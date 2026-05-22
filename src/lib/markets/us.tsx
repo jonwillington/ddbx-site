@@ -14,6 +14,7 @@ import type {
   MarketStats,
   Tone,
 } from "@/lib/markets/types";
+import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import type {
   Analysis,
   UsDealing,
@@ -281,6 +282,7 @@ export function toMarketDealing(group: UsRowGroup): MarketDealing<UsRowGroup> {
     legCount: group.leg_count,
     rating: group.analysis?.rating,
     triageVerdict: group.triage_verdict,
+    summary: group.analysis?.summary,
     actionLabel: action.label,
     actionTone: action.tone,
     raw: group,
@@ -737,12 +739,14 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   formatTickerDisplay: (ticker) => ticker,
   isRowMuted: (d) => !d.rating || !d.isPurchase,
   isSkipped: (d) => !d.rating,
-  views: [
-    { id: "signal", label: "Signal" },
-    { id: "interesting", label: "Interesting" },
-    { id: "all", label: "All filings" },
-  ],
-  defaultView: "signal",
+  // The Signal axis lives on the filter bar's Filter dropdown (client-side,
+  // shared across markets). The legacy server-side `view` tabs are gone:
+  // fetchDealings always pulls view=all so Today sees every disclosure.
+  views: [{ id: "all", label: "All" }],
+  defaultView: "all",
+  heroFilters: defaultRatingHeroFilters<UsRowGroup>(),
+  defaultHeroFilter: "any",
+  defaultSignalFilter: "signal",
   pollIntervalMs: 30_000,
   // Right-hand drawer news strip. Aggregates CNBC / MarketWatch /
   // Yahoo Finance / Seeking Alpha RSS via /api/news/us (worker side
@@ -751,24 +755,25 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   newsHeading: "US market news",
   newsFooterNote:
     "Third-party headlines (CNBC, MarketWatch, Yahoo Finance, Seeking Alpha); opens in a new tab.",
-  async fetchDealings({ view }) {
-    const r = await api.usDealings({
-      limit: 200,
-      view: view as "signal" | "interesting" | "all",
-    });
+  async fetchDealings() {
+    // Pull the raw (unfiltered) Form 4 set at the server cap so the Today
+    // hero can show every disclosure regardless of the client Signal/Strength
+    // selection. The new client-side Filter dropdown supersedes the old
+    // server `view` axis — Signal narrows the table client-side from rated
+    // rows already in `dealings`. 1000 is the current server MAX_LIMIT
+    // (ddbx-data/worker/db/us-queries.ts); peak Form 4 days can exceed
+    // that, in which case the next move is a date-scoped fetch rather than
+    // another global bump.
+    const r = await api.usDealings({ limit: 1000, view: "all" });
     const groups = groupRows(r.dealings);
     const stats: MarketStats = {
       total: r.stats.total,
-      viewCounts: {
-        signal: r.stats.signal,
-        interesting: r.stats.interesting,
-        all: r.stats.total,
-      },
+      viewCounts: { all: r.stats.total },
       latestDisclosedLabel: r.stats.latest_disclosed_date
         ? `Latest disclosure ${r.stats.latest_disclosed_date}`
         : undefined,
       debugBreakdown:
-        view === "all" && r.stats.by_code.length > 0
+        r.stats.by_code.length > 0
           ? `By code: ${r.stats.by_code.map((c) => `${c.code}=${c.n}`).join(" · ")}`
           : undefined,
     };

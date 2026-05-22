@@ -19,6 +19,7 @@ import type {
   MarketStats,
   Tone,
 } from "@/lib/markets/types";
+import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import type { EuDealing } from "@/types/ddbx";
 
 import { api } from "@/lib/api";
@@ -579,27 +580,25 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   // bytes (verified 2026-05-20). Suppressing the bubble keeps the row clean
   // until we either find a Nordic logo source or vendor logos ourselves.
   enableLogos: false,
-  views: [
-    { id: "signal", label: "Signal" },
-    { id: "all", label: "All filings" },
-  ],
-  defaultView: "signal",
+  // Single view: pull the raw set so Today shows every disclosure. The
+  // Signal/All narrowing now lives in the filter bar's Filter dropdown
+  // (client-side), shared with every other market.
+  views: [{ id: "all", label: "All" }],
+  defaultView: "all",
+  heroFilters: defaultRatingHeroFilters<EuRowGroup>(),
+  defaultHeroFilter: "any",
+  defaultSignalFilter: "all",
   pollIntervalMs: 60_000,
-  async fetchDealings({ view }) {
+  async fetchDealings() {
     const r = await api.euDealings({ market: "SE", limit: 500 });
     const groups = groupRows(r.dealings);
-    const signal = groups.filter(isCleanBuyGroup);
-    const selected = view === "signal" ? signal : groups;
     const stats: MarketStats = {
       // viewCounts now report logical-event counts (post-collapse), which is
       // the user-facing number ("12 filings today" instead of "47 legs across
       // 12 buys"). r.stats.total still reflects raw eu_dealings rows from the
       // worker — surface that as a transparency aside.
       total: groups.length,
-      viewCounts: {
-        signal: signal.length,
-        all: groups.length,
-      },
+      viewCounts: { all: groups.length },
       latestDisclosedLabel: r.stats.latest_disclosed_date
         ? `Latest disclosure ${r.stats.latest_disclosed_date.slice(0, 10)}`
         : undefined,
@@ -609,7 +608,7 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
           : undefined,
     };
 
-    return { dealings: selected.map(toMarketDealing), stats };
+    return { dealings: groups.map(toMarketDealing), stats };
   },
   RowActionCell: SwedenRowActionCell,
   DetailBody: SwedenDetailBody,
@@ -623,23 +622,8 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
     "Third-party headlines (Dagens industri, DN Ekonomi, SVT Ekonomi, Börsvärlden); opens in a new tab.",
   // No useGating — Sweden mirrors /us, no discretion mode.
   // No useMetricMode — no analysis layer to drive alpha-vs-raw toggles.
-  renderEmptyState: ({ view, stats, setView }) => {
+  renderEmptyState: ({ stats }) => {
     const total = stats?.total ?? 0;
-    const all = stats?.viewCounts.all ?? 0;
-
-    if (view === "signal") {
-      return (
-        <>
-          No direct PDMR buys in the latest scan.{" "}
-          <button
-            className="text-foreground/70 underline underline-offset-2 hover:text-foreground"
-            onClick={() => setView("all")}
-          >
-            Show all {all} filings
-          </button>
-        </>
-      );
-    }
 
     return (
       <>

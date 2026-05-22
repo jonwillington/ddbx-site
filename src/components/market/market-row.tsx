@@ -306,6 +306,11 @@ interface MarketRowProps<W> {
    *  `dealing.entryPrice`. Undefined while the latest-prices fetch is in
    *  flight. */
   stockCurrentMajor?: number;
+  /** Stock entry price the Return % anchors at. Resolved by the shell:
+   *  trade-anchor → execution price (`dealing.entryPrice`); disclosure-
+   *  anchor → close on the disclosure date (from stockBars). Falls back to
+   *  `dealing.entryPrice` while the per-ticker bars fetch is in flight. */
+  stockEntry?: number;
   /** Benchmark close at the chart-mode anchor (trade or disclosure) —
    *  resolved by the shell so the row stays presentational. */
   benchmarkEntry?: number;
@@ -343,6 +348,7 @@ export function MarketRow<W>({
   selected,
   onSelect,
   stockCurrentMajor,
+  stockEntry,
   benchmarkEntry,
   benchmarkCurrent,
   stockBars,
@@ -366,7 +372,7 @@ export function MarketRow<W>({
   const tradeDiffers = tradeDay !== disclosedDay;
 
   const { stockPct, alpha } = computeRowMetric({
-    dealing,
+    stockEntry: stockEntry ?? dealing.entryPrice ?? undefined,
     stockCurrentMajor,
     benchmarkEntry,
     benchmarkCurrent,

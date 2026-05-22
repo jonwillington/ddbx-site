@@ -5,12 +5,13 @@ import type {
   MarketDealing,
   MarketStats,
   NewsPayload,
+  SignalFilterValue,
 } from "@/lib/markets/types";
+import { isSignalDealing } from "@/lib/markets/types";
 
 import {
   CalendarDaysIcon,
   ChevronDownIcon,
-  PlayIcon,
 } from "@heroicons/react/24/outline";
 import {
   useCallback,
@@ -35,6 +36,7 @@ import {
 import { type SparkBar } from "./market-row-spark";
 import { MarketTodayDrawer } from "./market-today-drawer";
 import { MarketTodayEmpty } from "./market-today-empty";
+import { MarketTodayHero } from "./market-today-hero";
 import { bucketByMonth, todayKeyIso } from "./market-utils";
 
 import DefaultLayout from "@/layouts/default";
@@ -86,6 +88,12 @@ export function MarketPage<W>({
   const [openMonths, setOpenMonths] = useState<Set<string> | null>(null);
   const [heroFilterId, setHeroFilterId] = useState<string | null>(
     config.defaultHeroFilter ?? config.heroFilters?.[0]?.id ?? null,
+  );
+  /** Top-level Signal/All filter. Composes with the Strength dropdown
+   *  (heroFilterId): Signal narrows to rated rows, Strength narrows further
+   *  inside Signal. When this is "all" the bar hides Strength entirely. */
+  const [signalFilter, setSignalFilter] = useState<SignalFilterValue>(
+    config.defaultSignalFilter ?? "signal",
   );
   /** When non-null, the daily-summary sheet is open for this date. */
   const [openSummaryDate, setOpenSummaryDate] = useState<string | null>(null);
@@ -320,9 +328,13 @@ export function MarketPage<W>({
 
   /* ───────── Derived state ───────────────────────────────────────────── */
 
-  // Hero filter pills now act on the actual deals list (not just on the
-  // long-gone hero perf card). Predicate runs first; the search box is
-  // applied on top so the user can filter further inside a rating tier.
+  // Filter pipeline:
+  //   searchedDealings = dealings ∩ search    → drives the Today hero
+  //   filteredDealings = searchedDealings ∩ Signal ∩ Strength → drives the table
+  // Today is meant to stay the canonical "what happened today" surface — only
+  // search narrows it. Signal/Strength are table-only controls (the filter bar
+  // sits visually above the table, beneath the Today hero, to make that
+  // boundary obvious).
   const heroPredicate = useMemo(() => {
     if (!config.heroFilters || !heroFilterId) return null;
 
@@ -331,19 +343,34 @@ export function MarketPage<W>({
     );
   }, [config.heroFilters, heroFilterId]);
 
-  const filteredDealings = useMemo(() => {
-    let base = heroPredicate ? dealings.filter(heroPredicate) : dealings;
+  const searchedDealings = useMemo(() => {
     const q = search.trim().toLowerCase();
 
-    if (!q) return base;
+    if (!q) return dealings;
 
-    return base.filter(
+    return dealings.filter(
       (d) =>
         d.ticker.toLowerCase().includes(q) ||
         d.company.toLowerCase().includes(q) ||
         d.insiderName.toLowerCase().includes(q),
     );
-  }, [dealings, search, heroPredicate]);
+  }, [dealings, search]);
+
+  const filteredDealings = useMemo(() => {
+    let base =
+      signalFilter === "signal"
+        ? searchedDealings.filter(isSignalDealing)
+        : searchedDealings;
+
+    // Strength only composes with Signal — when the top-level filter is
+    // "all" the bar hides the Strength dropdown, so honouring its value
+    // here would silently re-apply a hidden control.
+    if (signalFilter === "signal" && heroPredicate) {
+      base = base.filter(heroPredicate);
+    }
+
+    return base;
+  }, [searchedDealings, heroPredicate, signalFilter]);
 
   const todayIso = useMemo(
     () => todayKeyIso(config.session?.timeZone),
@@ -352,8 +379,10 @@ export function MarketPage<W>({
 
   const todayDealings = useMemo(
     () =>
-      filteredDealings.filter((d) => d.disclosedDate.slice(0, 10) === todayIso),
-    [filteredDealings, todayIso],
+      searchedDealings.filter(
+        (d) => d.disclosedDate.slice(0, 10) === todayIso,
+      ),
+    [searchedDealings, todayIso],
   );
 
   const monthBuckets = useMemo(
@@ -423,6 +452,24 @@ export function MarketPage<W>({
     [benchEntries, anchorsOnDisclosure],
   );
 
+  // Stock entry price the Return % anchors at. When anchor=trade we use the
+  // recorded execution price (what the insider actually paid). When
+  // anchor=disclosure we want the close on the disclosure date instead, so
+  // the displayed % matches what the sparkline rebases against — the
+  // sparkline picks the first bar where `b.date >= anchor`, so we mirror
+  // that here.
+  const stockEntry = useCallback(
+    (d: MarketDealing<W>): number | undefined => {
+      if (!anchorsOnDisclosure) return d.entryPrice ?? undefined;
+      const bars = stockBars[d.ticker];
+      const disclosedIso = d.disclosedDate.slice(0, 10);
+      const post = bars?.find((b) => b.date >= disclosedIso);
+
+      return post?.close ?? d.entryPrice ?? undefined;
+    },
+    [stockBars, anchorsOnDisclosure],
+  );
+
   const benchmarkCurrentRaw = prices[config.benchmarkTicker];
   const benchmarkCurrent = benchmarkCurrentRaw
     ? (config.normalizeLivePrice(
@@ -447,12 +494,15 @@ export function MarketPage<W>({
       .sort((a, b) => b.pct - a.pct);
   }, [filteredDealings, stockCurrent]);
 
+  // Drawer should open for any clicked dealing, even ones the active
+  // signal/strength filter would hide — the Today hero surfaces skipped
+  // rows that aren't in `filteredDealings` when signalFilter === "signal".
   const selectedDealing = useMemo(
     () =>
       selectedKey
-        ? (filteredDealings.find((d) => d.key === selectedKey) ?? null)
+        ? (dealings.find((d) => d.key === selectedKey) ?? null)
         : null,
-    [filteredDealings, selectedKey],
+    [dealings, selectedKey],
   );
 
   const currentView = config.views.find((v) => v.id === view);
@@ -518,7 +568,7 @@ export function MarketPage<W>({
   );
 
   return (
-    <DefaultLayout drawerRight>
+    <DefaultLayout drawerRight={hasNewsSource}>
       <section className="pb-8 space-y-6">
         {/* Shared hero — first content under the navbar. Perf moved to
             /performance; the old title + description block is dropped
@@ -591,90 +641,25 @@ export function MarketPage<W>({
           </div>
         )}
 
-        {/* Rating filter pills sit directly above the deals; they now filter
-            the actual list (not just a defunct hero stats card). */}
-        {config.heroFilters && config.heroFilters.length > 0 && (
-          <div
-            className="flex flex-wrap justify-center gap-1.5 animate-content-in"
-            role="tablist"
-          >
-            {config.heroFilters.map((f) => (
-              <button
-                key={f.id}
-                aria-selected={heroFilterId === f.id}
-                className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                  heroFilterId === f.id
-                    ? "border-[#6b5038]/50 bg-[#6b5038]/10 text-[#6b5038] dark:text-[#a8804e]"
-                    : "border-separator text-muted hover:text-foreground hover:border-[#6b5038]/30"
-                }`}
-                role="tab"
-                onClick={() => setHeroFilterId(f.id)}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Today — inline card; lg+ hides this because the right drawer
-            already shows today's filings. */}
-        <div className="lg:hidden bg-[#faf7f2] dark:bg-surface rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#e8e0d5] dark:border-separator">
-            <div className="text-sm font-semibold flex items-center gap-2">
-              <PlayIcon className="w-4 h-4" />
-              Today
-            </div>
-            {todayDealings.length > 0 && (
-              <div className="text-xs text-muted mt-0.5">
-                {todayDealings.length}{" "}
-                {todayDealings.length === 1 ? "filing" : "filings"} disclosed
-                today
-              </div>
-            )}
-          </div>
-          {todayDealings.length > 0 ? (
-            <div className="divide-y divide-black/[0.06] dark:divide-separator">
-              {todayDealings.map((d) => (
-                <MarketRow
-                  key={d.key}
-                  hideDate
-                  RowActionCell={config.RowActionCell}
-                  benchmarkBars={benchmarkBars}
-                  benchmarkCurrent={benchmarkCurrent}
-                  benchmarkEntry={benchmarkEntry(d)}
-                  benchmarkLabel={config.benchmarkLabel}
-                  chartMode={chartMode}
-                  dealing={d}
-                  formatTickerDisplay={config.formatTickerDisplay}
-                  fmt={config.priceFormat}
-                  isMuted={config.isRowMuted}
-                  locale={config.locale}
-                  selected={selectedKey === d.key}
-                  showLogo={logosEnabled}
-                  stockBars={stockBars[d.ticker]}
-                  stockCurrentMajor={stockCurrent(d.ticker)}
-                  onSelect={() => setSelectedKey(d.key)}
-                />
-              ))}
-            </div>
-          ) : loading ? (
-            <div className="divide-y divide-black/[0.06] dark:divide-separator">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <MarketRowSkeleton
-                  key={i}
-                  hideDate
-                  valueColumnClass={config.priceFormat.valueColumnClass}
-                />
-              ))}
-            </div>
-          ) : TodayEmptyComponent ? (
-            <TodayEmptyComponent />
-          ) : (
-            <div className="px-5 py-6 text-sm text-muted">
-              No filings disclosed today yet.
-            </div>
-          )}
-        </div>
+        {/* Today hero — large, dominant section. Replaces both the old
+            mobile-only inline Today card AND the right-drawer "Today's
+            filings" half so the page reads top-down with today front-and-
+            centre instead of tucked into a sidebar. */}
+        <MarketTodayHero
+          TodayEmpty={TodayEmptyComponent}
+          fmt={config.priceFormat}
+          formatTickerDisplay={config.formatTickerDisplay}
+          holidays={config.holidays}
+          isMuted={config.isRowMuted}
+          loading={loading && dealings.length === 0}
+          locale={config.locale}
+          selectedKey={selectedKey}
+          session={config.session}
+          showLogo={logosEnabled}
+          todayDealings={todayDealings}
+          todayIso={todayIso}
+          onSelect={(d) => setSelectedKey(d.key)}
+        />
 
         {loading && filteredDealings.length === 0 && (
           <div className="bg-[#faf7f2] dark:bg-surface rounded-xl overflow-hidden animate-content-in">
@@ -694,23 +679,29 @@ export function MarketPage<W>({
           </div>
         )}
 
-        {emptyState}
-
         {/* Sticky filter bar — single instance shared by both view bodies.
             Sits right beneath the navbar with rounded top + opaque bg so
             it doubles as the table's curved top edge AND masks anything
-            scrolling beneath it. */}
-        {filteredDealings.length > 0 && (
+            scrolling beneath it. Stays visible when the hero filter
+            narrows the list to zero so the user can switch back. */}
+        {dealings.length > 0 && (
           <div className="sticky top-[64px] z-20 bg-[#faf7f2] dark:bg-surface rounded-t-xl border-b border-[#e8e0d5]/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
             <MarketFilterBar
+              heroFilterId={heroFilterId}
+              heroFilters={config.heroFilters?.map((f) => ({ id: f.id, label: f.label }))}
               search={search}
+              signalFilter={signalFilter}
               trailing={chartModeToggle}
               viewMode={viewMode}
+              onHeroFilterChange={setHeroFilterId}
               onSearch={setSearch}
+              onSignalFilterChange={setSignalFilter}
               onViewMode={setViewMode}
             />
           </div>
         )}
+
+        {emptyState}
 
         {/* By-gain view */}
         {filteredDealings.length > 0 && viewMode === "by-gain" && (
@@ -739,6 +730,7 @@ export function MarketPage<W>({
                   showLogo={logosEnabled}
                   stockBars={stockBars[d.ticker]}
                   stockCurrentMajor={stockCurrent(d.ticker)}
+                  stockEntry={stockEntry(d)}
                   onSelect={() => setSelectedKey(d.key)}
                 />
               ))}
@@ -770,7 +762,9 @@ export function MarketPage<W>({
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="text-xs text-muted">
                           {config.isSkipped
-                            ? `${month.suggestedCount} analysed · ${month.skippedCount} skipped`
+                            ? month.skippedCount > 0
+                              ? `${month.suggestedCount} analysed · ${month.skippedCount} skipped`
+                              : `${month.suggestedCount} analysed`
                             : `${month.count} ${month.count === 1 ? "filing" : "filings"}`}
                         </span>
                         <ChevronDownIcon
@@ -788,7 +782,7 @@ export function MarketPage<W>({
                         chartMode={chartMode}
                         valueColumnClass={config.priceFormat.valueColumnClass}
                       />
-                      <div className="px-3 py-3 space-y-2 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
+                      <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
                         {month.days.map((day) => {
                           const hasContent =
                             day.suggested.length > 0 || day.skipped.length > 0;
@@ -838,6 +832,7 @@ export function MarketPage<W>({
                                   showLogo={logosEnabled}
                                   stockBars={stockBars[d.ticker]}
                                   stockCurrentMajor={stockCurrent(d.ticker)}
+                                  stockEntry={stockEntry(d)}
                                   onSelect={() => setSelectedKey(d.key)}
                                 />
                               ))}
@@ -860,6 +855,7 @@ export function MarketPage<W>({
                                   showLogo={logosEnabled}
                                   stockBars={stockBars[d.ticker]}
                                   stockCurrentMajor={stockCurrent(d.ticker)}
+                                  stockEntry={stockEntry(d)}
                                   onSelect={() => setSelectedKey(d.key)}
                                 />
                               ))}
@@ -900,17 +896,9 @@ export function MarketPage<W>({
       </section>
 
       <MarketTodayDrawer
-        TodayEmpty={TodayEmptyComponent}
-        formatTickerDisplay={config.formatTickerDisplay}
-        fmt={config.priceFormat}
-        isRowMuted={config.isRowMuted}
-        loading={loading && dealings.length === 0}
         news={hasNewsSource ? news : undefined}
         newsFooterNote={config.newsFooterNote}
         newsHeading={config.newsHeading}
-        selectedKey={selectedKey}
-        todayDealings={todayDealings}
-        onSelect={(d) => setSelectedKey(d.key)}
       />
 
       <MarketDetailDrawer

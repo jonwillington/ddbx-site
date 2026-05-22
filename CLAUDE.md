@@ -1,5 +1,12 @@
 # Director Dealings (ddbx.uk) — website Claude Code context
 
+> **⚠ Production system across three repos.** This site, the API
+> (`ddbx-data`), and the iOS app share wire-format types, API endpoint
+> contracts, and `MARKET_CONFIG` capability flags. Read
+> [`~/CLAUDE.md`](../CLAUDE.md) ("Coordinating changes") **before**
+> renaming types, changing API params, or adding filter axes — the
+> sibling consumers don't fail loudly and there is no staging.
+
 This repo is the public website. The data platform (Cloudflare Worker, D1,
 scraping/triage/analysis pipeline) was split out into the `ddbx-data` repo
 on 2026-05-10. If you're looking for `worker/`, it lives there now.

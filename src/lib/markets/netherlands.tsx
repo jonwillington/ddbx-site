@@ -27,6 +27,7 @@ import type {
   MarketStats,
   Tone,
 } from "@/lib/markets/types";
+import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { api } from "@/lib/api";
 import { normalisedDisplayName } from "@/lib/display-name";
 import { PriceFormat } from "@/components/position-card";
@@ -505,23 +506,21 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   // HEIA resolve cleanly; smaller AMX / AScX names return placeholders).
   // Leaving off until either a Euronext logo source or vendor logos.
   enableLogos: false,
-  views: [
-    { id: "signal", label: "Signal" },
-    { id: "all", label: "All filings" },
-  ],
-  defaultView: "signal",
+  // Single view: pull the raw set so Today shows every disclosure. The
+  // Signal/All narrowing now lives in the filter bar's Filter dropdown
+  // (client-side), shared with every other market.
+  views: [{ id: "all", label: "All" }],
+  defaultView: "all",
+  heroFilters: defaultRatingHeroFilters<EuRowGroup>(),
+  defaultHeroFilter: "any",
+  defaultSignalFilter: "all",
   pollIntervalMs: 60_000,
-  async fetchDealings({ view }) {
+  async fetchDealings() {
     const r = await api.euDealings({ market: "NL", limit: 500 });
     const groups = groupRows(r.dealings);
-    const signal = groups.filter(isCleanBuyGroup);
-    const selected = view === "signal" ? signal : groups;
     const stats: MarketStats = {
       total: groups.length,
-      viewCounts: {
-        signal: signal.length,
-        all: groups.length,
-      },
+      viewCounts: { all: groups.length },
       latestDisclosedLabel: r.stats.latest_disclosed_date
         ? `Latest disclosure ${r.stats.latest_disclosed_date.slice(0, 10)}`
         : undefined,
@@ -531,7 +530,7 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
           : undefined,
     };
 
-    return { dealings: selected.map(toMarketDealing), stats };
+    return { dealings: groups.map(toMarketDealing), stats };
   },
   RowActionCell: NetherlandsRowActionCell,
   DetailBody: NetherlandsDetailBody,
@@ -543,23 +542,8 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
     "Third-party headlines (NOS Economie, NRC Economie, Volkskrant Economie, NU.nl Economie); opens in a new tab.",
   // No useGating — Netherlands ships unmoderated like Sweden until you
   // decide whether to gate NL behind the iOS app.
-  renderEmptyState: ({ view, stats, setView }) => {
+  renderEmptyState: ({ stats }) => {
     const total = stats?.total ?? 0;
-    const all = stats?.viewCounts.all ?? 0;
-
-    if (view === "signal") {
-      return (
-        <>
-          No direct PDMR buys in the latest scan.{" "}
-          <button
-            className="text-foreground/70 underline underline-offset-2 hover:text-foreground"
-            onClick={() => setView("all")}
-          >
-            Show all {all} filings
-          </button>
-        </>
-      );
-    }
 
     return (
       <>

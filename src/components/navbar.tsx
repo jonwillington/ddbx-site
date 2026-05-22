@@ -44,7 +44,7 @@ export const Navbar = () => {
             />
           </Link>
           <MarketSwitcher />
-          <ul className="flex gap-4">
+          <ul className="hidden gap-4 md:flex">
             {navItems.map((item) => {
               const active = item.match(location.pathname);
 

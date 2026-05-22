@@ -177,22 +177,24 @@ export interface RowMetric {
   alpha: number | null;
 }
 
-export function computeRowMetric<W>({
-  dealing,
+export function computeRowMetric({
+  stockEntry,
   stockCurrentMajor,
   benchmarkEntry,
   benchmarkCurrent,
 }: {
-  dealing: MarketDealing<W>;
+  /** Stock baseline at the chart-mode anchor — trade-day execution price or
+   *  disclosure-day close. Resolved by the shell so this helper stays pure. */
+  stockEntry: number | undefined;
   stockCurrentMajor: number | undefined;
   benchmarkEntry: number | undefined;
   benchmarkCurrent: number | undefined;
 }): RowMetric {
   const stockPct =
-    dealing.entryPrice != null &&
+    stockEntry != null &&
     stockCurrentMajor != null &&
-    dealing.entryPrice > 0
-      ? stockReturnPct(dealing.entryPrice, stockCurrentMajor)
+    stockEntry > 0
+      ? stockReturnPct(stockEntry, stockCurrentMajor)
       : null;
   const benchPct =
     benchmarkEntry != null && benchmarkCurrent != null && benchmarkEntry > 0

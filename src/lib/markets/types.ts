@@ -68,6 +68,10 @@ export interface MarketDealing<W = unknown> {
   /** Optional triage verdict, when the market has a triage pass. US uses
    *  "promising" | "maybe" | "skip". */
   triageVerdict?: string;
+  /** Optional one-liner from the deep-analysis pipeline. Surfaced by the
+   *  Today hero so each card teases its summary; markets without analysis
+   *  leave this undefined. */
+  summary?: string;
 
   /** Human-readable action ("Open-market buy", "Director purchase"). */
   actionLabel: string;
@@ -140,6 +144,46 @@ export interface HeroFilter<W = unknown> {
   id: string;
   label: string;
   predicate: (d: MarketDealing<W>) => boolean;
+}
+
+export type SignalFilterValue = "signal" | "all";
+
+/** Predicate for the top-level "Signal" filter: anything the analyst pass
+ *  rated above routine. Routine and unrated rows fall outside Signal. The
+ *  "All" filter value is everything (no predicate applied). */
+export function isSignalDealing<W>(d: MarketDealing<W>): boolean {
+  return (
+    d.rating === "significant" ||
+    d.rating === "noteworthy" ||
+    d.rating === "minor"
+  );
+}
+
+/** Standard four-bucket rating filter shared across markets. UK and US
+ *  populate the buckets from the analyst pipeline; NL/SE have no ratings
+ *  yet so every row falls into "Routine / unrated" until the pipeline
+ *  catches up. Kept as a function so each market gets a freshly-typed
+ *  array — `predicate` only reads `d.rating`, which exists on every
+ *  MarketDealing regardless of W. */
+export function defaultRatingHeroFilters<W>(): HeroFilter<W>[] {
+  return [
+    {
+      id: "significant",
+      label: "Significant",
+      predicate: (d) => d.rating === "significant",
+    },
+    {
+      id: "noteworthy",
+      label: "Noteworthy",
+      predicate: (d) => d.rating === "noteworthy",
+    },
+    {
+      id: "routine",
+      label: "Routine / unrated",
+      predicate: (d) => !d.rating || d.rating === "routine",
+    },
+    { id: "any", label: "All", predicate: () => true },
+  ];
 }
 
 /** A complete market plugin. Everything per-market hangs off here. */
@@ -267,13 +311,22 @@ export interface MarketConfig<W = unknown> {
    *  falls back to the historical UK rule: unrated or non-purchase rows fade. */
   isRowMuted?: (d: MarketDealing<W>) => boolean;
 
-  /** Hero-card filter pills. Optional — when present, MarketPage renders a
-   *  pill strip above the hero and narrows the hero performance stats to
-   *  the matching dealings. UK uses this for the rating axis
-   *  (Significant / Noteworthy / All / Routine). */
+  /** Strength-tier filter pills (Significant / Noteworthy / Routine-unrated
+   *  / All). Rendered inside the grid filter bar as a "Strength" dropdown,
+   *  but only when the top-level Filter dropdown is on "signal" — picking
+   *  "all" hides Strength because the rating axis no longer narrows the
+   *  list meaningfully. */
   heroFilters?: HeroFilter<W>[];
   /** Default-selected hero filter id; falls back to heroFilters[0]?.id. */
   defaultHeroFilter?: string;
+
+  /** Default value for the top-level "Filter: Signal / All" dropdown.
+   *  Markets with a populated triage→analysis pipeline (UK, US) default to
+   *  "signal" so the curated list is what the reader sees first. Markets
+   *  where triage hasn't been backfilled (NL, SE today) default to "all"
+   *  because "signal" would render empty until those rows pick up
+   *  ratings. */
+  defaultSignalFilter?: SignalFilterValue;
 
   /** Predicate identifying "skipped" rows — dealings that exist in the data
    *  but didn't earn full analysis. The shell collapses these into a

@@ -12,7 +12,8 @@ import type {
   MarketStats,
   Tone,
 } from "@/lib/markets/types";
-import type { Dealing, Rating, TriageVerdict } from "@/types/ddbx";
+import { defaultRatingHeroFilters } from "@/lib/markets/types";
+import type { Dealing, TriageVerdict } from "@/types/ddbx";
 
 import { normalisedDisplayName } from "@/lib/display-name";
 import { useEffect, useState } from "react";
@@ -92,6 +93,7 @@ export function toMarketDealing(d: Dealing): MarketDealing<Dealing> {
     legCount: 1,
     rating: d.analysis?.rating,
     triageVerdict: d.triage?.verdict,
+    summary: d.analysis?.summary,
     actionLabel: action.label,
     actionTone: action.tone,
     raw: d,
@@ -379,20 +381,6 @@ function useUkGating(): GatingInfo {
 
 /* ─── MarketConfig ───────────────────────────────────────────────────── */
 
-// Rating-keyed hero pills. Live UK dashboard has this as a four-way
-// filter that narrows the "Average return vs FTSE" stat to one rating
-// tier — pipeline stages aren't a concept here (Opus screens every
-// disclosure), so view tabs collapse to a single "All" view and the
-// rating axis lives on heroFilters.
-function ratingPredicate(target: Rating | "any" | "routine") {
-  return (d: { rating?: Rating }) => {
-    if (target === "any") return true;
-    if (target === "routine") return !d.rating || d.rating === "routine";
-
-    return d.rating === target;
-  };
-}
-
 export const UkMarket: MarketConfig<Dealing> = {
   id: "uk",
   title: "UK director dealings (preview)",
@@ -424,25 +412,9 @@ export const UkMarket: MarketConfig<Dealing> = {
   // tab strip is hidden (MarketPage shows it only when len > 1).
   views: [{ id: "all", label: "All" }],
   defaultView: "all",
-  heroFilters: [
-    {
-      id: "significant",
-      label: "Significant",
-      predicate: ratingPredicate("significant"),
-    },
-    {
-      id: "noteworthy",
-      label: "Noteworthy",
-      predicate: ratingPredicate("noteworthy"),
-    },
-    {
-      id: "routine",
-      label: "Routine / unrated",
-      predicate: ratingPredicate("routine"),
-    },
-    { id: "any", label: "All", predicate: ratingPredicate("any") },
-  ],
+  heroFilters: defaultRatingHeroFilters<Dealing>(),
   defaultHeroFilter: "any",
+  defaultSignalFilter: "signal",
   pollIntervalMs: 30_000,
   fetchNews: () => api.ukNews(),
   newsHeading: "UK market news",
