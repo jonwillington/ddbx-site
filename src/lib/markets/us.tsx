@@ -30,6 +30,7 @@ import { RatingBadge } from "@/components/rating-badge";
 import { EvidenceTable } from "@/components/evidence-table";
 import { RatingChecklistView } from "@/components/rating-checklist-view";
 import { api } from "@/lib/api";
+import { normalisedDisplayName } from "@/lib/display-name";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -268,8 +269,8 @@ export function toMarketDealing(group: UsRowGroup): MarketDealing<UsRowGroup> {
     key: group.key,
     id: group.key,
     ticker: row.ticker,
-    company: row.company,
-    insiderName: reporter.name,
+    company: normalisedDisplayName(row.company),
+    insiderName: normalisedDisplayName(reporter.name),
     insiderRole: reporter.role,
     disclosedDate: row.disclosed_date,
     tradeDate: row.trade_date,

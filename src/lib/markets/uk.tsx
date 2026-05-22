@@ -14,6 +14,7 @@ import type {
 } from "@/lib/markets/types";
 import type { Dealing, Rating, TriageVerdict } from "@/types/ddbx";
 
+import { normalisedDisplayName } from "@/lib/display-name";
 import { useEffect, useState } from "react";
 import { InformationCircleIcon as InformationCircleOutlineIcon } from "@heroicons/react/24/outline";
 
@@ -77,8 +78,8 @@ export function toMarketDealing(d: Dealing): MarketDealing<Dealing> {
     key: d.id,
     id: d.id,
     ticker: d.ticker,
-    company: d.company,
-    insiderName: d.director.name,
+    company: normalisedDisplayName(d.company),
+    insiderName: normalisedDisplayName(d.director.name),
     insiderRole: d.director.role,
     disclosedDate: d.disclosed_date || d.trade_date,
     tradeDate: d.trade_date,
@@ -256,7 +257,7 @@ function UkDetailBody({ dealing }: { dealing: MarketDealing<Dealing> }) {
     return (
       <div className="space-y-4">
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-          <Field label="Insider" value={d.director.name} />
+          <Field label="Insider" value={normalisedDisplayName(d.director.name)} />
           <Field label="Role" value={d.director.role ?? "—"} />
           <Field label="Amount" value={fmtGbp(d.value_gbp)} />
           <Field label="Shares" value={d.shares.toLocaleString()} />
@@ -269,7 +270,7 @@ function UkDetailBody({ dealing }: { dealing: MarketDealing<Dealing> }) {
   return (
     <div className="space-y-6">
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-        <Field label="Insider" value={d.director.name} />
+        <Field label="Insider" value={normalisedDisplayName(d.director.name)} />
         <Field label="Role" value={d.director.role ?? "—"} />
         <Field label="Amount" value={fmtGbp(d.value_gbp)} />
         <Field label="Shares" value={d.shares.toLocaleString()} />

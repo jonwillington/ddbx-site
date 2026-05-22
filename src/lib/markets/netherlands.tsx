@@ -28,6 +28,7 @@ import type {
   Tone,
 } from "@/lib/markets/types";
 import { api } from "@/lib/api";
+import { normalisedDisplayName } from "@/lib/display-name";
 import { PriceFormat } from "@/components/position-card";
 
 /** Euronext Amsterdam — continuous trading 09:00–17:30 Europe/Amsterdam,
@@ -219,8 +220,8 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     // AFM ISINs resolve to .AS Yahoo tickers via the same isin_tickers
     // cache as Sweden. Empty fallback keeps MarketRow's "—" treatment.
     ticker: d.ticker ?? "",
-    company: d.company,
-    insiderName: d.reporter.name,
+    company: normalisedDisplayName(d.company),
+    insiderName: normalisedDisplayName(d.reporter.name),
     insiderRole: translateRole(d.reporter.role),
     disclosedDate: g.disclosed_date,
     tradeDate: g.trade_date,
@@ -322,7 +323,7 @@ function NetherlandsDetailBody({
   return (
     <div className="space-y-6">
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-        <Field label="Insider" value={d.reporter.name} />
+        <Field label="Insider" value={normalisedDisplayName(d.reporter.name)} />
         <Field label="Role" value={translateRole(d.reporter.role) ?? "—"} />
         <Field label="Action" value={action.label} />
         <Field
