@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 
 import { BetaTag } from "@/components/market/beta-tag";
+import { CookieBanner } from "@/components/cookie-banner";
 import { DocumentTitle } from "@/components/document-title";
 import PerformancePage from "@/pages/performance";
 import DirectorPage from "@/pages/director";
@@ -39,6 +40,7 @@ function App() {
         <Route element={<NetherlandsPreviewPage />} path="/nl" />
         <Route element={<UkPreviewPage />} path="/uk-preview" />
       </Routes>
+      <CookieBanner />
     </div>
   );
 }

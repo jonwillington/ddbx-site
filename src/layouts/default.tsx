@@ -156,8 +156,10 @@ function PrivacyContent() {
       <p>
         The site is hosted on Cloudflare Pages and uses Cloudflare Workers for
         API functionality. Cloudflare&apos;s own privacy policy governs their
-        processing of network-level data. We do not integrate third-party
-        advertising, analytics, or social media tracking scripts.
+        processing of network-level data. If you accept the cookie banner, we
+        also load Google Analytics 4 (aggregate usage statistics) and the X
+        (Twitter) Ads conversion pixel (to measure ad-driven installs) — see
+        the Cookie Policy for details.
       </p>
 
       <SectionTitle>Your rights</SectionTitle>
@@ -194,46 +196,57 @@ function CookieContent() {
         provide information to site operators.
       </p>
 
-      <SectionTitle>Cookies we use</SectionTitle>
+      <SectionTitle>Strictly necessary</SectionTitle>
       <p>
-        We use only essential cookies required for the site to function
-        correctly. These include:
+        These are always on. They are needed for the site to work and do not
+        require your consent.
       </p>
       <ul className="list-disc pl-5 space-y-1">
         <li>
-          <strong>Cloudflare security cookies</strong> — used to identify
-          trusted web traffic and protect against malicious visitors. These are
-          set automatically by our hosting provider and cannot be disabled
-          without affecting site functionality.
+          <strong>Cloudflare security cookies</strong> — set by our hosting
+          provider to identify trusted traffic and protect against malicious
+          visitors.
         </li>
         <li>
-          <strong>Theme preference</strong> — a local storage entry that
-          remembers whether you have selected light or dark mode, so your choice
-          persists between visits.
+          <strong>Local preferences</strong> — small <code>localStorage</code>{" "}
+          entries remembering things like your selected theme, market, and which
+          deal cards you have opened today. These never leave your browser.
         </li>
       </ul>
 
-      <SectionTitle>Cookies we do not use</SectionTitle>
+      <SectionTitle>Analytics &amp; marketing (requires consent)</SectionTitle>
       <p>
-        We do not use analytics cookies, advertising cookies, social media
-        tracking pixels, or any form of cross-site tracking. We do not
-        participate in advertising networks or share cookie data with third
-        parties.
+        If you click <strong>&quot;Agree to cookies&quot;</strong> on the
+        banner, we load the following scripts. Until you agree, none of them
+        are loaded and no cookies are set by them.
+      </p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>
+          <strong>Google Analytics 4</strong> — aggregate usage statistics
+          (which pages are viewed, roughly where visitors come from).
+        </li>
+        <li>
+          <strong>X (Twitter) conversion pixel</strong> — measures whether
+          visitors arriving from X ads go on to install the iOS app or sign
+          up. Loaded from <code>static.ads-twitter.com</code>.
+        </li>
+      </ul>
+      <p>
+        We do not use display-advertising cookies, retargeting networks, or
+        cross-site tracking beyond the conversion pixel above.
       </p>
 
-      <SectionTitle>Managing cookies</SectionTitle>
+      <SectionTitle>Changing your mind</SectionTitle>
       <p>
-        You can control and delete cookies through your browser settings.
-        Blocking essential cookies may affect site functionality. Since we do
-        not use optional tracking cookies, there is no cookie consent banner —
-        only strictly necessary cookies are set.
+        Cleared site data or a fresh browser will show the banner again. To
+        re-trigger it on the same browser, visit any page with{" "}
+        <code>?cookies=reset</code> appended to the URL.
       </p>
 
       <SectionTitle>Changes to this policy</SectionTitle>
       <p>
         If we introduce new categories of cookies in the future, we will update
-        this page and, if required, implement a consent mechanism before setting
-        non-essential cookies.
+        this page and, where required, ask for consent before setting them.
       </p>
     </>
   );

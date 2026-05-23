@@ -145,11 +145,28 @@ export function marketHref(
   const host = safeHostname(hostname);
   const targetHost = MARKET_HOST_BY_ID[market.id];
 
-  if (!targetHost || !host) return path;
-  if (!(host in HOST_DEFAULT_MARKET)) return path;
+  // Dev/local hosts (localhost, preview URLs) don't participate in
+  // domain-based routing. Keep links on the current origin and map
+  // canonical cross-domain paths back to the local route shape.
+  if (!host || !(host in HOST_DEFAULT_MARKET)) {
+    return localPathForMarket(market, path);
+  }
+  if (!targetHost) return path;
   if (host === targetHost) return path;
 
   return `https://${targetHost}${path}`;
+}
+
+function localPathForMarket(
+  market: MarketRegistryEntry,
+  canonicalPath: string,
+): string {
+  if (canonicalPath === "/") return market.route;
+  if (canonicalPath === "/performance") {
+    return market.id === "uk" ? "/portfolio" : `${market.route}/performance`;
+  }
+
+  return canonicalPath;
 }
 
 /** Resolve a route to its owning market. UK is the default for paths that

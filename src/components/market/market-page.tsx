@@ -456,6 +456,26 @@ export function MarketPage<W>({
     [stockBars, anchorsOnDisclosure],
   );
 
+  // True when disclosure-anchored AND the bar we'd anchor at is also the
+  // latest live close — i.e. the market has not yet produced a price after
+  // disclosure (typical on weekends for Friday's disclosures). Return would
+  // mechanically be 0% in this case, so the row shows "No data yet" instead
+  // of a misleading green ▲ +0.0%. Bars-not-loaded falls through to false.
+  const stockNoPosteriorData = useCallback(
+    (d: MarketDealing<W>): boolean => {
+      if (!anchorsOnDisclosure) return false;
+      const liveDate = prices[d.ticker]?.date;
+
+      if (!liveDate) return false;
+      const bars = stockBars[d.ticker];
+      const disclosedIso = d.disclosedDate.slice(0, 10);
+      const post = bars?.find((b) => b.date >= disclosedIso);
+
+      return post?.date === liveDate;
+    },
+    [anchorsOnDisclosure, prices, stockBars],
+  );
+
   const benchmarkCurrentRaw = prices[config.benchmarkTicker];
   const benchmarkCurrent = benchmarkCurrentRaw
     ? (config.normalizeLivePrice(
@@ -479,6 +499,59 @@ export function MarketPage<W>({
       .filter((x): x is { dealing: MarketDealing<W>; pct: number } => x != null)
       .sort((a, b) => b.pct - a.pct);
   }, [filteredDealings, stockCurrent]);
+
+  // Past-month best performers — feeds the right half of the Today
+  // section when today has no filings (weekends, holidays, quiet days).
+  // Looks back 30 days *excluding* today so the gains have room to mean
+  // something — a 7-day window gave us a lot of low-single-digit moves.
+  // Applies the same primary/skipped split rule the Today hero uses,
+  // computes return-since-trade from the live price cache, and sorts by
+  // gain descending. Items without a computable return fall back to the
+  // end ordered by deal value, so the grid still fills out before
+  // prices finish loading.
+  const recentBestPerformingDealings = useMemo<
+    { dealing: MarketDealing<W>; returnPct: number | null }[]
+  >(() => {
+    if (todayDealings.length > 0) return [];
+    const cutoff = new Date(`${todayIso}T00:00:00Z`);
+
+    cutoff.setUTCDate(cutoff.getUTCDate() - 30);
+    const cutoffIso = cutoff.toISOString().slice(0, 10);
+    const inWindow = searchedDealings.filter((d) => {
+      const iso = d.disclosedDate.slice(0, 10);
+
+      if (iso >= todayIso || iso < cutoffIso) return false;
+
+      return config.isRowMuted ? !config.isRowMuted(d) : d.isPurchase;
+    });
+
+    return inWindow
+      .map((d) => {
+        const current = stockCurrent(d.ticker);
+        const returnPct =
+          d.entryPrice != null && current != null && d.entryPrice > 0
+            ? ((current - d.entryPrice) / d.entryPrice) * 100
+            : null;
+
+        return { dealing: d, returnPct };
+      })
+      .sort((a, b) => {
+        // Items with a return go first, ranked by gain; everything else
+        // tail-sorted by value so we always have six cells on screen.
+        if (a.returnPct != null && b.returnPct != null)
+          return b.returnPct - a.returnPct;
+        if (a.returnPct != null) return -1;
+        if (b.returnPct != null) return 1;
+
+        return (b.dealing.value ?? 0) - (a.dealing.value ?? 0);
+      });
+  }, [
+    searchedDealings,
+    todayDealings,
+    todayIso,
+    config.isRowMuted,
+    stockCurrent,
+  ]);
 
   // Drawer should open for any clicked dealing, even ones the active
   // signal/strength filter would hide — the Today hero surfaces skipped
@@ -593,6 +666,7 @@ export function MarketPage<W>({
           isMuted={config.isRowMuted}
           loading={loading && dealings.length === 0}
           locale={config.locale}
+          recentBest={recentBestPerformingDealings}
           selectedKey={selectedKey}
           session={config.session}
           showLogo={logosEnabled}
@@ -669,6 +743,7 @@ export function MarketPage<W>({
                   formatTickerDisplay={config.formatTickerDisplay}
                   isMuted={config.isRowMuted}
                   locale={config.locale}
+                  noPosteriorData={stockNoPosteriorData(d)}
                   selected={selectedKey === d.key}
                   showLogo={logosEnabled}
                   stockBars={stockBars[d.ticker]}
@@ -775,6 +850,7 @@ export function MarketPage<W>({
                                   }
                                   isMuted={config.isRowMuted}
                                   locale={config.locale}
+                                  noPosteriorData={stockNoPosteriorData(d)}
                                   selected={selectedKey === d.key}
                                   showLogo={logosEnabled}
                                   stockBars={stockBars[d.ticker]}
@@ -800,6 +876,7 @@ export function MarketPage<W>({
                                   }
                                   isMuted={config.isRowMuted}
                                   locale={config.locale}
+                                  noPosteriorData={stockNoPosteriorData(d)}
                                   selected={selectedKey === d.key}
                                   showLogo={logosEnabled}
                                   stockBars={stockBars[d.ticker]}

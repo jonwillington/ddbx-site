@@ -298,6 +298,13 @@ export interface Dealing {
    *  equals price_pence/100; for non-GBP rows this is the raw RNS figure
    *  surfaced for cross-checking against broker confirmations. */
   price_native: number;
+  /** Close-of-day price (pence) on `disclosed_date`, or the nearest prior
+   *  trading day when disclosure landed on a weekend / holiday. Sourced
+   *  from the `prices` table via a read-time subquery — nullable when
+   *  we haven't yet cached bars covering the disclosure date. Anchors
+   *  the "since disclosure" return on iOS / site (the price a copycat
+   *  could realistically have bought into end-of-day). */
+  disclosed_close_pence?: number | null;
   /**
    * Set when the row is structurally wrong (price >50× off market after
    * FX + snap). Quarantined rows are hidden from default API responses;
@@ -526,6 +533,13 @@ export interface UsDealing {
   price: number | null;
   /** shares × price. `null` when price is `null`. */
   value: number | null;
+  /** Close-of-day price (USD majors) on `disclosed_date`, or nearest prior
+   *  trading day. Sourced from the cached `prices` table at read time —
+   *  nullable when bars aren't cached for the disclosure window. Anchors
+   *  the "since disclosure" return on iOS / site so the metric is what a
+   *  copycat trader could have actually entered at, not the insider's
+   *  trade-day fill. */
+  disclosed_close?: number | null;
   /** Post-transaction holding. Lets the product answer "did they sell out
    *  entirely?" — a stronger signal than just the transaction size. */
   shares_after?: number;
@@ -559,6 +573,17 @@ export interface UsDealing {
   is_amendment: boolean;
   /** Form 4 `dateOfOriginalSubmission`, present on amendments only. */
   original_filing_date?: string;
+
+  /** Set by `worker/pipeline/us/classify-trade.ts` after ingest. `true` means
+   *  the trade looks replicable by a retail copycat (open-market fill at a
+   *  liquid issuer); `false` means it isn't (penny stock, non-exchange
+   *  issuer, placement-priced fill, or a data-quality outlier); `null` /
+   *  `undefined` means unclassified — surfaced normally until the next
+   *  classifier pass. User-facing query paths in `worker/db/us-queries.ts`
+   *  hide rows where this is `false`. Mirrors UK `Dealing.is_open_market_buy`
+   *  semantically, but the underlying rules differ (US uses penny-stock
+   *  floor + ticker-absence + tighter divergence). */
+  is_open_market_buy?: boolean | null;
 
   /** Footnote map. Many Form 4 fields carry a `<footnoteId>` reference
    *  instead of an inline value — the footnote text is often the substance. */
@@ -853,6 +878,10 @@ export interface UsDealingGroup {
   is_late: boolean | null;
   /** Number of underlying us_dealings rows that collapsed into this group. */
   leg_count: number;
+  /** Disclosed-day close (USD majors), same semantics as `UsDealing.disclosed_close`.
+   *  All legs of a group share (ticker, disclosed_date) so the per-leg subquery
+   *  collapses cleanly under aggregation. Null when prices aren't cached yet. */
+  disclosed_close?: number | null;
   triage_verdict?: UsTriageVerdict;
   triage_reason?: string;
   /** Return at each horizon since the group's trade_date, computed off

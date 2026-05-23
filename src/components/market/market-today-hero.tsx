@@ -1,21 +1,26 @@
 import type { ComponentType } from "react";
 import type { MarketDealing } from "@/lib/markets/types";
 import type { PriceFormat } from "@/components/position-card";
-import type { MarketSession, MarketStatus } from "@/lib/market-status";
+import type { MarketSession } from "@/lib/market-status";
 import type { HolidaySource } from "@/lib/bank-holidays";
+import type { MarketStatusView } from "./market-anchor-card";
 
-import { useEffect, useState } from "react";
 import { ArrowUpRightIcon } from "@heroicons/react/24/outline";
 
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { Skeleton } from "@/components/skeleton";
-import { useExchangeHolidays } from "@/lib/bank-holidays";
 import {
-  formatCloseTime,
-  formatCountdown,
-  marketStatus,
-} from "@/lib/market-status";
+  LiveWash,
+  MarketAnchorCard,
+  MarketAnchorPanel,
+  useMarketStatusView,
+} from "./market-anchor-card";
+
+export interface RecentBestEntry<W> {
+  dealing: MarketDealing<W>;
+  returnPct: number | null;
+}
 
 interface MarketTodayHeroProps<W> {
   todayDealings: MarketDealing<W>[];
@@ -29,19 +34,21 @@ interface MarketTodayHeroProps<W> {
   selectedKey?: string | null;
   onSelect: (d: MarketDealing<W>) => void;
   TodayEmpty?: ComponentType;
-  /** Trading session for the market — drives the live status card pinned
-   *  at the end of the "Also today" grid. */
+  /** Trading session for the market — drives the anchor card pinned at
+   *  the top of the section. */
   session?: MarketSession;
-  /** Exchange-holiday source so the status card can switch to "Closed for
-   *  X" copy on bank holidays. */
+  /** Exchange-holiday source so the anchor card can show "Closed for X"
+   *  on bank holidays and skip them when computing the next open day. */
   holidays?: HolidaySource;
+  /** Past-week best-performing filings, pre-sorted by return %. Surfaced
+   *  next to the anchor on empty days as the "Best this week" grid so
+   *  weekends/holidays don't leave the page blank. */
+  recentBest?: RecentBestEntry<W>[];
 }
 
-/** Today surface — one section heading + a row of cards. Deliberately
- *  spartan: no outer container, no inset tray, no internal card dividers.
- *  Each card carries the data in a single flowing block. Mobile collapses
- *  to a snap carousel; desktop spreads to a two/three-up grid. Skipped
- *  rows are reachable in the table below, so they don't surface up here. */
+/** Today surface — section heading, then either today's deal cards
+ *  (busy day) or the anchor + best-this-week side-by-side (empty day).
+ *  Mobile stacks everything; lg+ splits the empty-day view 50/50. */
 export function MarketTodayHero<W>({
   todayDealings,
   todayIso,
@@ -56,6 +63,7 @@ export function MarketTodayHero<W>({
   TodayEmpty,
   session,
   holidays: holidaySource,
+  recentBest,
 }: MarketTodayHeroProps<W>) {
   const { title: todayTitle, meta: todayMeta } = formatToday(todayIso, locale);
   const sortedDealings = [...todayDealings].sort(compareTodayDealings);
@@ -79,6 +87,7 @@ export function MarketTodayHero<W>({
   // off the page. The remainder is still reachable in the chronological
   // table below, so this is purely a visual cap.
   const SKIPPED_VISIBLE_CAP = 9;
+  const BEST_GRID_CAP = 6;
   const allSkipped = splitDay ? skippedDealings : [];
   const skippedRows = allSkipped.slice(0, SKIPPED_VISIBLE_CAP);
   const skippedOverflow = allSkipped.length - skippedRows.length;
@@ -89,37 +98,57 @@ export function MarketTodayHero<W>({
         ? "1 filing"
         : `${todayDealings.length} filings`;
 
+  const view = useMarketStatusView(session, holidaySource);
+  const bestEntries = (recentBest ?? []).slice(0, BEST_GRID_CAP);
+  // Full-day closures (weekend, bank holiday) make the "Today · SATURDAY"
+  // header read as filler — the anchor card carries the date context.
+  // Suppress on those days regardless of whether late filings landed
+  // (Sweden's regulator publishes on Saturdays); keep it for live /
+  // pre-open / after-hours when the framing is still meaningful.
+  const hideTodayHeader =
+    view?.closureKind === "weekend" || view?.closureKind === "holiday";
+
   return (
     <section className="relative z-10">
-      <header className="mb-4 flex items-end justify-between gap-4 md:mb-5">
-        <div className="min-w-0">
-          <h2
-            className="animate-today-hero-item text-[30px] font-semibold leading-none tracking-[-0.035em] md:text-[34px]"
-            style={{ animationDelay: todayHeroDelay(0) }}
-          >
-            {todayTitle}
-          </h2>
-          {todayMeta && (
-            <div
-              className="animate-today-hero-item mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted md:text-[11px]"
-              style={{ animationDelay: todayHeroDelay(0, 25) }}
+      {!hideTodayHeader && (
+        <header className="mb-4 flex items-end justify-between gap-4 md:mb-5">
+          <div className="min-w-0">
+            <h2
+              className="animate-today-hero-item text-[30px] font-semibold leading-none tracking-[-0.035em] md:text-[34px]"
+              style={{ animationDelay: todayHeroDelay(0) }}
             >
-              {todayMeta}
+              {todayTitle}
+            </h2>
+            {todayMeta && (
+              <div
+                className="animate-today-hero-item mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted md:text-[11px]"
+                style={{ animationDelay: todayHeroDelay(0, 25) }}
+              >
+                {todayMeta}
+              </div>
+            )}
+          </div>
+          {countLabel && (
+            <div
+              className="animate-today-hero-item shrink-0 text-xs text-muted tabular-nums"
+              style={{ animationDelay: todayHeroDelay(0, 50) }}
+            >
+              {countLabel}
             </div>
           )}
-        </div>
-        {countLabel && (
-          <div
-            className="animate-today-hero-item shrink-0 text-xs text-muted tabular-nums"
-            style={{ animationDelay: todayHeroDelay(0, 50) }}
-          >
-            {countLabel}
-          </div>
-        )}
-      </header>
+        </header>
+      )}
 
       {todayDealings.length > 0 ? (
         <>
+          {view && (
+            <div
+              className="animate-today-hero-item mb-5"
+              style={{ animationDelay: todayHeroDelay(1) }}
+            >
+              <MarketAnchorCard view={view} />
+            </div>
+          )}
           {/* Mobile: snap carousel so a busy day doesn't push the table
               1800px down the page — peek the next card at the right edge to
               signal swipe. lg+: spreads to a tidy two/three-up grid. */}
@@ -130,7 +159,7 @@ export function MarketTodayHero<W>({
                 className="w-[80%] shrink-0 snap-start lg:w-auto lg:shrink"
               >
                 <TodayCard
-                  animationDelay={todayHeroDelay(index + 1)}
+                  animationDelay={todayHeroDelay(index + 2)}
                   dealing={d}
                   fmt={fmt}
                   formatTickerDisplay={formatTickerDisplay}
@@ -143,40 +172,24 @@ export function MarketTodayHero<W>({
             ))}
           </div>
 
-          <div
-            className="animate-today-hero-item mt-5"
-            style={{ animationDelay: todayHeroDelay(mainDealings.length + 1) }}
-          >
-            {allSkipped.length > 0 && (
+          {allSkipped.length > 0 && (
+            <div
+              className="animate-today-hero-item mt-5"
+              style={{ animationDelay: todayHeroDelay(mainDealings.length + 2) }}
+            >
               <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
                 Also today · {allSkipped.length} skipped
                 {skippedOverflow > 0 && ` · +${skippedOverflow} in table below`}
               </div>
-            )}
-            {/* Interconnected grid — one outer border, cells separated only
-                by a 1px gap that lets the container's bg show through. The
-                status cell at the end is always present so the user knows
-                whether the market is still scanning or has shut. */}
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-black/[0.08] bg-black/[0.08] dark:border-white/[0.08] dark:bg-white/[0.08] md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-              {skippedRows.map((d) => (
-                <SkippedCard
-                  key={d.key}
-                  dealing={d}
-                  fmt={fmt}
-                  formatTickerDisplay={formatTickerDisplay}
-                  selected={selectedKey === d.key}
-                  onSelect={() => onSelect(d)}
-                />
-              ))}
-              {session && holidaySource && (
-                <MarketStatusCard
-                  alone={skippedRows.length === 0}
-                  holidaySource={holidaySource}
-                  session={session}
-                />
-              )}
+              <CompactSkippedGrid
+                dealings={skippedRows}
+                fmt={fmt}
+                formatTickerDisplay={formatTickerDisplay}
+                selectedKey={selectedKey}
+                onSelect={onSelect}
+              />
             </div>
-          </div>
+          )}
         </>
       ) : loading ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
@@ -190,6 +203,16 @@ export function MarketTodayHero<W>({
             </div>
           ))}
         </div>
+      ) : view ? (
+        <EmptyDayContainer
+          bestEntries={bestEntries}
+          fmt={fmt}
+          formatTickerDisplay={formatTickerDisplay}
+          selectedKey={selectedKey}
+          showLogo={showLogo}
+          view={view}
+          onSelect={onSelect}
+        />
       ) : TodayEmpty ? (
         <TodayEmpty />
       ) : (
@@ -301,189 +324,210 @@ function TodayCard<W>({
   );
 }
 
-function SkippedCard<W>({
-  dealing,
+/** "Also today · skipped" grid — interconnected cells, one outer border,
+ *  cells separated by a 1px gap that lets the container bg show through.
+ *  Tight rows: ticker / company / insider / value. Used only in the
+ *  busy-day branch; the empty-day branch uses `BestThisWeekGrid` instead. */
+function CompactSkippedGrid<W>({
+  dealings,
+  fmt,
+  formatTickerDisplay,
+  selectedKey,
+  onSelect,
+}: {
+  dealings: MarketDealing<W>[];
+  fmt: PriceFormat;
+  formatTickerDisplay?: (ticker: string) => string;
+  selectedKey?: string | null;
+  onSelect: (d: MarketDealing<W>) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-black/[0.08] bg-black/[0.08] dark:border-white/[0.08] dark:bg-white/[0.08] md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+      {dealings.map((d) => {
+        const tickerLabel = formatTickerDisplay
+          ? formatTickerDisplay(d.ticker || "—")
+          : d.ticker || "—";
+        const valueLabel = d.value != null ? fmt.formatValue(d.value) : "—";
+        const selected = selectedKey === d.key;
+
+        return (
+          <button
+            key={d.key}
+            className={`group p-3 text-left transition-colors ${
+              selected
+                ? "bg-[#6b5038]/[0.06] dark:bg-[#6b5038]/[0.20]"
+                : "bg-[#faf7f2] hover:bg-[#f1ebe2] dark:bg-surface dark:hover:bg-surface-secondary"
+            }`}
+            onClick={() => onSelect(d)}
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="flex min-w-0 items-baseline gap-1">
+                <span className="truncate font-mono text-[10px] font-semibold text-muted/70">
+                  {tickerLabel}
+                </span>
+                <ArrowUpRightIcon
+                  aria-hidden
+                  className="h-3 w-3 shrink-0 self-center text-muted/50 transition-colors group-hover:text-foreground/70"
+                />
+              </span>
+              <span className="shrink-0 text-[13px] font-semibold tabular-nums">
+                {valueLabel}
+              </span>
+            </div>
+            <div className="mt-1.5 truncate text-[13px] font-medium leading-tight tracking-[-0.02em]">
+              {d.company || "—"}
+            </div>
+            <div className="mt-0.5 truncate text-[11px] text-muted">
+              {d.insiderName}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Empty-day surface — one shared rounded container holding the anchor
+ *  panel on the left and the "Biggest gainers" grid on the right. A 1px
+ *  gap-px lattice paints the dividers, so there's no internal border
+ *  chrome and both halves stretch to the same height. Stacks on mobile. */
+function EmptyDayContainer<W>({
+  view,
+  bestEntries,
+  fmt,
+  formatTickerDisplay,
+  selectedKey,
+  showLogo,
+  onSelect,
+}: {
+  view: MarketStatusView;
+  bestEntries: RecentBestEntry<W>[];
+  fmt: PriceFormat;
+  formatTickerDisplay?: (ticker: string) => string;
+  selectedKey?: string | null;
+  showLogo: boolean;
+  onSelect: (d: MarketDealing<W>) => void;
+}) {
+  const showGrid = bestEntries.length > 0;
+
+  return (
+    <div
+      className="animate-today-hero-item overflow-hidden rounded-xl border border-black/[0.08] bg-black/[0.08] dark:border-white/[0.08] dark:bg-white/[0.08]"
+      style={{ animationDelay: todayHeroDelay(1) }}
+    >
+      <div
+        className={`grid gap-px ${showGrid ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}
+      >
+        <div
+          className={`relative flex flex-col p-6 md:p-8 ${
+            view.isLive
+              ? "bg-[#2E7D32]/[0.06] dark:bg-[#2E7D32]/[0.15]"
+              : "bg-[#faf7f2] dark:bg-surface"
+          }`}
+        >
+          {view.isLive && <LiveWash />}
+          <MarketAnchorPanel view={view} />
+        </div>
+        {showGrid && (
+          <div className="flex min-w-0 flex-col bg-[#faf7f2] dark:bg-surface">
+            <div className="flex items-center justify-between px-4 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
+              <span>Biggest gainers · last 30 days</span>
+              <span className="font-normal normal-case tracking-normal text-muted/70">
+                Return since trade
+              </span>
+            </div>
+            <div className="grid flex-1 grid-cols-2 gap-px bg-black/[0.06] dark:bg-white/[0.06]">
+              {bestEntries.map((entry) => (
+                <BestThisWeekCell
+                  key={entry.dealing.key}
+                  entry={entry}
+                  fmt={fmt}
+                  formatTickerDisplay={formatTickerDisplay}
+                  selected={selectedKey === entry.dealing.key}
+                  showLogo={showLogo}
+                  onSelect={() => onSelect(entry.dealing)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BestThisWeekCell<W>({
+  entry,
   selected,
   onSelect,
   fmt,
+  showLogo,
   formatTickerDisplay,
 }: {
-  dealing: MarketDealing<W>;
+  entry: RecentBestEntry<W>;
   selected: boolean;
   onSelect: () => void;
   fmt: PriceFormat;
+  showLogo: boolean;
   formatTickerDisplay?: (ticker: string) => string;
 }) {
+  const { dealing, returnPct } = entry;
   const tickerLabel = formatTickerDisplay
     ? formatTickerDisplay(dealing.ticker || "—")
     : dealing.ticker || "—";
   const valueLabel =
-    dealing.value != null ? fmt.formatValue(dealing.value) : "—";
+    dealing.value != null ? fmt.formatValue(dealing.value) : null;
+  const returnLabel =
+    returnPct != null
+      ? `${returnPct >= 0 ? "+" : ""}${returnPct.toFixed(1)}%`
+      : null;
+  const returnTone =
+    returnPct == null
+      ? "text-muted"
+      : returnPct >= 0
+        ? "text-emerald-600 dark:text-emerald-400"
+        : "text-rose-600 dark:text-rose-400";
 
   return (
     <button
-      className={`group p-3 text-left transition-colors ${
+      className={`group flex items-center gap-3 p-3 text-left transition-colors ${
         selected
           ? "bg-[#6b5038]/[0.06] dark:bg-[#6b5038]/[0.20]"
           : "bg-[#faf7f2] hover:bg-[#f1ebe2] dark:bg-surface dark:hover:bg-surface-secondary"
       }`}
       onClick={onSelect}
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="flex min-w-0 items-baseline gap-1">
-          <span className="truncate font-mono text-[10px] font-semibold text-muted/70">
-            {tickerLabel}
+      {showLogo ? (
+        <CompanyLogo
+          className="ring-1 ring-black/[0.04] dark:ring-white/[0.05] shrink-0"
+          size={32}
+          ticker={dealing.ticker || ""}
+        />
+      ) : (
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-[10px] font-semibold text-muted dark:bg-surface-secondary">
+          {tickerLabel.slice(0, 3)}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="truncate text-[13px] font-medium leading-tight tracking-[-0.02em]">
+            {dealing.company || "—"}
           </span>
-          <ArrowUpRightIcon
-            aria-hidden
-            className="h-3 w-3 shrink-0 self-center text-muted/50 transition-colors group-hover:text-foreground/70"
-          />
-        </span>
-        <span className="shrink-0 text-[13px] font-semibold tabular-nums">
-          {valueLabel}
-        </span>
-      </div>
-      <div className="mt-1.5 truncate text-[13px] font-medium leading-tight tracking-[-0.02em]">
-        {dealing.company || "—"}
-      </div>
-      <div className="mt-0.5 truncate text-[11px] text-muted">
-        {dealing.insiderName}
+          <span
+            className={`shrink-0 text-[13px] font-semibold tabular-nums ${returnTone}`}
+          >
+            {returnLabel ?? valueLabel ?? "—"}
+          </span>
+        </div>
+        <div className="mt-0.5 flex items-baseline justify-between gap-2 text-[11px] text-muted">
+          <span className="truncate font-mono">{tickerLabel}</span>
+          {returnLabel && valueLabel && (
+            <span className="shrink-0 tabular-nums">{valueLabel}</span>
+          )}
+        </div>
       </div>
     </button>
   );
-}
-
-function MarketStatusCard({
-  session,
-  holidaySource,
-  alone,
-}: {
-  session: MarketSession;
-  holidaySource: HolidaySource;
-  alone?: boolean;
-}) {
-  const holidays = useExchangeHolidays(holidaySource);
-  const now = useTickingNow(60_000);
-  const status = marketStatus(session, now, holidays);
-  const view = describeStatus(status, session);
-  const isLive = status.kind === "open";
-
-  return (
-    <div
-      className={`relative flex flex-col justify-between overflow-hidden p-3 transition-colors ${
-        isLive
-          ? "bg-[#2E7D32]/[0.06] dark:bg-[#2E7D32]/[0.15]"
-          : "bg-[#faf7f2] dark:bg-surface"
-      } ${alone ? "col-span-full" : ""}`}
-    >
-      {/* Soft breathing wash so live cards feel alive without being noisy. */}
-      {isLive && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 animate-today-live-wash bg-[radial-gradient(circle_at_top_left,rgba(46,125,50,0.18),transparent_70%)]"
-        />
-      )}
-      <div className="relative flex items-center gap-2">
-        {isLive ? (
-          <span aria-hidden className="relative inline-flex h-2 w-2 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2E7D32] opacity-70" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#2E7D32]" />
-          </span>
-        ) : (
-          <span
-            aria-hidden
-            className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${view.dotClass}`}
-          />
-        )}
-        <span
-          className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
-            isLive ? "text-[#2E7D32] dark:text-[#7BBE7F]" : "text-muted"
-          }`}
-        >
-          {view.eyebrow}
-        </span>
-      </div>
-      <div className="relative mt-1.5 text-[13px] font-medium leading-tight tracking-[-0.02em]">
-        {view.headline}
-      </div>
-      {view.sub && (
-        <div className="relative mt-0.5 truncate text-[11px] text-muted">
-          {view.sub}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function describeStatus(
-  status: MarketStatus,
-  session: MarketSession,
-): {
-  eyebrow: string;
-  headline: string;
-  sub: string | null;
-  dotClass: string;
-} {
-  if (status.kind === "open") {
-    return {
-      eyebrow: "Live",
-      headline: "Scanning the market for deals",
-      sub: status.earlyCloseToday
-        ? `Early close at ${formatCloseTime(session.halfDayCloseMinute ?? session.closeMinute)} (${status.earlyCloseToday})`
-        : `Closes at ${formatCloseTime(session.closeMinute)}`,
-      dotClass: "bg-[#2E7D32]",
-    };
-  }
-  if (status.kind === "preOpen") {
-    return {
-      eyebrow: "Pre-open",
-      headline: `Market opens in ${formatCountdown(status.opensInMs)}`,
-      sub: `Opens at ${formatCloseTime(session.openMinute)}`,
-      dotClass: "bg-amber-400",
-    };
-  }
-  const reopens =
-    status.reopens.kind === "tomorrow"
-      ? "Reopens tomorrow"
-      : `Reopens ${status.reopens.day}`;
-
-  if (status.reason.kind === "holiday") {
-    return {
-      eyebrow: "Closed",
-      headline: `Closed for ${status.reason.name}`,
-      sub: reopens,
-      dotClass: "bg-foreground/30",
-    };
-  }
-  if (status.reason.kind === "weekend") {
-    return {
-      eyebrow: "Closed",
-      headline: "Markets closed for the weekend",
-      sub: reopens,
-      dotClass: "bg-foreground/30",
-    };
-  }
-
-  return {
-    eyebrow: "Closed",
-    headline: "The market has closed",
-    sub: reopens,
-    dotClass: "bg-foreground/30",
-  };
-}
-
-/** Returns `new Date()` and re-renders every `intervalMs`. Used to keep the
- *  market-status card honest as the session ticks over. */
-function useTickingNow(intervalMs: number): Date {
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), intervalMs);
-
-    return () => clearInterval(id);
-  }, [intervalMs]);
-
-  return now;
 }
 
 function TodayCardSkeleton() {
@@ -505,7 +549,8 @@ function TodayCardSkeleton() {
   );
 }
 
-/** Stagger delays for the Today hero cascade — header first, then cards. */
+/** Stagger delays for the Today hero cascade — header first, then anchor,
+ *  then cards. */
 function todayHeroDelay(index: number, extraMs = 0): string {
   return `${50 + index * 75 + extraMs}ms`;
 }

@@ -159,8 +159,9 @@ export function MiniPriceChart({
       autoSize: false,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)",
+        textColor: isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)",
         fontSize: 10,
+        attributionLogo: false,
       },
       grid: {
         vertLines: { visible: false },
@@ -181,13 +182,14 @@ export function MiniPriceChart({
         mode: 1,
         vertLine: {
           width: 1,
-          color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)",
+          color: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)",
           style: LineStyle.Dashed,
           labelVisible: true,
+          labelBackgroundColor: isDark ? "#1a1a1a" : "#6b5038",
         },
         horzLine: {
           width: 1,
-          color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)",
+          color: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)",
           style: LineStyle.Dashed,
           labelVisible: false,
         },
@@ -209,29 +211,30 @@ export function MiniPriceChart({
 
     series.setData(bars.map((b) => ({ time: b.date as Time, value: b.close })));
 
-    // Director's paid price — dashed horizontal baseline.
+    // Director's paid price — faint dotted baseline. Kept subtle so the
+    // price action stays the main visual.
     series.createPriceLine({
       price: entryPrice,
-      color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)",
+      color: isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.22)",
       lineWidth: 1,
-      lineStyle: LineStyle.Dashed,
+      lineStyle: LineStyle.Dotted,
       axisLabelVisible: false,
       title: "",
     });
 
     // Trade + disclosure markers. lightweight-charts snaps each marker
     // to the first bar at-or-after the requested date, matching how
-    // weekend disclosures land on the next trading-day bar.
+    // weekend disclosures land on the next trading-day bar. Text labels
+    // are dropped — the dates live in the meta row above the chart.
     const markers: SeriesMarker<Time>[] = [];
     const tradeBar = bars.find((b) => b.date >= tradeDate);
 
     if (tradeBar) {
       markers.push({
         time: tradeBar.date as Time,
-        position: "aboveBar",
+        position: "inBar",
         color: lineColor,
         shape: "circle",
-        text: "Trade",
       });
     }
     if (disclosedDate && disclosedDate !== tradeDate) {
@@ -240,10 +243,9 @@ export function MiniPriceChart({
       if (discBar) {
         markers.push({
           time: discBar.date as Time,
-          position: "aboveBar",
-          color: isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)",
-          shape: "arrowDown",
-          text: "Disclosed",
+          position: "inBar",
+          color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.45)",
+          shape: "circle",
         });
       }
     }
@@ -286,6 +288,17 @@ export function MiniPriceChart({
   const periodHigh = visiblePrices.length ? Math.max(...visiblePrices) : null;
   const periodLow = visiblePrices.length ? Math.min(...visiblePrices) : null;
   const nowPrice = lastBar?.close ?? null;
+
+  const formatShort = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+    });
+  const tradeLabel = formatShort(tradeDate);
+  const disclosedLabel =
+    disclosedDate && disclosedDate !== tradeDate
+      ? formatShort(disclosedDate)
+      : null;
 
   return (
     <div className="flex flex-col gap-2">
@@ -348,6 +361,27 @@ export function MiniPriceChart({
           )}
         </div>
       )}
+
+      <div className="flex items-center gap-3 shrink-0 text-[10px] text-muted">
+        <span className="flex items-center gap-1.5">
+          <span
+            aria-hidden
+            className="inline-block w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: lineColor }}
+          />
+          Trade <span className="tabular-nums">{tradeLabel}</span>
+        </span>
+        {disclosedLabel && (
+          <span className="flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="inline-block w-1.5 h-1.5 rounded-full bg-foreground/40"
+            />
+            Disclosed{" "}
+            <span className="tabular-nums">{disclosedLabel}</span>
+          </span>
+        )}
+      </div>
 
       <div className="relative w-full" style={{ height: CHART_HEIGHT }}>
         {bars.length >= 2 ? (

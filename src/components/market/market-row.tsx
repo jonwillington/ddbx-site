@@ -345,6 +345,11 @@ interface MarketRowProps<W> {
   /** Drives the right-most Performance cell — raw stock return when
    *  `axis === "raw"`, alpha vs benchmark when `axis === "market"`. */
   chartMode: ChartMode;
+  /** True when the disclosure-anchored entry bar is the same date as the
+   *  latest live close — no posterior price exists yet (typical on weekends
+   *  for Friday's disclosures). Drives a "No data yet" placeholder in the
+   *  Return cell instead of a misleading +0.0%. */
+  noPosteriorData?: boolean;
 }
 
 /** A single dealing row, shared across all markets. The shell hands in the
@@ -370,6 +375,7 @@ export function MarketRow<W>({
   locale,
   showLogo = true,
   chartMode,
+  noPosteriorData = false,
 }: MarketRowProps<W>) {
   const showAlpha = chartMode.axis === "market";
   const muted = isMuted
@@ -446,9 +452,11 @@ export function MarketRow<W>({
             )}
           </div>
         </div>
-        {(showAlpha ? alpha != null : stockPct != null) && (
+        {(noPosteriorData || (showAlpha ? alpha != null : stockPct != null)) && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            {showAlpha ? (
+            {noPosteriorData ? (
+              <span className="text-[11px] text-muted/60">No data yet</span>
+            ) : showAlpha ? (
               <>
                 <DeltaBadge suffix="pp" value={alpha!} />
                 <span className="text-[10px] text-muted/70">
@@ -521,7 +529,9 @@ export function MarketRow<W>({
           />
         </div>
         <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-          {showAlpha ? (
+          {noPosteriorData ? (
+            <span className="text-[11px] text-muted/60">No data yet</span>
+          ) : showAlpha ? (
             alpha != null ? (
               <DeltaBadge suffix="pp" value={alpha} />
             ) : (
