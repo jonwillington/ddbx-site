@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
+
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import type { ReactNode } from "react";
 
 import { marketForPath } from "@/lib/markets/registry";
 

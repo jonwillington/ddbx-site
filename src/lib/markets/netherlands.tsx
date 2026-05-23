@@ -221,7 +221,10 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     // AFM ISINs resolve to .AS Yahoo tickers via the same isin_tickers
     // cache as Sweden. Empty fallback keeps MarketRow's "—" treatment.
     ticker: d.ticker ?? "",
-    company: stripTickerSuffix(normalisedDisplayName(d.company), d.ticker ?? ""),
+    company: stripTickerSuffix(
+      normalisedDisplayName(d.company),
+      d.ticker ?? "",
+    ),
     insiderName: normalisedDisplayName(d.reporter.name),
     insiderRole: translateRole(d.reporter.role),
     disclosedDate: g.disclosed_date,

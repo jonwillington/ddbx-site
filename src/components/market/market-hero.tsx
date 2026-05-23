@@ -11,11 +11,7 @@
  *  every market — the optional beta notice is rendered absolutely at the
  *  top so it doesn't push the headline around, and slides in instead of
  *  popping when the user navigates to a beta market. */
-export function MarketHero({
-  marketLabel,
-}: {
-  marketLabel: string;
-}) {
+export function MarketHero({ marketLabel }: { marketLabel: string }) {
   return (
     <header className="relative w-screen left-1/2 -translate-x-1/2 -mt-4 md:-mt-6 min-h-[300px] md:min-h-[380px] flex flex-col overflow-hidden animate-content-in">
       <style>{`
@@ -387,7 +383,7 @@ export function MarketHero({
         />
       </div>
 
-<div className="relative z-10 flex-1 flex items-center justify-center px-4 py-10 md:py-16 text-center">
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-10 md:py-16 text-center">
         <h2
           className="mx-auto text-balance text-3xl font-semibold tracking-tight leading-[1.05] md:text-[52px]"
           style={{ maxWidth: 550 }}

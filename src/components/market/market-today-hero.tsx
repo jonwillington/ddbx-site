@@ -11,7 +11,11 @@ import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { Skeleton } from "@/components/skeleton";
 import { useExchangeHolidays } from "@/lib/bank-holidays";
-import { formatCloseTime, formatCountdown, marketStatus } from "@/lib/market-status";
+import {
+  formatCloseTime,
+  formatCountdown,
+  marketStatus,
+} from "@/lib/market-status";
 
 interface MarketTodayHeroProps<W> {
   todayDealings: MarketDealing<W>[];
@@ -64,8 +68,7 @@ export function MarketTodayHero<W>({
   // Only split when there's at least one of each — if everything's been
   // skipped we still want to show those as the main row of cards so the
   // section never empties out for no reason.
-  const splitDay =
-    primaryDealings.length > 0 && skippedDealings.length > 0;
+  const splitDay = primaryDealings.length > 0 && skippedDealings.length > 0;
   const mainDealings = splitDay
     ? primaryDealings
     : primaryDealings.length > 0
@@ -248,9 +251,11 @@ function TodayCard<W>({
   return (
     <button
       className={`group h-full w-full animate-today-hero-item rounded-xl border bg-[#faf7f2] p-5 text-left transition-colors duration-150 dark:bg-surface
-        ${selected
-          ? "border-[#6b5038]/40 bg-[#6b5038]/[0.04] dark:border-[#c4a882]/40 dark:bg-[#6b5038]/[0.18]"
-          : "border-black/[0.08] hover:border-black/[0.18] dark:border-white/[0.08] dark:hover:border-white/[0.18]"}
+        ${
+          selected
+            ? "border-[#6b5038]/40 bg-[#6b5038]/[0.04] dark:border-[#c4a882]/40 dark:bg-[#6b5038]/[0.18]"
+            : "border-black/[0.08] hover:border-black/[0.18] dark:border-white/[0.08] dark:hover:border-white/[0.18]"
+        }
         ${muted ? "opacity-75" : ""}`}
       style={{ animationDelay }}
       onClick={onSelect}
@@ -441,6 +446,7 @@ function describeStatus(
     status.reopens.kind === "tomorrow"
       ? "Reopens tomorrow"
       : `Reopens ${status.reopens.day}`;
+
   if (status.reason.kind === "holiday") {
     return {
       eyebrow: "Closed",
@@ -470,10 +476,13 @@ function describeStatus(
  *  market-status card honest as the session ticks over. */
 function useTickingNow(intervalMs: number): Date {
   const [now, setNow] = useState(() => new Date());
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), intervalMs);
+
     return () => clearInterval(id);
   }, [intervalMs]);
+
   return now;
 }
 
@@ -508,10 +517,12 @@ function formatToday(
   locale = "en-GB",
 ): { title: string; meta: string } {
   const d = new Date(`${iso}T12:00:00`);
+
   if (Number.isNaN(d.getTime())) return { title: "Today", meta: "" };
   const weekday = d.toLocaleDateString(locale, { weekday: "long" });
   const day = d.toLocaleDateString(locale, { day: "numeric" });
   const month = d.toLocaleDateString(locale, { month: "long" });
   const year = d.toLocaleDateString(locale, { year: "numeric" });
+
   return { title: "Today", meta: `${weekday} · ${day} ${month} ${year}` };
 }

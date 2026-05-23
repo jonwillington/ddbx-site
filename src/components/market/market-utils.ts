@@ -191,9 +191,7 @@ export function computeRowMetric({
   benchmarkCurrent: number | undefined;
 }): RowMetric {
   const stockPct =
-    stockEntry != null &&
-    stockCurrentMajor != null &&
-    stockEntry > 0
+    stockEntry != null && stockCurrentMajor != null && stockEntry > 0
       ? stockReturnPct(stockEntry, stockCurrentMajor)
       : null;
   const benchPct =

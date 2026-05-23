@@ -292,7 +292,10 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     // (12-char SE0… codes) made the grid look broken (verified visually
     // 2026-05-20).
     ticker: d.ticker ?? "",
-    company: stripTickerSuffix(normalisedDisplayName(d.company), d.ticker ?? ""),
+    company: stripTickerSuffix(
+      normalisedDisplayName(d.company),
+      d.ticker ?? "",
+    ),
     insiderName: normalisedDisplayName(d.reporter.name),
     insiderRole: translateRole(d.reporter.role),
     disclosedDate: g.disclosed_date,

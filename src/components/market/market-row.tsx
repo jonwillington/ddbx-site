@@ -28,7 +28,9 @@ export function MarketRowHeader({
   /** Tailwind width class for the Value column — wider for SEK. */
   valueColumnClass?: string;
 }) {
-  const perfLabel = chartMode.axis === "market" ? `vs ${benchmarkLabel}` : "Return";
+  const perfLabel =
+    chartMode.axis === "market" ? `vs ${benchmarkLabel}` : "Return";
+
   return (
     <div
       className={`hidden md:flex items-center text-[10px] uppercase tracking-wider text-muted/80 font-medium select-none border-b border-black/[0.08] dark:border-white/[0.08] bg-black/[0.04] dark:bg-white/[0.05] rounded-t-xl ${inset ? "px-3" : ""}`}
@@ -44,7 +46,9 @@ export function MarketRowHeader({
       <div className="flex-1 min-w-0 px-3 py-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
         Company / Insider
       </div>
-      <div className={`${valueColumnClass} shrink-0 px-3 py-1.5 text-right border-r border-black/[0.06] dark:border-white/[0.06]`}>
+      <div
+        className={`${valueColumnClass} shrink-0 px-3 py-1.5 text-right border-r border-black/[0.06] dark:border-white/[0.06]`}
+      >
         Value
       </div>
       <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
@@ -199,7 +203,9 @@ export function MarketDaySummaryRow({
             </div>
           </div>
         </div>
-        <div className={`${valueColumnClass} shrink-0 px-3 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]`} />
+        <div
+          className={`${valueColumnClass} shrink-0 px-3 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]`}
+        />
         <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
         <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
         <div className="w-40 shrink-0 px-2 py-2.5" />
@@ -259,7 +265,9 @@ export function MarketRowSkeleton({
             <Skeleton className="h-3 w-2/5 rounded" />
           </div>
         </div>
-        <div className={`${valueColumnClass} shrink-0 px-3 py-2.5 flex flex-col items-end justify-center gap-1 border-r border-black/[0.06] dark:border-white/[0.06]`}>
+        <div
+          className={`${valueColumnClass} shrink-0 px-3 py-2.5 flex flex-col items-end justify-center gap-1 border-r border-black/[0.06] dark:border-white/[0.06]`}
+        >
           <Skeleton className="h-4 w-16 rounded" />
         </div>
         <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
@@ -379,7 +387,9 @@ export function MarketRow<W>({
   });
 
   const rawTicker = dealing.ticker || "—";
-  const ticker = formatTickerDisplay ? formatTickerDisplay(rawTicker) : rawTicker;
+  const ticker = formatTickerDisplay
+    ? formatTickerDisplay(rawTicker)
+    : rawTicker;
   const company = dealing.company || "—";
   const insiderLine = dealing.insiderRole
     ? `${dealing.insiderName} (${dealing.insiderRole})`
@@ -419,7 +429,9 @@ export function MarketRow<W>({
               <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-[#e8e0d5] dark:bg-surface-secondary shrink-0">
                 {ticker}
               </span>
-              <span className="text-[13px] font-medium truncate">{company}</span>
+              <span className="text-[13px] font-medium truncate">
+                {company}
+              </span>
             </div>
             <div className="text-[11px] text-muted truncate mt-0.5">
               {insiderLine}
@@ -489,7 +501,9 @@ export function MarketRow<W>({
             </div>
           </div>
         </div>
-        <div className={`${fmt.valueColumnClass ?? "w-24"} shrink-0 px-3 py-2.5 flex flex-col items-end justify-center border-r border-black/[0.06] dark:border-white/[0.06]`}>
+        <div
+          className={`${fmt.valueColumnClass ?? "w-24"} shrink-0 px-3 py-2.5 flex flex-col items-end justify-center border-r border-black/[0.06] dark:border-white/[0.06]`}
+        >
           <div className="text-sm font-semibold tabular-nums">{valueLabel}</div>
           {dealing.legCount > 1 && (
             <div className="text-[10px] text-muted tabular-nums mt-0.5">

@@ -1,16 +1,24 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { AU, CA } from "country-flag-icons/react/3x2";
 import clsx from "clsx";
 
 import {
   MARKETS,
   REGION_LABEL,
   REGION_ORDER,
+  marketDashboardPath,
+  marketHref,
   marketForPath,
   type MarketRegion,
   type MarketRegistryEntry,
 } from "@/lib/markets/registry";
+
+const UPCOMING_MARKETS = [
+  { code: "CA", label: "Canada", Flag: CA },
+  { code: "AU", label: "Australia", Flag: AU },
+] as const;
 
 export function MarketSwitcher() {
   const location = useLocation();
@@ -69,25 +77,24 @@ export function MarketSwitcher() {
 
       {open && (
         <div
-          className="absolute left-0 mt-2 w-36 rounded-xl border border-separator bg-[#f5f0e8] dark:bg-background shadow-lg overflow-hidden z-50 py-1"
+          className="absolute left-0 mt-2 w-48 rounded-xl border border-separator bg-[#f5f0e8] dark:bg-background shadow-lg overflow-hidden z-50 py-1"
           role="listbox"
         >
           {sections.map((section, i) => (
             <Fragment key={section.region}>
-              {i > 0 && (
-                <div className="my-1 border-t border-separator/60" />
-              )}
+              {i > 0 && <div className="my-1 border-t border-separator/60" />}
               <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-foreground/45">
                 {REGION_LABEL[section.region]}
               </div>
               {section.markets.map((m) => {
                 const isCurrent = m.code === current.code;
+                const href = marketHref(m, marketDashboardPath(m));
 
                 return (
-                  <Link
+                  <a
                     key={m.code}
                     className="flex items-center gap-2 w-full px-2.5 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                    to={m.route}
+                    href={href}
                     onClick={() => setOpen(false)}
                   >
                     <m.Flag
@@ -98,10 +105,29 @@ export function MarketSwitcher() {
                     {isCurrent && (
                       <CheckIcon className="w-3.5 h-3.5 text-foreground/60" />
                     )}
-                  </Link>
+                  </a>
                 );
               })}
             </Fragment>
+          ))}
+          <div className="my-1 border-t border-separator/60" />
+          <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-foreground/45">
+            Coming soon
+          </div>
+          {UPCOMING_MARKETS.map((m) => (
+            <div
+              key={m.code}
+              className="flex items-center gap-2 w-full px-2.5 py-1.5 text-sm text-foreground/45"
+            >
+              <m.Flag
+                aria-hidden
+                className="h-3.5 w-5 rounded-sm object-cover opacity-70"
+              />
+              <span className="flex-1 text-left">{m.label}</span>
+              <span className="text-[10px] uppercase tracking-wider text-foreground/40">
+                Soon
+              </span>
+            </div>
           ))}
         </div>
       )}

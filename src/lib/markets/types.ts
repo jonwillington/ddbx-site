@@ -109,20 +109,6 @@ export interface DealingsPayload<W = unknown> {
   stats: MarketStats;
 }
 
-/** Manual ingest hook — optional. /us has one for SEC EDGAR pulls. */
-export interface IngestAction {
-  label: string;
-  run: () => Promise<IngestSummary | void>;
-}
-
-export interface IngestSummary {
-  scanned: number;
-  parsed: number;
-  inserted: number;
-  replaced: number;
-  errors: unknown[];
-}
-
 /** News item shape that the today drawer renders. Markets without a news
  *  source can simply omit fetchNews from their MarketConfig. */
 export interface NewsItem {
@@ -274,9 +260,6 @@ export interface MarketConfig<W = unknown> {
   /** Footer caption under the news ("Refreshed at …"). */
   newsFooterNote?: ReactNode;
 
-  /** Optional manual ingest button — currently used by /us. */
-  ingest?: IngestAction;
-
   /** Component slot rendered in the row's right-most column. Receives the
    *  MarketDealing so it can read raw extras (Form 4 amendment flag, etc).
    *  Should produce visually compact chip(s). */
@@ -346,7 +329,6 @@ export interface MarketConfig<W = unknown> {
   /** Overlay rendered above the blurred dummy body — the "open the app" CTA.
    *  Positioned absolutely inside the drawer body. */
   AnalysisOverlay?: ComponentType;
-
 }
 
 /** Whether the per-row performance number (and the inline sparkline)

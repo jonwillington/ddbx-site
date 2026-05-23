@@ -1,6 +1,5 @@
 import type {
   ChartMode,
-  IngestSummary,
   MarketConfig,
   MarketDealing,
   MarketStats,
@@ -129,11 +128,6 @@ export function MarketPage<W>({
     config.fetchNews ? null : null,
   );
   const hasNewsSource = !!config.fetchNews;
-
-  const [ingestSummary, setIngestSummary] = useState<IngestSummary | null>(
-    null,
-  );
-  const [ingesting, setIngesting] = useState(false);
 
   /* ───────── Data loading ─────────────────────────────────────────────── */
 
@@ -509,22 +503,6 @@ export function MarketPage<W>({
 
   /* ───────── Handlers ────────────────────────────────────────────────── */
 
-  const runIngest = async () => {
-    if (!config.ingest) return;
-    setIngesting(true);
-    setErr(null);
-    try {
-      const r = await config.ingest.run();
-
-      if (r) setIngestSummary(r);
-      await load();
-    } catch (e) {
-      setErr((e as Error).message);
-    } finally {
-      setIngesting(false);
-    }
-  };
-
   const toggleMonth = (key: string) => {
     setOpenMonths((prev) => {
       const next = new Set(prev ?? []);
@@ -569,61 +547,31 @@ export function MarketPage<W>({
             changes instead of remounting with each MarketHero. */}
         <MarketHero marketLabel={config.marketLabel} />
 
-        {(config.views.length > 1 || config.ingest) && (
-          <div className="flex flex-wrap items-center gap-3">
-            {config.views.length > 1 && (
-              <div
-                className="inline-flex rounded-full border border-separator bg-surface/40 p-1"
-                role="tablist"
+        {config.views.length > 1 && (
+          <div
+            className="inline-flex rounded-full border border-separator bg-surface/40 p-1"
+            role="tablist"
+          >
+            {config.views.map((v) => (
+              <button
+                key={v.id}
+                aria-selected={view === v.id}
+                className={`text-sm px-4 py-1.5 rounded-full transition-colors font-medium ${
+                  view === v.id
+                    ? "bg-[#6b5038]/15 text-[#4a3520] dark:text-[#c4a882]"
+                    : "text-muted hover:text-foreground"
+                }`}
+                role="tab"
+                onClick={() => setView(v.id)}
               >
-                {config.views.map((v) => (
-                  <button
-                    key={v.id}
-                    aria-selected={view === v.id}
-                    className={`text-sm px-4 py-1.5 rounded-full transition-colors font-medium ${
-                      view === v.id
-                        ? "bg-[#6b5038]/15 text-[#4a3520] dark:text-[#c4a882]"
-                        : "text-muted hover:text-foreground"
-                    }`}
-                    role="tab"
-                    onClick={() => setView(v.id)}
-                  >
-                    {v.label}
-                    {stats && (
-                      <span className="ml-1 text-xs opacity-60 tabular-nums">
-                        {stats.viewCounts[v.id] ?? 0}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-            {config.ingest && (
-              <div className="ml-auto flex items-center gap-3 text-xs">
-                <button
-                  className="rounded-full border border-separator bg-[#6b5038]/10 hover:bg-[#6b5038]/15 text-[#4a3520] dark:text-[#c4a882] px-3 py-1.5 font-medium disabled:opacity-50 transition-colors"
-                  disabled={ingesting}
-                  onClick={runIngest}
-                >
-                  {ingesting ? "Fetching…" : config.ingest.label}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {ingestSummary && (
-          <div className="rounded-lg border border-separator bg-surface/40 px-4 py-2 text-xs text-foreground/65">
-            Last manual ingest: scanned {ingestSummary.scanned}, parsed{" "}
-            {ingestSummary.parsed}, {ingestSummary.inserted} new ·{" "}
-            {ingestSummary.replaced} updated
-            {ingestSummary.errors.length > 0 && (
-              <span className="text-amber-700 dark:text-amber-300">
-                {" "}
-                · {ingestSummary.errors.length} parse error
-                {ingestSummary.errors.length === 1 ? "" : "s"}
-              </span>
-            )}
+                {v.label}
+                {stats && (
+                  <span className="ml-1 text-xs opacity-60 tabular-nums">
+                    {stats.viewCounts[v.id] ?? 0}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         )}
 

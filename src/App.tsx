@@ -4,6 +4,7 @@ import { BetaTag } from "@/components/market/beta-tag";
 import { DocumentTitle } from "@/components/document-title";
 import PerformancePage from "@/pages/performance";
 import DirectorPage from "@/pages/director";
+import MarketHomePage from "@/pages/market-home";
 import NetherlandsPreviewPage from "@/pages/netherlands-preview";
 import SwedenPreviewPage from "@/pages/sweden-preview";
 import UsPreviewPage from "@/pages/us-preview";
@@ -15,12 +16,12 @@ function App() {
       <DocumentTitle />
       <BetaTag />
       <Routes>
-        <Route element={<UkPreviewPage />} path="/" />
+        <Route element={<MarketHomePage />} path="/" />
         <Route element={<UkPreviewPage />} path="/dealings/:id" />
-        <Route element={<UkPreviewPage />} path="/contact" />
-        <Route element={<UkPreviewPage />} path="/privacy" />
-        <Route element={<UkPreviewPage />} path="/cookies" />
-        <Route element={<UkPreviewPage />} path="/terms" />
+        <Route element={<MarketHomePage />} path="/contact" />
+        <Route element={<MarketHomePage />} path="/privacy" />
+        <Route element={<MarketHomePage />} path="/cookies" />
+        <Route element={<MarketHomePage />} path="/terms" />
         <Route element={<PerformancePage />} path="/portfolio" />
         <Route element={<PerformancePage />} path="/performance" />
         <Route element={<PerformancePage />} path="/us/performance" />

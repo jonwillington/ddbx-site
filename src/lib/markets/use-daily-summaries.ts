@@ -1,7 +1,8 @@
+import type { DailySummary } from "@/types/ddbx";
+
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
-import type { DailySummary } from "@/types/ddbx";
 
 /** Module-level cache so flipping back to a market doesn't refetch what
  *  we already have. Keys are `YYYY-MM-DD`. `null` means the API 404'd —

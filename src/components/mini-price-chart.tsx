@@ -95,7 +95,6 @@ export function MiniPriceChart({
       .catch(() => {});
     // normalize intentionally excluded — it's a per-market closure that
     // would otherwise trigger a refetch on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickerForApi]);
 
   const bars = useMemo(() => {
@@ -208,9 +207,7 @@ export function MiniPriceChart({
       crosshairMarkerBorderColor: isDark ? "#1a1a1a" : "#ffffff",
     });
 
-    series.setData(
-      bars.map((b) => ({ time: b.date as Time, value: b.close })),
-    );
+    series.setData(bars.map((b) => ({ time: b.date as Time, value: b.close })));
 
     // Director's paid price — dashed horizontal baseline.
     series.createPriceLine({
@@ -275,7 +272,15 @@ export function MiniPriceChart({
       chartRef.current = null;
       seriesRef.current = null;
     };
-  }, [bars, entryPrice, tradeDate, disclosedDate, lineColor, fillColor, isDark]);
+  }, [
+    bars,
+    entryPrice,
+    tradeDate,
+    disclosedDate,
+    lineColor,
+    fillColor,
+    isDark,
+  ]);
 
   const visiblePrices = bars.map((b) => b.close);
   const periodHigh = visiblePrices.length ? Math.max(...visiblePrices) : null;

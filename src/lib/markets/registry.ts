@@ -9,7 +9,13 @@
 //      routes in src/App.tsx
 import type { MarketConfig } from "./types";
 
-import { GB, NL, SE, US, type FlagComponent } from "country-flag-icons/react/3x2";
+import {
+  GB,
+  NL,
+  SE,
+  US,
+  type FlagComponent,
+} from "country-flag-icons/react/3x2";
 
 import { NetherlandsMarket } from "./netherlands";
 import { SwedenMarket } from "./sweden";
@@ -35,6 +41,8 @@ export interface MarketRegistryEntry {
   label: string;
   /** Route the switcher links to. */
   route: string;
+  /** Canonical dashboard path for this market on its own domain. */
+  canonicalRoute: string;
   /** Flag icon component. */
   Flag: FlagComponent;
   /** Region the market lives in — drives switcher grouping. */
@@ -49,6 +57,7 @@ export const MARKETS: MarketRegistryEntry[] = [
     code: "UK",
     label: "UK",
     route: "/",
+    canonicalRoute: "/",
     Flag: GB,
     region: "europe",
     config: UkMarket as MarketConfig,
@@ -58,6 +67,7 @@ export const MARKETS: MarketRegistryEntry[] = [
     code: "US",
     label: "US",
     route: "/us",
+    canonicalRoute: "/",
     Flag: US,
     region: "north-america",
     config: UsMarket as MarketConfig,
@@ -67,6 +77,7 @@ export const MARKETS: MarketRegistryEntry[] = [
     code: "SE",
     label: "SE",
     route: "/se",
+    canonicalRoute: "/",
     Flag: SE,
     region: "europe",
     config: SwedenMarket as MarketConfig,
@@ -76,16 +87,79 @@ export const MARKETS: MarketRegistryEntry[] = [
     code: "NL",
     label: "NL",
     route: "/nl",
+    canonicalRoute: "/nl",
     Flag: NL,
     region: "europe",
     config: NetherlandsMarket as MarketConfig,
   },
 ];
 
+const MARKET_HOST_BY_ID: Record<string, string> = {
+  uk: "ddbx.uk",
+  us: "ddbx.us",
+  se: "ddbx.eu",
+  nl: "ddbx.eu",
+};
+
+const HOST_DEFAULT_MARKET: Record<string, string> = {
+  "ddbx.uk": "uk",
+  "www.ddbx.uk": "uk",
+  "ddbx.us": "us",
+  "www.ddbx.us": "us",
+  "ddbx.eu": "se",
+  "www.ddbx.eu": "se",
+};
+
+function safeHostname(hostname?: string): string | null {
+  if (hostname && hostname.trim().length > 0) return hostname.toLowerCase();
+  if (typeof window !== "undefined" && window.location?.hostname) {
+    return window.location.hostname.toLowerCase();
+  }
+
+  return null;
+}
+
+function byId(id: string): MarketRegistryEntry | undefined {
+  return MARKETS.find((m) => m.id === id);
+}
+
+/** Canonical dashboard path on the market's own domain. */
+export function marketDashboardPath(market: MarketRegistryEntry): string {
+  return market.canonicalRoute;
+}
+
+/** Canonical performance path on the market's own domain. */
+export function marketPerformancePath(market: MarketRegistryEntry): string {
+  if (market.id === "uk") return "/portfolio";
+  if (market.id === "nl") return "/nl/performance";
+
+  return "/performance";
+}
+
+/** Build a market-aware URL. In local/dev hosts this stays relative. */
+export function marketHref(
+  market: MarketRegistryEntry,
+  path: string,
+  hostname?: string,
+): string {
+  const host = safeHostname(hostname);
+  const targetHost = MARKET_HOST_BY_ID[market.id];
+
+  if (!targetHost || !host) return path;
+  if (!(host in HOST_DEFAULT_MARKET)) return path;
+  if (host === targetHost) return path;
+
+  return `https://${targetHost}${path}`;
+}
+
 /** Resolve a route to its owning market. UK is the default for paths that
  *  don't match a more specific market prefix. */
-export function marketForPath(pathname: string): MarketRegistryEntry {
+export function marketForPath(
+  pathname: string,
+  hostname?: string,
+): MarketRegistryEntry {
   const uk = MARKETS.find((m) => m.id === "uk");
+  const host = safeHostname(hostname);
 
   if (!uk) throw new Error("UK market must be registered");
   if (pathname.startsWith("/us-preview"))
@@ -94,6 +168,16 @@ export function marketForPath(pathname: string): MarketRegistryEntry {
     return MARKETS.find((m) => m.id === "se") ?? uk;
   if (pathname.startsWith("/nl-preview"))
     return MARKETS.find((m) => m.id === "nl") ?? uk;
+  if (pathname === "/us" || pathname.startsWith("/us/"))
+    return MARKETS.find((m) => m.id === "us") ?? uk;
+  if (pathname === "/se" || pathname.startsWith("/se/"))
+    return MARKETS.find((m) => m.id === "se") ?? uk;
+  if (pathname === "/nl" || pathname.startsWith("/nl/"))
+    return MARKETS.find((m) => m.id === "nl") ?? uk;
+
+  if (host && HOST_DEFAULT_MARKET[host]) {
+    return byId(HOST_DEFAULT_MARKET[host]) ?? uk;
+  }
 
   const match = MARKETS.filter((m) => m.route !== "/")
     .sort((a, b) => b.route.length - a.route.length)

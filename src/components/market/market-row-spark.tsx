@@ -100,11 +100,11 @@ export function MarketRowSpark({
         strokeDasharray="2 2"
         strokeOpacity={0.15}
         strokeWidth={0.5}
+        style={{ transition: "y 200ms ease-in-out" }}
         x1={0}
         x2={width}
         y1={baselineY}
         y2={baselineY}
-        style={{ transition: "y 200ms ease-in-out" }}
       />
       {postCount < 2 && (
         <line
@@ -214,10 +214,7 @@ function computeLayout({
       let lastBenchClose = benchBase;
 
       series = stockPost.map((b) => {
-        while (
-          bi < benchmarkBars.length &&
-          benchmarkBars[bi].date <= b.date
-        ) {
+        while (bi < benchmarkBars.length && benchmarkBars[bi].date <= b.date) {
           lastBenchClose = benchmarkBars[bi].close;
           bi++;
         }
@@ -274,10 +271,12 @@ function useAnimatedPoints(
   useEffect(() => {
     if (!target) {
       setCurrent(null);
+
       return;
     }
     if (!current || current.length !== target.length) {
       setCurrent(target);
+
       return;
     }
     if (pointsEqual(current, target)) return;
@@ -312,16 +311,12 @@ function useAnimatedPoints(
     // current is intentionally excluded — including it would re-fire the
     // effect on every animation frame and loop forever. We only kick off
     // a new tween when the upstream `target` actually changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target]);
 
   return current;
 }
 
-function pointsEqual(
-  a: [number, number][],
-  b: [number, number][],
-): boolean {
+function pointsEqual(a: [number, number][], b: [number, number][]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
     if (a[i][0] !== b[i][0] || a[i][1] !== b[i][1]) return false;

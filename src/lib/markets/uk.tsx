@@ -12,13 +12,13 @@ import type {
   MarketStats,
   Tone,
 } from "@/lib/markets/types";
-import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import type { Dealing, TriageVerdict } from "@/types/ddbx";
 
-import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 import { useEffect, useState } from "react";
 import { InformationCircleIcon as InformationCircleOutlineIcon } from "@heroicons/react/24/outline";
 
+import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
+import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { AnalysisSection } from "@/components/analysis-section";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";

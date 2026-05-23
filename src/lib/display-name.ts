@@ -68,13 +68,15 @@ const TRAILING_PUNCT_RE = /^[^\p{L}\p{N}&]+|[^\p{L}\p{N}&]+$/gu;
 export function normalisedDisplayName(raw: string): string {
   if (!raw) return raw;
   const letters = [...raw].filter((c) => LETTER_RE.test(c));
+
   if (letters.length === 0) return raw;
-  const upperCount = letters.filter((c) => c === c.toUpperCase() && c !== c.toLowerCase()).length;
+  const upperCount = letters.filter(
+    (c) => c === c.toUpperCase() && c !== c.toLowerCase(),
+  ).length;
+
   if (upperCount / letters.length < 0.7) return raw;
-  return raw
-    .split(" ")
-    .map(recaseWord)
-    .join(" ");
+
+  return raw.split(" ").map(recaseWord).join(" ");
 }
 
 /// Strip a trailing "(ticker)" parenthetical from a company name when it
@@ -85,8 +87,10 @@ export function normalisedDisplayName(raw: string): string {
 export function stripTickerSuffix(company: string, ticker: string): string {
   if (!company || !ticker) return company;
   const t = ticker.replace(/\.[A-Z]+$/i, "").toLowerCase();
+
   if (!t) return company;
   const re = new RegExp(`\\s*\\(${escapeRegExp(t)}\\)\\s*$`, "i");
+
   return company.replace(re, "").trim();
 }
 
@@ -100,9 +104,11 @@ function recaseWord(word: string): string {
   // hits "LTD" in the allowlist. Return the original word — uppercased
   // for preserved acronyms, title-cased otherwise.
   const core = word.replace(TRAILING_PUNCT_RE, "").toUpperCase();
+
   if (PRESERVED_ACRONYMS.has(core)) {
     return word.toUpperCase();
   }
+
   return titleCaseWord(word);
 }
 
@@ -111,5 +117,8 @@ function recaseWord(word: string): string {
 function titleCaseWord(word: string): string {
   return word
     .toLowerCase()
-    .replace(/(^|[-'\s])(\p{L})/gu, (_, sep: string, ch: string) => sep + ch.toUpperCase());
+    .replace(
+      /(^|[-'\s])(\p{L})/gu,
+      (_, sep: string, ch: string) => sep + ch.toUpperCase(),
+    );
 }

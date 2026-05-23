@@ -1,8 +1,8 @@
+import type { ReactNode } from "react";
+import type { SignalFilterValue } from "@/lib/markets/types";
+
 import { ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
-
-import type { SignalFilterValue } from "@/lib/markets/types";
 
 export type MarketViewMode = "chronological" | "by-gain";
 
@@ -25,8 +25,7 @@ const SIGNAL_FILTER_OPTIONS: FilterSelectOption[] = [
   {
     id: "signal",
     label: "Signal",
-    description:
-      "Trades the analyst surfaced — high-conviction, non-routine.",
+    description: "Trades the analyst surfaced — high-conviction, non-routine.",
   },
   {
     id: "all",
@@ -181,9 +180,9 @@ function FilterSelect({
             return (
               <button
                 key={opt.id}
+                aria-selected={isCurrent}
                 className="flex items-start gap-2 w-full px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
                 role="option"
-                aria-selected={isCurrent}
                 type="button"
                 onClick={() => {
                   onChange(opt.id);

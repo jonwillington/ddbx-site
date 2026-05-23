@@ -36,15 +36,6 @@ export interface UsDealingsStats {
   latest_disclosed_date: string | null;
 }
 
-export interface IngestResult {
-  scanned: number;
-  parsed: number;
-  rows: UsDealing[];
-  inserted: number;
-  replaced: number;
-  errors: Array<{ accession: string; message: string }>;
-}
-
 const WORKER_BASE = (() => {
   // Strip the trailing `/api` so admin routes (`/__us-*`) hit the worker root.
   const apiBase =
@@ -137,17 +128,6 @@ export const api = {
     return get<{ dealings: UsDealing[]; stats: UsDealingsStats }>(
       `/us-dealings${suffix}`,
     );
-  },
-  usIngest: async (limit = 50): Promise<IngestResult> => {
-    // Force a fresh scrape + persist. Fires the same code path as the cron;
-    // the /us page's "Fetch latest" button is the manual trigger.
-    const res = await fetch(`${WORKER_BASE}/__us-ingest?limit=${limit}`, {
-      method: "POST",
-    });
-
-    if (!res.ok) throw new Error(`/__us-ingest ${res.status}`);
-
-    return (await res.json()) as IngestResult;
   },
   euScrape: async (from: string, to: string): Promise<EuScrapeResult> => {
     // Dry-run EU scrape (currently Sweden FI). Returns parsed rows without

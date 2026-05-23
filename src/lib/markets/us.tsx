@@ -697,10 +697,6 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
 
     return { dealings: groups.map(toMarketDealing), stats };
   },
-  ingest: {
-    label: "Fetch latest",
-    run: () => api.usIngest(50),
-  },
   RowActionCell: UsRowActionCell,
   DetailBody: UsDetailBody,
   DetailPosition: UsDetailPosition,
@@ -738,9 +734,8 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
 
     return (
       <>
-        No US dealings stored yet. Click{" "}
-        <span className="font-medium text-foreground/70">Fetch latest</span> to
-        run the first ingest, or wait for the next half-hourly cron.
+        No US dealings stored yet — the half-hourly cron will populate this page
+        once SEC EDGAR returns its next batch.
       </>
     );
   },

@@ -1,9 +1,10 @@
+import type { DailySummary, Dealing } from "@/types/ddbx";
+
 import { useEffect, useState } from "react";
 
 import { CompanyLogo } from "@/components/company-logo";
 import { api, type DailySummaryResponse } from "@/lib/api";
 import { normalisedDisplayName } from "@/lib/display-name";
-import type { DailySummary, Dealing } from "@/types/ddbx";
 
 interface SheetProps {
   date: string | null;
@@ -80,9 +81,7 @@ export function DailySummarySheet({ date, onClose, onSelectDeal }: SheetProps) {
           {phase.kind === "loading" && (
             <p className="text-sm text-muted">Loading…</p>
           )}
-          {phase.kind === "unavailable" && (
-            <Unavailable />
-          )}
+          {phase.kind === "unavailable" && <Unavailable />}
           {phase.kind === "error" && (
             <p className="text-sm text-rose-600 dark:text-rose-400">
               Couldn't load summary: {phase.msg}
@@ -121,10 +120,7 @@ function SummaryBody({
         </h2>
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
           <StatChip label="Deals" value={summary.total_count.toString()} />
-          <StatChip
-            label="Value"
-            value={formatGbp(summary.total_value_gbp)}
-          />
+          <StatChip label="Value" value={formatGbp(summary.total_value_gbp)} />
         </div>
       </header>
       <BodyProse markdown={summary.body} />
@@ -179,8 +175,8 @@ function renderInlineMarkdown(text: string) {
 function Attribution() {
   return (
     <div className="text-xs text-muted border-t border-black/[0.06] dark:border-white/[0.06] pt-3">
-      Written by the ddbx.uk team, drafted with AI assistance after each
-      market close.
+      Written by the ddbx.uk team, drafted with AI assistance after each market
+      close.
     </div>
   );
 }
@@ -211,7 +207,8 @@ function CitedSection({
                 {normalisedDisplayName(deal.company)}
               </div>
               <div className="text-xs text-muted truncate">
-                {deal.ticker.replace(/\.L$/, "")} · {normalisedDisplayName(deal.director.name)}
+                {deal.ticker.replace(/\.L$/, "")} ·{" "}
+                {normalisedDisplayName(deal.director.name)}
               </div>
             </div>
             <ChevronIcon />
@@ -225,8 +222,7 @@ function CitedSection({
 function Unavailable() {
   return (
     <div className="text-center py-10 text-sm text-muted">
-      Summary not available yet — the team writes one after each market
-      close.
+      Summary not available yet — the team writes one after each market close.
     </div>
   );
 }
