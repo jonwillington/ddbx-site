@@ -14,7 +14,6 @@ import type {
   MarketStats,
   Tone,
 } from "@/lib/markets/types";
-import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import type {
   Analysis,
   UsDealing,
@@ -25,13 +24,15 @@ import type {
 
 import { useEffect, useMemo, useState } from "react";
 
+import { defaultRatingHeroFilters } from "@/lib/markets/types";
+import { AnalysisSection } from "@/components/analysis-section";
+import { DisclosureSection } from "@/components/disclosure-section";
+import { DetailField } from "@/components/market/detail-field";
 import { MiniPriceChart } from "@/components/mini-price-chart";
 import { PositionCard, type PriceFormat } from "@/components/position-card";
 import { RatingBadge } from "@/components/rating-badge";
-import { EvidenceTable } from "@/components/evidence-table";
-import { RatingChecklistView } from "@/components/rating-checklist-view";
 import { api } from "@/lib/api";
-import { normalisedDisplayName } from "@/lib/display-name";
+import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -270,7 +271,7 @@ export function toMarketDealing(group: UsRowGroup): MarketDealing<UsRowGroup> {
     key: group.key,
     id: group.key,
     ticker: row.ticker,
-    company: normalisedDisplayName(row.company),
+    company: stripTickerSuffix(normalisedDisplayName(row.company), row.ticker),
     insiderName: normalisedDisplayName(reporter.name),
     insiderRole: reporter.role,
     disclosedDate: row.disclosed_date,
@@ -368,67 +369,6 @@ function UsRowActionCell({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
   );
 }
 
-function UsAnalysisSection({ analysis }: { analysis: Analysis }) {
-  return (
-    <div className="mb-4 space-y-6 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-surface p-5">
-      <div className="flex items-center gap-3">
-        <RatingBadge rating={analysis.rating} />
-        <span className="text-xs text-muted">
-          {(analysis.confidence * 100).toFixed(0)}% confidence ·{" "}
-          {analysis.catalyst_window} catalyst
-        </span>
-      </div>
-      {analysis.summary && (
-        <p className="text-lg font-semibold leading-snug text-foreground/90">
-          {analysis.summary}
-        </p>
-      )}
-      {analysis.checklist && (
-        <RatingChecklistView checklist={analysis.checklist} />
-      )}
-      {analysis.thesis_points.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold mb-2">Thesis</h3>
-          <div className="space-y-3">
-            {analysis.thesis_points.map((p, i) => (
-              <p key={i} className="text-sm text-foreground/90 leading-relaxed">
-                {p}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
-      <div className="space-y-8">
-        <EvidenceTable
-          points={analysis.evidence_for}
-          title="Why this is interesting"
-          tone="for"
-        />
-        <EvidenceTable
-          points={analysis.evidence_against}
-          title="Why it might not be"
-          tone="against"
-        />
-      </div>
-      {analysis.key_risks.length > 0 && (
-        <div>
-          <h4 className="text-sm font-semibold mb-1">Key risks</h4>
-          <ul className="text-sm list-disc pl-5 text-foreground/90 space-y-1">
-            {analysis.key_risks.map((r, i) => (
-              <li key={i}>{r}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {analysis.rating_rationale && (
-        <p className="text-xs italic text-muted leading-relaxed border-t border-black/[0.06] dark:border-white/[0.08] pt-3">
-          {analysis.rating_rationale}
-        </p>
-      )}
-    </div>
-  );
-}
-
 function UsDetailPosition({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
   const group = dealing.raw;
   const ticker = group.primary.ticker;
@@ -506,8 +446,11 @@ function UsDetailPosition({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
           shares={group.total_shares}
         />
       )}
-      <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4 h-72">
+      <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
         <MiniPriceChart
+          disclosedDate={(
+            group.primary.disclosed_date || group.primary.trade_date
+          ).slice(0, 10)}
           entryPrice={entryPrice}
           fmt={USD_FORMAT}
           normalizeClose={normalizeUsdClose}
@@ -525,10 +468,11 @@ function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
   const row = group.primary;
 
   return (
-    <div className="space-y-3">
-      {group.analysis && <UsAnalysisSection analysis={group.analysis} />}
+    <div className="space-y-4">
+      {group.analysis && <AnalysisSection analysis={group.analysis} />}
+
       {group.triage_verdict && (
-        <div className="mb-3 flex items-start gap-3 rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
+        <div className="flex items-start gap-3 rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
           <VerdictChip verdict={group.triage_verdict} />
           <div className="text-sm text-foreground/80 leading-snug">
             {group.triage_reason || (
@@ -537,61 +481,47 @@ function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
           </div>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
-        <Field
-          label="Code"
-          value={`${row.transaction_code} — ${CODE_LABELS[row.transaction_code] ?? "?"}`}
-        />
-        <Field
-          label="Direction"
-          value={
-            row.acquired_disposed === "A" ? "Acquired (A)" : "Disposed (D)"
-          }
-        />
-        <Field
-          label="Ownership"
-          value={
-            row.direct_indirect === "D"
-              ? "Direct"
-              : `Indirect${row.nature_of_ownership ? ` — ${row.nature_of_ownership}` : ""}`
-          }
-        />
-        <Field label="10b5-1 plan" value={row.aff_10b5_one ? "Yes" : "No"} />
-        <Field label="Security" value={row.security_title} />
-        <Field
-          label="Shares after"
-          value={row.shares_after?.toLocaleString() ?? "—"}
-        />
-        <Field
-          label="Price"
-          value={
-            row.price == null ? "—" : row.price === 0 ? "$0" : `$${row.price}`
-          }
-        />
-        <Field mono label="Filing" value={row.filing_id} />
-        <Field mono label="Issuer CIK" value={row.issuer_cik} />
-        <Field mono label="Reporter CIK" value={row.reporter.cik} />
-        <Field label="Roles" value={row.reporter.roles.join(", ") || "—"} />
-        {row.reporter.officer_title && (
-          <Field label="Officer title" value={row.reporter.officer_title} />
-        )}
-      </div>
+
+      <DisclosureSection title="Filing details">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <DetailField
+            label="Code"
+            value={`${row.transaction_code} — ${CODE_LABELS[row.transaction_code] ?? "?"}`}
+          />
+          <DetailField
+            label="Direction"
+            value={
+              row.acquired_disposed === "A" ? "Acquired (A)" : "Disposed (D)"
+            }
+          />
+          <DetailField
+            label="Ownership"
+            value={
+              row.direct_indirect === "D"
+                ? "Direct"
+                : `Indirect${row.nature_of_ownership ? ` — ${row.nature_of_ownership}` : ""}`
+            }
+          />
+          <DetailField
+            label="10b5-1 plan"
+            value={row.aff_10b5_one ? "Yes" : "No"}
+          />
+          <DetailField label="Security" value={row.security_title} />
+        </div>
+      </DisclosureSection>
 
       {row.is_derivative && (
-        <div className="mt-3 rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
-          <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-2">
-            Derivative
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-1 text-sm">
-            <Field
+        <DisclosureSection title="Derivative">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <DetailField
               label="Underlying"
               value={row.underlying_security_title ?? "—"}
             />
-            <Field
+            <DetailField
               label="Underlying shares"
               value={row.underlying_security_shares?.toLocaleString() ?? "—"}
             />
-            <Field
+            <DetailField
               label="Strike"
               value={
                 row.conversion_or_exercise_price == null
@@ -599,17 +529,20 @@ function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
                   : `$${row.conversion_or_exercise_price}`
               }
             />
-            <Field label="Exercise date" value={row.exercise_date ?? "—"} />
-            <Field label="Expiration" value={row.expiration_date ?? "—"} />
+            <DetailField
+              label="Exercise date"
+              value={row.exercise_date ?? "—"}
+            />
+            <DetailField
+              label="Expiration"
+              value={row.expiration_date ?? "—"}
+            />
           </div>
-        </div>
+        </DisclosureSection>
       )}
 
       {row.co_reporters && row.co_reporters.length > 0 && (
-        <div className="mt-3 rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
-          <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-2">
-            Co-reporters ({row.co_reporters.length})
-          </div>
+        <DisclosureSection count={row.co_reporters.length} title="Co-reporters">
           <ul className="space-y-1 text-sm">
             {row.co_reporters.map((c) => (
               <li key={c.cik}>
@@ -621,14 +554,14 @@ function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
               </li>
             ))}
           </ul>
-        </div>
+        </DisclosureSection>
       )}
 
       {row.footnotes && Object.keys(row.footnotes).length > 0 && (
-        <div className="mt-3 rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
-          <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-2">
-            Footnotes
-          </div>
+        <DisclosureSection
+          count={Object.keys(row.footnotes).length}
+          title="Footnotes"
+        >
           <dl className="space-y-1 text-sm">
             {Object.entries(row.footnotes).map(([id, text]) => (
               <div key={id}>
@@ -637,14 +570,11 @@ function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
               </div>
             ))}
           </dl>
-        </div>
+        </DisclosureSection>
       )}
 
       {group.leg_count > 1 && (
-        <div className="mt-3 rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
-          <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-2">
-            Fills ({group.leg_count})
-          </div>
+        <DisclosureSection count={group.leg_count} title="Fills">
           <table className="w-full text-sm">
             <thead className="text-xs text-muted">
               <tr>
@@ -668,34 +598,14 @@ function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </DisclosureSection>
       )}
 
-      <details className="mt-3 text-xs text-muted">
-        <summary className="cursor-pointer hover:text-foreground transition-colors">
-          Raw JSON ({group.leg_count} leg{group.leg_count === 1 ? "" : "s"})
-        </summary>
-        <pre className="mt-2 overflow-x-auto rounded bg-black/85 dark:bg-black/60 p-3 text-[11px] text-slate-100 leading-snug">
+      <DisclosureSection count={group.leg_count} title="Raw JSON">
+        <pre className="overflow-x-auto rounded bg-black/85 dark:bg-black/60 p-3 text-[11px] text-slate-100 leading-snug">
           {JSON.stringify(group.legs, null, 2)}
         </pre>
-      </details>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div>
-      <span className="text-muted">{label}:</span>{" "}
-      <span className={mono ? "font-mono" : undefined}>{value}</span>
+      </DisclosureSection>
     </div>
   );
 }
@@ -756,15 +666,22 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   newsFooterNote:
     "Third-party headlines (CNBC, MarketWatch, Yahoo Finance, Seeking Alpha); opens in a new tab.",
   async fetchDealings() {
-    // Pull the raw (unfiltered) Form 4 set at the server cap so the Today
-    // hero can show every disclosure regardless of the client Signal/Strength
-    // selection. The new client-side Filter dropdown supersedes the old
-    // server `view` axis — Signal narrows the table client-side from rated
-    // rows already in `dealings`. 1000 is the current server MAX_LIMIT
-    // (ddbx-data/worker/db/us-queries.ts); peak Form 4 days can exceed
-    // that, in which case the next move is a date-scoped fetch rather than
-    // another global bump.
-    const r = await api.usDealings({ limit: 1000, view: "all" });
+    // Pull the default ("interesting") Form 4 set — open-market direct
+    // purchases, not on 10b5-1 plan, non-derivative, >=$50k. Per
+    // ddbx-data/docs/us-open-market-only-2026-05-23.md (Tier 1), the
+    // worker now defaults `/api/us-dealings` to this filtered set.
+    // Sales, RSU grants, option exercises, tax withholdings, gifts, and
+    // derivative-table rows no longer appear here — they're noise for
+    // the conviction-signal product surface.
+    //
+    // The client-side Filter dropdown still narrows further (Signal =
+    // rated rows only). To inspect the raw stream for ops/audit,
+    // explicitly pass `view: "all"`.
+    //
+    // 1000 is the current server MAX_LIMIT (ddbx-data/worker/db/
+    // us-queries.ts); peak Form 4 buy days are well under that since
+    // the filter cuts ~95% of rows.
+    const r = await api.usDealings({ limit: 1000 });
     const groups = groupRows(r.dealings);
     const stats: MarketStats = {
       total: r.stats.total,

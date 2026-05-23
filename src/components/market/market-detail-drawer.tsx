@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
+import { RecentBuysSection } from "@/components/market/recent-buys-section";
 
 /** Right-hand modal drawer used by every market. Shell-owned: backdrop,
  *  slide-from-right, escape-to-close, body-scroll lock, scroll-shadow on
@@ -13,8 +14,10 @@ import { RatingBadge } from "@/components/rating-badge";
  *  (Form 4 footnotes, RNS director history, …). */
 export function MarketDetailDrawer<W>({
   dealing,
+  allDealings,
   onClose,
   fmt,
+  locale,
   DetailBody,
   DetailPosition,
   gating,
@@ -24,8 +27,13 @@ export function MarketDetailDrawer<W>({
   formatTickerDisplay,
 }: {
   dealing: MarketDealing<W> | null;
+  /** Full in-memory dealings list — used by RecentBuysSection to surface
+   *  other recent buys on the same ticker. The shell stays stateless; the
+   *  list is whatever the parent fetched. */
+  allDealings: MarketDealing<W>[];
   onClose: () => void;
   fmt: PriceFormat;
+  locale?: string;
   DetailBody: ComponentType<{ dealing: MarketDealing<W> }>;
   DetailPosition?: ComponentType<{ dealing: MarketDealing<W> }>;
   /** Optional gating state — when set, the drawer records a view on open
@@ -89,7 +97,9 @@ export function MarketDetailDrawer<W>({
   const BodyComponent = gated && DummyDetailBody ? DummyDetailBody : DetailBody;
 
   const rawTicker = dealing?.ticker || "—";
-  const ticker = formatTickerDisplay ? formatTickerDisplay(rawTicker) : rawTicker;
+  const ticker = formatTickerDisplay
+    ? formatTickerDisplay(rawTicker)
+    : rawTicker;
   const company = dealing?.company || "—";
   const insiderLine = dealing
     ? dealing.insiderRole
@@ -98,6 +108,8 @@ export function MarketDetailDrawer<W>({
     : "";
   const valueLabel =
     dealing && dealing.value != null ? fmt.formatValue(dealing.value) : "—";
+  const sharesLabel =
+    dealing && dealing.shares > 0 ? dealing.shares.toLocaleString() : "—";
 
   return (
     <>
@@ -128,7 +140,12 @@ export function MarketDetailDrawer<W>({
                 {ticker}
               </span>
               {dealing.rating && (
-                <RatingBadge className="shrink-0" rating={dealing.rating} />
+                <RatingBadge
+                  className={`shrink-0 transition-opacity duration-200 ${
+                    scrolled ? "opacity-100" : "opacity-0"
+                  }`}
+                  rating={dealing.rating}
+                />
               )}
               <span
                 className={`font-semibold text-sm truncate flex-1 min-w-0 transition-opacity duration-200
@@ -158,7 +175,7 @@ export function MarketDetailDrawer<W>({
                   </h1>
                 </div>
 
-                <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
+                <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
                   <div>
                     <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
                       Insider
@@ -181,9 +198,26 @@ export function MarketDetailDrawer<W>({
                     </dt>
                     <dd className="text-sm font-medium">{valueLabel}</dd>
                   </div>
+                  <div>
+                    <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                      Shares
+                    </dt>
+                    <dd className="text-sm font-medium tabular-nums">
+                      {sharesLabel}
+                    </dd>
+                  </div>
                 </dl>
 
                 {DetailPosition && <DetailPosition dealing={dealing} />}
+
+                <RecentBuysSection
+                  allDealings={allDealings}
+                  currentDealing={dealing}
+                  fmt={fmt}
+                  formatTickerDisplay={formatTickerDisplay}
+                  locale={locale}
+                />
+
                 {gated ? (
                   <div className="relative">
                     <div

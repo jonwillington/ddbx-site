@@ -33,10 +33,7 @@ import {
 } from "@/lib/markets/sweden";
 import { toMarketDealing as toNlMarketDealing } from "@/lib/markets/netherlands";
 
-type AnyDirectorDetail =
-  | DirectorDetail
-  | UsDirectorDetail
-  | EuDirectorDetail;
+type AnyDirectorDetail = DirectorDetail | UsDirectorDetail | EuDirectorDetail;
 
 function isUsDetail(d: AnyDirectorDetail): d is UsDirectorDetail {
   // UsDirectorDetail.prior_picks carries UsDealing rows (filing_id +
@@ -212,8 +209,8 @@ export default function DirectorPage() {
                     benchmarkLabel={market.config.benchmarkLabel}
                     chartMode={chartMode}
                     dealing={dealing}
-                    formatTickerDisplay={market.config.formatTickerDisplay}
                     fmt={market.config.priceFormat}
+                    formatTickerDisplay={market.config.formatTickerDisplay}
                     isMuted={market.config.isRowMuted}
                     locale={market.config.locale}
                     selected={selectedKey === dealing.key}
@@ -231,10 +228,12 @@ export default function DirectorPage() {
         DetailBody={market.config.DetailBody}
         DetailPosition={market.config.DetailPosition}
         DummyDetailBody={market.config.DummyDetailBody}
+        allDealings={dealings}
         dealing={selectedDealing}
-        formatTickerDisplay={market.config.formatTickerDisplay}
         fmt={market.config.priceFormat}
+        formatTickerDisplay={market.config.formatTickerDisplay}
         gating={gating}
+        locale={market.config.locale}
         showLogo={market.config.enableLogos !== false}
         onClose={() => setSelectedKey(null)}
       />

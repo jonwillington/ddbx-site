@@ -7,19 +7,9 @@ import type {
   NewsPayload,
   SignalFilterValue,
 } from "@/lib/markets/types";
-import { isSignalDealing } from "@/lib/markets/types";
 
-import {
-  CalendarDaysIcon,
-  ChevronDownIcon,
-} from "@heroicons/react/24/outline";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { CalendarDaysIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DailySummarySheet } from "./daily-summary-banner";
 import { MarketChartModeToggle } from "./market-chart-mode-toggle";
@@ -39,6 +29,7 @@ import { MarketTodayEmpty } from "./market-today-empty";
 import { MarketTodayHero } from "./market-today-hero";
 import { bucketByMonth, todayKeyIso } from "./market-utils";
 
+import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import {
@@ -228,7 +219,8 @@ export function MarketPage<W>({
       .then((list) => {
         const map: Record<string, { price: number; date?: string }> = {};
 
-        for (const p of list) map[p.ticker] = { price: p.price_pence, date: p.date };
+        for (const p of list)
+          map[p.ticker] = { price: p.price_pence, date: p.date };
         setPrices(map);
       })
       .catch(() => {});
@@ -246,7 +238,9 @@ export function MarketPage<W>({
         const map: Record<string, number> = {};
         const sparkBars: SparkBar[] = bars.map((b) => ({
           date: b.date,
-          close: config.normalizeLivePrice(b.close_pence, b.date, fxRates) ?? b.close_pence,
+          close:
+            config.normalizeLivePrice(b.close_pence, b.date, fxRates) ??
+            b.close_pence,
         }));
 
         for (const b of bars) {
@@ -379,9 +373,7 @@ export function MarketPage<W>({
 
   const todayDealings = useMemo(
     () =>
-      searchedDealings.filter(
-        (d) => d.disclosedDate.slice(0, 10) === todayIso,
-      ),
+      searchedDealings.filter((d) => d.disclosedDate.slice(0, 10) === todayIso),
     [searchedDealings, todayIso],
   );
 
@@ -688,7 +680,10 @@ export function MarketPage<W>({
           <div className="sticky top-[64px] z-20 bg-[#faf7f2] dark:bg-surface rounded-t-xl border-b border-[#e8e0d5]/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
             <MarketFilterBar
               heroFilterId={heroFilterId}
-              heroFilters={config.heroFilters?.map((f) => ({ id: f.id, label: f.label }))}
+              heroFilters={config.heroFilters?.map((f) => ({
+                id: f.id,
+                label: f.label,
+              }))}
               search={search}
               signalFilter={signalFilter}
               trailing={chartModeToggle}
@@ -722,8 +717,8 @@ export function MarketPage<W>({
                   benchmarkLabel={config.benchmarkLabel}
                   chartMode={chartMode}
                   dealing={d}
-                  formatTickerDisplay={config.formatTickerDisplay}
                   fmt={config.priceFormat}
+                  formatTickerDisplay={config.formatTickerDisplay}
                   isMuted={config.isRowMuted}
                   locale={config.locale}
                   selected={selectedKey === d.key}
@@ -805,7 +800,9 @@ export function MarketPage<W>({
                               {config.id === "uk" &&
                                 dailySummaries.get(day.key) && (
                                   <MarketDaySummaryRow
-                                    headline={dailySummaries.get(day.key)!.headline}
+                                    headline={
+                                      dailySummaries.get(day.key)!.headline
+                                    }
                                     isToday={day.key === todayIso}
                                     valueColumnClass={
                                       config.priceFormat.valueColumnClass
@@ -824,8 +821,10 @@ export function MarketPage<W>({
                                   benchmarkLabel={config.benchmarkLabel}
                                   chartMode={chartMode}
                                   dealing={d}
-                                  formatTickerDisplay={config.formatTickerDisplay}
                                   fmt={config.priceFormat}
+                                  formatTickerDisplay={
+                                    config.formatTickerDisplay
+                                  }
                                   isMuted={config.isRowMuted}
                                   locale={config.locale}
                                   selected={selectedKey === d.key}
@@ -847,8 +846,10 @@ export function MarketPage<W>({
                                   benchmarkLabel={config.benchmarkLabel}
                                   chartMode={chartMode}
                                   dealing={d}
-                                  formatTickerDisplay={config.formatTickerDisplay}
                                   fmt={config.priceFormat}
+                                  formatTickerDisplay={
+                                    config.formatTickerDisplay
+                                  }
                                   isMuted={config.isRowMuted}
                                   locale={config.locale}
                                   selected={selectedKey === d.key}
@@ -906,10 +907,12 @@ export function MarketPage<W>({
         DetailBody={config.DetailBody}
         DetailPosition={config.DetailPosition}
         DummyDetailBody={config.DummyDetailBody}
+        allDealings={dealings}
         dealing={selectedDealing}
-        formatTickerDisplay={config.formatTickerDisplay}
         fmt={config.priceFormat}
+        formatTickerDisplay={config.formatTickerDisplay}
         gating={gating}
+        locale={config.locale}
         showLogo={logosEnabled}
         onClose={() => setSelectedKey(null)}
       />

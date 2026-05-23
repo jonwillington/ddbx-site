@@ -77,6 +77,23 @@ export function normalisedDisplayName(raw: string): string {
     .join(" ");
 }
 
+/// Strip a trailing "(ticker)" parenthetical from a company name when it
+/// duplicates the row's ticker (case-insensitive, ".L" suffix tolerated).
+/// Upstream RNS / EDGAR feeds occasionally append the ticker to the
+/// company string ("Sig (shi)", "3i Group (III)"); the chip column
+/// already shows the ticker, so the parenthetical is just noise.
+export function stripTickerSuffix(company: string, ticker: string): string {
+  if (!company || !ticker) return company;
+  const t = ticker.replace(/\.[A-Z]+$/i, "").toLowerCase();
+  if (!t) return company;
+  const re = new RegExp(`\\s*\\(${escapeRegExp(t)}\\)\\s*$`, "i");
+  return company.replace(re, "").trim();
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function recaseWord(word: string): string {
   if (word.length === 0) return word;
   // Strip surrounding punctuation for the lookup so "LTD." still

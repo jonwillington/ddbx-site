@@ -19,11 +19,13 @@ import type {
   MarketStats,
   Tone,
 } from "@/lib/markets/types";
-import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import type { EuDealing } from "@/types/ddbx";
 
+import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { api } from "@/lib/api";
-import { normalisedDisplayName } from "@/lib/display-name";
+import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
+import { DisclosureSection } from "@/components/disclosure-section";
+import { DetailField } from "@/components/market/detail-field";
 import { PriceFormat } from "@/components/position-card";
 
 /** Nasdaq Stockholm — continuous trading 09:00–17:30 Europe/Stockholm,
@@ -290,7 +292,7 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     // (12-char SE0… codes) made the grid look broken (verified visually
     // 2026-05-20).
     ticker: d.ticker ?? "",
-    company: normalisedDisplayName(d.company),
+    company: stripTickerSuffix(normalisedDisplayName(d.company), d.ticker ?? ""),
     insiderName: normalisedDisplayName(d.reporter.name),
     insiderRole: translateRole(d.reporter.role),
     disclosedDate: g.disclosed_date,
@@ -373,7 +375,6 @@ function fmtNativePrice(n: number | null, ccy: string): string {
 function SwedenDetailBody({ dealing }: { dealing: MarketDealing<EuRowGroup> }) {
   const g = dealing.raw;
   const d = g.primary;
-  const action = translateNature(d.nature);
   const flags: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
   if (d.reporter.is_closely_associated)
@@ -386,25 +387,7 @@ function SwedenDetailBody({ dealing }: { dealing: MarketDealing<EuRowGroup> }) {
   const multiLeg = g.leg_count > 1;
 
   return (
-    <div className="space-y-6">
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-        <Field label="Insider" value={normalisedDisplayName(d.reporter.name)} />
-        <Field label="Role" value={translateRole(d.reporter.role) ?? "—"} />
-        <Field label="Action" value={action.label} />
-        <Field
-          label={multiLeg ? "Total value" : "Value"}
-          value={fmtNativeMoney(g.total_value, d.currency)}
-        />
-        <Field
-          label={multiLeg ? "Total shares" : "Shares"}
-          value={g.total_shares.toLocaleString("en-GB")}
-        />
-        <Field
-          label={multiLeg ? "VWAP" : "Price"}
-          value={fmtNativePrice(g.weighted_price, d.currency)}
-        />
-      </dl>
-
+    <div className="space-y-4">
       {flags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {flags.map((f) => (
@@ -419,33 +402,32 @@ function SwedenDetailBody({ dealing }: { dealing: MarketDealing<EuRowGroup> }) {
       )}
 
       {d.is_amendment && d.amendment_reason && (
-        <div className="rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3 text-sm">
-          <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-1">
-            Amendment reason
-          </div>
-          <div className="text-foreground/85">{d.amendment_reason}</div>
-        </div>
+        <DisclosureSection defaultOpen title="Amendment reason">
+          <p className="text-sm text-foreground/85">{d.amendment_reason}</p>
+        </DisclosureSection>
       )}
 
-      <div className="rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
-        <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-2">
-          Instrument
+      <DisclosureSection title="Instrument">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <DetailField label="Name" value={d.instrument_name || "—"} />
+          <DetailField label="Type" value={d.instrument_type || "—"} />
+          <DetailField mono label="ISIN" value={d.isin} />
+          <DetailField mono label="LEI" value={d.lei} />
+          {d.venue && <DetailField label="Venue" value={d.venue} />}
+          <DetailField label="Currency" value={d.currency || "—"} />
+          <DetailField
+            label={multiLeg ? "VWAP" : "Price"}
+            value={fmtNativePrice(g.weighted_price, d.currency)}
+          />
+          <DetailField
+            label={multiLeg ? "Total value" : "Value"}
+            value={fmtNativeMoney(g.total_value, d.currency)}
+          />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-sm">
-          <Field label="Name" value={d.instrument_name || "—"} />
-          <Field label="Type" value={d.instrument_type || "—"} />
-          <Field mono label="ISIN" value={d.isin} />
-          <Field mono label="LEI" value={d.lei} />
-          {d.venue && <Field label="Venue" value={d.venue} />}
-          <Field label="Currency" value={d.currency || "—"} />
-        </div>
-      </div>
+      </DisclosureSection>
 
       {multiLeg && (
-        <div className="rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
-          <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-2">
-            Fills ({g.leg_count})
-          </div>
+        <DisclosureSection count={g.leg_count} title="Fills">
           <table className="w-full text-sm">
             <thead className="text-xs text-muted">
               <tr>
@@ -478,61 +460,36 @@ function SwedenDetailBody({ dealing }: { dealing: MarketDealing<EuRowGroup> }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </DisclosureSection>
       )}
 
       {d.reporter.filing_entity &&
         d.reporter.filing_entity !== d.reporter.name && (
-          <div className="rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3 text-sm">
-            <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-1">
-              Filing entity
-            </div>
-            <div className="text-foreground/85">{d.reporter.filing_entity}</div>
-            <div className="text-xs text-muted mt-1">
+          <DisclosureSection title="Filing entity">
+            <p className="text-sm text-foreground/85">
+              {d.reporter.filing_entity}
+            </p>
+            <p className="mt-1 text-xs text-muted">
               (FI: Anmälningsskyldig — the legal entity that filed on behalf of
               the PDMR)
-            </div>
-          </div>
+            </p>
+          </DisclosureSection>
         )}
 
-      <details className="text-xs text-muted">
-        <summary className="cursor-pointer hover:text-foreground transition-colors">
-          Raw filing (Swedish source fields)
-        </summary>
-        <dl className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
-          <Field label="Nature (raw)" value={d.nature} />
-          <Field label="Role (raw)" value={d.reporter.role} />
-          <Field label="Status" value={d.status || "—"} />
-          <Field label="Volume unit" value={d.volume_unit || "—"} />
-          <Field mono label="Disclosed" value={d.disclosed_date} />
-          <Field mono label="Trade date" value={d.trade_date} />
-          <Field mono label="ID" value={d.id} />
+      <DisclosureSection title="Raw filing (Swedish source fields)">
+        <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+          <DetailField label="Nature (raw)" value={d.nature} />
+          <DetailField label="Role (raw)" value={d.reporter.role} />
+          <DetailField label="Status" value={d.status || "—"} />
+          <DetailField label="Volume unit" value={d.volume_unit || "—"} />
+          <DetailField mono label="Disclosed" value={d.disclosed_date} />
+          <DetailField mono label="Trade date" value={d.trade_date} />
+          <DetailField mono label="ID" value={d.id} />
         </dl>
         <pre className="mt-3 overflow-x-auto rounded bg-black/85 dark:bg-black/60 p-3 text-[11px] text-slate-100 leading-snug">
           {JSON.stringify(d, null, 2)}
         </pre>
-      </details>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div>
-      <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-        {label}
-      </dt>
-      <dd className={`text-sm font-medium truncate ${mono ? "font-mono" : ""}`}>
-        {value}
-      </dd>
+      </DisclosureSection>
     </div>
   );
 }

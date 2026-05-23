@@ -15,17 +15,16 @@ import type {
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import type { Dealing, TriageVerdict } from "@/types/ddbx";
 
-import { normalisedDisplayName } from "@/lib/display-name";
+import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 import { useEffect, useState } from "react";
 import { InformationCircleIcon as InformationCircleOutlineIcon } from "@heroicons/react/24/outline";
 
+import { AnalysisSection } from "@/components/analysis-section";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
-import { EvidenceTable } from "@/components/evidence-table";
 import { MiniPriceChart } from "@/components/mini-price-chart";
 import { PositionCard, type PriceFormat } from "@/components/position-card";
 import { RatingBadge } from "@/components/rating-badge";
-import { RatingChecklistView } from "@/components/rating-checklist-view";
 import { api } from "@/lib/api";
 import { UK_BANK_HOLIDAYS_SOURCE } from "@/lib/bank-holidays";
 import { isSuggestedDealing } from "@/lib/dealing-classify";
@@ -48,12 +47,6 @@ const GBP_FORMAT: PriceFormat = {
     }).format(n),
   quoteToValue: 0.01,
 };
-
-function fmtGbp(n: number | null | undefined): string {
-  if (n == null) return "—";
-
-  return GBP_FORMAT.formatValue(n);
-}
 
 /* ─── Wire → MarketDealing normalization ─────────────────────────────── */
 
@@ -79,7 +72,7 @@ export function toMarketDealing(d: Dealing): MarketDealing<Dealing> {
     key: d.id,
     id: d.id,
     ticker: d.ticker,
-    company: normalisedDisplayName(d.company),
+    company: stripTickerSuffix(normalisedDisplayName(d.company), d.ticker),
     insiderName: normalisedDisplayName(d.director.name),
     insiderRole: d.director.role,
     disclosedDate: d.disclosed_date || d.trade_date,
@@ -157,8 +150,6 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
   useEffect(() => {
     let cancelled = false;
 
-    // 90-day history is enough to find the trade-day close; the chart
-    // component fetches its own 365-day window separately.
     api
       .priceHistory(FTSE_TICKER, 365)
       .then((bars) => {
@@ -192,8 +183,9 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
           shares={d.shares}
         />
       )}
-      <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4 h-72">
+      <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
         <MiniPriceChart
+          disclosedDate={(d.disclosed_date || d.trade_date).slice(0, 10)}
           entryPrice={entryPrice}
           fmt={GBP_FORMAT}
           tickerForApi={ticker}
@@ -255,102 +247,9 @@ function UkDetailBody({ dealing }: { dealing: MarketDealing<Dealing> }) {
   const d = dealing.raw;
   const analysis = d.analysis;
 
-  if (!analysis) {
-    return (
-      <div className="space-y-4">
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-          <Field label="Insider" value={normalisedDisplayName(d.director.name)} />
-          <Field label="Role" value={d.director.role ?? "—"} />
-          <Field label="Amount" value={fmtGbp(d.value_gbp)} />
-          <Field label="Shares" value={d.shares.toLocaleString()} />
-        </dl>
-        <UkTriageOnlyNotice triage={d.triage} />
-      </div>
-    );
-  }
+  if (!analysis) return <UkTriageOnlyNotice triage={d.triage} />;
 
-  return (
-    <div className="space-y-6">
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-        <Field label="Insider" value={normalisedDisplayName(d.director.name)} />
-        <Field label="Role" value={d.director.role ?? "—"} />
-        <Field label="Amount" value={fmtGbp(d.value_gbp)} />
-        <Field label="Shares" value={d.shares.toLocaleString()} />
-      </dl>
-
-      <div className="flex items-center gap-3">
-        <RatingBadge rating={analysis.rating} />
-        <span className="text-xs text-muted">
-          {(analysis.confidence * 100).toFixed(0)}% confidence ·{" "}
-          {analysis.catalyst_window} catalyst
-        </span>
-      </div>
-
-      {analysis.summary && (
-        <p className="text-xl font-semibold leading-snug text-foreground/90">
-          {analysis.summary}
-        </p>
-      )}
-
-      {analysis.checklist && (
-        <RatingChecklistView checklist={analysis.checklist} />
-      )}
-
-      {analysis.thesis_points.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold mb-2">Thesis</h3>
-          <div className="space-y-3">
-            {analysis.thesis_points.map((p, i) => (
-              <p key={i} className="text-sm text-foreground/90 leading-relaxed">
-                {p}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-8">
-        <EvidenceTable
-          points={analysis.evidence_for}
-          title="Why this is interesting"
-          tone="for"
-        />
-        <EvidenceTable
-          points={analysis.evidence_against}
-          title="Why it might not be"
-          tone="against"
-        />
-      </div>
-
-      {analysis.key_risks.length > 0 && (
-        <div>
-          <h4 className="text-sm font-semibold mb-1">Key risks</h4>
-          <ul className="text-sm list-disc pl-5 text-foreground/90 space-y-1">
-            {analysis.key_risks.map((r, i) => (
-              <li key={i}>{r}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {analysis.rating_rationale && (
-        <p className="text-xs italic text-muted leading-relaxed border-t border-black/[0.06] dark:border-white/[0.08] pt-3">
-          {analysis.rating_rationale}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-        {label}
-      </dt>
-      <dd className="text-sm font-medium truncate">{value}</dd>
-    </div>
-  );
+  return <AnalysisSection analysis={analysis} />;
 }
 
 /* ─── Slot: DummyDetailBody (gated drawer body) ──────────────────────── */

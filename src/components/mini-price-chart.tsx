@@ -1,31 +1,48 @@
+import type {
+  IChartApi,
+  ISeriesApi,
+  SeriesMarker,
+  Time,
+} from "lightweight-charts";
 import type { PriceFormat } from "@/components/position-card";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  AreaSeries,
+  ColorType,
+  LineStyle,
+  createChart,
+  createSeriesMarkers,
+} from "lightweight-charts";
 
 import { api } from "@/lib/api";
 
-type Period = "since" | "ytd" | "max";
+type Period = "around" | "ytd" | "max";
 
 const PERIODS: { key: Period; label: string }[] = [
-  { key: "since", label: "Since entry" },
+  { key: "around", label: "Around buy" },
   { key: "ytd", label: "YTD" },
   { key: "max", label: "Max" },
 ];
 
-/** Inline price chart for one dealing. Generalised from the UK pence-flavoured
- *  component — fetches via /api/prices/history (which Yahoo backs for both
- *  LSE pence and US dollars), then renders period-toggled SVG.
- *
- *  The API returns numbers as `close_pence` regardless of the security's quote
- *  currency; this component reads them as quote-unit numbers and lets the
- *  PriceFormat bundle decide how to render them. Caller passes `tickerForApi`
- *  (what to send to /api/prices/history — e.g. "TSCO.L" or "AAPL") and
- *  `tickerForDisplay` (what to show in the header — e.g. "TSCO" or "AAPL").
- */
+/** How many calendar days of pre-buy context to include on the "Around buy"
+ *  tab. Gives the reader a sense of where the price was heading when the
+ *  director stepped in. */
+const PRE_BUY_CONTEXT_DAYS = 5;
+
+const CHART_HEIGHT = 168;
+
+/** Inline price chart for one dealing. Renders via TradingView's
+ *  lightweight-charts (Canvas) — gives crisp lines, built-in crosshair,
+ *  proper time axis with date labels, and clean marker support out of the
+ *  box. Period switcher narrows the on-screen window (Around buy / YTD /
+ *  Max); markers highlight the trade and disclosure dates so the reader
+ *  can see the gap between when the deal happened and when it surfaced. */
 export function MiniPriceChart({
   tickerForApi,
   tickerForDisplay,
   tradeDate,
+  disclosedDate,
   entryPrice,
   fmt,
   normalizeClose,
@@ -33,20 +50,25 @@ export function MiniPriceChart({
   tickerForApi: string;
   tickerForDisplay: string;
   tradeDate: string;
+  /** Disclosure date (regulator-receipt). When present and distinct from
+   *  the trade date, the chart renders a second marker so the reader can
+   *  see how long the news took to surface. */
+  disclosedDate?: string;
   /** Per-share quote price on the trade date — must be in the same unit
    *  the chart will render closes in (after `normalizeClose`). */
   entryPrice: number;
   fmt: PriceFormat;
   /** Map a raw `close_pence` API value to the rendered quote unit. UK
-   *  defaults to identity (prices are already pence and match the dealing's
-   *  `price_pence`). US passes `(n) => n / 100` because Yahoo's USD bars
-   *  land as cents in the prices table while Form 4's `price` is in
-   *  major-dollars. Mismatched units make the chart squish the line
-   *  against the top of the y-axis. */
+   *  defaults to identity (prices are already pence). US passes a USD
+   *  converter because Yahoo's USD bars land as cents-times-FX in the
+   *  prices table while Form 4's `price` is in major-dollars. */
   normalizeClose?: (closePence: number, date: string) => number | null;
 }) {
-  const [period, setPeriod] = useState<Period>("since");
+  const [period, setPeriod] = useState<Period>("around");
   const [allBars, setAllBars] = useState<{ date: string; close: number }[]>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
   const normalize = normalizeClose ?? ((n: number) => n);
 
   useEffect(() => {
@@ -71,12 +93,23 @@ export function MiniPriceChart({
         ),
       )
       .catch(() => {});
-    // normalize is intentionally not in deps — it's a stable per-market
-    // function and changing it would trigger a refetch unnecessarily.
+    // normalize intentionally excluded — it's a per-market closure that
+    // would otherwise trigger a refetch on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickerForApi]);
 
   const bars = useMemo(() => {
-    if (period === "since") return allBars.filter((b) => b.date >= tradeDate);
+    if (period === "around") {
+      const cutoff = (() => {
+        const t = new Date(tradeDate);
+
+        t.setDate(t.getDate() - PRE_BUY_CONTEXT_DAYS);
+
+        return t.toISOString().slice(0, 10);
+      })();
+
+      return allBars.filter((b) => b.date >= cutoff);
+    }
     if (period === "ytd")
       return allBars.filter(
         (b) => b.date >= `${new Date().getFullYear()}-01-01`,
@@ -94,6 +127,10 @@ export function MiniPriceChart({
   const isDark =
     typeof document !== "undefined" &&
     document.documentElement.classList.contains("dark");
+
+  const upText = "text-[#1e6b18] dark:text-[#5cd84a]";
+  const downText = "text-[#8b2020] dark:text-[#e84d4d]";
+
   const lineColor = up
     ? isDark
       ? "#5cd84a"
@@ -101,108 +138,144 @@ export function MiniPriceChart({
     : isDark
       ? "#e84d4d"
       : "#8b2020";
-  const upCls = "text-[#1e6b18] dark:text-[#5cd84a]";
-  const downCls = "text-[#8b2020] dark:text-[#e84d4d]";
+  const fillColor = up
+    ? isDark
+      ? "rgba(92,216,74,0.18)"
+      : "rgba(30,107,24,0.12)"
+    : isDark
+      ? "rgba(232,77,77,0.18)"
+      : "rgba(139,32,32,0.12)";
 
-  const W = 240,
-    H = 160;
-  const pL = 2,
-    pR = 2,
-    pT = 8,
-    pB = 18;
+  // Lightweight-charts owns the canvas; create on mount + when bars or
+  // theme change, tear down on unmount. We always render the container
+  // div so the ref is stable across the loading→loaded transition.
+  useEffect(() => {
+    const container = containerRef.current;
 
-  let svgContent: React.ReactNode = null;
+    if (!container || bars.length < 2) return;
 
-  if (bars.length >= 2) {
-    const prices = bars.map((b) => b.close);
-    const rawMin = Math.min(...prices);
-    const rawMax = Math.max(...prices);
-    // On "since entry", fold the entry price into the Y-bounds so the line's
-    // slope reads as gain/loss against the buy, not just the period's local
-    // low→high. Matches the iOS MiniPriceChart.
-    const minP = period === "since" ? Math.min(rawMin, entryPrice) : rawMin;
-    const maxP = period === "since" ? Math.max(rawMax, entryPrice) : rawMax;
-    const yPad = (maxP - minP) * 0.06 || 5;
-    const yMin = minP - yPad;
-    const yMax = maxP + yPad;
-    const yRange = yMax - yMin;
-    const n = bars.length;
+    const chart = createChart(container, {
+      width: container.clientWidth,
+      height: CHART_HEIGHT,
+      autoSize: false,
+      layout: {
+        background: { type: ColorType.Solid, color: "transparent" },
+        textColor: isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)",
+        fontSize: 10,
+      },
+      grid: {
+        vertLines: { visible: false },
+        horzLines: { visible: false },
+      },
+      timeScale: {
+        borderVisible: false,
+        fixLeftEdge: true,
+        fixRightEdge: true,
+        rightOffset: 2,
+      },
+      rightPriceScale: {
+        borderVisible: false,
+        visible: false,
+      },
+      leftPriceScale: { visible: false },
+      crosshair: {
+        mode: 1,
+        vertLine: {
+          width: 1,
+          color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)",
+          style: LineStyle.Dashed,
+          labelVisible: true,
+        },
+        horzLine: {
+          width: 1,
+          color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)",
+          style: LineStyle.Dashed,
+          labelVisible: false,
+        },
+      },
+      handleScroll: false,
+      handleScale: false,
+    });
 
-    const xS = (i: number) => pL + (i / (n - 1)) * (W - pL - pR);
-    const yS = (v: number) => pT + (1 - (v - yMin) / yRange) * (H - pT - pB);
+    const series = chart.addSeries(AreaSeries, {
+      lineColor,
+      topColor: fillColor,
+      bottomColor: "rgba(0,0,0,0)",
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerRadius: 4,
+      crosshairMarkerBorderColor: isDark ? "#1a1a1a" : "#ffffff",
+    });
 
-    const entryIdx =
-      period === "since" ? 0 : bars.findIndex((b) => b.date >= tradeDate);
-    const entryY = yS(entryPrice);
-    const path = bars
-      .map(
-        (b, i) =>
-          `${i === 0 ? "M" : "L"}${xS(i).toFixed(1)},${yS(b.close).toFixed(1)}`,
-      )
-      .join(" ");
-
-    svgContent = (
-      <svg
-        height="100%"
-        preserveAspectRatio="none"
-        style={{ display: "block" }}
-        viewBox={`0 0 ${W} ${H}`}
-        width="100%"
-      >
-        <line
-          opacity={0.35}
-          stroke="#888"
-          strokeDasharray="3,3"
-          strokeWidth={0.75}
-          x1={pL}
-          x2={W - pR}
-          y1={entryY}
-          y2={entryY}
-        />
-        {entryIdx > 0 && (
-          <line
-            opacity={0.35}
-            stroke="#888"
-            strokeDasharray="3,3"
-            strokeWidth={0.75}
-            x1={xS(entryIdx)}
-            x2={xS(entryIdx)}
-            y1={pT}
-            y2={H - pB}
-          />
-        )}
-        <path
-          d={path}
-          fill="none"
-          stroke={lineColor}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-        />
-        {entryIdx >= 0 && entryIdx < n && (
-          <circle
-            cx={xS(entryIdx)}
-            cy={yS(bars[entryIdx].close)}
-            fill={lineColor}
-            opacity={0.55}
-            r={2.5}
-          />
-        )}
-        <circle
-          cx={xS(n - 1)}
-          cy={yS(bars[n - 1].close)}
-          fill={lineColor}
-          r={2.5}
-        />
-        <text fill="#999" fontSize={8} x={pL} y={H - 4}>
-          {bars[0].date.slice(5)}
-        </text>
-        <text fill="#999" fontSize={8} textAnchor="end" x={W - pR} y={H - 4}>
-          {bars[n - 1].date.slice(5)}
-        </text>
-      </svg>
+    series.setData(
+      bars.map((b) => ({ time: b.date as Time, value: b.close })),
     );
-  }
+
+    // Director's paid price — dashed horizontal baseline.
+    series.createPriceLine({
+      price: entryPrice,
+      color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.4)",
+      lineWidth: 1,
+      lineStyle: LineStyle.Dashed,
+      axisLabelVisible: false,
+      title: "",
+    });
+
+    // Trade + disclosure markers. lightweight-charts snaps each marker
+    // to the first bar at-or-after the requested date, matching how
+    // weekend disclosures land on the next trading-day bar.
+    const markers: SeriesMarker<Time>[] = [];
+    const tradeBar = bars.find((b) => b.date >= tradeDate);
+
+    if (tradeBar) {
+      markers.push({
+        time: tradeBar.date as Time,
+        position: "aboveBar",
+        color: lineColor,
+        shape: "circle",
+        text: "Trade",
+      });
+    }
+    if (disclosedDate && disclosedDate !== tradeDate) {
+      const discBar = bars.find((b) => b.date >= disclosedDate);
+
+      if (discBar) {
+        markers.push({
+          time: discBar.date as Time,
+          position: "aboveBar",
+          color: isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)",
+          shape: "arrowDown",
+          text: "Disclosed",
+        });
+      }
+    }
+    if (markers.length > 0) {
+      createSeriesMarkers(series, markers);
+    }
+
+    chart.timeScale().fitContent();
+
+    chartRef.current = chart;
+    seriesRef.current = series;
+
+    const ro = new ResizeObserver(() => {
+      const c = containerRef.current;
+
+      if (c && chartRef.current) {
+        chartRef.current.applyOptions({ width: c.clientWidth });
+      }
+    });
+
+    ro.observe(container);
+
+    return () => {
+      ro.disconnect();
+      chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+    };
+  }, [bars, entryPrice, tradeDate, disclosedDate, lineColor, fillColor, isDark]);
 
   const visiblePrices = bars.map((b) => b.close);
   const periodHigh = visiblePrices.length ? Math.max(...visiblePrices) : null;
@@ -210,14 +283,14 @@ export function MiniPriceChart({
   const nowPrice = lastBar?.close ?? null;
 
   return (
-    <div className="flex flex-col h-full gap-2">
+    <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between shrink-0">
         <span className="text-[10px] text-muted uppercase tracking-wider font-medium">
           {tickerForDisplay}
         </span>
         {lastBar && (
           <span
-            className={`text-[10px] font-semibold tabular-nums ${up ? upCls : downCls}`}
+            className={`text-[10px] font-semibold tabular-nums ${up ? upText : downText}`}
           >
             {returnPct >= 0 ? "+" : ""}
             {returnPct.toFixed(1)}% since buy
@@ -252,7 +325,7 @@ export function MiniPriceChart({
           <span className="text-[10px] text-muted">
             Now{" "}
             <span
-              className={`font-mono tabular-nums font-semibold ${up ? upCls : downCls}`}
+              className={`font-mono tabular-nums font-semibold ${up ? upText : downText}`}
             >
               {fmt.formatPrice(nowPrice)}
             </span>
@@ -271,11 +344,11 @@ export function MiniPriceChart({
         </div>
       )}
 
-      <div className="flex-1 min-h-0">
+      <div className="relative w-full" style={{ height: CHART_HEIGHT }}>
         {bars.length >= 2 ? (
-          svgContent
+          <div ref={containerRef} className="h-full w-full" />
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex h-full w-full items-center justify-center">
             <span className="text-xs text-muted/50">
               {allBars.length === 0
                 ? "Loading chart…"

@@ -17,19 +17,19 @@
 
 import type { HolidaySource } from "@/lib/bank-holidays";
 import type { MarketSession } from "@/lib/market-status";
-import {
-  type EuRowGroup,
-  groupRows,
-} from "@/lib/markets/sweden";
 import type {
   MarketConfig,
   MarketDealing,
   MarketStats,
   Tone,
 } from "@/lib/markets/types";
+
+import { type EuRowGroup, groupRows } from "@/lib/markets/sweden";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { api } from "@/lib/api";
-import { normalisedDisplayName } from "@/lib/display-name";
+import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
+import { DisclosureSection } from "@/components/disclosure-section";
+import { DetailField } from "@/components/market/detail-field";
 import { PriceFormat } from "@/components/position-card";
 
 /** Euronext Amsterdam — continuous trading 09:00–17:30 Europe/Amsterdam,
@@ -221,7 +221,7 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     // AFM ISINs resolve to .AS Yahoo tickers via the same isin_tickers
     // cache as Sweden. Empty fallback keeps MarketRow's "—" treatment.
     ticker: d.ticker ?? "",
-    company: normalisedDisplayName(d.company),
+    company: stripTickerSuffix(normalisedDisplayName(d.company), d.ticker ?? ""),
     insiderName: normalisedDisplayName(d.reporter.name),
     insiderRole: translateRole(d.reporter.role),
     disclosedDate: g.disclosed_date,
@@ -311,7 +311,6 @@ function NetherlandsDetailBody({
 }) {
   const g = dealing.raw;
   const d = g.primary;
-  const action = translateNature(d.nature);
   const flags: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
   if (d.reporter.is_closely_associated)
@@ -322,25 +321,7 @@ function NetherlandsDetailBody({
   const multiLeg = g.leg_count > 1;
 
   return (
-    <div className="space-y-6">
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-        <Field label="Insider" value={normalisedDisplayName(d.reporter.name)} />
-        <Field label="Role" value={translateRole(d.reporter.role) ?? "—"} />
-        <Field label="Action" value={action.label} />
-        <Field
-          label={multiLeg ? "Total value" : "Value"}
-          value={fmtNativeMoney(g.total_value, d.currency)}
-        />
-        <Field
-          label={multiLeg ? "Total shares" : "Shares"}
-          value={g.total_shares.toLocaleString("en-GB")}
-        />
-        <Field
-          label={multiLeg ? "VWAP" : "Price"}
-          value={fmtNativePrice(g.weighted_price, d.currency)}
-        />
-      </dl>
-
+    <div className="space-y-4">
       {flags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {flags.map((f) => (
@@ -354,24 +335,26 @@ function NetherlandsDetailBody({
         </div>
       )}
 
-      <div className="rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
-        <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-2">
-          Instrument
+      <DisclosureSection title="Instrument">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <DetailField label="Type" value={d.instrument_type || "—"} />
+          <DetailField mono label="ISIN" value={d.isin || "—"} />
+          <DetailField mono label="LEI" value={d.lei} />
+          {d.venue && <DetailField label="Venue" value={d.venue} />}
+          <DetailField label="Currency" value={d.currency || "—"} />
+          <DetailField
+            label={multiLeg ? "VWAP" : "Price"}
+            value={fmtNativePrice(g.weighted_price, d.currency)}
+          />
+          <DetailField
+            label={multiLeg ? "Total value" : "Value"}
+            value={fmtNativeMoney(g.total_value, d.currency)}
+          />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-sm">
-          <Field label="Type" value={d.instrument_type || "—"} />
-          <Field mono label="ISIN" value={d.isin || "—"} />
-          <Field mono label="LEI" value={d.lei} />
-          {d.venue && <Field label="Venue" value={d.venue} />}
-          <Field label="Currency" value={d.currency || "—"} />
-        </div>
-      </div>
+      </DisclosureSection>
 
       {multiLeg && (
-        <div className="rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
-          <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-2">
-            Fills ({g.leg_count})
-          </div>
+        <DisclosureSection count={g.leg_count} title="Fills">
           <table className="w-full text-sm">
             <thead className="text-xs text-muted">
               <tr>
@@ -404,60 +387,35 @@ function NetherlandsDetailBody({
               ))}
             </tbody>
           </table>
-        </div>
+        </DisclosureSection>
       )}
 
       {d.reporter.filing_entity &&
         d.reporter.filing_entity !== d.reporter.name && (
-          <div className="rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3 text-sm">
-            <div className="text-xs uppercase tracking-wide font-semibold text-muted mb-1">
-              Closely associated with
-            </div>
-            <div className="text-foreground/85">{d.reporter.filing_entity}</div>
-            <div className="text-xs text-muted mt-1">
+          <DisclosureSection title="Closely associated with">
+            <p className="text-sm text-foreground/85">
+              {d.reporter.filing_entity}
+            </p>
+            <p className="mt-1 text-xs text-muted">
               (AFM: nauwgelieerdaan — the PDMR on whose behalf this filing was
               made)
-            </div>
-          </div>
+            </p>
+          </DisclosureSection>
         )}
 
-      <details className="text-xs text-muted">
-        <summary className="cursor-pointer hover:text-foreground transition-colors">
-          Raw filing (Dutch source fields)
-        </summary>
-        <dl className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
-          <Field label="Nature (raw)" value={d.nature} />
-          <Field label="Role (raw)" value={d.reporter.role} />
-          <Field label="Instrument (raw)" value={d.instrument_type} />
-          <Field mono label="Disclosed" value={d.disclosed_date} />
-          <Field mono label="Trade date" value={d.trade_date} />
-          <Field mono label="ID" value={d.id} />
+      <DisclosureSection title="Raw filing (Dutch source fields)">
+        <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+          <DetailField label="Nature (raw)" value={d.nature} />
+          <DetailField label="Role (raw)" value={d.reporter.role} />
+          <DetailField label="Instrument (raw)" value={d.instrument_type} />
+          <DetailField mono label="Disclosed" value={d.disclosed_date} />
+          <DetailField mono label="Trade date" value={d.trade_date} />
+          <DetailField mono label="ID" value={d.id} />
         </dl>
         <pre className="mt-3 overflow-x-auto rounded bg-black/85 dark:bg-black/60 p-3 text-[11px] text-slate-100 leading-snug">
           {JSON.stringify(d, null, 2)}
         </pre>
-      </details>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div>
-      <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-        {label}
-      </dt>
-      <dd className={`text-sm font-medium truncate ${mono ? "font-mono" : ""}`}>
-        {value}
-      </dd>
+      </DisclosureSection>
     </div>
   );
 }
