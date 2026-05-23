@@ -111,6 +111,13 @@ export function MarketPage<W>({
   const [prices, setPrices] = useState<
     Record<string, { price: number; date?: string }>
   >({});
+  /** Flips to true once the latest-prices fetch has resolved (or settled
+   *  via catch). Drives the empty-day "Biggest gainers" grid: render a
+   *  skeleton until we have prices in hand, then swap in the ranked
+   *  cells in one shot — without this the cells materialize with
+   *  value-sorted fallback ordering and then re-sort once prices land,
+   *  producing a visible jump. */
+  const [pricesLoaded, setPricesLoaded] = useState(false);
   /** Benchmark daily closes keyed by ISO date — raw values from the
    *  prices table (index points). */
   const [benchEntries, setBenchEntries] = useState<Record<string, number>>({});
@@ -201,7 +208,14 @@ export function MarketPage<W>({
       : undefined;
 
   useEffect(() => {
-    if (!livePricesEnabled) return;
+    if (!livePricesEnabled) {
+      // Sweden today — flag ready straight away so the gainers grid
+      // doesn't sit on a perpetual skeleton waiting for prices that
+      // will never arrive.
+      setPricesLoaded(true);
+
+      return;
+    }
     if (dealings.length === 0) return;
     const tickers = Array.from(
       new Set(dealings.map((d) => d.ticker).filter(Boolean)),
@@ -216,8 +230,11 @@ export function MarketPage<W>({
         for (const p of list)
           map[p.ticker] = { price: p.price_pence, date: p.date };
         setPrices(map);
+        setPricesLoaded(true);
       })
-      .catch(() => {});
+      .catch(() => {
+        setPricesLoaded(true);
+      });
   }, [dealings, config.benchmarkTicker, livePricesEnabled]);
 
   // Benchmark daily-close history — pre-loaded once per market. Kept in
@@ -667,6 +684,7 @@ export function MarketPage<W>({
           loading={loading && dealings.length === 0}
           locale={config.locale}
           recentBest={recentBestPerformingDealings}
+          recentBestReady={pricesLoaded}
           selectedKey={selectedKey}
           session={config.session}
           showLogo={logosEnabled}

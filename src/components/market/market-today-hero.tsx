@@ -44,6 +44,11 @@ interface MarketTodayHeroProps<W> {
    *  next to the anchor on empty days as the "Best this week" grid so
    *  weekends/holidays don't leave the page blank. */
   recentBest?: RecentBestEntry<W>[];
+  /** True once the live-prices fetch has settled. Until then the gainers
+   *  grid renders skeleton cells — the underlying entries arrive sorted
+   *  by value when prices are missing and then re-sort by gain as soon
+   *  as prices land, so rendering them eagerly produces a visible jump. */
+  recentBestReady?: boolean;
 }
 
 /** Today surface — section heading, then either today's deal cards
@@ -64,6 +69,7 @@ export function MarketTodayHero<W>({
   session,
   holidays: holidaySource,
   recentBest,
+  recentBestReady,
 }: MarketTodayHeroProps<W>) {
   const { title: todayTitle, meta: todayMeta } = formatToday(todayIso, locale);
   const sortedDealings = [...todayDealings].sort(compareTodayDealings);
@@ -206,6 +212,7 @@ export function MarketTodayHero<W>({
       ) : view ? (
         <EmptyDayContainer
           bestEntries={bestEntries}
+          bestReady={recentBestReady ?? true}
           fmt={fmt}
           formatTickerDisplay={formatTickerDisplay}
           selectedKey={selectedKey}
@@ -394,6 +401,7 @@ function CompactSkippedGrid<W>({
 function EmptyDayContainer<W>({
   view,
   bestEntries,
+  bestReady,
   fmt,
   formatTickerDisplay,
   selectedKey,
@@ -402,13 +410,14 @@ function EmptyDayContainer<W>({
 }: {
   view: MarketStatusView;
   bestEntries: RecentBestEntry<W>[];
+  bestReady: boolean;
   fmt: PriceFormat;
   formatTickerDisplay?: (ticker: string) => string;
   selectedKey?: string | null;
   showLogo: boolean;
   onSelect: (d: MarketDealing<W>) => void;
 }) {
-  const showGrid = bestEntries.length > 0;
+  const showGrid = bestReady ? bestEntries.length > 0 : true;
 
   return (
     <div
@@ -437,17 +446,21 @@ function EmptyDayContainer<W>({
               </span>
             </div>
             <div className="grid flex-1 grid-cols-2 gap-px bg-black/[0.06] dark:bg-white/[0.06]">
-              {bestEntries.map((entry) => (
-                <BestThisWeekCell
-                  key={entry.dealing.key}
-                  entry={entry}
-                  fmt={fmt}
-                  formatTickerDisplay={formatTickerDisplay}
-                  selected={selectedKey === entry.dealing.key}
-                  showLogo={showLogo}
-                  onSelect={() => onSelect(entry.dealing)}
-                />
-              ))}
+              {bestReady
+                ? bestEntries.map((entry) => (
+                    <BestThisWeekCell
+                      key={entry.dealing.key}
+                      entry={entry}
+                      fmt={fmt}
+                      formatTickerDisplay={formatTickerDisplay}
+                      selected={selectedKey === entry.dealing.key}
+                      showLogo={showLogo}
+                      onSelect={() => onSelect(entry.dealing)}
+                    />
+                  ))
+                : Array.from({ length: 6 }).map((_, i) => (
+                    <BestThisWeekCellSkeleton key={i} showLogo={showLogo} />
+                  ))}
             </div>
           </div>
         )}
@@ -527,6 +540,28 @@ function BestThisWeekCell<W>({
         </div>
       </div>
     </button>
+  );
+}
+
+function BestThisWeekCellSkeleton({ showLogo }: { showLogo: boolean }) {
+  return (
+    <div className="flex items-center gap-3 bg-[#faf7f2] p-3 dark:bg-surface">
+      {showLogo ? (
+        <Skeleton circle h={32} w={32} />
+      ) : (
+        <Skeleton circle h={32} w={32} />
+      )}
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <Skeleton className="h-3 w-24 rounded" />
+          <Skeleton className="h-3 w-10 rounded" />
+        </div>
+        <div className="flex items-baseline justify-between gap-2">
+          <Skeleton className="h-2.5 w-12 rounded" />
+          <Skeleton className="h-2.5 w-14 rounded" />
+        </div>
+      </div>
+    </div>
   );
 }
 
