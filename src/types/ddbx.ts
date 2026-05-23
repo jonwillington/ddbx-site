@@ -112,7 +112,14 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
     wireType: "UsDealing",
     directorIdKind: "cik",
     endpoints: {
-      dealings: "/api/us-dealings",
+      // `view=interesting` is the mechanical mask: open-market direct
+      // buy, no 10b5-1, non-derivative, value ≥ $50k. Without it the
+      // raw US stream is ~7800 Form 4 rows over the 14-day window —
+      // mostly grants / option exercises / tax withholdings — which
+      // makes the default dashboard unusable. Matches the default
+      // ddbx-site's US page picks. Clients can still pass `view=all`
+      // explicitly when they want the unfiltered stream.
+      dealings: "/api/us-dealings?view=interesting",
       directorDetail: "/api/directors/us/:id",
       news: "/api/news/us",
     },
@@ -812,6 +819,16 @@ export interface UsDealingGroup {
   transaction_code: UsTransactionCode;
   reporter_cik: string;
   reporter_name: string;
+  /** Reporter relationship checkboxes from Form 4 (parsed in
+   *  worker/pipeline/us/parse.ts:208-212). Hydrated via
+   *  json_extract on us_dealings.raw_json so triage doesn't have to
+   *  re-fetch the row. Empty array if the field is absent or the
+   *  reporter is a non-individual entity. */
+  roles: Array<"director" | "officer" | "ten_percent_owner" | "other">;
+  /** Free-text officer title from Form 4 reporter relationship
+   *  ("Chief Executive Officer", "President and CFO", etc). Null when
+   *  the reporter is not an officer or the title was not disclosed. */
+  officer_title: string | null;
   issuer_cik: string;
   ticker: string;
   company: string;
@@ -835,4 +852,10 @@ export interface UsDealingGroup {
   leg_count: number;
   triage_verdict?: UsTriageVerdict;
   triage_reason?: string;
+  /** Return at each horizon since the group's trade_date, computed off
+   *  the group's volume-weighted average entry price. Absent / empty
+   *  when no horizon has elapsed yet. Same shape as Dealing.performance
+   *  (currency-agnostic ratio). Surfaces only once
+   *  MARKET_CONFIG.US.capabilities.performance flips to true. */
+  performance?: PerformanceRow[];
 }
