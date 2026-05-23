@@ -55,10 +55,18 @@ here in the same change cycle. CI runs `check:types` to catch drift.
 ## Discretion mode (web gating)
 
 The public website intentionally shows only a sliver of the data so the iOS
-app remains the canonical surface. Toggle with `VITE_DISCRETION_MODE` —
-default is `on`; set to `off` to expose the full unblurred UX.
+app remains the canonical surface. One flag governs every gating surface
+(drawer + performance contributors) — flip it and everything follows.
 
-- **List cap**: each day shows at most 3 trade rows. Hidden trades render as `BlurredDealingRow` placeholders — the layout is identical to a real `DealingRow` but the data comes from a static `POOL` of fake FTSE-style trades, wrapped in `filter: blur(4px)` with a "See in app" pill linking to the App Store. The desktop right-drawer (narrow column) keeps the simpler `DayMoreInApp` link. Applies to today's section, per-day groupings in chronological view, and globally in by-gain view.
+**Toggle precedence** (highest wins):
+1. URL: `?discretion=on|off|reset` — `reset` clears the override, the rest stick via localStorage. Lets you flip the live site from any browser without a redeploy.
+2. localStorage: `ddbx.discretion.override` (written by the URL param).
+3. Env: `VITE_DISCRETION_MODE=off` in `.env.production`.
+
+Default is `on`; the build currently ships with the env set to `off`.
+
 - **Drawer cap**: the **first** deal opened today shows full analysis; subsequent drawers render dummy text (`src/components/discretion/dummy-analysis.ts`) under a CSS blur with a CTA overlay. Position card and price chart stay unblurred.
+- **Performance contributors**: list past the first few names blurs to nudge installs.
+- **List cap**: previously capped lists to 3 rows via `BlurredDealingRow`; component is gone and the cap is no longer enforced. `LIST_CAP=3` is still exported for future reuse.
 - **Storage**: `localStorage` key `ddbx.discretion.viewState` shaped `{ date: "YYYY-MM-DD", viewedDealIds: string[] }`. Resets at UK midnight (Europe/London).
-- **Module**: all logic lives in `src/lib/discretion.ts` (`useDiscretion` hook, `recordView`, `hasFullAccess`, `LIST_CAP`).
+- **Module**: all logic lives in `src/lib/discretion.ts` (`useDiscretion` hook, `recordView`, `hasFullAccess`, `DISCRETION_ENABLED`).

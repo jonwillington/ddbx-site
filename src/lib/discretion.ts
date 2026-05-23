@@ -1,11 +1,20 @@
 // Discretion mode — gates the public website to drive iOS app installs.
-// When enabled (default), the deals list is capped to 3 suggested deals and
-// only the FIRST drawer opened today shows full analysis; subsequent drawers
-// render dummy text under a CSS blur with an "open the app" CTA. Performance
-// data (price chart + position card) is never blurred.
+// When enabled (default), only the FIRST drawer opened today shows full
+// analysis; subsequent drawers render dummy text under a CSS blur with an
+// "open the app" CTA. The Performance tab's contributors list also caps to
+// a few unblurred names. Performance price chart + position card stay
+// unblurred regardless.
 //
-// State is persisted per market and resets at that market's midnight. Toggle
-// the whole feature with VITE_DISCRETION_MODE=off.
+// State is persisted per market and resets at that market's midnight.
+//
+// Toggle precedence (highest wins):
+//   1. URL: `?discretion=on|off|reset` (reset clears the override)
+//   2. localStorage: `ddbx.discretion.override` (written by URL param)
+//   3. Build-time env: VITE_DISCRETION_MODE=off in .env.production
+//
+// Visit `https://ddbx.uk/?discretion=off` once and the override sticks per
+// browser — no redeploy needed. `?discretion=reset` returns to the env
+// default.
 
 import { useEffect, useState } from "react";
 
@@ -13,11 +22,41 @@ const STORAGE_KEY_PREFIX = "ddbx.discretion.viewState";
 const EVENT_NAME = "ddbx:discretion:change";
 const DEFAULT_MARKET_ID = "uk";
 const DEFAULT_TIME_ZONE = "Europe/London";
+const OVERRIDE_KEY = "ddbx.discretion.override";
 
 export const LIST_CAP = 3;
 export const FREE_DRAWER_QUOTA = 1;
-export const DISCRETION_ENABLED =
-  (import.meta.env.VITE_DISCRETION_MODE as string | undefined) !== "off";
+export const DISCRETION_ENABLED = resolveDiscretionEnabled();
+
+function resolveDiscretionEnabled(): boolean {
+  const envDefault =
+    (import.meta.env.VITE_DISCRETION_MODE as string | undefined) !== "off";
+
+  if (typeof window === "undefined") return envDefault;
+
+  try {
+    const urlMode = new URLSearchParams(window.location.search).get(
+      "discretion",
+    );
+
+    if (urlMode === "on" || urlMode === "off") {
+      window.localStorage.setItem(OVERRIDE_KEY, urlMode);
+
+      return urlMode === "on";
+    }
+    if (urlMode === "reset") {
+      window.localStorage.removeItem(OVERRIDE_KEY);
+    }
+    const stored = window.localStorage.getItem(OVERRIDE_KEY);
+
+    if (stored === "on") return true;
+    if (stored === "off") return false;
+  } catch {
+    // localStorage unavailable / SSR — fall through to env default.
+  }
+
+  return envDefault;
+}
 
 interface ViewState {
   date: string;
