@@ -4,6 +4,7 @@ import type { PriceFormat } from "@/components/position-card";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
+import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
@@ -22,6 +23,7 @@ export function MarketDetailDrawer<W>({
   dealing,
   allDealings,
   onClose,
+  onSelectDealing,
   fmt,
   locale,
   DetailBody,
@@ -38,6 +40,9 @@ export function MarketDetailDrawer<W>({
    *  list is whatever the parent fetched. */
   allDealings: MarketDealing<W>[];
   onClose: () => void;
+  /** Re-target the drawer at another dealing without closing it — wired to
+   *  the RecentBuysSection rows so a related buy opens its own analysis. */
+  onSelectDealing?: (dealing: MarketDealing<W>) => void;
   fmt: PriceFormat;
   locale?: string;
   DetailBody: ComponentType<{ dealing: MarketDealing<W> }>;
@@ -65,14 +70,50 @@ export function MarketDetailDrawer<W>({
     if (dealing) setActive(dealing);
   }, [dealing]);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [scrolled, setScrolled] = useState(false);
+  // Breadcrumb stack of dealings the reader drilled into from the in-drawer
+  // "Other recent buys" links, so a back button can walk them out without
+  // closing the panel. Reset on each fresh open (closed → open); related-buy
+  // navigations keep the panel open, so they don't trip the reset.
+  const [history, setHistory] = useState<MarketDealing<W>[]>([]);
+  const prevOpenRef = useRef(false);
 
-  const handleScroll = useCallback(() => {
+  useEffect(() => {
+    if (open && !prevOpenRef.current) setHistory([]);
+    prevOpenRef.current = open;
+  }, [open]);
+
+  const handleSelectRelated = useCallback(
+    (d: MarketDealing<W>) => {
+      setHistory((h) => (active ? [...h, active] : h));
+      onSelectDealing?.(d);
+    },
+    [active, onSelectDealing],
+  );
+
+  const handleBack = useCallback(() => {
+    setHistory((h) => {
+      const prev = h[h.length - 1];
+
+      if (prev) onSelectDealing?.(prev);
+
+      return h.slice(0, -1);
+    });
+  }, [onSelectDealing]);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+  // Whether more content sits below the fold — drives the bottom "lip" fade
+  // so the user knows the panel scrolls. Default true (assume it fits) to
+  // avoid flashing the lip before the first measure.
+  const [atBottom, setAtBottom] = useState(true);
+
+  const recompute = useCallback(() => {
     const el = scrollRef.current;
 
     if (!el) return;
     setScrolled(el.scrollTop > 56);
+    setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 8);
   }, []);
 
   useEffect(() => {
@@ -81,6 +122,24 @@ export function MarketDetailDrawer<W>({
 
     if (el) el.scrollTop = 0;
   }, [active?.key]);
+
+  // Recompute the bottom-lip state when the content first mounts and whenever
+  // it resizes (the price chart + recent buys load in after open) or the
+  // panel itself is resized.
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    const content = contentRef.current;
+
+    if (!scroller || !content) return;
+
+    const ro = new ResizeObserver(() => recompute());
+
+    ro.observe(scroller);
+    ro.observe(content);
+    recompute();
+
+    return () => ro.disconnect();
+  }, [active?.key, recompute]);
 
   // Record the view on every drawer open. recordView is idempotent per
   // dealId so re-renders during the same view don't matter; the first
@@ -153,6 +212,15 @@ export function MarketDetailDrawer<W>({
                     : "border-transparent"
                 }`}
               >
+                {history.length > 0 && (
+                  <button
+                    aria-label="Back"
+                    className="shrink-0 -ml-1 flex items-center text-muted hover:text-foreground"
+                    onClick={handleBack}
+                  >
+                    <ChevronLeftIcon className="h-5 w-5" />
+                  </button>
+                )}
                 {showLogo && <CompanyLogo size={32} ticker={rawTicker} />}
                 <span className="font-mono text-xs bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded shrink-0">
                   {ticker}
@@ -180,77 +248,86 @@ export function MarketDetailDrawer<W>({
                 </button>
               </div>
 
-              <div
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto overscroll-contain"
-                onScroll={handleScroll}
-              >
-                <div className="p-5 md:p-8 space-y-6">
-                  <div className="flex items-center gap-4">
-                    {showLogo && <CompanyLogo size={56} ticker={rawTicker} />}
-                    <h1 className="text-3xl font-bold leading-tight tracking-tight flex-1 min-w-0">
-                      {company}
-                    </h1>
-                  </div>
-
-                  <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-                    <div>
-                      <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                        Insider
-                      </dt>
-                      <dd className="text-sm font-medium truncate">
-                        {insiderLine}
-                      </dd>
+              <div className="relative flex-1 min-h-0">
+                <div
+                  ref={scrollRef}
+                  className="h-full overflow-y-auto overflow-x-hidden overscroll-contain"
+                  onScroll={recompute}
+                >
+                  <div ref={contentRef} className="p-5 md:p-8 space-y-6">
+                    <div className="flex items-center gap-4">
+                      {showLogo && <CompanyLogo size={56} ticker={rawTicker} />}
+                      <h1 className="text-3xl font-bold leading-tight tracking-tight flex-1 min-w-0">
+                        {company}
+                      </h1>
                     </div>
-                    <div>
-                      <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                        Action
-                      </dt>
-                      <dd className="text-sm font-medium">
-                        {active.actionLabel}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                        Amount
-                      </dt>
-                      <dd className="text-sm font-medium">{valueLabel}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                        Shares
-                      </dt>
-                      <dd className="text-sm font-medium tabular-nums">
-                        {sharesLabel}
-                      </dd>
-                    </div>
-                  </dl>
 
-                  {DetailPosition && <DetailPosition dealing={active} />}
-
-                  <RecentBuysSection
-                    allDealings={allDealings}
-                    currentDealing={active}
-                    fmt={fmt}
-                    formatTickerDisplay={formatTickerDisplay}
-                    locale={locale}
-                  />
-
-                  {gated ? (
-                    <div className="relative">
-                      <div
-                        aria-hidden
-                        className="pointer-events-none select-none"
-                        style={{ filter: "blur(4px)" }}
-                      >
-                        <BodyComponent dealing={active} />
+                    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
+                      <div className="min-w-0">
+                        <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                          Insider
+                        </dt>
+                        <dd className="text-sm font-medium truncate">
+                          {insiderLine}
+                        </dd>
                       </div>
-                      {AnalysisOverlay && <AnalysisOverlay />}
-                    </div>
-                  ) : (
-                    <BodyComponent dealing={active} />
-                  )}
+                      <div>
+                        <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                          Action
+                        </dt>
+                        <dd className="text-sm font-medium">
+                          {active.actionLabel}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                          Amount
+                        </dt>
+                        <dd className="text-sm font-medium">{valueLabel}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                          Shares
+                        </dt>
+                        <dd className="text-sm font-medium tabular-nums">
+                          {sharesLabel}
+                        </dd>
+                      </div>
+                    </dl>
+
+                    {DetailPosition && <DetailPosition dealing={active} />}
+
+                    <RecentBuysSection
+                      allDealings={allDealings}
+                      currentDealing={active}
+                      fmt={fmt}
+                      formatTickerDisplay={formatTickerDisplay}
+                      locale={locale}
+                      onSelect={onSelectDealing ? handleSelectRelated : undefined}
+                    />
+
+                    {gated ? (
+                      <div className="relative">
+                        <div
+                          aria-hidden
+                          className="pointer-events-none select-none"
+                          style={{ filter: "blur(4px)" }}
+                        >
+                          <BodyComponent dealing={active} />
+                        </div>
+                        {AnalysisOverlay && <AnalysisOverlay />}
+                      </div>
+                    ) : (
+                      <BodyComponent dealing={active} />
+                    )}
+                  </div>
                 </div>
+                {!atBottom && (
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-12 bg-gradient-to-t from-background to-transparent"
+                  />
+                )}
               </div>
             </>
           )}

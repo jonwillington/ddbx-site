@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { marketForPath } from "@/lib/markets/registry";
+import { useMediaQuery } from "@/lib/use-media-query";
 
 /** Persistent beta/advisory badge that floats below the navbar. Lives above
  *  the route boundary so it doesn't remount when navigating between markets —
@@ -11,6 +12,7 @@ import { marketForPath } from "@/lib/markets/registry";
  *  entering/leaving a beta market animates the badge in or out. */
 export function BetaTag() {
   const { pathname } = useLocation();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const market = marketForPath(pathname);
   const notice = market.config.topNotice ?? null;
 
@@ -69,9 +71,15 @@ export function BetaTag() {
       `}</style>
       <div
         aria-live="polite"
-        className="absolute left-1/2 lg:left-[calc(50%-10rem)] top-[80px] md:top-[88px] z-30 inline-flex items-center gap-2 rounded-full border border-amber-300/40 bg-amber-100/85 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800/60 backdrop-blur-sm px-3.5 py-1 text-sm shadow-sm will-change-transform pointer-events-auto"
+        className={`absolute top-[80px] md:top-[88px] z-30 items-center gap-2 rounded-full border border-amber-300/40 bg-amber-100/85 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800/60 backdrop-blur-sm px-3.5 py-1 text-sm shadow-sm will-change-transform pointer-events-auto ${
+          isDesktop
+            ? "inline-flex left-1/2 lg:left-[calc(50%-10rem)]"
+            : "flex justify-center left-4 right-4"
+        }`}
         style={{
-          transform: `translate(-50%, ${present ? "0" : "-160%"})`,
+          transform: isDesktop
+            ? `translate(-50%, ${present ? "0" : "-160%"})`
+            : `translateY(${present ? "0" : "-160%"})`,
           opacity: present ? 1 : 0,
           transition:
             "transform 480ms cubic-bezier(0.16, 0.84, 0.34, 1), opacity 320ms ease-out",

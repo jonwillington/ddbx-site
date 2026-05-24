@@ -466,15 +466,6 @@ export function MarketRow<W>({
             ) : (
               <DeltaBadge value={stockPct!} />
             )}
-            <MarketRowSpark
-              bars={stockBars}
-              benchmarkBars={benchmarkBars}
-              chartMode={chartMode}
-              disclosedDate={dealing.disclosedDate}
-              height={18}
-              tradeDate={dealing.tradeDate}
-              width={64}
-            />
           </div>
         )}
       </div>

@@ -258,10 +258,12 @@ function computeLayout({
 }
 
 /** Eases the polyline vertices from the previously-rendered state toward
- *  the new target whenever `target` changes. Snaps (no animation) on first
- *  render and on length changes — interpolating between curves with
- *  different point counts produces visual noise that's worse than a
- *  clean cut. */
+ *  the new target whenever `target` changes. Snaps (no animation) only on
+ *  first render. When the target's vertex count differs from the current
+ *  curve — e.g. the trade↔disclosure anchor shifts the post-anchor window,
+ *  adding or dropping bars — the previous curve is resampled onto the new
+ *  count so the line *morphs* into place with the same easing an axis (Raw↔
+ *  Market) toggle gets, rather than cutting. */
 function useAnimatedPoints(
   target: [number, number][] | null,
 ): [number, number][] | null {
@@ -274,14 +276,25 @@ function useAnimatedPoints(
 
       return;
     }
-    if (!current || current.length !== target.length) {
+    if (!current) {
       setCurrent(target);
 
       return;
     }
-    if (pointsEqual(current, target)) return;
+    // Equal-length curves tween vertex-to-vertex; mismatched counts (anchor
+    // toggle) tween from a resampled copy of the previous curve so the
+    // transition stays smooth across the full width.
+    const from =
+      current.length === target.length
+        ? current
+        : resamplePoints(current, target.length);
 
-    const from = current;
+    if (pointsEqual(from, target)) {
+      if (current.length !== target.length) setCurrent(target);
+
+      return;
+    }
+
     const start = performance.now();
 
     const tick = () => {
@@ -314,6 +327,37 @@ function useAnimatedPoints(
   }, [target]);
 
   return current;
+}
+
+/** Resample a polyline to `count` vertices by walking the source at uniform
+ *  normalized-index steps and linearly interpolating between neighbours. Lets
+ *  the easing hook morph between curves whose vertex counts differ (the
+ *  anchor toggle changes how many bars fall after the anchor). x always spans
+ *  0…width in both curves, so the resampled line covers the same horizontal
+ *  range — only the shape shifts. */
+function resamplePoints(
+  src: [number, number][],
+  count: number,
+): [number, number][] {
+  if (src.length === count) return src;
+  if (src.length === 0 || count <= 0) return [];
+  if (src.length === 1 || count === 1)
+    return Array.from({ length: count }, () => src[0]);
+
+  const out: [number, number][] = [];
+
+  for (let j = 0; j < count; j++) {
+    const pos = (j / (count - 1)) * (src.length - 1);
+    const i0 = Math.floor(pos);
+    const i1 = Math.min(src.length - 1, i0 + 1);
+    const f = pos - i0;
+    const [x0, y0] = src[i0];
+    const [x1, y1] = src[i1];
+
+    out.push([x0 + (x1 - x0) * f, y0 + (y1 - y0) * f]);
+  }
+
+  return out;
 }
 
 function pointsEqual(a: [number, number][], b: [number, number][]): boolean {

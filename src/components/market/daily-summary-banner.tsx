@@ -2,6 +2,7 @@ import type { DailySummary, Dealing } from "@/types/ddbx";
 
 import { useEffect, useState } from "react";
 
+import { AppDrawer } from "@/components/app-drawer";
 import { CompanyLogo } from "@/components/company-logo";
 import { api, type DailySummaryResponse } from "@/lib/api";
 import { normalisedDisplayName } from "@/lib/display-name";
@@ -46,57 +47,30 @@ export function DailySummarySheet({ date, onClose, onSelectDeal }: SheetProps) {
     };
   }, [open, date]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-
-    window.addEventListener("keydown", onKey);
-
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
   return (
-    <>
-      <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-        onClick={onClose}
-      />
-      <aside
-        aria-hidden={!open}
-        className={`fixed top-0 right-0 h-full w-full max-w-xl bg-background border-l border-black/10 dark:border-white/10 z-50 shadow-2xl flex flex-col overflow-hidden transform transition-transform duration-200 ${open ? "translate-x-0" : "translate-x-full"}`}
-      >
-        <div className="shrink-0 flex items-center justify-between px-5 md:px-6 py-4 border-b border-black/10 dark:border-white/10">
-          <span className="text-sm font-semibold">Daily summary</span>
-          <button
-            aria-label="Close"
-            className="text-muted hover:text-foreground text-2xl leading-none px-1"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-5 md:px-6 py-5">
-          {phase.kind === "loading" && (
-            <p className="text-sm text-muted">Loading…</p>
-          )}
-          {phase.kind === "unavailable" && <Unavailable />}
-          {phase.kind === "error" && (
-            <p className="text-sm text-rose-600 dark:text-rose-400">
-              Couldn't load summary: {phase.msg}
-            </p>
-          )}
-          {phase.kind === "ready" && (
-            <SummaryBody
-              cited={phase.resp.cited}
-              summary={phase.resp.summary}
-              onSelectDeal={onSelectDeal}
-            />
-          )}
-        </div>
-      </aside>
-    </>
+    <AppDrawer
+      maxWidthClass="max-w-xl"
+      open={open}
+      title="Daily summary"
+      onClose={onClose}
+    >
+      {phase.kind === "loading" && (
+        <p className="text-sm text-muted">Loading…</p>
+      )}
+      {phase.kind === "unavailable" && <Unavailable />}
+      {phase.kind === "error" && (
+        <p className="text-sm text-rose-600 dark:text-rose-400">
+          Couldn&apos;t load summary: {phase.msg}
+        </p>
+      )}
+      {phase.kind === "ready" && (
+        <SummaryBody
+          cited={phase.resp.cited}
+          summary={phase.resp.summary}
+          onSelectDeal={onSelectDeal}
+        />
+      )}
+    </AppDrawer>
   );
 }
 

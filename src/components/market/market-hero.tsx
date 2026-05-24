@@ -11,7 +11,17 @@
  *  every market — the optional beta notice is rendered absolutely at the
  *  top so it doesn't push the headline around, and slides in instead of
  *  popping when the user navigates to a beta market. */
-export function MarketHero({ marketLabel }: { marketLabel: string }) {
+export function MarketHero({
+  marketLabel,
+  hasTopNotice = false,
+}: {
+  marketLabel: string;
+  /** When the market carries a beta/advisory notice, the floating <BetaTag/>
+   *  sits at the top of the hero. Desktop has room to spare; on the compact
+   *  mobile hero the badge would land on the headline, so we reserve top
+   *  space for it here. */
+  hasTopNotice?: boolean;
+}) {
   return (
     <header className="relative w-screen left-1/2 -translate-x-1/2 -mt-4 md:-mt-6 min-h-[120px] md:min-h-[380px] flex flex-col overflow-hidden animate-content-in">
       <style>{`
@@ -391,7 +401,11 @@ export function MarketHero({ marketLabel }: { marketLabel: string }) {
 
       </div>
 
-      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 md:py-16 text-center">
+      <div
+        className={`relative z-10 flex-1 flex items-center justify-center px-4 md:py-16 text-center ${
+          hasTopNotice ? "pt-16 pb-6" : "py-6"
+        }`}
+      >
         <h2
           className="mx-auto text-balance text-[26px] font-semibold tracking-tight leading-[1.1] md:text-[52px] md:leading-[1.05]"
           style={{ maxWidth: 550 }}

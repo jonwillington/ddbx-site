@@ -1,7 +1,7 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { XMarkIcon } from "@heroicons/react/24/outline";
 
+import { AppDrawer } from "@/components/app-drawer";
 import { Navbar } from "@/components/navbar";
 import { AppStoreBadge } from "@/components/app-store-badge";
 
@@ -27,6 +27,13 @@ function pathToLegalPage(pathname: string): LegalPage {
   return null;
 }
 
+const LEGAL_TITLES: Record<Exclude<LegalPage, null>, string> = {
+  privacy: "Privacy Policy",
+  cookies: "Cookie Policy",
+  terms: "Terms & Conditions",
+  contact: "Contact",
+};
+
 function LegalDrawer({
   page,
   onClose,
@@ -34,63 +41,19 @@ function LegalDrawer({
   page: LegalPage;
   onClose: () => void;
 }) {
-  const open = page !== null;
-
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-
-    document.addEventListener("keydown", handler);
-
-    return () => document.removeEventListener("keydown", handler);
-  }, [open, onClose]);
-
-  // Lock body scroll while open
-  useEffect(() => {
-    if (open) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
-
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className={`fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-        onClick={onClose}
-      />
-      {/* Drawer panel */}
-      <div
-        className={`fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[#f5f0e8] dark:bg-background shadow-2xl transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
-      >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-separator">
-          <h2 className="text-lg font-semibold">
-            {page === "privacy" && "Privacy Policy"}
-            {page === "cookies" && "Cookie Policy"}
-            {page === "terms" && "Terms & Conditions"}
-            {page === "contact" && "Contact"}
-          </h2>
-          <button
-            className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-            onClick={onClose}
-          >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="overflow-y-auto h-[calc(100%-65px)] px-6 py-6 text-sm leading-relaxed text-foreground/70 space-y-4">
-          {page === "privacy" && <PrivacyContent />}
-          {page === "cookies" && <CookieContent />}
-          {page === "terms" && <TermsContent />}
-          {page === "contact" && <ContactContent />}
-        </div>
-      </div>
-    </>
+    <AppDrawer
+      bodyClassName="px-6 py-6 text-sm leading-relaxed text-foreground/70 space-y-4"
+      maxWidthClass="max-w-lg"
+      open={page !== null}
+      title={page ? LEGAL_TITLES[page] : ""}
+      onClose={onClose}
+    >
+      {page === "privacy" && <PrivacyContent />}
+      {page === "cookies" && <CookieContent />}
+      {page === "terms" && <TermsContent />}
+      {page === "contact" && <ContactContent />}
+    </AppDrawer>
   );
 }
 

@@ -1,6 +1,7 @@
 import type {
   IChartApi,
   ISeriesApi,
+  MouseEventParams,
   SeriesMarker,
   Time,
 } from "lightweight-charts";
@@ -11,6 +12,7 @@ import {
   AreaSeries,
   ColorType,
   LineStyle,
+  TrackingModeExitMode,
   createChart,
   createSeriesMarkers,
 } from "lightweight-charts";
@@ -31,6 +33,14 @@ const PERIODS: { key: Period; label: string }[] = [
 const PRE_BUY_CONTEXT_DAYS = 5;
 
 const CHART_HEIGHT = 168;
+
+/** Marker `size` multipliers. lightweight-charts scales a circle's radius by
+ *  `clamp(barSpacing, 12, 30) · size · 0.8`; with only a handful of bars the
+ *  spacing caps at 30, so the default size 1 renders an oversized ~24px dot
+ *  that dominates the line. ~0.5 brings the trade/disclosure markers down to
+ *  a restrained ~12px. */
+const TRADE_MARKER_SIZE = 0.6;
+const DISCLOSED_MARKER_SIZE = 0.5;
 
 /** Inline price chart for one dealing. Renders via TradingView's
  *  lightweight-charts (Canvas) — gives crisp lines, built-in crosshair,
@@ -66,6 +76,11 @@ export function MiniPriceChart({
 }) {
   const [period, setPeriod] = useState<Period>("around");
   const [allBars, setAllBars] = useState<{ date: string; close: number }[]>([]);
+  // Price + date under the crosshair while the user scrubs (hover on desktop,
+  // touch-drag on mobile via tracking mode). null when the pointer is away.
+  const [scrub, setScrub] = useState<{ value: number; time: string } | null>(
+    null,
+  );
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
@@ -171,7 +186,9 @@ export function MiniPriceChart({
         borderVisible: false,
         fixLeftEdge: true,
         fixRightEdge: true,
-        rightOffset: 2,
+        // No trailing gap — the line runs flush to both edges so the chart
+        // reads edge-to-edge inside its card.
+        rightOffset: 0,
       },
       rightPriceScale: {
         borderVisible: false,
@@ -196,6 +213,9 @@ export function MiniPriceChart({
       },
       handleScroll: false,
       handleScale: false,
+      // Pan/zoom are off, so on touch a press-and-drag drives the crosshair
+      // (scrub) instead of scrolling; lift the finger to clear it.
+      trackingMode: { exitMode: TrackingModeExitMode.OnTouchEnd },
     });
 
     const series = chart.addSeries(AreaSeries, {
@@ -235,6 +255,7 @@ export function MiniPriceChart({
         position: "inBar",
         color: lineColor,
         shape: "circle",
+        size: TRADE_MARKER_SIZE,
       });
     }
     if (disclosedDate && disclosedDate !== tradeDate) {
@@ -246,6 +267,7 @@ export function MiniPriceChart({
           position: "inBar",
           color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.45)",
           shape: "circle",
+          size: DISCLOSED_MARKER_SIZE,
         });
       }
     }
@@ -257,6 +279,19 @@ export function MiniPriceChart({
 
     chartRef.current = chart;
     seriesRef.current = series;
+
+    // Scrub readout — report the close under the crosshair as the user hovers
+    // (desktop) or drags (mobile). seriesData holds the bar at the pointer;
+    // an undefined time means the pointer left the plot, so clear.
+    const onCrosshairMove = (param: MouseEventParams<Time>) => {
+      const data = param.time ? param.seriesData.get(series) : undefined;
+      const value =
+        data && "value" in data ? (data.value as number) : undefined;
+
+      setScrub(value != null ? { value, time: String(param.time) } : null);
+    };
+
+    chart.subscribeCrosshairMove(onCrosshairMove);
 
     const ro = new ResizeObserver(() => {
       const c = containerRef.current;
@@ -270,9 +305,11 @@ export function MiniPriceChart({
 
     return () => {
       ro.disconnect();
+      chart.unsubscribeCrosshairMove(onCrosshairMove);
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
+      setScrub(null);
     };
   }, [
     bars,
@@ -383,7 +420,9 @@ export function MiniPriceChart({
         )}
       </div>
 
-      <div className="relative w-full" style={{ height: CHART_HEIGHT }}>
+      {/* Bleed past the card's p-4 so the plot runs edge-to-edge. The meta
+          rows above stay padded; only the canvas reaches the card borders. */}
+      <div className="relative -mx-4" style={{ height: CHART_HEIGHT }}>
         {bars.length >= 2 ? (
           <div ref={containerRef} className="h-full w-full" />
         ) : (
@@ -392,6 +431,20 @@ export function MiniPriceChart({
               {allBars.length === 0
                 ? "Loading chart…"
                 : "No data for this period"}
+            </span>
+          </div>
+        )}
+        {scrub && (
+          <div className="pointer-events-none absolute left-4 top-1 z-10 flex items-baseline gap-2 rounded-md border border-black/[0.06] bg-background/90 px-2 py-1 shadow-sm backdrop-blur-sm dark:border-white/[0.08]">
+            <span className="text-[10px] text-muted tabular-nums">
+              {formatShort(scrub.time)}
+            </span>
+            <span
+              className={`font-mono text-[12px] font-semibold tabular-nums ${
+                scrub.value >= entryPrice ? upText : downText
+              }`}
+            >
+              {fmt.formatPrice(scrub.value)}
             </span>
           </div>
         )}

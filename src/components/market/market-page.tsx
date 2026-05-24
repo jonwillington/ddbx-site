@@ -635,7 +635,10 @@ export function MarketPage<W>({
             because the hero IS the page heading. Per-market beta notice
             renders via <BetaTag/> in App.tsx so it persists across route
             changes instead of remounting with each MarketHero. */}
-        <MarketHero marketLabel={config.marketLabel} />
+        <MarketHero
+          hasTopNotice={!!config.topNotice}
+          marketLabel={config.marketLabel}
+        />
 
         {config.views.length > 1 && (
           <div
@@ -958,6 +961,7 @@ export function MarketPage<W>({
         locale={config.locale}
         showLogo={logosEnabled}
         onClose={() => setSelectedKey(null)}
+        onSelectDealing={(d) => setSelectedKey(d.key)}
       />
 
       <DailySummarySheet

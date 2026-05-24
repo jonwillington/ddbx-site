@@ -9,6 +9,7 @@ import type {
 
 import { useEffect, useState } from "react";
 
+import { AppDrawer } from "@/components/app-drawer";
 import {
   PerformanceChart,
   pctAtIndex,
@@ -30,62 +31,31 @@ export function SectorDrilldownSheet({ sector, viewMode, onClose }: Props) {
   const [scrubIdx, setScrubIdx] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-
-    window.addEventListener("keydown", onKey);
-
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
-
-  useEffect(() => {
     setScrubIdx(null);
   }, [sector]);
 
   return (
-    <>
-      <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity ${
-          open ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-        onClick={onClose}
-      />
-      <div
-        aria-label={sector ? `${sector.sector} — backtest` : "Sector backtest"}
-        aria-modal="true"
-        className={`fixed z-50 left-1/2 -translate-x-1/2 bg-background border border-black/10 dark:border-white/10
-          shadow-2xl rounded-xl flex flex-col overflow-hidden
-          w-[calc(100%-2rem)] max-w-2xl
-          top-1/2 -translate-y-1/2
-          max-h-[85vh]
-          transition-opacity duration-150
-          ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-        role="dialog"
-      >
-        {sector && (
-          <Body
-            scrubIdx={scrubIdx}
-            sector={sector}
-            setScrubIdx={setScrubIdx}
-            viewMode={viewMode}
-            onClose={onClose}
-          />
-        )}
-      </div>
-    </>
+    <AppDrawer
+      open={open}
+      subtitle={
+        sector
+          ? `${sector.result.dealCount} deal${
+              sector.result.dealCount === 1 ? "" : "s"
+            } backtested`
+          : undefined
+      }
+      title={sector ? sector.sector : "Sector backtest"}
+      onClose={onClose}
+    >
+      {sector && (
+        <Body
+          scrubIdx={scrubIdx}
+          sector={sector}
+          setScrubIdx={setScrubIdx}
+          viewMode={viewMode}
+        />
+      )}
+    </AppDrawer>
   );
 }
 
@@ -94,13 +64,11 @@ function Body({
   viewMode,
   scrubIdx,
   setScrubIdx,
-  onClose,
 }: {
   sector: SectorResult;
   viewMode: PerformanceViewMode;
   scrubIdx: number | null;
   setScrubIdx: (i: number | null) => void;
-  onClose: () => void;
 }) {
   const alpha = alphaReturnPct(sector.result) * 100;
   const stratPct = strategyReturnPct(sector.result);
@@ -115,27 +83,8 @@ function Body({
     scrubIdx != null ? (sector.result.strategy[scrubIdx]?.date ?? null) : null;
 
   return (
-    <>
-      <div className="shrink-0 flex items-start justify-between gap-4 px-5 py-3.5 border-b border-black/[0.06] dark:border-white/[0.06]">
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold truncate">{sector.sector}</h2>
-          <p className="text-xs text-muted mt-0.5">
-            {sector.result.dealCount} deal
-            {sector.result.dealCount === 1 ? "" : "s"} backtested
-          </p>
-        </div>
-        <button
-          aria-label="Close"
-          className="shrink-0 text-muted hover:text-foreground text-2xl leading-none px-1"
-          type="button"
-          onClick={onClose}
-        >
-          ×
-        </button>
-      </div>
-
-      <div className="overflow-y-auto px-5 py-4 space-y-4">
-        <div className="grid grid-cols-3 gap-3 text-center">
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3 text-center">
           <Stat label="Picks" muted={false} value={formatPct(stratPct)} />
           <Stat muted label="Benchmark" value={formatPct(benchPct)} />
           <Stat
@@ -172,7 +121,6 @@ function Body({
           />
         </div>
       </div>
-    </>
   );
 }
 
