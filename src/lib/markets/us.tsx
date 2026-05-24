@@ -385,7 +385,6 @@ function UsDetailPosition({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
     price: number;
     date: string;
   } | null>(null);
-  const [fxRates, setFxRates] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!ticker) return;
@@ -412,28 +411,12 @@ function UsDetailPosition({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
     };
   }, [ticker]);
 
-  useEffect(() => {
-    api
-      .gbpPerUsdHistory(730)
-      .then((rates) => {
-        const map: Record<string, number> = {};
-
-        for (const r of rates) map[r.date] = r.gbp_per_usd;
-        setFxRates(map);
-      })
-      .catch(() => setFxRates({}));
-  }, []);
-
   if (entryPrice == null) return null;
-  const normalizeUsdClose = (closePence: number, date: string) => {
-    const fx = fxRates[date];
-
-    return fx && fx > 0 ? closePence / (fx * 100) : null;
-  };
+  // price_pence is native USD cents; recover dollars with /100 (see the
+  // market config's normalizeLivePrice note — no FX involved).
+  const normalizeUsdClose = (closePence: number) => closePence / 100;
   const currentUsd =
-    currentPrice != null
-      ? normalizeUsdClose(currentPrice.price, currentPrice.date)
-      : null;
+    currentPrice != null ? normalizeUsdClose(currentPrice.price) : null;
 
   return (
     <div className="mb-4 space-y-4">
@@ -635,15 +618,13 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   locale: "en-US",
   topNotice: "The US is in BETA currently.",
   priceFormat: USD_FORMAT,
-  // The shared prices table stores USD equities as GBP-equivalent pence
-  // (USD close * GBP/USD * 100). Convert back to native USD before comparing
-  // against Form 4 entry prices, which are disclosed in dollars.
-  usesGbpPerUsdFx: true,
-  normalizeLivePrice: (close_pence, date, fxRates) => {
-    const fx = date ? fxRates?.[date] : undefined;
-
-    return fx && fx > 0 ? close_pence / (fx * 100) : null;
-  },
+  // The prices API returns native USD already: `price_pence` is the minor
+  // unit (cents = USD * 100), NOT GBP-equivalent pence. So recover native
+  // dollars with a plain /100 — Form 4 entry prices are also in dollars, so
+  // the return % compares like with like. (Earlier code divided by fx*100 on
+  // the false assumption that cents were GBP pence, inflating every US move
+  // by ~1/gbp_per_usd ≈ 1.34x.)
+  normalizeLivePrice: (close_pence) => close_pence / 100,
   benchmarkTicker: SPY_TICKER,
   benchmarkLabel: SPY_LABEL,
   formatTickerDisplay: (ticker) => ticker,
