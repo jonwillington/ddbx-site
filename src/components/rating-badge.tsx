@@ -38,7 +38,9 @@ export function RatingBadge({
   return (
     <span
       className={clsx(
-        "inline-flex items-center justify-center w-32 rounded-md border py-2 text-sm font-semibold",
+        // Mobile: a light auto-width pill so it reads as a tag, not a block.
+        // md+: the original fixed-width boxed badge (desktop unchanged).
+        "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium md:w-32 md:rounded-md md:px-0 md:py-2 md:text-sm md:font-semibold",
         STYLES[normalized] ??
           "bg-neutral-500/15 text-neutral-400 border-neutral-500/30",
         className,

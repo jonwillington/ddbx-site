@@ -13,7 +13,7 @@
  *  popping when the user navigates to a beta market. */
 export function MarketHero({ marketLabel }: { marketLabel: string }) {
   return (
-    <header className="relative w-screen left-1/2 -translate-x-1/2 -mt-4 md:-mt-6 min-h-[300px] md:min-h-[380px] flex flex-col overflow-hidden animate-content-in">
+    <header className="relative w-screen left-1/2 -translate-x-1/2 -mt-4 md:-mt-6 min-h-[120px] md:min-h-[380px] flex flex-col overflow-hidden animate-content-in">
       <style>{`
         @keyframes hero-spotlight-breathe {
           0%, 100% { opacity: 0.85; transform: scale(1); }
@@ -86,6 +86,12 @@ export function MarketHero({ marketLabel }: { marketLabel: string }) {
         }
       `}</style>
 
+      {/* Decorative backdrop + side panels — md+ only. On mobile the hero
+          collapses to a compact headline on the plain page colour; the
+          animated atmosphere felt heavy in the small viewport. This wrapper
+          is position:static so its absolute children still anchor to the
+          <header> and keep their z-order relative to the headline. */}
+      <div aria-hidden className="hidden md:block">
       {/* Atmospheric backdrop — order matters. Warm floor sits behind so
           the shimmer + spotlight feel like they're cast on a surface; the
           vignette goes last so light falls off toward the corners. */}
@@ -383,9 +389,11 @@ export function MarketHero({ marketLabel }: { marketLabel: string }) {
         />
       </div>
 
-      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-10 md:py-16 text-center">
+      </div>
+
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-6 md:py-16 text-center">
         <h2
-          className="mx-auto text-balance text-3xl font-semibold tracking-tight leading-[1.05] md:text-[52px]"
+          className="mx-auto text-balance text-[26px] font-semibold tracking-tight leading-[1.1] md:text-[52px] md:leading-[1.05]"
           style={{ maxWidth: 550 }}
         >
           Which directors have been buying shares in{" "}

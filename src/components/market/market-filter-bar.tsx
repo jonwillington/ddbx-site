@@ -4,6 +4,8 @@ import type { SignalFilterValue } from "@/lib/markets/types";
 import { ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
 
+import { MarketFiltersSheet } from "./market-filters-sheet";
+
 export type MarketViewMode = "chronological" | "by-gain";
 
 /** Lean shape MarketFilterBar needs to render its dropdowns. Predicates and
@@ -21,7 +23,7 @@ export interface FilterSelectOption {
 /** Legacy alias kept so older imports compile while callers migrate. */
 export type HeroFilterOption = FilterSelectOption;
 
-const SIGNAL_FILTER_OPTIONS: FilterSelectOption[] = [
+export const SIGNAL_FILTER_OPTIONS: FilterSelectOption[] = [
   {
     id: "signal",
     label: "Signal",
@@ -32,6 +34,11 @@ const SIGNAL_FILTER_OPTIONS: FilterSelectOption[] = [
     label: "All",
     description: "Every disclosed filing, including routine and unrated.",
   },
+];
+
+export const VIEW_OPTIONS: FilterSelectOption[] = [
+  { id: "chronological", label: "Chronological" },
+  { id: "by-gain", label: "By gain" },
 ];
 
 /** Filter strip rendered above the month list (and inside the by-gain view).
@@ -67,10 +74,6 @@ export function MarketFilterBar({
    *  chart-mode toggle. */
   trailing?: ReactNode;
 }) {
-  const viewOptions: FilterSelectOption[] = [
-    { id: "chronological", label: "Chronological" },
-    { id: "by-gain", label: "By gain" },
-  ];
   const showStrength =
     signalFilter !== "all" &&
     !!heroFilters &&
@@ -78,37 +81,57 @@ export function MarketFilterBar({
     !!onHeroFilterChange;
 
   return (
-    <div className="flex flex-wrap items-center gap-3 bg-[#faf7f2] dark:bg-surface px-5 py-3.5">
+    <div className="flex items-center gap-3 bg-[#faf7f2] dark:bg-surface px-5 py-3.5">
       <input
-        className="w-72 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-[#6b5038]/50 transition-colors"
+        className="flex-1 min-w-0 lg:flex-none lg:w-72 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-[#6b5038]/50 transition-colors"
         placeholder={searchPlaceholder}
         type="text"
         value={search}
         onChange={(e) => onSearch(e.target.value)}
       />
-      <FilterSelect
-        label="View"
-        options={viewOptions}
-        value={viewMode}
-        onChange={(id) => onViewMode(id as MarketViewMode)}
-      />
-      {signalFilter !== undefined && onSignalFilterChange && (
+
+      {/* Desktop: filters laid out inline. Below lg they collapse into the
+          bottom sheet so the bar stays a single clean row on mobile. */}
+      <div className="hidden lg:flex flex-1 min-w-0 items-center gap-3">
         <FilterSelect
-          label="Filter"
-          options={SIGNAL_FILTER_OPTIONS}
-          value={signalFilter}
-          onChange={(id) => onSignalFilterChange(id as SignalFilterValue)}
+          label="View"
+          options={VIEW_OPTIONS}
+          value={viewMode}
+          onChange={(id) => onViewMode(id as MarketViewMode)}
         />
-      )}
-      {showStrength && (
-        <FilterSelect
-          label="Strength"
-          options={heroFilters!}
-          value={heroFilterId ?? heroFilters![0]?.id ?? ""}
-          onChange={onHeroFilterChange!}
+        {signalFilter !== undefined && onSignalFilterChange && (
+          <FilterSelect
+            label="Filter"
+            options={SIGNAL_FILTER_OPTIONS}
+            value={signalFilter}
+            onChange={(id) => onSignalFilterChange(id as SignalFilterValue)}
+          />
+        )}
+        {showStrength && (
+          <FilterSelect
+            label="Strength"
+            options={heroFilters!}
+            value={heroFilterId ?? heroFilters![0]?.id ?? ""}
+            onChange={onHeroFilterChange!}
+          />
+        )}
+        {trailing && <div className="ml-auto">{trailing}</div>}
+      </div>
+
+      {/* Mobile: one button opens a bottom sheet holding every filter. */}
+      <div className="lg:hidden shrink-0">
+        <MarketFiltersSheet
+          heroFilterId={heroFilterId}
+          heroFilters={heroFilters}
+          showStrength={showStrength}
+          signalFilter={signalFilter}
+          trailing={trailing}
+          viewMode={viewMode}
+          onHeroFilterChange={onHeroFilterChange}
+          onSignalFilterChange={onSignalFilterChange}
+          onViewMode={onViewMode}
         />
-      )}
-      {trailing && <div className="ml-auto">{trailing}</div>}
+      </div>
     </div>
   );
 }
