@@ -144,13 +144,23 @@ export const api = {
     return (await res.json()) as EuScrapeResult;
   },
   euDealings: (
-    opts: { limit?: number; since?: string; market?: "SE" | "NL" } = {},
+    opts: {
+      limit?: number;
+      since?: string;
+      market?: "SE" | "NL";
+      /** Curated view. "interesting" = mechanical eligible set (open-market
+       *  buy/sell above the per-market noise floor, off-exchange/zero-price/
+       *  amendment/programme stripped via is_open_market_buy). "signal" adds a
+       *  Haiku triage verdict of maybe/promising. Omit / "all" = raw feed. */
+      view?: "interesting" | "signal" | "all";
+    } = {},
   ) => {
     const qs = new URLSearchParams();
 
     if (opts.limit != null) qs.set("limit", String(opts.limit));
     if (opts.since) qs.set("since", opts.since);
     if (opts.market) qs.set("market", opts.market);
+    if (opts.view) qs.set("view", opts.view);
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
 
     return get<{ dealings: EuDealing[]; stats: EuDealingsStats }>(

@@ -467,9 +467,11 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   // HEIA resolve cleanly; smaller AMX / AScX names return placeholders).
   // Leaving off until either a Euronext logo source or vendor logos.
   enableLogos: false,
-  // Single view: pull the raw set so Today shows every disclosure. The
-  // Signal/All narrowing now lives in the filter bar's Filter dropdown
-  // (client-side), shared with every other market.
+  // Fetch the server-side eligible set (view=interesting), matching the US
+  // page's curation: the worker strips off-exchange transfers / settlements
+  // (is_open_market_buy), zero-price, amendments, programme drips and
+  // sub-floor noise before it reaches the client. The Signal/All narrowing
+  // in the filter bar's Filter dropdown then operates on this clean set.
   views: [{ id: "all", label: "All" }],
   defaultView: "all",
   heroFilters: defaultRatingHeroFilters<EuRowGroup>(),
@@ -477,7 +479,7 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   defaultSignalFilter: "all",
   pollIntervalMs: 60_000,
   async fetchDealings() {
-    const r = await api.euDealings({ market: "NL", limit: 500 });
+    const r = await api.euDealings({ market: "NL", limit: 500, view: "interesting" });
     const groups = groupRows(r.dealings);
     const stats: MarketStats = {
       total: groups.length,

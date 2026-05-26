@@ -540,9 +540,11 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   // bytes (verified 2026-05-20). Suppressing the bubble keeps the row clean
   // until we either find a Nordic logo source or vendor logos ourselves.
   enableLogos: false,
-  // Single view: pull the raw set so Today shows every disclosure. The
-  // Signal/All narrowing now lives in the filter bar's Filter dropdown
-  // (client-side), shared with every other market.
+  // Fetch the server-side eligible set (view=interesting), matching the US
+  // page's curation: the worker strips off-exchange transfers / settlements
+  // (is_open_market_buy), zero-price, amendments, programme drips and
+  // sub-floor noise before it reaches the client. The Signal/All narrowing
+  // in the filter bar's Filter dropdown then operates on this clean set.
   views: [{ id: "all", label: "All" }],
   defaultView: "all",
   heroFilters: defaultRatingHeroFilters<EuRowGroup>(),
@@ -550,7 +552,7 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   defaultSignalFilter: "all",
   pollIntervalMs: 60_000,
   async fetchDealings() {
-    const r = await api.euDealings({ market: "SE", limit: 500 });
+    const r = await api.euDealings({ market: "SE", limit: 500, view: "interesting" });
     const groups = groupRows(r.dealings);
     const stats: MarketStats = {
       // viewCounts now report logical-event counts (post-collapse), which is
