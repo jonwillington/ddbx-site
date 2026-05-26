@@ -793,6 +793,13 @@ export interface EuDealing {
    *  exists. Same {skip,maybe,promising} shape as the UK and US layers.
    *  Optional — null/absent on rows we haven't triaged yet. */
   triage?: { verdict: EuTriageVerdict; reason: string };
+
+  /** Opus deep analysis, attached at read time when the eu_analyses row
+   *  exists. Same Analysis payload as the UK (`Dealing.analysis`) and US
+   *  (`UsDealing.analysis`) layers. Absent on rows that triaged below the
+   *  analyse threshold or haven't been analysed yet. Clients gate on
+   *  MARKET_CONFIG[market].capabilities.analysis before surfacing it. */
+  analysis?: Analysis;
 }
 
 export type EuTriageVerdict = "skip" | "maybe" | "promising";
