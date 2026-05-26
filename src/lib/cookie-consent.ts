@@ -1,16 +1,21 @@
-// Cookie consent — gates Google Analytics behind explicit acceptance.
+// Analytics + cookie consent.
 //
-// Until the user clicks "Agree", no Google scripts are loaded and no
-// `window.gtag` is defined, so the optional-chained `gtag?.()` calls in
-// DocumentTitle become no-ops. On consent, we bootstrap GA4 (per-domain
-// measurement ID) and fire a page_view for the current location so the
-// initial visit isn't lost.
+// GA4 loads unconditionally on app start (per-domain measurement ID) via
+// `bootstrapAnalytics`, called from main.tsx — see that file. Page views are
+// owned by DocumentTitle, which fires the initial view once `window.gtag` is
+// defined and then one per SPA navigation. `config` uses `send_page_view:
+// false` so gtag.js doesn't double-count.
+//
+// The cookie banner now gates only the X (Twitter) ads pixel, which loads on
+// explicit acceptance.
 //
 // Toggle precedence (highest wins):
 //   1. URL: `?cookies=reset` clears the saved choice (handy for testing).
 //   2. localStorage: `ddbx.cookies.consent` ("accepted" or absent).
 
 import { useEffect, useState } from "react";
+
+import { marketForPath } from "@/lib/markets/registry";
 
 const STORAGE_KEY = "ddbx.cookies.consent";
 const EVENT_NAME = "ddbx:cookies:change";
@@ -61,29 +66,29 @@ function readStored(): ConsentStatus {
   }
 }
 
-function bootstrapAnalytics(): void {
+export function bootstrapAnalytics(): void {
   if (typeof window === "undefined") return;
   if (window.__DDBX_GA_BOOTSTRAPPED) return;
 
   const host = (window.location.hostname || "").toLowerCase();
   const measurementId = GA_IDS[host] || FALLBACK_GA_ID;
+  const market = marketForPath(window.location.pathname, host).id;
 
   window.__DDBX_GA_MEASUREMENT_ID = measurementId;
   window.__DDBX_GA_BOOTSTRAPPED = true;
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer!.push(args);
+  // gtag.js only processes dataLayer entries that are `arguments` objects as
+  // commands — pushing a plain Array (e.g. via rest params) is silently
+  // ignored, so GA never initialises. Use the canonical `arguments` form.
+  window.gtag = function gtag() {
+    window.dataLayer!.push(arguments);
   };
   window.gtag("js", new Date());
   window.gtag("config", measurementId, { send_page_view: false });
-  // DocumentTitle won't re-run on consent, so fire the current page_view here.
-  window.gtag("event", "page_view", {
-    page_title: document.title,
-    page_path:
-      window.location.pathname + window.location.search + window.location.hash,
-    page_location: window.location.href,
-    host,
-  });
+  window.gtag("set", "user_properties", { market, host });
+  // The initial page_view is fired by DocumentTitle's mount effect (gtag is
+  // defined by the time React mounts, since this runs at module load), so we
+  // don't fire one here — doing so would double-count the landing page.
 
   const script = document.createElement("script");
 
