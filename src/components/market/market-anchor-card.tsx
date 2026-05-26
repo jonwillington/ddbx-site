@@ -50,14 +50,16 @@ export function useMarketStatusView(
   return describeStatus(status, session);
 }
 
-/** Standalone bordered anchor — used above today's deal cards on busy
- *  days. On empty days the Today hero instead drops this card's content
- *  into a shared container with the gainers grid, via
+/** Standalone bordered anchor — rides as the first card in today's deal
+ *  grid on busy days (pinned ahead of the deals), so it reads as one card
+ *  in the row rather than a full-width banner. Padding matches the deal
+ *  cards (p-5/p-6). On empty days the Today hero instead drops this card's
+ *  content into a shared container with the gainers grid, via
  *  `MarketAnchorPanel`. */
 export function MarketAnchorCard({ view }: { view: MarketStatusView }) {
   return (
     <div
-      className={`relative flex h-full flex-col overflow-hidden rounded-xl border p-6 transition-colors md:p-8 ${
+      className={`relative flex h-full flex-col overflow-hidden rounded-xl border p-5 transition-colors md:p-6 ${
         view.isLive
           ? "border-[#2E7D32]/30 bg-[#2E7D32]/[0.06] dark:bg-[#2E7D32]/[0.15]"
           : "border-black/[0.08] bg-[#faf7f2] dark:border-white/[0.08] dark:bg-surface"

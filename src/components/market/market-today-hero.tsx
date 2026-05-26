@@ -147,18 +147,24 @@ export function MarketTodayHero<W>({
 
       {todayDealings.length > 0 ? (
         <>
-          {view && (
-            <div
-              className="animate-today-hero-item mb-5"
-              style={{ animationDelay: todayHeroDelay(1) }}
-            >
-              <MarketAnchorCard view={view} />
-            </div>
-          )}
           {/* Mobile: snap carousel so a busy day doesn't push the table
               1800px down the page — peek the next card at the right edge to
-              signal swipe. lg+: spreads to a tidy two/three-up grid. */}
+              signal swipe. lg+: spreads to a tidy two/three-up grid. The
+              market-status anchor rides along as the first card (pinned
+              ahead of the deals) rather than a full-width banner — so once
+              there's at least one deal, "Scanning the market" is just one
+              card in the row. */}
           <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:-mx-6 md:px-6 lg:mx-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0 2xl:grid-cols-3">
+            {view && (
+              <div className="w-[80%] shrink-0 snap-start lg:w-auto lg:shrink">
+                <div
+                  className="animate-today-hero-item h-full"
+                  style={{ animationDelay: todayHeroDelay(1) }}
+                >
+                  <MarketAnchorCard view={view} />
+                </div>
+              </div>
+            )}
             {mainDealings.map((d, index) => (
               <div
                 key={d.key}
