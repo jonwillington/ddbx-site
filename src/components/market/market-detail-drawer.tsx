@@ -272,7 +272,7 @@ export function MarketDetailDrawer<W>({
                       </h1>
                     </div>
 
-                    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
+                    <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
                       <div className="min-w-0">
                         <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
                           Insider
