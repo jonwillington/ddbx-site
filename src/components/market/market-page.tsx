@@ -362,9 +362,12 @@ export function MarketPage<W>({
   }, [dealings, search]);
 
   const filteredDealings = useMemo(() => {
+    // Per-market Signal predicate; ratingless markets (NL/SE) override the
+    // rating-based default with their own clean-buy heuristic.
+    const signalPredicate = config.isSignal ?? isSignalDealing;
     let base =
       signalFilter === "signal"
-        ? searchedDealings.filter(isSignalDealing)
+        ? searchedDealings.filter(signalPredicate)
         : searchedDealings;
 
     // Strength only composes with Signal — when the top-level filter is
@@ -375,7 +378,7 @@ export function MarketPage<W>({
     }
 
     return base;
-  }, [searchedDealings, heroPredicate, signalFilter]);
+  }, [searchedDealings, heroPredicate, signalFilter, config.isSignal]);
 
   const todayIso = useMemo(
     () => todayKeyIso(config.session?.timeZone),

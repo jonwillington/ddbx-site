@@ -550,6 +550,10 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   heroFilters: defaultRatingHeroFilters<EuRowGroup>(),
   defaultHeroFilter: "any",
   defaultSignalFilter: "all",
+  // No rating pipeline — Signal = the clean-buy heuristic (isCleanBuyGroup,
+  // stored on isPurchase): direct PDMR acquisition, not PCA / programme /
+  // amendment.
+  isSignal: (d) => d.isPurchase,
   pollIntervalMs: 60_000,
   async fetchDealings() {
     const r = await api.euDealings({ market: "SE", limit: 500, view: "interesting" });

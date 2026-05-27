@@ -311,6 +311,15 @@ export interface MarketConfig<W = unknown> {
    *  ratings. */
   defaultSignalFilter?: SignalFilterValue;
 
+  /** Predicate for the "Signal" filter. Markets with a deep-analysis
+   *  pipeline (UK, US) leave this unset and fall back to the rating-based
+   *  isSignalDealing. Markets without ratings (NL, SE) supply their own —
+   *  e.g. the clean-buy heuristic the EU modules store on `isPurchase`
+   *  (direct PDMR acquisition of common shares, not PCA / programme /
+   *  amendment). Without this, Signal reads `d.rating` and renders empty for
+   *  ratingless markets. */
+  isSignal?: (d: MarketDealing<W>) => boolean;
+
   /** Predicate identifying "skipped" rows — dealings that exist in the data
    *  but didn't earn full analysis. The shell collapses these into a
    *  per-day cluster the user can expand. Markets without an analyst pass
