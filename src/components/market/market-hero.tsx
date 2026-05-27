@@ -14,6 +14,7 @@
 export function MarketHero({
   marketLabel,
   hasTopNotice = false,
+  onExplain,
 }: {
   marketLabel: string;
   /** When the market carries a beta/advisory notice, the floating <BetaTag/>
@@ -21,6 +22,9 @@ export function MarketHero({
    *  mobile hero the badge would land on the headline, so we reserve top
    *  space for it here. */
   hasTopNotice?: boolean;
+  /** When provided, a quiet "What are we looking for?" pill renders under the
+   *  headline and opens the per-market explainer sheet. */
+  onExplain?: () => void;
 }) {
   return (
     <header className="relative w-screen left-1/2 -translate-x-1/2 -mt-4 md:-mt-6 min-h-[120px] md:min-h-[380px] flex flex-col overflow-hidden animate-content-in">
@@ -402,7 +406,7 @@ export function MarketHero({
       </div>
 
       <div
-        className={`relative z-10 flex-1 flex items-center justify-center px-4 md:py-16 text-center ${
+        className={`relative z-10 flex-1 flex flex-col items-center justify-center gap-7 md:gap-10 px-4 md:py-16 text-center ${
           hasTopNotice ? "pt-16 pb-6" : "py-6"
         }`}
       >
@@ -416,6 +420,16 @@ export function MarketHero({
           </span>{" "}
           companies?
         </h2>
+
+        {onExplain && (
+          <button
+            className="inline-flex items-center rounded-full bg-[#6b5038] px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-[#5a4230] hover:shadow-lg dark:bg-[#c4a882] dark:text-[#1a140d] dark:hover:bg-[#d4ba96]"
+            type="button"
+            onClick={onExplain}
+          >
+            What are we looking for?
+          </button>
+        )}
       </div>
     </header>
   );

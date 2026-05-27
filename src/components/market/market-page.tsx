@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DailySummarySheet } from "./daily-summary-banner";
 import { MarketChartModeToggle } from "./market-chart-mode-toggle";
 import { MarketDetailDrawer } from "./market-detail-drawer";
+import { MarketExplainerSheet } from "./market-explainer-sheet";
 import { MarketFilterBar, type MarketViewMode } from "./market-filter-bar";
 import { MarketHero } from "./market-hero";
 import {
@@ -95,6 +96,8 @@ export function MarketPage<W>({
   );
   /** When non-null, the daily-summary sheet is open for this date. */
   const [openSummaryDate, setOpenSummaryDate] = useState<string | null>(null);
+  /** "What are we looking for?" explainer sheet, opened from the hero. */
+  const [explainerOpen, setExplainerOpen] = useState(false);
 
   // Global chart mode — drives the inline sparkline AND the right-most
   // Performance cell. Persisted in localStorage via the dashboard metric
@@ -689,6 +692,7 @@ export function MarketPage<W>({
         <MarketHero
           hasTopNotice={!!config.topNotice}
           marketLabel={config.marketLabel}
+          onExplain={() => setExplainerOpen(true)}
         />
 
         {config.views.length > 1 && (
@@ -988,6 +992,12 @@ export function MarketPage<W>({
         showLogo={logosEnabled}
         onClose={() => setSelectedKey(null)}
         onSelectDealing={(d) => setSelectedKey(d.key)}
+      />
+
+      <MarketExplainerSheet
+        marketId={config.id}
+        open={explainerOpen}
+        onClose={() => setExplainerOpen(false)}
       />
 
       <DailySummarySheet
