@@ -2,10 +2,11 @@
 // `/se` via SwedenPreviewPage. Wire format is EuDealing (MAR-harmonised),
 // designed to scale to NL/DE/FR later when those NCAs come online.
 //
-// v1 has no triage / analysis layer — rows land straight from the hourly :20
-// cron in ddbx-data. The Signal view is a pure filter (direct PDMR acquisition,
-// not closely-associated, not share-programme) so we still surface a meaningful
-// shortlist without LLM enrichment.
+// Opus deep analysis is now live for EU (ddbx-data shipped the eu_analyses
+// stage 2026-05-26 and flipped the capability flag 2026-05-27). Analysed rows
+// carry a rating badge + full analysis panel, the same surface as UK/US.
+// Coverage is still ramping, so Signal is a union of the clean-buy heuristic
+// (keeps the view populated) and anything Opus has rated — see isEuSignal.
 //
 // Localised CSV fields (nature, role) are mapped to English at the edge here.
 // Person and company names stay in Swedish with their diacritics — names are
@@ -21,7 +22,7 @@ import type {
 } from "@/lib/markets/types";
 import type { EuDealing } from "@/types/ddbx";
 
-import { defaultRatingHeroFilters } from "@/lib/markets/types";
+import { defaultRatingHeroFilters, isSignalDealing } from "@/lib/markets/types";
 import { api } from "@/lib/api";
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 import { AnalysisSection } from "@/components/analysis-section";
@@ -320,6 +321,16 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
   };
 }
 
+/** A group earns the Signal view (and full row opacity) if it's a clean
+ *  conviction buy OR Opus has rated it significant / noteworthy / minor. The
+ *  union keeps Signal populated while EU analysis coverage ramps, and lets a
+ *  rating override the heuristic the moment one lands — a rated PCA or
+ *  programme buy the clean-buy filter would mute still surfaces. Shared by
+ *  both EU markets (Netherlands imports it). */
+export function isEuSignal(d: MarketDealing<EuRowGroup>): boolean {
+  return d.isPurchase || isSignalDealing(d);
+}
+
 /* ─── Slot: RowActionCell (flag chips for MAR-specific signals) ──────── */
 
 const CHIP_BASE =
@@ -520,9 +531,12 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
     <>
       Finansinspektionen <em>Insynsregister</em> — Sweden&apos;s MAR Article 19
       register of trades by PDMRs (Persons Discharging Managerial
-      Responsibilities) and their close associates. Hourly ingest from FI; no
-      analysis layer yet. <strong className="text-foreground/75">Signal</strong>{" "}
-      = direct PDMR acquisitions outside any share programme.{" "}
+      Responsibilities) and their close associates. Hourly ingest from FI, with
+      Opus deep analysis now rolling out — rated buys carry a{" "}
+      <strong className="text-foreground/75">Significant</strong> or{" "}
+      <strong className="text-foreground/75">Noteworthy</strong> badge.{" "}
+      <strong className="text-foreground/75">Signal</strong> = direct PDMR
+      acquisitions outside any share programme, plus anything Opus has rated.{" "}
       <strong className="text-foreground/75">All filings</strong> includes
       disposals, grants, pledges and closely-associated (PCA) filings.
     </>
@@ -543,7 +557,7 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   benchmarkTicker: "^OMX",
   benchmarkLabel: "OMXS30",
   formatTickerDisplay: (ticker) => ticker,
-  isRowMuted: (d) => !d.isPurchase,
+  isRowMuted: (d) => !isEuSignal(d),
   enableLivePrices: true,
   // logo.dev's ticker → image mapping is heavily US-skewed; for the OMXS30 /
   // First North seed-map tickers only ~4 of 25 (SAND, BRAV, EQT, SAVE) resolve
@@ -561,13 +575,18 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   heroFilters: defaultRatingHeroFilters<EuRowGroup>(),
   defaultHeroFilter: "any",
   defaultSignalFilter: "all",
-  // No rating pipeline — Signal = the clean-buy heuristic (isCleanBuyGroup,
-  // stored on isPurchase): direct PDMR acquisition, not PCA / programme /
-  // amendment.
-  isSignal: (d) => d.isPurchase,
+  // Signal = the clean-buy heuristic (isCleanBuyGroup, stored on isPurchase:
+  // direct PDMR acquisition, not PCA / programme / amendment) unioned with any
+  // Opus rating — see isEuSignal. The union keeps the view populated while
+  // analysis coverage ramps and lets a rating override the heuristic.
+  isSignal: isEuSignal,
   pollIntervalMs: 60_000,
   async fetchDealings() {
-    const r = await api.euDealings({ market: "SE", limit: 500, view: "interesting" });
+    const r = await api.euDealings({
+      market: "SE",
+      limit: 500,
+      view: "interesting",
+    });
     const groups = groupRows(r.dealings);
     const stats: MarketStats = {
       // viewCounts now report logical-event counts (post-collapse), which is
@@ -598,7 +617,8 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   newsFooterNote:
     "Third-party headlines (Dagens industri, DN Ekonomi, SVT Ekonomi, Börsvärlden); opens in a new tab.",
   // No useGating — Sweden mirrors /us, no discretion mode.
-  // No useMetricMode — no analysis layer to drive alpha-vs-raw toggles.
+  // No useMetricMode — price history isn't wired for ISIN-quoted Swedish
+  // instruments yet, so there's no alpha-vs-raw axis to toggle.
   renderEmptyState: ({ stats }) => {
     const total = stats?.total ?? 0;
 

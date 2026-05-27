@@ -24,7 +24,7 @@ import type {
   Tone,
 } from "@/lib/markets/types";
 
-import { type EuRowGroup, groupRows } from "@/lib/markets/sweden";
+import { type EuRowGroup, groupRows, isEuSignal } from "@/lib/markets/sweden";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { AnalysisSection } from "@/components/analysis-section";
 import { RatingBadge } from "@/components/rating-badge";
@@ -446,11 +446,14 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
       AFM <em>Register meldingen leidinggevenden MAR 19</em> — the Dutch MAR
       Article 19 register of trades by PDMRs (Persons Discharging Managerial
       Responsibilities) and their close associates. Hourly ingest from AFM;
-      Haiku triage runs on the candidate pool.{" "}
+      Haiku triage and Opus deep analysis run on the candidate pool, so rated
+      buys carry a <strong className="text-foreground/75">Significant</strong>{" "}
+      or <strong className="text-foreground/75">Noteworthy</strong> badge.{" "}
       <strong className="text-foreground/75">Signal</strong> = direct PDMR
       acquisitions of common shares (Gewoon aandeel) outside any share
-      programme. <strong className="text-foreground/75">All filings</strong>{" "}
-      includes disposals, derivatives (Restricted share rights, Opties), and
+      programme, plus anything Opus has rated.{" "}
+      <strong className="text-foreground/75">All filings</strong> includes
+      disposals, derivatives (Restricted share rights, Opties), and
       closely-associated (PCA) filings.
     </>
   ),
@@ -471,7 +474,7 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   benchmarkTicker: "^AEX",
   benchmarkLabel: "AEX",
   formatTickerDisplay: (ticker) => ticker,
-  isRowMuted: (d) => !d.isPurchase,
+  isRowMuted: (d) => !isEuSignal(d),
   enableLivePrices: true,
   // logo.dev coverage on Euronext Amsterdam is mid (ASML, ING, AKZA,
   // HEIA resolve cleanly; smaller AMX / AScX names return placeholders).
@@ -487,13 +490,18 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   heroFilters: defaultRatingHeroFilters<EuRowGroup>(),
   defaultHeroFilter: "any",
   defaultSignalFilter: "all",
-  // No rating pipeline — Signal = the clean-buy heuristic (isCleanBuyGroup,
-  // stored on isPurchase): direct PDMR acquisition of common shares, not
-  // PCA / programme / amendment.
-  isSignal: (d) => d.isPurchase,
+  // Signal = the clean-buy heuristic (common-share PDMR acquisition, not PCA /
+  // programme / amendment, stored on isPurchase) unioned with any Opus rating —
+  // see isEuSignal in sweden.tsx. NL analysis coverage is still filling, so the
+  // heuristic keeps the view populated until ratings catch up.
+  isSignal: isEuSignal,
   pollIntervalMs: 60_000,
   async fetchDealings() {
-    const r = await api.euDealings({ market: "NL", limit: 500, view: "interesting" });
+    const r = await api.euDealings({
+      market: "NL",
+      limit: 500,
+      view: "interesting",
+    });
     const groups = groupRows(r.dealings);
     const stats: MarketStats = {
       total: groups.length,
