@@ -24,9 +24,11 @@ import type { EuDealing } from "@/types/ddbx";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { api } from "@/lib/api";
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
+import { AnalysisSection } from "@/components/analysis-section";
 import { DisclosureSection } from "@/components/disclosure-section";
 import { DetailField } from "@/components/market/detail-field";
 import { PriceFormat } from "@/components/position-card";
+import { RatingBadge } from "@/components/rating-badge";
 
 /** Nasdaq Stockholm — continuous trading 09:00–17:30 Europe/Stockholm,
  *  closing call at 17:25, official close at 17:30. We use the official
@@ -307,6 +309,11 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     legCount: g.leg_count,
     actionLabel: action.label + suffix,
     actionTone: action.tone,
+    // Opus deep analysis when the dealing has been analysed — drives the
+    // rating badge, the Strength filter, and the detail drawer's analysis
+    // panel. The full analysis object stays on raw.primary.analysis.
+    rating: d.analysis?.rating,
+    summary: d.analysis?.summary,
     raw: g,
   };
 }
@@ -338,10 +345,11 @@ function SwedenRowActionCell({
     chips.push({ label: "PCA", tone: "weak" });
   if (d.is_share_programme) chips.push({ label: "Programme", tone: "weak" });
   if (d.is_amendment) chips.push({ label: "Amendment", tone: "neutral" });
-  if (chips.length === 0) return null;
+  if (!dealing.rating && chips.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-1 justify-center">
+    <div className="flex flex-wrap items-center gap-1 justify-center">
+      {dealing.rating && <RatingBadge rating={dealing.rating} />}
       {chips.map((c) => (
         <span key={c.label} className={`${CHIP_BASE} ${CHIP_TONES[c.tone]}`}>
           {c.label}
@@ -391,6 +399,7 @@ function SwedenDetailBody({ dealing }: { dealing: MarketDealing<EuRowGroup> }) {
 
   return (
     <div className="space-y-4">
+      {d.analysis && <AnalysisSection analysis={d.analysis} />}
       {flags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {flags.map((f) => (

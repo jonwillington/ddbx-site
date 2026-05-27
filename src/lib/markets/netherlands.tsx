@@ -26,6 +26,8 @@ import type {
 
 import { type EuRowGroup, groupRows } from "@/lib/markets/sweden";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
+import { AnalysisSection } from "@/components/analysis-section";
+import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 import { DisclosureSection } from "@/components/disclosure-section";
@@ -236,6 +238,10 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     legCount: g.leg_count,
     actionLabel: action.label + suffix,
     actionTone: action.tone,
+    // Opus deep analysis when analysed — drives the rating badge, Strength
+    // filter, and the detail drawer's analysis panel.
+    rating: d.analysis?.rating,
+    summary: d.analysis?.summary,
     raw: g,
   };
 }
@@ -270,10 +276,11 @@ function NetherlandsRowActionCell({
     chips.push({ label: "PCA", tone: "weak" });
   if (d.is_share_programme) chips.push({ label: "Programme", tone: "weak" });
   if (d.is_amendment) chips.push({ label: "Amendment", tone: "neutral" });
-  if (chips.length === 0) return null;
+  if (!dealing.rating && chips.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-1 justify-center">
+    <div className="flex flex-wrap items-center gap-1 justify-center">
+      {dealing.rating && <RatingBadge rating={dealing.rating} />}
       {chips.map((c) => (
         <span key={c.label} className={`${CHIP_BASE} ${CHIP_TONES[c.tone]}`}>
           {c.label}
@@ -325,6 +332,7 @@ function NetherlandsDetailBody({
 
   return (
     <div className="space-y-4">
+      {d.analysis && <AnalysisSection analysis={d.analysis} />}
       {flags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {flags.map((f) => (

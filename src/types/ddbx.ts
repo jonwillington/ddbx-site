@@ -148,7 +148,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       news: "/api/news/se",
     },
     capabilities: {
-      analysis: false,
+      analysis: true,
       performance: false,
       portfolio: false,
       dailySummary: false,
@@ -169,7 +169,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       news: "/api/news/nl",
     },
     capabilities: {
-      analysis: false,
+      analysis: true,
       performance: false,
       portfolio: false,
       dailySummary: false,
