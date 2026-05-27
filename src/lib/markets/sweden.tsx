@@ -314,6 +314,8 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     // panel. The full analysis object stays on raw.primary.analysis.
     rating: d.analysis?.rating,
     summary: d.analysis?.summary,
+    confidence: d.analysis?.confidence,
+    catalystWindow: d.analysis?.catalyst_window,
     raw: g,
   };
 }

@@ -97,7 +97,47 @@ export function bucketByMonth<W>(
     bucket.count++;
   }
 
+  // Rank each day's rows by importance — most significant first — so the
+  // chronological table leads with what matters rather than raw API order.
+  // Skipped rows stay a separate cluster (the shell renders them after
+  // suggested) but are ranked among themselves too.
+  for (const month of months) {
+    for (const day of month.days) {
+      day.suggested.sort(compareDealingImportance);
+      day.skipped.sort(compareDealingImportance);
+    }
+  }
+
   return months;
+}
+
+/** Order dealings by analyst importance — significant → noteworthy → minor →
+ *  routine → unrated — then by deal value within a tier. Shared by the Today
+ *  hero (card order) and the chronological day buckets so "most important
+ *  first" means the same thing on every surface. */
+export function compareDealingImportance<W>(
+  a: MarketDealing<W>,
+  b: MarketDealing<W>,
+): number {
+  const rank = (d: MarketDealing<W>) => {
+    switch (d.rating) {
+      case "significant":
+        return 0;
+      case "noteworthy":
+        return 1;
+      case "minor":
+        return 2;
+      case "routine":
+        return 3;
+      default:
+        return 4;
+    }
+  };
+  const diff = rank(a) - rank(b);
+
+  if (diff !== 0) return diff;
+
+  return (b.value ?? 0) - (a.value ?? 0);
 }
 
 export function ordinal(n: number): string {

@@ -284,6 +284,9 @@ export function toMarketDealing(group: UsRowGroup): MarketDealing<UsRowGroup> {
     rating: group.analysis?.rating,
     triageVerdict: group.triage_verdict,
     summary: group.analysis?.summary,
+    sector: row.sector_normalized ?? undefined,
+    confidence: group.analysis?.confidence,
+    catalystWindow: group.analysis?.catalyst_window,
     actionLabel: action.label,
     actionTone: action.tone,
     raw: group,
@@ -637,7 +640,9 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   defaultView: "all",
   heroFilters: defaultRatingHeroFilters<UsRowGroup>(),
   defaultHeroFilter: "any",
-  defaultSignalFilter: "signal",
+  // Open on the full list rather than the curated Signal subset — readers see
+  // every disclosure first and narrow to Signal themselves.
+  defaultSignalFilter: "all",
   pollIntervalMs: 30_000,
   // Right-hand drawer news strip. Aggregates CNBC / MarketWatch /
   // Yahoo Finance / Seeking Alpha RSS via /api/news/us (worker side

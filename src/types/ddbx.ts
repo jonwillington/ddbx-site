@@ -600,6 +600,18 @@ export interface UsDealing {
    *  when the group hasn't been enriched yet. The same Analysis shape UK
    *  dealings carry, so the same renderers apply on the frontend. */
   analysis?: Analysis | null;
+
+  /** Free-form industry — SEC's `sicDescription` for the issuer's CIK (e.g.
+   *  "Pharmaceutical Preparations"). Joined in by the read API from the
+   *  `us_issuers` enrichment table; absent until the issuer's been enriched.
+   *  Mirrors `Dealing.sector`. */
+  sector?: string | null;
+  /** Normalised ICB top-level industry — one of the 11 `SectorNormalized`
+   *  values, derived from the SEC SIC code via worker/pipeline/us-sic-to-icb.ts
+   *  (LLM fallback for sentinel/ambiguous codes). Joined in from `us_issuers`.
+   *  Lets US issuers group alongside UK ones in the consumers' "Industry"
+   *  surfaces. Mirrors `Dealing.sector_normalized`. */
+  sector_normalized?: SectorNormalized | null;
 }
 
 export type UsTriageVerdict = "skip" | "maybe" | "promising";

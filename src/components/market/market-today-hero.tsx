@@ -5,17 +5,17 @@ import type { MarketSession } from "@/lib/market-status";
 import type { HolidaySource } from "@/lib/bank-holidays";
 import type { MarketStatusView } from "./market-anchor-card";
 
-import { ArrowUpRightIcon } from "@heroicons/react/24/outline";
-
-import { CompanyLogo } from "@/components/company-logo";
-import { RatingBadge } from "@/components/rating-badge";
-import { Skeleton } from "@/components/skeleton";
 import {
   LiveWash,
   MarketAnchorCard,
   MarketAnchorPanel,
   useMarketStatusView,
 } from "./market-anchor-card";
+import { compareDealingImportance } from "./market-utils";
+
+import { CompanyLogo } from "@/components/company-logo";
+import { RatingBadge } from "@/components/rating-badge";
+import { Skeleton } from "@/components/skeleton";
 
 export interface RecentBestEntry<W> {
   dealing: MarketDealing<W>;
@@ -72,31 +72,15 @@ export function MarketTodayHero<W>({
   recentBestReady,
 }: MarketTodayHeroProps<W>) {
   const { title: todayTitle, meta: todayMeta } = formatToday(todayIso, locale);
-  const sortedDealings = [...todayDealings].sort(compareTodayDealings);
-  const primaryDealings = sortedDealings.filter((d) =>
+  const sortedDealings = [...todayDealings].sort(compareDealingImportance);
+  // The hero surfaces the day's analysed/primary filings as cards. Skipped
+  // (muted) filings render as ordinary rows under a "Today" group in the
+  // table below — a long tail of low-signal tranches reads better as table
+  // rows than as a grid of cards — so they're intentionally absent here.
+  const mainDealings = sortedDealings.filter((d) =>
     isMuted ? !isMuted(d) : d.isPurchase,
   );
-  const skippedDealings = sortedDealings.filter((d) =>
-    isMuted ? isMuted(d) : !d.isPurchase,
-  );
-  // Only split when there's at least one of each — if everything's been
-  // skipped we still want to show those as the main row of cards so the
-  // section never empties out for no reason.
-  const splitDay = primaryDealings.length > 0 && skippedDealings.length > 0;
-  const mainDealings = splitDay
-    ? primaryDealings
-    : primaryDealings.length > 0
-      ? primaryDealings
-      : sortedDealings;
-  // Cap how many skipped cards we surface — US Form 4 days can run to
-  // dozens of skipped tranches and shouldn't be allowed to push the table
-  // off the page. The remainder is still reachable in the chronological
-  // table below, so this is purely a visual cap.
-  const SKIPPED_VISIBLE_CAP = 9;
   const BEST_GRID_CAP = 6;
-  const allSkipped = splitDay ? skippedDealings : [];
-  const skippedRows = allSkipped.slice(0, SKIPPED_VISIBLE_CAP);
-  const skippedOverflow = allSkipped.length - skippedRows.length;
   const countLabel =
     todayDealings.length === 0
       ? ""
@@ -183,25 +167,6 @@ export function MarketTodayHero<W>({
               </div>
             ))}
           </div>
-
-          {allSkipped.length > 0 && (
-            <div
-              className="animate-today-hero-item mt-5"
-              style={{ animationDelay: todayHeroDelay(mainDealings.length + 2) }}
-            >
-              <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
-                Also today · {allSkipped.length} skipped
-                {skippedOverflow > 0 && ` · +${skippedOverflow} in table below`}
-              </div>
-              <CompactSkippedGrid
-                dealings={skippedRows}
-                fmt={fmt}
-                formatTickerDisplay={formatTickerDisplay}
-                selectedKey={selectedKey}
-                onSelect={onSelect}
-              />
-            </div>
-          )}
         </>
       ) : loading ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
@@ -235,24 +200,6 @@ export function MarketTodayHero<W>({
       )}
     </section>
   );
-}
-
-function compareTodayDealings<W>(
-  a: MarketDealing<W>,
-  b: MarketDealing<W>,
-): number {
-  const ratingRank = (d: MarketDealing<W>) => {
-    if (d.rating === "significant") return 0;
-    if (d.rating === "noteworthy") return 1;
-    if (d.rating === "routine") return 2;
-
-    return 3;
-  };
-  const rankDiff = ratingRank(a) - ratingRank(b);
-
-  if (rankDiff !== 0) return rankDiff;
-
-  return (b.value ?? 0) - (a.value ?? 0);
 }
 
 function TodayCard<W>({
@@ -334,69 +281,6 @@ function TodayCard<W>({
         </p>
       )}
     </button>
-  );
-}
-
-/** "Also today · skipped" grid — interconnected cells, one outer border,
- *  cells separated by a 1px gap that lets the container bg show through.
- *  Tight rows: ticker / company / insider / value. Used only in the
- *  busy-day branch; the empty-day branch uses `BestThisWeekGrid` instead. */
-function CompactSkippedGrid<W>({
-  dealings,
-  fmt,
-  formatTickerDisplay,
-  selectedKey,
-  onSelect,
-}: {
-  dealings: MarketDealing<W>[];
-  fmt: PriceFormat;
-  formatTickerDisplay?: (ticker: string) => string;
-  selectedKey?: string | null;
-  onSelect: (d: MarketDealing<W>) => void;
-}) {
-  return (
-    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-black/[0.08] bg-black/[0.08] dark:border-white/[0.08] dark:bg-white/[0.08] md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-      {dealings.map((d) => {
-        const tickerLabel = formatTickerDisplay
-          ? formatTickerDisplay(d.ticker || "—")
-          : d.ticker || "—";
-        const valueLabel = d.value != null ? fmt.formatValue(d.value) : "—";
-        const selected = selectedKey === d.key;
-
-        return (
-          <button
-            key={d.key}
-            className={`group p-3 text-left transition-colors ${
-              selected
-                ? "bg-[#6b5038]/[0.06] dark:bg-[#6b5038]/[0.20]"
-                : "bg-[#faf7f2] hover:bg-[#f1ebe2] dark:bg-surface dark:hover:bg-surface-secondary"
-            }`}
-            onClick={() => onSelect(d)}
-          >
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="flex min-w-0 items-baseline gap-1">
-                <span className="truncate font-mono text-[10px] font-semibold text-muted/70">
-                  {tickerLabel}
-                </span>
-                <ArrowUpRightIcon
-                  aria-hidden
-                  className="h-3 w-3 shrink-0 self-center text-muted/50 transition-colors group-hover:text-foreground/70"
-                />
-              </span>
-              <span className="shrink-0 text-[13px] font-semibold tabular-nums">
-                {valueLabel}
-              </span>
-            </div>
-            <div className="mt-1.5 truncate text-[13px] font-medium leading-tight tracking-[-0.02em]">
-              {d.company || "—"}
-            </div>
-            <div className="mt-0.5 truncate text-[11px] text-muted">
-              {d.insiderName}
-            </div>
-          </button>
-        );
-      })}
-    </div>
   );
 }
 

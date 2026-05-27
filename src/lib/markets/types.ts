@@ -73,6 +73,15 @@ export interface MarketDealing<W = unknown> {
    *  leave this undefined. */
   summary?: string;
 
+  /** Optional ICB top-level industry (normalized sector), when the wire row
+   *  carries one. Surfaced in the detail drawer's metadata grid — mirrors the
+   *  iOS DealDetailView "Industry" metric. */
+  sector?: string;
+  /** Optional analyst confidence (0..1) from the deep-analysis pipeline. */
+  confidence?: number;
+  /** Optional catalyst window ("3m" | "6m" | "12m") from deep analysis. */
+  catalystWindow?: string;
+
   /** Human-readable action ("Open-market buy", "Director purchase"). */
   actionLabel: string;
   /** Visual tone for action chip + row muting decisions. */
@@ -303,12 +312,11 @@ export interface MarketConfig<W = unknown> {
   /** Default-selected hero filter id; falls back to heroFilters[0]?.id. */
   defaultHeroFilter?: string;
 
-  /** Default value for the top-level "Filter: Signal / All" dropdown.
-   *  Markets with a populated triage→analysis pipeline (UK, US) default to
-   *  "signal" so the curated list is what the reader sees first. Markets
-   *  where triage hasn't been backfilled (NL, SE today) default to "all"
-   *  because "signal" would render empty until those rows pick up
-   *  ratings. */
+  /** Default value for the top-level "Filter: Signal / All" dropdown. All four
+   *  markets currently set this to "all" so the reader sees every disclosure
+   *  first and narrows to the curated Signal subset themselves. Ratingless
+   *  markets (NL, SE) additionally *need* "all" because "signal" would render
+   *  empty until those rows pick up ratings. Unset falls back to "signal". */
   defaultSignalFilter?: SignalFilterValue;
 
   /** Predicate for the "Signal" filter. Markets with a deep-analysis

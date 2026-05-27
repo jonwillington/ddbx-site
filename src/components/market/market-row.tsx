@@ -97,11 +97,13 @@ export function MarketDayHeader({
     </span>
   );
   const counts = (
-    <span className="text-[10px] text-muted/80 tabular-nums shrink-0">
-      {suggestedCount}
+    <span className="text-[10px] tabular-nums shrink-0">
+      {suggestedCount > 0 && (
+        <span className="text-muted/80">{suggestedCount}</span>
+      )}
       {skippedCount > 0 && (
         <span className="text-muted/50">
-          {" · "}
+          {suggestedCount > 0 ? " · " : ""}
           {skippedCount} skipped
         </span>
       )}
@@ -132,7 +134,7 @@ export function MarketDayHeader({
 function AiAvatar({ size = 28 }: { size?: number }) {
   return (
     <div
-      className="rounded-full flex items-center justify-center shrink-0 shadow-sm bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400"
+      className="rounded-full flex items-center justify-center shrink-0 shadow-sm bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-700"
       style={{ width: size, height: size }}
     >
       <svg
@@ -452,7 +454,8 @@ export function MarketRow<W>({
             )}
           </div>
         </div>
-        {(noPosteriorData || (showAlpha ? alpha != null : stockPct != null)) && (
+        {(noPosteriorData ||
+          (showAlpha ? alpha != null : stockPct != null)) && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             {noPosteriorData ? (
               <span className="text-[11px] text-muted/60">No data yet</span>

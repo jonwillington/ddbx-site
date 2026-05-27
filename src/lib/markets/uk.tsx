@@ -87,6 +87,9 @@ export function toMarketDealing(d: Dealing): MarketDealing<Dealing> {
     rating: d.analysis?.rating,
     triageVerdict: d.triage?.verdict,
     summary: d.analysis?.summary,
+    sector: d.sector_normalized ?? undefined,
+    confidence: d.analysis?.confidence,
+    catalystWindow: d.analysis?.catalyst_window,
     actionLabel: action.label,
     actionTone: action.tone,
     raw: d,
@@ -100,11 +103,7 @@ function UkRowActionCell({ dealing }: { dealing: MarketDealing<Dealing> }) {
   // attached, nothing otherwise. The market-row's muted state (driven by
   // isPurchase + rating) communicates "skipped / unanalysed" visually.
   if (!dealing.rating) {
-    return (
-      <span className="inline-flex items-center justify-center rounded-md border border-[#d8d0c6]/55 bg-transparent px-2 py-0.5 text-[11px] text-[#a89e8c] dark:text-foreground/40">
-        Skipped
-      </span>
-    );
+    return <RatingBadge rating="skipped" />;
   }
 
   return <RatingBadge rating={dealing.rating} />;
@@ -313,7 +312,9 @@ export const UkMarket: MarketConfig<Dealing> = {
   defaultView: "all",
   heroFilters: defaultRatingHeroFilters<Dealing>(),
   defaultHeroFilter: "any",
-  defaultSignalFilter: "signal",
+  // Open on the full list rather than the curated Signal subset — readers see
+  // every disclosure first and narrow to Signal themselves.
+  defaultSignalFilter: "all",
   pollIntervalMs: 30_000,
   fetchNews: () => api.ukNews(),
   newsHeading: "UK market news",

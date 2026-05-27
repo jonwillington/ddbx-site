@@ -37,6 +37,12 @@ import {
 } from "@/lib/dashboard-metric-mode";
 import { useDailySummaries } from "@/lib/markets/use-daily-summaries";
 
+/** How many of today's skipped rows to show before the "Show all" toggle.
+ *  A busy US Form 4 day can disclose dozens; the standalone Today block sits
+ *  above the historical table, so without a cap it would push that table off
+ *  the page. */
+const TODAY_SKIPPED_CAP = 8;
+
 /** The full shell that every market page mounts. Reads everything from
  *  MarketConfig — adding a new market means writing a new MarketConfig and
  *  pointing a route at `<MarketPage config={…} />`. Nothing in here should
@@ -76,6 +82,8 @@ export function MarketPage<W>({
     [controlled, onSelectionChange],
   );
   const [openMonths, setOpenMonths] = useState<Set<string> | null>(null);
+  /** Expands the standalone "Also today" skipped block past TODAY_SKIPPED_CAP. */
+  const [showAllTodaySkipped, setShowAllTodaySkipped] = useState(false);
   const [heroFilterId, setHeroFilterId] = useState<string | null>(
     config.defaultHeroFilter ?? config.heroFilters?.[0]?.id ?? null,
   );
@@ -391,6 +399,18 @@ export function MarketPage<W>({
     [searchedDealings, todayIso],
   );
 
+  // Today's skipped (muted) filings. The analysed/primary ones surface as
+  // cards in the Today hero; these render as ordinary rows under a "Today"
+  // group at the top of the chronological table. Mirrors the hero's split
+  // (isRowMuted, or non-purchase when a market declares no mute rule) so every
+  // today filing lands in exactly one place. bucketByMonth excludes today, so
+  // without this the skipped tail would have nowhere to go.
+  const todaySkipped = useMemo(() => {
+    const isMuted = config.isRowMuted;
+
+    return todayDealings.filter((d) => (isMuted ? isMuted(d) : !d.isPurchase));
+  }, [todayDealings, config.isRowMuted]);
+
   const monthBuckets = useMemo(
     () =>
       bucketByMonth(filteredDealings, todayIso, {
@@ -584,8 +604,6 @@ export function MarketPage<W>({
     [dealings, selectedKey],
   );
 
-  const currentView = config.views.find((v) => v.id === view);
-
   const chartModeToggle = (
     <MarketChartModeToggle
       benchmarkLabel={config.benchmarkLabel}
@@ -609,26 +627,56 @@ export function MarketPage<W>({
 
   /* ───────── Render ──────────────────────────────────────────────────── */
 
-  const emptyState = filteredDealings.length === 0 && !loading && (
-    <div className="bg-[#faf7f2] dark:bg-surface rounded-xl px-4 py-10 text-center text-sm text-muted">
-      {search.trim() ? (
-        <>
-          No filings match{" "}
-          <span className="font-medium text-foreground/70">"{search}"</span>.{" "}
-          <button
-            className="text-foreground/70 underline underline-offset-2 hover:text-foreground"
-            onClick={() => setSearch("")}
-          >
-            Clear search
-          </button>
-        </>
-      ) : config.renderEmptyState ? (
-        config.renderEmptyState({ view, stats, setView })
-      ) : (
-        <>No filings yet.</>
-      )}
-    </div>
+  // One dealing row with the shared table props bound — used by every day
+  // group (the Today group + the month/day buckets). The by-gain list keeps
+  // its own inline row because it shows the date column (no hideDate).
+  const renderDayRow = (d: MarketDealing<W>) => (
+    <MarketRow
+      key={d.key}
+      hideDate
+      RowActionCell={config.RowActionCell}
+      benchmarkBars={benchmarkBars}
+      benchmarkCurrent={benchmarkCurrent}
+      benchmarkEntry={benchmarkEntry(d)}
+      benchmarkLabel={config.benchmarkLabel}
+      chartMode={chartMode}
+      dealing={d}
+      fmt={config.priceFormat}
+      formatTickerDisplay={config.formatTickerDisplay}
+      isMuted={config.isRowMuted}
+      locale={config.locale}
+      noPosteriorData={stockNoPosteriorData(d)}
+      selected={selectedKey === d.key}
+      showLogo={logosEnabled}
+      stockBars={stockBars[d.ticker]}
+      stockCurrentMajor={stockCurrent(d.ticker)}
+      stockEntry={stockEntry(d)}
+      onSelect={() => setSelectedKey(d.key)}
+    />
   );
+
+  const emptyState = filteredDealings.length === 0 &&
+    todaySkipped.length === 0 &&
+    !loading && (
+      <div className="bg-[#faf7f2] dark:bg-surface rounded-xl px-4 py-10 text-center text-sm text-muted">
+        {search.trim() ? (
+          <>
+            No filings match{" "}
+            <span className="font-medium text-foreground/70">"{search}"</span>.{" "}
+            <button
+              className="text-foreground/70 underline underline-offset-2 hover:text-foreground"
+              onClick={() => setSearch("")}
+            >
+              Clear search
+            </button>
+          </>
+        ) : config.renderEmptyState ? (
+          config.renderEmptyState({ view, stats, setView })
+        ) : (
+          <>No filings yet.</>
+        )}
+      </div>
+    );
 
   return (
     <DefaultLayout drawerRight={hasNewsSource}>
@@ -698,6 +746,48 @@ export function MarketPage<W>({
           todayIso={todayIso}
           onSelect={(d) => setSelectedKey(d.key)}
         />
+
+        {/* Today's skipped (muted) filings. The analysed ones surface as cards
+            in the hero above; their low-signal tail renders here as ordinary
+            table rows. Deliberately sits above the filter bar so it stays part
+            of "Today" — always visible and never narrowed by the Signal /
+            Strength controls, which govern only the historical table below. */}
+        {todaySkipped.length > 0 && (
+          <section className="animate-content-in">
+            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
+              Also today · {todaySkipped.length} skipped
+            </div>
+            <div className="overflow-hidden rounded-xl bg-[#faf7f2] dark:bg-surface">
+              <MarketRowHeader
+                hideDate
+                inset
+                benchmarkLabel={config.benchmarkLabel}
+                chartMode={chartMode}
+                valueColumnClass={config.priceFormat.valueColumnClass}
+              />
+              {/* Contrast tray + white card mirrors the month/day cards in the
+                  chronological table below, so the two sections read alike. */}
+              <div className="bg-[#ece8e5] px-3 py-3 dark:bg-black/15">
+                <div className="overflow-hidden rounded-xl bg-white divide-y divide-black/[0.06] dark:divide-separator dark:bg-surface-secondary">
+                  {(showAllTodaySkipped
+                    ? todaySkipped
+                    : todaySkipped.slice(0, TODAY_SKIPPED_CAP)
+                  ).map(renderDayRow)}
+                  {todaySkipped.length > TODAY_SKIPPED_CAP && (
+                    <button
+                      className="w-full px-4 py-2.5 text-center text-xs font-medium text-muted transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                      onClick={() => setShowAllTodaySkipped((v) => !v)}
+                    >
+                      {showAllTodaySkipped
+                        ? "Show fewer"
+                        : `Show all ${todaySkipped.length} skipped`}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {loading && filteredDealings.length === 0 && (
           <div className="bg-[#faf7f2] dark:bg-surface rounded-xl overflow-hidden animate-content-in">
@@ -857,58 +947,8 @@ export function MarketPage<W>({
                                     onOpen={() => setOpenSummaryDate(day.key)}
                                   />
                                 )}
-                              {day.suggested.map((d) => (
-                                <MarketRow
-                                  key={d.key}
-                                  hideDate
-                                  RowActionCell={config.RowActionCell}
-                                  benchmarkBars={benchmarkBars}
-                                  benchmarkCurrent={benchmarkCurrent}
-                                  benchmarkEntry={benchmarkEntry(d)}
-                                  benchmarkLabel={config.benchmarkLabel}
-                                  chartMode={chartMode}
-                                  dealing={d}
-                                  fmt={config.priceFormat}
-                                  formatTickerDisplay={
-                                    config.formatTickerDisplay
-                                  }
-                                  isMuted={config.isRowMuted}
-                                  locale={config.locale}
-                                  noPosteriorData={stockNoPosteriorData(d)}
-                                  selected={selectedKey === d.key}
-                                  showLogo={logosEnabled}
-                                  stockBars={stockBars[d.ticker]}
-                                  stockCurrentMajor={stockCurrent(d.ticker)}
-                                  stockEntry={stockEntry(d)}
-                                  onSelect={() => setSelectedKey(d.key)}
-                                />
-                              ))}
-                              {day.skipped.map((d) => (
-                                <MarketRow
-                                  key={d.key}
-                                  hideDate
-                                  RowActionCell={config.RowActionCell}
-                                  benchmarkBars={benchmarkBars}
-                                  benchmarkCurrent={benchmarkCurrent}
-                                  benchmarkEntry={benchmarkEntry(d)}
-                                  benchmarkLabel={config.benchmarkLabel}
-                                  chartMode={chartMode}
-                                  dealing={d}
-                                  fmt={config.priceFormat}
-                                  formatTickerDisplay={
-                                    config.formatTickerDisplay
-                                  }
-                                  isMuted={config.isRowMuted}
-                                  locale={config.locale}
-                                  noPosteriorData={stockNoPosteriorData(d)}
-                                  selected={selectedKey === d.key}
-                                  showLogo={logosEnabled}
-                                  stockBars={stockBars[d.ticker]}
-                                  stockCurrentMajor={stockCurrent(d.ticker)}
-                                  stockEntry={stockEntry(d)}
-                                  onSelect={() => setSelectedKey(d.key)}
-                                />
-                              ))}
+                              {day.suggested.map(renderDayRow)}
+                              {day.skipped.map(renderDayRow)}
                             </div>
                           );
                         })}
@@ -921,28 +961,11 @@ export function MarketPage<W>({
           </div>
         )}
 
-        <div className="text-xs text-muted text-center space-y-1">
-          <div>
-            Showing {filteredDealings.length} filing
-            {filteredDealings.length === 1 ? "" : "s"}
-            {stats && (
-              <>
-                {" "}
-                of {stats.viewCounts[view] ?? stats.total}{" "}
-                {currentView?.label.toLowerCase()}
-              </>
-            )}
-            {search.trim() && filteredDealings.length !== dealings.length && (
-              <>
-                {" "}
-                · {dealings.length - filteredDealings.length} hidden by search
-              </>
-            )}
-          </div>
-          {stats?.debugBreakdown && (
+        {stats?.debugBreakdown && (
+          <div className="text-xs text-muted text-center">
             <div className="text-[10px] opacity-70">{stats.debugBreakdown}</div>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
       <MarketTodayDrawer

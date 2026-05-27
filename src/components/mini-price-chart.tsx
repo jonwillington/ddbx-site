@@ -184,10 +184,13 @@ export function MiniPriceChart({
       },
       timeScale: {
         borderVisible: false,
-        fixLeftEdge: true,
-        fixRightEdge: true,
-        // No trailing gap — the line runs flush to both edges so the chart
-        // reads edge-to-edge inside its card.
+        // fixLeftEdge/fixRightEdge force the *whole* first/last bar to stay
+        // visible, which re-imposes a half-bar-spacing margin and clamps the
+        // setVisibleLogicalRange pin below back inward. Pan/zoom are off, so we
+        // don't need them — leave them false and let the logical range run the
+        // line flush to both edges.
+        fixLeftEdge: false,
+        fixRightEdge: false,
         rightOffset: 0,
       },
       rightPriceScale: {
@@ -275,7 +278,29 @@ export function MiniPriceChart({
       createSeriesMarkers(series, markers);
     }
 
-    chart.timeScale().fitContent();
+    // lightweight-charts centers each bar and leaves a half-bar-spacing margin
+    // at each edge (its `fitContent` default). With the handful of bars on
+    // "Around buy" the bar spacing is huge, so that margin becomes a big inset
+    // and the plot reads as floating rather than running edge-to-edge. Pin the
+    // visible logical range to the first/last bar instead: flush on the left
+    // (no marker there), with ~a marker's width on the right so the disclosure
+    // dot on the latest bar isn't clipped at the canvas boundary.
+    //
+    // This must run *after* layout — calling it synchronously here doesn't
+    // stick, because the library re-fits on its first paint and again whenever
+    // the ResizeObserver applies a new width. So pin in a rAF and re-pin on
+    // every resize.
+    const lastIdx = bars.length - 1;
+    const pinRange = () => {
+      const w = container.clientWidth;
+      const rightPad = w > 0 ? (16 * lastIdx) / w : 0;
+
+      chart
+        .timeScale()
+        .setVisibleLogicalRange({ from: 0, to: lastIdx + rightPad });
+    };
+
+    requestAnimationFrame(pinRange);
 
     chartRef.current = chart;
     seriesRef.current = series;
@@ -298,6 +323,8 @@ export function MiniPriceChart({
 
       if (c && chartRef.current) {
         chartRef.current.applyOptions({ width: c.clientWidth });
+        // applyOptions re-fits the time scale, so re-pin to the edges after.
+        pinRange();
       }
     });
 

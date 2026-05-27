@@ -167,6 +167,16 @@ export function MarketDetailDrawer<W>({
     active && active.value != null ? fmt.formatValue(active.value) : "—";
   const sharesLabel =
     active && active.shares > 0 ? active.shares.toLocaleString() : "—";
+  // Secondary metadata row — mirrors the iOS DealDetailView metrics grid.
+  // Each is optional: industry rides on the wire row; confidence + catalyst
+  // come from the deep-analysis pipeline, so they're absent on unanalysed
+  // dealings (and on markets without an analysis layer).
+  const industryLabel = active?.sector ?? null;
+  const confidenceLabel =
+    active && active.confidence != null
+      ? `${Math.round(active.confidence * 100)}%`
+      : null;
+  const catalystLabel = active?.catalystWindow ?? null;
 
   // Detached, floating panel (vaul "side drawer" style): a gap on every
   // free edge + rounded corners so it reads as a card lifted off the page
@@ -293,6 +303,36 @@ export function MarketDetailDrawer<W>({
                           {sharesLabel}
                         </dd>
                       </div>
+                      {industryLabel && (
+                        <div className="min-w-0">
+                          <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                            Industry
+                          </dt>
+                          <dd className="text-sm font-medium truncate">
+                            {industryLabel}
+                          </dd>
+                        </div>
+                      )}
+                      {confidenceLabel && (
+                        <div>
+                          <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                            Confidence
+                          </dt>
+                          <dd className="text-sm font-medium tabular-nums">
+                            {confidenceLabel}
+                          </dd>
+                        </div>
+                      )}
+                      {catalystLabel && (
+                        <div>
+                          <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                            Catalyst
+                          </dt>
+                          <dd className="text-sm font-medium">
+                            {catalystLabel}
+                          </dd>
+                        </div>
+                      )}
                     </dl>
 
                     {DetailPosition && <DetailPosition dealing={active} />}

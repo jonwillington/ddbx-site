@@ -242,6 +242,8 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     // filter, and the detail drawer's analysis panel.
     rating: d.analysis?.rating,
     summary: d.analysis?.summary,
+    confidence: d.analysis?.confidence,
+    catalystWindow: d.analysis?.catalyst_window,
     raw: g,
   };
 }
