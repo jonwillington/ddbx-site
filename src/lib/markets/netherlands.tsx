@@ -259,16 +259,16 @@ function NetherlandsRowActionCell({
   const d = dealing.raw.primary;
   const chips: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
+  // Weak-signal caveats only (PCA / Programme / Amendment), matching Sweden.
+  // No "Derivative" chip: non-replicable instruments (options, RSUs, awards,
+  // warrants, …) are stripped at ingest in ddbx-data now, so the only
+  // non-"gewoon" rows left are shares we deliberately keep — depositary
+  // receipts (Certificaat van aandeel), share classes (Aandeel A),
+  // dual-listing lines ("<issuer> - Aandeel"), Non-voting shares. Flagging
+  // those as "Derivative" was wrong.
   if (d.reporter.is_closely_associated)
     chips.push({ label: "PCA", tone: "weak" });
   if (d.is_share_programme) chips.push({ label: "Programme", tone: "weak" });
-  // AFM-specific: surface non-common-share instruments so users
-  // understand why a row didn't make Signal.
-  const itype = (d.instrument_type || "").toLowerCase();
-
-  if (itype && !itype.startsWith("gewoon")) {
-    chips.push({ label: "Derivative", tone: "weak" });
-  }
   if (d.is_amendment) chips.push({ label: "Amendment", tone: "neutral" });
   if (chips.length === 0) return null;
 
