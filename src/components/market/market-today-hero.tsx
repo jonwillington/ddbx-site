@@ -51,6 +51,15 @@ interface MarketTodayHeroProps<W> {
   recentBestReady?: boolean;
 }
 
+/** Mobile: a horizontal snap carousel that peeks the next card; lg+: a
+ *  tidy two/three-up grid. Shared by the live cards AND the loading
+ *  skeleton so the layout doesn't jump when data lands. */
+const TODAY_CAROUSEL_CLASS =
+  "flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-2 lg:gap-4 lg:overflow-visible lg:pb-0 2xl:grid-cols-3";
+/** One card slot inside the carousel — fixed-width + peek on mobile, auto
+ *  in the lg+ grid. */
+const TODAY_CARD_SLOT_CLASS = "w-[72%] shrink-0 snap-start lg:w-auto lg:shrink";
+
 /** Today surface — section heading, then either today's deal cards
  *  (busy day) or the anchor + best-this-week side-by-side (empty day).
  *  Mobile stacks everything; lg+ splits the empty-day view 50/50. */
@@ -138,9 +147,9 @@ export function MarketTodayHero<W>({
               ahead of the deals) rather than a full-width banner — so once
               there's at least one deal, "Scanning the market" is just one
               card in the row. */}
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:-mx-6 md:px-6 lg:mx-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0 2xl:grid-cols-3">
+          <div className={TODAY_CAROUSEL_CLASS}>
             {view && (
-              <div className="w-[80%] shrink-0 snap-start lg:w-auto lg:shrink">
+              <div className={TODAY_CARD_SLOT_CLASS}>
                 <div
                   className="animate-today-hero-item h-full"
                   style={{ animationDelay: todayHeroDelay(1) }}
@@ -150,10 +159,7 @@ export function MarketTodayHero<W>({
               </div>
             )}
             {mainDealings.map((d, index) => (
-              <div
-                key={d.key}
-                className="w-[80%] shrink-0 snap-start lg:w-auto lg:shrink"
-              >
+              <div key={d.key} className={TODAY_CARD_SLOT_CLASS}>
                 <TodayCard
                   animationDelay={todayHeroDelay(index + 2)}
                   dealing={d}
@@ -169,11 +175,11 @@ export function MarketTodayHero<W>({
           </div>
         </>
       ) : loading ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+        <div className={TODAY_CAROUSEL_CLASS}>
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="animate-today-hero-item"
+              className={`${TODAY_CARD_SLOT_CLASS} animate-today-hero-item`}
               style={{ animationDelay: todayHeroDelay(i + 1) }}
             >
               <TodayCardSkeleton />
@@ -233,7 +239,7 @@ function TodayCard<W>({
 
   return (
     <button
-      className={`group h-full w-full animate-today-hero-item rounded-xl border bg-[#faf7f2] p-5 text-left transition-colors duration-150 dark:bg-surface
+      className={`group h-full w-full animate-today-hero-item rounded-xl border bg-[#faf7f2] p-4 text-left transition-colors duration-150 dark:bg-surface md:p-5
         ${
           selected
             ? "border-[#6b5038]/40 bg-[#6b5038]/[0.04] dark:border-[#c4a882]/40 dark:bg-[#6b5038]/[0.18]"
@@ -457,7 +463,7 @@ function BestThisWeekCellSkeleton({ showLogo }: { showLogo: boolean }) {
 
 function TodayCardSkeleton() {
   return (
-    <div className="rounded-xl border border-black/[0.08] bg-[#faf7f2] p-5 dark:border-white/[0.08] dark:bg-surface">
+    <div className="h-full rounded-xl border border-black/[0.08] bg-[#faf7f2] p-4 dark:border-white/[0.08] dark:bg-surface md:p-5">
       <div className="flex items-start gap-4">
         <Skeleton circle h={48} w={48} />
         <div className="min-w-0 flex-1 space-y-2">
