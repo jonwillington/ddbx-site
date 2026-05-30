@@ -534,11 +534,39 @@ export interface MonthlySummary {
   created_at: string;             // ISO datetime UTC
 }
 
+/** Read-time alpha series for the month's buys: equal-weight £100/buy, entered
+ *  on each buy's disclosure-day close and marked to the latest close, against
+ *  the same stakes put into the FTSE All-Share. Computed on the fly in
+ *  GET /api/monthly-summary (not persisted — deterministic, no LLM). Null when
+ *  too few buys have price data, or for markets without the monthly benchmark. */
+export interface MonthlyPerformance {
+  strategy: PortfolioPoint[];   // picks portfolio value over the month, £ major
+  benchmark: PortfolioPoint[];  // same stakes into FTSE All-Share, £ major
+  deployed: PortfolioPoint[];   // cumulative capital deployed, £ major
+}
+
 /** Response shape for GET /api/monthly-summary — the summary plus the featured
- *  and cluster dealings hydrated into full Dealing objects for deep-linking. */
+ *  and cluster dealings hydrated into full Dealing objects for deep-linking,
+ *  plus the read-time `performance` alpha series (null when unavailable). */
 export interface MonthlySummaryResponse {
   summary: MonthlySummary;
   cited: Dealing[];
+  performance: MonthlyPerformance | null;
+}
+
+/** Lightweight index entry for GET /api/monthly-summaries — enough to render a
+ *  list of available retrospectives without fetching each full article. */
+export interface MonthlySummaryListItem {
+  month: string;      // ISO "YYYY-MM"
+  market: Market;
+  headline: string;
+  created_at: string; // ISO datetime UTC
+}
+
+/** Response shape for GET /api/monthly-summaries — available retrospectives for
+ *  a market, newest first. */
+export interface MonthlySummariesResponse {
+  summaries: MonthlySummaryListItem[];
 }
 
 export interface PortfolioPoint {
