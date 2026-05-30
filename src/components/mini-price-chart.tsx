@@ -56,6 +56,7 @@ export function MiniPriceChart({
   entryPrice,
   fmt,
   normalizeClose,
+  muted = false,
 }: {
   tickerForApi: string;
   tickerForDisplay: string;
@@ -73,6 +74,11 @@ export function MiniPriceChart({
    *  converter because Yahoo's USD bars land as cents-times-FX in the
    *  prices table while Form 4's `price` is in major-dollars. */
   normalizeClose?: (closePence: number, date: string) => number | null;
+  /** When true, the line + headline render in neutral ink instead of
+   *  buy-green / sell-red. Used for non-open-market trades (awards, schemes,
+   *  placings) where the movement is real but the "winner / loser" framing
+   *  would mislead. Mirrors the iOS MiniPriceChart `isMuted` flag. */
+  muted?: boolean;
 }) {
   const [period, setPeriod] = useState<Period>("around");
   const [allBars, setAllBars] = useState<{ date: string; close: number }[]>([]);
@@ -144,21 +150,33 @@ export function MiniPriceChart({
 
   const upText = "text-[#1e6b18] dark:text-[#5cd84a]";
   const downText = "text-[#8b2020] dark:text-[#e84d4d]";
+  // Non-open-market trades drop the green/red framing — the price path is
+  // real but the director didn't buy at the entry price, so the movement
+  // isn't a "win".
+  const trendText = muted ? "text-foreground/60" : up ? upText : downText;
 
-  const lineColor = up
+  const lineColor = muted
     ? isDark
-      ? "#5cd84a"
-      : "#1e6b18"
-    : isDark
-      ? "#e84d4d"
-      : "#8b2020";
-  const fillColor = up
+      ? "rgba(255,255,255,0.5)"
+      : "rgba(0,0,0,0.45)"
+    : up
+      ? isDark
+        ? "#5cd84a"
+        : "#1e6b18"
+      : isDark
+        ? "#e84d4d"
+        : "#8b2020";
+  const fillColor = muted
     ? isDark
-      ? "rgba(92,216,74,0.18)"
-      : "rgba(30,107,24,0.12)"
-    : isDark
-      ? "rgba(232,77,77,0.18)"
-      : "rgba(139,32,32,0.12)";
+      ? "rgba(255,255,255,0.08)"
+      : "rgba(0,0,0,0.05)"
+    : up
+      ? isDark
+        ? "rgba(92,216,74,0.18)"
+        : "rgba(30,107,24,0.12)"
+      : isDark
+        ? "rgba(232,77,77,0.18)"
+        : "rgba(139,32,32,0.12)";
 
   // Lightweight-charts owns the canvas; create on mount + when bars or
   // theme change, tear down on unmount. We always render the container
@@ -372,7 +390,7 @@ export function MiniPriceChart({
         </span>
         {lastBar && (
           <span
-            className={`text-[10px] font-semibold tabular-nums ${up ? upText : downText}`}
+            className={`text-[10px] font-semibold tabular-nums ${trendText}`}
           >
             {returnPct >= 0 ? "+" : ""}
             {returnPct.toFixed(1)}% since buy
@@ -407,7 +425,7 @@ export function MiniPriceChart({
           <span className="text-[10px] text-muted">
             Now{" "}
             <span
-              className={`font-mono tabular-nums font-semibold ${up ? upText : downText}`}
+              className={`font-mono tabular-nums font-semibold ${trendText}`}
             >
               {fmt.formatPrice(nowPrice)}
             </span>
@@ -468,7 +486,11 @@ export function MiniPriceChart({
             </span>
             <span
               className={`font-mono text-[12px] font-semibold tabular-nums ${
-                scrub.value >= entryPrice ? upText : downText
+                muted
+                  ? "text-foreground/60"
+                  : scrub.value >= entryPrice
+                    ? upText
+                    : downText
               }`}
             >
               {fmt.formatPrice(scrub.value)}

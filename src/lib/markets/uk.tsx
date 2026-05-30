@@ -117,6 +117,11 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
   const ticker = d.ticker;
   const entryPrice = d.price_pence;
   const tradeDate = d.trade_date.slice(0, 10);
+  // A buy the pipeline classified as not-open-market (award / scheme /
+  // placing). The entry "price" wasn't paid at market, so the entry→now
+  // return isn't a like-for-like gain. Mute the green "winner" framing and
+  // explain why — same treatment as the iOS detail view (isPlacement).
+  const isNonMarketBuy = d.is_open_market_buy === false;
 
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [ftseEntry, setFtseEntry] = useState<number | null>(null);
@@ -169,6 +174,22 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
 
   return (
     <div className="mb-4 space-y-4">
+      {isNonMarketBuy && (
+        <div
+          className="flex gap-3 rounded-lg border border-blue-200/90 bg-blue-50/90 px-3.5 py-3 text-left dark:border-blue-900/50 dark:bg-blue-950/30"
+          role="note"
+        >
+          <InformationCircleOutlineIcon
+            aria-hidden
+            className="w-5 h-5 shrink-0 text-blue-700 dark:text-blue-400 mt-0.5"
+          />
+          <p className="text-sm leading-relaxed text-blue-950/90 dark:text-blue-100/90">
+            Non-market trade — the entry price reflects an award or scheme, not
+            shares bought at market value, so the return below isn’t a
+            like-for-like gain.
+          </p>
+        </div>
+      )}
       {currentPrice != null && d.value_gbp != null && (
         <PositionCard
           benchmark={{
@@ -179,6 +200,7 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
           current={currentPrice}
           entry={entryPrice}
           fmt={GBP_FORMAT}
+          muted={isNonMarketBuy}
           originalValue={d.value_gbp}
           shares={d.shares}
         />
@@ -188,6 +210,7 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
           disclosedDate={(d.disclosed_date || d.trade_date).slice(0, 10)}
           entryPrice={entryPrice}
           fmt={GBP_FORMAT}
+          muted={isNonMarketBuy}
           tickerForApi={ticker}
           tickerForDisplay={ticker.replace(/\.L$/, "")}
           tradeDate={tradeDate}

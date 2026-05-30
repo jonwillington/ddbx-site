@@ -33,6 +33,7 @@ export function PositionCard({
   originalValue,
   fmt,
   benchmark,
+  muted = false,
 }: {
   entry: number;
   current: number;
@@ -42,6 +43,12 @@ export function PositionCard({
   /** When provided, renders a 4th tile. Pass `{ entry: null, current: null }`
    *  to show a loading skeleton; omit the prop entirely to hide the tile. */
   benchmark?: BenchmarkProps;
+  /** When true, the Now / Return / alpha cells render in neutral styling
+   *  instead of buy-green / sell-red, and the Return tile drops its coloured
+   *  fill. Used for non-open-market trades (awards, schemes, placings) where
+   *  the % is real but the green "winner" framing would mislead — the director
+   *  didn't buy at this price. Mirrors the iOS PositionCard `isMuted` flag. */
+  muted?: boolean;
 }) {
   const stockPct = (current - entry) / entry;
   const up = stockPct >= 0;
@@ -82,6 +89,14 @@ export function PositionCard({
   const downText = "text-[#8b2020] dark:text-[#e84d4d]";
   const upBg = "bg-[#1e6b18]/[0.12] dark:bg-[#5cd84a]/[0.12]";
   const downBg = "bg-[#8b2020]/[0.12] dark:bg-[#e84d4d]/[0.12]";
+  const neutralBg = "bg-black/[0.04] dark:bg-white/[0.06]";
+
+  // For non-open-market trades the % is real but green/red "winner" framing
+  // would mislead — the director didn't buy at this price. Strip the colour
+  // and the Return tile's coloured fill, keeping the numbers in neutral ink.
+  const trendText = muted ? "text-foreground" : up ? upText : downText;
+  const returnBg = muted ? neutralBg : up ? upBg : downBg;
+  const alphaText = muted ? "text-muted" : ahead ? upText : downText;
 
   const cols = benchmark ? "sm:grid-cols-4" : "sm:grid-cols-3";
 
@@ -103,9 +118,7 @@ export function PositionCard({
         <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
           Now
         </div>
-        <div
-          className={`text-2xl font-bold tabular-nums ${up ? upText : downText}`}
-        >
+        <div className={`text-2xl font-bold tabular-nums ${trendText}`}>
           {fmt.formatPrice(current)}
         </div>
         <div className="text-xs text-muted mt-1">
@@ -113,18 +126,14 @@ export function PositionCard({
         </div>
       </div>
 
-      <div className={`rounded-xl px-4 py-4 ${up ? upBg : downBg}`}>
+      <div className={`rounded-xl px-4 py-4 ${returnBg}`}>
         <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
           Return
         </div>
-        <div
-          className={`text-2xl font-bold tabular-nums ${up ? upText : downText}`}
-        >
+        <div className={`text-2xl font-bold tabular-nums ${trendText}`}>
           {fmtPct(stockPct)}
         </div>
-        <div
-          className={`text-xs font-medium mt-1 opacity-70 ${up ? upText : downText}`}
-        >
+        <div className={`text-xs font-medium mt-1 opacity-70 ${trendText}`}>
           {gainSign}
           {fmt.formatValue(gainLoss)}
         </div>
@@ -140,9 +149,7 @@ export function PositionCard({
               {fmtPct(benchmarkPct)}
             </div>
             {alphaPct != null && (
-              <div
-                className={`text-xs font-semibold mt-1 ${ahead ? upText : downText}`}
-              >
+              <div className={`text-xs font-semibold mt-1 ${alphaText}`}>
                 {fmtPp(alphaPct)} alpha
               </div>
             )}
