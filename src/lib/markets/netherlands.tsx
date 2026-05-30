@@ -244,6 +244,7 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     summary: d.analysis?.summary,
     confidence: d.analysis?.confidence,
     catalystWindow: d.analysis?.catalyst_window,
+    cluster: d.cluster ?? null,
     raw: g,
   };
 }

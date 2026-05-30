@@ -7,6 +7,7 @@ import { computeRowMetric, deltaStyle, shortDate } from "./market-utils";
 
 import { Skeleton } from "@/components/skeleton";
 import { CompanyLogo } from "@/components/company-logo";
+import { ClusterChip } from "@/components/cluster-chip";
 
 /** Column headers above the row list. `hideDate` matches the per-section
  *  Today cluster which gets its own date heading. The Performance column
@@ -441,8 +442,11 @@ export function MarketRow<W>({
                 {company}
               </span>
             </div>
-            <div className="text-[11px] text-muted truncate mt-0.5">
-              {insiderLine}
+            <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+              <ClusterChip cluster={dealing.cluster} />
+              <span className="text-[11px] text-muted truncate">
+                {insiderLine}
+              </span>
             </div>
           </div>
           <div className="shrink-0 text-sm font-semibold tabular-nums leading-tight text-right">
@@ -498,8 +502,11 @@ export function MarketRow<W>({
             <div className="text-[13px] font-medium truncate leading-tight">
               {company}
             </div>
-            <div className="text-[11px] text-muted truncate mt-0.5">
-              {insiderLine}
+            <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+              <ClusterChip cluster={dealing.cluster} />
+              <span className="text-[11px] text-muted truncate">
+                {insiderLine}
+              </span>
             </div>
           </div>
         </div>

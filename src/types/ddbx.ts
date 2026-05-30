@@ -277,6 +277,36 @@ export interface DirectorSummary {
 // Treat them as distinct concepts even though the string overlaps.
 export type DealingCurrency = "GBP" | "EUR" | "USD";
 
+/**
+ * Cluster signal — multiple distinct insiders buying the same issuer within a
+ * short window. One of the strongest patterns in this dataset (see the triage
+ * floors `cluster-PDMR-14d` / `cluster-reporter-14d` and the analyse prompts),
+ * surfaced here as a structured, renderable fact so consumers can show a chip
+ * rather than the user having to read it out of the analysis prose.
+ *
+ * Computed at READ time, not persisted — clusters form over days, so a flag
+ * frozen at triage time would never light up for the FIRST mover (alone at
+ * their own triage moment). The read query therefore uses a SYMMETRIC ±window
+ * around the dealing's trade_date (not the look-back-only window the triage
+ * engine uses), so every member of a cluster shows the chip, first mover
+ * included. Filters mirror the triage engine: open-market buys only, above the
+ * per-market value floor, excluding quarantined rows and the dealing's own
+ * insider. Only set on `tx_type: "buy"` (UK) / acquisition (US/EU) rows.
+ *
+ *  - `tier`: "strong" ⇒ a co-buyer within ±14 days; "soft" ⇒ none within 14d
+ *    but at least one within ±30 days. Lets consumers weight the chip.
+ *  - `count`: distinct insiders in the cluster INCLUDING this dealing's insider
+ *    (so the smallest cluster reads `count: 2`).
+ *  - `window_days`: 14 for strong, 30 for soft — the window the tier matched.
+ *
+ * Null/absent when the dealing isn't part of a cluster.
+ */
+export interface ClusterInfo {
+  tier: "strong" | "soft";
+  count: number;
+  window_days: 14 | 30;
+}
+
 export interface Dealing {
   id: string;
   trade_date: string;      // ISO
@@ -325,6 +355,9 @@ export interface Dealing {
   sector?: string | null;
   sector_normalized?: SectorNormalized | null;
   sic_codes?: string[] | null;
+  /** Cluster signal computed at read time. See ClusterInfo. Null/absent when
+   *  this buy isn't part of a same-issuer cluster (or the row is a sell). */
+  cluster?: ClusterInfo | null;
 }
 
 export interface PerformanceRow {
@@ -612,6 +645,12 @@ export interface UsDealing {
    *  Lets US issuers group alongside UK ones in the consumers' "Industry"
    *  surfaces. Mirrors `Dealing.sector_normalized`. */
   sector_normalized?: SectorNormalized | null;
+
+  /** Cluster signal computed at read time — distinct other reporters acquiring
+   *  the same issuer within ±14d (strong) / ±30d (soft). See ClusterInfo.
+   *  Null/absent when not part of a cluster, or the row isn't an acquisition.
+   *  Mirrors `Dealing.cluster`. */
+  cluster?: ClusterInfo | null;
 }
 
 export type UsTriageVerdict = "skip" | "maybe" | "promising";
@@ -812,6 +851,12 @@ export interface EuDealing {
    *  analyse threshold or haven't been analysed yet. Clients gate on
    *  MARKET_CONFIG[market].capabilities.analysis before surfacing it. */
   analysis?: Analysis;
+
+  /** Cluster signal computed at read time — distinct other PDMRs acquiring the
+   *  same issuer (by LEI) within ±14d (strong) / ±30d (soft). See ClusterInfo.
+   *  Null/absent when not part of a cluster, or the row isn't an acquisition.
+   *  Mirrors `Dealing.cluster`. */
+  cluster?: ClusterInfo | null;
 }
 
 export type EuTriageVerdict = "skip" | "maybe" | "promising";

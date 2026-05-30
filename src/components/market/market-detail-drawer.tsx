@@ -8,6 +8,7 @@ import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
+import { ClusterChip } from "@/components/cluster-chip";
 import { RecentBuysSection } from "@/components/market/recent-buys-section";
 import { useMediaQuery } from "@/lib/use-media-query";
 
@@ -270,6 +271,10 @@ export function MarketDetailDrawer<W>({
                       <h1 className="text-3xl font-bold leading-tight tracking-tight flex-1 min-w-0">
                         {company}
                       </h1>
+                      <ClusterChip
+                        className="shrink-0"
+                        cluster={active.cluster}
+                      />
                     </div>
 
                     <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">

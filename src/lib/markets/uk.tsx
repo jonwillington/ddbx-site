@@ -90,6 +90,7 @@ export function toMarketDealing(d: Dealing): MarketDealing<Dealing> {
     sector: d.sector_normalized ?? undefined,
     confidence: d.analysis?.confidence,
     catalystWindow: d.analysis?.catalyst_window,
+    cluster: d.cluster ?? null,
     actionLabel: action.label,
     actionTone: action.tone,
     raw: d,

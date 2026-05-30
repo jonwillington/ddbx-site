@@ -19,7 +19,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { PriceFormat } from "@/components/position-card";
 import type { MarketSession } from "@/lib/market-status";
 import type { HolidaySource } from "@/lib/bank-holidays";
-import type { Rating } from "@/types/ddbx";
+import type { ClusterInfo, Rating } from "@/types/ddbx";
 
 /** Triage label string. Markets are free to use their own taxonomies — the
  *  hero / today card just renders whatever the adapter produces. */
@@ -81,6 +81,12 @@ export interface MarketDealing<W = unknown> {
   confidence?: number;
   /** Optional catalyst window ("3m" | "6m" | "12m") from deep analysis. */
   catalystWindow?: string;
+
+  /** Cluster signal computed server-side — 2+ insiders buying the same issuer
+   *  in a ±14d (strong) / ±30d (soft) window. Surfaced as a chip on the row +
+   *  detail drawer. null/undefined when this dealing isn't part of a cluster.
+   *  Read off the wire row's `cluster` field in each market's toMarketDealing. */
+  cluster?: ClusterInfo | null;
 
   /** Human-readable action ("Open-market buy", "Director purchase"). */
   actionLabel: string;

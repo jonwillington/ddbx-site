@@ -287,6 +287,7 @@ export function toMarketDealing(group: UsRowGroup): MarketDealing<UsRowGroup> {
     sector: row.sector_normalized ?? undefined,
     confidence: group.analysis?.confidence,
     catalystWindow: group.analysis?.catalyst_window,
+    cluster: row.cluster ?? null,
     actionLabel: action.label,
     actionTone: action.tone,
     raw: group,
