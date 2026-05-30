@@ -78,6 +78,8 @@ export interface MarketConfig {
     news: boolean;
     /** Has automated tweet output (daily summaries, weekly movers). */
     tweets: boolean;
+    /** Monthly retrospective article + banner (GET /api/monthly-summary). */
+    monthlySummary: boolean;
   };
 }
 
@@ -102,6 +104,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       dailySummary: true,
       news: true,
       tweets: true,
+      monthlySummary: true,
     },
   },
   US: {
@@ -133,6 +136,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       dailySummary: false,
       news: true,
       tweets: false,
+      monthlySummary: false,
     },
   },
   SE: {
@@ -154,6 +158,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       dailySummary: false,
       news: true,
       tweets: false,
+      monthlySummary: false,
     },
   },
   NL: {
@@ -175,6 +180,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       dailySummary: false,
       news: true,
       tweets: false,
+      monthlySummary: false,
     },
   },
 };
@@ -394,6 +400,144 @@ export interface DailySummary {
  *  dealings hydrated into full Dealing objects, in cited_ids order. */
 export interface DailySummaryResponse {
   summary: DailySummary;
+  cited: Dealing[];
+}
+
+// ---- Monthly summary -------------------------------------------------------
+// A rich retrospective on the previous month's dealings, surfaced as a distinct
+// article (a banner at the top of the list is the entry point). Deterministic
+// data (selection, metrics, clusters, chart bars) wrapped in a bounded LLM
+// narrative layer. One row per (month, market) in `monthly_summaries`
+// (migration 029), served by GET /api/monthly-summary. UK-only in v1; the
+// `market` field keeps it forward-compatible. All sub-types are intentionally
+// flat (string enums, no unions) so they mirror cleanly to Swift Codable and
+// Kotlin kotlinx.serialization. See worker/pipeline/monthly-summary.ts.
+
+/** Sentiment marker the article sorts/filters on. Set deterministically from
+ *  the item's price move, so the badge can never contradict the number. */
+export type MonthlyItemSentiment = "positive" | "negative" | "neutral";
+
+/** Why an item was featured. `spike_faded` is the mid-month-spike-that-reverted
+ *  case ("the value has now gone"), only detectable from the price path, not
+ *  start-to-end returns. */
+export type MonthlyFeatureReason =
+  | "best_performer"
+  | "worst_performer"
+  | "most_interesting"
+  | "cluster"
+  | "spike_faded";
+
+/** One downsampled price point for a featured item's chart. Mirrors the
+ *  /api/prices/history bar shape so consumers reuse their chart renderer.
+ *  `price` is always major units (GBP for UK); `close_pence` is the raw stored
+ *  scale for parity with the `prices` table. */
+export interface MonthlyChartBar {
+  date: string;          // ISO YYYY-MM-DD
+  price: number;         // major units (e.g. GBP)
+  close_pence: number;   // raw stored scale (e.g. pence)
+}
+
+/** A same-issuer cluster surfaced for the month. Rolled up from the read-time
+ *  per-dealing `cluster` signal (see ClusterInfo) so the article and the row
+ *  chip always agree. Closed-end investment trusts are already excluded by the
+ *  shared cluster layer. */
+export interface MonthlyCluster {
+  ticker: string;
+  company: string;
+  /** Distinct insiders in the cluster (>= 2). */
+  insider_count: number;
+  /** Strongest tier seen across the cluster's in-month buys. */
+  tier: ClusterInfo["tier"];
+  /** Total GBP across the cluster's in-month buys. */
+  total_value_gbp: number;
+  /** Representative dealing ids in the cluster, for deep-linking. */
+  dealing_ids: string[];
+  /** Earliest / latest disclosed_date among the cluster's in-month buys. */
+  first_buy_date: string;
+  last_buy_date: string;
+}
+
+/** Month-level deterministic metrics. Never LLM-authored. */
+export interface MonthlyMetrics {
+  total_dealings: number;        // in-month buys considered (post quarantine + £0 filter)
+  total_buys: number;
+  total_sells: number;
+  total_value_gbp: number;
+  distinct_companies: number;
+  distinct_directors: number;
+  cluster_count: number;
+  /** Median since-disclosure return across in-month buys with price data, as a
+   *  ratio (0.12 = +12%). Measured disclosure-day close to latest close — for
+   *  the just-ended month no 90d horizon has elapsed, so this is the honest
+   *  short-window figure, not a settled horizon return. Null when too few. */
+  median_return: number | null;
+  best_return: number | null;    // best single since-disclosure return, ratio
+  worst_return: number | null;   // worst, ratio
+  benchmark_return: number | null; // FTSE All-Share over the month, ratio
+}
+
+/** Path-aware summary of an item's post-disclosure move, computed by scanning
+ *  the daily `prices` series (not just endpoints). This is what makes a
+ *  mid-month spike that has since faded a detectable, first-class shape. All
+ *  returns are ratios from the disclosure-day close (the realistic copycat
+ *  entry); null when the price series is too thin. */
+export interface MonthlyPriceArc {
+  peak_return: number | null;     // max close/entry - 1 over the window
+  peak_date: string | null;
+  trough_return: number | null;   // min close/entry - 1
+  trough_date: string | null;
+  current_return: number | null;  // latest/entry - 1
+  give_back: number | null;       // peak_return - current_return (how much faded)
+  max_drawdown_from_peak: number | null;
+}
+
+/** One featured retrospective item. The deterministic fields are filled by the
+ *  selector; the *_text fields and `sources` are the per-item LLM (Opus +
+ *  web_search) narrative. `sentiment` and `feature_reason` are deterministic. */
+export interface MonthlyFeaturedItem {
+  dealing_id: string;
+  ticker: string;
+  company: string;
+  director_name: string;
+  director_role: string | null;
+  disclosed_date: string;
+  entry_price_pence: number | null;   // disclosed-day close (copycat entry)
+  latest_price_pence: number | null;  // latest cached close at generation time
+  return_since_entry: number | null;  // latest/entry - 1, ratio
+  arc: MonthlyPriceArc;
+  sentiment: MonthlyItemSentiment;
+  feature_reason: MonthlyFeatureReason;
+  /** Cluster signal for this buy, when part of one. Mirrors Dealing.cluster. */
+  cluster?: ClusterInfo | null;
+  /** Downsampled price bars over the featured window. */
+  chart: MonthlyChartBar[];
+  // --- LLM narrative (Opus + web_search) ---
+  headline_text: string;          // one-line "what happened"
+  retrospective_text: string;     // balanced "has the value gone"
+  forward_view_text: string;      // impartial "is there still a case", never advice
+  sources?: string[];             // source URLs retrieved at synthesis time
+}
+
+/** Top-level monthly retrospective. Persisted to `monthly_summaries`; served by
+ *  GET /api/monthly-summary. Market-aware; UK only in v1. */
+export interface MonthlySummary {
+  month: string;                  // featured month, ISO "YYYY-MM" (the previous month)
+  market: Market;
+  headline: string;               // banner title (~60 chars)
+  intro: string;                  // 2-4 sentence month overview
+  macro_note: string;             // macro framing for the month
+  metrics: MonthlyMetrics;
+  featured: MonthlyFeaturedItem[];
+  clusters: MonthlyCluster[];
+  benchmark_chart: MonthlyChartBar[]; // FTSE All-Share over the month
+  model: string;                  // primary synthesis model id
+  created_at: string;             // ISO datetime UTC
+}
+
+/** Response shape for GET /api/monthly-summary — the summary plus the featured
+ *  and cluster dealings hydrated into full Dealing objects for deep-linking. */
+export interface MonthlySummaryResponse {
+  summary: MonthlySummary;
   cited: Dealing[];
 }
 
@@ -954,4 +1098,45 @@ export interface UsDealingGroup {
    *  (currency-agnostic ratio). Surfaces only once
    *  MARKET_CONFIG.US.capabilities.performance flips to true. */
   performance?: PerformanceRow[];
+}
+
+// ---- Analysis-quality feedback ---------------------------------------------
+// Signed-in users rate the quality of a dealing's deep analysis (thumbs up /
+// down + optional comment) at the bottom of the analysis article. Stored in
+// D1 (`analysis_ratings`, migration 028) via POST /api/analysis-feedback,
+// keyed by a server-verified Firebase uid. iOS-only for now; Android/web are
+// additive later. Internal quality/eval signal — not surfaced to other users.
+
+/** Thumbs up (1) or thumbs down (-1). */
+export type AnalysisFeedbackVote = 1 | -1;
+
+/** Request body for POST /api/analysis-feedback. The uid is NOT taken from the
+ *  body — it's derived from the verified Firebase ID token in the
+ *  Authorization: Bearer header (see worker/lib/firebase-auth.ts). */
+export interface AnalysisFeedbackRequest {
+  dealing_id: string;
+  market: Market;
+  vote: AnalysisFeedbackVote;
+  /** Optional free text, trimmed and capped at 1000 chars server-side. */
+  comment?: string;
+  /** The analysis quality tier the client is showing at vote time. Captured
+   *  as a review annotation so feedback can be sliced by tier; the client
+   *  already has `analysis.rating` on screen. */
+  analysis_rating?: Rating;
+  /** Client build string, e.g. "1.3.0 (412)". Capped at 40 chars. */
+  app_version?: string;
+}
+
+/** A row in `analysis_ratings`. */
+export interface AnalysisFeedbackRow {
+  dealing_id: string;
+  user_uid: string;
+  market: Market;
+  vote: AnalysisFeedbackVote;
+  comment: string | null;
+  analysis_rating: Rating | null;
+  app_version: string | null;
+  client: string;
+  created_at: string;
+  updated_at: string;
 }
