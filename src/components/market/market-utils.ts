@@ -37,10 +37,16 @@ export function bucketByMonth<W>(
   options?: {
     locale?: string;
     isSkipped?: (d: MarketDealing<W>) => boolean;
+    /** Current price (in the entry-price unit) for a dealing, when known.
+     *  When provided, each day's skipped cluster gets a secondary sort by
+     *  mark-to-market return (biggest gainers first); unpriced rows and
+     *  non-market buys keep their importance order at the tail. */
+    currentPriceOf?: (d: MarketDealing<W>) => number | undefined;
   },
 ): MonthBucket<W>[] {
   const locale = options?.locale ?? "en-US";
   const isSkipped = options?.isSkipped;
+  const currentPriceOf = options?.currentPriceOf;
   const months: MonthBucket<W>[] = [];
 
   for (const d of dealings) {
@@ -105,10 +111,43 @@ export function bucketByMonth<W>(
     for (const day of month.days) {
       day.suggested.sort(compareDealingImportance);
       day.skipped.sort(compareDealingImportance);
+      // Secondary sort for the skipped cluster: when we can price the rows,
+      // lead with the biggest gainers. Stable over the importance sort above,
+      // so unpriced rows (and awards/schemes, whose return is N/A) keep their
+      // importance order at the tail.
+      if (currentPriceOf) day.skipped.sort(compareByReturnDesc(currentPriceOf));
     }
   }
 
   return months;
+}
+
+/** Comparator factory: order by mark-to-market return, biggest gainers first.
+ *  Yields 0 for rows we can't price (or non-market buys — awards / schemes,
+ *  whose return is N/A) so a stable sort leaves them in their prior order. */
+export function compareByReturnDesc<W>(
+  currentPriceOf: (d: MarketDealing<W>) => number | undefined,
+): (a: MarketDealing<W>, b: MarketDealing<W>) => number {
+  const returnOf = (d: MarketDealing<W>): number | null => {
+    if (d.actionTone === "grant") return null;
+    const current = currentPriceOf(d);
+    const entry = d.entryPrice;
+
+    if (current == null || entry == null || entry <= 0) return null;
+
+    return (current - entry) / entry;
+  };
+
+  return (a, b) => {
+    const ra = returnOf(a);
+    const rb = returnOf(b);
+
+    if (ra == null && rb == null) return 0;
+    if (ra == null) return 1;
+    if (rb == null) return -1;
+
+    return rb - ra;
+  };
 }
 
 /** Order dealings by analyst importance — significant → noteworthy → minor →

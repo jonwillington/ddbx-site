@@ -27,7 +27,7 @@ import { type SparkBar } from "./market-row-spark";
 import { MarketTodayDrawer } from "./market-today-drawer";
 import { MarketTodayEmpty } from "./market-today-empty";
 import { MarketTodayHero } from "./market-today-hero";
-import { bucketByMonth, todayKeyIso } from "./market-utils";
+import { bucketByMonth, compareByReturnDesc, todayKeyIso } from "./market-utils";
 
 import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
@@ -402,25 +402,55 @@ export function MarketPage<W>({
     [searchedDealings, todayIso],
   );
 
+  const stockCurrent = useCallback(
+    (ticker: string): number | undefined => {
+      const raw = prices[ticker];
+
+      if (raw == null) return undefined;
+      const normalized = config.normalizeLivePrice(
+        raw.price,
+        raw.date,
+        fxRates,
+      );
+
+      return normalized ?? undefined;
+    },
+    [prices, config, fxRates],
+  );
+  const stockCurrentForDealing = useCallback(
+    (d: MarketDealing<W>) => stockCurrent(d.ticker),
+    [stockCurrent],
+  );
+
   // Today's skipped (muted) filings. The analysed/primary ones surface as
   // cards in the Today hero; these render as ordinary rows under a "Today"
   // group at the top of the chronological table. Mirrors the hero's split
   // (isRowMuted, or non-purchase when a market declares no mute rule) so every
   // today filing lands in exactly one place. bucketByMonth excludes today, so
-  // without this the skipped tail would have nowhere to go.
+  // without this the skipped tail would have nowhere to go. Ordered by
+  // mark-to-market return (biggest gainers first), same as the dated clusters.
   const todaySkipped = useMemo(() => {
     const isMuted = config.isRowMuted;
 
-    return todayDealings.filter((d) => (isMuted ? isMuted(d) : !d.isPurchase));
-  }, [todayDealings, config.isRowMuted]);
+    return todayDealings
+      .filter((d) => (isMuted ? isMuted(d) : !d.isPurchase))
+      .sort(compareByReturnDesc(stockCurrentForDealing));
+  }, [todayDealings, config.isRowMuted, stockCurrentForDealing]);
 
   const monthBuckets = useMemo(
     () =>
       bucketByMonth(filteredDealings, todayIso, {
         locale: config.locale,
         isSkipped: config.isSkipped,
+        currentPriceOf: stockCurrentForDealing,
       }),
-    [filteredDealings, todayIso, config.locale, config.isSkipped],
+    [
+      filteredDealings,
+      todayIso,
+      config.locale,
+      config.isSkipped,
+      stockCurrentForDealing,
+    ],
   );
 
   // Daily summaries — UK-only today. The hook collects the unique ISO
@@ -446,22 +476,6 @@ export function MarketPage<W>({
       setOpenMonths(new Set(monthBuckets.map((m) => m.key)));
     }
   }, [monthBuckets, openMonths]);
-
-  const stockCurrent = useCallback(
-    (ticker: string): number | undefined => {
-      const raw = prices[ticker];
-
-      if (raw == null) return undefined;
-      const normalized = config.normalizeLivePrice(
-        raw.price,
-        raw.date,
-        fxRates,
-      );
-
-      return normalized ?? undefined;
-    },
-    [prices, config, fxRates],
-  );
 
   // When the user picks the disclosure anchor we look up the benchmark
   // close on the disclosure date first (and fall back to trade-day).
