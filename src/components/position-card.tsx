@@ -130,13 +130,17 @@ export function PositionCard({
         <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
           Return
         </div>
-        <div className={`text-2xl font-bold tabular-nums ${trendText}`}>
-          {fmtPct(stockPct)}
+        <div
+          className={`text-2xl font-bold tabular-nums ${muted ? "text-muted" : trendText}`}
+        >
+          {muted ? "N/A" : fmtPct(stockPct)}
         </div>
-        <div className={`text-xs font-medium mt-1 opacity-70 ${trendText}`}>
-          {gainSign}
-          {fmt.formatValue(gainLoss)}
-        </div>
+        {!muted && (
+          <div className={`text-xs font-medium mt-1 opacity-70 ${trendText}`}>
+            {gainSign}
+            {fmt.formatValue(gainLoss)}
+          </div>
+        )}
       </div>
 
       {benchmark &&
@@ -148,10 +152,14 @@ export function PositionCard({
             <div className="text-2xl font-bold tabular-nums text-foreground/50">
               {fmtPct(benchmarkPct)}
             </div>
-            {alphaPct != null && (
-              <div className={`text-xs font-semibold mt-1 ${alphaText}`}>
-                {fmtPp(alphaPct)} alpha
-              </div>
+            {muted ? (
+              <div className="text-xs font-semibold mt-1 text-muted">N/A</div>
+            ) : (
+              alphaPct != null && (
+                <div className={`text-xs font-semibold mt-1 ${alphaText}`}>
+                  {fmtPp(alphaPct)} alpha
+                </div>
+              )
             )}
           </div>
         ) : (
