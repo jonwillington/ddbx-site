@@ -332,11 +332,11 @@ export default function DefaultLayout({
           </div>
         )}
       </div>
-      <main className="container mx-auto max-w-7xl px-4 md:px-6 flex-grow pt-8">
+      <main className="mx-auto w-full max-w-[1280px] px-4 md:px-6 flex-grow pt-8">
         {children}
       </main>
       <footer className="w-full border-t border-separator bg-surface/60">
-        <div className="container mx-auto max-w-7xl px-4 md:px-6 py-5 text-[10px] leading-4 text-foreground/40">
+        <div className="mx-auto w-full max-w-[1280px] px-4 md:px-6 py-5 text-[10px] leading-4 text-foreground/40">
           <div className="flex items-center mb-4">
             <img
               alt="ddbx"
