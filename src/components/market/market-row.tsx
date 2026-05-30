@@ -135,7 +135,7 @@ export function MarketDayHeader({
 function AiAvatar({ size = 28 }: { size?: number }) {
   return (
     <div
-      className="rounded-full flex items-center justify-center shrink-0 shadow-sm bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-700"
+      className="rounded-full flex items-center justify-center shrink-0 shadow-sm bg-[linear-gradient(to_right,#3300FC,#95008A,#EB0000)]"
       style={{ width: size, height: size }}
     >
       <svg
