@@ -27,7 +27,11 @@ import { type SparkBar } from "./market-row-spark";
 import { MarketTodayDrawer } from "./market-today-drawer";
 import { MarketTodayEmpty } from "./market-today-empty";
 import { MarketTodayHero } from "./market-today-hero";
-import { bucketByMonth, compareByReturnDesc, todayKeyIso } from "./market-utils";
+import {
+  bucketByMonth,
+  compareByReturnDesc,
+  todayKeyIso,
+} from "./market-utils";
 
 import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
