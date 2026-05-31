@@ -500,7 +500,11 @@ export function MarketPage<W>({
 
   useEffect(() => {
     if (openMonths === null && monthBuckets.length > 0) {
-      setOpenMonths(new Set(monthBuckets.map((m) => m.key)));
+      // Open only the most recent month; older months stay collapsed and
+      // expand on click. Keeps the initial DOM (and the near-viewport logo
+      // prefetch window) small instead of mounting every month's rows at
+      // once. monthBuckets is most-recent-first, so [0] is the latest.
+      setOpenMonths(new Set([monthBuckets[0].key]));
     }
   }, [monthBuckets, openMonths]);
 
@@ -517,6 +521,7 @@ export function MarketPage<W>({
     const ro = new ResizeObserver(read);
 
     ro.observe(el);
+
     return () => ro.disconnect();
   }, [dealings.length]);
 
