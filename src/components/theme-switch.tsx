@@ -11,12 +11,28 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
 
   useEffect(() => {
     const root = document.documentElement;
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    const initialTheme = savedTheme || "dark";
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
 
-    setTheme(initialTheme);
-    root.classList.toggle("dark", initialTheme === "dark");
+    // No saved choice → follow the OS. Once the user toggles, the saved
+    // value wins and OS changes are ignored (see the guard in onChange).
+    const resolve = () => {
+      const saved = localStorage.getItem("theme") as "light" | "dark" | null;
+      const next = saved ?? (mq.matches ? "dark" : "light");
+
+      setTheme(next);
+      root.classList.toggle("dark", next === "dark");
+    };
+
+    resolve();
     setIsMounted(true);
+
+    const onChange = () => {
+      if (!localStorage.getItem("theme")) resolve();
+    };
+
+    mq.addEventListener("change", onChange);
+
+    return () => mq.removeEventListener("change", onChange);
   }, []);
 
   const toggleTheme = useCallback(() => {
