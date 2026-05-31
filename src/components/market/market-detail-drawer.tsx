@@ -153,6 +153,7 @@ export function MarketDetailDrawer<W>({
   const gated =
     gating?.enabled === true && !!active && !gating.hasFullAccess(active.id);
   const BodyComponent = gated && DummyDetailBody ? DummyDetailBody : DetailBody;
+  const leadWithBody = !!active && !active.rating;
 
   const rawTicker = active?.ticker || "—";
   const ticker = formatTickerDisplay
@@ -342,6 +343,25 @@ export function MarketDetailDrawer<W>({
 
                     {DetailPosition && <DetailPosition dealing={active} />}
 
+                    {leadWithBody && (
+                      <>
+                        {gated ? (
+                          <div className="relative">
+                            <div
+                              aria-hidden
+                              className="pointer-events-none select-none"
+                              style={{ filter: "blur(4px)" }}
+                            >
+                              <BodyComponent dealing={active} />
+                            </div>
+                            {AnalysisOverlay && <AnalysisOverlay />}
+                          </div>
+                        ) : (
+                          <BodyComponent dealing={active} />
+                        )}
+                      </>
+                    )}
+
                     <RecentBuysSection
                       allDealings={allDealings}
                       currentDealing={active}
@@ -351,20 +371,21 @@ export function MarketDetailDrawer<W>({
                       onSelect={onSelectDealing ? handleSelectRelated : undefined}
                     />
 
-                    {gated ? (
-                      <div className="relative">
-                        <div
-                          aria-hidden
-                          className="pointer-events-none select-none"
-                          style={{ filter: "blur(4px)" }}
-                        >
-                          <BodyComponent dealing={active} />
+                    {!leadWithBody &&
+                      (gated ? (
+                        <div className="relative">
+                          <div
+                            aria-hidden
+                            className="pointer-events-none select-none"
+                            style={{ filter: "blur(4px)" }}
+                          >
+                            <BodyComponent dealing={active} />
+                          </div>
+                          {AnalysisOverlay && <AnalysisOverlay />}
                         </div>
-                        {AnalysisOverlay && <AnalysisOverlay />}
-                      </div>
-                    ) : (
-                      <BodyComponent dealing={active} />
-                    )}
+                      ) : (
+                        <BodyComponent dealing={active} />
+                      ))}
                   </div>
                 </div>
                 {!atBottom && (
