@@ -223,7 +223,7 @@ export function MiniPriceChart({
           color: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)",
           style: LineStyle.Dashed,
           labelVisible: true,
-          labelBackgroundColor: isDark ? "#1a1a1a" : "#6b5038",
+          labelBackgroundColor: isDark ? "#1a1a1a" : "#5a4128",
         },
         horzLine: {
           width: 1,
@@ -404,8 +404,8 @@ export function MiniPriceChart({
             key={key}
             className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
               period === key
-                ? "border-[#6b5038]/50 bg-[#6b5038]/10 text-[#6b5038] dark:text-[#a8804e]"
-                : "border-black/10 dark:border-white/10 text-muted hover:border-[#6b5038]/30"
+                ? "border-[#5a4128]/50 bg-[#5a4128]/10 text-[#5a4128] dark:text-[#a88c6e]"
+                : "border-black/10 dark:border-white/10 text-muted hover:border-[#5a4128]/30"
             }`}
             onClick={() => setPeriod(key)}
           >

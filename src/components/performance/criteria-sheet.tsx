@@ -58,7 +58,7 @@ export function CriteriaSheet<T extends string>({
                 </div>
                 <svg
                   aria-hidden
-                  className={active ? "text-[#6b5038]" : "text-transparent"}
+                  className={active ? "text-[#5a4128]" : "text-transparent"}
                   fill="none"
                   height="18"
                   viewBox="0 0 24 24"

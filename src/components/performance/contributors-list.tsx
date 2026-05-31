@@ -88,7 +88,7 @@ export function ContributorsList({
         <div className="flex items-center justify-between rounded-md border border-separator bg-surface/60 px-3 py-2 text-xs">
           <span className="text-muted">{excludedDealIds.size} excluded</span>
           <button
-            className="font-semibold text-[#6b5038] hover:underline"
+            className="font-semibold text-[#5a4128] hover:underline"
             type="button"
             onClick={onResetExclusions}
           >

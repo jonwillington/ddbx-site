@@ -16,7 +16,7 @@ export function ViewModeToggle({ value, onChange }: Props) {
             key={mode}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               active
-                ? "bg-[#6b5038]/10 text-[#6b5038]"
+                ? "bg-[#5a4128]/10 text-[#5a4128]"
                 : "bg-surface/60 text-muted hover:bg-surface/80"
             }`}
             type="button"

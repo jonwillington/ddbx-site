@@ -58,8 +58,8 @@ export const Navbar = () => {
                     className={clsx(
                       "text-sm transition-colors",
                       active
-                        ? "text-[#6b5038] font-medium"
-                        : "text-foreground hover:text-[#6b5038]",
+                        ? "text-[#5a4128] font-medium"
+                        : "text-foreground hover:text-[#5a4128]",
                     )}
                     href={item.href}
                   >

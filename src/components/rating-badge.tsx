@@ -26,7 +26,7 @@ const STYLES: Record<BadgeRating, string> = {
   significant:
     "bg-[#8b4513]/18 text-[#6b2f0a] border-[#8b4513]/40 font-bold dark:bg-[#d4845a]/15 dark:text-[#e8a878] dark:border-[#d4845a]/35",
   noteworthy:
-    "bg-[#6b5038]/14 text-[#4a3520] border-[#6b5038]/35 dark:bg-[#b8956e]/12 dark:text-[#c4a882] dark:border-[#b8956e]/30",
+    "bg-[#5a4128]/14 text-[#3d2b1a] border-[#5a4128]/35 dark:bg-[#ad9479]/12 dark:text-[#ad9479] dark:border-[#ad9479]/30",
   minor: "bg-[#c0b4a6]/10 text-[#7e766c] border-[#c0b4a6]/40 font-normal",
   routine: "bg-transparent text-[#b0a898] border-[#d8d0c6]/60 font-normal",
   skipped:

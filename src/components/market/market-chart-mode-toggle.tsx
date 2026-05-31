@@ -57,7 +57,7 @@ function PillGroup<T extends string>({
           aria-pressed={selected === item.id}
           className={`text-[11px] px-2.5 py-0.5 rounded-full transition-colors font-medium whitespace-nowrap ${
             selected === item.id
-              ? "bg-[#6b5038]/15 text-[#4a3520] dark:text-[#c4a882]"
+              ? "bg-[#5a4128]/15 text-[#3d2b1a] dark:text-[#ad9479]"
               : "text-muted hover:text-foreground"
           }`}
           type="button"

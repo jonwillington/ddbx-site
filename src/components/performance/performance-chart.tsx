@@ -18,7 +18,7 @@ import type {
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const STRAT_COLOR = "#6b5038"; // brand brown, matches the active-link tint
+const STRAT_COLOR = "#5a4128"; // brand brown, matches the active-link tint
 const BENCH_COLOR = "#a1a1aa"; // muted grey
 // Match the site's canonical positive/negative palette (see market-row,
 // evidence-table, hero-card). Light/dark variants are picked at render time.

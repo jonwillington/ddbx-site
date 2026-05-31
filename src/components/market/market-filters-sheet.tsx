@@ -48,13 +48,13 @@ export function MarketFiltersSheet({
     <Drawer.Root>
       <Drawer.Trigger asChild>
         <button
-          className="relative flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-2 text-xs text-foreground/85 hover:border-[#6b5038]/50 transition-colors"
+          className="relative flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-2 text-xs text-foreground/85 hover:border-[#5a4128]/50 transition-colors"
           type="button"
         >
           <AdjustmentsHorizontalIcon className="w-4 h-4" />
           <span className="font-medium">Filters</span>
           {hasActiveFilter && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#6b5038] dark:bg-[#c4a882]" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#5a4128] dark:bg-[#ad9479]" />
           )}
         </button>
       </Drawer.Trigger>
@@ -113,7 +113,7 @@ export function MarketFiltersSheet({
 
             <Drawer.Close asChild>
               <button
-                className="w-full rounded-full bg-[#6b5038] py-3 text-sm font-medium text-white transition-colors hover:bg-[#5a432f]"
+                className="w-full rounded-full bg-[#5a4128] py-3 text-sm font-medium text-white transition-colors hover:bg-[#49331f]"
                 type="button"
               >
                 Done
@@ -163,7 +163,7 @@ function Select({
   return (
     <div className="relative">
       <select
-        className="w-full appearance-none rounded-full border border-separator bg-surface/40 px-4 py-2.5 pr-10 text-sm font-medium text-foreground focus:border-[#6b5038]/50 focus:outline-none"
+        className="w-full appearance-none rounded-full border border-separator bg-surface/40 px-4 py-2.5 pr-10 text-sm font-medium text-foreground focus:border-[#5a4128]/50 focus:outline-none"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -198,7 +198,7 @@ function Segmented({
             aria-pressed={isCurrent}
             className={`flex-1 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
               isCurrent
-                ? "bg-[#6b5038]/15 text-[#4a3520] dark:text-[#c4a882]"
+                ? "bg-[#5a4128]/15 text-[#3d2b1a] dark:text-[#ad9479]"
                 : "text-muted hover:text-foreground"
             }`}
             type="button"

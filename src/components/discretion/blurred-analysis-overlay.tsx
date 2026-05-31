@@ -12,7 +12,7 @@ export function BlurredAnalysisOverlay() {
   return (
     <div className="absolute inset-0 z-10 flex items-start justify-center pt-12 px-4">
       <div className="relative w-full max-w-md rounded-2xl border border-[#e8e0d5] dark:border-separator bg-[#faf7f2]/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
-        <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#6b5038]/10 text-[#6b5038] dark:text-[#c4a882] mb-4">
+        <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#5a4128]/10 text-[#5a4128] dark:text-[#ad9479] mb-4">
           <LockClosedIcon className="w-5 h-5" />
         </span>
         <h3 className="text-lg font-semibold mb-1">Unlock the full analysis</h3>
@@ -26,7 +26,7 @@ export function BlurredAnalysisOverlay() {
               key={line}
               className="flex items-start gap-2 text-foreground/80"
             >
-              <span className="text-[#6b5038] dark:text-[#c4a882] mt-0.5">
+              <span className="text-[#5a4128] dark:text-[#ad9479] mt-0.5">
                 ✓
               </span>
               <span>{line}</span>

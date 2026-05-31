@@ -242,7 +242,7 @@ function TodayCard<W>({
       className={`group h-full w-full animate-today-hero-item rounded-xl border bg-[#faf7f2] p-4 text-left transition-colors duration-150 dark:bg-surface md:p-5
         ${
           selected
-            ? "border-[#6b5038]/40 bg-[#6b5038]/[0.04] dark:border-[#c4a882]/40 dark:bg-[#6b5038]/[0.18]"
+            ? "border-[#5a4128]/40 bg-[#5a4128]/[0.04] dark:border-[#ad9479]/40 dark:bg-[#5a4128]/[0.18]"
             : "border-black/[0.08] hover:border-black/[0.18] dark:border-white/[0.08] dark:hover:border-white/[0.18]"
         }
         ${muted ? "opacity-75" : ""}`}
@@ -401,7 +401,7 @@ function BestThisWeekCell<W>({
     <button
       className={`group flex items-center gap-3 p-3 text-left transition-colors ${
         selected
-          ? "bg-[#6b5038]/[0.06] dark:bg-[#6b5038]/[0.20]"
+          ? "bg-[#5a4128]/[0.06] dark:bg-[#5a4128]/[0.20]"
           : "bg-[#faf7f2] hover:bg-[#f1ebe2] dark:bg-surface dark:hover:bg-surface-secondary"
       }`}
       onClick={onSelect}

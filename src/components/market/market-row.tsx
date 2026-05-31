@@ -183,7 +183,7 @@ export function MarketDaySummaryRow({
       <div className="md:hidden px-3 py-2.5 flex items-center gap-2.5">
         <AiAvatar />
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-[#6b5038] dark:text-[#c4a882] leading-tight">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-[#5a4128] dark:text-[#ad9479] leading-tight">
             {label}
           </div>
           <div className="text-[13px] font-medium text-foreground/90 mt-0.5 truncate">
@@ -198,7 +198,7 @@ export function MarketDaySummaryRow({
         <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
           <AiAvatar />
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#6b5038] dark:text-[#c4a882] leading-tight">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#5a4128] dark:text-[#ad9479] leading-tight">
               {label}
             </div>
             <div className="text-[13px] font-medium text-foreground/90 mt-0.5 truncate">
@@ -411,7 +411,7 @@ export function MarketRow<W>({
       className={`w-full text-left transition-colors
         ${muted ? "opacity-65" : ""}
         ${muted && !selected ? "bg-black/[0.025] dark:bg-white/[0.025]" : ""}
-        ${selected ? "bg-[#6b5038]/[0.07] dark:bg-[#6b5038]/[0.20]" : "hover:bg-black/[0.03] dark:hover:bg-white/5"}`}
+        ${selected ? "bg-[#5a4128]/[0.07] dark:bg-[#5a4128]/[0.20]" : "hover:bg-black/[0.03] dark:hover:bg-white/5"}`}
       onClick={onSelect}
     >
       {/* ── Mobile (<md) ── */}

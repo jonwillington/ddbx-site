@@ -5,6 +5,8 @@ import type {
   EuDealing,
   EuDirectorDetail,
   LatestPrice,
+  MonthlySummariesResponse,
+  MonthlySummaryResponse,
   Portfolio,
   Rating,
   UkNewsItem,
@@ -87,6 +89,18 @@ export const api = {
     get<{ rates: { date: string; gbp_per_usd: number }[] }>(
       `/fx/gbp-per-usd?days=${days}`,
     ).then((r) => r.rates),
+  /** Index of available monthly retrospectives for a market, newest first.
+   *  UK omits the market param (like the other endpoints). Powers the
+   *  "View the {month} report" CTA and the month chooser. */
+  monthlySummaries: (market?: string) =>
+    get<MonthlySummariesResponse>(
+      `/monthly-summaries${market ? `?market=${market}` : ""}`,
+    ),
+  /** Full monthly retrospective article for a YYYY-MM month. */
+  monthlySummary: (month: string, market?: string) =>
+    get<MonthlySummaryResponse>(
+      `/monthly-summary?month=${month}${market ? `&market=${market}` : ""}`,
+    ),
   ukNews: () =>
     get<{ items: UkNewsItem[]; fetched_at: string | null }>("/news/uk"),
   usNews: () =>
@@ -182,6 +196,8 @@ export type {
   EuDealing,
   EuDirectorDetail,
   LatestPrice,
+  MonthlySummariesResponse,
+  MonthlySummaryResponse,
   Portfolio,
   Rating,
   UkNewsItem,

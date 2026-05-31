@@ -83,7 +83,7 @@ export function MarketFilterBar({
   return (
     <div className="flex items-center gap-3 bg-[#faf7f2] dark:bg-surface px-5 py-3.5">
       <input
-        className="flex-1 min-w-0 xl:flex-none xl:w-72 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-[#6b5038]/50 transition-colors"
+        className="flex-1 min-w-0 xl:flex-none xl:w-72 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-[#5a4128]/50 transition-colors"
         placeholder={searchPlaceholder}
         type="text"
         value={search}
@@ -179,7 +179,7 @@ function FilterSelect({
       <button
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-1.5 text-xs text-foreground/85 hover:border-[#6b5038]/50 transition-colors"
+        className="flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-1.5 text-xs text-foreground/85 hover:border-[#5a4128]/50 transition-colors"
         type="button"
         onClick={() => setOpen((v) => !v)}
       >

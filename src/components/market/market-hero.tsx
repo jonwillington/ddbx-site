@@ -15,6 +15,8 @@ export function MarketHero({
   marketLabel,
   hasTopNotice = false,
   onExplain,
+  onViewReport,
+  reportLabel,
 }: {
   marketLabel: string;
   /** When the market carries a beta/advisory notice, the floating <BetaTag/>
@@ -25,6 +27,11 @@ export function MarketHero({
   /** When provided, a quiet "What are we looking for?" pill renders under the
    *  headline and opens the per-market explainer sheet. */
   onExplain?: () => void;
+  /** When provided (a monthly recap exists), a secondary "View the {month}
+   *  report" pill renders beside the explainer and opens the recap modal. */
+  onViewReport?: () => void;
+  /** Short month label for the report CTA, e.g. "May". */
+  reportLabel?: string;
 }) {
   return (
     <header className="relative w-screen left-1/2 -translate-x-1/2 -mt-4 md:-mt-6 min-h-[120px] md:min-h-[380px] flex flex-col overflow-hidden animate-content-in">
@@ -106,36 +113,36 @@ export function MarketHero({
           is position:static so its absolute children still anchor to the
           <header> and keep their z-order relative to the headline. */}
       <div aria-hidden className="hidden md:block">
-      {/* Atmospheric backdrop — order matters. Warm floor sits behind so
+        {/* Atmospheric backdrop — order matters. Warm floor sits behind so
           the shimmer + spotlight feel like they're cast on a surface; the
           vignette goes last so light falls off toward the corners. */}
-      <div aria-hidden className="hero-warm-floor z-0" />
-      <div aria-hidden className="hero-shimmer z-0" />
-      <div aria-hidden className="hero-spotlight z-0" />
-      <div aria-hidden className="hero-vignette z-[1] pointer-events-none" />
+        <div aria-hidden className="hero-warm-floor z-0" />
+        <div aria-hidden className="hero-shimmer z-0" />
+        <div aria-hidden className="hero-spotlight z-0" />
+        <div aria-hidden className="hero-vignette z-[1] pointer-events-none" />
 
-      {/* Top fade dissolves into the navbar; bottom fade passes through a
+        {/* Top fade dissolves into the navbar; bottom fade passes through a
           slightly darker tone before resolving to the page colour so the
           table beneath reads as sitting *under* the lit stage. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 z-[6] bg-gradient-to-b from-[#f5f0e8] dark:from-background to-transparent" />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] dark:hidden"
-        style={{
-          background:
-            "linear-gradient(to top, #f5f0e8 0%, rgba(245,240,232,0.94) 20%, rgba(245,240,232,0.58) 48%, rgba(245,240,232,0) 82%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] hidden dark:block"
-        style={{
-          background:
-            "linear-gradient(to top, var(--color-background, #15110d) 0%, rgba(21,17,13,0.85) 32%, rgba(21,17,13,0.4) 60%, transparent 100%)",
-        }}
-      />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 z-[6] bg-gradient-to-b from-[#f5f0e8] dark:from-background to-transparent" />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] dark:hidden"
+          style={{
+            background:
+              "linear-gradient(to top, #f5f0e8 0%, rgba(245,240,232,0.94) 20%, rgba(245,240,232,0.58) 48%, rgba(245,240,232,0) 82%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] hidden dark:block"
+          style={{
+            background:
+              "linear-gradient(to top, var(--color-background, #15110d) 0%, rgba(21,17,13,0.85) 32%, rgba(21,17,13,0.4) 60%, transparent 100%)",
+          }}
+        />
 
-      <style>{`
+        <style>{`
         .hero-orb { position: absolute; border-radius: 50%; will-change: opacity, transform; pointer-events: none; }
         .hero-orb-a { animation: ho-a 3.5s cubic-bezier(0.45,0.05,0.55,0.95) infinite; }
         .hero-orb-b { animation: ho-b 4.2s cubic-bezier(0.4,0,0.6,1) infinite; animation-delay: -1.2s; }
@@ -221,188 +228,187 @@ export function MarketHero({
         }
       `}</style>
 
-      {/* Left side panel — orbs anchored at the right edge so they drift
+        {/* Left side panel — orbs anchored at the right edge so they drift
           out toward the gutter rather than into the headline. Overflow stays
           visible so gradients never reveal a clipped rectangular panel. */}
-      <div
-        aria-hidden
-        className="hidden md:block absolute inset-y-0 left-0 w-[38%] overflow-visible z-0 pointer-events-none"
-      >
-        <svg
+        <div
           aria-hidden
-          className="absolute inset-0 w-full h-full"
-          preserveAspectRatio="none"
-          viewBox="0 0 100 100"
+          className="hidden md:block absolute inset-y-0 left-0 w-[38%] overflow-visible z-0 pointer-events-none"
         >
-          <polyline
-            className="hero-line hero-line-a"
-            points="0,56 12,51 22,47 32,53 44,45 56,41 68,44 80,37 92,33 100,30"
-            stroke="#9a8878"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
+          <svg
+            aria-hidden
+            className="absolute inset-0 w-full h-full"
+            preserveAspectRatio="none"
+            viewBox="0 0 100 100"
+          >
+            <polyline
+              className="hero-line hero-line-a"
+              points="0,56 12,51 22,47 32,53 44,45 56,41 68,44 80,37 92,33 100,30"
+              stroke="#9a8878"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+            <polyline
+              className="hero-line hero-line-b"
+              points="0,68 16,73 30,80 46,77 62,70 78,63 92,58 100,55"
+              stroke="#b0a090"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <div
+            className="hero-orb hero-orb-a"
+            style={{
+              right: "-20%",
+              top: "-30%",
+              width: 320,
+              height: 320,
+              background:
+                "radial-gradient(circle, #b8a898 0%, rgba(184,168,152,0) 70%)",
+            }}
           />
-          <polyline
-            className="hero-line hero-line-b"
-            points="0,68 16,73 30,80 46,77 62,70 78,63 92,58 100,55"
-            stroke="#b0a090"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
+          <div
+            className="hero-orb hero-orb-c"
+            style={{
+              right: "10%",
+              top: "30%",
+              width: 260,
+              height: 260,
+              background:
+                "radial-gradient(circle, #a89880 0%, rgba(168,152,128,0) 70%)",
+            }}
           />
-        </svg>
-        <div
-          className="hero-orb hero-orb-a"
-          style={{
-            right: "-20%",
-            top: "-30%",
-            width: 320,
-            height: 320,
-            background:
-              "radial-gradient(circle, #b8a898 0%, rgba(184,168,152,0) 70%)",
-          }}
-        />
-        <div
-          className="hero-orb hero-orb-c"
-          style={{
-            right: "10%",
-            top: "30%",
-            width: 260,
-            height: 260,
-            background:
-              "radial-gradient(circle, #a89880 0%, rgba(168,152,128,0) 70%)",
-          }}
-        />
-        <div
-          className="hero-orb hero-orb-e"
-          style={{
-            right: "-10%",
-            top: "0%",
-            width: 240,
-            height: 240,
-            background:
-              "radial-gradient(circle, transparent 46%, #b0a090 49%, #b0a090 51%, transparent 56%)",
-          }}
-        />
-        <div
-          className="hero-glow hero-glow-a"
-          style={{
-            right: "20%",
-            top: "30%",
-            width: 20,
-            height: 20,
-            border: "1px solid #8B6040",
-            background: "transparent",
-          }}
-        />
-        <div
-          className="hero-dot  hero-dot-a"
-          style={{
-            right: "20%",
-            top: "30%",
-            width: 10,
-            height: 10,
-            background: "#8B6040",
-            marginRight: 5,
-            marginTop: 5,
-          }}
-        />
-      </div>
+          <div
+            className="hero-orb hero-orb-e"
+            style={{
+              right: "-10%",
+              top: "0%",
+              width: 240,
+              height: 240,
+              background:
+                "radial-gradient(circle, transparent 46%, #b0a090 49%, #b0a090 51%, transparent 56%)",
+            }}
+          />
+          <div
+            className="hero-glow hero-glow-a"
+            style={{
+              right: "20%",
+              top: "30%",
+              width: 20,
+              height: 20,
+              border: "1px solid #8B6040",
+              background: "transparent",
+            }}
+          />
+          <div
+            className="hero-dot  hero-dot-a"
+            style={{
+              right: "20%",
+              top: "30%",
+              width: 10,
+              height: 10,
+              background: "#8B6040",
+              marginRight: 5,
+              marginTop: 5,
+            }}
+          />
+        </div>
 
-      {/* Right side panel — mirror, anchored at the left edge. */}
-      <div
-        aria-hidden
-        className="hidden md:block absolute inset-y-0 right-0 w-[38%] overflow-visible z-0 pointer-events-none"
-      >
-        <svg
+        {/* Right side panel — mirror, anchored at the left edge. */}
+        <div
           aria-hidden
-          className="absolute inset-0 w-full h-full"
-          preserveAspectRatio="none"
-          viewBox="0 0 100 100"
+          className="hidden md:block absolute inset-y-0 right-0 w-[38%] overflow-visible z-0 pointer-events-none"
         >
-          <polyline
-            className="hero-line hero-line-c"
-            points="0,53 12,48 22,51 34,44 48,48 62,41 76,45 88,39 100,37"
-            stroke="#8B7258"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
+          <svg
+            aria-hidden
+            className="absolute inset-0 w-full h-full"
+            preserveAspectRatio="none"
+            viewBox="0 0 100 100"
+          >
+            <polyline
+              className="hero-line hero-line-c"
+              points="0,53 12,48 22,51 34,44 48,48 62,41 76,45 88,39 100,37"
+              stroke="#8B7258"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+            <polyline
+              className="hero-line hero-line-b"
+              points="0,30 14,33 28,30 44,27 58,25 74,22 88,20 100,18"
+              stroke="#b0a090"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <div
+            className="hero-orb hero-orb-b"
+            style={{
+              left: "-15%",
+              top: "-25%",
+              width: 280,
+              height: 280,
+              background:
+                "radial-gradient(circle, #c4b5a5 0%, rgba(196,181,165,0) 70%)",
+            }}
           />
-          <polyline
-            className="hero-line hero-line-b"
-            points="0,30 14,33 28,30 44,27 58,25 74,22 88,20 100,18"
-            stroke="#b0a090"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
+          <div
+            className="hero-orb hero-orb-d"
+            style={{
+              left: "20%",
+              top: "25%",
+              width: 360,
+              height: 360,
+              background:
+                "radial-gradient(circle, transparent 47%, #9a8878 49%, #9a8878 51%, transparent 55%)",
+            }}
           />
-        </svg>
-        <div
-          className="hero-orb hero-orb-b"
-          style={{
-            left: "-15%",
-            top: "-25%",
-            width: 280,
-            height: 280,
-            background:
-              "radial-gradient(circle, #c4b5a5 0%, rgba(196,181,165,0) 70%)",
-          }}
-        />
-        <div
-          className="hero-orb hero-orb-d"
-          style={{
-            left: "20%",
-            top: "25%",
-            width: 360,
-            height: 360,
-            background:
-              "radial-gradient(circle, transparent 47%, #9a8878 49%, #9a8878 51%, transparent 55%)",
-          }}
-        />
-        <div
-          className="hero-glow hero-glow-b"
-          style={{
-            left: "15%",
-            top: "60%",
-            width: 20,
-            height: 20,
-            border: "1px solid #8B6040",
-            background: "transparent",
-          }}
-        />
-        <div
-          className="hero-dot  hero-dot-b"
-          style={{
-            left: "15%",
-            top: "60%",
-            width: 10,
-            height: 10,
-            background: "#8B6040",
-            marginLeft: 5,
-            marginTop: 5,
-          }}
-        />
-        <div
-          className="hero-glow hero-glow-c"
-          style={{
-            left: "45%",
-            top: "20%",
-            width: 20,
-            height: 20,
-            border: "1px solid #8B6040",
-            background: "transparent",
-          }}
-        />
-        <div
-          className="hero-dot  hero-dot-c"
-          style={{
-            left: "45%",
-            top: "20%",
-            width: 10,
-            height: 10,
-            background: "#8B6040",
-            marginLeft: 5,
-            marginTop: 5,
-          }}
-        />
-      </div>
-
+          <div
+            className="hero-glow hero-glow-b"
+            style={{
+              left: "15%",
+              top: "60%",
+              width: 20,
+              height: 20,
+              border: "1px solid #8B6040",
+              background: "transparent",
+            }}
+          />
+          <div
+            className="hero-dot  hero-dot-b"
+            style={{
+              left: "15%",
+              top: "60%",
+              width: 10,
+              height: 10,
+              background: "#8B6040",
+              marginLeft: 5,
+              marginTop: 5,
+            }}
+          />
+          <div
+            className="hero-glow hero-glow-c"
+            style={{
+              left: "45%",
+              top: "20%",
+              width: 20,
+              height: 20,
+              border: "1px solid #8B6040",
+              background: "transparent",
+            }}
+          />
+          <div
+            className="hero-dot  hero-dot-c"
+            style={{
+              left: "45%",
+              top: "20%",
+              width: 10,
+              height: 10,
+              background: "#8B6040",
+              marginLeft: 5,
+              marginTop: 5,
+            }}
+          />
+        </div>
       </div>
 
       <div
@@ -415,20 +421,33 @@ export function MarketHero({
           style={{ maxWidth: 550 }}
         >
           Which directors have been buying shares in{" "}
-          <span className="text-[#6b5038] dark:text-[#c4a882]">
+          <span className="text-[#5a4128] dark:text-[#ad9479]">
             {marketLabel}
           </span>{" "}
           companies?
         </h2>
 
-        {onExplain && (
-          <button
-            className="inline-flex items-center rounded-full bg-[#6b5038] px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-[#5a4230] hover:shadow-lg dark:bg-[#c4a882] dark:text-[#1a140d] dark:hover:bg-[#d4ba96]"
-            type="button"
-            onClick={onExplain}
-          >
-            What are we looking for?
-          </button>
+        {(onExplain || onViewReport) && (
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {onExplain && (
+              <button
+                className="inline-flex items-center rounded-full bg-[#5a4128] px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-[#49331f] hover:shadow-lg dark:bg-[#ad9479] dark:text-[#1a140d] dark:hover:bg-[#bda58a]"
+                type="button"
+                onClick={onExplain}
+              >
+                What are we looking for?
+              </button>
+            )}
+            {onViewReport && (
+              <button
+                className="inline-flex items-center rounded-full bg-[#6b503921] px-6 py-3 text-base font-semibold text-[#5a4128] backdrop-blur-sm transition-all hover:bg-[#6b50382e] dark:bg-[#ad9479]/15 dark:text-[#ad9479] dark:hover:bg-[#ad9479]/25"
+                type="button"
+                onClick={onViewReport}
+              >
+                View {reportLabel} Report
+              </button>
+            )}
+          </div>
         )}
       </div>
     </header>

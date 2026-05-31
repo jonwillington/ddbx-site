@@ -167,13 +167,13 @@ function NewsRow({
           src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostnameFromUrl(item.url))}&sz=32`}
         />
         <span className="min-w-0">
-          <span className="flex items-center gap-1.5 text-[10px] font-mono leading-none text-[#6b5038]/90 dark:text-[#c4a882] mb-1">
+          <span className="flex items-center gap-1.5 text-[10px] font-mono leading-none text-[#5a4128]/90 dark:text-[#ad9479] mb-1">
             {fresh && (
               <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#7c5cbf] animate-[fade-in-up_0.3s_ease-out]" />
             )}
             {item.source}
           </span>
-          <span className="inline-flex items-start gap-1.5 text-xs text-foreground/90 leading-snug line-clamp-3 group-hover:text-[#6b5038] transition-colors">
+          <span className="inline-flex items-start gap-1.5 text-xs text-foreground/90 leading-snug line-clamp-3 group-hover:text-[#5a4128] transition-colors">
             <span>{item.title}</span>
             <ArrowTopRightOnSquareIcon className="w-2.5 h-2.5 shrink-0 mt-0.5 opacity-60 group-hover:opacity-100" />
           </span>

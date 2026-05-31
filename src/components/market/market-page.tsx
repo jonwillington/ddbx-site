@@ -6,6 +6,7 @@ import type {
   NewsPayload,
   SignalFilterValue,
 } from "@/lib/markets/types";
+import type { MonthlySummaryListItem } from "@/types/ddbx";
 
 import { CalendarDaysIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -34,6 +35,8 @@ import {
   todayKeyIso,
 } from "./market-utils";
 
+import { monthShort } from "@/components/monthly/monthly-utils";
+import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
 import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
@@ -107,6 +110,14 @@ export function MarketPage<W>({
   const [openSummaryDate, setOpenSummaryDate] = useState<string | null>(null);
   /** "What are we looking for?" explainer sheet, opened from the hero. */
   const [explainerOpen, setExplainerOpen] = useState(false);
+  /** Monthly recap modal, opened from the hero's "View the {month} report"
+   *  CTA. The index is fetched on mount; an empty index hides the CTA, so the
+   *  surface self-gates per market (UK-only today) without a config flag. */
+  const [recapOpen, setRecapOpen] = useState(false);
+  const [recapMonths, setRecapMonths] = useState<MonthlySummaryListItem[]>([]);
+  /** Which month the recap modal should open at. Null → the latest. Set by the
+   *  per-month "View Report" links so each opens its own month. */
+  const [recapMonth, setRecapMonth] = useState<string | null>(null);
 
   // Global chart mode — drives the inline sparkline AND the right-most
   // Performance cell. Persisted in localStorage via the dashboard metric
@@ -156,7 +167,44 @@ export function MarketPage<W>({
   );
   const hasNewsSource = !!config.fetchNews;
 
+  /** API market param for monthly endpoints. UK omits it (the worker defaults
+   *  to "UK"); other markets pass their uppercased id ("US" | "NL" | "SE"),
+   *  matching MARKET_CONFIG's keys. */
+  const apiMarket = config.id === "uk" ? undefined : config.id.toUpperCase();
+  /** Latest available recap month — seeds the modal and the CTA label. */
+  const latestRecapMonth = recapMonths[0]?.month ?? null;
+  /** ISO "YYYY-MM" months that have a published recap — drives the per-month
+   *  "View Report" links in the list. */
+  const recapMonthSet = useMemo(
+    () => new Set(recapMonths.map((m) => m.month)),
+    [recapMonths],
+  );
+  /** Open the recap at a specific month (null → latest). */
+  const openRecap = useCallback((monthIso: string | null) => {
+    setRecapMonth(monthIso);
+    setRecapOpen(true);
+  }, []);
+
   /* ───────── Data loading ─────────────────────────────────────────────── */
+
+  // Probe the monthly-recap index once per market. Drives the hero CTA's
+  // visibility (empty → no pill) and seeds the modal's first month.
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .monthlySummaries(apiMarket)
+      .then((r) => {
+        if (!cancelled) setRecapMonths(r.summaries);
+      })
+      .catch(() => {
+        if (!cancelled) setRecapMonths([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiMarket]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -754,7 +802,11 @@ export function MarketPage<W>({
         <MarketHero
           hasTopNotice={!!config.topNotice}
           marketLabel={config.marketLabel}
+          reportLabel={monthShort(latestRecapMonth)}
           onExplain={() => setExplainerOpen(true)}
+          onViewReport={
+            latestRecapMonth ? () => openRecap(latestRecapMonth) : undefined
+          }
         />
 
         {config.views.length > 1 && (
@@ -768,7 +820,7 @@ export function MarketPage<W>({
                 aria-selected={view === v.id}
                 className={`text-sm px-4 py-1.5 rounded-full transition-colors font-medium ${
                   view === v.id
-                    ? "bg-[#6b5038]/15 text-[#4a3520] dark:text-[#c4a882]"
+                    ? "bg-[#5a4128]/15 text-[#3d2b1a] dark:text-[#ad9479]"
                     : "text-muted hover:text-foreground"
                 }`}
                 role="tab"
@@ -944,6 +996,10 @@ export function MarketPage<W>({
           <div className="space-y-6 animate-content-in -mt-6">
             {monthBuckets.map((month, monthIdx) => {
               const monthOpen = openMonths?.has(month.key) ?? false;
+              // bucketByMonth keys on "<MonthName>-<year>"; derive the ISO
+              // "YYYY-MM" from any day in the bucket to match the recap index.
+              const monthIso = month.days[0]?.key.slice(0, 7);
+              const hasReport = !!monthIso && recapMonthSet.has(monthIso);
 
               return (
                 <div key={month.key}>
@@ -961,6 +1017,29 @@ export function MarketPage<W>({
                         <CalendarDaysIcon className="w-5 h-5 text-muted shrink-0" />
                         <div className="text-xl font-semibold">
                           {month.label} {month.year}
+                          {hasReport && (
+                            <>
+                              <span className="mx-2 text-muted">·</span>
+                              <span
+                                className="cursor-pointer text-sm font-medium text-[#5a4128] hover:underline dark:text-[#ad9479]"
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openRecap(monthIso!);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    openRecap(monthIso!);
+                                  }
+                                }}
+                              >
+                                View Report
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
@@ -1097,6 +1176,13 @@ export function MarketPage<W>({
         marketId={config.id}
         open={explainerOpen}
         onClose={() => setExplainerOpen(false)}
+      />
+
+      <MonthlyRecapModal
+        market={apiMarket}
+        month={recapMonth ?? latestRecapMonth}
+        open={recapOpen}
+        onClose={() => setRecapOpen(false)}
       />
 
       <DailySummarySheet

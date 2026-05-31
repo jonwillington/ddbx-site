@@ -314,7 +314,7 @@ function ModeToggle({
           key={m}
           className={`px-3 py-1 rounded-full font-medium transition-colors ${
             value === m
-              ? "bg-[#6b5038]/15 text-[#6b5038] dark:text-[#a8804e]"
+              ? "bg-[#5a4128]/15 text-[#5a4128] dark:text-[#a88c6e]"
               : "text-muted hover:text-foreground"
           }`}
           type="button"

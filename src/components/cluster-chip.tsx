@@ -12,7 +12,7 @@ import { Tooltip } from "@/components/tooltip";
  *  unconditionally. */
 
 const BASE =
-  "inline-flex items-center justify-center gap-1 rounded-md border border-transparent whitespace-nowrap px-2 py-0.5 text-[11px] font-medium bg-[#e8e0d5] text-[#6b5038] dark:bg-surface-secondary dark:text-foreground/75";
+  "inline-flex items-center justify-center gap-1 rounded-md border border-transparent whitespace-nowrap px-2 py-0.5 text-[11px] font-medium bg-[#e8e0d5] text-[#5a4128] dark:bg-surface-secondary dark:text-foreground/75";
 
 const TOOLTIP =
   "This purchase is part of a wider trend of insiders buying this stock.";

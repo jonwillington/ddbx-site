@@ -101,7 +101,7 @@ export function MarketExplainerSheet({
           <ol className="space-y-3">
             {checklist.map((item, i) => (
               <li key={item.title} className="flex gap-3">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6b5038]/12 text-xs font-semibold text-[#6b5038] dark:bg-[#c4a882]/15 dark:text-[#c4a882]">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5a4128]/12 text-xs font-semibold text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]">
                   {i + 1}
                 </span>
                 <div>
@@ -116,8 +116,8 @@ export function MarketExplainerSheet({
         </section>
 
         {/* Still tuning */}
-        <section className="flex gap-3 rounded-xl border border-[#6b5038]/20 bg-[#6b5038]/[0.06] p-4 dark:border-[#c4a882]/25 dark:bg-[#c4a882]/[0.08]">
-          <SparklesIcon className="mt-0.5 h-5 w-5 shrink-0 text-[#6b5038] dark:text-[#c4a882]" />
+        <section className="flex gap-3 rounded-xl border border-[#5a4128]/20 bg-[#5a4128]/[0.06] p-4 dark:border-[#ad9479]/25 dark:bg-[#ad9479]/[0.08]">
+          <SparklesIcon className="mt-0.5 h-5 w-5 shrink-0 text-[#5a4128] dark:text-[#ad9479]" />
           <div className="space-y-1.5">
             <h3 className="text-sm font-semibold">Still tuning</h3>
             <p className="text-sm leading-relaxed text-foreground/70">
