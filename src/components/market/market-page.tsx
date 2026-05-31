@@ -16,6 +16,7 @@ import { MarketDetailDrawer } from "./market-detail-drawer";
 import { MarketExplainerSheet } from "./market-explainer-sheet";
 import { MarketFilterBar, type MarketViewMode } from "./market-filter-bar";
 import { MarketHero } from "./market-hero";
+import { MarketIntroBanner, useIntroDismissed } from "./market-intro-banner";
 import {
   MarketDayHeader,
   MarketDaySummaryRow,
@@ -456,6 +457,24 @@ export function MarketPage<W>({
       stockCurrentForDealing,
     ],
   );
+
+  // First dated day-group that actually has analysed ("Significant") rows.
+  // The one-time intro strip rides on top of this day's rows — the first
+  // place the badges appear without context. Skipped-only days don't count.
+  const introDayKey = useMemo(() => {
+    for (const m of monthBuckets) {
+      for (const d of m.days) {
+        if (d.suggested.length > 0) return d.key;
+      }
+    }
+
+    return null;
+  }, [monthBuckets]);
+
+  // Once dismissed, the intro banner hides AND the grouped panel unwraps
+  // back into a plain day-group (no tint/ring/inset). Lifted here so the
+  // day render can react, not just the banner.
+  const intro = useIntroDismissed();
 
   // Daily summaries — UK-only today. The hook collects the unique ISO
   // dates in the open months and fetches a per-date payload in parallel,
@@ -943,10 +962,17 @@ export function MarketPage<W>({
 
                           if (!hasContent) return null;
 
+                          const isIntroDay =
+                            day.key === introDayKey && !intro.dismissed;
+
                           return (
                             <div
                               key={day.key}
-                              className="rounded-xl overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-black/[0.06] dark:divide-separator"
+                              className={`rounded-xl overflow-hidden bg-white dark:bg-surface-secondary ${
+                                isIntroDay
+                                  ? ""
+                                  : "divide-y divide-black/[0.06] dark:divide-separator"
+                              }`}
                             >
                               <MarketDayHeader
                                 day={day.day}
@@ -969,8 +995,32 @@ export function MarketPage<W>({
                                     onOpen={() => setOpenSummaryDate(day.key)}
                                   />
                                 )}
-                              {day.suggested.map(renderDayRow)}
-                              {day.skipped.map(renderDayRow)}
+                              {isIntroDay ? (
+                                <>
+                                  {/* Grouped "signal" panel — the intro banner
+                                      as a curved header wrapping the analysed
+                                      rows on a tinted, ringed inset card, so a
+                                      newcomer sees exactly which filings cleared
+                                      the check. Skipped rows sit outside it. */}
+                                  <div className="m-2 overflow-hidden rounded-xl bg-[#faf7f2] ring-1 ring-black/[0.07] divide-y divide-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10 dark:divide-separator">
+                                    <MarketIntroBanner
+                                      onDismiss={intro.dismiss}
+                                      onExplain={() => setExplainerOpen(true)}
+                                    />
+                                    {day.suggested.map(renderDayRow)}
+                                  </div>
+                                  {day.skipped.length > 0 && (
+                                    <div className="divide-y divide-black/[0.06] border-t border-black/[0.06] dark:divide-separator dark:border-separator">
+                                      {day.skipped.map(renderDayRow)}
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  {day.suggested.map(renderDayRow)}
+                                  {day.skipped.map(renderDayRow)}
+                                </>
+                              )}
                             </div>
                           );
                         })}
