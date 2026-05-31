@@ -83,7 +83,7 @@ export function MarketFilterBar({
   return (
     <div className="flex items-center gap-3 bg-[#faf7f2] dark:bg-surface px-5 py-3.5">
       <input
-        className="flex-1 min-w-0 lg:flex-none lg:w-72 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-[#6b5038]/50 transition-colors"
+        className="flex-1 min-w-0 xl:flex-none xl:w-72 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-[#6b5038]/50 transition-colors"
         placeholder={searchPlaceholder}
         type="text"
         value={search}
@@ -92,7 +92,7 @@ export function MarketFilterBar({
 
       {/* Desktop: filters laid out inline. Below lg they collapse into the
           bottom sheet so the bar stays a single clean row on mobile. */}
-      <div className="hidden lg:flex flex-1 min-w-0 items-center gap-3">
+      <div className="hidden xl:flex flex-1 min-w-0 items-center gap-3">
         <FilterSelect
           label="View"
           options={VIEW_OPTIONS}
@@ -119,7 +119,7 @@ export function MarketFilterBar({
       </div>
 
       {/* Mobile: one button opens a bottom sheet holding every filter. */}
-      <div className="lg:hidden shrink-0">
+      <div className="xl:hidden shrink-0">
         <MarketFiltersSheet
           heroFilterId={heroFilterId}
           heroFilters={heroFilters}

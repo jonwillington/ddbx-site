@@ -534,15 +534,36 @@ export interface MonthlySummary {
   created_at: string;             // ISO datetime UTC
 }
 
-/** Read-time alpha series for the month's buys: equal-weight £100/buy, entered
- *  on each buy's disclosure-day close and marked to the latest close, against
- *  the same stakes put into the FTSE All-Share. Computed on the fly in
- *  GET /api/monthly-summary (not persisted — deterministic, no LLM). Null when
- *  too few buys have price data, or for markets without the monthly benchmark. */
-export interface MonthlyPerformance {
+/** Strategy universes the monthly performance chart can switch between.
+ *  `every_buy` is the broad series; the rating-based universes narrow to the
+ *  analysis signal. */
+export type MonthlyPerfUniverse = "every_buy" | "significant" | "noteworthy";
+
+/** One universe's read-time alpha series for the month: equal-weight £100/buy,
+ *  entered on each buy's disclosure-day close and marked to the latest close,
+ *  against the same stakes put into the FTSE All-Share. `alpha` is the final
+ *  strategy return minus the benchmark return — the ranking key for the default
+ *  series. */
+export interface MonthlyPerfSeries {
+  universe: MonthlyPerfUniverse;
+  label: string;                // "Every buy" | "Significant" | "Noteworthy"
+  buy_count: number;            // legs contributing to this series
   strategy: PortfolioPoint[];   // picks portfolio value over the month, £ major
   benchmark: PortfolioPoint[];  // same stakes into FTSE All-Share, £ major
   deployed: PortfolioPoint[];   // cumulative capital deployed, £ major
+  final_return: number;         // strategy return at as-of, ratio
+  benchmark_return: number;     // same stakes in FTSE, ratio
+  alpha: number;                // final_return - benchmark_return
+}
+
+/** Read-time alpha for the month, one series per strategy universe. Only
+ *  universes with a computable (>= 2 point) series are included; `default_universe`
+ *  is the highest-alpha one ("best return vs FTSE"). Computed on the fly in
+ *  GET /api/monthly-summary (not persisted — deterministic, no LLM). Null when
+ *  too few buys have price data, or for markets without the monthly benchmark. */
+export interface MonthlyPerformance {
+  series: MonthlyPerfSeries[];
+  default_universe: MonthlyPerfUniverse;
 }
 
 /** Response shape for GET /api/monthly-summary — the summary plus the featured

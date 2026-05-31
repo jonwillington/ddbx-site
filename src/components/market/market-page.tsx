@@ -88,6 +88,10 @@ export function MarketPage<W>({
     [controlled, onSelectionChange],
   );
   const [openMonths, setOpenMonths] = useState<Set<string> | null>(null);
+  /** Measured sticky filter-bar height (px). Used to keep month-header
+   *  sticky offset vertically aligned at every breakpoint. */
+  const [filterBarHeight, setFilterBarHeight] = useState(0);
+  const filterBarRef = useRef<HTMLDivElement | null>(null);
   /** Expands the standalone "Also today" skipped block past TODAY_SKIPPED_CAP. */
   const [showAllTodaySkipped, setShowAllTodaySkipped] = useState(false);
   const [heroFilterId, setHeroFilterId] = useState<string | null>(
@@ -500,6 +504,22 @@ export function MarketPage<W>({
     }
   }, [monthBuckets, openMonths]);
 
+  // Keep month sticky offset in sync with the actual filter-bar height.
+  // The filter row grows/shrinks across breakpoints (mobile sheet vs desktop
+  // inline controls), so hardcoded pixel offsets drift and look vertically off.
+  useEffect(() => {
+    const el = filterBarRef.current;
+
+    if (!el) return;
+    const read = () => setFilterBarHeight(el.getBoundingClientRect().height);
+
+    read();
+    const ro = new ResizeObserver(read);
+
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [dealings.length]);
+
   // When the user picks the disclosure anchor we look up the benchmark
   // close on the disclosure date first (and fall back to trade-day).
   // Otherwise the older trade-day preference stands.
@@ -854,7 +874,10 @@ export function MarketPage<W>({
             scrolling beneath it. Stays visible when the hero filter
             narrows the list to zero so the user can switch back. */}
         {dealings.length > 0 && (
-          <div className="sticky top-[64px] z-20 bg-[#faf7f2] dark:bg-surface rounded-t-xl border-b border-[#e8e0d5]/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]">
+          <div
+            ref={filterBarRef}
+            className="sticky top-[64px] z-20 bg-[#faf7f2] dark:bg-surface rounded-t-xl border-b border-[#e8e0d5]/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
+          >
             <MarketFilterBar
               heroFilterId={heroFilterId}
               heroFilters={config.heroFilters?.map((f) => ({
@@ -920,7 +943,10 @@ export function MarketPage<W>({
               return (
                 <div key={month.key}>
                   <div
-                    className={`sticky top-[112px] z-10 ${monthIdx === 0 ? "" : "pt-3"} bg-[#f5f0e8] dark:bg-background`}
+                    className={`sticky z-10 ${monthIdx === 0 ? "" : "pt-3"} bg-[#f5f0e8] dark:bg-background`}
+                    style={{
+                      top: `${64 + (filterBarHeight || 0)}px`,
+                    }}
                   >
                     <button
                       className={`w-full flex items-center justify-between px-6 py-5 hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors bg-[#faf7f2] dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-xl"} ${monthOpen ? "" : "rounded-b-xl"}`}
