@@ -56,7 +56,9 @@ function FeaturedCard({ item }: { item: MonthlyFeaturedItem }) {
             <span className="truncate text-base font-semibold">
               {item.company}
             </span>
-            <span className="shrink-0 text-xs text-muted">{item.ticker}</span>
+            <span className="hidden shrink-0 text-xs text-muted sm:inline">
+              {item.ticker}
+            </span>
           </div>
           <span
             className={`mt-1.5 inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${badge.className}`}

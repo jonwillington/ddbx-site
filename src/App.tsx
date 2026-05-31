@@ -18,6 +18,9 @@ function App() {
       <BetaTag />
       <Routes>
         <Route element={<MarketHomePage />} path="/" />
+        {/* Deep-link to a monthly recap, e.g. /report/may-2026. Resolves to the
+            UK home (reports are UK-only today) which auto-opens the modal. */}
+        <Route element={<MarketHomePage />} path="/report/:month" />
         <Route element={<UkPreviewPage />} path="/dealings/:id" />
         <Route element={<MarketHomePage />} path="/contact" />
         <Route element={<MarketHomePage />} path="/privacy" />

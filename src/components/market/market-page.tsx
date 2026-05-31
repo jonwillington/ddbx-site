@@ -10,6 +10,7 @@ import type { MonthlySummaryListItem } from "@/types/ddbx";
 
 import { CalendarDaysIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { DailySummarySheet } from "./daily-summary-banner";
 import { MarketChartModeToggle } from "./market-chart-mode-toggle";
@@ -35,7 +36,11 @@ import {
   todayKeyIso,
 } from "./market-utils";
 
-import { monthShort } from "@/components/monthly/monthly-utils";
+import {
+  monthShort,
+  monthSlug,
+  slugToMonth,
+} from "@/components/monthly/monthly-utils";
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
 import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
@@ -179,11 +184,51 @@ export function MarketPage<W>({
     () => new Set(recapMonths.map((m) => m.month)),
     [recapMonths],
   );
-  /** Open the recap at a specific month (null → latest). */
-  const openRecap = useCallback((monthIso: string | null) => {
-    setRecapMonth(monthIso);
-    setRecapOpen(true);
-  }, []);
+  /** Recap deep-linking lives on the UK home only (reports are UK-only today).
+   *  The URL carries the month as a slug, e.g. /report/may-2026; opening the
+   *  modal pushes that path and closing it restores "/". */
+  const navigate = useNavigate();
+  const { month: reportSlug } = useParams<{ month?: string }>();
+  const recapDeepLink = config.id === "uk";
+
+  /** Open the recap at a specific month (null → latest). On UK the URL is the
+   *  source of truth — navigate and let the effect below open the modal — so a
+   *  shared link, refresh and the browser back button all behave. */
+  const openRecap = useCallback(
+    (monthIso: string | null) => {
+      const target = monthIso ?? latestRecapMonth;
+
+      if (recapDeepLink && target) {
+        navigate(`/report/${monthSlug(target)}`);
+
+        return;
+      }
+      setRecapMonth(monthIso);
+      setRecapOpen(true);
+    },
+    [navigate, recapDeepLink, latestRecapMonth],
+  );
+
+  /** Close the recap and drop the /report/* path back to the home route. */
+  const closeRecap = useCallback(() => {
+    if (recapDeepLink) {
+      navigate("/");
+
+      return;
+    }
+    setRecapOpen(false);
+  }, [navigate, recapDeepLink]);
+
+  // On UK, mirror the /report/<slug> path into the modal state. Covers fresh
+  // loads, shared links, the CTA's navigate, and the back button (path clears →
+  // modal closes). The modal fetches its own article, independent of the index.
+  useEffect(() => {
+    if (!recapDeepLink) return;
+    const iso = reportSlug ? slugToMonth(reportSlug) : null;
+
+    setRecapMonth(iso);
+    setRecapOpen(iso != null);
+  }, [recapDeepLink, reportSlug]);
 
   /* ───────── Data loading ─────────────────────────────────────────────── */
 
@@ -1182,7 +1227,7 @@ export function MarketPage<W>({
         market={apiMarket}
         month={recapMonth ?? latestRecapMonth}
         open={recapOpen}
-        onClose={() => setRecapOpen(false)}
+        onClose={closeRecap}
       />
 
       <DailySummarySheet

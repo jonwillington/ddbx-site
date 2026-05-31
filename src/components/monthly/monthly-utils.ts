@@ -14,6 +14,33 @@ export function monthLabel(month: string | null | undefined): string {
   return `${MONTH_NAMES[m - 1]} ${y}`;
 }
 
+/** URL slug for the recap deep-link: "2026-05" → "may-2026". Falls back to the
+ *  raw string if unparseable. Paired with {@link slugToMonth}. */
+export function monthSlug(month: string | null | undefined): string {
+  if (!month) return "";
+  const [y, m] = month.split("-").map((p) => Number(p));
+
+  if (!y || !m || m < 1 || m > 12) return month;
+
+  return `${MONTH_NAMES[m - 1].toLowerCase()}-${y}`;
+}
+
+/** Inverse of {@link monthSlug}: "may-2026" → "2026-05". Returns null when the
+ *  slug isn't a valid month-year so a junk URL just doesn't open a report. */
+export function slugToMonth(slug: string | null | undefined): string | null {
+  if (!slug) return null;
+  const match = slug.match(/^([a-z]+)-(\d{4})$/i);
+
+  if (!match) return null;
+  const idx = MONTH_NAMES.findIndex(
+    (n) => n.toLowerCase() === match[1].toLowerCase(),
+  );
+
+  if (idx < 0) return null;
+
+  return `${match[2]}-${String(idx + 1).padStart(2, "0")}`;
+}
+
 /** Short month name only: "2026-05" → "May". */
 export function monthShort(month: string | null | undefined): string {
   if (!month) return "";
