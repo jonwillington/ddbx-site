@@ -10,6 +10,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
+import { useUrlParam } from "@/lib/use-url-overlay";
+
 import DefaultLayout from "@/layouts/default";
 import { Skeleton } from "@/components/skeleton";
 import { subtitle, title } from "@/components/primitives";
@@ -119,8 +121,13 @@ function UkPerformancePage() {
   );
   const [activeMetric, setActiveMetric] = useState<MetricKind | null>(null);
   const [scrubIdx, setScrubIdx] = useState<number | null>(null);
-  const [drilldownSector, setDrilldownSector] = useState<SectorResult | null>(
-    null,
+  // Sector drill-down is URL-backed (`?sector=<name>`) for deep-linking and GA
+  // tracking; the param holds the sector name, resolved back to its row here.
+  const [drilldownSectorId, setDrilldownSectorId] = useUrlParam("sector");
+  const drilldownSector = useMemo<SectorResult | null>(
+    () =>
+      perf.sectorResults.find((r) => r.sector === drilldownSectorId) ?? null,
+    [perf.sectorResults, drilldownSectorId],
   );
 
   const universeOptions = useMemo(
@@ -228,7 +235,7 @@ function UkPerformancePage() {
               <SectorLeaderboard
                 isComputing={perf.isComputing}
                 rows={perf.sectorResults}
-                onSelect={setDrilldownSector}
+                onSelect={(r) => setDrilldownSectorId(r.sector)}
               />
             )}
           </>
@@ -294,7 +301,7 @@ function UkPerformancePage() {
       <SectorDrilldownSheet
         sector={drilldownSector}
         viewMode={perf.config.viewMode}
-        onClose={() => setDrilldownSector(null)}
+        onClose={() => setDrilldownSectorId(null)}
       />
     </DefaultLayout>
   );

@@ -50,6 +50,11 @@ import {
   useDashboardMetricMode,
 } from "@/lib/dashboard-metric-mode";
 import { useDailySummaries } from "@/lib/markets/use-daily-summaries";
+import {
+  useSetUrlParams,
+  useUrlFlag,
+  useUrlParam,
+} from "@/lib/use-url-overlay";
 
 /** How many of today's skipped rows to show before the "Show all" toggle.
  *  A busy US Form 4 day can disclose dozens; the standalone Today block sits
@@ -81,19 +86,20 @@ export function MarketPage<W>({
   const [stats, setStats] = useState<MarketStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [internalSelectedKey, setInternalSelectedKey] = useState<string | null>(
-    null,
-  );
+  // Uncontrolled selection is URL-backed (`?deal=<key>`) so opening a dealing
+  // deep-links, the back button closes the drawer, and GA logs each open. When
+  // a parent controls selection (the /dealings/:id and director routes), it
+  // owns the URL via the path and this param stays unused.
+  const [urlDealKey, setUrlDealKey] = useUrlParam("deal");
+  const setUrlParams = useSetUrlParams();
   const controlled = selectedKeyProp !== undefined;
-  const selectedKey = controlled
-    ? (selectedKeyProp ?? null)
-    : internalSelectedKey;
+  const selectedKey = controlled ? (selectedKeyProp ?? null) : urlDealKey;
   const setSelectedKey = useCallback(
     (key: string | null) => {
-      if (!controlled) setInternalSelectedKey(key);
+      if (!controlled) setUrlDealKey(key);
       onSelectionChange?.(key);
     },
-    [controlled, onSelectionChange],
+    [controlled, onSelectionChange, setUrlDealKey],
   );
   const [openMonths, setOpenMonths] = useState<Set<string> | null>(null);
   /** Measured sticky filter-bar height (px). Used to keep month-header
@@ -111,10 +117,12 @@ export function MarketPage<W>({
   const [signalFilter, setSignalFilter] = useState<SignalFilterValue>(
     config.defaultSignalFilter ?? "signal",
   );
-  /** When non-null, the daily-summary sheet is open for this date. */
-  const [openSummaryDate, setOpenSummaryDate] = useState<string | null>(null);
-  /** "What are we looking for?" explainer sheet, opened from the hero. */
-  const [explainerOpen, setExplainerOpen] = useState(false);
+  /** When non-null, the daily-summary sheet is open for this date. URL-backed
+   *  (`?day=YYYY-MM-DD`) so it deep-links and is tracked in GA. */
+  const [openSummaryDate, setOpenSummaryDate] = useUrlParam("day");
+  /** "What are we looking for?" explainer sheet, opened from the hero.
+   *  URL-backed (`?panel=explainer`). */
+  const [explainerOpen, setExplainerOpen] = useUrlFlag("panel", "explainer");
   /** Monthly recap modal, opened from the hero's "View the {month} report"
    *  CTA. The index is fetched on mount; an empty index hides the CTA, so the
    *  surface self-gates per market (UK-only today) without a config flag. */
@@ -212,7 +220,8 @@ export function MarketPage<W>({
   /** Close the recap and drop the /report/* path back to the home route. */
   const closeRecap = useCallback(() => {
     if (recapDeepLink) {
-      navigate("/");
+      // Replace so Back lands on the pre-open page, not back into the recap.
+      navigate("/", { replace: true });
 
       return;
     }
@@ -1235,9 +1244,9 @@ export function MarketPage<W>({
         onClose={() => setOpenSummaryDate(null)}
         onSelectDeal={(deal) => {
           // UK MarketDealing.key === dealing.id; this surface is UK-only
-          // because /api/daily-summary is UK-only.
-          setOpenSummaryDate(null);
-          setSelectedKey(deal.id);
+          // because /api/daily-summary is UK-only. Swap day → deal atomically
+          // (two separate setters would race and leave ?day set).
+          setUrlParams({ day: null, deal: deal.id });
         }}
       />
     </DefaultLayout>
