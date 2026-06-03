@@ -296,10 +296,7 @@ function TermsContent() {
         content and suspend or terminate any account at our discretion. You are
         solely responsible for the content you post. To report content or a
         user, use the in-app report and block controls or contact us at{" "}
-        <a href="mailto:jonathanwillington@gmail.com">
-          jonathanwillington@gmail.com
-        </a>
-        .
+        <a href="mailto:trades@ddbx.us">trades@ddbx.us</a>.
       </p>
 
       <SectionTitle>Governing law</SectionTitle>
