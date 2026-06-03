@@ -220,9 +220,10 @@ function TermsContent() {
     <>
       <p>Last updated: 1 April 2026</p>
       <p>
-        By accessing and using ddbx.uk (&quot;the Site&quot;), you agree to be
-        bound by these Terms &amp; Conditions. If you do not agree, please do
-        not use the Site.
+        By accessing and using ddbx (&quot;the Service&quot;, whether at ddbx.uk,
+        ddbx.us, or in the ddbx mobile apps), you agree to be bound by these
+        Terms &amp; Conditions. If you do not agree, please do not use the
+        Service.
       </p>
 
       <SectionTitle>Nature of the service</SectionTitle>
@@ -277,6 +278,28 @@ function TermsContent() {
         We aim to keep the Site available continuously but do not guarantee
         uninterrupted access. The Site may be temporarily unavailable due to
         maintenance, updates, or circumstances beyond our control.
+      </p>
+
+      <SectionTitle>Community content and conduct</SectionTitle>
+      <p>
+        The ddbx apps let users post comments and other content
+        (&quot;user content&quot;) and interact with other users. There is zero
+        tolerance for objectionable content or abusive behaviour. By posting,
+        you agree not to submit content that is unlawful, harassing,
+        threatening, hateful, defamatory, obscene, or otherwise objectionable,
+        and not to abuse, harass, or impersonate other users.
+      </p>
+      <p>
+        You can report objectionable content and block abusive users from
+        within the apps. We review reports and remove objectionable content,
+        ejecting users who post it, within 24 hours. We may remove any user
+        content and suspend or terminate any account at our discretion. You are
+        solely responsible for the content you post. To report content or a
+        user, use the in-app report and block controls or contact us at{" "}
+        <a href="mailto:jonathanwillington@gmail.com">
+          jonathanwillington@gmail.com
+        </a>
+        .
       </p>
 
       <SectionTitle>Governing law</SectionTitle>
