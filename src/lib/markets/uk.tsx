@@ -38,7 +38,16 @@ const FTSE_LABEL = "FTSE";
  *  what /api/prices stores for LSE tickers, so quoteToValue = 0.01 and
  *  normalizeLivePrice is identity. */
 const GBP_FORMAT: PriceFormat = {
-  formatPrice: (n) => `${n.toFixed(0)}p`,
+  // Adaptive precision: blue-chips quote in hundreds/thousands of pence where
+  // whole pence is right, but penny stocks need decimals — otherwise a 4.5p
+  // close rounds to "5p" and an entry of 4.0p reads as a +25% move when the
+  // actual return is +12.5%. Mirrors the mini-chart's decimal scaling. Trailing
+  // zeros are stripped so large prices stay clean (5000p, not 5000.0p).
+  formatPrice: (n) => {
+    const a = Math.abs(n);
+    const decimals = a < 1 ? 3 : a < 10 ? 2 : a < 100 ? 1 : 0;
+    return `${parseFloat(n.toFixed(decimals))}p`;
+  },
   formatValue: (n) =>
     new Intl.NumberFormat("en-GB", {
       style: "currency",
