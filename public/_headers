@@ -1,0 +1,4 @@
+# The AASA file has no extension, so Pages would guess its content type.
+# Apple is lenient, but serve it explicitly as JSON.
+/.well-known/apple-app-site-association
+  Content-Type: application/json

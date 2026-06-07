@@ -1,0 +1,18 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["DT649V63HR.uk.ddbx.app"],
+        "components": [
+          { "/": "/t/*", "comment": "UK shared-trade deep links" }
+        ]
+      },
+      {
+        "appIDs": ["DT649V63HR.us.ddbx.app"],
+        "components": [
+          { "/": "/us/t/*", "comment": "US shared-trade deep links" }
+        ]
+      }
+    ]
+  }
+}

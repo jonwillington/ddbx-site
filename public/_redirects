@@ -1,0 +1,18 @@
+# Shared-trade Universal Links (see ddbx-ios-app investigations/2026-06-07-share-trade-deep-link.md).
+# When the app is installed, iOS intercepts these before the request ever reaches
+# the network and opens the app. These rules are the fallback for people WITHOUT
+# the app: send them to the App Store. The {id} is irrelevant to the store, so a
+# splat is fine.
+#
+# US has no App Store listing yet — /us/t/* points at the UK listing as a
+# placeholder until the US product lands. When Android ships, replace these
+# static rules with a Pages Function that user-agent-sniffs iOS vs Android.
+/t/*       https://apps.apple.com/app/id6762196330   302
+/us/t/*    https://apps.apple.com/app/id6762196330   302
+
+# SPA fallback — MUST stay last. The site previously relied on Cloudflare's
+# implicit single-page-app fallback; introducing this _redirects file makes it
+# explicit so client routes (/dealings/:id, /directors/:id, …) keep resolving.
+# Static assets (incl. /.well-known/apple-app-site-association) are served before
+# these rules, so the AASA file is returned as JSON, not swallowed by this line.
+/*         /index.html                               200
