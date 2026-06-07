@@ -14,12 +14,9 @@
 
 const APP_STORE_URL = "https://apps.apple.com/app/id6762196330";
 const API_BASE = "https://api.ddbx.uk/api";
-const LOGO_TOKEN = "pk_aFXx8Wx5TrenY0XbJuUMrA";
-// Generated 1200x630 card (Phase 2b, Worker route). Falls back to the company
-// logo if the card endpoint isn't available.
+// Generated 1200×630 card served by the Worker. It internally redirects to the
+// company logo / a default image on any failure, so it's always a safe og:image.
 const cardImage = (id) => `${API_BASE}/dealings/${encodeURIComponent(id)}/og.png`;
-const logoImage = (ticker) =>
-  `https://img.logo.dev/ticker/${encodeURIComponent(ticker)}?token=${LOGO_TOKEN}&size=600&format=png&retina=true`;
 
 function esc(s) {
   return String(s ?? "")
@@ -34,19 +31,18 @@ const cleanCompany = (c) => String(c ?? "").replace(/\s*\([^)]*\)\s*$/, "").trim
 // "STAF.L" -> "STAF"
 const bareTicker = (t) => String(t ?? "").split(".")[0];
 
+// Mirrors the worker's fmtGbp (worker/pipeline/summary-image.ts) so the headline
+// in the unfurl text matches the value on the generated card image (e.g. £29k).
 function money(value, currency) {
   const n = Number(value);
   if (!isFinite(n) || n <= 0) return null;
-  try {
-    return new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: currency || "GBP",
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(n);
-  } catch {
-    return `${currency || "GBP"} ${Math.round(n).toLocaleString()}`;
+  const sym = currency === "USD" ? "$" : currency === "EUR" ? "€" : "£";
+  if (n >= 1_000_000) {
+    const m = n / 1_000_000;
+    return `${sym}${m >= 10 ? Math.round(m) : m.toFixed(1).replace(/\.0$/, "")}M`;
   }
+  if (n >= 1_000) return `${sym}${Math.round(n / 1_000)}k`;
+  return `${sym}${Math.round(n)}`;
 }
 
 function tradeDate(iso) {
@@ -155,11 +151,11 @@ export async function onRequestGet(context) {
     if (!res.ok) return new Response(fallback(url), { headers });
     const d = await res.json();
     const meta = buildMeta(d, id);
-    // Phase 2a: company logo as og:image. The generated card (cardImage) is the
-    // intended og:image once the Worker route ships — switch the line below.
-    const image = meta.ticker ? logoImage(meta.ticker) : "https://ddbx.uk/apple-icon-180x180.png";
+    // Generated 1200×630 card (Worker route). The card endpoint itself redirects
+    // to the company logo / default image on any failure, so this is always safe.
+    const image = cardImage(id);
     return new Response(
-      page({ title: meta.title, description: meta.description, image, url, largeImage: false }),
+      page({ title: meta.title, description: meta.description, image, url, largeImage: true }),
       { headers }
     );
   } catch {
