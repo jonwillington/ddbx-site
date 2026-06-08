@@ -133,6 +133,13 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       // iOS's Performance tab unhides once this flips true.
       performance: true,
       portfolio: false,
+      // GO-LIVE SWITCH for the US close-of-day digest. The pipeline (own cron +
+      // us_daily_summaries table + /api/daily-summary?market=US) is live and
+      // generates+persists regardless, but this flag gates BOTH the in-app
+      // surface AND the push fan-out (see runUsDailySummary). Keep false until
+      // an iOS build that renders US daily summaries reaches TestFlight, then
+      // flip → push + in-app light up together. (Wire shape matches UK; only
+      // the cited dealing type differs.)
       dailySummary: false,
       news: true,
       tweets: false,
