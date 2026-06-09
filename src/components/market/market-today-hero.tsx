@@ -268,7 +268,7 @@ function TodayCard<W>({
             </h3>
             {dealing.rating && (
               <RatingBadge
-                className="shrink-0 !h-[20px] !w-auto !rounded-sm !px-2 !py-0 !text-[10px] !leading-none"
+                className="shrink-0 !h-[20px] !w-auto !rounded-full !px-2 !py-0 !text-[10px] !leading-none"
                 rating={dealing.rating}
               />
             )}
