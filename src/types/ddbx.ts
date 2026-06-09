@@ -1342,6 +1342,12 @@ export interface GovDealing {
    *  precision pass. */
   triage?: { verdict: GovTriageVerdict; reason: string };
 
+  /** Deterministic classification (significant | noteworthy | minor) from the
+   *  frozen govRating scoring matrix, computed at read for every signal row —
+   *  this is the user-facing label (the triage verdict is pipeline-internal).
+   *  Matches `analysis.rating` when a narrative analysis exists. */
+  rating?: Rating;
+
   /** Deep analysis, when present (capability gated; off at launch). Same
    *  `Analysis` payload as every other market. */
   analysis?: Analysis | null;

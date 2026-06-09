@@ -55,6 +55,7 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
     shares: 0,
     legCount: 1,
     triageVerdict: d.triage?.verdict,
+    rating: d.rating, // deterministic significant/noteworthy/minor — the user-facing label
     sector: d.sector_normalized ?? undefined,
     cluster: d.cluster ?? null,
     actionLabel: isOption ? "Options purchase" : "Open-market buy",
@@ -64,12 +65,6 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
 }
 
 /* ─── Slot components ────────────────────────────────────────────────── */
-
-const VERDICT_STYLE: Record<string, string> = {
-  promising: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  maybe: "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  skip: "border-[#d8d0c6]/55 text-[#a89e8c] dark:text-foreground/40",
-};
 
 function Chip({ label, cls }: { label: string; cls: string }) {
   return (
@@ -81,13 +76,14 @@ function Chip({ label, cls }: { label: string; cls: string }) {
 
 function CongressRowActionCell({ dealing }: { dealing: MarketDealing<GovDealing> }) {
   const d = dealing.raw;
-  const v = d.triage?.verdict ?? "skip";
   return (
     <div className="flex flex-col items-end gap-1">
       <span className="font-semibold tabular-nums text-sm">{formatBand(d.amount_min, d.amount_max)}</span>
-      <div className="flex gap-1">
+      <div className="flex items-center gap-1">
         {d.asset_type === "option" && <Chip label="options" cls="border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-300" />}
-        {v !== "skip" && <Chip label={v} cls={VERDICT_STYLE[v]} />}
+        {/* User-facing classification = the deterministic rating, not the
+            pipeline-internal triage verdict. */}
+        {dealing.rating && <RatingBadge rating={dealing.rating} />}
       </div>
     </div>
   );
