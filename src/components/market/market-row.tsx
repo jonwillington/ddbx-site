@@ -499,6 +499,7 @@ export function MemberClusterRow({
   insiderRole,
   insiderPhotoUrl,
   count,
+  signalCount = 0,
   totalValueLabel,
   children,
 }: {
@@ -506,11 +507,20 @@ export function MemberClusterRow({
   insiderRole?: string;
   insiderPhotoUrl?: string;
   count: number;
+  /** How many of the member's buys cleared the signal floor (promising|maybe) —
+   *  shown as a chip so the collapsed row still tells you there's something. */
+  signalCount?: number;
   totalValueLabel: string;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(count > 1); // multi-buy members open by default
+  const [open, setOpen] = useState(false); // collapsed → one tidy row per member; expand for the buys + connector
   const countLabel = `${count} ${count === 1 ? "buy" : "buys"}${insiderRole ? ` · ${insiderRole}` : ""}`;
+  const SignalChip = () =>
+    signalCount > 0 ? (
+      <span className="ml-2 inline-flex items-center rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+        {signalCount} signal
+      </span>
+    ) : null;
 
   return (
     <div className="divide-y divide-black/[0.06] dark:divide-separator">
@@ -527,7 +537,10 @@ export function MemberClusterRow({
           />
           <InsiderAvatar name={insiderName} photoUrl={insiderPhotoUrl} size={32} />
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-semibold truncate">{insiderName}</div>
+            <div className="flex items-center min-w-0">
+              <span className="text-[13px] font-semibold truncate">{insiderName}</span>
+              <SignalChip />
+            </div>
             <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
           </div>
           <div className="shrink-0 text-sm font-semibold tabular-nums text-right">{totalValueLabel}</div>
@@ -543,7 +556,10 @@ export function MemberClusterRow({
               className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             />
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-semibold truncate leading-tight">{insiderName}</div>
+              <div className="flex items-center min-w-0">
+                <span className="text-[13px] font-semibold truncate leading-tight">{insiderName}</span>
+                <SignalChip />
+              </div>
               <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
             </div>
           </div>

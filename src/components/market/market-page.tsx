@@ -842,6 +842,7 @@ export function MarketPage<W>({
           insiderName={group.insiderName}
           insiderPhotoUrl={group.insiderPhotoUrl}
           insiderRole={group.insiderRole}
+          signalCount={group.dealings.filter((d) => d.triageVerdict === "promising" || d.triageVerdict === "maybe").length}
           totalValueLabel={
             group.totalValue != null
               ? config.priceFormat.formatValue(group.totalValue)
@@ -1221,7 +1222,14 @@ export function MarketPage<W>({
                                     onOpen={() => setOpenSummaryDate(day.key)}
                                   />
                                 )}
-                              {isIntroDay ? (
+                              {config.clusterByPerson ? (
+                                // Person-grouped markets (Congress): fold the
+                                // WHOLE day — suggested + skipped — into one
+                                // group per member, so a member never appears
+                                // as both a cluster and loose rows. No corporate
+                                // intro banner.
+                                <>{renderSuggestedRows([...day.suggested, ...day.skipped])}</>
+                              ) : isIntroDay ? (
                                 <>
                                   {/* Grouped "signal" panel — the intro banner
                                       as a curved header wrapping the analysed
