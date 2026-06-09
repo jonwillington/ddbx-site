@@ -1267,6 +1267,9 @@ export interface GovReporter {
    *  from the current roster today; effective-dating to the trade's Congress is
    *  a known follow-up (committee assignments turn over each Congress). */
   committees?: string[];
+  /** Official member portrait (public-domain), served from our R2 mirror at
+   *  /api/gov/photo/:bioguide. Absent when the member has no Bioguide id. */
+  photo_url?: string;
 }
 
 export interface GovDealing {
