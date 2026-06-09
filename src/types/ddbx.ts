@@ -20,7 +20,7 @@
 // EU_MARKETS / MARKET_POLICY further down stay in lockstep when the new
 // market is region:"EU" — see the comment on EU_MARKETS below.
 
-export const MARKETS = ["UK", "US", "SE", "NL"] as const;
+export const MARKETS = ["UK", "US", "SE", "NL", "USG"] as const;
 export type Market = (typeof MARKETS)[number];
 
 export function isMarket(v: unknown): v is Market {
@@ -34,20 +34,23 @@ export interface MarketConfig {
   name: string;
   /** Region groups markets that share a wire format and pipeline shape.
    *  "UK" and "US" are one-market regions; "EU" covers all MAR-jurisdiction
-   *  members and shares the EuDealing wire format. */
-  region: "UK" | "US" | "EU";
+   *  members and shares the EuDealing wire format. "GOV" is US government-
+   *  insider (congressional STOCK Act) trading — same US equity universe but a
+   *  different insider class, its own GovDealing wire format and pipeline. */
+  region: "UK" | "US" | "EU" | "GOV";
   /** Primary listing currency (ISO 4217). Note: for UK this is the canonical
    *  product currency; an LSE-listed company can still disclose in EUR/USD —
    *  see the comment block on Dealing.currency below. */
   currency: string;
   /** Which wire format this market's dealings ride on. */
-  wireType: "Dealing" | "UsDealing" | "EuDealing";
+  wireType: "Dealing" | "UsDealing" | "EuDealing" | "GovDealing";
   /** What an insider/director identifier looks like in URLs and detail keys.
    *  - "opaque-hash": UK's `d-{16-char}` synthetic key
    *  - "cik": SEC 10-digit zero-padded reporter CIK
    *  - "normalized-name": lowercase + diacritic-folded reporter name (SE, NL)
+   *  - "bioguide": Congress Bioguide ID, the canonical member key (USG)
    *  Lets clients build deep-link URLs and dedupe directors without sniffing. */
-  directorIdKind: "opaque-hash" | "cik" | "normalized-name";
+  directorIdKind: "opaque-hash" | "cik" | "normalized-name" | "bioguide";
   /** Canonical endpoint paths a client should hit for this market. Resolved
    *  server-side so consumers don't hardcode the current naming asymmetry
    *  (`/api/dealings` vs `/api/us-dealings` vs `/api/eu-dealings?market=…`). */
@@ -186,6 +189,36 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       portfolio: false,
       dailySummary: false,
       news: true,
+      tweets: false,
+      monthlySummary: false,
+    },
+  },
+  USG: {
+    code: "USG",
+    name: "US Congress (House)",
+    region: "GOV",
+    currency: "USD",
+    wireType: "GovDealing",
+    directorIdKind: "bioguide",
+    endpoints: {
+      // `view=signal` is the mechanical mask: open-market common-stock
+      // purchases that pass the deterministic triage floor (jurisdiction /
+      // cluster / size). Without it the raw stream is mostly diversified
+      // managed-account baskets and sales — see worker/pipeline/us-gov.
+      dealings: "/api/gov-dealings?view=signal",
+      directorDetail: "/api/directors/usg/:id",
+      news: "/api/news/usg",
+    },
+    // DARK LAUNCH: every flag false. The pipeline ingests + serves
+    // /api/gov-dealings regardless, but no client surfaces it until a
+    // dedicated "Congress" surface ships AND the relevant flag flips. Senate
+    // is deferred (efdsearch is behind an Akamai bot wall); House only today.
+    capabilities: {
+      analysis: false,
+      performance: false,
+      portfolio: false,
+      dailySummary: false,
+      news: false,
       tweets: false,
       monthlySummary: false,
     },
@@ -1195,4 +1228,123 @@ export interface AnalysisFeedbackRow {
   client: string;
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================================
+// USG — US government-insider (congressional) trading
+// ============================================================================
+// STOCK Act Periodic Transaction Reports (PTRs). Kept as its own wire format
+// (like EuDealing) rather than overloaded onto UsDealing, which is Form-4
+// shaped (CIK, transaction codes, 10b5-1, derivative tables — all
+// inapplicable). The key structural difference from director dealings: there
+// is NO reporter⟷issuer relationship (a member buys any company), so the edge
+// is legislative jurisdiction / cross-member clustering, not own-company
+// conviction — reflected in the triage layer, not the wire shape.
+//
+// Source today: official House Clerk disclosures (static, Worker-reachable;
+// PTR detail parsed from text-layered PDFs). Senate (efdsearch) is deferred —
+// behind an Akamai bot wall. See ../pipeline/us-gov and the investigation at
+// ddbx-ios-app/investigations/2026-06-09-congress-trading.md.
+
+export type GovChamber = "house" | "senate";
+export type GovOwner = "self" | "spouse" | "joint" | "child";
+export type GovTransactionType = "purchase" | "sale_full" | "sale_partial" | "exchange" | "other";
+export type GovTriageVerdict = "skip" | "maybe" | "promising";
+
+export interface GovReporter {
+  /** Bioguide ID — Congress's canonical member key (e.g. "W000798"). The PTR
+   *  feed only carries a free-text name; ingest resolves it against the free
+   *  @unitedstates/congress-legislators roster. Stable across feeds + filings. */
+  id: string;
+  name: string;
+  chamber: GovChamber;
+  party?: "D" | "R" | "I";
+  /** 2-letter state. */
+  state?: string;
+  /** House district number; absent for senators. */
+  district?: number;
+  /** Committee names from the roster — the jurisdiction signal. NOTE: resolved
+   *  from the current roster today; effective-dating to the trade's Congress is
+   *  a known follow-up (committee assignments turn over each Congress). */
+  committees?: string[];
+}
+
+export interface GovDealing {
+  /** Content-hash identity: `cap-{sha1(filing_id|row_seq|owner|ticker|
+   *  trade_date|tx|amount_min|amount_max)[:16]}`. `row_seq` is IN the hash
+   *  because a PTR can legitimately repeat an identical line (same member /
+   *  ticker / band / day) — hashing content alone would silently collapse the
+   *  duplicate. `row_seq` comes from the PDF's own table order (stable unless
+   *  the parser changes), so the id only moves when position or content does. */
+  id: string;
+  /** Position of this row within its filing's table (stable secondary key). */
+  row_seq: number;
+  /** Source PTR filing id (House DocID). Groups multi-leg same-filing rows. */
+  filing_id: string;
+  trade_date: string;          // ISO — PTR transaction date
+  /** ISO — PTR notification/filing date. Disclosure lags the trade by up to
+   *  ~45 days (and far more on amendments), so the "since disclosure" return is
+   *  anchored here, NOT trade_date — what a copycat could actually enter at. */
+  disclosed_date: string;
+  created_at?: string;         // ISO datetime UTC — when ingested
+
+  reporter: GovReporter;
+
+  /** Issuer ticker (no exchange suffix). Null on scanned/unparseable rows,
+   *  which user-facing query paths hide. */
+  ticker: string | null;
+  company: string;             // PTR asset description
+  currency: "USD";
+  /** Normalised PTR asset class: "stock" today; "option" and others carried
+   *  verbatim-lowercased. Non-share classes are filtered from signal views. */
+  asset_type: string;
+  transaction_type: GovTransactionType;
+  /** Acquired (A) vs disposed (D). Null for exchanges/other. */
+  acquired_disposed: "A" | "D" | null;
+  owner: GovOwner;
+
+  /** Amounts are disclosed as a BAND, never an exact figure. `amount_mid` is a
+   *  midpoint estimate for sort/display only — never treat as a real value. */
+  amount_min: number | null;
+  amount_max: number | null;
+  amount_mid: number | null;
+
+  /** Close on `disclosed_date` (USD), nearest prior trading day. Anchors the
+   *  copycat return. Nullable when bars aren't cached. Mirrors
+   *  `UsDealing.disclosed_close`. */
+  disclosed_close?: number | null;
+  /** Filed past the STOCK Act 45-day window — a governance signal in itself. */
+  is_late?: boolean;
+  /** Replicable copycat buy: open-market common-stock purchase at a real
+   *  ticker. Mirrors `UsDealing.is_open_market_buy` / EU's share filter. */
+  is_open_market_buy?: boolean | null;
+  /** True when the PTR is an amendment. Mirror of the US posture — surface
+   *  alongside the original with a badge; no supersession logic. */
+  is_amendment?: boolean;
+  original_filing_date?: string;
+  /** Canonical source filing URL. */
+  ptr_link: string;
+
+  /** SEC `sicDescription` for the issuer (free-text industry), joined at read
+   *  time. Mirrors `UsDealing.sector`. */
+  sector?: string | null;
+  /** Normalised ICB top-level industry via the shared us-sic-to-icb mapping
+   *  (SEC SIC → ICB), so USG issuers group alongside US/UK ones. Mirrors
+   *  `UsDealing.sector_normalized`. */
+  sector_normalized?: SectorNormalized | null;
+
+  /** Triage verdict + reason for this row, joined in by the read API. Same
+   *  nested shape as the other markets' `triage`. Driven by a deterministic
+   *  feature floor (jurisdiction overlap / cluster / owner / size) plus an LLM
+   *  precision pass. */
+  triage?: { verdict: GovTriageVerdict; reason: string };
+
+  /** Deep analysis, when present (capability gated; off at launch). Same
+   *  `Analysis` payload as every other market. */
+  analysis?: Analysis | null;
+
+  /** Cross-member cluster: distinct OTHER members acquiring the same issuer in
+   *  a tight window. Stronger signal here than for corporates. Mirrors
+   *  `Dealing.cluster`. */
+  cluster?: ClusterInfo | null;
 }
