@@ -63,6 +63,7 @@ import {
  *  above the historical table, so without a cap it would push that table off
  *  the page. */
 const TODAY_SKIPPED_CAP = 8;
+const UK_APP_STORE_URL = "https://apps.apple.com/us/app/ddbx-uk/id6762196330";
 
 /** The full shell that every market page mounts. Reads everything from
  *  MarketConfig — adding a new market means writing a new MarketConfig and
@@ -889,10 +890,14 @@ export function MarketPage<W>({
         <MarketHero
           hasTopNotice={!!config.topNotice}
           marketLabel={config.marketLabel}
+          primaryCtaHref={config.id === "uk" ? UK_APP_STORE_URL : undefined}
+          primaryCtaLabel={config.id === "uk" ? "Download the app" : undefined}
           reportLabel={monthShort(latestRecapMonth)}
           onExplain={() => setExplainerOpen(true)}
           onViewReport={
-            latestRecapMonth ? () => openRecap(latestRecapMonth) : undefined
+            config.id !== "uk" && latestRecapMonth
+              ? () => openRecap(latestRecapMonth)
+              : undefined
           }
         />
 

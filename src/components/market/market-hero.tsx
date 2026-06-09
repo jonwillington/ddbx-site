@@ -14,6 +14,8 @@
 export function MarketHero({
   marketLabel,
   hasTopNotice = false,
+  primaryCtaHref,
+  primaryCtaLabel,
   onExplain,
   onViewReport,
   reportLabel,
@@ -24,6 +26,10 @@ export function MarketHero({
    *  mobile hero the badge would land on the headline, so we reserve top
    *  space for it here. */
   hasTopNotice?: boolean;
+  /** Optional primary CTA rendered as an external link (new tab). */
+  primaryCtaHref?: string;
+  /** Label for the primary external CTA. */
+  primaryCtaLabel?: string;
   /** When provided, a quiet "What are we looking for?" pill renders under the
    *  headline and opens the per-market explainer sheet. */
   onExplain?: () => void;
@@ -427,11 +433,21 @@ export function MarketHero({
           companies?
         </h2>
 
-        {(onExplain || onViewReport) && (
+        {(primaryCtaHref || onExplain || onViewReport) && (
           <div className="flex flex-wrap items-center justify-center gap-3">
+            {primaryCtaHref && (
+              <a
+                className="inline-flex items-center rounded-full bg-[#5a4128] px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-[#49331f] hover:shadow-lg dark:bg-[#ad9479] dark:text-[#1a140d] dark:hover:bg-[#bda58a]"
+                href={primaryCtaHref}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                {primaryCtaLabel ?? "Download the app"}
+              </a>
+            )}
             {onExplain && (
               <button
-                className="inline-flex items-center rounded-full bg-[#5a4128] px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-[#49331f] hover:shadow-lg dark:bg-[#ad9479] dark:text-[#1a140d] dark:hover:bg-[#bda58a]"
+                className="inline-flex items-center rounded-full bg-[#6b503921] px-6 py-3 text-base font-semibold text-[#5a4128] backdrop-blur-sm transition-all hover:bg-[#6b50382e] dark:bg-[#ad9479]/15 dark:text-[#ad9479] dark:hover:bg-[#ad9479]/25"
                 type="button"
                 onClick={onExplain}
               >
