@@ -464,6 +464,111 @@ export function MarketClusterRow<W>({
   );
 }
 
+/** Round insider avatar — member portrait when present, else initials. */
+function InsiderAvatar({ name, photoUrl, size = 28 }: { name: string; photoUrl?: string; size?: number }) {
+  const initials = name.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+  if (photoUrl) {
+    return (
+      <img
+        alt=""
+        className="rounded-full object-cover bg-black/[0.06] dark:bg-white/10 shrink-0"
+        height={size}
+        loading="lazy"
+        src={photoUrl}
+        width={size}
+      />
+    );
+  }
+  return (
+    <div
+      className="rounded-full bg-black/[0.06] dark:bg-white/10 shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted"
+      style={{ width: size, height: size }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+/** Person-grouped master row: one INSIDER who traded this day, their portrait
+ *  anchored at the top, expanding to the company rows they bought — each
+ *  visually tied back to the member by a connector line. The person-view
+ *  analogue of MarketClusterRow. Children are ordinary MarketRows that still
+ *  open their own drawer. */
+export function MemberClusterRow({
+  insiderName,
+  insiderRole,
+  insiderPhotoUrl,
+  count,
+  totalValueLabel,
+  children,
+}: {
+  insiderName: string;
+  insiderRole?: string;
+  insiderPhotoUrl?: string;
+  count: number;
+  totalValueLabel: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(count > 1); // multi-buy members open by default
+  const countLabel = `${count} ${count === 1 ? "buy" : "buys"}${insiderRole ? ` · ${insiderRole}` : ""}`;
+
+  return (
+    <div className="divide-y divide-black/[0.06] dark:divide-separator">
+      <button
+        aria-expanded={open}
+        className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5"
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+      >
+        {/* ── Mobile (<md) ── */}
+        <div className="md:hidden px-3 py-2.5 flex items-center gap-2.5">
+          <ChevronDownIcon
+            className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+          <InsiderAvatar name={insiderName} photoUrl={insiderPhotoUrl} size={32} />
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-semibold truncate">{insiderName}</div>
+            <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
+          </div>
+          <div className="shrink-0 text-sm font-semibold tabular-nums text-right">{totalValueLabel}</div>
+        </div>
+
+        {/* ── Desktop (md+) — geometry matches MarketRow's columns ── */}
+        <div className="hidden md:flex items-stretch">
+          <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+            <InsiderAvatar name={insiderName} photoUrl={insiderPhotoUrl} size={36} />
+          </div>
+          <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+            <ChevronDownIcon
+              className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-semibold truncate leading-tight">{insiderName}</div>
+              <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
+            </div>
+          </div>
+          <div className="w-24 shrink-0 px-3 py-2.5 flex items-center justify-end border-r border-black/[0.06] dark:border-white/[0.06]">
+            <span className="text-sm font-semibold tabular-nums">{totalValueLabel}</span>
+          </div>
+          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+          <div className="w-40 shrink-0 px-2 py-2.5" />
+        </div>
+      </button>
+
+      {open && (
+        // Connector line: the company rows the member bought, tied back to the
+        // portrait above by a vertical rule down the left gutter.
+        <div className="bg-black/[0.015] dark:bg-white/[0.02]">
+          <div className="ml-7 md:ml-[38px] border-l-2 border-black/[0.10] dark:border-white/[0.12] divide-y divide-black/[0.06] dark:divide-separator">
+            {children}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** A single dealing row, shared across all markets. The shell hands in the
  *  computed prices + benchmark closes; this component only does the math
  *  for the return + alpha badges and renders the chrome. Market-specific

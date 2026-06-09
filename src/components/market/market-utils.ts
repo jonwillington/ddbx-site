@@ -236,6 +236,58 @@ export function groupByCompany<W>(
   return order.map((k) => byKey.get(k)!);
 }
 
+export interface PersonGroup<W> {
+  /** Insider name (the grouping key). */
+  key: string;
+  insiderName: string;
+  insiderRole?: string;
+  insiderPhotoUrl?: string;
+  /** This member's dealings, in importance order. */
+  dealings: MarketDealing<W>[];
+  /** First (most significant) dealing — fixes the group's position + avatar. */
+  representative: MarketDealing<W>;
+  count: number;
+  /** Sum of this member's values; null when every leg was unpriced. */
+  totalValue: number | null;
+}
+
+/** Collapse a day's dealings by INSIDER — each member who traded that day folds
+ *  into one group, preserving first-occurrence order so their most significant
+ *  buy fixes their position. For Congress, where the member is the entity of
+ *  interest (one member often buys many tickers the same day). Singletons come
+ *  back as `count===1`. */
+export function groupByPerson<W>(
+  dealings: MarketDealing<W>[],
+): PersonGroup<W>[] {
+  const order: string[] = [];
+  const byKey = new Map<string, PersonGroup<W>>();
+
+  for (const d of dealings) {
+    const key = d.insiderName || d.key;
+    let group = byKey.get(key);
+
+    if (!group) {
+      group = {
+        key,
+        insiderName: d.insiderName,
+        insiderRole: d.insiderRole,
+        insiderPhotoUrl: d.insiderPhotoUrl,
+        dealings: [],
+        representative: d,
+        count: 0,
+        totalValue: null,
+      };
+      byKey.set(key, group);
+      order.push(key);
+    }
+    group.dealings.push(d);
+    group.count++;
+    if (d.value != null) group.totalValue = (group.totalValue ?? 0) + d.value;
+  }
+
+  return order.map((k) => byKey.get(k)!);
+}
+
 export function ordinal(n: number): string {
   const v = n % 100;
 

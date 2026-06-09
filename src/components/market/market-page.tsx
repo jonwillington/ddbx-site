@@ -26,6 +26,7 @@ import {
   MarketRow,
   MarketRowHeader,
   MarketRowSkeleton,
+  MemberClusterRow,
 } from "./market-row";
 import { type SparkBar } from "./market-row-spark";
 import { MarketTodayDrawer } from "./market-today-drawer";
@@ -35,6 +36,7 @@ import {
   bucketByMonth,
   compareByReturnDesc,
   groupByCompany,
+  groupByPerson,
   todayKeyIso,
 } from "./market-utils";
 
@@ -830,6 +832,27 @@ export function MarketPage<W>({
   // into one expandable MarketClusterRow (mirrors iOS ticker clustering);
   // otherwise each dealing renders as its own row. Skipped rows never cluster.
   const renderSuggestedRows = (rows: MarketDealing<W>[]) => {
+    // Person-grouping wins when enabled: fold each member's buys for the day
+    // into one MemberClusterRow (portrait → the companies they bought).
+    if (config.clusterByPerson) {
+      return groupByPerson(rows).map((group) => (
+        <MemberClusterRow
+          key={`person-${group.key}`}
+          count={group.count}
+          insiderName={group.insiderName}
+          insiderPhotoUrl={group.insiderPhotoUrl}
+          insiderRole={group.insiderRole}
+          totalValueLabel={
+            group.totalValue != null
+              ? config.priceFormat.formatValue(group.totalValue)
+              : "—"
+          }
+        >
+          {group.dealings.map(renderDayRow)}
+        </MemberClusterRow>
+      ));
+    }
+
     if (!config.clusterByCompany) return rows.map(renderDayRow);
 
     return groupByCompany(rows).map((group) =>
@@ -889,6 +912,7 @@ export function MarketPage<W>({
             changes instead of remounting with each MarketHero. */}
         <MarketHero
           hasTopNotice={!!config.topNotice}
+          headline={config.heroHeadline}
           marketLabel={config.marketLabel}
           primaryCtaHref={config.id === "uk" ? UK_APP_STORE_URL : undefined}
           primaryCtaLabel={config.id === "uk" ? "Download the app" : undefined}

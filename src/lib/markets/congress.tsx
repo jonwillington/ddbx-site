@@ -43,6 +43,7 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
     company: d.company,
     insiderName: d.reporter.name,
     insiderRole: partyState(d.reporter) || (d.reporter.chamber === "senate" ? "Senate" : "House"),
+    insiderPhotoUrl: d.reporter.photo_url,
     disclosedDate: d.disclosed_date,
     tradeDate: d.trade_date,
     isPurchase: buy,
@@ -167,6 +168,13 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   id: "usg",
   title: "US Congress (preview)",
   documentTitle: "ddbx · Congressional Trading — US House STOCK Act Filings",
+  heroHeadline: (
+    <>
+      Which members of{" "}
+      <span className="text-[#5a4128] dark:text-[#ad9479]">Congress</span> have
+      been buying stocks?
+    </>
+  ),
   description: (
     <>
       US House <strong className="text-foreground/75">STOCK Act</strong> Periodic
@@ -196,7 +204,10 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   isSignal: isGovSignal,
   isRowMuted: (d) => d.triageVerdict === "skip",
   isSkipped: (d) => d.triageVerdict === "skip",
-  clusterByCompany: true,
+  // Group by member, not company — for Congress the person is the entity of
+  // interest (one member often buys many tickers in a day). Portrait anchors
+  // the group, connected to the company rows they bought.
+  clusterByPerson: true,
   pollIntervalMs: 0,
   async fetchDealings() {
     const r = await api.govDealings({ view: "all", limit: 500 });

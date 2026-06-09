@@ -11,8 +11,11 @@
  *  every market — the optional beta notice is rendered absolutely at the
  *  top so it doesn't push the headline around, and slides in instead of
  *  popping when the user navigates to a beta market. */
+import type { ReactNode } from "react";
+
 export function MarketHero({
   marketLabel,
+  headline,
   hasTopNotice = false,
   primaryCtaHref,
   primaryCtaLabel,
@@ -21,6 +24,11 @@ export function MarketHero({
   reportLabel,
 }: {
   marketLabel: string;
+  /** Optional full headline override. When provided it replaces the templated
+   *  "Which directors have been buying shares in {marketLabel} companies?" —
+   *  used by markets where that phrasing doesn't fit (e.g. Congress, where
+   *  members buy other companies, they aren't companies). */
+  headline?: ReactNode;
   /** When the market carries a beta/advisory notice, the floating <BetaTag/>
    *  sits at the top of the hero. Desktop has room to spare; on the compact
    *  mobile hero the badge would land on the headline, so we reserve top
@@ -426,11 +434,15 @@ export function MarketHero({
           className="mx-auto text-balance text-[26px] font-semibold tracking-tight leading-[1.1] md:text-[52px] md:leading-[1.05]"
           style={{ maxWidth: 550 }}
         >
-          Which directors have been buying shares in{" "}
-          <span className="text-[#5a4128] dark:text-[#ad9479]">
-            {marketLabel}
-          </span>{" "}
-          companies?
+          {headline ?? (
+            <>
+              Which directors have been buying shares in{" "}
+              <span className="text-[#5a4128] dark:text-[#ad9479]">
+                {marketLabel}
+              </span>{" "}
+              companies?
+            </>
+          )}
         </h2>
 
         {(primaryCtaHref || onExplain || onViewReport) && (

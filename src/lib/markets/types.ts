@@ -39,6 +39,9 @@ export interface MarketDealing<W = unknown> {
   company: string;
   insiderName: string;
   insiderRole?: string;
+  /** Optional insider avatar (member portrait for Congress). Person-grouped
+   *  views anchor the group on it; falls back to initials when absent. */
+  insiderPhotoUrl?: string;
 
   /** ISO `YYYY-MM-DD…` strings — disclosure on the regulator side. Used for
    *  month/day bucketing and "today" detection. */
@@ -198,6 +201,10 @@ export interface MarketConfig<W = unknown> {
    *  reads this from the active market — e.g. "ddbx · Director Dealings —
    *  UK Insider Transactions". */
   documentTitle: string;
+  /** Optional full hero-headline override, replacing the templated
+   *  "Which directors have been buying shares in {marketLabel} companies?".
+   *  Congress sets this since members buy other companies, not themselves. */
+  heroHeadline?: ReactNode;
   /** Explainer paragraph under the title. Markdown-y JSX is fine. */
   description: ReactNode;
   /** Short market label substituted into the shared hero headline
@@ -347,6 +354,13 @@ export interface MarketConfig<W = unknown> {
    *  Only the prominent (non-skipped) rows cluster; skipped rows stay flat.
    *  Off by default; US keeps its own same-filing `legCount` fold instead. */
   clusterByCompany?: boolean;
+
+  /** When true, day buckets group the prominent rows by INSIDER instead of by
+   *  company — each member who traded that day folds into one expandable
+   *  MemberClusterRow (their portrait anchored, connected to the company
+   *  badges they bought). For Congress, where the member is the primary
+   *  entity. Mutually exclusive with clusterByCompany (person wins). */
+  clusterByPerson?: boolean;
 
   /** Discretion-gating hook. When provided, MarketDetailDrawer calls
    *  `recordView(dealId)` on open and falls back to the dummy body +
