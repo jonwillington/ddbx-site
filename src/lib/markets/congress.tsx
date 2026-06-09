@@ -9,6 +9,7 @@ import type { GovDealing } from "@/types/ddbx";
 import type { PriceFormat } from "@/components/position-card";
 
 import { api } from "@/lib/api";
+import { RatingBadge } from "@/components/rating-badge";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -113,6 +114,28 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
           </div>
         </div>
       </div>
+
+      {d.analysis && (
+        <div className="space-y-2.5 rounded-lg border border-foreground/10 bg-foreground/[0.03] p-3">
+          <div className="flex items-center gap-2">
+            <RatingBadge rating={d.analysis.rating} />
+            {d.analysis.confidence != null && (
+              <span className="text-xs text-foreground/45">{Math.round(d.analysis.confidence * 100)}% confidence</span>
+            )}
+          </div>
+          <div className="text-sm font-medium text-foreground/90">{d.analysis.summary}</div>
+          {d.analysis.thesis_points?.length > 0 && (
+            <ul className="list-disc space-y-1 pl-4 text-sm text-foreground/80">
+              {d.analysis.thesis_points.map((p, i) => <li key={i}>{p}</li>)}
+            </ul>
+          )}
+          {d.analysis.key_risks?.length > 0 && (
+            <div className="text-xs text-foreground/55">
+              <span className="uppercase tracking-wide">Risks:</span> {d.analysis.key_risks.join(" · ")}
+            </div>
+          )}
+        </div>
+      )}
 
       {committees.length > 0 && (
         <div>
