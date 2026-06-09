@@ -179,6 +179,63 @@ export function compareDealingImportance<W>(
   return (b.value ?? 0) - (a.value ?? 0);
 }
 
+/** One company's worth of same-day dealings, folded for display. `count===1`
+ *  groups pass through as ordinary single rows; `count>1` render as a
+ *  collapsed, expandable cluster. */
+export interface CompanyGroup<W> {
+  /** Ticker, or the lone dealing's key when the row carries no ticker (so
+   *  unticketed rows never collapse into each other). */
+  key: string;
+  ticker: string;
+  company: string;
+  /** Member dealings in their original (importance-sorted) order. */
+  dealings: MarketDealing<W>[];
+  /** First member — highest-importance after the day's sort. Drives the
+   *  cluster's logo / company / ticker display. */
+  representative: MarketDealing<W>;
+  count: number;
+  /** Sum of member values; null when every member was unpriced. */
+  totalValue: number | null;
+}
+
+/** Collapse same-company dealings (already importance-sorted within the day)
+ *  into one group per ticker, preserving first-occurrence order so the most
+ *  significant buy fixes each group's position. Mirrors the iOS dashboard's
+ *  ticker clustering (DashboardView.groupByTicker): multiple insiders or
+ *  disclosures on the same company on the same day fold into one expandable
+ *  row instead of N near-identical rows. Singletons come back as `count===1`.
+ *  Rows without a ticker key on their own dealing key, so they stay distinct. */
+export function groupByCompany<W>(
+  dealings: MarketDealing<W>[],
+): CompanyGroup<W>[] {
+  const order: string[] = [];
+  const byKey = new Map<string, CompanyGroup<W>>();
+
+  for (const d of dealings) {
+    const key = d.ticker || d.key;
+    let group = byKey.get(key);
+
+    if (!group) {
+      group = {
+        key,
+        ticker: d.ticker,
+        company: d.company,
+        dealings: [],
+        representative: d,
+        count: 0,
+        totalValue: null,
+      };
+      byKey.set(key, group);
+      order.push(key);
+    }
+    group.dealings.push(d);
+    group.count++;
+    if (d.value != null) group.totalValue = (group.totalValue ?? 0) + d.value;
+  }
+
+  return order.map((k) => byKey.get(k)!);
+}
+
 export function ordinal(n: number): string {
   const v = n % 100;
 

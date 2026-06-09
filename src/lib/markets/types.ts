@@ -340,6 +340,14 @@ export interface MarketConfig<W = unknown> {
    *  omit this and every row renders inline. */
   isSkipped?: (d: MarketDealing<W>) => boolean;
 
+  /** When true, the chronological day buckets fold multiple same-company
+   *  ("suggested") rows on the same day into one expandable cluster row —
+   *  mirrors the iOS dashboard's ticker clustering so a company several
+   *  insiders bought into doesn't produce a wall of near-identical rows.
+   *  Only the prominent (non-skipped) rows cluster; skipped rows stay flat.
+   *  Off by default; US keeps its own same-filing `legCount` fold instead. */
+  clusterByCompany?: boolean;
+
   /** Discretion-gating hook. When provided, MarketDetailDrawer calls
    *  `recordView(dealId)` on open and falls back to the dummy body +
    *  overlay when `hasFullAccess(dealId)` returns false. The hook owns

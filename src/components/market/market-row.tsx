@@ -1,6 +1,9 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { PriceFormat } from "@/components/position-card";
 import type { ChartMode, MarketDealing } from "@/lib/markets/types";
+
+import { useState } from "react";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
 
 import { MarketRowSpark, type SparkBar } from "./market-row-spark";
 import { computeRowMetric, deltaStyle, shortDate } from "./market-utils";
@@ -353,6 +356,112 @@ interface MarketRowProps<W> {
    *  for Friday's disclosures). Drives a "No data yet" placeholder in the
    *  Return cell instead of a misleading +0.0%. */
   noPosteriorData?: boolean;
+}
+
+/** Collapsed "multiple insiders bought this company today" master row.
+ *  Mirrors the iOS dashboard's ticker cluster (DashboardView.clusterMasterRow):
+ *  when several insiders — or several disclosures — hit the same ticker on the
+ *  same day we fold them into one expandable row instead of N near-identical
+ *  rows. Holds its own open/closed state; this is purely a presentation
+ *  grouping — the children are ordinary MarketRows that still open their own
+ *  drawer on click. Column geometry matches MarketRow's `hideDate` layout so
+ *  the master aligns with the table; spark / return / action columns are left
+ *  empty (those numbers are per-deal, not per-cluster). */
+export function MarketClusterRow<W>({
+  representative,
+  company,
+  count,
+  totalValueLabel,
+  showLogo = true,
+  formatTickerDisplay,
+  valueColumnClass = "w-24",
+  children,
+}: {
+  representative: MarketDealing<W>;
+  company: string;
+  count: number;
+  totalValueLabel: string;
+  showLogo?: boolean;
+  formatTickerDisplay?: (ticker: string) => string;
+  valueColumnClass?: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const rawTicker = representative.ticker || "—";
+  const ticker = formatTickerDisplay
+    ? formatTickerDisplay(rawTicker)
+    : rawTicker;
+  const countLabel = `${count} insider buys`;
+
+  return (
+    <div className="divide-y divide-black/[0.06] dark:divide-separator">
+      <button
+        aria-expanded={open}
+        className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5"
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+      >
+        {/* ── Mobile (<md) ── */}
+        <div className="md:hidden px-3 py-2.5 flex items-center gap-2.5">
+          <ChevronDownIcon
+            className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+          {showLogo && <CompanyLogo size={28} ticker={rawTicker} />}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-[#e8e0d5] dark:bg-surface-secondary shrink-0">
+                {ticker}
+              </span>
+              <span className="text-[13px] font-medium truncate">
+                {company}
+              </span>
+            </div>
+            <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
+          </div>
+          <div className="shrink-0 text-sm font-semibold tabular-nums text-right">
+            {totalValueLabel}
+          </div>
+        </div>
+
+        {/* ── Desktop (md+) ── */}
+        <div className="hidden md:flex items-stretch">
+          <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+            <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-[#e8e0d5] dark:bg-surface-secondary">
+              {ticker}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+            <ChevronDownIcon
+              className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            />
+            {showLogo && <CompanyLogo size={28} ticker={rawTicker} />}
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-medium truncate leading-tight">
+                {company}
+              </div>
+              <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
+            </div>
+          </div>
+          <div
+            className={`${valueColumnClass} shrink-0 px-3 py-2.5 flex items-center justify-end border-r border-black/[0.06] dark:border-white/[0.06]`}
+          >
+            <span className="text-sm font-semibold tabular-nums">
+              {totalValueLabel}
+            </span>
+          </div>
+          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+          <div className="w-40 shrink-0 px-2 py-2.5" />
+        </div>
+      </button>
+
+      {open && (
+        <div className="divide-y divide-black/[0.06] dark:divide-separator bg-black/[0.015] dark:bg-white/[0.02]">
+          {children}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** A single dealing row, shared across all markets. The shell hands in the

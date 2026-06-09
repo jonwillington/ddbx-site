@@ -4,6 +4,7 @@ import type {
   DirectorDetail,
   EuDealing,
   EuDirectorDetail,
+  GovDealing,
   LatestPrice,
   MonthlySummariesResponse,
   MonthlySummaryResponse,
@@ -123,6 +124,19 @@ export const api = {
 
     return (await res.json()) as DailySummaryResponse;
   },
+  /** USG — congressional (House STOCK Act) dealings. view=signal returns the
+   *  triage-cleared set (jurisdiction + notable/marquee); view=all the raw
+   *  buy stream. Buys only (sales/junk dropped server-side). */
+  govDealings: (opts: { view?: "signal" | "all"; ticker?: string; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+
+    if (opts.view) qs.set("view", opts.view);
+    if (opts.ticker) qs.set("ticker", opts.ticker);
+    if (opts.limit != null) qs.set("limit", String(opts.limit));
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+
+    return get<{ dealings: GovDealing[] }>(`/gov-dealings${suffix}`);
+  },
   usDealings: (
     opts: {
       limit?: number;
@@ -195,6 +209,7 @@ export type {
   DirectorDetail,
   EuDealing,
   EuDirectorDetail,
+  GovDealing,
   LatestPrice,
   MonthlySummariesResponse,
   MonthlySummaryResponse,

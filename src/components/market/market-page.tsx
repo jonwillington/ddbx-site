@@ -20,6 +20,7 @@ import { MarketFilterBar, type MarketViewMode } from "./market-filter-bar";
 import { MarketHero } from "./market-hero";
 import { MarketIntroBanner, useIntroDismissed } from "./market-intro-banner";
 import {
+  MarketClusterRow,
   MarketDayHeader,
   MarketDaySummaryRow,
   MarketRow,
@@ -33,6 +34,7 @@ import { MarketTodayHero } from "./market-today-hero";
 import {
   bucketByMonth,
   compareByReturnDesc,
+  groupByCompany,
   todayKeyIso,
 } from "./market-utils";
 
@@ -822,6 +824,37 @@ export function MarketPage<W>({
     />
   );
 
+  // The prominent ("suggested") rows of a day. When the market opts into
+  // company clustering, multiple same-company buys on the same day collapse
+  // into one expandable MarketClusterRow (mirrors iOS ticker clustering);
+  // otherwise each dealing renders as its own row. Skipped rows never cluster.
+  const renderSuggestedRows = (rows: MarketDealing<W>[]) => {
+    if (!config.clusterByCompany) return rows.map(renderDayRow);
+
+    return groupByCompany(rows).map((group) =>
+      group.count > 1 ? (
+        <MarketClusterRow
+          key={`cluster-${group.key}`}
+          company={group.company}
+          count={group.count}
+          formatTickerDisplay={config.formatTickerDisplay}
+          representative={group.representative}
+          showLogo={logosEnabled}
+          totalValueLabel={
+            group.totalValue != null
+              ? config.priceFormat.formatValue(group.totalValue)
+              : "—"
+          }
+          valueColumnClass={config.priceFormat.valueColumnClass}
+        >
+          {group.dealings.map(renderDayRow)}
+        </MarketClusterRow>
+      ) : (
+        renderDayRow(group.representative)
+      ),
+    );
+  };
+
   const emptyState = filteredDealings.length === 0 &&
     todaySkipped.length === 0 &&
     !loading && (
@@ -1171,7 +1204,7 @@ export function MarketPage<W>({
                                       onDismiss={intro.dismiss}
                                       onExplain={() => setExplainerOpen(true)}
                                     />
-                                    {day.suggested.map(renderDayRow)}
+                                    {renderSuggestedRows(day.suggested)}
                                   </div>
                                   {day.skipped.length > 0 && (
                                     <div className="divide-y divide-black/[0.06] border-t border-black/[0.06] dark:divide-separator dark:border-separator">
@@ -1181,7 +1214,7 @@ export function MarketPage<W>({
                                 </>
                               ) : (
                                 <>
-                                  {day.suggested.map(renderDayRow)}
+                                  {renderSuggestedRows(day.suggested)}
                                   {day.skipped.map(renderDayRow)}
                                 </>
                               )}

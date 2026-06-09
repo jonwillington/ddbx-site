@@ -5,6 +5,7 @@ import { CookieBanner } from "@/components/cookie-banner";
 import { DocumentTitle } from "@/components/document-title";
 import PerformancePage from "@/pages/performance";
 import DirectorPage from "@/pages/director";
+import CongressPreviewPage from "@/pages/congress-preview";
 import MarketHomePage from "@/pages/market-home";
 import NetherlandsPreviewPage from "@/pages/netherlands-preview";
 import SwedenPreviewPage from "@/pages/sweden-preview";
@@ -37,6 +38,10 @@ function App() {
         <Route element={<DirectorPage />} path="/nl/directors/:id" />
         <Route element={<UsPreviewPage />} path="/us-preview" />
         <Route element={<UsPreviewPage />} path="/us" />
+        {/* US Congress (STOCK Act) preview — distinct from /directors/:id
+            (per-market insider detail). */}
+        <Route element={<CongressPreviewPage />} path="/directors" />
+        <Route element={<CongressPreviewPage />} path="/congress" />
         <Route element={<SwedenPreviewPage />} path="/se-preview" />
         <Route element={<SwedenPreviewPage />} path="/se" />
         <Route element={<NetherlandsPreviewPage />} path="/nl-preview" />

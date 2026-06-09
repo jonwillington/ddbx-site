@@ -17,6 +17,7 @@ import {
   type FlagComponent,
 } from "country-flag-icons/react/3x2";
 
+import { CongressMarket } from "./congress";
 import { NetherlandsMarket } from "./netherlands";
 import { SwedenMarket } from "./sweden";
 import { UkMarket } from "./uk";
@@ -71,6 +72,16 @@ export const MARKETS: MarketRegistryEntry[] = [
     Flag: US,
     region: "north-america",
     config: UsMarket as MarketConfig,
+  },
+  {
+    id: "usg",
+    code: "USG",
+    label: "Congress",
+    route: "/directors",
+    canonicalRoute: "/directors",
+    Flag: US,
+    region: "north-america",
+    config: CongressMarket as MarketConfig,
   },
   {
     id: "se",

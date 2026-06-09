@@ -384,6 +384,10 @@ export const UkMarket: MarketConfig<Dealing> = {
   // into a per-day cluster the user can expand. Mirrors the live dashboard's
   // "X analysed · Y skipped" split.
   isSkipped: (d) => !isSuggestedDealing(d.raw),
+  // Fold multiple same-company buys disclosed on one day into a single
+  // expandable cluster row — mirrors the iOS dashboard's ticker clustering so
+  // a company several directors bought into reads as one row, not a wall.
+  clusterByCompany: true,
   // Discretion gating: first drawer of the UK day is free; subsequent drawers
   // render the dummy body under a blur with a "use the app" overlay.
   useGating: useUkGating,
