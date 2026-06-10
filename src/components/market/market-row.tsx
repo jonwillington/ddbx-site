@@ -184,7 +184,7 @@ export function MarketDaySummaryRow({
 
   return (
     <button
-      className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5"
+      className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
       type="button"
       onClick={onOpen}
     >
@@ -412,7 +412,7 @@ export function MarketClusterRow<W>({
     <div className="divide-y divide-black/[0.06] dark:divide-separator">
       <button
         aria-expanded={open}
-        className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5"
+        className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
         type="button"
         onClick={() => setOpen((v) => !v)}
       >
@@ -559,7 +559,7 @@ export function MemberClusterRow({
     <div className="divide-y divide-black/[0.06] dark:divide-separator">
       <button
         aria-expanded={open}
-        className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5"
+        className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
         type="button"
         onClick={() => setOpen((v) => !v)}
       >
@@ -701,7 +701,7 @@ export function MarketRow<W>({
 
   return (
     <button
-      className={`w-full text-left transition-colors
+      className={`w-full text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40
         ${muted ? "opacity-65" : ""}
         ${muted && !selected ? "bg-black/[0.025] dark:bg-white/[0.025]" : ""}
         ${selected ? "bg-[#5a4128]/[0.07] dark:bg-[#5a4128]/[0.20]" : "hover:bg-black/[0.03] dark:hover:bg-white/5"}`}
