@@ -872,9 +872,11 @@ export function MarketRow<W>({
           <div className="text-sm font-semibold tabular-nums">{valueLabel}</div>
         </div>
         <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center gap-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
-          <span className="text-[11px] font-semibold tabular-nums text-muted/70">
-            {dealing.legCount}
-          </span>
+          {dealing.legCount > 1 && (
+            <span className="text-[11px] font-semibold tabular-nums text-muted/70">
+              {dealing.legCount}
+            </span>
+          )}
           <MarketRowSpark
             bars={stockBars}
             benchmarkBars={benchmarkBars}
