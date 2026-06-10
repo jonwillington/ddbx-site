@@ -546,15 +546,17 @@ export function MemberClusterRow({
           <div className="shrink-0 text-sm font-semibold tabular-nums text-right">{totalValueLabel}</div>
         </div>
 
-        {/* ── Desktop (md+) — geometry matches MarketRow's columns ── */}
+        {/* ── Desktop (md+) — geometry matches MarketRow's columns ──
+            Ticker column stays empty for the master so it reads as a pure
+            ticker column for the child rows; the member photo sits beside the
+            name instead. */}
         <div className="hidden md:flex items-stretch">
-          <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-            <InsiderAvatar name={insiderName} photoUrl={insiderPhotoUrl} size={36} />
-          </div>
+          <div className="w-20 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
           <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
             <ChevronDownIcon
               className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             />
+            <InsiderAvatar name={insiderName} photoUrl={insiderPhotoUrl} size={30} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center min-w-0">
                 <span className="text-[13px] font-semibold truncate leading-tight">{insiderName}</span>
@@ -573,12 +575,11 @@ export function MemberClusterRow({
       </button>
 
       {open && (
-        // Connector line: the company rows the member bought, tied back to the
-        // portrait above by a vertical rule down the left gutter.
-        <div className="bg-black/[0.015] dark:bg-white/[0.02]">
-          <div className="ml-7 md:ml-[38px] border-l-2 border-black/[0.10] dark:border-white/[0.12] divide-y divide-black/[0.06] dark:divide-separator">
-            {children}
-          </div>
+        // The member's buys, flush so the ticker column stays aligned/pure.
+        // No connector rule — the grouping under the member already conveys
+        // they're all the same person.
+        <div className="bg-black/[0.015] dark:bg-white/[0.02] divide-y divide-black/[0.06] dark:divide-separator">
+          {children}
         </div>
       )}
     </div>

@@ -83,7 +83,11 @@ function CongressRowActionCell({ dealing }: { dealing: MarketDealing<GovDealing>
   return (
     <div className="flex items-center justify-end gap-1">
       {d.asset_type === "option" && <Chip label="options" cls="border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-300" />}
-      {dealing.rating && <RatingBadge rating={dealing.rating} />}
+      {dealing.rating ? (
+        <RatingBadge rating={dealing.rating} />
+      ) : (
+        <Chip label="skipped" cls="border-[#d8d0c6]/55 text-[#a89e8c] dark:border-white/10 dark:text-foreground/40" />
+      )}
     </div>
   );
 }
@@ -141,22 +145,16 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <Field label="Company">{d.company}{d.ticker ? ` (${d.ticker})` : ""}</Field>
-        <Field label="Type">{d.asset_type === "option" ? "Option purchase" : "Stock purchase"}</Field>
-        <Field label="Amount">{formatBand(d.amount_min, d.amount_max)}</Field>
+      {/* Insider / Action / Amount (≈) / Industry are already in the drawer's
+          shared header — only the fields the header doesn't carry go here.
+          "Disclosed range" is the exact STOCK Act bracket (the header's Amount
+          is the approximate midpoint). */}
+      <div className="grid grid-cols-3 gap-3 text-sm">
+        <Field label="Disclosed range">{formatBand(d.amount_min, d.amount_max)}</Field>
         <Field label="Owner">{d.owner}</Field>
         <Field label="Traded">{d.trade_date}</Field>
         <Field label="Disclosed">{d.disclosed_date}{d.is_late ? " (late)" : ""}</Field>
-        {d.sector_normalized && <Field label="Sector">{d.sector_normalized}</Field>}
       </div>
-
-      {d.triage?.reason && (
-        <div>
-          <div className="text-xs uppercase tracking-wide text-foreground/45 mb-1">Why this surfaced</div>
-          <div className="text-sm text-foreground/80">{d.triage.reason}</div>
-        </div>
-      )}
 
       <div className="text-xs text-foreground/45">
         Amounts are disclosed as ranges (STOCK Act). ·{" "}
