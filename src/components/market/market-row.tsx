@@ -360,6 +360,11 @@ interface MarketRowProps<W> {
    *  for Friday's disclosures). Drives a "No data yet" placeholder in the
    *  Return cell instead of a misleading +0.0%. */
   noPosteriorData?: boolean;
+  /** When true, the company column's content (logo + name) is nudged right by
+   *  one chevron-width so a child row's logo lines up under the parent's
+   *  portrait/logo. Set for rows rendered inside a MemberClusterRow, whose
+   *  master indents its avatar past an expand chevron. */
+  indent?: boolean;
 }
 
 /** Collapsed "multiple insiders bought this company today" master row.
@@ -639,6 +644,7 @@ export function MarketRow<W>({
   showLogo = true,
   chartMode,
   noPosteriorData = false,
+  indent = false,
 }: MarketRowProps<W>) {
   const showAlpha = chartMode.axis === "market";
   const muted = isMuted
@@ -690,6 +696,7 @@ export function MarketRow<W>({
           </div>
         </div>
         <div className="flex items-start gap-2.5">
+          {indent && <div aria-hidden className="w-4 shrink-0" />}
           {showLogo && (
             <CompanyLogo className="mt-0.5" size={28} ticker={rawTicker} />
           )}
@@ -758,6 +765,7 @@ export function MarketRow<W>({
           </span>
         </div>
         <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+          {indent && <div aria-hidden className="w-4 shrink-0" />}
           {showLogo && <CompanyLogo size={28} ticker={rawTicker} />}
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-medium truncate leading-tight">

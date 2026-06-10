@@ -851,10 +851,15 @@ export function MarketPage<W>({
   // One dealing row with the shared table props bound — used by every day
   // group (the Today group + the month/day buckets). The by-gain list keeps
   // its own inline row because it shows the date column (no hideDate).
-  const renderDayRow = (d: MarketDealing<W>) => (
+  // `indent` lines a row's logo up under a MemberClusterRow's avatar (the
+  // master indents its portrait past an expand chevron). Defaulted off so the
+  // bare `.map(renderDayRow)` call sites — where map passes an index, not a
+  // boolean — stay un-indented.
+  const renderRow = (d: MarketDealing<W>, indent = false) => (
     <MarketRow
       key={d.key}
       hideDate
+      indent={indent}
       RowActionCell={config.RowActionCell}
       RowNameBadge={config.RowNameBadge}
       benchmarkBars={benchmarkBars}
@@ -876,6 +881,7 @@ export function MarketPage<W>({
       onSelect={() => setSelectedKey(d.key)}
     />
   );
+  const renderDayRow = (d: MarketDealing<W>) => renderRow(d);
 
   // The prominent ("suggested") rows of a day. When the market opts into
   // company clustering, multiple same-company buys on the same day collapse
@@ -901,7 +907,7 @@ export function MarketPage<W>({
               : "—"
           }
         >
-          {group.dealings.map(renderDayRow)}
+          {group.dealings.map((d) => renderRow(d, true))}
         </MemberClusterRow>
       ));
     }
