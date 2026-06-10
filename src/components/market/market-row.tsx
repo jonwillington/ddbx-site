@@ -546,11 +546,11 @@ export function MemberClusterRow({
 }) {
   const [open, setOpen] = useState(false); // collapsed → one tidy row per member; expand for the buys + connector
   const countLabel = `${count} ${count === 1 ? "buy" : "buys"}${insiderRole ? ` · ${insiderRole}` : ""}`;
-  // Same rounded-md/px-2/text-[11px] chip family as PartyChip / ClusterChip so
-  // the member-row chips read as siblings.
-  const SignalChip = () =>
+  // Same rounded-md/px-2/text-[11px] chip family as PartyChip / ClusterChip.
+  // Lives in the Action column (desktop) / right stack (mobile), not by the name.
+  const SignalChip = ({ className = "" }: { className?: string }) =>
     signalCount > 0 ? (
-      <span className="ml-2 inline-flex items-center justify-center whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+      <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 ${className}`}>
         {signalCount} signal
       </span>
     ) : null;
@@ -573,7 +573,6 @@ export function MemberClusterRow({
             <div className="flex items-center min-w-0">
               <span className="text-[13px] font-semibold truncate">{insiderName}</span>
               <PartyChip className="ml-2" party={party} />
-              <SignalChip />
             </div>
             <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
           </div>
@@ -582,6 +581,7 @@ export function MemberClusterRow({
             {aggReturnPct != null && (
               <DeltaBadge suffix={aggShowAlpha ? "pp" : undefined} value={aggReturnPct} />
             )}
+            <SignalChip />
           </div>
         </div>
 
@@ -600,7 +600,6 @@ export function MemberClusterRow({
               <div className="flex items-center min-w-0">
                 <span className="text-[13px] font-semibold truncate leading-tight">{insiderName}</span>
                 <PartyChip className="ml-2" party={party} />
-                <SignalChip />
               </div>
               <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
             </div>
@@ -616,7 +615,9 @@ export function MemberClusterRow({
               <span className="text-[11px] text-muted/50">—</span>
             )}
           </div>
-          <div className="w-40 shrink-0 px-2 py-2.5" />
+          <div className="w-40 shrink-0 px-2 py-2.5 flex items-center justify-center">
+            <SignalChip />
+          </div>
         </div>
       </button>
 
