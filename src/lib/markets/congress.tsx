@@ -120,6 +120,48 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
         </div>
       </div>
 
+      {d.rating_explain && (
+        <div className="space-y-2.5 rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
+          <div className="flex items-center gap-2">
+            {d.rating ? (
+              <RatingBadge rating={d.rating} />
+            ) : (
+              <span className="inline-flex items-center justify-center rounded-md border border-[#d8d0c6]/55 bg-transparent px-2 py-0.5 text-[11px] text-[#a89e8c] dark:text-foreground/40">
+                Skipped
+              </span>
+            )}
+            <span className="text-sm font-medium text-foreground/90">
+              {d.rating_explain.headline}
+            </span>
+          </div>
+          <ul className="space-y-1.5">
+            {d.rating_explain.factors.map((f, i) => (
+              <li key={i} className="flex gap-2 text-sm leading-snug">
+                <span
+                  aria-hidden="true"
+                  className={`mt-px shrink-0 font-semibold tabular-nums ${
+                    f.sign === "pos"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : f.sign === "neg"
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "text-foreground/35"
+                  }`}
+                >
+                  {f.sign === "pos" ? "＋" : f.sign === "neg" ? "－" : "・"}
+                </span>
+                <span
+                  className={
+                    f.sign === "neutral" ? "text-foreground/55" : "text-foreground/80"
+                  }
+                >
+                  {f.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {d.analysis && (
         <div className="space-y-2.5 rounded-lg border border-foreground/10 bg-foreground/[0.03] p-3">
           <div className="flex items-center gap-2">

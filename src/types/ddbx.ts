@@ -1251,6 +1251,23 @@ export type GovOwner = "self" | "spouse" | "joint" | "child";
 export type GovTransactionType = "purchase" | "sale_full" | "sale_partial" | "exchange" | "other";
 export type GovTriageVerdict = "skip" | "maybe" | "promising";
 
+/** A single driver behind a row's rating/verdict, in plain English. `sign`
+ *  tells the UI whether it pushed the score up (pos), down (neg), or is just
+ *  context (neutral). */
+export type GovFactorSign = "pos" | "neg" | "neutral";
+export interface GovRatingFactor {
+  text: string;
+  sign: GovFactorSign;
+}
+/** Derived (never hand-written) explanation of why a Congress row got its
+ *  label — see `explainGov`. Always consistent with the deterministic score. */
+export interface GovRatingExplain {
+  /** One-line summary keyed off the verdict + rating. */
+  headline: string;
+  /** Ordered drivers — positives first, then the drags, then context. */
+  factors: GovRatingFactor[];
+}
+
 export interface GovReporter {
   /** Bioguide ID — Congress's canonical member key (e.g. "W000798"). The PTR
    *  feed only carries a free-text name; ingest resolves it against the free
@@ -1347,6 +1364,13 @@ export interface GovDealing {
    *  this is the user-facing label (the triage verdict is pipeline-internal).
    *  Matches `analysis.rating` when a narrative analysis exists. */
   rating?: Rating;
+
+  /** Plain-English breakdown of WHY this row got its verdict/rating, derived
+   *  from the same deterministic factors the scorers use (jurisdiction, owner,
+   *  deliberateness, concentration, cluster, size, leverage). Present for every
+   *  row including skips, so the detail drawer can explain the label rather
+   *  than leaving it opaque. */
+  rating_explain?: GovRatingExplain;
 
   /** Deep analysis, when present (capability gated; off at launch). Same
    *  `Analysis` payload as every other market. */
