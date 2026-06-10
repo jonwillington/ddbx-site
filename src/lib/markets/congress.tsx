@@ -7,11 +7,13 @@ import type { MarketConfig, MarketDealing, Tone } from "@/lib/markets/types";
 import type { Analysis, GovDealing } from "@/types/ddbx";
 import type { PriceFormat } from "@/components/position-card";
 
+import { useEffect, useState } from "react";
 import { BoltIcon } from "@heroicons/react/24/solid";
 
 import { api } from "@/lib/api";
 import { RatingBadge } from "@/components/rating-badge";
-import { DeltaBadge } from "@/components/market/market-row";
+import { PositionCard } from "@/components/position-card";
+import { MiniPriceChart } from "@/components/mini-price-chart";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -155,77 +157,137 @@ function CongressRowActionCell({ dealing }: { dealing: MarketDealing<GovDealing>
   );
 }
 
-/** Performance block (drawer DetailPosition slot). Congress PTRs carry no
- *  per-share fill price, so there's no honest "you'd be up £X" position card —
- *  instead we surface the server-precomputed return as of the latest close,
- *  anchored both at the trade date (the member's actual window) and the
- *  disclosure date (what a copycat could have entered at), each paired with its
- *  alpha vs the S&P. Reads straight off live_performance — no price fetch. When
- *  the ticker has no cached prices, says so explicitly rather than showing a
- *  fake 0%. */
-function CongressPerformance({
+/** Latest cached close on or before `date` (handles weekends / holidays). */
+function closeOnOrBefore(
+  bars: { date: string; close_pence: number }[],
+  date: string,
+): number | null {
+  let best: { date: string; close_pence: number } | null = null;
+  for (const b of bars) {
+    if (b.date <= date && (!best || b.date > best.date)) best = b;
+  }
+  return best?.close_pence ?? null;
+}
+
+/** Position block (drawer DetailPosition slot) — the same entry → now → return
+ *  → vs-S&P tiles + price chart the UK/US drawers use. Congress PTRs carry no
+ *  per-share fill price, so we anchor on the close on the trade date (the same
+ *  anchor live_performance's trade return uses) and hide the cash sub-lines
+ *  (amounts are disclosed only as a band, with no share count, so a derived
+ *  £/$ figure would be invented). Prices are fetched on open, one ticker. */
+function CongressDetailPosition({
   dealing,
 }: {
   dealing: MarketDealing<GovDealing>;
 }) {
-  const lp = dealing.livePerformance;
-  const rows = [
-    {
-      label: "Since trade",
-      ret: lp?.return_pct_trade ?? null,
-      alpha: lp?.alpha_pct_trade ?? null,
-    },
-    {
-      label: "Since disclosure",
-      ret: lp?.return_pct_disclosed ?? null,
-      alpha: lp?.alpha_pct_disclosed ?? null,
-    },
-  ];
-  const hasData = rows.some((r) => r.ret != null);
+  const d = dealing.raw;
+  const ticker = d.ticker ?? "";
+  const tradeDate = d.trade_date.slice(0, 10);
+  const disclosedDate = (d.disclosed_date || d.trade_date).slice(0, 10);
+
+  const [entry, setEntry] = useState<number | null>(null);
+  const [current, setCurrent] = useState<number | null>(null);
+  const [spEntry, setSpEntry] = useState<number | null>(null);
+  const [spCurrent, setSpCurrent] = useState<number | null>(null);
+
+  // US tickers store closes in cents; ^GSPC stores raw index points (left as-is
+  // — return ratios are unit-free).
+  const usd = (closePence: number) => closePence / 100;
+
+  useEffect(() => {
+    if (!ticker) return;
+    let cancelled = false;
+
+    api
+      .latestPrices([ticker, SPY_TICKER])
+      .then((rows) => {
+        if (cancelled) return;
+        const t = rows.find(
+          (r) => r.ticker.toUpperCase() === ticker.toUpperCase(),
+        );
+        const sp = rows.find((r) => r.ticker === SPY_TICKER);
+
+        setCurrent(t ? usd(t.price_pence) : null);
+        setSpCurrent(sp ? sp.price_pence : null);
+      })
+      .catch(() => {
+        if (!cancelled) setCurrent(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ticker]);
+
+  useEffect(() => {
+    if (!ticker) return;
+    let cancelled = false;
+
+    api
+      .priceHistory(ticker, 365)
+      .then((bars) => {
+        if (cancelled) return;
+        const close = closeOnOrBefore(bars, tradeDate);
+
+        setEntry(close != null ? usd(close) : null);
+      })
+      .catch(() => {
+        if (!cancelled) setEntry(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ticker, tradeDate]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .priceHistory(SPY_TICKER, 365)
+      .then((bars) => {
+        if (!cancelled) setSpEntry(closeOnOrBefore(bars, tradeDate));
+      })
+      .catch(() => {
+        if (!cancelled) setSpEntry(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tradeDate]);
+
+  if (!ticker) return null;
 
   return (
-    <section className="rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
-      <div className="mb-2.5 flex items-baseline justify-between gap-2">
-        <h3 className="text-xs uppercase tracking-wide text-foreground/45">
-          Performance
-        </h3>
-        {hasData && lp?.as_of && (
-          <span className="text-[11px] tabular-nums text-foreground/40">
-            as of {lp.as_of}
-          </span>
-        )}
-      </div>
-
-      {hasData ? (
-        <div className="space-y-2">
-          {rows.map((r) => (
-            <div
-              key={r.label}
-              className="flex items-center justify-between gap-3"
-            >
-              <span className="text-sm text-foreground/70">{r.label}</span>
-              <div className="flex items-center gap-2.5">
-                {r.alpha != null && (
-                  <span className="text-[11px] tabular-nums text-foreground/45">
-                    {r.alpha >= 0 ? "+" : ""}
-                    {r.alpha.toFixed(1)}pp vs S&amp;P
-                  </span>
-                )}
-                {r.ret != null ? (
-                  <DeltaBadge value={r.ret} />
-                ) : (
-                  <span className="text-xs text-muted/50">—</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="space-y-4">
+      {entry != null && current != null ? (
+        <PositionCard
+          hideAmounts
+          benchmark={{ entry: spEntry, current: spCurrent, label: SPY_LABEL }}
+          current={current}
+          entry={entry}
+          fmt={USD_FORMAT}
+        />
       ) : (
         <p className="text-sm italic text-muted">
-          No price data cached for this ticker yet.
+          No price data cached for {ticker} yet.
         </p>
       )}
-    </section>
+      {entry != null && (
+        <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
+          <MiniPriceChart
+            disclosedDate={disclosedDate}
+            entryPrice={entry}
+            fmt={USD_FORMAT}
+            normalizeClose={(closePence) => closePence / 100}
+            tickerForApi={ticker}
+            tickerForDisplay={ticker}
+            tradeDate={tradeDate}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -281,7 +343,7 @@ function CongressDetailBody({
   return (
     <div className="space-y-4">
       {(d.rating_explain || d.analysis) && (
-        <section className="space-y-3 rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
+        <section className="space-y-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               {d.rating ? (
@@ -291,7 +353,7 @@ function CongressDetailBody({
                   Skipped
                 </span>
               )}
-              <h3 className="text-sm font-semibold">
+              <h3 className="text-base font-semibold">
                 {isWiderFiling ? "This trade" : "Trade assessment"}
               </h3>
             </div>
@@ -339,7 +401,7 @@ function CongressDetailBody({
           {/* Focused filing: the narrative is about this very trade, so it
               belongs here rather than in a separate "wider filing" section. */}
           {!isWiderFiling && d.analysis && (
-            <div className="space-y-1.5 border-t border-foreground/10 pt-2.5">
+            <div className="space-y-1.5">
               {confidence && (
                 <div className="text-xs text-foreground/45">{confidence}</div>
               )}
@@ -351,10 +413,10 @@ function CongressDetailBody({
 
       {/* Only shown when the buy was genuinely one of several in one report. */}
       {isWiderFiling && d.analysis && (
-        <section className="space-y-2 rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
+        <section className="space-y-2 border-t border-foreground/10 pt-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold">Wider filing assessment</h3>
+              <h3 className="text-base font-semibold">Wider filing assessment</h3>
               {confidence && (
                 <span className="text-xs text-foreground/45">{confidence}</span>
               )}
@@ -369,28 +431,20 @@ function CongressDetailBody({
         </section>
       )}
 
-      {(d.triage?.reason || dealing.sector || committees.length > 0) && (
-        <section className="space-y-2 rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
-          <h3 className="text-sm font-semibold">Context</h3>
-          {d.triage?.reason && (
-            <p className="text-sm text-foreground/75">{d.triage.reason}</p>
+      {(dealing.sector || committees.length > 0) && (
+        <section className="space-y-1.5 border-t border-foreground/10 pt-4">
+          <h3 className="text-base font-semibold">Context</h3>
+          {dealing.sector && (
+            <div className="text-sm text-foreground/70">
+              <span className="text-muted">Industry</span> · {dealing.sector}
+            </div>
           )}
-          <div className="space-y-1.5">
-            {dealing.sector && (
-              <div className="text-xs text-foreground/60">
-                <span className="uppercase tracking-wide">Industry:</span>{" "}
-                <span className="text-foreground/75">{dealing.sector}</span>
-              </div>
-            )}
-            {committees.length > 0 && (
-              <div className="text-xs text-foreground/60">
-                <span className="uppercase tracking-wide">Committees:</span>{" "}
-                <span className="text-foreground/75">
-                  {committees.join(" · ")}
-                </span>
-              </div>
-            )}
-          </div>
+          {committees.length > 0 && (
+            <div className="text-sm text-foreground/70">
+              <span className="text-muted">Committees</span> ·{" "}
+              {committees.join(" · ")}
+            </div>
+          )}
         </section>
       )}
 
@@ -532,7 +586,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   insiderLabel: "Congress member",
   RowActionCell: CongressRowActionCell,
   RowNameBadge: CongressRowNameBadge,
-  DetailPosition: CongressPerformance,
+  DetailPosition: CongressDetailPosition,
   DetailBody: CongressDetailBody,
   detailFields: congressDetailFields,
   // Right-hand news bar — reuse the US market feed (/api/news/us); Congress

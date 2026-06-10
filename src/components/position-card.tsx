@@ -29,16 +29,17 @@ export interface BenchmarkProps {
 export function PositionCard({
   entry,
   current,
-  shares,
-  originalValue,
+  shares = 0,
+  originalValue = 0,
   fmt,
   benchmark,
   muted = false,
+  hideAmounts = false,
 }: {
   entry: number;
   current: number;
-  shares: number;
-  originalValue: number;
+  shares?: number;
+  originalValue?: number;
   fmt: PriceFormat;
   /** When provided, renders a 4th tile. Pass `{ entry: null, current: null }`
    *  to show a loading skeleton; omit the prop entirely to hide the tile. */
@@ -49,6 +50,11 @@ export function PositionCard({
    *  the % is real but the green "winner" framing would mislead — the director
    *  didn't buy at this price. Mirrors the iOS PositionCard `isMuted` flag. */
   muted?: boolean;
+  /** When true, the per-tile cash sub-lines (consideration, current value,
+   *  absolute gain) are hidden — the price + % numbers stay. For markets with
+   *  no exact trade value or share count (Congress PTRs disclose only a band),
+   *  where a derived cash figure would be made up. */
+  hideAmounts?: boolean;
 }) {
   const stockPct = (current - entry) / entry;
   const up = stockPct >= 0;
@@ -109,9 +115,11 @@ export function PositionCard({
         <div className="text-2xl font-bold tabular-nums">
           {fmt.formatPrice(entry)}
         </div>
-        <div className="text-xs text-muted mt-1">
-          {fmt.formatValue(originalValue)}
-        </div>
+        {!hideAmounts && (
+          <div className="text-xs text-muted mt-1">
+            {fmt.formatValue(originalValue)}
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
@@ -121,9 +129,11 @@ export function PositionCard({
         <div className={`text-2xl font-bold tabular-nums ${trendText}`}>
           {fmt.formatPrice(current)}
         </div>
-        <div className="text-xs text-muted mt-1">
-          {fmt.formatValue(currentValue)}
-        </div>
+        {!hideAmounts && (
+          <div className="text-xs text-muted mt-1">
+            {fmt.formatValue(currentValue)}
+          </div>
+        )}
       </div>
 
       <div className={`rounded-xl px-4 py-4 ${returnBg}`}>
@@ -135,7 +145,7 @@ export function PositionCard({
         >
           {muted ? "N/A" : fmtPct(stockPct)}
         </div>
-        {!muted && (
+        {!muted && !hideAmounts && (
           <div className={`text-xs font-medium mt-1 opacity-70 ${trendText}`}>
             {gainSign}
             {fmt.formatValue(gainLoss)}
