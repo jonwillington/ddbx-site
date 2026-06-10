@@ -340,6 +340,10 @@ interface MarketRowProps<W> {
   fmt: PriceFormat;
   benchmarkLabel: string;
   RowActionCell: ComponentType<{ dealing: MarketDealing<W> }>;
+  /** Optional badge slotted into the name column beside the ClusterChip —
+   *  for per-market read-time signals (e.g. Congress "options"). Should
+   *  return null when it has nothing to show. */
+  RowNameBadge?: ComponentType<{ dealing: MarketDealing<W> }>;
   hideDate?: boolean;
   isMuted?: (dealing: MarketDealing<W>) => boolean;
   formatTickerDisplay?: (ticker: string) => string;
@@ -607,6 +611,7 @@ export function MarketRow<W>({
   fmt,
   benchmarkLabel,
   RowActionCell,
+  RowNameBadge,
   hideDate,
   isMuted,
   formatTickerDisplay,
@@ -679,6 +684,7 @@ export function MarketRow<W>({
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
               <ClusterChip cluster={dealing.cluster} />
+              {RowNameBadge && <RowNameBadge dealing={dealing} />}
               <span className="text-[11px] text-muted truncate">
                 {insiderLine}
               </span>
@@ -739,6 +745,7 @@ export function MarketRow<W>({
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
               <ClusterChip cluster={dealing.cluster} />
+              {RowNameBadge && <RowNameBadge dealing={dealing} />}
               <span className="text-[11px] text-muted truncate">
                 {insiderLine}
               </span>

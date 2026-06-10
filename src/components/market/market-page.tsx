@@ -807,6 +807,7 @@ export function MarketPage<W>({
       key={d.key}
       hideDate
       RowActionCell={config.RowActionCell}
+      RowNameBadge={config.RowNameBadge}
       benchmarkBars={benchmarkBars}
       benchmarkCurrent={benchmarkCurrent}
       benchmarkEntry={benchmarkEntry(d)}
@@ -1085,6 +1086,7 @@ export function MarketPage<W>({
                 <MarketRow
                   key={d.key}
                   RowActionCell={config.RowActionCell}
+                  RowNameBadge={config.RowNameBadge}
                   benchmarkBars={benchmarkBars}
                   benchmarkCurrent={benchmarkCurrent}
                   benchmarkEntry={benchmarkEntry(d)}

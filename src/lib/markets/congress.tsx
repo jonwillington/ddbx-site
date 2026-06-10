@@ -67,22 +67,24 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
 
 /* ─── Slot components ────────────────────────────────────────────────── */
 
-function Chip({ label, cls }: { label: string; cls: string }) {
+// Options marker for the name column — same shape/size as the ClusterChip
+// (rounded-md border, px-2 py-0.5, text-[11px]) so the two read as siblings,
+// with a violet tint to keep the "leveraged" signal distinct.
+function CongressRowNameBadge({ dealing }: { dealing: MarketDealing<GovDealing> }) {
+  if (dealing.raw.asset_type !== "option") return null;
   return (
-    <span className={`inline-flex items-center justify-center rounded-md border whitespace-nowrap px-2 py-0.5 text-[11px] uppercase tracking-wide ${cls}`}>
-      {label}
+    <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-600 dark:text-violet-300">
+      Options
     </span>
   );
 }
 
 function CongressRowActionCell({ dealing }: { dealing: MarketDealing<GovDealing> }) {
-  const d = dealing.raw;
-  // No size here — the value column already shows the (approximate) size, and
-  // the exact disclosed band is in the detail drawer. This cell is just the
-  // classification: options tag + rating (not the pipeline-internal verdict).
+  // Just the classification rating (not the pipeline-internal verdict). The
+  // options marker now lives in the name column beside the cluster chip; size
+  // is in the value column + the drawer's exact disclosed band.
   return (
     <div className="flex items-center justify-end gap-1">
-      {d.asset_type === "option" && <Chip label="options" cls="border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-300" />}
       {dealing.rating ? (
         <RatingBadge rating={dealing.rating} />
       ) : (
@@ -244,6 +246,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   },
   insiderLabel: "Congress member",
   RowActionCell: CongressRowActionCell,
+  RowNameBadge: CongressRowNameBadge,
   DetailBody: CongressDetailBody,
   // Right-hand news bar — reuse the US market feed (/api/news/us); Congress
   // trades US equities, so US business headlines are the right context.

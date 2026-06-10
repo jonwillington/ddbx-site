@@ -290,6 +290,10 @@ export interface MarketConfig<W = unknown> {
    *  MarketDealing so it can read raw extras (Form 4 amendment flag, etc).
    *  Should produce visually compact chip(s). */
   RowActionCell: ComponentType<{ dealing: MarketDealing<W> }>;
+  /** Optional badge rendered in the name column beside the ClusterChip
+   *  (same row as the company/insider line). For per-market read-time
+   *  signals like Congress "options". Should return null when empty. */
+  RowNameBadge?: ComponentType<{ dealing: MarketDealing<W> }>;
   /** Component slot rendered as the body of the modal detail drawer (the
    *  popup that opens when a row is clicked). The shell provides the
    *  chrome — backdrop, scrollable container, escape-to-close. */
