@@ -77,15 +77,13 @@ function Chip({ label, cls }: { label: string; cls: string }) {
 
 function CongressRowActionCell({ dealing }: { dealing: MarketDealing<GovDealing> }) {
   const d = dealing.raw;
+  // No size here — the value column already shows the (approximate) size, and
+  // the exact disclosed band is in the detail drawer. This cell is just the
+  // classification: options tag + rating (not the pipeline-internal verdict).
   return (
-    <div className="flex flex-col items-end gap-1">
-      <span className="font-semibold tabular-nums text-sm">{formatBand(d.amount_min, d.amount_max)}</span>
-      <div className="flex items-center gap-1">
-        {d.asset_type === "option" && <Chip label="options" cls="border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-300" />}
-        {/* User-facing classification = the deterministic rating, not the
-            pipeline-internal triage verdict. */}
-        {dealing.rating && <RatingBadge rating={dealing.rating} />}
-      </div>
+    <div className="flex items-center justify-end gap-1">
+      {d.asset_type === "option" && <Chip label="options" cls="border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-300" />}
+      {dealing.rating && <RatingBadge rating={dealing.rating} />}
     </div>
   );
 }
