@@ -31,8 +31,29 @@ function formatBand(min: number | null, max: number | null): string {
   return max == null ? `over ${k(min)}` : `${k(min)}–${k(max)}`;
 }
 
-const partyState = (r: GovDealing["reporter"]): string =>
-  [r.party, r.state].filter(Boolean).join("-") + (r.district != null ? `-${r.district}` : "");
+const US_STATES: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi",
+  MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire",
+  NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina",
+  ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania",
+  RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee",
+  TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington",
+  WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
+  PR: "Puerto Rico", GU: "Guam", VI: "U.S. Virgin Islands", AS: "American Samoa",
+  MP: "Northern Mariana Islands",
+};
+
+/** Readable location for a member — full state name + House district ("New
+ *  Jersey-5"). Party is dropped (it's its own chip now); falls back to chamber. */
+const stateLine = (r: GovDealing["reporter"]): string => {
+  if (!r.state) return r.chamber === "senate" ? "Senate" : "House";
+  const name = US_STATES[r.state] ?? r.state;
+  return r.district != null ? `${name}-${r.district}` : name;
+};
 
 /** Strip the instrument-class descriptor PTRs append to the issuer name
  *  ("- Common Stock", "Class A Common Stock", "Ordinary Shares", "American
@@ -62,7 +83,9 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
     // stays on `raw` and shows in the drawer body ("Security").
     company: cleanCompany(d.company),
     insiderName: d.reporter.name,
-    insiderRole: partyState(d.reporter) || (d.reporter.chamber === "senate" ? "Senate" : "House"),
+    // Location only (full state name + district) — party is shown as a chip on
+    // the member row, not repeated in this line.
+    insiderRole: stateLine(d.reporter),
     insiderPhotoUrl: d.reporter.photo_url,
     party: d.reporter.party,
     disclosedDate: d.disclosed_date,
@@ -87,21 +110,15 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
 
 /* ─── Slot components ────────────────────────────────────────────────── */
 
-// Name-column chips — party (Dem/Rep/Ind) always, plus an "Options" marker for
-// leveraged buys. Same rounded-md/px-2/text-[11px] shape as the ClusterChip so
-// they read as siblings; the options chip keeps a violet tint to stay distinct.
+// Options marker for the name column — party lives on the member row (it's a
+// person attribute, redundant on each of their trades). Same rounded-md shape
+// as the cluster chip, violet tint to stay distinct.
 function CongressRowNameBadge({ dealing }: { dealing: MarketDealing<GovDealing> }) {
-  const isOption = dealing.raw.asset_type === "option";
-  if (!dealing.party && !isOption) return null;
+  if (dealing.raw.asset_type !== "option") return null;
   return (
-    <>
-      <PartyChip party={dealing.party} />
-      {isOption && (
-        <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-600 dark:text-violet-300">
-          Options
-        </span>
-      )}
-    </>
+    <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-600 dark:text-violet-300">
+      Options
+    </span>
   );
 }
 
@@ -144,7 +161,7 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
             <PartyChip party={r.party} />
           </div>
           <div className="text-sm text-foreground/60">
-            {partyState(r)} · {r.chamber === "senate" ? "Senate" : "House"}
+            {stateLine(r)} · {r.chamber === "senate" ? "Senate" : "House"}
           </div>
         </div>
       </div>

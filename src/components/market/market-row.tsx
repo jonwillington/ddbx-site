@@ -546,9 +546,11 @@ export function MemberClusterRow({
 }) {
   const [open, setOpen] = useState(false); // collapsed → one tidy row per member; expand for the buys + connector
   const countLabel = `${count} ${count === 1 ? "buy" : "buys"}${insiderRole ? ` · ${insiderRole}` : ""}`;
+  // Same rounded-md/px-2/text-[11px] chip family as PartyChip / ClusterChip so
+  // the member-row chips read as siblings.
   const SignalChip = () =>
     signalCount > 0 ? (
-      <span className="ml-2 inline-flex items-center rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+      <span className="ml-2 inline-flex items-center justify-center whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
         {signalCount} signal
       </span>
     ) : null;
