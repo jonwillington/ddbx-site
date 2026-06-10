@@ -658,8 +658,18 @@ export function MarketPage<W>({
   // that here.
   const stockEntry = useCallback(
     (d: MarketDealing<W>): number | undefined => {
-      if (!anchorsOnDisclosure) return d.entryPrice ?? undefined;
       const bars = stockBars[d.ticker];
+
+      if (!anchorsOnDisclosure) {
+        // Trade anchor: prefer the execution price. Markets that carry no
+        // entry price (Congress PTRs disclose ranges, not an exact fill)
+        // derive the close on/after the trade date from the fetched bars,
+        // mirroring the disclosure-anchor path below.
+        if (d.entryPrice != null) return d.entryPrice;
+        const tradeIso = d.tradeDate.slice(0, 10);
+
+        return bars?.find((b) => b.date >= tradeIso)?.close ?? undefined;
+      }
       const disclosedIso = d.disclosedDate.slice(0, 10);
       const post = bars?.find((b) => b.date >= disclosedIso);
 

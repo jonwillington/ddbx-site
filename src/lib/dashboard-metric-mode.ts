@@ -23,6 +23,17 @@ export type DashboardMetricMode =
 const STORAGE_KEY_PREFIX = "ddbx.dashboardMetricMode";
 const DEFAULT_MODE: DashboardMetricMode = "performanceSinceDisclosure";
 
+// Per-market default before the user has touched the toggle. Congress PTRs
+// have no replicable "buy at disclosure" entry (ranges, weeks-late), so the
+// meaningful read is the move since the member actually traded.
+const MARKET_DEFAULT_MODE: Record<string, DashboardMetricMode> = {
+  usg: "performanceSinceTrade",
+};
+
+function defaultModeFor(marketId: string): DashboardMetricMode {
+  return MARKET_DEFAULT_MODE[marketId] ?? DEFAULT_MODE;
+}
+
 const ALL_MODES: readonly DashboardMetricMode[] = [
   "performanceSinceDisclosure",
   "performanceSinceTrade",
@@ -72,7 +83,7 @@ function storageKey(marketId: string): string {
 }
 
 function readStored(marketId: string): DashboardMetricMode {
-  if (typeof window === "undefined") return DEFAULT_MODE;
+  if (typeof window === "undefined") return defaultModeFor(marketId);
   try {
     const raw =
       window.localStorage.getItem(storageKey(marketId)) ??
@@ -87,7 +98,7 @@ function readStored(marketId: string): DashboardMetricMode {
     // ignore — falls through to default
   }
 
-  return DEFAULT_MODE;
+  return defaultModeFor(marketId);
 }
 
 export function useDashboardMetricMode(marketId = "uk") {

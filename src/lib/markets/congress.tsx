@@ -213,9 +213,13 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   topNotice: "US Congress is an early preview — House only, no manual curation yet.",
   priceFormat: USD_FORMAT,
   normalizeLivePrice: (close_pence) => close_pence / 100,
-  // PTRs carry no entry price and disclose weeks late — the position/return
-  // machinery doesn't apply, so skip the live-price + benchmark fetches.
-  enableLivePrices: false,
+  // PTRs disclose dollar ranges, not an exact fill, and land weeks late — so
+  // there's no execution price to anchor on. But the move *since the member
+  // traded* is exactly the interesting number, so we do fetch live prices +
+  // bars: the shell derives the trade-date entry from the fetched bars (see
+  // stockEntry in market-page) and the default metric mode for `usg` is
+  // performanceSinceTrade.
+  enableLivePrices: true,
   enableLogos: true,
   benchmarkTicker: SPY_TICKER,
   benchmarkLabel: SPY_LABEL,
