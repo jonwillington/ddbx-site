@@ -86,7 +86,11 @@ function CongressRowActionCell({ dealing }: { dealing: MarketDealing<GovDealing>
       {dealing.rating ? (
         <RatingBadge rating={dealing.rating} />
       ) : (
-        <Chip label="skipped" cls="border-[#d8d0c6]/55 text-[#a89e8c] dark:border-white/10 dark:text-foreground/40" />
+        // Match the US/UK "Skipped" pill exactly (capitalised, not uppercase)
+        // so the congress table reads consistently with the others.
+        <span className="inline-flex items-center justify-center rounded-md border border-[#d8d0c6]/55 bg-transparent px-2 py-0.5 text-[11px] text-[#a89e8c] dark:text-foreground/40">
+          Skipped
+        </span>
       )}
     </div>
   );
@@ -238,6 +242,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
       },
     };
   },
+  insiderLabel: "Congress member",
   RowActionCell: CongressRowActionCell,
   DetailBody: CongressDetailBody,
   // Right-hand news bar — reuse the US market feed (/api/news/us); Congress

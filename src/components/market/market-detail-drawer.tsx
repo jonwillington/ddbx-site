@@ -34,6 +34,7 @@ export function MarketDetailDrawer<W>({
   AnalysisOverlay,
   showLogo = true,
   formatTickerDisplay,
+  insiderLabel = "Insider",
 }: {
   dealing: MarketDealing<W> | null;
   /** Full in-memory dealings list — used by RecentBuysSection to surface
@@ -58,6 +59,8 @@ export function MarketDetailDrawer<W>({
   showLogo?: boolean;
   /** Human-readable ticker formatter from MarketConfig. */
   formatTickerDisplay?: (ticker: string) => string;
+  /** Label for the person field in the header grid. Default "Insider". */
+  insiderLabel?: string;
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const direction = isDesktop ? "right" : "bottom";
@@ -281,7 +284,7 @@ export function MarketDetailDrawer<W>({
                     <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
                       <div className="min-w-0">
                         <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                          Insider
+                          {insiderLabel}
                         </dt>
                         <dd className="text-sm font-medium truncate">
                           {insiderLine}

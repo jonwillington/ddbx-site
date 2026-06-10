@@ -471,10 +471,14 @@ function InsiderAvatar({ name, photoUrl, size = 28 }: { name: string; photoUrl?:
     return (
       <img
         alt=""
+        // Explicit square style overrides Tailwind preflight's `height:auto`,
+        // which would otherwise let a non-square portrait keep its aspect
+        // ratio and render as an oval rather than a true circle.
         className="rounded-full object-cover bg-black/[0.06] dark:bg-white/10 shrink-0"
         height={size}
         loading="lazy"
         src={photoUrl}
+        style={{ width: size, height: size }}
         width={size}
       />
     );

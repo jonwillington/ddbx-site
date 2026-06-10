@@ -282,6 +282,10 @@ export interface MarketConfig<W = unknown> {
   /** Footer caption under the news ("Refreshed at …"). */
   newsFooterNote?: ReactNode;
 
+  /** Label for the person field in the detail drawer's header grid.
+   *  Defaults to "Insider"; congress overrides to "Congress member". */
+  insiderLabel?: string;
+
   /** Component slot rendered in the row's right-most column. Receives the
    *  MarketDealing so it can read raw extras (Form 4 amendment flag, etc).
    *  Should produce visually compact chip(s). */

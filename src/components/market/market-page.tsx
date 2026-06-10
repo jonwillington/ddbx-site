@@ -1290,6 +1290,7 @@ export function MarketPage<W>({
         fmt={config.priceFormat}
         formatTickerDisplay={config.formatTickerDisplay}
         gating={gating}
+        insiderLabel={config.insiderLabel}
         locale={config.locale}
         showLogo={logosEnabled}
         onClose={() => setSelectedKey(null)}
