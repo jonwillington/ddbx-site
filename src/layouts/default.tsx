@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { GB, US } from "country-flag-icons/react/3x2";
+import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 
 import { AppDrawer } from "@/components/app-drawer";
 import { Navbar } from "@/components/navbar";
@@ -29,6 +29,9 @@ const FOLLOW_CHOICES: MarketChoice[] = [
     description: "US insiders & Congress · @ddbxus",
     href: "https://x.com/ddbxus",
   },
+  { id: "eu", Flag: EU, label: "ddbx.eu", description: "Europe", comingSoon: true },
+  { id: "au", Flag: AU, label: "ddbx.au", description: "Australia", comingSoon: true },
+  { id: "ca", Flag: CA, label: "ddbx.ca", description: "Canada", comingSoon: true },
 ];
 
 const LEGAL_LINKS: {
