@@ -9,7 +9,9 @@ import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { ClusterChip } from "@/components/cluster-chip";
+import { PartyChip } from "@/components/party-chip";
 import { RecentBuysSection } from "@/components/market/recent-buys-section";
+import { InsiderAvatar } from "@/components/market/market-row";
 import { useMediaQuery } from "@/lib/use-media-query";
 
 /** Deal detail drawer used by every market. Built on vaul so it slides in
@@ -163,11 +165,6 @@ export function MarketDetailDrawer<W>({
     ? formatTickerDisplay(rawTicker)
     : rawTicker;
   const company = active?.company || "—";
-  const insiderLine = active
-    ? active.insiderRole
-      ? `${active.insiderName} (${active.insiderRole})`
-      : active.insiderName
-    : "";
   const valueLabel =
     active && active.value != null ? fmt.formatValue(active.value) : "—";
   const sharesLabel =
@@ -216,7 +213,9 @@ export function MarketDetailDrawer<W>({
             <>
               <Drawer.Title className="sr-only">{company}</Drawer.Title>
               <Drawer.Description className="sr-only">
-                {insiderLine}
+                {active.insiderRole
+                  ? `${active.insiderName} (${active.insiderRole})`
+                  : active.insiderName}
               </Drawer.Description>
 
               <div
@@ -270,26 +269,65 @@ export function MarketDetailDrawer<W>({
                   onScroll={recompute}
                 >
                   <div ref={contentRef} className="p-5 md:p-8 space-y-6">
-                    <div className="flex items-center gap-4">
-                      {showLogo && <CompanyLogo size={56} ticker={rawTicker} />}
-                      <h1 className="text-3xl font-bold leading-tight tracking-tight flex-1 min-w-0">
-                        {company}
-                      </h1>
-                      <ClusterChip
-                        className="shrink-0"
-                        cluster={active.cluster}
-                      />
+                    {/* Company on top, the person who made the buy beneath,
+                        tied together by an org-chart connector so the header
+                        reads "this purchase was made by this person". */}
+                    <div>
+                      <div className="flex items-center gap-4">
+                        {showLogo && (
+                          <CompanyLogo size={56} ticker={rawTicker} />
+                        )}
+                        <h1 className="text-3xl font-bold leading-tight tracking-tight flex-1 min-w-0">
+                          {company}
+                        </h1>
+                        <ClusterChip
+                          className="shrink-0"
+                          cluster={active.cluster}
+                        />
+                      </div>
+
+                      <div className="flex items-stretch">
+                        {/* └ connector, vertical stroke centred under the logo */}
+                        <div
+                          aria-hidden
+                          className={`relative shrink-0 ${showLogo ? "w-14" : "w-4"}`}
+                        >
+                          <span
+                            className={`absolute top-0 bottom-1/2 w-px bg-black/15 dark:bg-white/15 ${showLogo ? "left-7" : "left-2"}`}
+                          />
+                          <span
+                            className={`absolute top-1/2 h-px bg-black/15 dark:bg-white/15 ${showLogo ? "left-7 w-5" : "left-2 w-3"}`}
+                          />
+                        </div>
+                        <div className="flex items-center gap-3 py-2">
+                          <InsiderAvatar
+                            name={active.insiderName}
+                            photoUrl={active.insiderPhotoUrl}
+                            size={40}
+                          />
+                          <div className="min-w-0">
+                            <div className="text-[10px] uppercase tracking-wide text-muted mb-0.5">
+                              {insiderLabel}
+                            </div>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-base font-semibold truncate">
+                                {active.insiderName}
+                              </span>
+                              {active.party && (
+                                <PartyChip party={active.party} />
+                              )}
+                            </div>
+                            {active.insiderRole && (
+                              <div className="text-xs text-muted truncate">
+                                {active.insiderRole}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-                      <div className="min-w-0">
-                        <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                          {insiderLabel}
-                        </dt>
-                        <dd className="text-sm font-medium truncate">
-                          {insiderLine}
-                        </dd>
-                      </div>
                       <div>
                         <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
                           Action

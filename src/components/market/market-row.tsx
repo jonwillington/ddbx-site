@@ -484,7 +484,7 @@ export function MarketClusterRow<W>({
 }
 
 /** Round insider avatar — member portrait when present, else initials. */
-function InsiderAvatar({ name, photoUrl, size = 28 }: { name: string; photoUrl?: string; size?: number }) {
+export function InsiderAvatar({ name, photoUrl, size = 28 }: { name: string; photoUrl?: string; size?: number }) {
   const initials = name.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
   if (photoUrl) {
     return (

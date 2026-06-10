@@ -1,6 +1,7 @@
 import type { MarketDealing } from "@/lib/markets/types";
 import type { PriceFormat } from "@/components/position-card";
 
+import { useState } from "react";
 import {
   ChevronRightIcon,
   InformationCircleIcon,
@@ -32,6 +33,8 @@ export function RecentBuysSection<W>({
   formatTickerDisplay?: (ticker: string) => string;
   onSelect?: (dealing: MarketDealing<W>) => void;
 }) {
+  const [open, setOpen] = useState(false);
+
   if (!currentDealing.ticker) return null;
 
   const ticker = currentDealing.ticker.toUpperCase();
@@ -56,38 +59,60 @@ export function RecentBuysSection<W>({
     year: "numeric",
   });
 
-  return (
-    <section>
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h3 className="inline-flex items-center gap-1.5 text-sm font-semibold">
-          Other recent buys on {tickerDisplay}
-          <span className="group/tip relative inline-flex cursor-default items-center">
-            <InformationCircleIcon className="h-3.5 w-3.5 shrink-0 text-muted/50 transition-colors group-hover/tip:text-muted/80" />
-            <span
-              className="pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-64
-              rounded-lg bg-[#1e1a16] px-3 py-2.5 text-xs leading-relaxed text-[#e8e2da]
-              opacity-0 shadow-2xl transition-opacity duration-150
-              group-hover/tip:opacity-100 dark:bg-[#e8e2da] dark:text-[#1e1a16]"
-            >
-              Insider buys recorded by ddbx since we began tracking this market.
-              Sells aren&apos;t covered comprehensively, so this list is buys
-              only.
-            </span>
-          </span>
-        </h3>
-        {buys.length > 0 && (
-          <span className="text-xs text-muted tabular-nums">
-            {buys.length} buy{buys.length === 1 ? "" : "s"}
-          </span>
-        )}
-      </div>
+  // The heading label + info tooltip, shared by the empty state (static) and
+  // the populated state (inside the accordion toggle button).
+  const headingLabel = (
+    <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+      Other recent buys on {tickerDisplay}
+      <span className="group/tip relative inline-flex cursor-default items-center">
+        <InformationCircleIcon className="h-3.5 w-3.5 shrink-0 text-muted/50 transition-colors group-hover/tip:text-muted/80" />
+        <span
+          className="pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-64
+          rounded-lg bg-[#1e1a16] px-3 py-2.5 text-xs leading-relaxed text-[#e8e2da]
+          opacity-0 shadow-2xl transition-opacity duration-150
+          group-hover/tip:opacity-100 dark:bg-[#e8e2da] dark:text-[#1e1a16]"
+        >
+          Insider buys recorded by ddbx since we began tracking this market.
+          Sells aren&apos;t covered comprehensively, so this list is buys only.
+        </span>
+      </span>
+    </span>
+  );
 
-      {buys.length === 0 ? (
+  if (buys.length === 0) {
+    return (
+      <section>
+        <div className="mb-3">{headingLabel}</div>
         <p className="text-sm text-muted italic">
           No other insider buys recorded for {tickerDisplay} in our data.
         </p>
-      ) : (
-        <ul className="divide-y divide-black/[0.06] dark:divide-white/[0.08] border-y border-black/[0.06] dark:border-white/[0.08]">
+      </section>
+    );
+  }
+
+  return (
+    <section>
+      {/* Collapsed by default — a long flat list eats too much drawer height,
+          so it lives behind an accordion that summarises the count. */}
+      <button
+        aria-expanded={open}
+        className="flex w-full items-baseline justify-between gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {headingLabel}
+        <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted tabular-nums">
+          {buys.length} buy{buys.length === 1 ? "" : "s"}
+          <ChevronRightIcon
+            className={`h-4 w-4 text-muted/60 transition-transform duration-200 ${
+              open ? "rotate-90" : ""
+            }`}
+          />
+        </span>
+      </button>
+
+      {open && (
+        <ul className="mt-3 divide-y divide-black/[0.06] dark:divide-white/[0.08] border-y border-black/[0.06] dark:border-white/[0.08]">
           {visible.map((d) => {
             const content = (
               <>
@@ -125,13 +150,12 @@ export function RecentBuysSection<W>({
               </li>
             );
           })}
+          {hiddenCount > 0 && (
+            <li className="py-2 text-xs text-muted">
+              + {hiddenCount} more not shown.
+            </li>
+          )}
         </ul>
-      )}
-
-      {hiddenCount > 0 && (
-        <p className="mt-2 text-xs text-muted">
-          + {hiddenCount} more not shown.
-        </p>
       )}
     </section>
   );
