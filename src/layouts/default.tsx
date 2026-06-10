@@ -1,11 +1,35 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { GB, US } from "country-flag-icons/react/3x2";
 
 import { AppDrawer } from "@/components/app-drawer";
 import { Navbar } from "@/components/navbar";
 import { AppStoreBadge } from "@/components/app-store-badge";
+import {
+  MarketChooserModal,
+  type MarketChoice,
+} from "@/components/market-chooser-modal";
 
 type LegalPage = "privacy" | "cookies" | "terms" | "contact" | null;
+
+/** Per-market X (Twitter) accounts, surfaced in the "who to follow" chooser.
+ *  Same pattern will drive the app-store chooser later. */
+const FOLLOW_CHOICES: MarketChoice[] = [
+  {
+    id: "uk",
+    Flag: GB,
+    label: "ddbx.uk",
+    description: "UK director dealings · @ddbxuk",
+    href: "https://x.com/ddbxuk",
+  },
+  {
+    id: "us",
+    Flag: US,
+    label: "ddbx.us",
+    description: "US insiders & Congress · @ddbxus",
+    href: "https://x.com/ddbxus",
+  },
+];
 
 const LEGAL_LINKS: {
   label: string;
@@ -327,6 +351,7 @@ export default function DefaultLayout({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [followOpen, setFollowOpen] = useState(false);
   const legalPage = pathToLegalPage(location.pathname);
   const closeLegal = useCallback(() => {
     navigate("/");
@@ -424,12 +449,11 @@ export default function DefaultLayout({
               ))}
             </div>
             <div className="flex items-center gap-4">
-              <a
+              <button
                 aria-label="Follow on X (Twitter)"
                 className="flex items-center gap-1.5 text-foreground/40 hover:text-foreground/70 transition-colors"
-                href="https://x.com/ddbxuk"
-                rel="noopener noreferrer"
-                target="_blank"
+                type="button"
+                onClick={() => setFollowOpen(true)}
               >
                 <svg
                   aria-hidden="true"
@@ -438,7 +462,7 @@ export default function DefaultLayout({
                 >
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.736-8.861L1.254 2.25H8.08l4.257 5.625zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
-              </a>
+              </button>
               <AppStoreBadge size="sm" />
             </div>
           </div>
@@ -446,6 +470,14 @@ export default function DefaultLayout({
       </footer>
 
       <LegalDrawer page={legalPage} onClose={closeLegal} />
+
+      <MarketChooserModal
+        choices={FOLLOW_CHOICES}
+        open={followOpen}
+        subtitle="Each account posts the trades for its own markets."
+        title="Choose who you want to follow"
+        onClose={() => setFollowOpen(false)}
+      />
     </div>
   );
 }
