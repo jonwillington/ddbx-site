@@ -169,6 +169,68 @@ function closeOnOrBefore(
   return best?.close_pence ?? null;
 }
 
+const fmtSignedPct = (n: number, unit: "%" | "pp"): string =>
+  `${n >= 0 ? "+" : "−"}${Math.abs(n).toFixed(1)}${unit}`;
+
+const deltaToneClass = (n: number): string =>
+  n >= 0
+    ? "text-emerald-600 dark:text-emerald-400"
+    : "text-rose-600 dark:text-rose-400";
+
+/** The disclosure-gap story — the single most powerful read for Congress:
+ *  PTRs disclose weeks late, so the move BETWEEN the trade and its public
+ *  filing is return the public never had a chance to act on. We surface both
+ *  anchored returns (server-computed `live_performance`) and call out the gap
+ *  explicitly. Raw returns, not alpha — the headline is "how much happened
+ *  before you could see it". Hidden when we don't have both anchors. */
+function DisclosureGapCallout({
+  dealing,
+}: {
+  dealing: MarketDealing<GovDealing>;
+}) {
+  const d = dealing.raw;
+  const lp = d.live_performance;
+  const rt = lp?.return_pct_trade;
+  const rd = lp?.return_pct_disclosed;
+  if (rt == null || rd == null) return null;
+
+  const gap = rt - rd; // ≈ the move captured during the disclosure blackout
+  const lagDays = Math.round(
+    (Date.parse(d.disclosed_date.slice(0, 10)) -
+      Date.parse(d.trade_date.slice(0, 10))) /
+      86_400_000,
+  );
+
+  return (
+    <div className="space-y-2 rounded-xl border border-foreground/10 bg-foreground/[0.02] p-3">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-foreground/60">Since the trade</span>
+        <span className={`font-semibold tabular-nums ${deltaToneClass(rt)}`}>
+          {fmtSignedPct(rt, "%")}
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-foreground/60">Since public disclosure</span>
+        <span className={`font-semibold tabular-nums ${deltaToneClass(rd)}`}>
+          {fmtSignedPct(rd, "%")}
+        </span>
+      </div>
+      {lagDays > 1 && (
+        <div className="flex items-start gap-1.5 border-t border-foreground/10 pt-2 text-[13px] leading-snug text-foreground/80">
+          <BoltIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-500" />
+          <span>
+            <span className={`font-semibold ${deltaToneClass(gap)}`}>
+              {fmtSignedPct(gap, "pp")}
+            </span>{" "}
+            of that move happened in the {lagDays} days between the trade and
+            its public disclosure — before anyone could act on it.
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Position block (drawer DetailPosition slot) — the same entry → now → return
  *  → vs-S&P tiles + price chart the UK/US drawers use. Congress PTRs carry no
  *  per-share fill price, so we anchor on the close on the trade date (the same
@@ -274,6 +336,8 @@ function CongressDetailPosition({
           No price data cached for {ticker} yet.
         </p>
       )}
+
+      <DisclosureGapCallout dealing={dealing} />
       {entry != null && (
         <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
           <MiniPriceChart
