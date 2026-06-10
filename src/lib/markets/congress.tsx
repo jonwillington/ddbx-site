@@ -3,7 +3,6 @@
 // so "Signal" is the deterministic triage verdict (jurisdiction + notable
 // size/options) rather than a Rating. Buys only — sales/junk are dropped
 // server-side. Member portraits (public-domain) show in the detail drawer.
-import type { ReactNode } from "react";
 import type { MarketConfig, MarketDealing, Tone } from "@/lib/markets/types";
 import type { GovDealing } from "@/types/ddbx";
 import type { PriceFormat } from "@/components/position-card";
@@ -220,8 +219,6 @@ function CongressPerformance({
 
 function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> }) {
   const d = dealing.raw;
-  const r = d.reporter;
-  const committees = (r.committees ?? []).filter((c) => c.includes("Committee"));
   return (
     <div className="space-y-5">
       {/* One rating section. The buyer + party + district are already in the
@@ -308,30 +305,6 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
         </div>
       )}
 
-      {committees.length > 0 && (
-        <div>
-          <div className="text-xs uppercase tracking-wide text-foreground/45 mb-1">Committees</div>
-          <div className="text-sm text-foreground/80">
-            {committees.map((c) => c.replace("House Committee on ", "").replace("Permanent Select Committee on ", "")).join(" · ")}
-          </div>
-        </div>
-      )}
-
-      {/* Insider / Action / Amount (≈) / Industry are already in the drawer's
-          shared header — only the fields the header doesn't carry go here.
-          "Security" is the full PTR instrument descriptor (the header shows the
-          cleaned company name); "Disclosed range" is the exact STOCK Act
-          bracket (the header's Amount is the approximate midpoint). */}
-      <Field label="Security">
-        {d.company}{d.ticker ? ` · ${d.ticker}` : ""}
-      </Field>
-      <div className="grid grid-cols-3 gap-3 text-sm">
-        <Field label="Disclosed range">{formatBand(d.amount_min, d.amount_max)}</Field>
-        <Field label="Owner">{d.owner}</Field>
-        <Field label="Traded">{d.trade_date}</Field>
-        <Field label="Disclosed">{d.disclosed_date}{d.is_late ? " (late)" : ""}</Field>
-      </div>
-
       <div className="text-xs text-foreground/45">
         Amounts are disclosed as ranges (STOCK Act). ·{" "}
         <a className="underline underline-offset-2 hover:text-foreground/70" href={d.ptr_link} rel="noreferrer" target="_blank">
@@ -342,13 +315,39 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div>
-      <div className="text-xs uppercase tracking-wide text-foreground/45">{label}</div>
-      <div className="text-foreground/85">{children}</div>
-    </div>
-  );
+/** Raw-filing facts folded into the drawer's standard metadata grid (see
+ *  MarketConfig.detailFields). The disclosed band is the primary money figure —
+ *  the STOCK Act discloses ranges, so we show the bracket rather than the
+ *  fabricated midpoint. Committees come along too so the jurisdiction context
+ *  the rating leans on is one glance away. */
+function congressDetailFields(dealing: MarketDealing<GovDealing>) {
+  const d = dealing.raw;
+  const committees = (d.reporter.committees ?? [])
+    .filter((c) => c.includes("Committee"))
+    .map((c) =>
+      c
+        .replace("House Committee on ", "")
+        .replace("Permanent Select Committee on ", ""),
+    );
+
+  return [
+    { label: "Action", value: dealing.actionLabel },
+    { label: "Disclosed range", value: formatBand(d.amount_min, d.amount_max) },
+    dealing.sector ? { label: "Industry", value: dealing.sector } : null,
+    {
+      label: "Security",
+      value: `${d.company}${d.ticker ? ` · ${d.ticker}` : ""}`,
+    },
+    { label: "Owner", value: d.owner },
+    { label: "Traded", value: d.trade_date },
+    {
+      label: "Disclosed",
+      value: `${d.disclosed_date}${d.is_late ? " (late)" : ""}`,
+    },
+    committees.length > 0
+      ? { label: "Committees", value: committees.join(" · ") }
+      : null,
+  ];
 }
 
 const isGovSignal = (d: MarketDealing<GovDealing>): boolean =>
@@ -444,6 +443,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   RowNameBadge: CongressRowNameBadge,
   DetailPosition: CongressPerformance,
   DetailBody: CongressDetailBody,
+  detailFields: congressDetailFields,
   // Right-hand news bar — reuse the US market feed (/api/news/us); Congress
   // trades US equities, so US business headlines are the right context.
   fetchNews: () => api.usNews(),

@@ -1430,6 +1430,7 @@ export function MarketPage<W>({
         DummyDetailBody={config.DummyDetailBody}
         allDealings={dealings}
         dealing={selectedDealing}
+        detailFields={config.detailFields}
         fmt={config.priceFormat}
         formatTickerDisplay={config.formatTickerDisplay}
         gating={gating}

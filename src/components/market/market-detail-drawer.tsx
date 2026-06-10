@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { GatingInfo, MarketDealing } from "@/lib/markets/types";
 import type { PriceFormat } from "@/components/position-card";
 
@@ -37,6 +37,7 @@ export function MarketDetailDrawer<W>({
   showLogo = true,
   formatTickerDisplay,
   insiderLabel = "Insider",
+  detailFields,
 }: {
   dealing: MarketDealing<W> | null;
   /** Full in-memory dealings list — used by RecentBuysSection to surface
@@ -63,6 +64,11 @@ export function MarketDetailDrawer<W>({
   formatTickerDisplay?: (ticker: string) => string;
   /** Label for the person field in the header grid. Default "Insider". */
   insiderLabel?: string;
+  /** Optional per-market override for the metadata grid cells. See
+   *  MarketConfig.detailFields. */
+  detailFields?: (
+    dealing: MarketDealing<W>,
+  ) => Array<{ label: string; value: ReactNode } | null | false | undefined>;
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const direction = isDesktop ? "right" : "bottom";
@@ -235,8 +241,18 @@ export function MarketDetailDrawer<W>({
                     <ChevronLeftIcon className="h-5 w-5" />
                   </button>
                 )}
-                {showLogo && <CompanyLogo size={32} ticker={rawTicker} />}
-                <span className="font-mono text-xs bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded shrink-0">
+                {/* Logo + ticker only surface once you've scrolled past the
+                    big header — the top bar stays clean on open. */}
+                {showLogo && (
+                  <CompanyLogo
+                    className={`transition-opacity duration-200 ${scrolled ? "opacity-100" : "opacity-0"}`}
+                    size={32}
+                    ticker={rawTicker}
+                  />
+                )}
+                <span
+                  className={`font-mono text-xs bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded shrink-0 transition-opacity duration-200 ${scrolled ? "opacity-100" : "opacity-0"}`}
+                >
                   {ticker}
                 </span>
                 {active.rating && (
@@ -287,24 +303,29 @@ export function MarketDetailDrawer<W>({
                       </div>
 
                       <div className="flex items-stretch">
-                        {/* └ connector, vertical stroke centred under the logo */}
+                        {/* Curved elbow connector — drops from under the logo
+                            and sweeps into the buyer's avatar, in a soft brand
+                            tint so the company→person link reads at a glance. */}
                         <div
                           aria-hidden
-                          className={`relative shrink-0 ${showLogo ? "w-14" : "w-4"}`}
+                          className={`relative shrink-0 ${showLogo ? "w-14" : "w-5"}`}
                         >
-                          <span
-                            className={`absolute top-0 bottom-1/2 w-px bg-black/15 dark:bg-white/15 ${showLogo ? "left-7" : "left-2"}`}
-                          />
-                          <span
-                            className={`absolute top-1/2 h-px bg-black/15 dark:bg-white/15 ${showLogo ? "left-7 w-5" : "left-2 w-3"}`}
+                          <div
+                            className={`absolute top-0 bottom-1/2 rounded-bl-[14px] border-b-2 border-l-2 border-[#5a4128]/25 dark:border-[#ad9479]/30 ${showLogo ? "left-7 right-1.5" : "left-2 right-0"}`}
                           />
                         </div>
                         <div className="flex items-center gap-3 py-2">
-                          <InsiderAvatar
-                            name={active.insiderName}
-                            photoUrl={active.insiderPhotoUrl}
-                            size={40}
-                          />
+                          <div className="relative shrink-0">
+                            <InsiderAvatar
+                              name={active.insiderName}
+                              photoUrl={active.insiderPhotoUrl}
+                              size={44}
+                            />
+                            <span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-[#5a4128]/15 dark:ring-[#ad9479]/20"
+                            />
+                          </div>
                           <div className="min-w-0">
                             <div className="text-[10px] uppercase tracking-wide text-muted mb-0.5">
                               {insiderLabel}
@@ -328,59 +349,77 @@ export function MarketDetailDrawer<W>({
                     </div>
 
                     <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-                      <div>
-                        <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                          Action
-                        </dt>
-                        <dd className="text-sm font-medium">
-                          {active.actionLabel}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                          Amount
-                        </dt>
-                        <dd className="text-sm font-medium">{valueLabel}</dd>
-                      </div>
-                      {active.shares > 0 && (
-                        <div>
-                          <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                            Shares
-                          </dt>
-                          <dd className="text-sm font-medium tabular-nums">
-                            {sharesLabel}
-                          </dd>
-                        </div>
-                      )}
-                      {industryLabel && (
-                        <div className="min-w-0">
-                          <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                            Industry
-                          </dt>
-                          <dd className="text-sm font-medium truncate">
-                            {industryLabel}
-                          </dd>
-                        </div>
-                      )}
-                      {confidenceLabel && (
-                        <div>
-                          <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                            Confidence
-                          </dt>
-                          <dd className="text-sm font-medium tabular-nums">
-                            {confidenceLabel}
-                          </dd>
-                        </div>
-                      )}
-                      {catalystLabel && (
-                        <div>
-                          <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                            Catalyst
-                          </dt>
-                          <dd className="text-sm font-medium">
-                            {catalystLabel}
-                          </dd>
-                        </div>
+                      {detailFields ? (
+                        detailFields(active)
+                          .filter(
+                            (f): f is { label: string; value: ReactNode } =>
+                              !!f,
+                          )
+                          .map((f) => (
+                            <div key={f.label} className="min-w-0">
+                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                {f.label}
+                              </dt>
+                              <dd className="text-sm font-medium">{f.value}</dd>
+                            </div>
+                          ))
+                      ) : (
+                        <>
+                          <div>
+                            <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                              Action
+                            </dt>
+                            <dd className="text-sm font-medium">
+                              {active.actionLabel}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                              Amount
+                            </dt>
+                            <dd className="text-sm font-medium">{valueLabel}</dd>
+                          </div>
+                          {active.shares > 0 && (
+                            <div>
+                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                Shares
+                              </dt>
+                              <dd className="text-sm font-medium tabular-nums">
+                                {sharesLabel}
+                              </dd>
+                            </div>
+                          )}
+                          {industryLabel && (
+                            <div className="min-w-0">
+                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                Industry
+                              </dt>
+                              <dd className="text-sm font-medium truncate">
+                                {industryLabel}
+                              </dd>
+                            </div>
+                          )}
+                          {confidenceLabel && (
+                            <div>
+                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                Confidence
+                              </dt>
+                              <dd className="text-sm font-medium tabular-nums">
+                                {confidenceLabel}
+                              </dd>
+                            </div>
+                          )}
+                          {catalystLabel && (
+                            <div>
+                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                Catalyst
+                              </dt>
+                              <dd className="text-sm font-medium">
+                                {catalystLabel}
+                              </dd>
+                            </div>
+                          )}
+                        </>
                       )}
                     </dl>
 

@@ -331,6 +331,17 @@ export interface MarketConfig<W = unknown> {
    *  per ticker) belongs in the market, not the shell. */
   DetailPosition?: ComponentType<{ dealing: MarketDealing<W> }>;
 
+  /** Optional override for the drawer's metadata grid. When provided, the
+   *  shared drawer renders exactly these label/value cells in the standard
+   *  grid instead of its default set (Action / Amount / Shares / Industry / …).
+   *  Lets a market fold its own raw-filing facts into the same grid rather than
+   *  scattering them through the body — e.g. Congress shows the disclosed band
+   *  (not a fabricated midpoint), security, owner, trade/disclosure dates.
+   *  Falsy entries are skipped so cells can be conditional. */
+  detailFields?: (
+    dealing: MarketDealing<W>,
+  ) => Array<{ label: string; value: ReactNode } | null | false | undefined>;
+
   /** Empty-state copy when fetchDealings returns nothing for a given view. */
   renderEmptyState?: (opts: {
     view: string;
