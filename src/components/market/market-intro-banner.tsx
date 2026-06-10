@@ -1,4 +1,4 @@
-import { SparklesIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ExclamationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 
 /** localStorage flag so the intro only nudges first-time visitors — once
@@ -49,12 +49,9 @@ export function MarketIntroBanner({
 }) {
   return (
     <div className="relative bg-[#faf7f2] px-4 py-3.5 dark:bg-white/[0.03] md:px-5">
-      {/* Brand AI gradient hairline along the top edge — signals these are
-          the machine-scored filings without flooding the warm surface. */}
-      <div className="absolute inset-x-0 top-0 h-[2px] bg-[linear-gradient(to_right,#3300FC,#95008A,#EB0000)]" />
       <div className="flex items-start gap-3 pr-6">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#3300FC,#95008A,#EB0000)] text-white">
-          <SparklesIcon className="h-4 w-4" />
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-foreground/70 dark:bg-white/[0.08] dark:text-foreground/70">
+          <ExclamationCircleIcon className="h-4 w-4" />
         </span>
         <div className="min-w-0">
           <p className="text-sm font-semibold leading-snug text-foreground">
