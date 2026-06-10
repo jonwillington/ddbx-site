@@ -12,6 +12,7 @@ import { BoltIcon } from "@heroicons/react/24/solid";
 
 import { api } from "@/lib/api";
 import { RatingBadge } from "@/components/rating-badge";
+import { DeltaBadge } from "@/components/market/market-row";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -140,6 +141,80 @@ function CongressRowActionCell({ dealing }: { dealing: MarketDealing<GovDealing>
         </span>
       )}
     </div>
+  );
+}
+
+/** Performance block (drawer DetailPosition slot). Congress PTRs carry no
+ *  per-share fill price, so there's no honest "you'd be up £X" position card —
+ *  instead we surface the server-precomputed return as of the latest close,
+ *  anchored both at the trade date (the member's actual window) and the
+ *  disclosure date (what a copycat could have entered at), each paired with its
+ *  alpha vs the S&P. Reads straight off live_performance — no price fetch. When
+ *  the ticker has no cached prices, says so explicitly rather than showing a
+ *  fake 0%. */
+function CongressPerformance({
+  dealing,
+}: {
+  dealing: MarketDealing<GovDealing>;
+}) {
+  const lp = dealing.livePerformance;
+  const rows = [
+    {
+      label: "Since trade",
+      ret: lp?.return_pct_trade ?? null,
+      alpha: lp?.alpha_pct_trade ?? null,
+    },
+    {
+      label: "Since disclosure",
+      ret: lp?.return_pct_disclosed ?? null,
+      alpha: lp?.alpha_pct_disclosed ?? null,
+    },
+  ];
+  const hasData = rows.some((r) => r.ret != null);
+
+  return (
+    <section className="rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
+      <div className="mb-2.5 flex items-baseline justify-between gap-2">
+        <h3 className="text-xs uppercase tracking-wide text-foreground/45">
+          Performance
+        </h3>
+        {hasData && lp?.as_of && (
+          <span className="text-[11px] tabular-nums text-foreground/40">
+            as of {lp.as_of}
+          </span>
+        )}
+      </div>
+
+      {hasData ? (
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <div
+              key={r.label}
+              className="flex items-center justify-between gap-3"
+            >
+              <span className="text-sm text-foreground/70">{r.label}</span>
+              <div className="flex items-center gap-2.5">
+                {r.alpha != null && (
+                  <span className="text-[11px] tabular-nums text-foreground/45">
+                    {r.alpha >= 0 ? "+" : ""}
+                    {r.alpha.toFixed(1)}pp vs S&amp;P
+                  </span>
+                )}
+                {r.ret != null ? (
+                  <DeltaBadge value={r.ret} />
+                ) : (
+                  <span className="text-xs text-muted/50">—</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm italic text-muted">
+          No price data cached for this ticker yet.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -367,6 +442,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   insiderLabel: "Congress member",
   RowActionCell: CongressRowActionCell,
   RowNameBadge: CongressRowNameBadge,
+  DetailPosition: CongressPerformance,
   DetailBody: CongressDetailBody,
   // Right-hand news bar — reuse the US market feed (/api/news/us); Congress
   // trades US equities, so US business headlines are the right context.
