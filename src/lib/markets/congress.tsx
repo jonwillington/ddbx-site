@@ -16,8 +16,9 @@ const SPY_LABEL = "S&P 500";
 
 const USD_FORMAT: PriceFormat = {
   formatPrice: (n) => `$${n.toFixed(2)}`,
-  formatValue: (n) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n),
+  // Approximate — PTR amounts are disclosed as ranges, so the value column is a
+  // band midpoint, not an exact figure. The precise band shows in the row cell.
+  formatValue: (n) => (n >= 1_000_000 ? `~$${(n / 1_000_000).toFixed(1)}M` : `~$${Math.round(n / 1000)}k`),
   quoteToValue: 1,
 };
 
@@ -243,6 +244,12 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   },
   RowActionCell: CongressRowActionCell,
   DetailBody: CongressDetailBody,
+  // Right-hand news bar — reuse the US market feed (/api/news/us); Congress
+  // trades US equities, so US business headlines are the right context.
+  fetchNews: () => api.usNews(),
+  newsHeading: "US market news",
+  newsFooterNote:
+    "Third-party headlines (CNBC, MarketWatch, Yahoo Finance, Seeking Alpha); opens in a new tab.",
   renderEmptyState: () => (
     <>No congressional buys stored yet — the ingest cron fills this every few hours.</>
   ),
