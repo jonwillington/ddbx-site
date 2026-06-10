@@ -12,7 +12,6 @@ import { BoltIcon } from "@heroicons/react/24/solid";
 
 import { api } from "@/lib/api";
 import { RatingBadge } from "@/components/rating-badge";
-import { PartyChip } from "@/components/party-chip";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -150,28 +149,15 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
   const committees = (r.committees ?? []).filter((c) => c.includes("Committee"));
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        {r.photo_url ? (
-          <img alt="" className="h-14 w-14 rounded-full object-cover bg-foreground/10" loading="lazy" src={r.photo_url} />
-        ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-foreground/10 text-sm font-semibold text-foreground/50">
-            {r.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
-          </div>
-        )}
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold">{r.name}</span>
-            <PartyChip party={r.party} />
-          </div>
-          <div className="text-sm text-foreground/60">
-            {stateLine(r)} · {r.chamber === "senate" ? "Senate" : "House"}
-          </div>
-        </div>
-      </div>
-
-      {d.rating_explain && (
-        <div className="space-y-2.5 rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
-          <div className="flex items-center gap-2">
+      {/* One rating section. The buyer + party + district are already in the
+          shared drawer header, so the body no longer repeats them. The
+          per-row factor breakdown and the filing-level assessment used to be
+          two separate cards each with their own "Minor" badge — they're merged
+          here under a single badge: verdict + confidence, the ± "why" factors,
+          then the filing-level note (rebalance context, etc). */}
+      {(d.rating_explain || d.analysis) && (
+        <div className="space-y-3 rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
+          <div className="flex flex-wrap items-center gap-2">
             {d.rating ? (
               <RatingBadge rating={d.rating} />
             ) : (
@@ -179,55 +165,69 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
                 Skipped
               </span>
             )}
-            <span className="text-sm font-medium text-foreground/90">
-              {d.rating_explain.headline}
-            </span>
-          </div>
-          <ul className="space-y-1.5">
-            {d.rating_explain.factors.map((f, i) => (
-              <li key={i} className="flex gap-2 text-sm leading-snug">
-                <span
-                  aria-hidden="true"
-                  className={`mt-px shrink-0 font-semibold tabular-nums ${
-                    f.sign === "pos"
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : f.sign === "neg"
-                        ? "text-rose-600 dark:text-rose-400"
-                        : "text-foreground/35"
-                  }`}
-                >
-                  {f.sign === "pos" ? "＋" : f.sign === "neg" ? "－" : "・"}
-                </span>
-                <span
-                  className={
-                    f.sign === "neutral" ? "text-foreground/55" : "text-foreground/80"
-                  }
-                >
-                  {f.text}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {d.analysis && (
-        <div className="space-y-2.5 rounded-lg border border-foreground/10 bg-foreground/[0.03] p-3">
-          <div className="flex items-center gap-2">
-            <RatingBadge rating={d.analysis.rating} />
-            {d.analysis.confidence != null && (
-              <span className="text-xs text-foreground/45">{Math.round(d.analysis.confidence * 100)}% confidence</span>
+            {d.analysis?.confidence != null && (
+              <span className="text-xs text-foreground/45">
+                {Math.round(d.analysis.confidence * 100)}% confidence
+              </span>
+            )}
+            {d.rating_explain && (
+              <span className="text-sm font-medium text-foreground/90">
+                {d.rating_explain.headline}
+              </span>
             )}
           </div>
-          <div className="text-sm font-medium text-foreground/90">{d.analysis.summary}</div>
-          {d.analysis.thesis_points?.length > 0 && (
-            <ul className="list-disc space-y-1 pl-4 text-sm text-foreground/80">
-              {d.analysis.thesis_points.map((p, i) => <li key={i}>{p}</li>)}
+
+          {d.rating_explain && (
+            <ul className="space-y-1.5">
+              {d.rating_explain.factors.map((f, i) => (
+                <li key={i} className="flex gap-2 text-sm leading-snug">
+                  <span
+                    aria-hidden="true"
+                    className={`mt-px shrink-0 font-semibold tabular-nums ${
+                      f.sign === "pos"
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : f.sign === "neg"
+                          ? "text-rose-600 dark:text-rose-400"
+                          : "text-foreground/35"
+                    }`}
+                  >
+                    {f.sign === "pos" ? "＋" : f.sign === "neg" ? "－" : "・"}
+                  </span>
+                  <span
+                    className={
+                      f.sign === "neutral"
+                        ? "text-foreground/55"
+                        : "text-foreground/80"
+                    }
+                  >
+                    {f.text}
+                  </span>
+                </li>
+              ))}
             </ul>
           )}
-          {d.analysis.key_risks?.length > 0 && (
-            <div className="text-xs text-foreground/55">
-              <span className="uppercase tracking-wide">Risks:</span> {d.analysis.key_risks.join(" · ")}
+
+          {d.analysis && (
+            <div className="space-y-1.5 border-t border-foreground/10 pt-2.5">
+              <div className="text-[10px] uppercase tracking-wide text-foreground/45">
+                Filing assessment
+              </div>
+              <div className="text-sm text-foreground/80">
+                {d.analysis.summary}
+              </div>
+              {d.analysis.thesis_points?.length > 0 && (
+                <ul className="list-disc space-y-1 pl-4 text-sm text-foreground/75">
+                  {d.analysis.thesis_points.map((p, i) => (
+                    <li key={i}>{p}</li>
+                  ))}
+                </ul>
+              )}
+              {d.analysis.key_risks?.length > 0 && (
+                <div className="text-xs text-foreground/55">
+                  <span className="uppercase tracking-wide">Risks:</span>{" "}
+                  {d.analysis.key_risks.join(" · ")}
+                </div>
+              )}
             </div>
           )}
         </div>

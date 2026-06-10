@@ -342,14 +342,16 @@ export function MarketDetailDrawer<W>({
                         </dt>
                         <dd className="text-sm font-medium">{valueLabel}</dd>
                       </div>
-                      <div>
-                        <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                          Shares
-                        </dt>
-                        <dd className="text-sm font-medium tabular-nums">
-                          {sharesLabel}
-                        </dd>
-                      </div>
+                      {active.shares > 0 && (
+                        <div>
+                          <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                            Shares
+                          </dt>
+                          <dd className="text-sm font-medium tabular-nums">
+                            {sharesLabel}
+                          </dd>
+                        </div>
+                      )}
                       {industryLabel && (
                         <div className="min-w-0">
                           <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
