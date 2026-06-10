@@ -33,6 +33,21 @@ function formatBand(min: number | null, max: number | null): string {
 const partyState = (r: GovDealing["reporter"]): string =>
   [r.party, r.state].filter(Boolean).join("-") + (r.district != null ? `-${r.district}` : "");
 
+/** Strip the instrument-class descriptor PTRs append to the issuer name
+ *  ("- Common Stock", "Class A Common Stock", "Ordinary Shares", "American
+ *  Depositary Shares") so the row shows a clean company name. The full
+ *  descriptor stays on the wire row and is shown in the detail drawer. */
+function cleanCompany(name: string): string {
+  const cleaned = name
+    .trim()
+    .replace(/[\s,–-]*\b(Class\s+[A-Z0-9]+\s+)?(Common|Ordinary)\s+(Stock|Shares)\b.*$/i, "")
+    .replace(/[\s,–-]*\bAmerican\s+Depositary\s+(Shares|Receipts)\b.*$/i, "")
+    .replace(/[\s,–-]*\bDepositary\s+(Shares|Receipts)\b.*$/i, "")
+    .replace(/[\s,–-]+$/, "")
+    .trim();
+  return cleaned || name.trim();
+}
+
 /* ─── Wire → MarketDealing ───────────────────────────────────────────── */
 
 export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
@@ -42,7 +57,9 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
     key: d.id,
     id: d.id,
     ticker: d.ticker ?? "",
-    company: d.company,
+    // Clean name for the row + drawer header; the full instrument descriptor
+    // stays on `raw` and shows in the drawer body ("Security").
+    company: cleanCompany(d.company),
     insiderName: d.reporter.name,
     insiderRole: partyState(d.reporter) || (d.reporter.chamber === "senate" ? "Senate" : "House"),
     insiderPhotoUrl: d.reporter.photo_url,
@@ -196,8 +213,12 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
 
       {/* Insider / Action / Amount (≈) / Industry are already in the drawer's
           shared header — only the fields the header doesn't carry go here.
-          "Disclosed range" is the exact STOCK Act bracket (the header's Amount
-          is the approximate midpoint). */}
+          "Security" is the full PTR instrument descriptor (the header shows the
+          cleaned company name); "Disclosed range" is the exact STOCK Act
+          bracket (the header's Amount is the approximate midpoint). */}
+      <Field label="Security">
+        {d.company}{d.ticker ? ` · ${d.ticker}` : ""}
+      </Field>
       <div className="grid grid-cols-3 gap-3 text-sm">
         <Field label="Disclosed range">{formatBand(d.amount_min, d.amount_max)}</Field>
         <Field label="Owner">{d.owner}</Field>
