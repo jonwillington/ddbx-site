@@ -50,12 +50,18 @@ export function MarketDetailDrawer<W>({
   onSelectDealing?: (dealing: MarketDealing<W>) => void;
   fmt: PriceFormat;
   locale?: string;
-  DetailBody: ComponentType<{ dealing: MarketDealing<W> }>;
+  DetailBody: ComponentType<{
+    dealing: MarketDealing<W>;
+    allDealings?: MarketDealing<W>[];
+  }>;
   DetailPosition?: ComponentType<{ dealing: MarketDealing<W> }>;
   /** Optional gating state — when set, the drawer records a view on open
    *  and may swap to the dummy body + overlay. */
   gating?: GatingInfo;
-  DummyDetailBody?: ComponentType<{ dealing: MarketDealing<W> }>;
+  DummyDetailBody?: ComponentType<{
+    dealing: MarketDealing<W>;
+    allDealings?: MarketDealing<W>[];
+  }>;
   AnalysisOverlay?: ComponentType;
   /** Mirror of the row prop — when false, the header + body logo bubbles
    *  are suppressed. Wired from MarketConfig.enableLogos. Default true. */
@@ -434,12 +440,12 @@ export function MarketDetailDrawer<W>({
                               className="pointer-events-none select-none"
                               style={{ filter: "blur(4px)" }}
                             >
-                              <BodyComponent dealing={active} />
+                              <BodyComponent allDealings={allDealings} dealing={active} />
                             </div>
                             {AnalysisOverlay && <AnalysisOverlay />}
                           </div>
                         ) : (
-                          <BodyComponent dealing={active} />
+                          <BodyComponent allDealings={allDealings} dealing={active} />
                         )}
                       </>
                     )}
@@ -461,12 +467,12 @@ export function MarketDetailDrawer<W>({
                             className="pointer-events-none select-none"
                             style={{ filter: "blur(4px)" }}
                           >
-                            <BodyComponent dealing={active} />
+                            <BodyComponent allDealings={allDealings} dealing={active} />
                           </div>
                           {AnalysisOverlay && <AnalysisOverlay />}
                         </div>
                       ) : (
-                        <BodyComponent dealing={active} />
+                        <BodyComponent allDealings={allDealings} dealing={active} />
                       ))}
                   </div>
                 </div>

@@ -4,7 +4,7 @@
 // size/options) rather than a Rating. Buys only — sales/junk are dropped
 // server-side. Member portraits (public-domain) show in the detail drawer.
 import type { MarketConfig, MarketDealing, Tone } from "@/lib/markets/types";
-import type { GovDealing } from "@/types/ddbx";
+import type { Analysis, GovDealing } from "@/types/ddbx";
 import type { PriceFormat } from "@/components/position-card";
 
 import { BoltIcon } from "@heroicons/react/24/solid";
@@ -217,37 +217,81 @@ function CongressPerformance({
   );
 }
 
-function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> }) {
-  const d = dealing.raw;
+/** The filing-level narrative (summary + supporting points + risks). Shared
+ *  between the two layouts below — it stands alone as the "wider filing" read
+ *  when this buy is one of many in a report, or folds into the single trade
+ *  assessment when the filing is just this one name. */
+function GovAnalysisNarrative({ analysis }: { analysis: Analysis }) {
   return (
-    <div className="space-y-5">
-      {/* One rating section. The buyer + party + district are already in the
-          shared drawer header, so the body no longer repeats them. The
-          per-row factor breakdown and the filing-level assessment used to be
-          two separate cards each with their own "Minor" badge — they're merged
-          here under a single badge: verdict + confidence, the ± "why" factors,
-          then the filing-level note (rebalance context, etc). */}
+    <div className="space-y-1.5">
+      <div className="text-sm text-foreground/80">{analysis.summary}</div>
+      {analysis.thesis_points?.length > 0 && (
+        <ul className="list-disc space-y-1 pl-4 text-sm text-foreground/75">
+          {analysis.thesis_points.map((p, i) => (
+            <li key={i}>{p}</li>
+          ))}
+        </ul>
+      )}
+      {analysis.key_risks?.length > 0 && (
+        <div className="text-xs text-foreground/55">
+          <span className="uppercase tracking-wide">Risks:</span>{" "}
+          {analysis.key_risks.join(" · ")}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CongressDetailBody({
+  dealing,
+  allDealings = [],
+}: {
+  dealing: MarketDealing<GovDealing>;
+  allDealings?: MarketDealing<GovDealing>[];
+}) {
+  const d = dealing.raw;
+  // "Part of a wider filing" = the member disclosed several positions in the
+  // same PTR (a portfolio rebalance, say). We detect it by counting sibling
+  // rows that share this filing_id in the loaded list; a lone row is a focused,
+  // single-name filing, where the filing-level read IS the trade-level read —
+  // so we don't split it into a separate (repetitive) section.
+  const filingSize = allDealings.filter(
+    (x) => x.raw.filing_id === d.filing_id,
+  ).length;
+  const isWiderFiling = filingSize > 1;
+
+  const confidence =
+    d.analysis?.confidence != null
+      ? `${Math.round(d.analysis.confidence * 100)}% confidence`
+      : null;
+
+  return (
+    <div className="space-y-4">
       {(d.rating_explain || d.analysis) && (
-        <div className="space-y-3 rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {d.rating ? (
-              <RatingBadge rating={d.rating} />
-            ) : (
-              <span className="inline-flex items-center justify-center rounded-md border border-[#d8d0c6]/55 bg-transparent px-2 py-0.5 text-[11px] text-[#a89e8c] dark:text-foreground/40">
-                Skipped
-              </span>
-            )}
-            {d.analysis?.confidence != null && (
-              <span className="text-xs text-foreground/45">
-                {Math.round(d.analysis.confidence * 100)}% confidence
-              </span>
-            )}
-            {d.rating_explain && (
-              <span className="text-sm font-medium text-foreground/90">
-                {d.rating_explain.headline}
-              </span>
-            )}
+        <section className="space-y-3 rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              {d.rating ? (
+                <RatingBadge rating={d.rating} />
+              ) : (
+                <span className="inline-flex items-center justify-center rounded-md border border-[#d8d0c6]/55 bg-transparent px-2 py-0.5 text-[11px] text-[#a89e8c] dark:text-foreground/40">
+                  Skipped
+                </span>
+              )}
+              <h3 className="text-sm font-semibold">
+                {isWiderFiling ? "This trade" : "Trade assessment"}
+              </h3>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              Why this specific purchase was rated the way it is.
+            </p>
           </div>
+
+          {d.rating_explain?.headline && (
+            <div className="text-sm font-medium text-foreground/90">
+              {d.rating_explain.headline}
+            </div>
+          )}
 
           {d.rating_explain && (
             <ul className="space-y-1.5">
@@ -279,30 +323,37 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
             </ul>
           )}
 
-          {d.analysis && (
+          {/* Focused filing: the narrative is about this very trade, so it
+              belongs here rather than in a separate "wider filing" section. */}
+          {!isWiderFiling && d.analysis && (
             <div className="space-y-1.5 border-t border-foreground/10 pt-2.5">
-              <div className="text-[10px] uppercase tracking-wide text-foreground/45">
-                Filing assessment
-              </div>
-              <div className="text-sm text-foreground/80">
-                {d.analysis.summary}
-              </div>
-              {d.analysis.thesis_points?.length > 0 && (
-                <ul className="list-disc space-y-1 pl-4 text-sm text-foreground/75">
-                  {d.analysis.thesis_points.map((p, i) => (
-                    <li key={i}>{p}</li>
-                  ))}
-                </ul>
+              {confidence && (
+                <div className="text-xs text-foreground/45">{confidence}</div>
               )}
-              {d.analysis.key_risks?.length > 0 && (
-                <div className="text-xs text-foreground/55">
-                  <span className="uppercase tracking-wide">Risks:</span>{" "}
-                  {d.analysis.key_risks.join(" · ")}
-                </div>
-              )}
+              <GovAnalysisNarrative analysis={d.analysis} />
             </div>
           )}
-        </div>
+        </section>
+      )}
+
+      {/* Only shown when the buy was genuinely one of several in one report. */}
+      {isWiderFiling && d.analysis && (
+        <section className="space-y-2 rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold">Wider filing assessment</h3>
+              {confidence && (
+                <span className="text-xs text-foreground/45">{confidence}</span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              Members often disclose many trades in one report. This buy was 1 of{" "}
+              {filingSize} positions filed together — here&apos;s the read on the
+              whole batch.
+            </p>
+          </div>
+          <GovAnalysisNarrative analysis={d.analysis} />
+        </section>
       )}
 
       <div className="text-xs text-foreground/45">

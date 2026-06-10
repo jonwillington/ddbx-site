@@ -325,7 +325,12 @@ export interface MarketConfig<W = unknown> {
   /** Component slot rendered as the body of the modal detail drawer (the
    *  popup that opens when a row is clicked). The shell provides the
    *  chrome — backdrop, scrollable container, escape-to-close. */
-  DetailBody: ComponentType<{ dealing: MarketDealing<W> }>;
+  DetailBody: ComponentType<{
+    dealing: MarketDealing<W>;
+    /** Full loaded list, so a body can reason about sibling rows — e.g.
+     *  Congress detecting how many positions shared the same filing. */
+    allDealings?: MarketDealing<W>[];
+  }>;
   /** Optional slot rendered above DetailBody — the position card / price
    *  chart block. Kept separate because the data wiring (live price fetch
    *  per ticker) belongs in the market, not the shell. */
@@ -429,7 +434,10 @@ export interface MarketConfig<W = unknown> {
   /** Component rendered as a blurred replacement for DetailBody when the
    *  current viewer doesn't have full access. Markets supply their own so
    *  the shape/length matches their real analysis. */
-  DummyDetailBody?: ComponentType<{ dealing: MarketDealing<W> }>;
+  DummyDetailBody?: ComponentType<{
+    dealing: MarketDealing<W>;
+    allDealings?: MarketDealing<W>[];
+  }>;
   /** Overlay rendered above the blurred dummy body — the "open the app" CTA.
    *  Positioned absolutely inside the drawer body. */
   AnalysisOverlay?: ComponentType;
