@@ -8,6 +8,8 @@ import type { MarketConfig, MarketDealing, Tone } from "@/lib/markets/types";
 import type { GovDealing } from "@/types/ddbx";
 import type { PriceFormat } from "@/components/position-card";
 
+import { BoltIcon } from "@heroicons/react/24/solid";
+
 import { api } from "@/lib/api";
 import { RatingBadge } from "@/components/rating-badge";
 import { PartyChip } from "@/components/party-chip";
@@ -116,7 +118,8 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
 function CongressRowNameBadge({ dealing }: { dealing: MarketDealing<GovDealing> }) {
   if (dealing.raw.asset_type !== "option") return null;
   return (
-    <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-600 dark:text-violet-300">
+    <span className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-600 dark:text-violet-300">
+      <BoltIcon className="h-3 w-3 shrink-0" />
       Options
     </span>
   );
