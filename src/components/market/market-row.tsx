@@ -32,7 +32,8 @@ const DEFAULT_COLUMN_HELP: Record<MarketColumnKey, string> = {
   ticker: "The stock's exchange ticker symbol.",
   company: "The company traded and the insider who traded it.",
   value: "Approximate size of the purchase.",
-  trend: "The share price's recent trend around the trade.",
+  trend:
+    "Quantity — the number of buys folded into this row — alongside the share price's recent trend.",
   performance:
     "Price change since the trade — or the return vs the market benchmark when that view is selected.",
   action: "Our signal rating for this trade.",
@@ -100,7 +101,7 @@ export function MarketRowHeader({
         <HeaderLabel help={help.value}>Value</HeaderLabel>
       </div>
       <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
-        <HeaderLabel help={help.trend}>Trend</HeaderLabel>
+        <HeaderLabel help={help.trend}>Qty / Trend</HeaderLabel>
       </div>
       <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
         <HeaderLabel help={help.performance}>{perfLabel}</HeaderLabel>
@@ -508,7 +509,11 @@ export function MarketClusterRow<W>({
               {totalValueLabel}
             </span>
           </div>
-          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+            <span className="text-[11px] font-semibold tabular-nums text-muted/70">
+              {count}
+            </span>
+          </div>
           <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
           <div className="w-40 shrink-0 px-2 py-2.5" />
         </div>
@@ -651,7 +656,11 @@ export function MemberClusterRow({
           <div className="w-24 shrink-0 px-3 py-2.5 flex items-center justify-end border-r border-black/[0.06] dark:border-white/[0.06]">
             <span className="text-sm font-semibold tabular-nums">{totalValueLabel}</span>
           </div>
-          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+            <span className="text-[11px] font-semibold tabular-nums text-muted/70">
+              {count}
+            </span>
+          </div>
           <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
             {aggReturnPct != null ? (
               <DeltaBadge suffix={aggShowAlpha ? "pp" : undefined} value={aggReturnPct} />
@@ -861,19 +870,18 @@ export function MarketRow<W>({
           className={`${fmt.valueColumnClass ?? "w-24"} shrink-0 px-3 py-2.5 flex flex-col items-end justify-center border-r border-black/[0.06] dark:border-white/[0.06]`}
         >
           <div className="text-sm font-semibold tabular-nums">{valueLabel}</div>
-          {dealing.legCount > 1 && (
-            <div className="text-[10px] text-muted tabular-nums mt-0.5">
-              {dealing.legCount} fills
-            </div>
-          )}
         </div>
-        <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+        <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center gap-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+          <span className="text-[11px] font-semibold tabular-nums text-muted/70">
+            {dealing.legCount}
+          </span>
           <MarketRowSpark
             bars={stockBars}
             benchmarkBars={benchmarkBars}
             chartMode={chartMode}
             disclosedDate={dealing.disclosedDate}
             tradeDate={dealing.tradeDate}
+            width={52}
           />
         </div>
         <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">

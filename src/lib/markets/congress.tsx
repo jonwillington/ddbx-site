@@ -531,7 +531,8 @@ export const CongressMarket: MarketConfig<GovDealing> = {
       "The company and the member of Congress (or their spouse) who bought it.",
     value:
       "Disclosed amount band — the STOCK Act reports ranges, not exact figures.",
-    trend: "The stock's 1-year price trend, with the trade date marked.",
+    trend:
+      "Number of buys in this row, plus the stock's 1-year price trend (trade date marked).",
     performance:
       "Stock return since the trade — or alpha vs the S&P 500 when that view is selected.",
     action:

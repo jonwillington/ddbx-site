@@ -642,7 +642,8 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
     company:
       "The issuer and the insider — officer, director, or 10% owner — who bought.",
     value: "Total value of the open-market purchase in USD.",
-    trend: "The stock's 1-year price trend, with the trade date marked.",
+    trend:
+      "Number of buys in this row, plus the stock's 1-year price trend (trade date marked).",
     performance:
       "Stock return since the trade — or alpha vs the S&P 500 when that view is selected.",
     action: "Triage verdict and analyst rating for the filing.",

@@ -345,7 +345,8 @@ export const UkMarket: MarketConfig<Dealing> = {
     company:
       "The company and the director (or other PDMR) who dealt in its shares.",
     value: "Total value of the trade in GBP.",
-    trend: "The share price's 1-year trend, with the trade date marked.",
+    trend:
+      "Number of buys in this row, plus the share price's 1-year trend (trade date marked).",
     performance:
       "Share-price return since the trade — or alpha vs the FTSE All-Share when 'vs FTSE' is selected.",
     action: "Our analyst rating: significant, noteworthy, or skipped.",
