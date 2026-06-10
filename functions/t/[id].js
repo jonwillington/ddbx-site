@@ -80,7 +80,18 @@ function buildMeta(d, id) {
   return { title, description, ticker: bareTicker(d.ticker) };
 }
 
-function page({ title, description, image, url, largeImage }) {
+function page({ title, description, image, url, largeImage, plain }) {
+  // `plain` suppresses the unfurl image card entirely — used by the automated
+  // X "Full analysis" reply, where the parent tweet already carries the card
+  // image and a second big card in the thread is just redundant. Everywhere
+  // else (iMessage / Slack / manual shares) keeps the rich card.
+  const imageMeta = plain
+    ? ""
+    : `\n<meta property="og:image" content="${esc(image)}">
+<meta name="twitter:card" content="${largeImage ? "summary_large_image" : "summary"}">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(description)}">
+<meta name="twitter:image" content="${esc(image)}">`;
   // Humans get meta-refreshed to the store; crawlers read the OG tags and
   // ignore the refresh. The visible body is the brief flash a human sees.
   return `<!DOCTYPE html>
@@ -94,12 +105,7 @@ function page({ title, description, image, url, largeImage }) {
 <meta property="og:site_name" content="ddbx">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
-<meta property="og:url" content="${esc(url)}">
-<meta property="og:image" content="${esc(image)}">
-<meta name="twitter:card" content="${largeImage ? "summary_large_image" : "summary"}">
-<meta name="twitter:title" content="${esc(title)}">
-<meta name="twitter:description" content="${esc(description)}">
-<meta name="twitter:image" content="${esc(image)}">
+<meta property="og:url" content="${esc(url)}">${imageMeta}
 <meta http-equiv="refresh" content="0; url=${esc(APP_STORE_URL)}">
 <style>
   :root { color-scheme: light dark; }
@@ -138,6 +144,8 @@ export async function onRequestGet(context) {
   const { params, request } = context;
   const id = params.id;
   const url = `https://ddbx.uk/t/${id}`;
+  // `?card=plain` → suppress the unfurl image (the automated X reply uses it).
+  const plain = new URL(request.url).searchParams.get("card") === "plain";
   const headers = {
     "content-type": "text/html; charset=utf-8",
     "cache-control": "public, s-maxage=3600, max-age=600",
@@ -155,7 +163,7 @@ export async function onRequestGet(context) {
     // to the company logo / default image on any failure, so this is always safe.
     const image = cardImage(id);
     return new Response(
-      page({ title: meta.title, description: meta.description, image, url, largeImage: true }),
+      page({ title: meta.title, description: meta.description, image, url, largeImage: true, plain }),
       { headers }
     );
   } catch {
