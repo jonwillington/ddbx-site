@@ -77,8 +77,8 @@ export const MARKETS: MarketRegistryEntry[] = [
     id: "usg",
     code: "USG",
     label: "Congress",
-    route: "/directors",
-    canonicalRoute: "/directors",
+    route: "/congress",
+    canonicalRoute: "/congress",
     Flag: US,
     region: "north-america",
     config: CongressMarket as MarketConfig,
@@ -108,6 +108,9 @@ export const MARKETS: MarketRegistryEntry[] = [
 const MARKET_HOST_BY_ID: Record<string, string> = {
   uk: "ddbx.uk",
   us: "ddbx.us",
+  // Congress lives on the US domain at /congress (the US Form 4 market owns
+  // the ddbx.us root). Clicking it from any other domain crosses over.
+  usg: "ddbx.us",
   se: "ddbx.eu",
   nl: "ddbx.eu",
 };
@@ -202,6 +205,16 @@ export function marketForPath(
     return MARKETS.find((m) => m.id === "se") ?? uk;
   if (pathname === "/nl" || pathname.startsWith("/nl/"))
     return MARKETS.find((m) => m.id === "nl") ?? uk;
+  // Congress: the canonical /congress (and the legacy /directors exact path).
+  // `/directors/:id` is a UK director profile, so only the exact /directors
+  // path maps to Congress here. Checked before the host default so it wins on
+  // ddbx.us (whose root is the US Form 4 market).
+  if (
+    pathname === "/congress" ||
+    pathname.startsWith("/congress/") ||
+    pathname === "/directors"
+  )
+    return MARKETS.find((m) => m.id === "usg") ?? uk;
 
   if (host && HOST_DEFAULT_MARKET[host]) {
     return byId(HOST_DEFAULT_MARKET[host]) ?? uk;
