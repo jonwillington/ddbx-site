@@ -24,6 +24,9 @@ export function MarketFiltersSheet({
   heroFilterId,
   onHeroFilterChange,
   showStrength,
+  extraFilters,
+  extraFilterValues,
+  onExtraFilterChange,
   trailing,
 }: {
   viewMode: MarketViewMode;
@@ -34,6 +37,9 @@ export function MarketFiltersSheet({
   heroFilterId?: string | null;
   onHeroFilterChange?: (id: string) => void;
   showStrength: boolean;
+  extraFilters?: { id: string; label: string; options: FilterSelectOption[] }[];
+  extraFilterValues?: Record<string, string>;
+  onExtraFilterChange?: (filterId: string, value: string) => void;
   trailing?: ReactNode;
 }) {
   const strengthValue = heroFilterId ?? heroFilters?.[0]?.id ?? "";
@@ -42,7 +48,11 @@ export function MarketFiltersSheet({
   const hasActiveFilter =
     viewMode !== "chronological" ||
     (signalFilter !== undefined && signalFilter !== "signal") ||
-    (showStrength && !!heroFilters && strengthValue !== heroFilters[0]?.id);
+    (showStrength && !!heroFilters && strengthValue !== heroFilters[0]?.id) ||
+    (extraFilters ?? []).some(
+      (ef) =>
+        (extraFilterValues?.[ef.id] ?? ef.options[0]?.id) !== ef.options[0]?.id,
+    );
 
   return (
     <Drawer.Root>
@@ -104,6 +114,16 @@ export function MarketFiltersSheet({
                 />
               </Field>
             )}
+
+            {extraFilters?.map((ef) => (
+              <Field key={ef.id} label={ef.label}>
+                <Segmented
+                  options={ef.options}
+                  value={extraFilterValues?.[ef.id] ?? ef.options[0]?.id ?? ""}
+                  onChange={(id) => onExtraFilterChange?.(ef.id, id)}
+                />
+              </Field>
+            ))}
 
             {trailing && (
               <Field label="Performance">

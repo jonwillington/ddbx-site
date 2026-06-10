@@ -126,6 +126,15 @@ export function MarketPage<W>({
   const [signalFilter, setSignalFilter] = useState<SignalFilterValue>(
     config.defaultSignalFilter ?? "signal",
   );
+  /** Values for config-driven extra filter axes (e.g. Congress party), keyed
+   *  by filter id. Seeded to each filter's "show everything" default. */
+  const [extraFilterValues, setExtraFilterValues] = useState<
+    Record<string, string>
+  >(() =>
+    Object.fromEntries(
+      (config.extraFilters ?? []).map((ef) => [ef.id, ef.defaultValue]),
+    ),
+  );
   /** When non-null, the daily-summary sheet is open for this date. URL-backed
    *  (`?day=YYYY-MM-DD`) so it deep-links and is tracked in GA. */
   const [openSummaryDate, setOpenSummaryDate] = useUrlParam("day");
@@ -508,8 +517,24 @@ export function MarketPage<W>({
       base = base.filter(heroPredicate);
     }
 
+    // Always-visible config-driven extra axes (e.g. Congress party). Skipped
+    // when the value is the filter's "show everything" default.
+    for (const ef of config.extraFilters ?? []) {
+      const value = extraFilterValues[ef.id] ?? ef.defaultValue;
+      if (value !== ef.defaultValue) {
+        base = base.filter((d) => ef.predicate(value, d));
+      }
+    }
+
     return base;
-  }, [searchedDealings, heroPredicate, signalFilter, config.isSignal]);
+  }, [
+    searchedDealings,
+    heroPredicate,
+    signalFilter,
+    config.isSignal,
+    config.extraFilters,
+    extraFilterValues,
+  ]);
 
   const todayIso = useMemo(
     () => todayKeyIso(config.session?.timeZone),
@@ -928,6 +953,7 @@ export function MarketPage<W>({
           insiderName={group.insiderName}
           insiderPhotoUrl={group.insiderPhotoUrl}
           insiderRole={group.insiderRole}
+          party={group.party}
           signalCount={group.dealings.filter((d) => d.triageVerdict === "promising" || d.triageVerdict === "maybe").length}
           totalValueLabel={
             group.totalValue != null
@@ -1146,6 +1172,12 @@ export function MarketPage<W>({
             className="sticky top-[64px] z-20 bg-[#faf7f2] dark:bg-surface rounded-t-xl border-b border-[#e8e0d5]/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
           >
             <MarketFilterBar
+              extraFilterValues={extraFilterValues}
+              extraFilters={config.extraFilters?.map((ef) => ({
+                id: ef.id,
+                label: ef.label,
+                options: ef.options,
+              }))}
               heroFilterId={heroFilterId}
               heroFilters={config.heroFilters?.map((f) => ({
                 id: f.id,
@@ -1155,6 +1187,9 @@ export function MarketPage<W>({
               signalFilter={signalFilter}
               trailing={chartModeToggle}
               viewMode={viewMode}
+              onExtraFilterChange={(id, value) =>
+                setExtraFilterValues((prev) => ({ ...prev, [id]: value }))
+              }
               onHeroFilterChange={setHeroFilterId}
               onSearch={setSearch}
               onSignalFilterChange={setSignalFilter}

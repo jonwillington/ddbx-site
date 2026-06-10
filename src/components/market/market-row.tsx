@@ -16,6 +16,7 @@ import {
 import { Skeleton } from "@/components/skeleton";
 import { CompanyLogo } from "@/components/company-logo";
 import { ClusterChip } from "@/components/cluster-chip";
+import { PartyChip } from "@/components/party-chip";
 
 /** Column headers above the row list. `hideDate` matches the per-section
  *  Today cluster which gets its own date heading. The Performance column
@@ -516,6 +517,7 @@ export function MemberClusterRow({
   insiderName,
   insiderRole,
   insiderPhotoUrl,
+  party,
   count,
   signalCount = 0,
   totalValueLabel,
@@ -526,6 +528,8 @@ export function MemberClusterRow({
   insiderName: string;
   insiderRole?: string;
   insiderPhotoUrl?: string;
+  /** Political party ("D" | "R" | "I"), shown as a chip beside the name. */
+  party?: string;
   count: number;
   /** How many of the member's buys cleared the signal floor (promising|maybe) —
    *  shown as a chip so the collapsed row still tells you there's something. */
@@ -566,6 +570,7 @@ export function MemberClusterRow({
           <div className="flex-1 min-w-0">
             <div className="flex items-center min-w-0">
               <span className="text-[13px] font-semibold truncate">{insiderName}</span>
+              <PartyChip className="ml-2" party={party} />
               <SignalChip />
             </div>
             <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
@@ -592,6 +597,7 @@ export function MemberClusterRow({
             <div className="flex-1 min-w-0">
               <div className="flex items-center min-w-0">
                 <span className="text-[13px] font-semibold truncate leading-tight">{insiderName}</span>
+                <PartyChip className="ml-2" party={party} />
                 <SignalChip />
               </div>
               <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>

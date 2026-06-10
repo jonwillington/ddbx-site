@@ -10,6 +10,7 @@ import type { PriceFormat } from "@/components/position-card";
 
 import { api } from "@/lib/api";
 import { RatingBadge } from "@/components/rating-badge";
+import { PartyChip } from "@/components/party-chip";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -63,6 +64,7 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
     insiderName: d.reporter.name,
     insiderRole: partyState(d.reporter) || (d.reporter.chamber === "senate" ? "Senate" : "House"),
     insiderPhotoUrl: d.reporter.photo_url,
+    party: d.reporter.party,
     disclosedDate: d.disclosed_date,
     tradeDate: d.trade_date,
     isPurchase: buy,
@@ -85,15 +87,21 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
 
 /* ─── Slot components ────────────────────────────────────────────────── */
 
-// Options marker for the name column — same shape/size as the ClusterChip
-// (rounded-md border, px-2 py-0.5, text-[11px]) so the two read as siblings,
-// with a violet tint to keep the "leveraged" signal distinct.
+// Name-column chips — party (Dem/Rep/Ind) always, plus an "Options" marker for
+// leveraged buys. Same rounded-md/px-2/text-[11px] shape as the ClusterChip so
+// they read as siblings; the options chip keeps a violet tint to stay distinct.
 function CongressRowNameBadge({ dealing }: { dealing: MarketDealing<GovDealing> }) {
-  if (dealing.raw.asset_type !== "option") return null;
+  const isOption = dealing.raw.asset_type === "option";
+  if (!dealing.party && !isOption) return null;
   return (
-    <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-600 dark:text-violet-300">
-      Options
-    </span>
+    <>
+      <PartyChip party={dealing.party} />
+      {isOption && (
+        <span className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-600 dark:text-violet-300">
+          Options
+        </span>
+      )}
+    </>
   );
 }
 
@@ -131,7 +139,10 @@ function CongressDetailBody({ dealing }: { dealing: MarketDealing<GovDealing> })
           </div>
         )}
         <div>
-          <div className="text-lg font-semibold">{r.name}</div>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-semibold">{r.name}</span>
+            <PartyChip party={r.party} />
+          </div>
           <div className="text-sm text-foreground/60">
             {partyState(r)} · {r.chamber === "senate" ? "Senate" : "House"}
           </div>
@@ -294,6 +305,23 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   isSignal: isGovSignal,
   isRowMuted: (d) => d.triageVerdict === "skip",
   isSkipped: (d) => d.triageVerdict === "skip",
+  // Party axis — Congress-only. Always visible in the filter bar; "all" applies
+  // no narrowing. Unresolved filers (no roster match) have no party and drop
+  // out of the D / R views.
+  extraFilters: [
+    {
+      id: "party",
+      label: "Party",
+      defaultValue: "all",
+      options: [
+        { id: "all", label: "All parties" },
+        { id: "D", label: "Democrat" },
+        { id: "R", label: "Republican" },
+        { id: "I", label: "Independent" },
+      ],
+      predicate: (value, d) => d.party === value,
+    },
+  ],
   // Group by member, not company — for Congress the person is the entity of
   // interest (one member often buys many tickers in a day). Portrait anchors
   // the group, connected to the company rows they bought.

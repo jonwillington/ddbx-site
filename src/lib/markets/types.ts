@@ -42,6 +42,10 @@ export interface MarketDealing<W = unknown> {
   /** Optional insider avatar (member portrait for Congress). Person-grouped
    *  views anchor the group on it; falls back to initials when absent. */
   insiderPhotoUrl?: string;
+  /** Optional political party ("D" | "R" | "I"), for markets where the actor
+   *  has one (Congress). Drives the party chip + party filter. Undefined when
+   *  unknown / not applicable. */
+  party?: string;
 
   /** ISO `YYYY-MM-DD…` strings — disclosure on the regulator side. Used for
    *  month/day bucketing and "today" detection. */
@@ -155,6 +159,23 @@ export interface HeroFilter<W = unknown> {
   id: string;
   label: string;
   predicate: (d: MarketDealing<W>) => boolean;
+}
+
+/** A config-driven extra filter axis (beyond Signal/All + Strength), rendered
+ *  as an always-visible dropdown in the filter bar. The first option should be
+ *  the "all / no narrowing" value (matched against `defaultValue`). The
+ *  predicate returns true to KEEP a dealing; it's skipped entirely when the
+ *  active value equals `defaultValue`. Congress supplies one for party. */
+export interface MarketExtraFilter<W = unknown> {
+  id: string;
+  /** Short control label, e.g. "Party". */
+  label: string;
+  /** Dropdown options — `id` is the selected value, `label` the display text.
+   *  Include the "show everything" option (its id === `defaultValue`). */
+  options: { id: string; label: string }[];
+  /** The "show everything" option id (no predicate applied when selected). */
+  defaultValue: string;
+  predicate: (value: string, dealing: MarketDealing<W>) => boolean;
 }
 
 export type SignalFilterValue = "signal" | "all";
@@ -339,6 +360,12 @@ export interface MarketConfig<W = unknown> {
   heroFilters?: HeroFilter<W>[];
   /** Default-selected hero filter id; falls back to heroFilters[0]?.id. */
   defaultHeroFilter?: string;
+
+  /** Config-driven extra filter axes, rendered as always-visible dropdowns in
+   *  the filter bar (unlike Strength, which is gated on Signal). Congress uses
+   *  one for party (D / R / All). Each holds its own value; the predicate runs
+   *  in the shared filteredDealings memo and returns true to KEEP the row. */
+  extraFilters?: MarketExtraFilter<W>[];
 
   /** Default value for the top-level "Filter: Signal / All" dropdown. All four
    *  markets currently set this to "all" so the reader sees every disclosure

@@ -58,6 +58,9 @@ export function MarketFilterBar({
   heroFilters,
   heroFilterId,
   onHeroFilterChange,
+  extraFilters,
+  extraFilterValues,
+  onExtraFilterChange,
   trailing,
 }: {
   viewMode: MarketViewMode;
@@ -70,6 +73,10 @@ export function MarketFilterBar({
   heroFilters?: FilterSelectOption[];
   heroFilterId?: string | null;
   onHeroFilterChange?: (id: string) => void;
+  /** Always-visible config-driven extra filter axes (e.g. Congress party). */
+  extraFilters?: { id: string; label: string; options: FilterSelectOption[] }[];
+  extraFilterValues?: Record<string, string>;
+  onExtraFilterChange?: (filterId: string, value: string) => void;
   /** Optional element rendered ml-auto on the right — currently used for the
    *  chart-mode toggle. */
   trailing?: ReactNode;
@@ -115,18 +122,30 @@ export function MarketFilterBar({
             onChange={onHeroFilterChange!}
           />
         )}
+        {extraFilters?.map((ef) => (
+          <FilterSelect
+            key={ef.id}
+            label={ef.label}
+            options={ef.options}
+            value={extraFilterValues?.[ef.id] ?? ef.options[0]?.id ?? ""}
+            onChange={(id) => onExtraFilterChange?.(ef.id, id)}
+          />
+        ))}
         {trailing && <div className="ml-auto">{trailing}</div>}
       </div>
 
       {/* Mobile: one button opens a bottom sheet holding every filter. */}
       <div className="xl:hidden shrink-0">
         <MarketFiltersSheet
+          extraFilterValues={extraFilterValues}
+          extraFilters={extraFilters}
           heroFilterId={heroFilterId}
           heroFilters={heroFilters}
           showStrength={showStrength}
           signalFilter={signalFilter}
           trailing={trailing}
           viewMode={viewMode}
+          onExtraFilterChange={onExtraFilterChange}
           onHeroFilterChange={onHeroFilterChange}
           onSignalFilterChange={onSignalFilterChange}
           onViewMode={onViewMode}
