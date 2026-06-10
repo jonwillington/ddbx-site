@@ -338,6 +338,18 @@ export const UkMarket: MarketConfig<Dealing> = {
   normalizeLivePrice: (close_pence) => close_pence,
   benchmarkTicker: FTSE_TICKER,
   benchmarkLabel: FTSE_LABEL,
+  columnHelp: {
+    disclosed:
+      "Date the dealing was announced to the market via an RNS filing.",
+    ticker: "London Stock Exchange ticker (e.g. BARC.L).",
+    company:
+      "The company and the director (or other PDMR) who dealt in its shares.",
+    value: "Total value of the trade in GBP.",
+    trend: "The share price's 1-year trend, with the trade date marked.",
+    performance:
+      "Share-price return since the trade — or alpha vs the FTSE All-Share when 'vs FTSE' is selected.",
+    action: "Our analyst rating: significant, noteworthy, or skipped.",
+  },
   formatTickerDisplay: (ticker) => ticker.replace(/\.L$/, ""),
   isRowMuted: (d) => !d.rating || !d.isPurchase,
   // Single view — UK doesn't have pipeline stages the way US does, so the

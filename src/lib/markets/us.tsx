@@ -635,6 +635,18 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   normalizeLivePrice: (close_pence) => close_pence / 100,
   benchmarkTicker: SPY_TICKER,
   benchmarkLabel: SPY_LABEL,
+  columnHelp: {
+    disclosed:
+      "Date the Form 4 was filed with the SEC — insiders must file within 2 business days of the trade.",
+    ticker: "US exchange ticker symbol.",
+    company:
+      "The issuer and the insider — officer, director, or 10% owner — who bought.",
+    value: "Total value of the open-market purchase in USD.",
+    trend: "The stock's 1-year price trend, with the trade date marked.",
+    performance:
+      "Stock return since the trade — or alpha vs the S&P 500 when that view is selected.",
+    action: "Triage verdict and analyst rating for the filing.",
+  },
   formatTickerDisplay: (ticker) => ticker,
   isRowMuted: (d) => !d.rating || !d.isPurchase,
   isSkipped: (d) => !d.rating,

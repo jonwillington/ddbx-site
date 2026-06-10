@@ -1,9 +1,14 @@
 import type { ComponentType, ReactNode } from "react";
 import type { PriceFormat } from "@/components/position-card";
-import type { ChartMode, MarketDealing } from "@/lib/markets/types";
+import type {
+  ChartMode,
+  MarketColumnKey,
+  MarketDealing,
+} from "@/lib/markets/types";
 
 import { useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon } from "@heroicons/react/20/solid";
 
 import { MarketRowSpark, type SparkBar } from "./market-row-spark";
 import {
@@ -17,6 +22,35 @@ import { Skeleton } from "@/components/skeleton";
 import { CompanyLogo } from "@/components/company-logo";
 import { ClusterChip } from "@/components/cluster-chip";
 import { PartyChip } from "@/components/party-chip";
+import { Tooltip } from "@/components/tooltip";
+
+/** Generic fallbacks for the table-header tooltips. A market overrides any of
+ *  these via MarketConfig.columnHelp; anything it leaves unset uses these so
+ *  every header still explains itself. */
+const DEFAULT_COLUMN_HELP: Record<MarketColumnKey, string> = {
+  disclosed: "The date this trade was disclosed to the public.",
+  ticker: "The stock's exchange ticker symbol.",
+  company: "The company traded and the insider who traded it.",
+  value: "Approximate size of the purchase.",
+  trend: "The share price's recent trend around the trade.",
+  performance:
+    "Price change since the trade — or the return vs the market benchmark when that view is selected.",
+  action: "Our signal rating for this trade.",
+};
+
+/** A column header label with an info tooltip explaining what the column means
+ *  for the active market. */
+function HeaderLabel({ help, children }: { help: string; children: ReactNode }) {
+  return (
+    <Tooltip
+      className="inline-flex items-center gap-1 cursor-help align-middle"
+      content={help}
+    >
+      {children}
+      <InformationCircleIcon className="h-3 w-3 shrink-0 text-muted/40" />
+    </Tooltip>
+  );
+}
 
 /** Column headers above the row list. `hideDate` matches the per-section
  *  Today cluster which gets its own date heading. The Performance column
@@ -28,6 +62,7 @@ export function MarketRowHeader({
   chartMode,
   inset = false,
   valueColumnClass = "w-24",
+  columnHelp,
 }: {
   hideDate?: boolean;
   benchmarkLabel: string;
@@ -37,9 +72,12 @@ export function MarketRowHeader({
   inset?: boolean;
   /** Tailwind width class for the Value column — wider for SEK. */
   valueColumnClass?: string;
+  /** Per-market header tooltip copy; unset columns fall back to defaults. */
+  columnHelp?: Partial<Record<MarketColumnKey, string>>;
 }) {
   const perfLabel =
     chartMode.axis === "market" ? `vs ${benchmarkLabel}` : "Return";
+  const help = { ...DEFAULT_COLUMN_HELP, ...columnHelp };
 
   return (
     <div
@@ -47,27 +85,29 @@ export function MarketRowHeader({
     >
       {!hideDate && (
         <div className="w-28 shrink-0 px-3 py-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
-          Disclosed
+          <HeaderLabel help={help.disclosed}>Disclosed</HeaderLabel>
         </div>
       )}
       <div className="w-20 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
-        Ticker
+        <HeaderLabel help={help.ticker}>Ticker</HeaderLabel>
       </div>
       <div className="flex-1 min-w-0 px-3 py-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
-        Company / Insider
+        <HeaderLabel help={help.company}>Company / Insider</HeaderLabel>
       </div>
       <div
         className={`${valueColumnClass} shrink-0 px-3 py-1.5 text-right border-r border-black/[0.06] dark:border-white/[0.06]`}
       >
-        Value
+        <HeaderLabel help={help.value}>Value</HeaderLabel>
       </div>
       <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
-        Trend
+        <HeaderLabel help={help.trend}>Trend</HeaderLabel>
       </div>
       <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
-        {perfLabel}
+        <HeaderLabel help={help.performance}>{perfLabel}</HeaderLabel>
       </div>
-      <div className="w-40 shrink-0 px-2 py-1.5 text-center">Action</div>
+      <div className="w-40 shrink-0 px-2 py-1.5 text-center">
+        <HeaderLabel help={help.action}>Action</HeaderLabel>
+      </div>
     </div>
   );
 }

@@ -557,6 +557,12 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   // display tickers and gets prices back keyed the same way.
   benchmarkTicker: "^OMX",
   benchmarkLabel: "OMXS30",
+  columnHelp: {
+    disclosed:
+      "Date the transaction was published in the Finansinspektionen (FI) insider register.",
+    company: "The company and the insider (PDMR) who dealt in its shares.",
+    value: "Approximate value of the transaction in SEK.",
+  },
   formatTickerDisplay: (ticker) => ticker,
   isRowMuted: (d) => !isEuSignal(d),
   enableLivePrices: true,

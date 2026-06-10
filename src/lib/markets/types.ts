@@ -25,6 +25,17 @@ import type { ClusterInfo, LivePerformance, Rating } from "@/types/ddbx";
  *  hero / today card just renders whatever the adapter produces. */
 export type Tone = "buy" | "sell" | "plan" | "grant" | "exercise" | "neutral";
 
+/** Columns in the shared chronological table — keys for per-market header
+ *  tooltip copy (MarketConfig.columnHelp). */
+export type MarketColumnKey =
+  | "disclosed"
+  | "ticker"
+  | "company"
+  | "value"
+  | "trend"
+  | "performance"
+  | "action";
+
 /** The shared row surface. One per logical card in the list — adapters do
  *  whatever bucketing they need (US groups Form 4 legs by filing_id; UK is
  *  1:1 with Dealing). `raw` is the original wire row, kept so slot
@@ -276,6 +287,13 @@ export interface MarketConfig<W = unknown> {
   benchmarkTicker: string;
   /** Short label rendered in row headers, hero card, etc. */
   benchmarkLabel: string;
+
+  /** Per-column header tooltip copy. The shared table header shows an info
+   *  icon on each column whose text explains what it means for THIS market —
+   *  a UK "Value" is GBP consideration, a Congress "Value" is a disclosed band,
+   *  a US "Disclosed" is the Form 4 file date, etc. Any column left unset falls
+   *  back to a generic description (see DEFAULT_COLUMN_HELP in market-row). */
+  columnHelp?: Partial<Record<MarketColumnKey, string>>;
 
   /** View tabs to show (signal / interesting / all for US;
    *  significant / noteworthy / … for UK). */

@@ -32,6 +32,18 @@ function formatBand(min: number | null, max: number | null): string {
   return max == null ? `over ${k(min)}` : `${k(min)}–${k(max)}`;
 }
 
+function compactCommitteeName(name: string): string {
+  return name
+    .replace("House Committee on ", "")
+    .replace("Permanent Select Committee on ", "");
+}
+
+function reporterCommittees(d: GovDealing): string[] {
+  return (d.reporter.committees ?? [])
+    .filter((c) => c.includes("Committee"))
+    .map(compactCommitteeName);
+}
+
 const US_STATES: Record<string, string> = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
   CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
@@ -250,6 +262,7 @@ function CongressDetailBody({
   allDealings?: MarketDealing<GovDealing>[];
 }) {
   const d = dealing.raw;
+  const committees = reporterCommittees(d);
   // "Part of a wider filing" = the member disclosed several positions in the
   // same PTR (a portfolio rebalance, say). We detect it by counting sibling
   // rows that share this filing_id in the loaded list; a lone row is a focused,
@@ -356,6 +369,31 @@ function CongressDetailBody({
         </section>
       )}
 
+      {(d.triage?.reason || dealing.sector || committees.length > 0) && (
+        <section className="space-y-2 rounded-lg border border-foreground/10 bg-foreground/[0.02] p-3">
+          <h3 className="text-sm font-semibold">Context</h3>
+          {d.triage?.reason && (
+            <p className="text-sm text-foreground/75">{d.triage.reason}</p>
+          )}
+          <div className="space-y-1.5">
+            {dealing.sector && (
+              <div className="text-xs text-foreground/60">
+                <span className="uppercase tracking-wide">Industry:</span>{" "}
+                <span className="text-foreground/75">{dealing.sector}</span>
+              </div>
+            )}
+            {committees.length > 0 && (
+              <div className="text-xs text-foreground/60">
+                <span className="uppercase tracking-wide">Committees:</span>{" "}
+                <span className="text-foreground/75">
+                  {committees.join(" · ")}
+                </span>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       <div className="text-xs text-foreground/45">
         Amounts are disclosed as ranges (STOCK Act). ·{" "}
         <a className="underline underline-offset-2 hover:text-foreground/70" href={d.ptr_link} rel="noreferrer" target="_blank">
@@ -369,22 +407,13 @@ function CongressDetailBody({
 /** Raw-filing facts folded into the drawer's standard metadata grid (see
  *  MarketConfig.detailFields). The disclosed band is the primary money figure —
  *  the STOCK Act discloses ranges, so we show the bracket rather than the
- *  fabricated midpoint. Committees come along too so the jurisdiction context
- *  the rating leans on is one glance away. */
+ *  fabricated midpoint. Keep this grid to the filing facts only; contextual
+ *  signal (industry / committees / triage reason) lives in the body section. */
 function congressDetailFields(dealing: MarketDealing<GovDealing>) {
   const d = dealing.raw;
-  const committees = (d.reporter.committees ?? [])
-    .filter((c) => c.includes("Committee"))
-    .map((c) =>
-      c
-        .replace("House Committee on ", "")
-        .replace("Permanent Select Committee on ", ""),
-    );
 
   return [
-    { label: "Action", value: dealing.actionLabel },
     { label: "Disclosed range", value: formatBand(d.amount_min, d.amount_max) },
-    dealing.sector ? { label: "Industry", value: dealing.sector } : null,
     {
       label: "Security",
       value: `${d.company}${d.ticker ? ` · ${d.ticker}` : ""}`,
@@ -395,9 +424,6 @@ function congressDetailFields(dealing: MarketDealing<GovDealing>) {
       label: "Disclosed",
       value: `${d.disclosed_date}${d.is_late ? " (late)" : ""}`,
     },
-    committees.length > 0
-      ? { label: "Committees", value: committees.join(" · ") }
-      : null,
   ];
 }
 
@@ -443,6 +469,20 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   enableLogos: true,
   benchmarkTicker: SPY_TICKER,
   benchmarkLabel: SPY_LABEL,
+  columnHelp: {
+    disclosed:
+      "Date the Periodic Transaction Report was filed. The STOCK Act allows up to ~45 days after the trade.",
+    ticker: "US exchange ticker symbol.",
+    company:
+      "The company and the member of Congress (or their spouse) who bought it.",
+    value:
+      "Disclosed amount band — the STOCK Act reports ranges, not exact figures.",
+    trend: "The stock's 1-year price trend, with the trade date marked.",
+    performance:
+      "Stock return since the trade — or alpha vs the S&P 500 when that view is selected.",
+    action:
+      "Signal rating from committee-jurisdiction overlap, trade size, and cross-member clustering.",
+  },
   formatTickerDisplay: (t) => t,
   views: [{ id: "all", label: "All" }],
   defaultView: "all",

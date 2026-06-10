@@ -1125,6 +1125,7 @@ export function MarketPage<W>({
                 inset
                 benchmarkLabel={config.benchmarkLabel}
                 chartMode={chartMode}
+                columnHelp={config.columnHelp}
                 valueColumnClass={config.priceFormat.valueColumnClass}
               />
               {/* Contrast tray + white card mirrors the month/day cards in the
@@ -1156,6 +1157,7 @@ export function MarketPage<W>({
             <MarketRowHeader
               benchmarkLabel={config.benchmarkLabel}
               chartMode={chartMode}
+              columnHelp={config.columnHelp}
               valueColumnClass={config.priceFormat.valueColumnClass}
             />
             <div className="divide-y divide-black/[0.06] dark:divide-separator">
@@ -1214,6 +1216,7 @@ export function MarketPage<W>({
             <MarketRowHeader
               benchmarkLabel={config.benchmarkLabel}
               chartMode={chartMode}
+              columnHelp={config.columnHelp}
               valueColumnClass={config.priceFormat.valueColumnClass}
             />
             <div className="divide-y divide-black/[0.06] dark:divide-separator overflow-hidden rounded-b-xl">
@@ -1317,6 +1320,7 @@ export function MarketPage<W>({
                         inset
                         benchmarkLabel={config.benchmarkLabel}
                         chartMode={chartMode}
+                        columnHelp={config.columnHelp}
                         valueColumnClass={config.priceFormat.valueColumnClass}
                       />
                       <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">

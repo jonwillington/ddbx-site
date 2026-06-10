@@ -474,6 +474,13 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   // we get a price source.
   benchmarkTicker: "^AEX",
   benchmarkLabel: "AEX",
+  columnHelp: {
+    disclosed: "Date the transaction was published in the AFM insider register.",
+    company: "The company and the PDMR (insider) who dealt in its shares.",
+    value: "Approximate value of the transaction in EUR.",
+    performance:
+      "Share-price return since the trade — or alpha vs the AEX when that view is selected.",
+  },
   formatTickerDisplay: (ticker) => ticker,
   isRowMuted: (d) => !isEuSignal(d),
   enableLivePrices: true,

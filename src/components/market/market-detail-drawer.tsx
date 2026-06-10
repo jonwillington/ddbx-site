@@ -290,7 +290,10 @@ export function MarketDetailDrawer<W>({
                   className="h-full overflow-y-auto overflow-x-hidden overscroll-contain"
                   onScroll={recompute}
                 >
-                  <div ref={contentRef} className="p-5 md:p-8 space-y-6">
+                  <div
+                    ref={contentRef}
+                    className="px-5 pb-5 pt-1 md:px-8 md:pb-8 md:pt-2 space-y-6"
+                  >
                     {/* Company on top, the person who made the buy beneath,
                         tied together by an org-chart connector so the header
                         reads "this purchase was made by this person". */}
@@ -321,17 +324,23 @@ export function MarketDetailDrawer<W>({
                           />
                         </div>
                         <div className="flex items-center gap-3 py-2">
-                          <div className="relative shrink-0">
-                            <InsiderAvatar
-                              name={active.insiderName}
-                              photoUrl={active.insiderPhotoUrl}
-                              size={44}
-                            />
-                            <span
-                              aria-hidden
-                              className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-[#5a4128]/15 dark:ring-[#ad9479]/20"
-                            />
-                          </div>
+                          {/* Only show a portrait when we actually have one
+                              (Congress members). Other markets have no insider
+                              images, so we skip the placeholder initials bubble
+                              and let the connector run straight to the name. */}
+                          {active.insiderPhotoUrl && (
+                            <div className="relative shrink-0">
+                              <InsiderAvatar
+                                name={active.insiderName}
+                                photoUrl={active.insiderPhotoUrl}
+                                size={44}
+                              />
+                              <span
+                                aria-hidden
+                                className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-[#5a4128]/15 dark:ring-[#ad9479]/20"
+                              />
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <div className="text-[10px] uppercase tracking-wide text-muted mb-0.5">
                               {insiderLabel}
