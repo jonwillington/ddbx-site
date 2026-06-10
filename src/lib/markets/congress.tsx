@@ -322,6 +322,10 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   views: [{ id: "all", label: "All" }],
   defaultView: "all",
   defaultSignalFilter: "all",
+  // PTRs disclose weeks late, so "today" is almost always empty — the big
+  // Today hero is noise here. Today's filings (when any) fall into the month
+  // list as a normal day instead.
+  hideTodayHero: true,
   isSignal: isGovSignal,
   isRowMuted: (d) => d.triageVerdict === "skip",
   isSkipped: (d) => d.triageVerdict === "skip",

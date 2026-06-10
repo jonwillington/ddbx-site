@@ -351,6 +351,10 @@ interface MarketRowProps<W> {
    *  return null when it has nothing to show. */
   RowNameBadge?: ComponentType<{ dealing: MarketDealing<W> }>;
   hideDate?: boolean;
+  /** Suppress the insider name/role subtitle — used for child rows inside a
+   *  person-grouped cluster, where every row is the same member shown on the
+   *  master above. Cluster + name-badge chips still render. */
+  hideInsider?: boolean;
   isMuted?: (dealing: MarketDealing<W>) => boolean;
   formatTickerDisplay?: (ticker: string) => string;
   locale?: string;
@@ -659,6 +663,7 @@ export function MarketRow<W>({
   chartMode,
   noPosteriorData = false,
   indent = false,
+  hideInsider = false,
 }: MarketRowProps<W>) {
   const showAlpha = chartMode.axis === "market";
   const muted = isMuted
@@ -739,9 +744,11 @@ export function MarketRow<W>({
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
               <ClusterChip cluster={dealing.cluster} />
               {RowNameBadge && <RowNameBadge dealing={dealing} />}
-              <span className="text-[11px] text-muted truncate">
-                {insiderLine}
-              </span>
+              {!hideInsider && (
+                <span className="text-[11px] text-muted truncate">
+                  {insiderLine}
+                </span>
+              )}
             </div>
           </div>
           <div className="shrink-0 text-sm font-semibold tabular-nums leading-tight text-right">
@@ -802,9 +809,11 @@ export function MarketRow<W>({
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
               <ClusterChip cluster={dealing.cluster} />
               {RowNameBadge && <RowNameBadge dealing={dealing} />}
-              <span className="text-[11px] text-muted truncate">
-                {insiderLine}
-              </span>
+              {!hideInsider && (
+                <span className="text-[11px] text-muted truncate">
+                  {insiderLine}
+                </span>
+              )}
             </div>
           </div>
         </div>

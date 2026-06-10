@@ -584,7 +584,10 @@ export function MarketPage<W>({
 
   const monthBuckets = useMemo(
     () =>
-      bucketByMonth(filteredDealings, todayIso, {
+      // When the Today hero is suppressed, pass an empty todayIso so
+      // bucketByMonth no longer holds today out — today's filings render as a
+      // normal day in the month list instead of vanishing with the hero.
+      bucketByMonth(filteredDealings, config.hideTodayHero ? "" : todayIso, {
         locale: config.locale,
         isSkipped: config.isSkipped,
         currentPriceOf: stockCurrentForDealing,
@@ -592,6 +595,7 @@ export function MarketPage<W>({
     [
       filteredDealings,
       todayIso,
+      config.hideTodayHero,
       config.locale,
       config.isSkipped,
       stockCurrentForDealing,
@@ -908,10 +912,11 @@ export function MarketPage<W>({
   // master indents its portrait past an expand chevron). Defaulted off so the
   // bare `.map(renderDayRow)` call sites — where map passes an index, not a
   // boolean — stay un-indented.
-  const renderRow = (d: MarketDealing<W>, indent = false) => (
+  const renderRow = (d: MarketDealing<W>, indent = false, hideInsider = false) => (
     <MarketRow
       key={d.key}
       hideDate
+      hideInsider={hideInsider}
       indent={indent}
       RowActionCell={config.RowActionCell}
       RowNameBadge={config.RowNameBadge}
@@ -961,7 +966,7 @@ export function MarketPage<W>({
               : "—"
           }
         >
-          {group.dealings.map((d) => renderRow(d, true))}
+          {group.dealings.map((d) => renderRow(d, true, true))}
         </MemberClusterRow>
       ));
     }
@@ -1075,7 +1080,9 @@ export function MarketPage<W>({
         {/* Today hero — large, dominant section. Replaces both the old
             mobile-only inline Today card AND the right-drawer "Today's
             filings" half so the page reads top-down with today front-and-
-            centre instead of tucked into a sidebar. */}
+            centre instead of tucked into a sidebar. Suppressed for low-volume
+            markets (Congress) that read better without it. */}
+        {!config.hideTodayHero && (
         <MarketTodayHero
           TodayEmpty={TodayEmptyComponent}
           fmt={config.priceFormat}
@@ -1100,13 +1107,14 @@ export function MarketPage<W>({
           todayIso={todayIso}
           onSelect={(d) => setSelectedKey(d.key)}
         />
+        )}
 
         {/* Today's skipped (muted) filings. The analysed ones surface as cards
             in the hero above; their low-signal tail renders here as ordinary
             table rows. Deliberately sits above the filter bar so it stays part
             of "Today" — always visible and never narrowed by the Signal /
             Strength controls, which govern only the historical table below. */}
-        {todaySkipped.length > 0 && (
+        {!config.hideTodayHero && todaySkipped.length > 0 && (
           <section className="animate-content-in">
             <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
               Also today · {todaySkipped.length} skipped

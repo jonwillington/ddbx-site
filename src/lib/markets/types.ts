@@ -367,6 +367,12 @@ export interface MarketConfig<W = unknown> {
    *  in the shared filteredDealings memo and returns true to KEEP the row. */
   extraFilters?: MarketExtraFilter<W>[];
 
+  /** Suppress the dominant "Today" hero (and its "Also today · N skipped"
+   *  block). Low-volume markets (Congress — PTRs disclose weeks late, so
+   *  "today" is usually empty) read better without it; today's filings, when
+   *  any, just fall into the chronological month list as a normal day. */
+  hideTodayHero?: boolean;
+
   /** Default value for the top-level "Filter: Signal / All" dropdown. All four
    *  markets currently set this to "all" so the reader sees every disclosure
    *  first and narrows to the curated Signal subset themselves. Ratingless
