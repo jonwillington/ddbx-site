@@ -509,6 +509,8 @@ export function MemberClusterRow({
   count,
   signalCount = 0,
   totalValueLabel,
+  aggReturnPct = null,
+  aggShowAlpha = false,
   children,
 }: {
   insiderName: string;
@@ -519,6 +521,13 @@ export function MemberClusterRow({
    *  shown as a chip so the collapsed row still tells you there's something. */
   signalCount?: number;
   totalValueLabel: string;
+  /** Value-weighted cumulative return across the member's trades — the
+   *  "whole basket" number shown on the collapsed master row. Null when no
+   *  legs have prices yet. */
+  aggReturnPct?: number | null;
+  /** True when aggReturnPct is alpha vs the benchmark (pp) rather than a raw
+   *  stock return — drives the badge suffix. */
+  aggShowAlpha?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false); // collapsed → one tidy row per member; expand for the buys + connector
@@ -551,7 +560,12 @@ export function MemberClusterRow({
             </div>
             <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
           </div>
-          <div className="shrink-0 text-sm font-semibold tabular-nums text-right">{totalValueLabel}</div>
+          <div className="shrink-0 flex flex-col items-end gap-0.5">
+            <span className="text-sm font-semibold tabular-nums">{totalValueLabel}</span>
+            {aggReturnPct != null && (
+              <DeltaBadge suffix={aggShowAlpha ? "pp" : undefined} value={aggReturnPct} />
+            )}
+          </div>
         </div>
 
         {/* ── Desktop (md+) — geometry matches MarketRow's columns ──
@@ -577,7 +591,13 @@ export function MemberClusterRow({
             <span className="text-sm font-semibold tabular-nums">{totalValueLabel}</span>
           </div>
           <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
-          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+            {aggReturnPct != null ? (
+              <DeltaBadge suffix={aggShowAlpha ? "pp" : undefined} value={aggReturnPct} />
+            ) : (
+              <span className="text-[11px] text-muted/50">—</span>
+            )}
+          </div>
           <div className="w-40 shrink-0 px-2 py-2.5" />
         </div>
       </button>

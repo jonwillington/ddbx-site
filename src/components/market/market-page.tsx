@@ -35,6 +35,7 @@ import { MarketTodayHero } from "./market-today-hero";
 import {
   bucketByMonth,
   compareByReturnDesc,
+  computeRowMetric,
   groupByCompany,
   groupByPerson,
   todayKeyIso,
@@ -707,6 +708,44 @@ export function MarketPage<W>({
       ) ?? undefined)
     : undefined;
 
+  // Cumulative return across a group of a member's trades — "how is the whole
+  // basket doing". Value-weighted by each buy's (approximate) dollar size so a
+  // $75k position counts more than an $8k one. Uses the same per-row metric as
+  // the children (raw return, or alpha on the vs-market axis) so the master
+  // row's number is directly comparable. Returns null when no priced legs.
+  const aggregateReturn = useCallback(
+    (group: MarketDealing<W>[]): number | null => {
+      const showAlpha = chartMode.axis === "market";
+      let weightSum = 0;
+      let acc = 0;
+
+      for (const d of group) {
+        const { stockPct, alpha } = computeRowMetric({
+          stockEntry: stockEntry(d),
+          stockCurrentMajor: stockCurrent(d.ticker),
+          benchmarkEntry: benchmarkEntry(d),
+          benchmarkCurrent,
+        });
+        const metric = showAlpha ? alpha : stockPct;
+        const weight = d.value ?? 0;
+
+        if (metric != null && weight > 0) {
+          acc += metric * weight;
+          weightSum += weight;
+        }
+      }
+
+      return weightSum > 0 ? acc / weightSum : null;
+    },
+    [
+      chartMode.axis,
+      stockEntry,
+      stockCurrent,
+      benchmarkEntry,
+      benchmarkCurrent,
+    ],
+  );
+
   const byGain = useMemo(() => {
     return filteredDealings
       .map((d) => {
@@ -849,6 +888,8 @@ export function MarketPage<W>({
       return groupByPerson(rows).map((group) => (
         <MemberClusterRow
           key={`person-${group.key}`}
+          aggReturnPct={aggregateReturn(group.dealings)}
+          aggShowAlpha={chartMode.axis === "market"}
           count={group.count}
           insiderName={group.insiderName}
           insiderPhotoUrl={group.insiderPhotoUrl}
