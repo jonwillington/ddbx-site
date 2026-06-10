@@ -38,6 +38,8 @@ import {
   computeRowMetric,
   groupByCompany,
   groupByPerson,
+  latestPricesAsOf,
+  shortDate,
   todayKeyIso,
 } from "./market-utils";
 
@@ -568,6 +570,14 @@ export function MarketPage<W>({
       config.isSkipped,
       stockCurrentForDealing,
     ],
+  );
+
+  // Freshness of the server-precomputed return badges — the latest close date
+  // across the loaded dealings' live-performance snapshots. Surfaced as a
+  // "Prices as of …" footer caption.
+  const pricesAsOf = useMemo(
+    () => latestPricesAsOf(filteredDealings),
+    [filteredDealings],
   );
 
   // First dated day-group that actually has analysed ("Significant") rows.
@@ -1323,6 +1333,12 @@ export function MarketPage<W>({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {pricesAsOf && (
+          <div className="text-center text-[11px] text-muted/70">
+            Prices as of {shortDate(pricesAsOf, config.locale)}
           </div>
         )}
 

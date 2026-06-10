@@ -398,6 +398,10 @@ export interface Dealing {
   triage?: { verdict: TriageVerdict; reason: string };
   analysis?: Analysis;
   performance?: PerformanceRow[];
+  /** Server-precomputed live return / alpha as of the latest cached close.
+   *  Lets the site render the row badge with no client price fetch. See
+   *  LivePerformance. */
+  live_performance?: LivePerformance | null;
   sector?: string | null;
   sector_normalized?: SectorNormalized | null;
   sic_codes?: string[] | null;
@@ -410,6 +414,31 @@ export interface PerformanceRow {
   horizon_days: 90 | 180 | 365 | 730;
   return_pct: number | null;
   as_of_date: string | null;
+}
+
+/** Server-precomputed "as of the latest cached close" performance, attached to
+ *  every dealing so consumers render the row's return / alpha badge instantly
+ *  from the dealings payload — no per-visitor /api/prices round-trips (which
+ *  used to fan out one request per ticker and hit Yahoo on cold cache). Both
+ *  anchors are provided so the consumer's trade-vs-disclosure toggle stays
+ *  client-side and free:
+ *   - `*_trade`     = measured from the execution price (or, for markets with
+ *                     no per-share fill price like Congress PTRs, the close on
+ *                     the trade date).
+ *   - `*_disclosed` = measured from the close on the disclosure date — the
+ *                     price a copycat could realistically have entered at.
+ *  `alpha_*` is the stock return minus the market benchmark's return over the
+ *  same window (FTSE All-Share for UK, S&P 500 for US / Congress). Values are
+ *  percentages (e.g. 12.3 = +12.3%); any field is null when the underlying
+ *  prices aren't cached yet. `as_of` is the ISO date of the latest close used
+ *  — consumers surface it as "Prices as of …". Recomputed every read, so it
+ *  tracks the 15-minute price-refresh cron with no extra storage. */
+export interface LivePerformance {
+  return_pct_trade: number | null;
+  return_pct_disclosed: number | null;
+  alpha_pct_trade: number | null;
+  alpha_pct_disclosed: number | null;
+  as_of: string | null;
 }
 
 export interface DirectorDetail extends DirectorSummary {
@@ -806,6 +835,10 @@ export interface UsDealing {
    *  copycat trader could have actually entered at, not the insider's
    *  trade-day fill. */
   disclosed_close?: number | null;
+  /** Server-precomputed live return / alpha as of the latest cached close.
+   *  See LivePerformance. For tranche-split filings this is per-leg; the site
+   *  reads it off the group's primary leg. */
+  live_performance?: LivePerformance | null;
   /** Post-transaction holding. Lets the product answer "did they sell out
    *  entirely?" — a stronger signal than just the transaction size. */
   shares_after?: number;
@@ -1187,6 +1220,9 @@ export interface UsDealingGroup {
    *  (currency-agnostic ratio). Surfaces only once
    *  MARKET_CONFIG.US.capabilities.performance flips to true. */
   performance?: PerformanceRow[];
+  /** Server-precomputed live return / alpha as of the latest cached close.
+   *  See LivePerformance. */
+  live_performance?: LivePerformance | null;
 }
 
 // ---- Analysis-quality feedback ---------------------------------------------
@@ -1333,6 +1369,10 @@ export interface GovDealing {
    *  copycat return. Nullable when bars aren't cached. Mirrors
    *  `UsDealing.disclosed_close`. */
   disclosed_close?: number | null;
+  /** Server-precomputed live return / alpha as of the latest cached close.
+   *  Congress PTRs carry no per-share fill price, so the `*_trade` anchor is
+   *  measured from the close on the trade date. See LivePerformance. */
+  live_performance?: LivePerformance | null;
   /** Filed past the STOCK Act 45-day window — a governance signal in itself. */
   is_late?: boolean;
   /** Replicable copycat buy: open-market common-stock purchase at a real

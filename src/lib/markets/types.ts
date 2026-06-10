@@ -19,7 +19,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { PriceFormat } from "@/components/position-card";
 import type { MarketSession } from "@/lib/market-status";
 import type { HolidaySource } from "@/lib/bank-holidays";
-import type { ClusterInfo, Rating } from "@/types/ddbx";
+import type { ClusterInfo, LivePerformance, Rating } from "@/types/ddbx";
 
 /** Triage label string. Markets are free to use their own taxonomies — the
  *  hero / today card just renders whatever the adapter produces. */
@@ -90,6 +90,13 @@ export interface MarketDealing<W = unknown> {
    *  detail drawer. null/undefined when this dealing isn't part of a cluster.
    *  Read off the wire row's `cluster` field in each market's toMarketDealing. */
   cluster?: ClusterInfo | null;
+
+  /** Server-precomputed return / alpha as of the latest cached close, for both
+   *  the trade and disclosure anchors. When present, the row renders its
+   *  performance badge straight from this — no per-visitor price fetch, no
+   *  fan-out. Falls back to the client-side computation (off fetched prices)
+   *  when absent. Read off the wire row's `live_performance`. */
+  livePerformance?: LivePerformance | null;
 
   /** Human-readable action ("Open-market buy", "Director purchase"). */
   actionLabel: string;

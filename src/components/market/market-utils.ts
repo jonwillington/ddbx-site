@@ -2,7 +2,8 @@
 // computation and doesn't render JSX lives here so adapters and shell
 // components can both reach it.
 
-import type { MarketDealing } from "@/lib/markets/types";
+import type { ChartMode, MarketDealing } from "@/lib/markets/types";
+import type { LivePerformance } from "@/types/ddbx";
 
 export interface DayBucket<W> {
   weekday: string; // "MON"
@@ -390,4 +391,33 @@ export function computeRowMetric({
     stockPct != null && benchPct != null ? stockPct - benchPct : null;
 
   return { stockPct, benchPct, alpha };
+}
+
+/** Pick the server-precomputed performance number that matches the active
+ *  chart mode (raw return vs alpha-vs-benchmark × trade vs disclosure anchor).
+ *  Returns null when there's no snapshot or that specific value is missing —
+ *  the row then falls back to the client-side computeRowMetric off fetched
+ *  prices. This is what lets the badge render with zero price round-trips. */
+export function livePerfValue(
+  lp: LivePerformance | null | undefined,
+  chartMode: ChartMode,
+): number | null {
+  if (!lp) return null;
+  const trade = chartMode.anchor === "trade";
+  if (chartMode.axis === "market") {
+    return trade ? lp.alpha_pct_trade : lp.alpha_pct_disclosed;
+  }
+  return trade ? lp.return_pct_trade : lp.return_pct_disclosed;
+}
+
+/** Latest "prices as of" ISO date across a set of dealings — the max as_of in
+ *  their live-performance snapshots. Null when none carry one. Surfaced as a
+ *  "Prices as of …" caption so the reader knows how fresh the badges are. */
+export function latestPricesAsOf<W>(dealings: MarketDealing<W>[]): string | null {
+  let max: string | null = null;
+  for (const d of dealings) {
+    const asOf = d.livePerformance?.as_of;
+    if (asOf && (max == null || asOf > max)) max = asOf;
+  }
+  return max;
 }

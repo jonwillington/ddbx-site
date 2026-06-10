@@ -6,7 +6,12 @@ import { useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 
 import { MarketRowSpark, type SparkBar } from "./market-row-spark";
-import { computeRowMetric, deltaStyle, shortDate } from "./market-utils";
+import {
+  computeRowMetric,
+  deltaStyle,
+  livePerfValue,
+  shortDate,
+} from "./market-utils";
 
 import { Skeleton } from "@/components/skeleton";
 import { CompanyLogo } from "@/components/company-logo";
@@ -661,6 +666,19 @@ export function MarketRow<W>({
     benchmarkCurrent,
   });
 
+  // Prefer the server-precomputed snapshot for the active chart mode — it's in
+  // the dealings payload, so the badge renders on first paint with no price
+  // fetch. Fall back to the client computation (off lazily-fetched prices) only
+  // when the snapshot is absent (e.g. an uncached ticker). `metricPct` is a raw
+  // return when axis=raw, alpha (pp) when axis=market.
+  const livePct = livePerfValue(dealing.livePerformance, chartMode);
+  // noPosteriorData (entry bar == latest close, e.g. a Friday disclosure seen
+  // on the weekend) still wins: the return is a trivial ~0% there, so keep the
+  // honest "No data yet" rather than a misleading +0.0%.
+  const metricPct = noPosteriorData
+    ? null
+    : livePct ?? (showAlpha ? alpha : stockPct);
+
   const rawTicker = dealing.ticker || "—";
   const ticker = formatTickerDisplay
     ? formatTickerDisplay(rawTicker)
@@ -726,20 +744,21 @@ export function MarketRow<W>({
             )}
           </div>
         </div>
-        {(noPosteriorData ||
-          (showAlpha ? alpha != null : stockPct != null)) && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            {noPosteriorData ? (
-              <span className="text-[11px] text-muted/60">No data yet</span>
-            ) : showAlpha ? (
-              <>
-                <DeltaBadge suffix="pp" value={alpha!} />
-                <span className="text-[10px] text-muted/70">
-                  vs {benchmarkLabel}
-                </span>
-              </>
+        {(metricPct != null || noPosteriorData) && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 animate-content-in">
+            {metricPct != null ? (
+              showAlpha ? (
+                <>
+                  <DeltaBadge suffix="pp" value={metricPct} />
+                  <span className="text-[10px] text-muted/70">
+                    vs {benchmarkLabel}
+                  </span>
+                </>
+              ) : (
+                <DeltaBadge value={metricPct} />
+              )
             ) : (
-              <DeltaBadge value={stockPct!} />
+              <span className="text-[11px] text-muted/60">No data yet</span>
             )}
           </div>
         )}
@@ -800,16 +819,12 @@ export function MarketRow<W>({
           />
         </div>
         <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-          {noPosteriorData ? (
+          {metricPct != null ? (
+            <span className="animate-content-in">
+              <DeltaBadge suffix={showAlpha ? "pp" : undefined} value={metricPct} />
+            </span>
+          ) : noPosteriorData ? (
             <span className="text-[11px] text-muted/60">No data yet</span>
-          ) : showAlpha ? (
-            alpha != null ? (
-              <DeltaBadge suffix="pp" value={alpha} />
-            ) : (
-              <span className="text-[11px] text-muted/50">—</span>
-            )
-          ) : stockPct != null ? (
-            <DeltaBadge value={stockPct} />
           ) : (
             <span className="text-[11px] text-muted/50">—</span>
           )}

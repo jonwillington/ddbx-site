@@ -59,6 +59,7 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
     rating: d.rating, // deterministic significant/noteworthy/minor — the user-facing label
     sector: d.sector_normalized ?? undefined,
     cluster: d.cluster ?? null,
+    livePerformance: d.live_performance ?? null,
     actionLabel: isOption ? "Options purchase" : "Open-market buy",
     actionTone: "buy" as Tone,
     raw: d,

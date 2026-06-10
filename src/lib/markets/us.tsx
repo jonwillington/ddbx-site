@@ -288,6 +288,10 @@ export function toMarketDealing(group: UsRowGroup): MarketDealing<UsRowGroup> {
     confidence: group.analysis?.confidence,
     catalystWindow: group.analysis?.catalyst_window,
     cluster: row.cluster ?? null,
+    // All legs of a group share ticker + dates, so the primary leg's snapshot
+    // is representative (alpha + disclosed return are identical across legs;
+    // only the per-leg trade-anchor entry differs).
+    livePerformance: row.live_performance ?? null,
     actionLabel: action.label,
     actionTone: action.tone,
     raw: group,
