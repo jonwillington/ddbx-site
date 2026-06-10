@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { SparklesIcon } from "@heroicons/react/24/outline";
 
 import { AppDrawer } from "@/components/app-drawer";
@@ -14,12 +16,33 @@ export function MarketExplainerSheet({
   open,
   onClose,
   marketId,
+  explainer,
+  explainerSubtitle,
 }: {
   open: boolean;
   onClose: () => void;
   marketId: string;
+  /** Per-market override for the sheet body. When set, the default six-point
+   *  insider-buy checklist is replaced entirely (e.g. Congress). */
+  explainer?: ReactNode;
+  explainerSubtitle?: string;
 }) {
   const c = marketCopyFor(marketId);
+
+  // Markets with their own signal model (Congress) bring their own body.
+  if (explainer) {
+    return (
+      <AppDrawer
+        maxWidthClass="max-w-lg"
+        open={open}
+        subtitle={explainerSubtitle}
+        title="What are we looking for?"
+        onClose={onClose}
+      >
+        {explainer}
+      </AppDrawer>
+    );
+  }
   const insidersTitle =
     c.insiderTermPlural.charAt(0).toUpperCase() + c.insiderTermPlural.slice(1);
 

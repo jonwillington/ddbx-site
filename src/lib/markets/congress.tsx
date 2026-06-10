@@ -548,6 +548,137 @@ function congressDetailFields(dealing: MarketDealing<GovDealing>) {
 const isGovSignal = (d: MarketDealing<GovDealing>): boolean =>
   d.triageVerdict === "promising" || d.triageVerdict === "maybe";
 
+/* ─── "What are we looking for?" sheet (Congress-specific) ───────────────
+ * The shared sheet explains the six-point insider-buy checklist (open-market
+ * buy / senior insider / conviction / …). That model doesn't apply to
+ * Congress: a member isn't an insider at the company they're buying, so the
+ * signal is jurisdiction + size + leverage + clustering, not the checklist.
+ * This body replaces it. */
+function CongressExplainer() {
+  const meta: { label: string; value: string }[] = [
+    { label: "Source", value: "US House Clerk — STOCK Act PTRs" },
+    { label: "Who files", value: "Representatives, their spouses & dependents" },
+    { label: "Amounts", value: "Disclosed as ranges, never exact figures" },
+    { label: "Timing", value: "Filed up to ~45 days after the trade" },
+  ];
+
+  const criteria: { title: string; body: string }[] = [
+    {
+      title: "Committee jurisdiction",
+      body: "The member sits on a committee that oversees the company’s industry — an Armed Services member buying a defense contractor, say. The clearest reason a trade is worth a second look.",
+    },
+    {
+      title: "Notable size",
+      body: "The disclosed band is large for a personal trade, so it reads as a real position rather than pocket change.",
+    },
+    {
+      title: "Leverage (options)",
+      body: "An options purchase rather than plain stock — a higher-conviction, higher-risk bet on the same name.",
+    },
+    {
+      title: "Cluster",
+      body: "Several members buying the same company around the same time, which can point to a shared read on it.",
+    },
+  ];
+
+  const caveats: string[] = [
+    "It’s a flag, not an accusation. A committee overlap shows a trade worth seeing — it doesn’t prove anything about how the decision was made.",
+    "The trade may not be the member’s own. Spouses and dependents file under the same name.",
+    "The picture is approximate and late. Amounts are bands, and disclosure can trail the trade by weeks.",
+  ];
+
+  return (
+    <div className="space-y-7">
+      <p className="text-[15px] leading-relaxed text-foreground/90">
+        Members of Congress write the laws and sit on the committees that
+        oversee whole industries. When one buys stock in a company their own
+        committee regulates — or places an unusually large or leveraged bet —
+        that’s worth seeing. The STOCK Act forces them to disclose it; we
+        surface the trades that stand out.
+      </p>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold">How we read it</h3>
+        <p className="text-sm leading-relaxed text-foreground/70">
+          We take the Periodic Transaction Reports (PTRs) filed with the US
+          House Clerk, keep the purchases — sales and non-trades are dropped —
+          and standardise every filing here. House only for now.
+        </p>
+        <dl className="overflow-hidden rounded-xl border border-black/[0.06] divide-y divide-black/[0.06] dark:border-white/[0.08] dark:divide-white/[0.08]">
+          {meta.map((m) => (
+            <div
+              key={m.label}
+              className="flex items-baseline justify-between gap-4 px-3.5 py-2.5"
+            >
+              <dt className="shrink-0 text-xs uppercase tracking-wide text-muted">
+                {m.label}
+              </dt>
+              <dd className="text-right text-sm text-foreground/85">
+                {m.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold">What makes a trade stand out</h3>
+        <p className="text-sm leading-relaxed text-foreground/70">
+          A member of Congress isn’t betting on a business they run, so we don’t
+          score conviction or seniority the way we do for company insiders.
+          Instead a buy is flagged when at least one of these is true — and the
+          more it hits, the higher it rates (significant, noteworthy, or minor):
+        </p>
+        <ol className="space-y-3">
+          {criteria.map((item, i) => (
+            <li key={item.title} className="flex gap-3">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5a4128]/12 text-xs font-semibold text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]">
+                {i + 1}
+              </span>
+              <div>
+                <p className="text-sm font-semibold">{item.title}</p>
+                <p className="mt-0.5 text-sm leading-relaxed text-foreground/70">
+                  {item.body}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="text-sm leading-relaxed text-foreground/60">
+          Everything else is filed as routine and tucked into the “skipped”
+          group.
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold">A few honest caveats</h3>
+        <ul className="space-y-2">
+          {caveats.map((c) => (
+            <li
+              key={c}
+              className="flex gap-2.5 text-sm leading-relaxed text-foreground/70"
+            >
+              <span
+                aria-hidden
+                className="mt-2 h-1 w-1 shrink-0 rounded-full bg-foreground/30"
+              />
+              {c}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-xl border border-[#5a4128]/20 bg-[#5a4128]/[0.06] p-4 dark:border-[#ad9479]/25 dark:bg-[#ad9479]/[0.08]">
+        <h3 className="text-sm font-semibold">Still tuning</h3>
+        <p className="mt-1.5 text-sm leading-relaxed text-foreground/70">
+          This is an early preview. As we see how these trades play out, we
+          adjust which patterns we flag and how highly we rate them.
+        </p>
+      </section>
+    </div>
+  );
+}
+
 /* ─── Config ─────────────────────────────────────────────────────────── */
 
 export const CongressMarket: MarketConfig<GovDealing> = {
@@ -572,6 +703,8 @@ export const CongressMarket: MarketConfig<GovDealing> = {
       shows every buy. Senate coming later.
     </>
   ),
+  explainer: <CongressExplainer />,
+  explainerSubtitle: "US House · STOCK Act",
   marketLabel: "US Congress",
   locale: "en-US",
   topNotice: "US Congress is an early preview — House only, no manual curation yet.",

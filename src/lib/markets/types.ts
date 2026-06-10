@@ -246,6 +246,15 @@ export interface MarketConfig<W = unknown> {
   heroHeadline?: ReactNode;
   /** Explainer paragraph under the title. Markdown-y JSX is fine. */
   description: ReactNode;
+  /** Optional override for the "What are we looking for?" sheet body. Markets
+   *  scored by the shared six-point insider-buy checklist (UK/US/EU) leave this
+   *  unset and get the default. Markets with a different signal model — Congress
+   *  is flagged by committee jurisdiction / size / options / clustering, not the
+   *  insider checklist — supply their own body here. */
+  explainer?: ReactNode;
+  /** Subtitle shown in the explainer sheet header when `explainer` is set.
+   *  Defaults to the market's exchange name otherwise. */
+  explainerSubtitle?: string;
   /** Short market label substituted into the shared hero headline
    *  ("Which directors have been buying shares in {marketLabel} companies?"). */
   marketLabel: string;

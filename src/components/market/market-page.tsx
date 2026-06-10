@@ -1446,6 +1446,8 @@ export function MarketPage<W>({
       />
 
       <MarketExplainerSheet
+        explainer={config.explainer}
+        explainerSubtitle={config.explainerSubtitle}
         marketId={config.id}
         open={explainerOpen}
         onClose={() => setExplainerOpen(false)}
