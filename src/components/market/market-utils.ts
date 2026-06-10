@@ -131,6 +131,12 @@ export function compareByReturnDesc<W>(
 ): (a: MarketDealing<W>, b: MarketDealing<W>) => number {
   const returnOf = (d: MarketDealing<W>): number | null => {
     if (d.actionTone === "grant") return null;
+    // Prefer the server snapshot's trade-anchor return so the order settles
+    // without waiting on the price fetch. It's a percentage; normalise to a
+    // fraction so it sorts consistently against the client-computed branch.
+    const live = d.livePerformance?.return_pct_trade;
+
+    if (live != null) return live / 100;
     const current = currentPriceOf(d);
     const entry = d.entryPrice;
 

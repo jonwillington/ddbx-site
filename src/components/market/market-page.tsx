@@ -39,6 +39,7 @@ import {
   groupByCompany,
   groupByPerson,
   latestPricesAsOf,
+  livePerfValue,
   shortDate,
   todayKeyIso,
 } from "./market-utils";
@@ -730,13 +731,21 @@ export function MarketPage<W>({
       let acc = 0;
 
       for (const d of group) {
-        const { stockPct, alpha } = computeRowMetric({
-          stockEntry: stockEntry(d),
-          stockCurrentMajor: stockCurrent(d.ticker),
-          benchmarkEntry: benchmarkEntry(d),
-          benchmarkCurrent,
-        });
-        const metric = showAlpha ? alpha : stockPct;
+        // Prefer the server snapshot (matches the active axis/anchor) so the
+        // master number paints without waiting on the price fetch; fall back to
+        // the client computation for any leg lacking a snapshot.
+        let metric = livePerfValue(d.livePerformance, chartMode);
+
+        if (metric == null) {
+          const { stockPct, alpha } = computeRowMetric({
+            stockEntry: stockEntry(d),
+            stockCurrentMajor: stockCurrent(d.ticker),
+            benchmarkEntry: benchmarkEntry(d),
+            benchmarkCurrent,
+          });
+
+          metric = showAlpha ? alpha : stockPct;
+        }
         const weight = d.value ?? 0;
 
         if (metric != null && weight > 0) {
@@ -747,23 +756,24 @@ export function MarketPage<W>({
 
       return weightSum > 0 ? acc / weightSum : null;
     },
-    [
-      chartMode.axis,
-      stockEntry,
-      stockCurrent,
-      benchmarkEntry,
-      benchmarkCurrent,
-    ],
+    [chartMode, stockEntry, stockCurrent, benchmarkEntry, benchmarkCurrent],
   );
 
   const byGain = useMemo(() => {
     return filteredDealings
       .map((d) => {
-        const current = stockCurrent(d.ticker);
+        // Prefer the server snapshot's trade-anchor return (the "gain since the
+        // buy" this view ranks by) so the list orders + renders without a price
+        // fetch; fall back to the client computation for uncached rows.
+        let pct = d.livePerformance?.return_pct_trade ?? null;
 
-        if (d.entryPrice == null || current == null || d.entryPrice <= 0)
-          return null;
-        const pct = ((current - d.entryPrice) / d.entryPrice) * 100;
+        if (pct == null) {
+          const current = stockCurrent(d.ticker);
+
+          if (d.entryPrice == null || current == null || d.entryPrice <= 0)
+            return null;
+          pct = ((current - d.entryPrice) / d.entryPrice) * 100;
+        }
 
         return { dealing: d, pct };
       })
@@ -798,11 +808,19 @@ export function MarketPage<W>({
 
     return inWindow
       .map((d) => {
-        const current = stockCurrent(d.ticker);
-        const returnPct =
-          d.entryPrice != null && current != null && d.entryPrice > 0
-            ? ((current - d.entryPrice) / d.entryPrice) * 100
-            : null;
+        // Server snapshot's trade-anchor return first (renders the gainers grid
+        // immediately), client computation as the fallback. Congress rows have
+        // no entryPrice, so the snapshot is the only way they rank by gain.
+        let returnPct = d.livePerformance?.return_pct_trade ?? null;
+
+        if (returnPct == null) {
+          const current = stockCurrent(d.ticker);
+
+          returnPct =
+            d.entryPrice != null && current != null && d.entryPrice > 0
+              ? ((current - d.entryPrice) / d.entryPrice) * 100
+              : null;
+        }
 
         return { dealing: d, returnPct };
       })
