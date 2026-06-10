@@ -1059,7 +1059,14 @@ export function MarketPage<W>({
           loading={loading && dealings.length === 0}
           locale={config.locale}
           recentBest={recentBestPerformingDealings}
-          recentBestReady={pricesLoaded}
+          // Ready as soon as we have real returns to rank by — which now arrive
+          // with the dealings via live_performance, no price fetch needed. Falls
+          // back to waiting on pricesLoaded for markets without snapshots
+          // (EU/SE), so their grid still fills only once client prices land.
+          recentBestReady={
+            pricesLoaded ||
+            recentBestPerformingDealings.some((e) => e.returnPct != null)
+          }
           selectedKey={selectedKey}
           session={config.session}
           showLogo={logosEnabled}
