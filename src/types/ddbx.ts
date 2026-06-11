@@ -145,7 +145,11 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       // the cited dealing type differs.)
       dailySummary: false,
       news: true,
-      tweets: false,
+      // Live as of 2026-06-11: US X posting (per-trade significant-buy cards,
+      // close-of-day daily tweet, Saturday weekly movers) posts as @ddbxus via
+      // the TWITTER_US_* OAuth 1.0a secrets. No consumer branches on this flag —
+      // it gates the worker's own posting only.
+      tweets: true,
       monthlySummary: false,
     },
   },

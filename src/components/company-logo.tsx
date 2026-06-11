@@ -8,6 +8,15 @@ import { useEffect, useState } from "react";
 const LOGO_DEV_TOKEN = "pk_aFXx8Wx5TrenY0XbJuUMrA";
 const LOGO_DEV_ATTRIBUTION_URL = "https://logo.dev";
 
+// Logo.dev's TICKER lookup mis-resolves a few dual-class symbols (BRK.B →
+// London Stock Exchange's logo). For these, fetch Logo.dev's DOMAIN endpoint
+// with the company's real domain instead. Mirrors the worker card kit
+// (ddbx-data summary-image.ts) + iOS/Android CompanyLogo. Extend as needed.
+const TICKER_LOGO_DOMAIN: Record<string, string> = {
+  "BRK.B": "berkshirehathaway.com",
+  "BRK.A": "berkshirehathaway.com",
+};
+
 function logoUrl(ticker: string, sizePx: number): string {
   // Keep the LSE `.L` suffix in the URL — Logo.dev's database is keyed on
   // exchange-qualified symbols for UK rows. Stripping it returns either a
@@ -17,6 +26,10 @@ function logoUrl(ticker: string, sizePx: number): string {
   // so cached responses re-use across @1x/@2x viewports.
   const pixelSize = Math.max(48, Math.round(sizePx * 3));
 
+  const domain = TICKER_LOGO_DOMAIN[ticker.toUpperCase()];
+  if (domain) {
+    return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=${pixelSize}&format=png&retina=true`;
+  }
   return `https://img.logo.dev/ticker/${encodeURIComponent(ticker)}?token=${LOGO_DEV_TOKEN}&size=${pixelSize}&format=png&retina=true`;
 }
 
