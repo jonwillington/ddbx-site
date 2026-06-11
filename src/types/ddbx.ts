@@ -224,7 +224,10 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       portfolio: false,
       dailySummary: false,
       news: false,
-      tweets: false,
+      // Live 2026-06-11: per-filing significant-buy cards post to @ddbxus
+      // (congress rides the US handle). Gated to buys-only + recency-swept so a
+      // flip never back-posts the catalogue. Posting code reads this flag.
+      tweets: true,
       monthlySummary: false,
     },
   },
