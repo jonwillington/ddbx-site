@@ -1192,7 +1192,7 @@ export function MarketPage<W>({
         {dealings.length > 0 && (
           <div
             ref={filterBarRef}
-            className="sticky top-[64px] z-20 bg-[#faf7f2] dark:bg-surface rounded-t-xl border-b border-[#e8e0d5]/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
+            className="sticky top-[64px] z-20 -mx-4 md:-mx-6 bg-[#faf7f2] dark:bg-surface rounded-t-xl border-b border-[#e8e0d5]/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
           >
             <MarketFilterBar
               extraFilterValues={extraFilterValues}
@@ -1226,7 +1226,7 @@ export function MarketPage<W>({
 
         {/* By-gain view */}
         {filteredDealings.length > 0 && viewMode === "by-gain" && (
-          <div className="bg-[#faf7f2] dark:bg-surface rounded-b-xl animate-content-in -mt-6">
+          <div className="bg-[#faf7f2] dark:bg-surface rounded-b-xl animate-content-in -mt-6 -mx-4 md:-mx-6">
             <MarketRowHeader
               benchmarkLabel={config.benchmarkLabel}
               chartMode={chartMode}
@@ -1264,7 +1264,7 @@ export function MarketPage<W>({
 
         {/* Chronological / month + day buckets */}
         {filteredDealings.length > 0 && viewMode === "chronological" && (
-          <div className="space-y-6 animate-content-in -mt-6">
+          <div className="space-y-6 animate-content-in -mt-6 -mx-4 md:-mx-6">
             {monthBuckets.map((month, monthIdx) => {
               const monthOpen = openMonths?.has(month.key) ?? false;
               // bucketByMonth keys on "<MonthName>-<year>"; derive the ISO
