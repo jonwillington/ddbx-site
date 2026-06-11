@@ -57,6 +57,9 @@ export interface MarketDealing<W = unknown> {
    *  has one (Congress). Drives the party chip + party filter. Undefined when
    *  unknown / not applicable. */
   party?: string;
+  /** Optional chamber ("house" | "senate"), for Congress. Drives the chamber
+   *  chip + chamber filter. Undefined for non-Congress markets. */
+  chamber?: string;
 
   /** ISO `YYYY-MM-DD…` strings — disclosure on the regulator side. Used for
    *  month/day bucketing and "today" detection. */
@@ -181,6 +184,9 @@ export interface MarketExtraFilter<W = unknown> {
   id: string;
   /** Short control label, e.g. "Party". */
   label: string;
+  /** Optional one-line explanation of the axis, shown under the control in the
+   *  filter drawer (the drawer has room the inline bar didn't). */
+  description?: string;
   /** Dropdown options — `id` is the selected value, `label` the display text.
    *  Include the "show everything" option (its id === `defaultValue`). */
   options: { id: string; label: string }[];

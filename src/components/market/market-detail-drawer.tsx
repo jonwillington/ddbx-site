@@ -10,6 +10,7 @@ import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { ClusterChip } from "@/components/cluster-chip";
 import { PartyChip } from "@/components/party-chip";
+import { ChamberChip } from "@/components/chamber-chip";
 import { RecentBuysSection } from "@/components/market/recent-buys-section";
 import { InsiderAvatar } from "@/components/market/market-row";
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -352,6 +353,7 @@ export function MarketDetailDrawer<W>({
                               {active.party && (
                                 <PartyChip party={active.party} />
                               )}
+                              <ChamberChip chamber={active.chamber} />
                             </div>
                             {active.insiderRole && (
                               <div className="text-xs text-muted truncate">

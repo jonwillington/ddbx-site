@@ -959,6 +959,7 @@ export function MarketPage<W>({
           insiderPhotoUrl={group.insiderPhotoUrl}
           insiderRole={group.insiderRole}
           party={group.party}
+          chamber={group.chamber}
           signalCount={group.dealings.filter((d) => d.triageVerdict === "promising" || d.triageVerdict === "maybe").length}
           totalValueLabel={
             group.totalValue != null
@@ -1186,6 +1187,7 @@ export function MarketPage<W>({
               extraFilters={config.extraFilters?.map((ef) => ({
                 id: ef.id,
                 label: ef.label,
+                description: ef.description,
                 options: ef.options,
               }))}
               heroFilterId={heroFilterId}

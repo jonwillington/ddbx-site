@@ -74,7 +74,7 @@ export function MarketFilterBar({
   heroFilterId?: string | null;
   onHeroFilterChange?: (id: string) => void;
   /** Always-visible config-driven extra filter axes (e.g. Congress party). */
-  extraFilters?: { id: string; label: string; options: FilterSelectOption[] }[];
+  extraFilters?: { id: string; label: string; description?: string; options: FilterSelectOption[] }[];
   extraFilterValues?: Record<string, string>;
   onExtraFilterChange?: (filterId: string, value: string) => void;
   /** Optional element rendered ml-auto on the right — currently used for the
@@ -90,16 +90,18 @@ export function MarketFilterBar({
   return (
     <div className="flex items-center gap-3 bg-[#faf7f2] dark:bg-surface px-5 py-3.5">
       <input
-        className="flex-1 min-w-0 xl:flex-none xl:w-72 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-[#5a4128]/50 transition-colors"
+        className="flex-1 min-w-0 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-[#5a4128]/50 transition-colors"
         placeholder={searchPlaceholder}
         type="text"
         value={search}
         onChange={(e) => onSearch(e.target.value)}
       />
 
-      {/* Desktop: filters laid out inline. Below lg they collapse into the
-          bottom sheet so the bar stays a single clean row on mobile. */}
-      <div className="hidden xl:flex flex-1 min-w-0 items-center gap-3">
+      {/* Filters live in a drawer at every width now (search stays inline). The
+          drawer has room to explain each axis; inline dropdowns didn't. Kept
+          behind `hidden` rather than deleted so the inline layout is one flag
+          away if we want it back on very wide screens. */}
+      <div className="hidden flex-1 min-w-0 items-center gap-3">
         <FilterSelect
           label="View"
           options={VIEW_OPTIONS}
@@ -134,8 +136,8 @@ export function MarketFilterBar({
         {trailing && <div className="ml-auto">{trailing}</div>}
       </div>
 
-      {/* Mobile: one button opens a bottom sheet holding every filter. */}
-      <div className="xl:hidden shrink-0">
+      {/* One button opens a drawer holding every filter — at all widths now. */}
+      <div className="shrink-0">
         <MarketFiltersSheet
           extraFilterValues={extraFilterValues}
           extraFilters={extraFilters}

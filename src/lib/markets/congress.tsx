@@ -62,16 +62,13 @@ const US_STATES: Record<string, string> = {
   MP: "Northern Mariana Islands",
 };
 
-/** Readable role + location for a member — chamber title + full state name, with
- *  the House district ("Rep. New Jersey-5", "Sen. Arkansas"). The chamber title
- *  distinguishes Senators from Representatives in the mixed feed; party is its
- *  own chip. */
+/** Readable location for a member — full state name + House district ("New
+ *  Jersey-5", "Arkansas"). Chamber and party are their own chips on the member
+ *  row, so this line is location only. */
 const stateLine = (r: GovDealing["reporter"]): string => {
-  const title = r.chamber === "senate" ? "Sen." : "Rep.";
   if (!r.state) return r.chamber === "senate" ? "Senate" : "House";
   const name = US_STATES[r.state] ?? r.state;
-  const loc = r.district != null ? `${name}-${r.district}` : name;
-  return `${title} ${loc}`;
+  return r.district != null ? `${name}-${r.district}` : name;
 };
 
 /** Strip the instrument-class descriptor PTRs append to the issuer name
@@ -107,6 +104,7 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
     insiderRole: stateLine(d.reporter),
     insiderPhotoUrl: d.reporter.photo_url,
     party: d.reporter.party,
+    chamber: d.reporter.chamber,
     disclosedDate: d.disclosed_date,
     tradeDate: d.trade_date,
     isPurchase: buy,
@@ -829,6 +827,8 @@ export const CongressMarket: MarketConfig<GovDealing> = {
     {
       id: "chamber",
       label: "Chamber",
+      description:
+        "House Representatives or Senators. Both file STOCK Act reports; the feed mixes them, and the House trades far more.",
       defaultValue: "all",
       options: [
         { id: "all", label: "Both chambers" },
@@ -840,6 +840,8 @@ export const CongressMarket: MarketConfig<GovDealing> = {
     {
       id: "party",
       label: "Party",
+      description:
+        "The member's party. Unresolved filers (no roster match) have no party and drop out of the D / R / I views.",
       defaultValue: "all",
       options: [
         { id: "all", label: "All parties" },

@@ -251,6 +251,8 @@ export interface PersonGroup<W> {
   insiderPhotoUrl?: string;
   /** Political party ("D" | "R" | "I"), when the market carries one. */
   party?: string;
+  /** Chamber ("house" | "senate"), for Congress. */
+  chamber?: string;
   /** This member's dealings, in importance order. */
   dealings: MarketDealing<W>[];
   /** First (most significant) dealing — fixes the group's position + avatar. */
@@ -282,6 +284,7 @@ export function groupByPerson<W>(
         insiderRole: d.insiderRole,
         insiderPhotoUrl: d.insiderPhotoUrl,
         party: d.party,
+        chamber: d.chamber,
         dealings: [],
         representative: d,
         count: 0,

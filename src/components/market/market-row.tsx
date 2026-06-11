@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/skeleton";
 import { CompanyLogo } from "@/components/company-logo";
 import { ClusterChip } from "@/components/cluster-chip";
 import { PartyChip } from "@/components/party-chip";
+import { ChamberChip } from "@/components/chamber-chip";
 import { Tooltip } from "@/components/tooltip";
 
 /** Generic fallbacks for the table-header tooltips. A market overrides any of
@@ -567,6 +568,7 @@ export function MemberClusterRow({
   insiderRole,
   insiderPhotoUrl,
   party,
+  chamber,
   count,
   signalCount = 0,
   totalValueLabel,
@@ -579,6 +581,8 @@ export function MemberClusterRow({
   insiderPhotoUrl?: string;
   /** Political party ("D" | "R" | "I"), shown as a chip beside the name. */
   party?: string;
+  /** Chamber ("house" | "senate"), shown as a chip beside the party chip. */
+  chamber?: string;
   count: number;
   /** How many of the member's buys cleared the signal floor (promising|maybe) —
    *  shown as a chip so the collapsed row still tells you there's something. */
@@ -622,6 +626,7 @@ export function MemberClusterRow({
             <div className="flex items-center min-w-0">
               <span className="text-[13px] font-semibold truncate">{insiderName}</span>
               <PartyChip className="ml-2" party={party} />
+              <ChamberChip className="ml-1.5" chamber={chamber} />
             </div>
             <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
           </div>

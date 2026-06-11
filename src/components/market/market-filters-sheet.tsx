@@ -37,7 +37,7 @@ export function MarketFiltersSheet({
   heroFilterId?: string | null;
   onHeroFilterChange?: (id: string) => void;
   showStrength: boolean;
-  extraFilters?: { id: string; label: string; options: FilterSelectOption[] }[];
+  extraFilters?: { id: string; label: string; description?: string; options: FilterSelectOption[] }[];
   extraFilterValues?: Record<string, string>;
   onExtraFilterChange?: (filterId: string, value: string) => void;
   trailing?: ReactNode;
@@ -79,7 +79,10 @@ export function MarketFiltersSheet({
               Filters
             </Drawer.Title>
 
-            <Field label="View">
+            <Field
+              description="Order the list by disclosure date, or by the biggest gain since the trade."
+              label="View"
+            >
               <Segmented
                 options={VIEW_OPTIONS}
                 value={viewMode}
@@ -106,7 +109,10 @@ export function MarketFiltersSheet({
             )}
 
             {showStrength && heroFilters && onHeroFilterChange && (
-              <Field label="Strength">
+              <Field
+                description="Narrow to one rating tier — significant, noteworthy, or minor."
+                label="Strength"
+              >
                 <Select
                   options={heroFilters}
                   value={strengthValue}
@@ -116,7 +122,7 @@ export function MarketFiltersSheet({
             )}
 
             {extraFilters?.map((ef) => (
-              <Field key={ef.id} label={ef.label}>
+              <Field key={ef.id} description={ef.description} label={ef.label}>
                 <Segmented
                   options={ef.options}
                   value={extraFilterValues?.[ef.id] ?? ef.options[0]?.id ?? ""}
