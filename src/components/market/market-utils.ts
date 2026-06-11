@@ -2,7 +2,11 @@
 // computation and doesn't render JSX lives here so adapters and shell
 // components can both reach it.
 
-import type { ChartMode, MarketDealing } from "@/lib/markets/types";
+import type {
+  ChartMode,
+  MarketDealing,
+  MarketExtraFilter,
+} from "@/lib/markets/types";
 import type { LivePerformance } from "@/types/ddbx";
 
 export interface DayBucket<W> {
@@ -241,6 +245,72 @@ export function groupByCompany<W>(
   }
 
   return order.map((k) => byKey.get(k)!);
+}
+
+/** Filters that apply to EVERY market — they read only shared MarketDealing
+ *  fields (sector, cluster, value), so the shell injects them for all markets
+ *  ahead of each market's own config.extraFilters. Each is included only when
+ *  the loaded data actually supports it (sectors present, some clustered rows,
+ *  non-zero values), so a market that doesn't carry a field simply doesn't show
+ *  that filter. `formatMoney` renders the size buckets in the market's currency. */
+export function buildUniversalFilters<W>(
+  dealings: MarketDealing<W>[],
+  formatMoney: (n: number) => string,
+): MarketExtraFilter<W>[] {
+  const filters: MarketExtraFilter<W>[] = [];
+
+  const sectors = [
+    ...new Set(dealings.map((d) => d.sector).filter((s): s is string => !!s)),
+  ].sort();
+  if (sectors.length >= 2) {
+    filters.push({
+      id: "industry",
+      label: "Industry",
+      question: "Which industries?",
+      description:
+        "Filter to one or more sectors — pick several to compare. None selected shows every industry.",
+      kind: "multiselect",
+      options: sectors.map((s) => ({ id: s, label: s })),
+      defaultValue: "",
+      predicate: (value, d) => !!d.sector && value.split(",").includes(d.sector),
+    });
+  }
+
+  if (dealings.some((d) => d.cluster)) {
+    filters.push({
+      id: "clustered",
+      label: "Clusters",
+      question: "Clustered buys only?",
+      description:
+        "Show only names that 2+ insiders bought in a tight window — a shared read rather than a lone trade.",
+      options: [
+        { id: "all", label: "All trades" },
+        { id: "only", label: "Clustered only" },
+      ],
+      defaultValue: "all",
+      predicate: (_v, d) => !!d.cluster,
+    });
+  }
+
+  if (dealings.some((d) => (d.value ?? 0) > 0)) {
+    filters.push({
+      id: "size",
+      label: "Trade size",
+      question: "How big a trade?",
+      description:
+        "Filter by the disclosed amount — useful for surfacing the big, high-conviction positions.",
+      options: [
+        { id: "all", label: "Any size" },
+        { id: "50000", label: `≥ ${formatMoney(50_000)}` },
+        { id: "250000", label: `≥ ${formatMoney(250_000)}` },
+        { id: "1000000", label: `≥ ${formatMoney(1_000_000)}` },
+      ],
+      defaultValue: "all",
+      predicate: (value, d) => (d.value ?? 0) >= Number(value),
+    });
+  }
+
+  return filters;
 }
 
 export interface PersonGroup<W> {

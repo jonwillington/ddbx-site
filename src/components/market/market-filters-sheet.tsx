@@ -3,6 +3,7 @@ import type { SignalFilterValue } from "@/lib/markets/types";
 import type { FilterSelectOption, MarketViewMode } from "./market-filter-bar";
 
 import { Drawer } from "vaul";
+import { useState } from "react";
 import {
   AdjustmentsHorizontalIcon,
   ChevronDownIcon,
@@ -11,11 +12,21 @@ import {
 import { useMediaQuery } from "@/lib/use-media-query";
 import { SIGNAL_FILTER_OPTIONS, VIEW_OPTIONS } from "./market-filter-bar";
 
-/** Filter drawer holding every list filter — a side drawer (floats off the
- *  right) on tablet + desktop, a bottom sheet on phones. Trigger is a compact
- *  pill; the panel uses full-width segmented controls with a one-line
- *  explanation under each axis (the room a drawer affords that an inline bar
- *  didn't). The chart-mode toggle is passed through verbatim (`trailing`). */
+interface ExtraFilter {
+  id: string;
+  label: string;
+  question?: string;
+  description?: string;
+  kind?: "select" | "multiselect";
+  options: FilterSelectOption[];
+  defaultValue?: string;
+}
+
+/** Filter drawer holding every list filter as a collapsible accordion — a side
+ *  drawer (floats off the right) on tablet + desktop, a bottom sheet on phones.
+ *  Each accordion shows its current value collapsed and expands to reveal the
+ *  control + a one-line explanation, so a many-axis panel stays scannable. The
+ *  chart-mode toggle is passed through verbatim (`trailing`). */
 export function MarketFiltersSheet({
   viewMode,
   onViewMode,
@@ -38,7 +49,7 @@ export function MarketFiltersSheet({
   heroFilterId?: string | null;
   onHeroFilterChange?: (id: string) => void;
   showStrength: boolean;
-  extraFilters?: { id: string; label: string; description?: string; options: FilterSelectOption[] }[];
+  extraFilters?: ExtraFilter[];
   extraFilterValues?: Record<string, string>;
   onExtraFilterChange?: (filterId: string, value: string) => void;
   trailing?: ReactNode;
@@ -52,6 +63,17 @@ export function MarketFiltersSheet({
     : "fixed bottom-0 inset-x-0 z-50 max-h-[88vh] rounded-t-2xl border-t border-[#e8e0d5] dark:border-separator bg-[#f5f0e8] dark:bg-background flex flex-col outline-none";
 
   const strengthValue = heroFilterId ?? heroFilters?.[0]?.id ?? "";
+
+  // Which accordions are expanded. Default just "View" open so it's obvious the
+  // rows expand; everything else collapses to its current-value summary.
+  const [open, setOpen] = useState<Set<string>>(() => new Set(["view"]));
+  const toggle = (id: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
   // A subtle dot when any axis differs from its conventional default, so the
   // user knows a filter is active without opening the sheet.
   const hasActiveFilter =
@@ -60,8 +82,16 @@ export function MarketFiltersSheet({
     (showStrength && !!heroFilters && strengthValue !== heroFilters[0]?.id) ||
     (extraFilters ?? []).some(
       (ef) =>
-        (extraFilterValues?.[ef.id] ?? ef.options[0]?.id) !== ef.options[0]?.id,
+        (extraFilterValues?.[ef.id] ?? ef.defaultValue ?? ef.options[0]?.id) !==
+        (ef.defaultValue ?? ef.options[0]?.id),
     );
+
+  const viewLabel =
+    VIEW_OPTIONS.find((o) => o.id === viewMode)?.label ?? viewMode;
+  const signalLabel = SIGNAL_FILTER_OPTIONS.find(
+    (o) => o.id === signalFilter,
+  )?.label;
+  const strengthLabel = heroFilters?.find((o) => o.id === strengthValue)?.label;
 
   return (
     <Drawer.Root direction={direction}>
@@ -85,26 +115,32 @@ export function MarketFiltersSheet({
             <div className="mx-auto mt-3 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-black/15 dark:bg-white/20" />
           )}
 
-          <div className="px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 space-y-6 overflow-y-auto">
-            <Drawer.Title className="text-base font-semibold">
+          <div className="px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 space-y-2.5 overflow-y-auto">
+            <Drawer.Title className="px-1 text-base font-semibold">
               Filters
             </Drawer.Title>
 
-            <Field
+            <Accordion
               description="Order the list by disclosure date, or by the biggest gain since the trade."
-              label="What do you want to see?"
+              open={open.has("view")}
+              title="What do you want to see?"
+              value={viewLabel}
+              onToggle={() => toggle("view")}
             >
               <Segmented
                 options={VIEW_OPTIONS}
                 value={viewMode}
                 onChange={(id) => onViewMode(id as MarketViewMode)}
               />
-            </Field>
+            </Accordion>
 
             {signalFilter !== undefined && onSignalFilterChange && (
-              <Field
+              <Accordion
                 description="Signal is the curated, non-routine subset we surface. All shows every disclosed filing, routine and unrated included."
-                label="How much should we show?"
+                open={open.has("signal")}
+                title="How much should we show?"
+                value={signalLabel}
+                onToggle={() => toggle("signal")}
               >
                 <Segmented
                   options={SIGNAL_FILTER_OPTIONS}
@@ -113,44 +149,67 @@ export function MarketFiltersSheet({
                     onSignalFilterChange(id as SignalFilterValue)
                   }
                 />
-              </Field>
+              </Accordion>
             )}
 
             {showStrength && heroFilters && onHeroFilterChange && (
-              <Field
+              <Accordion
                 description="Narrow to one rating tier — significant, noteworthy, or minor."
-                label="Which conviction strength?"
+                open={open.has("strength")}
+                title="Which conviction strength?"
+                value={strengthLabel}
+                onToggle={() => toggle("strength")}
               >
                 <Select
                   options={heroFilters}
                   value={strengthValue}
                   onChange={onHeroFilterChange}
                 />
-              </Field>
+              </Accordion>
             )}
 
-            {extraFilters?.map((ef) => (
-              <Field
-                key={ef.id}
-                description={ef.description}
-                label={`Which ${ef.label.toLowerCase()}?`}
-              >
-                <Segmented
-                  options={ef.options}
-                  value={extraFilterValues?.[ef.id] ?? ef.options[0]?.id ?? ""}
-                  onChange={(id) => onExtraFilterChange?.(ef.id, id)}
-                />
-              </Field>
-            ))}
+            {extraFilters?.map((ef) => {
+              const value =
+                extraFilterValues?.[ef.id] ?? ef.defaultValue ?? "";
+              return (
+                <Accordion
+                  key={ef.id}
+                  description={ef.description}
+                  open={open.has(ef.id)}
+                  title={ef.question ?? `Which ${ef.label.toLowerCase()}?`}
+                  value={summarizeExtra(ef, value)}
+                  onToggle={() => toggle(ef.id)}
+                >
+                  {ef.kind === "multiselect" ? (
+                    <MultiSelect
+                      options={ef.options}
+                      value={value}
+                      onChange={(v) => onExtraFilterChange?.(ef.id, v)}
+                    />
+                  ) : (
+                    <Segmented
+                      options={ef.options}
+                      value={value || ef.options[0]?.id || ""}
+                      onChange={(id) => onExtraFilterChange?.(ef.id, id)}
+                    />
+                  )}
+                </Accordion>
+              );
+            })}
 
-            {/* Performance: the toggle renders its own two stacked, separately
-                explained axes (compared-to-what + measured-from-when), so it
-                sits here directly rather than wrapped in a single Field. */}
-            {trailing}
+            {trailing && (
+              <Accordion
+                open={open.has("performance")}
+                title="Performance"
+                onToggle={() => toggle("performance")}
+              >
+                {trailing}
+              </Accordion>
+            )}
 
             <Drawer.Close asChild>
               <button
-                className="w-full rounded-full bg-[#5a4128] py-3 text-sm font-medium text-white transition-colors hover:bg-[#49331f]"
+                className="mt-1.5 w-full rounded-full bg-[#5a4128] py-3 text-sm font-medium text-white transition-colors hover:bg-[#49331f]"
                 type="button"
               >
                 Done
@@ -163,31 +222,74 @@ export function MarketFiltersSheet({
   );
 }
 
-function Field({
-  label,
+/** Summary of an extra filter's current value for the collapsed accordion. */
+function summarizeExtra(ef: ExtraFilter, value: string): string {
+  if (ef.kind === "multiselect") {
+    const ids = value.split(",").filter(Boolean);
+    if (ids.length === 0) return "All";
+    const labels = ids.map(
+      (id) => ef.options.find((o) => o.id === id)?.label ?? id,
+    );
+    return labels.length <= 2
+      ? labels.join(", ")
+      : `${labels.slice(0, 2).join(", ")} +${labels.length - 2}`;
+  }
+  const id = value || ef.defaultValue || ef.options[0]?.id;
+  return ef.options.find((o) => o.id === id)?.label ?? "All";
+}
+
+/** Collapsible filter row — current value on the right when collapsed; control
+ *  + explanation revealed on expand. */
+function Accordion({
+  title,
+  value,
   description,
+  open,
+  onToggle,
   children,
 }: {
-  /** Explanatory header — phrased as a question ("What do you want to see?")
-   *  so the drawer teaches the axis rather than just naming it. */
-  label: string;
+  title: string;
+  value?: string;
   description?: string;
+  open: boolean;
+  onToggle: () => void;
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-2">
-      <div className="text-[13px] font-semibold text-foreground/90">{label}</div>
-      {children}
-      {description && (
-        <p className="text-[12px] leading-snug text-muted">{description}</p>
+    <div className="overflow-hidden rounded-xl border border-separator/70 bg-surface/30">
+      <button
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left"
+        type="button"
+        onClick={onToggle}
+      >
+        <span className="text-[13px] font-semibold text-foreground/90">
+          {title}
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          {value && (
+            <span className="max-w-[150px] truncate text-[12px] text-muted">
+              {value}
+            </span>
+          )}
+          <ChevronDownIcon
+            className={`h-4 w-4 text-muted transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </span>
+      </button>
+      {open && (
+        <div className="space-y-2 px-3.5 pb-3.5 pt-0.5">
+          {children}
+          {description && (
+            <p className="text-[12px] leading-snug text-muted">{description}</p>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-/** Native select — used for axes with more options than fit comfortably as
- *  a segmented row (e.g. Strength's four buckets). The OS picker is the best
- *  touch target on mobile and never wraps. */
+/** Native select — for axes with more options than fit as a segmented row. */
 function Select({
   options,
   value,
@@ -240,6 +342,47 @@ function Segmented({
             }`}
             type="button"
             onClick={() => onChange(opt.id)}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Multi-select chips — any number selected; value is a comma-joined id list
+ *  ("" = none = show all). */
+function MultiSelect({
+  options,
+  value,
+  onChange,
+}: {
+  options: FilterSelectOption[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const selected = new Set(value.split(",").filter(Boolean));
+  const flip = (id: string) => {
+    const next = new Set(selected);
+    next.has(id) ? next.delete(id) : next.add(id);
+    onChange([...next].join(","));
+  };
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => {
+        const on = selected.has(opt.id);
+        return (
+          <button
+            key={opt.id}
+            aria-pressed={on}
+            className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+              on
+                ? "border-[#5a4128]/40 bg-[#5a4128]/15 text-[#3d2b1a] dark:text-[#ad9479]"
+                : "border-separator text-muted hover:text-foreground"
+            }`}
+            type="button"
+            onClick={() => flip(opt.id)}
           >
             {opt.label}
           </button>

@@ -854,6 +854,83 @@ export const CongressMarket: MarketConfig<GovDealing> = {
       ],
       predicate: (value, d) => d.party === value,
     },
+    {
+      id: "options",
+      label: "Asset",
+      question: "Stock or options?",
+      description:
+        "Options purchases are leveraged, higher-conviction bets — surface them on their own.",
+      defaultValue: "all",
+      options: [
+        { id: "all", label: "All buys" },
+        { id: "option", label: "Options only" },
+      ],
+      predicate: (_v, d) => d.raw.asset_type === "option",
+    },
+    {
+      id: "owner",
+      label: "Owner",
+      question: "Whose account?",
+      description:
+        "Who the trade is filed under. A member's own account is the strongest conviction signal; spouse and joint are a step removed.",
+      defaultValue: "any",
+      options: [
+        { id: "any", label: "Anyone" },
+        { id: "self", label: "Self" },
+        { id: "spouse", label: "Spouse" },
+        { id: "joint", label: "Joint" },
+      ],
+      predicate: (value, d) => d.raw.owner === value,
+    },
+    {
+      id: "style",
+      label: "Trading style",
+      question: "Self-directed or advised?",
+      description:
+        "Self-directed trades are the member's own calls; advisor-managed accounts are mechanical allocation, not conviction. Unassessed members match neither.",
+      defaultValue: "any",
+      options: [
+        { id: "any", label: "Either" },
+        { id: "self", label: "Self-directed" },
+        { id: "advised", label: "Advised" },
+      ],
+      predicate: (value, d) => {
+        const adv = d.raw.reporter.profile?.advisor_managed;
+        return value === "advised" ? adv === true : adv === false;
+      },
+    },
+    {
+      id: "networth",
+      label: "Net worth",
+      question: "How wealthy is the member?",
+      description:
+        "Estimated net worth — a $250k buy means more from a $3M member than a $300M one. Unassessed members are excluded from the bands.",
+      defaultValue: "all",
+      options: [
+        { id: "all", label: "Any" },
+        { id: "0", label: "Under $10M" },
+        { id: "10000000", label: "$10M+" },
+        { id: "50000000", label: "$50M+" },
+      ],
+      predicate: (value, d) => {
+        const nw = d.raw.reporter.profile?.net_worth_max ?? null;
+        if (nw == null) return false;
+        return value === "0" ? nw < 10_000_000 : nw >= Number(value);
+      },
+    },
+    {
+      id: "late",
+      label: "Disclosure",
+      question: "Late filings only?",
+      description:
+        "The STOCK Act requires disclosure within ~45 days. Show only trades filed past that deadline.",
+      defaultValue: "all",
+      options: [
+        { id: "all", label: "All" },
+        { id: "late", label: "Late only" },
+      ],
+      predicate: (_v, d) => d.raw.is_late === true,
+    },
   ],
   // Group by member, not company — for Congress the person is the entity of
   // interest (one member often buys many tickers in a day). Portrait anchors

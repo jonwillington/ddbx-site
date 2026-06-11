@@ -816,7 +816,7 @@ export function MarketRow<W>({
           </div>
         </div>
         {(metricPct != null || noPosteriorData) && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 animate-content-in">
+          <div className="mt-1.5 flex flex-wrap items-center justify-end gap-1.5 animate-content-in">
             {metricPct != null ? (
               showAlpha ? (
                 <>

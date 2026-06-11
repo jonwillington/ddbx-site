@@ -184,14 +184,24 @@ export interface MarketExtraFilter<W = unknown> {
   id: string;
   /** Short control label, e.g. "Party". */
   label: string;
+  /** Explanatory header in the drawer, phrased as a question ("Which party?").
+   *  Falls back to `label` when absent. */
+  question?: string;
   /** Optional one-line explanation of the axis, shown under the control in the
    *  filter drawer (the drawer has room the inline bar didn't). */
   description?: string;
+  /** Control kind. "select" (default) = one option at a time (segmented).
+   *  "multiselect" = any number of options (chips); the value is a
+   *  comma-joined list of selected ids, `defaultValue: ""` meaning "all". */
+  kind?: "select" | "multiselect";
   /** Dropdown options — `id` is the selected value, `label` the display text.
-   *  Include the "show everything" option (its id === `defaultValue`). */
+   *  For "select", include the "show everything" option (id === defaultValue).
+   *  For "multiselect", list only the real options ("" = none selected = all). */
   options: { id: string; label: string }[];
-  /** The "show everything" option id (no predicate applied when selected). */
+  /** The "show everything" value (no predicate applied when selected). "" for
+   *  multiselect; the all-option id for select. */
   defaultValue: string;
+  /** Keep the row? For multiselect, `value` is the comma-joined selection. */
   predicate: (value: string, dealing: MarketDealing<W>) => boolean;
 }
 

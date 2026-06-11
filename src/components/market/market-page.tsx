@@ -34,6 +34,7 @@ import { MarketTodayEmpty } from "./market-today-empty";
 import { MarketTodayHero } from "./market-today-hero";
 import {
   bucketByMonth,
+  buildUniversalFilters,
   compareByReturnDesc,
   computeRowMetric,
   groupByCompany,
@@ -501,6 +502,22 @@ export function MarketPage<W>({
     );
   }, [dealings, search]);
 
+  // Universal filters (Industry / Clusters / Trade size) injected for EVERY
+  // market ahead of its own extra axes — they read shared MarketDealing fields
+  // and self-gate on the data present. The list rebuilds as dealings load (the
+  // Industry options derive from the sectors actually in the data).
+  const allExtraFilters = useMemo(
+    () => [
+      ...buildUniversalFilters(
+        dealings,
+        config.priceFormat?.formatValue ??
+          ((n: number) => `${Math.round(n / 1000)}k`),
+      ),
+      ...(config.extraFilters ?? []),
+    ],
+    [dealings, config.priceFormat, config.extraFilters],
+  );
+
   const filteredDealings = useMemo(() => {
     // Per-market Signal predicate; ratingless markets (NL/SE) override the
     // rating-based default with their own clean-buy heuristic.
@@ -519,7 +536,7 @@ export function MarketPage<W>({
 
     // Always-visible config-driven extra axes (e.g. Congress party). Skipped
     // when the value is the filter's "show everything" default.
-    for (const ef of config.extraFilters ?? []) {
+    for (const ef of allExtraFilters) {
       const value = extraFilterValues[ef.id] ?? ef.defaultValue;
       if (value !== ef.defaultValue) {
         base = base.filter((d) => ef.predicate(value, d));
@@ -532,7 +549,7 @@ export function MarketPage<W>({
     heroPredicate,
     signalFilter,
     config.isSignal,
-    config.extraFilters,
+    allExtraFilters,
     extraFilterValues,
   ]);
 
@@ -1196,11 +1213,14 @@ export function MarketPage<W>({
           >
             <MarketFilterBar
               extraFilterValues={extraFilterValues}
-              extraFilters={config.extraFilters?.map((ef) => ({
+              extraFilters={allExtraFilters.map((ef) => ({
                 id: ef.id,
                 label: ef.label,
+                question: ef.question,
                 description: ef.description,
+                kind: ef.kind,
                 options: ef.options,
+                defaultValue: ef.defaultValue,
               }))}
               heroFilterId={heroFilterId}
               heroFilters={config.heroFilters?.map((f) => ({

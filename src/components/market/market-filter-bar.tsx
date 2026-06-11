@@ -74,7 +74,15 @@ export function MarketFilterBar({
   heroFilterId?: string | null;
   onHeroFilterChange?: (id: string) => void;
   /** Always-visible config-driven extra filter axes (e.g. Congress party). */
-  extraFilters?: { id: string; label: string; description?: string; options: FilterSelectOption[] }[];
+  extraFilters?: {
+    id: string;
+    label: string;
+    question?: string;
+    description?: string;
+    kind?: "select" | "multiselect";
+    options: FilterSelectOption[];
+    defaultValue?: string;
+  }[];
   extraFilterValues?: Record<string, string>;
   onExtraFilterChange?: (filterId: string, value: string) => void;
   /** Optional element rendered ml-auto on the right — currently used for the
