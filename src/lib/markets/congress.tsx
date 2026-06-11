@@ -62,12 +62,16 @@ const US_STATES: Record<string, string> = {
   MP: "Northern Mariana Islands",
 };
 
-/** Readable location for a member — full state name + House district ("New
- *  Jersey-5"). Party is dropped (it's its own chip now); falls back to chamber. */
+/** Readable role + location for a member — chamber title + full state name, with
+ *  the House district ("Rep. New Jersey-5", "Sen. Arkansas"). The chamber title
+ *  distinguishes Senators from Representatives in the mixed feed; party is its
+ *  own chip. */
 const stateLine = (r: GovDealing["reporter"]): string => {
+  const title = r.chamber === "senate" ? "Sen." : "Rep.";
   if (!r.state) return r.chamber === "senate" ? "Senate" : "House";
   const name = US_STATES[r.state] ?? r.state;
-  return r.district != null ? `${name}-${r.district}` : name;
+  const loc = r.district != null ? `${name}-${r.district}` : name;
+  return `${title} ${loc}`;
 };
 
 /** Strip the instrument-class descriptor PTRs append to the issuer name
@@ -628,8 +632,8 @@ const isGovSignal = (d: MarketDealing<GovDealing>): boolean =>
  * This body replaces it. */
 function CongressExplainer() {
   const meta: { label: string; value: string }[] = [
-    { label: "Source", value: "US House Clerk — STOCK Act PTRs" },
-    { label: "Who files", value: "Representatives, their spouses & dependents" },
+    { label: "Source", value: "US House Clerk + Senate eFD — STOCK Act PTRs" },
+    { label: "Who files", value: "Representatives & Senators, their spouses & dependents" },
     { label: "Amounts", value: "Disclosed as ranges, never exact figures" },
     { label: "Timing", value: "Filed up to ~45 days after the trade" },
   ];
@@ -673,8 +677,8 @@ function CongressExplainer() {
         <h3 className="text-sm font-semibold">How we read it</h3>
         <p className="text-sm leading-relaxed text-foreground/70">
           We take the Periodic Transaction Reports (PTRs) filed with the US
-          House Clerk, keep the purchases — sales and non-trades are dropped —
-          and standardise every filing here. House only for now.
+          House Clerk and the Senate eFD system, keep the purchases — sales and
+          non-trades are dropped — and standardise every filing here.
         </p>
         <dl className="overflow-hidden rounded-xl border border-black/[0.06] divide-y divide-black/[0.06] dark:border-white/[0.08] dark:divide-white/[0.08]">
           {meta.map((m) => (
@@ -756,7 +760,7 @@ function CongressExplainer() {
 export const CongressMarket: MarketConfig<GovDealing> = {
   id: "usg",
   title: "US Congress (preview)",
-  documentTitle: "ddbx · Congressional Trading — US House STOCK Act Filings",
+  documentTitle: "ddbx · Congressional Trading — US Congress STOCK Act Filings",
   heroHeadline: (
     <>
       Which members of{" "}
@@ -766,20 +770,20 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   ),
   description: (
     <>
-      US House <strong className="text-foreground/75">STOCK Act</strong> Periodic
-      Transaction Reports — what members of Congress (and their spouses) are
-      buying. Official House Clerk filings, parsed and triaged automatically.{" "}
-      <strong className="text-foreground/75">Signal</strong> = trades with a
-      committee-jurisdiction edge, a cross-member cluster, or that are notable by
-      size/leverage (large bets, options). <strong className="text-foreground/75">All</strong>{" "}
-      shows every buy. Senate coming later.
+      US Congress <strong className="text-foreground/75">STOCK Act</strong> Periodic
+      Transaction Reports — what Representatives and Senators (and their spouses)
+      are buying. Official House Clerk and Senate eFD filings, parsed and triaged
+      automatically. <strong className="text-foreground/75">Signal</strong> = trades
+      with a committee-jurisdiction edge, a cross-member cluster, or that are
+      notable by size/leverage (large bets, options).{" "}
+      <strong className="text-foreground/75">All</strong> shows every buy.
     </>
   ),
   explainer: <CongressExplainer />,
-  explainerSubtitle: "US House · STOCK Act",
+  explainerSubtitle: "US Congress · STOCK Act",
   marketLabel: "US Congress",
   locale: "en-US",
-  topNotice: "US Congress is an early preview — House only, no manual curation yet.",
+  topNotice: "US Congress is an early preview — no manual curation yet.",
   priceFormat: USD_FORMAT,
   normalizeLivePrice: (close_pence) => close_pence / 100,
   // PTRs disclose dollar ranges, not an exact fill, and land weeks late — so
@@ -822,6 +826,17 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   // no narrowing. Unresolved filers (no roster match) have no party and drop
   // out of the D / R views.
   extraFilters: [
+    {
+      id: "chamber",
+      label: "Chamber",
+      defaultValue: "all",
+      options: [
+        { id: "all", label: "Both chambers" },
+        { id: "house", label: "House" },
+        { id: "senate", label: "Senate" },
+      ],
+      predicate: (value, d) => d.raw.reporter.chamber === value,
+    },
     {
       id: "party",
       label: "Party",

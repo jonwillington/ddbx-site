@@ -1,3 +1,15 @@
+# Baseline security headers for all routes.
+# CSP is intentionally pragmatic (allows inline script/style because the app
+# currently uses inline bootstrap/style blocks). Tighten further once those
+# are nonce/hash-based.
+/*
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://static.ads-twitter.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; connect-src 'self' https://api.ddbx.uk https://*.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://analytics.twitter.com https://t.co https://static.ads-twitter.com; frame-src 'none'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
+  Strict-Transport-Security: max-age=31536000
+
 # The AASA file has no extension, so Pages would guess its content type.
 # Apple is lenient, but serve it explicitly as JSON.
 /.well-known/apple-app-site-association

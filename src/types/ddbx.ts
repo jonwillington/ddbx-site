@@ -211,8 +211,9 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
     },
     // DARK LAUNCH: every flag false. The pipeline ingests + serves
     // /api/gov-dealings regardless, but no client surfaces it until a
-    // dedicated "Congress" surface ships AND the relevant flag flips. Senate
-    // is deferred (efdsearch is behind an Akamai bot wall); House only today.
+    // dedicated "Congress" surface ships AND the relevant flag flips. Both
+    // chambers now ingested — House (Clerk PDFs) + Senate (efdsearch via
+    // Firecrawl, past the Akamai wall).
     capabilities: {
       analysis: false,
       performance: false,
@@ -1277,10 +1278,11 @@ export interface AnalysisFeedbackRow {
 // is legislative jurisdiction / cross-member clustering, not own-company
 // conviction — reflected in the triage layer, not the wire shape.
 //
-// Source today: official House Clerk disclosures (static, Worker-reachable;
-// PTR detail parsed from text-layered PDFs). Senate (efdsearch) is deferred —
-// behind an Akamai bot wall. See ../pipeline/us-gov and the investigation at
-// ddbx-ios-app/investigations/2026-06-09-congress-trading.md.
+// Sources: House Clerk disclosures (static, Worker-reachable; PTR detail from
+// text-layered PDFs) AND the Senate eFD portal (efdsearch — Akamai-walled to
+// datacenter IPs, so fetched via Firecrawl's stealth proxy; PTR detail is an
+// HTML table). See ../pipeline/us-gov and
+// investigations/2026-06-11-senate-efdsearch-ingest.md.
 
 export type GovChamber = "house" | "senate";
 export type GovOwner = "self" | "spouse" | "joint" | "child";

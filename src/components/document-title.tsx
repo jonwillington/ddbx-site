@@ -16,26 +16,67 @@ export function DocumentTitle() {
 
   useEffect(() => {
     const market = marketForPath(pathname);
+    const pageTitle = (() => {
+      if (pathname === "/portfolio" || pathname.endsWith("/performance")) {
+        return `${siteConfig.brand} · Portfolio (${market.label}) — ${siteConfig.name}`;
+      }
+      if (pathname.startsWith("/directors/") || /\/directors\//.test(pathname)) {
+        return `${siteConfig.brand} · Director (${market.label}) — ${siteConfig.name}`;
+      }
 
-    if (pathname === "/portfolio" || pathname.endsWith("/performance")) {
-      document.title = `${siteConfig.brand} · Portfolio (${market.label}) — ${siteConfig.name}`;
-    } else if (
-      pathname.startsWith("/directors/") ||
-      /\/directors\//.test(pathname)
-    ) {
-      document.title = `${siteConfig.brand} · Director (${market.label}) — ${siteConfig.name}`;
-    } else {
-      document.title = market.config.documentTitle;
-    }
+      return market.config.documentTitle;
+    })();
+    const pageDescription = (() => {
+      if (pathname === "/portfolio" || pathname.endsWith("/performance")) {
+        return `Track ${market.label} insider performance versus benchmark indices on ddbx.`;
+      }
+      if (pathname.startsWith("/directors/") || /\/directors\//.test(pathname)) {
+        return `${market.label} director profile with dealing history and signal context on ddbx.`;
+      }
+
+      return `AI-analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;
+    })();
+    const pageUrl = `${window.location.origin}${pathname}${search}${hash}`;
+
+    document.title = pageTitle;
+    setMeta("name", "description", pageDescription);
+    setMeta("property", "og:title", pageTitle);
+    setMeta("property", "og:description", pageDescription);
+    setMeta("property", "og:url", pageUrl);
+    setMeta("property", "og:site_name", siteConfig.name);
+    setMeta("name", "twitter:title", pageTitle);
+    setMeta("name", "twitter:description", pageDescription);
+    setMeta("name", "twitter:url", pageUrl);
+    setMeta("name", "twitter:card", "summary_large_image");
+    setMeta("name", "twitter:site", "@ddbxuk");
 
     window.gtag?.("event", "page_view", {
-      page_title: document.title,
+      page_title: pageTitle,
       page_path: `${pathname}${search}${hash}`,
-      page_location: window.location.href,
+      page_location: pageUrl,
       host: window.location.hostname,
       market: market.id,
     });
   }, [pathname, search, hash]);
 
   return null;
+}
+
+function setMeta(
+  key: "name" | "property",
+  value: string,
+  content: string,
+): void {
+  const selector = `meta[${key}="${value}"]`;
+  const existing = document.head.querySelector(selector);
+
+  if (existing instanceof HTMLMetaElement) {
+    existing.setAttribute("content", content);
+    return;
+  }
+  const tag = document.createElement("meta");
+
+  tag.setAttribute(key, value);
+  tag.setAttribute("content", content);
+  document.head.appendChild(tag);
 }
