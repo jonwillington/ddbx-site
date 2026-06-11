@@ -19,7 +19,12 @@ import type { ComponentType, ReactNode } from "react";
 import type { PriceFormat } from "@/components/position-card";
 import type { MarketSession } from "@/lib/market-status";
 import type { HolidaySource } from "@/lib/bank-holidays";
-import type { ClusterInfo, LivePerformance, Rating } from "@/types/ddbx";
+import type {
+  ClusterInfo,
+  LivePerformance,
+  Rating,
+  RatingChecklist,
+} from "@/types/ddbx";
 
 /** Triage label string. Markets are free to use their own taxonomies — the
  *  hero / today card just renders whatever the adapter produces. */
@@ -89,6 +94,10 @@ export interface MarketDealing<W = unknown> {
   /** Optional triage verdict, when the market has a triage pass. US uses
    *  "promising" | "maybe" | "skip". */
   triageVerdict?: string;
+  /** The six-point checklist verdicts from deep analysis, when present.
+   *  Feeds the explainer walkthrough's "score one with us" example — a
+   *  dealing that cleared all six demonstrates each check on real data. */
+  checklist?: RatingChecklist;
   /** Optional one-liner from the deep-analysis pipeline. Surfaced by the
    *  Today hero so each card teases its summary; markets without analysis
    *  leave this undefined. */

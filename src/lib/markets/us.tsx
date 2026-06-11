@@ -283,6 +283,7 @@ export function toMarketDealing(group: UsRowGroup): MarketDealing<UsRowGroup> {
     legCount: group.leg_count,
     rating: group.analysis?.rating,
     triageVerdict: group.triage_verdict,
+    checklist: group.analysis?.checklist,
     summary: group.analysis?.summary,
     sector: row.sector_normalized ?? undefined,
     confidence: group.analysis?.confidence,

@@ -46,6 +46,7 @@ const GBP_FORMAT: PriceFormat = {
   formatPrice: (n) => {
     const a = Math.abs(n);
     const decimals = a < 1 ? 3 : a < 10 ? 2 : a < 100 ? 1 : 0;
+
     return `${parseFloat(n.toFixed(decimals))}p`;
   },
   formatValue: (n) =>
@@ -95,6 +96,7 @@ export function toMarketDealing(d: Dealing): MarketDealing<Dealing> {
     legCount: 1,
     rating: d.analysis?.rating,
     triageVerdict: d.triage?.verdict,
+    checklist: d.analysis?.checklist,
     summary: d.analysis?.summary,
     sector: d.sector_normalized ?? undefined,
     confidence: d.analysis?.confidence,

@@ -5,13 +5,14 @@ import { SparklesIcon } from "@heroicons/react/24/outline";
 import { AppDrawer } from "@/components/app-drawer";
 import { marketCopyFor } from "@/lib/markets/market-copy";
 
-/** "What are we looking for?" — the explainer opened from the hero button.
- *  Web sibling of the iOS LogoSheet. Three parts: why insider buys matter, how
- *  the market is localised (exchange / regulator / filer noun), and the
- *  six-point checklist a buy is scored against. The checklist mirrors
- *  RatingChecklist in ddbx-data (worker/db/types.ts) and the iOS
- *  RatingChecklist.labels — same six checks UK/US/EU all use, so the copy
- *  describes the shared methodology rather than any one market's pipeline. */
+/** "What are we looking for?" — the quiet drawer form of the explainer.
+ *  Checklist markets (UK/US/EU) now open MarketExplainerExperience — the
+ *  full-screen walkthrough — instead; MarketPage renders this drawer only for
+ *  markets that pass a bespoke `explainer` body (Congress, whose signal model
+ *  is its own). The default six-point body below is kept as the reference
+ *  copy: it mirrors RatingChecklist in ddbx-data (worker/db/types.ts) and the
+ *  iOS RatingChecklist.labels — the same six checks the walkthrough plays
+ *  through scene by scene. */
 export function MarketExplainerSheet({
   open,
   onClose,

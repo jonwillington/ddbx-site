@@ -15,6 +15,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { DailySummarySheet } from "./daily-summary-banner";
 import { MarketChartModeToggle } from "./market-chart-mode-toggle";
 import { MarketDetailDrawer } from "./market-detail-drawer";
+import { MarketExplainerExperience } from "./market-explainer-experience";
 import { MarketExplainerSheet } from "./market-explainer-sheet";
 import { MarketFilterBar, type MarketViewMode } from "./market-filter-bar";
 import { MarketHero } from "./market-hero";
@@ -556,6 +557,7 @@ export function MarketPage<W>({
     // when the value is the filter's "show everything" default.
     for (const ef of allExtraFilters) {
       const value = extraFilterValues[ef.id] ?? ef.defaultValue;
+
       if (value !== ef.defaultValue) {
         base = base.filter((d) => ef.predicate(value, d));
       }
@@ -956,12 +958,14 @@ export function MarketPage<W>({
   // master indents its portrait past an expand chevron). Defaulted off so the
   // bare `.map(renderDayRow)` call sites — where map passes an index, not a
   // boolean — stay un-indented.
-  const renderRow = (d: MarketDealing<W>, indent = false, hideInsider = false) => (
+  const renderRow = (
+    d: MarketDealing<W>,
+    indent = false,
+    hideInsider = false,
+  ) => (
     <MarketRow
       key={d.key}
       hideDate
-      hideInsider={hideInsider}
-      indent={indent}
       RowActionCell={config.RowActionCell}
       RowNameBadge={config.RowNameBadge}
       benchmarkBars={benchmarkBars}
@@ -972,6 +976,8 @@ export function MarketPage<W>({
       dealing={d}
       fmt={config.priceFormat}
       formatTickerDisplay={config.formatTickerDisplay}
+      hideInsider={hideInsider}
+      indent={indent}
       isMuted={config.isRowMuted}
       locale={config.locale}
       noPosteriorData={stockNoPosteriorData(d)}
@@ -998,13 +1004,18 @@ export function MarketPage<W>({
           key={`person-${group.key}`}
           aggReturnPct={aggregateReturn(group.dealings)}
           aggShowAlpha={chartMode.axis === "market"}
+          chamber={group.chamber}
           count={group.count}
           insiderName={group.insiderName}
           insiderPhotoUrl={group.insiderPhotoUrl}
           insiderRole={group.insiderRole}
           party={group.party}
-          chamber={group.chamber}
-          signalCount={group.dealings.filter((d) => d.triageVerdict === "promising" || d.triageVerdict === "maybe").length}
+          signalCount={
+            group.dealings.filter(
+              (d) =>
+                d.triageVerdict === "promising" || d.triageVerdict === "maybe",
+            ).length
+          }
           totalValueLabel={
             group.totalValue != null
               ? config.priceFormat.formatValue(group.totalValue)
@@ -1131,30 +1142,30 @@ export function MarketPage<W>({
             centre instead of tucked into a sidebar. Suppressed for low-volume
             markets (Congress) that read better without it. */}
         {!config.hideTodayHero && (
-        <MarketTodayHero
-          TodayEmpty={TodayEmptyComponent}
-          fmt={config.priceFormat}
-          formatTickerDisplay={config.formatTickerDisplay}
-          holidays={config.holidays}
-          isMuted={config.isRowMuted}
-          loading={loading && dealings.length === 0}
-          locale={config.locale}
-          recentBest={recentBestPerformingDealings}
-          // Ready as soon as we have real returns to rank by — which now arrive
-          // with the dealings via live_performance, no price fetch needed. Falls
-          // back to waiting on pricesLoaded for markets without snapshots
-          // (EU/SE), so their grid still fills only once client prices land.
-          recentBestReady={
-            pricesLoaded ||
-            recentBestPerformingDealings.some((e) => e.returnPct != null)
-          }
-          selectedKey={selectedKey}
-          session={config.session}
-          showLogo={logosEnabled}
-          todayDealings={todayDealings}
-          todayIso={todayIso}
-          onSelect={(d) => setSelectedKey(d.key)}
-        />
+          <MarketTodayHero
+            TodayEmpty={TodayEmptyComponent}
+            fmt={config.priceFormat}
+            formatTickerDisplay={config.formatTickerDisplay}
+            holidays={config.holidays}
+            isMuted={config.isRowMuted}
+            loading={loading && dealings.length === 0}
+            locale={config.locale}
+            recentBest={recentBestPerformingDealings}
+            // Ready as soon as we have real returns to rank by — which now arrive
+            // with the dealings via live_performance, no price fetch needed. Falls
+            // back to waiting on pricesLoaded for markets without snapshots
+            // (EU/SE), so their grid still fills only once client prices land.
+            recentBestReady={
+              pricesLoaded ||
+              recentBestPerformingDealings.some((e) => e.returnPct != null)
+            }
+            selectedKey={selectedKey}
+            session={config.session}
+            showLogo={logosEnabled}
+            todayDealings={todayDealings}
+            todayIso={todayIso}
+            onSelect={(d) => setSelectedKey(d.key)}
+          />
         )}
 
         {/* Today's skipped (muted) filings. The analysed ones surface as cards
@@ -1422,7 +1433,12 @@ export function MarketPage<W>({
                                 // group per member, so a member never appears
                                 // as both a cluster and loose rows. No corporate
                                 // intro banner.
-                                <>{renderSuggestedRows([...day.suggested, ...day.skipped])}</>
+                                <>
+                                  {renderSuggestedRows([
+                                    ...day.suggested,
+                                    ...day.skipped,
+                                  ])}
+                                </>
                               ) : isIntroDay ? (
                                 <>
                                   {/* Grouped "signal" panel — the intro banner
@@ -1498,13 +1514,32 @@ export function MarketPage<W>({
         onSelectDealing={(d) => setSelectedKey(d.key)}
       />
 
-      <MarketExplainerSheet
-        explainer={config.explainer}
-        explainerSubtitle={config.explainerSubtitle}
-        marketId={config.id}
-        open={explainerOpen}
-        onClose={() => setExplainerOpen(false)}
-      />
+      {/* "What are we looking for?" — checklist markets get the full-screen
+          walkthrough (the six checks demonstrated on a real loaded filing);
+          markets with their own signal model (Congress) keep their bespoke
+          explainer body in the quiet drawer. */}
+      {config.explainer ? (
+        <MarketExplainerSheet
+          explainer={config.explainer}
+          explainerSubtitle={config.explainerSubtitle}
+          marketId={config.id}
+          open={explainerOpen}
+          onClose={() => setExplainerOpen(false)}
+        />
+      ) : (
+        <MarketExplainerExperience
+          dealings={dealings}
+          fmt={config.priceFormat}
+          locale={config.locale}
+          marketId={config.id}
+          open={explainerOpen}
+          onClose={() => setExplainerOpen(false)}
+          onViewFiling={(key) => {
+            setExplainerOpen(false);
+            setSelectedKey(key);
+          }}
+        />
+      )}
 
       <MonthlyRecapModal
         market={apiMarket}
