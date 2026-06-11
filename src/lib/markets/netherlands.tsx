@@ -440,6 +440,8 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   id: "nl",
   title: "Netherlands director dealings (preview)",
   documentTitle: "ddbx · Director Dealings — Dutch PDMR Disclosures",
+  heroSubhead:
+    "Every insider purchase from the AFM's MAR 19 register, screened and rated within the hour.",
   session: EURONEXT_AMSTERDAM,
   holidays: NL_EXCHANGE_HOLIDAYS,
   description: (

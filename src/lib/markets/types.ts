@@ -250,6 +250,9 @@ export interface MarketConfig<W = unknown> {
    *  "Which directors have been buying shares in {marketLabel} companies?".
    *  Congress sets this since members buy other companies, not themselves. */
   heroHeadline?: ReactNode;
+  /** One-line hero subhead for first-time visitors — what the product does
+   *  for this market. Rendered under the headline on md+ viewports only. */
+  heroSubhead?: ReactNode;
   /** Explainer paragraph under the title. Markdown-y JSX is fine. */
   description: ReactNode;
   /** Optional override for the "What are we looking for?" sheet body. Markets

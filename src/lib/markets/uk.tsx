@@ -317,6 +317,8 @@ export const UkMarket: MarketConfig<Dealing> = {
   id: "uk",
   title: "UK director dealings (preview)",
   documentTitle: "ddbx · Director Dealings — UK Insider Transactions",
+  heroSubhead:
+    "Every director purchase filed to the London market, scanned and rated minutes after disclosure.",
   session: LSE,
   holidays: UK_BANK_HOLIDAYS_SOURCE,
   description: (

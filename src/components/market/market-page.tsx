@@ -547,6 +547,14 @@ export function MarketPage<W>({
     [searchedDealings, todayIso],
   );
 
+  // Today's above-routine count for the hero's live proof line. Same
+  // predicate as the Signal view so the two numbers can't disagree.
+  const todaySignalCount = useMemo(() => {
+    const isSignal = config.isSignal ?? isSignalDealing;
+
+    return todayDealings.filter((d) => isSignal(d)).length;
+  }, [todayDealings, config.isSignal]);
+
   const stockCurrent = useCallback(
     (ticker: string): number | undefined => {
       const raw = prices[ticker];
@@ -1036,6 +1044,9 @@ export function MarketPage<W>({
           primaryCtaHref={config.id === "uk" ? UK_APP_STORE_URL : undefined}
           primaryCtaLabel={config.id === "uk" ? "Download the app" : undefined}
           reportLabel={monthShort(latestRecapMonth)}
+          subhead={config.heroSubhead}
+          todayCount={todayDealings.length}
+          todaySignalCount={todaySignalCount}
           onExplain={() => setExplainerOpen(true)}
           onViewReport={
             config.id !== "uk" && latestRecapMonth

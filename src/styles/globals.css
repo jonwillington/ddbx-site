@@ -5,6 +5,9 @@
 
 @theme {
   --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  /* Display serif — hero headline only. Pairs with Instrument Sans (same
+     family); single 400 weight, so display sizes stay font-normal. */
+  --font-serif: "Instrument Serif", Georgia, serif;
   /* bg-content1 shim — light mode: surface white; dark mode: warm dark surface via var() cascade */
   --color-content1: var(--content1, var(--surface));
 }
