@@ -21,6 +21,7 @@ import {
 import { Skeleton } from "@/components/skeleton";
 import { CompanyLogo } from "@/components/company-logo";
 import { ClusterChip } from "@/components/cluster-chip";
+import { BuyStyleChip } from "@/components/buy-style-chip";
 import { PartyChip } from "@/components/party-chip";
 import { ChamberChip } from "@/components/chamber-chip";
 import { Tooltip } from "@/components/tooltip";
@@ -798,6 +799,7 @@ export function MarketRow<W>({
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
               <ClusterChip cluster={dealing.cluster} />
+              <BuyStyleChip buyStyle={dealing.buyStyle} />
               {RowNameBadge && <RowNameBadge dealing={dealing} />}
               {!hideInsider && (
                 <span className="text-[11px] text-muted truncate">
@@ -863,6 +865,7 @@ export function MarketRow<W>({
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
               <ClusterChip cluster={dealing.cluster} />
+              <BuyStyleChip buyStyle={dealing.buyStyle} />
               {RowNameBadge && <RowNameBadge dealing={dealing} />}
               {!hideInsider && (
                 <span className="text-[11px] text-muted truncate">

@@ -9,6 +9,7 @@ import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { ClusterChip } from "@/components/cluster-chip";
+import { BuyStyleChip } from "@/components/buy-style-chip";
 import { PartyChip } from "@/components/party-chip";
 import { ChamberChip } from "@/components/chamber-chip";
 import { RecentBuysSection } from "@/components/market/recent-buys-section";
@@ -309,6 +310,10 @@ export function MarketDetailDrawer<W>({
                         <ClusterChip
                           className="shrink-0"
                           cluster={active.cluster}
+                        />
+                        <BuyStyleChip
+                          className="shrink-0"
+                          buyStyle={active.buyStyle}
                         />
                       </div>
 

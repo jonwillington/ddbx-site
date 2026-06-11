@@ -20,6 +20,7 @@ import type { PriceFormat } from "@/components/position-card";
 import type { MarketSession } from "@/lib/market-status";
 import type { HolidaySource } from "@/lib/bank-holidays";
 import type {
+  BuyStyle,
   ClusterInfo,
   LivePerformance,
   Rating,
@@ -117,6 +118,12 @@ export interface MarketDealing<W = unknown> {
    *  detail drawer. null/undefined when this dealing isn't part of a cluster.
    *  Read off the wire row's `cluster` field in each market's toMarketDealing. */
   cluster?: ClusterInfo | null;
+
+  /** Buy-style signal computed server-side — contrarian (bought into weakness) /
+   *  momentum (bought into strength) / neutral. Surfaced as a chip on the row +
+   *  detail drawer. null/undefined when unclassified or not a confirmed buy.
+   *  Read off the wire row's `buy_style` field (UK + US only). */
+  buyStyle?: BuyStyle | null;
 
   /** Server-precomputed return / alpha as of the latest cached close, for both
    *  the trade and disclosure anchors. When present, the row renders its

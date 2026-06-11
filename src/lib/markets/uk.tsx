@@ -102,6 +102,7 @@ export function toMarketDealing(d: Dealing): MarketDealing<Dealing> {
     confidence: d.analysis?.confidence,
     catalystWindow: d.analysis?.catalyst_window,
     cluster: d.cluster ?? null,
+    buyStyle: d.buy_style ?? null,
     livePerformance: d.live_performance ?? null,
     actionLabel: action.label,
     actionTone: action.tone,

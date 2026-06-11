@@ -361,6 +361,25 @@ export interface ClusterInfo {
   window_days: 14 | 30;
 }
 
+/** Buy-style signal: what kind of price action a director was buying into,
+ *  computed deterministically from the trailing-`window_days` price series.
+ *  `contrarian` = buying into weakness (well off the recent high); `momentum`
+ *  = buying into strength (at/near a rising high); `neutral` = no clear trend.
+ *  Null/absent when there isn't enough price history to judge, or the row isn't
+ *  a confirmed open-market buy. Raw signed numbers are carried alongside the
+ *  label so reporting can quote them ("bought 28% off the high") and consumers
+ *  can re-tier without a data change. Populated for UK + US only. */
+export interface BuyStyle {
+  kind: "contrarian" | "momentum" | "neutral";
+  /** Signed; ≤ 0. current close ÷ trailing-window max − 1. */
+  drawdown_from_high_pct: number;
+  /** Signed. current close ÷ window-start close − 1. */
+  trailing_return_pct: number;
+  window_days: number;
+  /** The BUY_STYLE_VERSION the row was tagged under (for audit / retunes). */
+  version: number;
+}
+
 export interface Dealing {
   id: string;
   trade_date: string;      // ISO
@@ -416,6 +435,9 @@ export interface Dealing {
   /** Cluster signal computed at read time. See ClusterInfo. Null/absent when
    *  this buy isn't part of a same-issuer cluster (or the row is a sell). */
   cluster?: ClusterInfo | null;
+  /** Buy-style signal (contrarian / momentum / neutral). See BuyStyle.
+   *  Null/absent when unclassified or not a confirmed open-market buy. */
+  buy_style?: BuyStyle | null;
 }
 
 export interface PerformanceRow {
@@ -925,6 +947,9 @@ export interface UsDealing {
    *  Null/absent when not part of a cluster, or the row isn't an acquisition.
    *  Mirrors `Dealing.cluster`. */
   cluster?: ClusterInfo | null;
+  /** Buy-style signal (contrarian / momentum / neutral). See BuyStyle.
+   *  Mirrors `Dealing.buy_style`. */
+  buy_style?: BuyStyle | null;
 }
 
 export type UsTriageVerdict = "skip" | "maybe" | "promising";
