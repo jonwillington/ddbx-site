@@ -29,6 +29,26 @@ const FILLED_CTA =
 const GHOST_CTA =
   "inline-flex items-center rounded-full bg-[#6b503921] px-6 py-3 text-base font-semibold text-[#5a4128] backdrop-blur-sm transition-all hover:bg-[#6b50382e] dark:bg-[#ad9479]/15 dark:text-[#ad9479] dark:hover:bg-[#ad9479]/25";
 
+/** Disclosure-pulse anchor points. Hand-placed in the side gutters — x stays
+ *  outside the ~40-60% centre column so a ripple never crosses the headline,
+ *  y stays above the bottom dissolve. Delays are deliberately uneven across
+ *  the shared 14s cycle so somewhere on the stage blips every ~2s. */
+const PULSE_POINTS: {
+  left: string;
+  top: string;
+  size: number;
+  delay: number;
+}[] = [
+  { left: "9%", top: "30%", size: 8, delay: 0 },
+  { left: "20%", top: "60%", size: 6, delay: 3.4 },
+  { left: "28%", top: "22%", size: 7, delay: 7.9 },
+  { left: "14%", top: "46%", size: 9, delay: 11.2 },
+  { left: "71%", top: "26%", size: 7, delay: 1.7 },
+  { left: "84%", top: "56%", size: 9, delay: 5.6 },
+  { left: "78%", top: "40%", size: 6, delay: 9.4 },
+  { left: "91%", top: "32%", size: 8, delay: 12.6 },
+];
+
 export function MarketHero({
   marketLabel,
   headline,
@@ -145,8 +165,50 @@ export function MarketHero({
               rgba(0, 0, 0, 0.20) 80%,
               rgba(0, 0, 0, 0.35) 100%);
         }
+        /* Disclosure pulses — a blip pops in, sends out two slow ripple
+           rings, lingers, then fades. Each point fires once per 14s cycle
+           at an uneven stagger so the rhythm reads as filings landing,
+           not a metronome. Base opacity 0: the keyframes own visibility. */
+        .hero-pulse {
+          position: absolute; border-radius: 50%; pointer-events: none;
+          opacity: 0; background: #8B6040;
+          will-change: opacity, transform;
+          animation: hero-pulse-dot 14s ease-out infinite;
+        }
+        .hero-pulse-ring {
+          position: absolute; inset: 0; border-radius: 50%;
+          opacity: 0; border: 1px solid rgba(139, 96, 64, 0.75);
+          will-change: opacity, transform;
+          animation: hero-pulse-ring 14s ease-out infinite;
+          animation-delay: inherit;
+        }
+        .hero-pulse-ring-2 { animation-name: hero-pulse-ring-2; }
+        :is(.dark) .hero-pulse { background: #ad9479; }
+        :is(.dark) .hero-pulse-ring { border-color: rgba(173, 148, 121, 0.6); }
+        @keyframes hero-pulse-dot {
+          0%   { opacity: 0;    transform: scale(0); }
+          1.5% { opacity: 0.85; transform: scale(1.3); }
+          3.5% { opacity: 0.6;  transform: scale(1); }
+          15%  { opacity: 0.4;  transform: scale(1); }
+          21%  { opacity: 0;    transform: scale(0.4); }
+          100% { opacity: 0;    transform: scale(0); }
+        }
+        @keyframes hero-pulse-ring {
+          0%   { opacity: 0;    transform: scale(0.5); }
+          1.5% { opacity: 0.55; }
+          12%  { opacity: 0;    transform: scale(3.6); }
+          100% { opacity: 0;    transform: scale(3.6); }
+        }
+        @keyframes hero-pulse-ring-2 {
+          0%, 2.5% { opacity: 0;  transform: scale(0.5); }
+          4%   { opacity: 0.35; }
+          15%  { opacity: 0;    transform: scale(5); }
+          100% { opacity: 0;    transform: scale(5); }
+        }
         @media (prefers-reduced-motion: reduce) {
           .hero-spotlight, .hero-shimmer { animation: none !important; }
+          .hero-pulse { animation: none !important; opacity: 0.22; }
+          .hero-pulse-ring { display: none; }
         }
       `}</style>
 
@@ -184,6 +246,26 @@ export function MarketHero({
               "linear-gradient(to top, var(--color-background, #15110d) 0%, rgba(21,17,13,0.85) 32%, rgba(21,17,13,0.4) 60%, transparent 100%)",
           }}
         />
+
+        {/* Disclosure pulses — kept clear of the centre column (~40-60%)
+            where the headline sits, and of the bottom fade. Sizes and
+            delays vary so no two blips read as twins. */}
+        {PULSE_POINTS.map((p) => (
+          <span
+            key={`${p.left}-${p.top}`}
+            className="hero-pulse z-[2]"
+            style={{
+              left: p.left,
+              top: p.top,
+              width: p.size,
+              height: p.size,
+              animationDelay: `${p.delay}s`,
+            }}
+          >
+            <span className="hero-pulse-ring" />
+            <span className="hero-pulse-ring hero-pulse-ring-2" />
+          </span>
+        ))}
       </div>
 
       <div
