@@ -92,7 +92,7 @@ export function MarketFiltersSheet({
 
             <Field
               description="Order the list by disclosure date, or by the biggest gain since the trade."
-              label="View"
+              label="What do you want to see?"
             >
               <Segmented
                 options={VIEW_OPTIONS}
@@ -103,11 +103,8 @@ export function MarketFiltersSheet({
 
             {signalFilter !== undefined && onSignalFilterChange && (
               <Field
-                description={
-                  SIGNAL_FILTER_OPTIONS.find((o) => o.id === signalFilter)
-                    ?.description
-                }
-                label="Filter"
+                description="Signal is the curated, non-routine subset we surface. All shows every disclosed filing, routine and unrated included."
+                label="How much should we show?"
               >
                 <Segmented
                   options={SIGNAL_FILTER_OPTIONS}
@@ -122,7 +119,7 @@ export function MarketFiltersSheet({
             {showStrength && heroFilters && onHeroFilterChange && (
               <Field
                 description="Narrow to one rating tier — significant, noteworthy, or minor."
-                label="Strength"
+                label="Which conviction strength?"
               >
                 <Select
                   options={heroFilters}
@@ -133,7 +130,11 @@ export function MarketFiltersSheet({
             )}
 
             {extraFilters?.map((ef) => (
-              <Field key={ef.id} description={ef.description} label={ef.label}>
+              <Field
+                key={ef.id}
+                description={ef.description}
+                label={`Which ${ef.label.toLowerCase()}?`}
+              >
                 <Segmented
                   options={ef.options}
                   value={extraFilterValues?.[ef.id] ?? ef.options[0]?.id ?? ""}
@@ -143,7 +144,10 @@ export function MarketFiltersSheet({
             ))}
 
             {trailing && (
-              <Field label="Performance">
+              <Field
+                description="Raw shows the stock's move; vs S&P 500 shows alpha (the move minus the index). From trade measures since the member traded; From disclosure measures since it became public."
+                label="How is performance measured?"
+              >
                 <div className="flex flex-wrap gap-2">{trailing}</div>
               </Field>
             )}
@@ -168,18 +172,18 @@ function Field({
   description,
   children,
 }: {
+  /** Explanatory header — phrased as a question ("What do you want to see?")
+   *  so the drawer teaches the axis rather than just naming it. */
   label: string;
   description?: string;
   children: ReactNode;
 }) {
   return (
     <div className="space-y-2">
-      <div className="text-xs font-medium uppercase tracking-wide text-muted">
-        {label}
-      </div>
+      <div className="text-[13px] font-semibold text-foreground/90">{label}</div>
       {children}
       {description && (
-        <p className="text-[11px] leading-snug text-muted">{description}</p>
+        <p className="text-[12px] leading-snug text-muted">{description}</p>
       )}
     </div>
   );

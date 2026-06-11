@@ -172,17 +172,10 @@ export function PerformanceChart({ result, viewMode, onScrub }: Props) {
     };
   }, [result]);
 
-  if (!series) {
-    return (
-      <div
-        ref={containerRef}
-        className="flex h-[220px] items-center justify-center rounded-lg border border-separator bg-surface/40 text-sm text-muted"
-      >
-        Not enough data yet.
-      </div>
-    );
-  }
-
+  // These don't depend on `series`, so compute them BEFORE the early return —
+  // every hook must run on every render, or React throws "rendered more hooks
+  // than during the previous render" the moment data arrives (series flips
+  // null→set) and the whole page (navbar/logo included) unmounts.
   const dates = result.strategy.map((p) => p.date);
   const n = dates.length;
 
@@ -206,6 +199,17 @@ export function PerformanceChart({ result, viewMode, onScrub }: Props) {
 
     return [...seen].sort((a, b) => a - b);
   }, [n, dates, result.contributors]);
+
+  if (!series) {
+    return (
+      <div
+        ref={containerRef}
+        className="flex h-[220px] items-center justify-center rounded-lg border border-separator bg-surface/40 text-sm text-muted"
+      >
+        Not enough data yet.
+      </div>
+    );
+  }
 
   const valuesForBounds =
     viewMode === "vs_market"
