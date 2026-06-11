@@ -518,6 +518,24 @@ export function MarketPage<W>({
     [dealings, config.priceFormat, config.extraFilters],
   );
 
+  /** Reset every drawer filter to its configured default ("show everything").
+   *  Search stays — it's a separate, always-visible control. */
+  const resetFilters = useCallback(() => {
+    setViewMode("chronological");
+    setSignalFilter(config.defaultSignalFilter ?? "signal");
+    setHeroFilterId(
+      config.defaultHeroFilter ?? config.heroFilters?.[0]?.id ?? null,
+    );
+    setExtraFilterValues(
+      Object.fromEntries(allExtraFilters.map((ef) => [ef.id, ef.defaultValue])),
+    );
+  }, [
+    config.defaultSignalFilter,
+    config.defaultHeroFilter,
+    config.heroFilters,
+    allExtraFilters,
+  ]);
+
   const filteredDealings = useMemo(() => {
     // Per-market Signal predicate; ratingless markets (NL/SE) override the
     // rating-based default with their own clean-buy heuristic.
@@ -1235,6 +1253,7 @@ export function MarketPage<W>({
                 setExtraFilterValues((prev) => ({ ...prev, [id]: value }))
               }
               onHeroFilterChange={setHeroFilterId}
+              onReset={resetFilters}
               onSearch={setSearch}
               onSignalFilterChange={setSignalFilter}
               onViewMode={setViewMode}

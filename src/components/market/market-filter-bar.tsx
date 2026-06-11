@@ -61,6 +61,7 @@ export function MarketFilterBar({
   extraFilters,
   extraFilterValues,
   onExtraFilterChange,
+  onReset,
   trailing,
 }: {
   viewMode: MarketViewMode;
@@ -85,6 +86,8 @@ export function MarketFilterBar({
   }[];
   extraFilterValues?: Record<string, string>;
   onExtraFilterChange?: (filterId: string, value: string) => void;
+  /** Reset every drawer filter to its default. */
+  onReset?: () => void;
   /** Optional element rendered ml-auto on the right — currently used for the
    *  chart-mode toggle. */
   trailing?: ReactNode;
@@ -157,6 +160,7 @@ export function MarketFilterBar({
           viewMode={viewMode}
           onExtraFilterChange={onExtraFilterChange}
           onHeroFilterChange={onHeroFilterChange}
+          onReset={onReset}
           onSignalFilterChange={onSignalFilterChange}
           onViewMode={onViewMode}
         />

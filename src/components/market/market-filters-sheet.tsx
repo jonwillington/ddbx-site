@@ -39,6 +39,7 @@ export function MarketFiltersSheet({
   extraFilters,
   extraFilterValues,
   onExtraFilterChange,
+  onReset,
   trailing,
 }: {
   viewMode: MarketViewMode;
@@ -52,6 +53,8 @@ export function MarketFiltersSheet({
   extraFilters?: ExtraFilter[];
   extraFilterValues?: Record<string, string>;
   onExtraFilterChange?: (filterId: string, value: string) => void;
+  /** Reset every drawer filter to its default ("show everything"). */
+  onReset?: () => void;
   trailing?: ReactNode;
 }) {
   // Side drawer (floats off the right) on tablet + desktop; bottom sheet on
@@ -60,7 +63,7 @@ export function MarketFiltersSheet({
   const direction = isDesktop ? "right" : "bottom";
   const contentClass = isDesktop
     ? "fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-sm rounded-2xl border border-[#e8e0d5] dark:border-separator bg-[#f5f0e8] dark:bg-background shadow-2xl flex flex-col overflow-hidden outline-none"
-    : "fixed bottom-0 inset-x-0 z-50 max-h-[88vh] rounded-t-2xl border-t border-[#e8e0d5] dark:border-separator bg-[#f5f0e8] dark:bg-background flex flex-col outline-none";
+    : "fixed bottom-0 inset-x-0 z-50 max-h-[88vh] rounded-t-2xl border-t border-[#e8e0d5] dark:border-separator bg-[#f5f0e8] dark:bg-background flex flex-col overflow-hidden outline-none";
 
   const strengthValue = heroFilterId ?? heroFilters?.[0]?.id ?? "";
 
@@ -115,7 +118,7 @@ export function MarketFiltersSheet({
             <div className="mx-auto mt-3 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-black/15 dark:bg-white/20" />
           )}
 
-          <div className="px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 space-y-2.5 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto px-4 pt-4 space-y-2.5">
             <Drawer.Title className="px-1 text-base font-semibold">
               Filters
             </Drawer.Title>
@@ -186,6 +189,13 @@ export function MarketFiltersSheet({
                       value={value}
                       onChange={(v) => onExtraFilterChange?.(ef.id, v)}
                     />
+                  ) : ef.options.length > 3 ? (
+                    // 4+ options don't fit a segmented row — use a dropdown.
+                    <Select
+                      options={ef.options}
+                      value={value || ef.options[0]?.id || ""}
+                      onChange={(id) => onExtraFilterChange?.(ef.id, id)}
+                    />
                   ) : (
                     <Segmented
                       options={ef.options}
@@ -206,10 +216,21 @@ export function MarketFiltersSheet({
                 {trailing}
               </Accordion>
             )}
+          </div>
 
+          {/* Pinned footer — Reset and Done at 50/50, always reachable. */}
+          <div className="shrink-0 flex gap-2.5 border-t border-separator/60 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <button
+              className="flex-1 rounded-full border border-separator py-3 text-sm font-medium text-foreground/70 transition-colors hover:bg-foreground/5 disabled:opacity-40"
+              disabled={!hasActiveFilter}
+              type="button"
+              onClick={() => onReset?.()}
+            >
+              Reset
+            </button>
             <Drawer.Close asChild>
               <button
-                className="mt-1.5 w-full rounded-full bg-[#5a4128] py-3 text-sm font-medium text-white transition-colors hover:bg-[#49331f]"
+                className="flex-1 rounded-full bg-[#5a4128] py-3 text-sm font-medium text-white transition-colors hover:bg-[#49331f]"
                 type="button"
               >
                 Done
