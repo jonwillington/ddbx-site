@@ -1533,10 +1533,16 @@ export function MarketPage<W>({
           locale={config.locale}
           marketId={config.id}
           open={explainerOpen}
+          showLogo={logosEnabled}
           onClose={() => setExplainerOpen(false)}
           onViewFiling={(key) => {
-            setExplainerOpen(false);
-            setSelectedKey(key);
+            // Swap panel → deal atomically. Two URL setters in the same tick
+            // race and resurrect the cleared param (same gotcha as the
+            // day → deal swap below). Controlled wrappers navigate to a
+            // dealing path instead, which drops the query string itself.
+            if (controlled) setExplainerOpen(false);
+            else setUrlParams({ panel: null, deal: key });
+            onSelectionChange?.(key);
           }}
         />
       )}

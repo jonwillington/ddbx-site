@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { shortDate } from "./market-utils";
 
+import { CompanyLogo } from "@/components/company-logo";
 import { marketCopyFor } from "@/lib/markets/market-copy";
 
 /** "What are we looking for?" — the explainer as a full-screen walkthrough
@@ -123,6 +124,7 @@ export function MarketExplainerExperience({
   dealings,
   fmt,
   locale,
+  showLogo,
   onViewFiling,
 }: {
   open: boolean;
@@ -133,6 +135,9 @@ export function MarketExplainerExperience({
   dealings: MarketDealing<unknown>[];
   fmt: PriceFormat;
   locale?: string;
+  /** Render the featured company's logo in the intro. Off for markets where
+   *  logo.dev coverage is too thin (SE), mirroring the table rows. */
+  showLogo?: boolean;
   /** Opens the featured filing's detail drawer (caller closes this overlay
    *  first). Omitted → the finale shows no "see this filing" CTA. */
   onViewFiling?: (key: string) => void;
@@ -144,9 +149,14 @@ export function MarketExplainerExperience({
   const stageRef = useRef<HTMLDivElement | null>(null);
 
   /** The worked example: the best recent buy that cleared all six checks.
-   *  Rating tier first (a "significant" payoff lands hardest), summary
-   *  presence second (the finale quotes it), recency last. Null when the
-   *  market has no checklist data — the walkthrough runs without examples. */
+   *  Hard bar: an open-market buy with a value and every checklist item true.
+   *  Among those, prefer in order of weight: top rating tier (a "significant"
+   *  payoff lands hardest), disclosed in the last 45 days (the story stays
+   *  current), not underwater right now (an exemplary buy that's down 20%
+   *  undercuts the finale — unknown performance is treated as fine), a
+   *  quotable summary, a named senior role for the headline. Recency breaks
+   *  ties. Null when the market has no checklist data — the walkthrough runs
+   *  without examples. */
   const featured = useMemo(() => {
     const cleared = dealings.filter(
       (d) =>
@@ -155,9 +165,15 @@ export function MarketExplainerExperience({
         d.checklist &&
         Object.values(d.checklist).every(Boolean),
     );
+    const freshCutoff = new Date(Date.now() - 45 * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
     const score = (d: MarketDealing<unknown>) =>
-      (d.rating === "significant" ? 4 : d.rating === "noteworthy" ? 2 : 0) +
-      (d.summary ? 1 : 0);
+      (d.rating === "significant" ? 100 : d.rating === "noteworthy" ? 50 : 0) +
+      (d.disclosedDate.slice(0, 10) >= freshCutoff ? 25 : 0) +
+      ((d.livePerformance?.return_pct_trade ?? 0) >= 0 ? 20 : 0) +
+      (d.summary ? 15 : 0) +
+      (d.insiderRole ? 10 : 0);
 
     return (
       cleared.sort(
@@ -312,6 +328,13 @@ export function MarketExplainerExperience({
           box-shadow: 0 0 24px 4px rgba(205, 177, 144, 0.45);
           animation: exp-hero-blip-in 1s ease-out both;
         }
+        /* Logo variant: the featured company's mark lands like a blip — same
+           scale-in + ripple rings, a soft glow instead of the dot. */
+        .exp-hero-land {
+          position: relative; border-radius: 50%;
+          box-shadow: 0 0 32px 6px rgba(205, 177, 144, 0.3);
+          animation: exp-hero-blip-in 1s ease-out both;
+        }
         .exp-hero-blip-ring {
           position: absolute; inset: 0; border-radius: 50%;
           border: 1.5px solid rgba(205, 177, 144, 0.8);
@@ -328,6 +351,16 @@ export function MarketExplainerExperience({
           15%  { opacity: 0.8; }
           100% { opacity: 0;   transform: scale(5); }
         }
+        /* From the 56px logo the dot's 5x ripple would be ~280px — keep the
+           rings proportionate to the bigger anchor. */
+        .exp-hero-land .exp-hero-blip-ring {
+          animation-name: exp-hero-land-ring;
+        }
+        @keyframes exp-hero-land-ring {
+          0%   { opacity: 0;   transform: scale(0.8); }
+          15%  { opacity: 0.7; }
+          100% { opacity: 0;   transform: scale(2.1); }
+        }
         /* Scene change: content rises in; the verdict card lands a beat
            after the check it answers. */
         .exp-scene { animation: exp-scene-in 0.55s ease-out both; }
@@ -342,7 +375,7 @@ export function MarketExplainerExperience({
         }
         @media (prefers-reduced-motion: reduce) {
           .exp-spotlight, .exp-shimmer, .exp-scene, .exp-verdict,
-          .exp-hero-blip { animation: none !important; opacity: 1; }
+          .exp-hero-blip, .exp-hero-land { animation: none !important; opacity: 1; }
           .exp-pulse { animation: none !important; opacity: 0.2; }
           .exp-pulse-ring, .exp-hero-blip-ring { display: none; }
         }
@@ -400,6 +433,7 @@ export function MarketExplainerExperience({
               exchange={c.exchangeFullName}
               insiderTermPlural={c.insiderTermPlural}
               locale={locale}
+              showLogo={showLogo}
               onBegin={advance}
             />
           )}
@@ -493,6 +527,7 @@ function IntroScene({
   exchange,
   insiderTermPlural,
   locale,
+  showLogo,
   onBegin,
 }: {
   ctx: FeaturedContext | null;
@@ -500,16 +535,35 @@ function IntroScene({
   exchange: string;
   insiderTermPlural: string;
   locale?: string;
+  showLogo?: boolean;
   onBegin: () => void;
 }) {
+  // The featured company's logo lands centre-stage like a filing blip; the
+  // plain dot carries the scene when logos are off or there's no example.
+  const logoTicker = showLogo && dealing ? dealing.ticker : null;
+
   return (
     <>
-      <span aria-hidden className="mx-auto mb-8 block h-3.5 w-3.5">
-        <span className="exp-hero-blip block h-full w-full">
-          <span className="exp-hero-blip-ring" />
-          <span className="exp-hero-blip-ring exp-hero-blip-ring--late" />
+      {logoTicker ? (
+        <span aria-hidden className="mx-auto mb-7 block h-14 w-14">
+          <span className="exp-hero-land block h-full w-full">
+            <CompanyLogo
+              className="!h-full !w-full"
+              size={56}
+              ticker={logoTicker}
+            />
+            <span className="exp-hero-blip-ring" />
+            <span className="exp-hero-blip-ring exp-hero-blip-ring--late" />
+          </span>
         </span>
-      </span>
+      ) : (
+        <span aria-hidden className="mx-auto mb-8 block h-3.5 w-3.5">
+          <span className="exp-hero-blip block h-full w-full">
+            <span className="exp-hero-blip-ring" />
+            <span className="exp-hero-blip-ring exp-hero-blip-ring--late" />
+          </span>
+        </span>
+      )}
       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#ad9479]">
         {exchange}
         {dealing && ` · ${shortDate(dealing.disclosedDate, locale)}`}
