@@ -32,21 +32,21 @@ const GHOST_CTA =
 /** Disclosure-pulse anchor points. Hand-placed in the side gutters — x stays
  *  outside the ~40-60% centre column so a ripple never crosses the headline,
  *  y stays above the bottom dissolve. Delays are deliberately uneven across
- *  the shared 14s cycle so somewhere on the stage blips every ~2s. */
+ *  the shared 9s cycle so somewhere on the stage blips roughly every second. */
 const PULSE_POINTS: {
   left: string;
   top: string;
   size: number;
   delay: number;
 }[] = [
-  { left: "9%", top: "30%", size: 8, delay: 0 },
-  { left: "20%", top: "60%", size: 6, delay: 3.4 },
-  { left: "28%", top: "22%", size: 7, delay: 7.9 },
-  { left: "14%", top: "46%", size: 9, delay: 11.2 },
-  { left: "71%", top: "26%", size: 7, delay: 1.7 },
-  { left: "84%", top: "56%", size: 9, delay: 5.6 },
-  { left: "78%", top: "40%", size: 6, delay: 9.4 },
-  { left: "91%", top: "32%", size: 8, delay: 12.6 },
+  { left: "9%", top: "30%", size: 10, delay: 0 },
+  { left: "20%", top: "60%", size: 8, delay: 2.1 },
+  { left: "28%", top: "22%", size: 9, delay: 4.6 },
+  { left: "14%", top: "46%", size: 11, delay: 7.2 },
+  { left: "71%", top: "26%", size: 9, delay: 1.2 },
+  { left: "84%", top: "56%", size: 11, delay: 3.7 },
+  { left: "78%", top: "40%", size: 8, delay: 6.0 },
+  { left: "91%", top: "32%", size: 10, delay: 8.1 },
 ];
 
 export function MarketHero({
@@ -166,44 +166,46 @@ export function MarketHero({
               rgba(0, 0, 0, 0.35) 100%);
         }
         /* Disclosure pulses — a blip pops in, sends out two slow ripple
-           rings, lingers, then fades. Each point fires once per 14s cycle
+           rings, lingers, then fades. Each point fires once per 9s cycle
            at an uneven stagger so the rhythm reads as filings landing,
-           not a metronome. Base opacity 0: the keyframes own visibility. */
+           not a metronome; with 8 points that's a blip roughly every
+           second and usually 2-3 alive at once. Base opacity 0: the
+           keyframes own visibility. */
         .hero-pulse {
           position: absolute; border-radius: 50%; pointer-events: none;
           opacity: 0; background: #8B6040;
           will-change: opacity, transform;
-          animation: hero-pulse-dot 14s ease-out infinite;
+          animation: hero-pulse-dot 9s ease-out infinite;
         }
         .hero-pulse-ring {
           position: absolute; inset: 0; border-radius: 50%;
-          opacity: 0; border: 1px solid rgba(139, 96, 64, 0.75);
+          opacity: 0; border: 1.5px solid rgba(139, 96, 64, 0.8);
           will-change: opacity, transform;
-          animation: hero-pulse-ring 14s ease-out infinite;
+          animation: hero-pulse-ring 9s ease-out infinite;
           animation-delay: inherit;
         }
         .hero-pulse-ring-2 { animation-name: hero-pulse-ring-2; }
         :is(.dark) .hero-pulse { background: #ad9479; }
-        :is(.dark) .hero-pulse-ring { border-color: rgba(173, 148, 121, 0.6); }
+        :is(.dark) .hero-pulse-ring { border-color: rgba(173, 148, 121, 0.7); }
         @keyframes hero-pulse-dot {
           0%   { opacity: 0;    transform: scale(0); }
-          1.5% { opacity: 0.85; transform: scale(1.3); }
-          3.5% { opacity: 0.6;  transform: scale(1); }
-          15%  { opacity: 0.4;  transform: scale(1); }
-          21%  { opacity: 0;    transform: scale(0.4); }
+          2.5% { opacity: 0.9;  transform: scale(1.3); }
+          5%   { opacity: 0.75; transform: scale(1); }
+          22%  { opacity: 0.55; transform: scale(1); }
+          30%  { opacity: 0;    transform: scale(0.4); }
           100% { opacity: 0;    transform: scale(0); }
         }
         @keyframes hero-pulse-ring {
           0%   { opacity: 0;    transform: scale(0.5); }
-          1.5% { opacity: 0.55; }
-          12%  { opacity: 0;    transform: scale(3.6); }
-          100% { opacity: 0;    transform: scale(3.6); }
+          2.5% { opacity: 0.7; }
+          18%  { opacity: 0;    transform: scale(3.8); }
+          100% { opacity: 0;    transform: scale(3.8); }
         }
         @keyframes hero-pulse-ring-2 {
-          0%, 2.5% { opacity: 0;  transform: scale(0.5); }
-          4%   { opacity: 0.35; }
-          15%  { opacity: 0;    transform: scale(5); }
-          100% { opacity: 0;    transform: scale(5); }
+          0%, 4% { opacity: 0;  transform: scale(0.5); }
+          6%   { opacity: 0.45; }
+          22%  { opacity: 0;    transform: scale(5.2); }
+          100% { opacity: 0;    transform: scale(5.2); }
         }
         @media (prefers-reduced-motion: reduce) {
           .hero-spotlight, .hero-shimmer { animation: none !important; }
