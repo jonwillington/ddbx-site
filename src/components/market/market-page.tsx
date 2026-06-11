@@ -892,6 +892,7 @@ export function MarketPage<W>({
 
   const chartModeToggle = (
     <MarketChartModeToggle
+      stacked
       benchmarkLabel={config.benchmarkLabel}
       mode={chartMode}
       onChange={setChartMode}

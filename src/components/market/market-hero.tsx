@@ -1,8 +1,10 @@
-/** Shared hero section. The market question as a serif display headline above
- *  a layered atmospheric backdrop: bright warm spotlight at the headline, cool
- *  silver fall-off at the corners, slow-breathing pulse so the light reads as
- *  alive. The bottom dissolves into the page colour without a hard rectangular
- *  band. All CSS-only; respects prefers-reduced-motion.
+/** Shared hero section. The market question as a headline above a layered
+ *  atmospheric backdrop: bright warm spotlight at the headline, cool silver
+ *  fall-off at the corners, slow-breathing pulse so the light reads as alive,
+ *  and disclosure pulses — soft double-ripple blips scattered around the
+ *  sides, like filings landing on a quiet radar. The bottom dissolves into
+ *  the page colour without a hard rectangular band. All CSS-only; respects
+ *  prefers-reduced-motion.
  *
  *  The headline is the page's <h1> — market pages render no other top-level
  *  heading. Under it: an optional one-line subhead for first-time visitors,
@@ -190,11 +192,11 @@ export function MarketHero({
         }`}
       >
         <div className="space-y-3 md:space-y-5">
-          <h1 className="mx-auto max-w-[620px] text-balance font-serif text-[30px] font-normal leading-[1.08] tracking-tight md:text-[58px] md:leading-[1.04]">
+          <h1 className="mx-auto max-w-[550px] text-balance text-[26px] font-semibold tracking-tight leading-[1.1] md:text-[52px] md:leading-[1.05]">
             {headline ?? (
               <>
                 Which directors have been buying shares in{" "}
-                <span className="italic text-[#5a4128] dark:text-[#ad9479]">
+                <span className="text-[#5a4128] dark:text-[#ad9479]">
                   {marketLabel}
                 </span>{" "}
                 companies?

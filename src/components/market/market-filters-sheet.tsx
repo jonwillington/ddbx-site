@@ -143,14 +143,10 @@ export function MarketFiltersSheet({
               </Field>
             ))}
 
-            {trailing && (
-              <Field
-                description="Raw shows the stock's move; vs S&P 500 shows alpha (the move minus the index). From trade measures since the member traded; From disclosure measures since it became public."
-                label="How is performance measured?"
-              >
-                <div className="flex flex-wrap gap-2">{trailing}</div>
-              </Field>
-            )}
+            {/* Performance: the toggle renders its own two stacked, separately
+                explained axes (compared-to-what + measured-from-when), so it
+                sits here directly rather than wrapped in a single Field. */}
+            {trailing}
 
             <Drawer.Close asChild>
               <button
