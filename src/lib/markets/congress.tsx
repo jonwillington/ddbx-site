@@ -380,6 +380,76 @@ function GovAnalysisNarrative({ analysis }: { analysis: Analysis }) {
   );
 }
 
+/** Compact USD for net-worth context ($1.7M, $602M, $1.2bn). */
+function formatMoneyShort(n: number): string {
+  if (n >= 1_000_000_000)
+    return `$${(n / 1_000_000_000).toFixed(n >= 10_000_000_000 ? 0 : 1)}bn`;
+  if (n >= 1_000_000)
+    return `$${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
+  if (n >= 1_000) return `$${Math.round(n / 1_000)}k`;
+  return `$${n}`;
+}
+
+function netWorthLabel(p: NonNullable<GovDealing["reporter"]["profile"]>): string | null {
+  const lo = p.net_worth_min ?? null;
+  const hi = p.net_worth_max ?? null;
+  if (lo == null && hi == null) return null;
+  if (lo != null && hi != null && lo !== hi)
+    return `${formatMoneyShort(lo)}–${formatMoneyShort(hi)}`;
+  return `~${formatMoneyShort((lo ?? hi) as number)}`;
+}
+
+/** Member-level context behind the rating — advisor-managed status (the key
+ *  "why" for a damped big trade), net worth, and the sourced basis. Renders
+ *  nothing for unassessed members (no profile on the wire). */
+function CongressTraderProfile({
+  reporter,
+}: {
+  reporter: GovDealing["reporter"];
+}) {
+  const p = reporter.profile;
+  if (!p) return null;
+  const adv = p.advisor_managed;
+  const nw = netWorthLabel(p);
+  if (adv == null && !nw && !p.note) return null;
+
+  const chip =
+    adv === true
+      ? { text: "Advisor-managed", cls: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300" }
+      : adv === false
+        ? { text: "Self-directed", cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" }
+        : { text: "Management unconfirmed", cls: "border-foreground/15 bg-transparent text-foreground/45" };
+
+  return (
+    <section className="space-y-1.5 border-t border-foreground/10 pt-4">
+      <h3 className="text-base font-semibold">Trader profile</h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium ${chip.cls}`}>
+          {chip.text}
+        </span>
+        {nw && (
+          <span className="text-sm text-foreground/70">
+            <span className="text-muted">Est. net worth</span> · {nw}
+          </span>
+        )}
+      </div>
+      {p.note && (
+        <p className="text-sm leading-snug text-foreground/65">{p.note}</p>
+      )}
+      {p.source && (
+        <a
+          className="inline-block text-xs text-foreground/45 underline underline-offset-2 hover:text-foreground/70"
+          href={p.source}
+          rel="noreferrer"
+          target="_blank"
+        >
+          Source
+        </a>
+      )}
+    </section>
+  );
+}
+
 function CongressDetailBody({
   dealing,
   allDealings = [],
@@ -494,6 +564,8 @@ function CongressDetailBody({
           <GovAnalysisNarrative analysis={d.analysis} />
         </section>
       )}
+
+      <CongressTraderProfile reporter={d.reporter} />
 
       {(dealing.sector || committees.length > 0) && (
         <section className="space-y-1.5 border-t border-foreground/10 pt-4">
