@@ -654,6 +654,7 @@ export function MemberClusterRow({
               <div className="flex items-center min-w-0">
                 <span className="text-[13px] font-semibold truncate leading-tight">{insiderName}</span>
                 <PartyChip className="ml-2" party={party} />
+                <ChamberChip className="ml-1.5" chamber={chamber} />
               </div>
               <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
             </div>

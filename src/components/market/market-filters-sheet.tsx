@@ -8,13 +8,14 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 
+import { useMediaQuery } from "@/lib/use-media-query";
 import { SIGNAL_FILTER_OPTIONS, VIEW_OPTIONS } from "./market-filter-bar";
 
-/** Mobile-only bottom sheet that holds the list filters the desktop bar
- *  shows inline. Trigger is a compact pill matching the FilterSelect look;
- *  the sheet itself uses full-width segmented controls so every option is a
- *  comfortable tap target. The chart-mode toggle is passed through verbatim
- *  (`trailing`) so there's a single source of truth for that control. */
+/** Filter drawer holding every list filter — a side drawer (floats off the
+ *  right) on tablet + desktop, a bottom sheet on phones. Trigger is a compact
+ *  pill; the panel uses full-width segmented controls with a one-line
+ *  explanation under each axis (the room a drawer affords that an inline bar
+ *  didn't). The chart-mode toggle is passed through verbatim (`trailing`). */
 export function MarketFiltersSheet({
   viewMode,
   onViewMode,
@@ -42,6 +43,14 @@ export function MarketFiltersSheet({
   onExtraFilterChange?: (filterId: string, value: string) => void;
   trailing?: ReactNode;
 }) {
+  // Side drawer (floats off the right) on tablet + desktop; bottom sheet on
+  // phones. Mirrors the detail drawer so the two read as the same surface.
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const direction = isDesktop ? "right" : "bottom";
+  const contentClass = isDesktop
+    ? "fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-sm rounded-2xl border border-[#e8e0d5] dark:border-separator bg-[#f5f0e8] dark:bg-background shadow-2xl flex flex-col overflow-hidden outline-none"
+    : "fixed bottom-0 inset-x-0 z-50 max-h-[88vh] rounded-t-2xl border-t border-[#e8e0d5] dark:border-separator bg-[#f5f0e8] dark:bg-background flex flex-col outline-none";
+
   const strengthValue = heroFilterId ?? heroFilters?.[0]?.id ?? "";
   // A subtle dot when any axis differs from its conventional default, so the
   // user knows a filter is active without opening the sheet.
@@ -55,7 +64,7 @@ export function MarketFiltersSheet({
     );
 
   return (
-    <Drawer.Root>
+    <Drawer.Root direction={direction}>
       <Drawer.Trigger asChild>
         <button
           className="relative flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-2 text-xs text-foreground/85 hover:border-[#5a4128]/50 transition-colors"
@@ -71,10 +80,12 @@ export function MarketFiltersSheet({
 
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/50 z-40" />
-        <Drawer.Content className="fixed bottom-0 inset-x-0 z-50 flex flex-col rounded-t-2xl border-t border-[#e8e0d5] dark:border-separator bg-[#f5f0e8] dark:bg-background outline-none">
-          <div className="mx-auto mt-3 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-black/15 dark:bg-white/20" />
+        <Drawer.Content className={contentClass}>
+          {!isDesktop && (
+            <div className="mx-auto mt-3 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-black/15 dark:bg-white/20" />
+          )}
 
-          <div className="px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 space-y-6 overflow-y-auto">
+          <div className="px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 space-y-6 overflow-y-auto">
             <Drawer.Title className="text-base font-semibold">
               Filters
             </Drawer.Title>
