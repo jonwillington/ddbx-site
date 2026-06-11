@@ -1304,6 +1304,26 @@ export interface GovRatingExplain {
   factors: GovRatingFactor[];
 }
 
+/** Slow-moving, member-level context that feeds the deterministic rating (see
+ *  `govRating`) and explains it in the UI. Sourced once per member, cached on
+ *  the roster. All fields optional — an unassessed member carries none.
+ *  See investigations/2026-06-11-gov-member-profiles-mock.md */
+export interface GovMemberProfile {
+  /** true = trades run by a fiduciary/discretionary manager (mechanical, not
+   *  informed → damped, never marquee); false = assessed self-directed
+   *  conviction trader; null/absent = unassessed (scored neutral). */
+  advisor_managed?: boolean | null;
+  /** Disclosure-derived net-worth band (USD). Materiality context for the UI;
+   *  not yet wired into the score (v2). */
+  net_worth_min?: number | null;
+  net_worth_max?: number | null;
+  /** Human-readable basis for the assessment (the "why", e.g. "office says an
+   *  outside firm has full discretion"). */
+  note?: string | null;
+  /** Provenance URL the assessment was sourced from. */
+  source?: string | null;
+}
+
 export interface GovReporter {
   /** Bioguide ID — Congress's canonical member key (e.g. "W000798"). The PTR
    *  feed only carries a free-text name; ingest resolves it against the free
@@ -1323,6 +1343,9 @@ export interface GovReporter {
   /** Official member portrait (public-domain), served from our R2 mirror at
    *  /api/gov/photo/:bioguide. Absent when the member has no Bioguide id. */
   photo_url?: string;
+  /** Member-profile context (advisor-managed status, net worth) — drives and
+   *  explains the rating. Absent for unassessed members. */
+  profile?: GovMemberProfile;
 }
 
 export interface GovDealing {
