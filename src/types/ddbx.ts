@@ -578,6 +578,12 @@ export interface MonthlyMetrics {
    *  with zero buys are omitted; absent entirely on summaries generated before
    *  the field shipped. */
   style_split?: MonthlyStyleSlice[];
+  /** The month's buys grouped by normalised ICB industry, sorted by money
+   *  committed. The editorial angle is the divergence: the most-bought sector
+   *  and the best-performing sector are often not the same one. Buys with no
+   *  sector are omitted; absent on summaries generated before the field
+   *  shipped. */
+  sector_table?: MonthlySectorSlice[];
 }
 
 /** One buy-style's slice of the month: how many buys, how much money, and how
@@ -586,6 +592,16 @@ export interface MonthlyMetrics {
  *  are null when no buy in the slice has usable price data. */
 export interface MonthlyStyleSlice {
   style: "contrarian" | "momentum" | "neutral";
+  buy_count: number;
+  total_value_gbp: number;
+  median_return: number | null;
+  median_alpha: number | null;
+}
+
+/** One industry's slice of the month — same stats as MonthlyStyleSlice but
+ *  grouped by the normalised ICB sector. */
+export interface MonthlySectorSlice {
+  sector: SectorNormalized;
   buy_count: number;
   total_value_gbp: number;
   median_return: number | null;
@@ -637,6 +653,31 @@ export interface MonthlyFeaturedItem {
   sources?: string[];             // source URLs retrieved at synthesis time
 }
 
+/** One of the previous review's featured picks, re-marked a month later. The
+ *  publication-time fields are copied verbatim from the stored item, so the
+ *  grade is against exactly what was published. */
+export interface MonthlyReportCardItem {
+  dealing_id: string;
+  ticker: string;
+  company: string;
+  feature_reason: MonthlyFeatureReason;
+  entry_price_pence: number | null;   // disclosure-day close, as published
+  return_at_publication: number | null; // return_since_entry when featured
+  return_now: number | null;          // entry -> latest close at grading time
+}
+
+/** "How did last month's calls do" — the previous summary's featured picks
+ *  re-marked at this summary's generation date. Wins build credibility,
+ *  owning the losers builds more. Null/absent when there is no prior summary
+ *  to grade (or it predates the field). */
+export interface MonthlyReportCard {
+  graded_month: string;           // ISO "YYYY-MM" of the summary being graded
+  as_of: string;                  // ISO date the return_now marks were taken
+  items: MonthlyReportCardItem[];
+  hits: number;                   // items with return_now > 0
+  misses: number;                 // items with return_now < 0
+}
+
 /** Top-level monthly retrospective. Persisted to `monthly_summaries`; served by
  *  GET /api/monthly-summary. Market-aware; UK only in v1. */
 export interface MonthlySummary {
@@ -649,6 +690,8 @@ export interface MonthlySummary {
   featured: MonthlyFeaturedItem[];
   clusters: MonthlyCluster[];
   benchmark_chart: MonthlyChartBar[]; // FTSE All-Share over the month
+  /** Last month's featured picks re-graded at generation time. */
+  report_card?: MonthlyReportCard | null;
   model: string;                  // primary synthesis model id
   created_at: string;             // ISO datetime UTC
 }
