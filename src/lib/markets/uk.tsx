@@ -321,7 +321,7 @@ export const UkMarket: MarketConfig<Dealing> = {
   title: "UK director dealings (preview)",
   documentTitle: "ddbx · Director Dealings — UK Insider Transactions",
   heroSubhead:
-    "Every director purchase filed to the London market, scanned and rated minutes after disclosure.",
+    "Follow the money. Every UK director purchase, rated as it lands.",
   session: LSE,
   holidays: UK_BANK_HOLIDAYS_SOURCE,
   description: (

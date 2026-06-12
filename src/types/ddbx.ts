@@ -77,6 +77,11 @@ export interface MarketConfig {
     portfolio: boolean;
     /** AI-generated morning / afternoon daily summary. */
     dailySummary: boolean;
+    /** Macro market-overview banner at the top of the dashboard feed (headline
+     *  index open-to-close move + one-line context, on the daily-summary row).
+     *  Independent of `dailySummary` so the banner can light up without the full
+     *  digest surface (US case). */
+    marketOverview: boolean;
     /** Per-market news feed (refreshUk/Us/Se/NlNews + /api/news/*). */
     news: boolean;
     /** Has automated tweet output (daily summaries, weekly movers). */
@@ -105,6 +110,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       performance: true,
       portfolio: true,
       dailySummary: true,
+      marketOverview: true,
       news: true,
       tweets: true,
       monthlySummary: true,
@@ -144,6 +150,11 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       // flip → push + in-app light up together. (Wire shape matches UK; only
       // the cited dealing type differs.)
       dailySummary: false,
+      // Macro overview banner ships ahead of the full US digest surface: the
+      // numbers are deterministic and the US daily summary is already generated
+      // + persisted each close, so the banner can light up while dailySummary
+      // (push + full digest screen) stays held.
+      marketOverview: true,
       news: true,
       // Live as of 2026-06-11: US X posting (per-trade significant-buy cards,
       // close-of-day daily tweet, Saturday weekly movers) posts as @ddbxus via
@@ -170,6 +181,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       performance: false,
       portfolio: false,
       dailySummary: false,
+      marketOverview: false,
       news: true,
       tweets: false,
       monthlySummary: false,
@@ -192,6 +204,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       performance: false,
       portfolio: false,
       dailySummary: false,
+      marketOverview: false,
       news: true,
       tweets: false,
       monthlySummary: false,
@@ -223,6 +236,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       performance: false,
       portfolio: false,
       dailySummary: false,
+      marketOverview: false,
       news: false,
       // Live 2026-06-11: per-filing significant-buy cards post to @ddbxus
       // (congress rides the US handle). Gated to buys-only + recency-swept so a
@@ -482,6 +496,20 @@ export interface DirectorDetail extends DirectorSummary {
   avg_return_by_horizon: Record<string, number | null>;
 }
 
+/** Macro market overview attached to a daily summary. Numbers are the headline
+ *  index's intraday open-to-close move (FTSE 100 for UK, S&P 500 for US),
+ *  computed deterministically from Yahoo — never the LLM. `narrative` is the
+ *  one-line "why", written in the same daily-summary call. Optional on the wire:
+ *  absent on thin days / older rows / older clients. */
+export interface MarketOverview {
+  ticker: string;                // e.g. "^FTSE"
+  label: string;                 // e.g. "FTSE 100"
+  open: number;                  // index points at the open (or prior close on a gap)
+  close: number;                 // index points at the close
+  pct: number;                   // open-to-close % move
+  narrative: string;             // 1-2 sentence macro context
+}
+
 /** Close-of-day prose recap, synthesised by Opus from the full tape. */
 export interface DailySummary {
   date: string;                  // ISO YYYY-MM-DD
@@ -493,6 +521,9 @@ export interface DailySummary {
   total_value_gbp: number;       // sum of value_gbp across all considered dealings
   model: string;                 // e.g. "claude-opus-4-6"
   created_at: string;            // ISO datetime UTC
+  /** Macro index overview. Optional — omitted when no index data was
+   *  available at generation time. */
+  market_overview?: MarketOverview;
 }
 
 /** Response shape for GET /api/daily-summary — the summary plus the cited

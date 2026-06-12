@@ -527,7 +527,7 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   title: "Sweden director dealings (preview)",
   documentTitle: "ddbx · Director Dealings — Swedish PDMR Disclosures",
   heroSubhead:
-    "Every insider purchase from Finansinspektionen's Insynsregister, screened and rated within the hour.",
+    "Follow the money. Every Swedish insider purchase, rated as it lands.",
   session: NASDAQ_STOCKHOLM,
   holidays: SE_EXCHANGE_HOLIDAYS,
   description: (

@@ -611,7 +611,7 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   documentTitle: "ddbx · Director Dealings — US Form 4 Filings",
   // US-market copy uses US English (analyzed, not analysed).
   heroSubhead:
-    "Every open-market insider buy filed on SEC Form 4, analyzed shortly after it lands on EDGAR.",
+    "Follow the money. Every US insider purchase on Form 4, rated as it lands.",
   session: NYSE,
   holidays: US_EXCHANGE_HOLIDAYS,
   description: (

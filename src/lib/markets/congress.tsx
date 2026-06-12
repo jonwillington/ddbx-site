@@ -768,7 +768,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   ),
   // US-market copy uses US English.
   heroSubhead:
-    "Every STOCK Act trade disclosed by Representatives and Senators, parsed and flagged for committee edge, size, and clusters.",
+    "Follow the money. Every US Congress STOCK Act purchase, rated as it lands.",
   description: (
     <>
       US Congress <strong className="text-foreground/75">STOCK Act</strong> Periodic
