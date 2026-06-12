@@ -4,16 +4,18 @@ import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 
 import { AppDrawer } from "@/components/app-drawer";
 import { Navbar } from "@/components/navbar";
-import { AppStoreBadge } from "@/components/app-store-badge";
+import { AppStoreBadgeImg } from "@/components/app-store-badge";
 import {
   MarketChooserModal,
   type MarketChoice,
 } from "@/components/market-chooser-modal";
+import { APP_CHOICES } from "@/lib/app-store";
 
 type LegalPage = "privacy" | "cookies" | "terms" | "contact" | null;
 
 /** Per-market X (Twitter) accounts, surfaced in the "who to follow" chooser.
- *  Same pattern will drive the app-store chooser later. */
+ *  The same MarketChooserModal pattern drives the app-store chooser — see
+ *  `APP_CHOICES` in `@/lib/app-store`. */
 const FOLLOW_CHOICES: MarketChoice[] = [
   {
     id: "uk",
@@ -355,6 +357,7 @@ export default function DefaultLayout({
   const location = useLocation();
   const navigate = useNavigate();
   const [followOpen, setFollowOpen] = useState(false);
+  const [appsOpen, setAppsOpen] = useState(false);
   const legalPage = pathToLegalPage(location.pathname);
   const closeLegal = useCallback(() => {
     navigate("/");
@@ -466,7 +469,14 @@ export default function DefaultLayout({
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.736-8.861L1.254 2.25H8.08l4.257 5.625zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
               </button>
-              <AppStoreBadge size="sm" />
+              <button
+                aria-label="Download the app"
+                className="inline-block opacity-80 hover:opacity-100 transition-opacity"
+                type="button"
+                onClick={() => setAppsOpen(true)}
+              >
+                <AppStoreBadgeImg size="sm" />
+              </button>
             </div>
           </div>
         </div>
@@ -480,6 +490,14 @@ export default function DefaultLayout({
         subtitle="Each account posts the trades for its own markets."
         title="Choose who you want to follow"
         onClose={() => setFollowOpen(false)}
+      />
+
+      <MarketChooserModal
+        choices={APP_CHOICES}
+        open={appsOpen}
+        subtitle="Get the app for your market."
+        title="Download the ddbx app"
+        onClose={() => setAppsOpen(false)}
       />
     </div>
   );

@@ -1,0 +1,36 @@
+import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
+
+import type { MarketChoice } from "@/components/market-chooser-modal";
+
+/** App Store URLs for the markets that ship a live iOS app. Keyed by the
+ *  same market id as `MarketConfig` so the hero can look one up directly.
+ *  Mirrors the iOS schemes — `uk.ddbx.app` (ddbx-uk) and `us.ddbx.app`
+ *  (ddbx-us). Add a market here the moment its listing goes live. */
+export const APP_STORE_URLS: Record<string, string> = {
+  uk: "https://apps.apple.com/us/app/ddbx-uk/id6762196330",
+  us: "https://apps.apple.com/us/app/ddbx-us/id6772091960",
+};
+
+/** Per-market app links for the footer download chooser — same shape and
+ *  ordering as the social `FOLLOW_CHOICES` so the breadth of markets is
+ *  always one tap away. Live markets carry an `href`; the rest are
+ *  `comingSoon` placeholders. */
+export const APP_CHOICES: MarketChoice[] = [
+  {
+    id: "uk",
+    Flag: GB,
+    label: "ddbx.uk",
+    description: "UK director dealings",
+    href: APP_STORE_URLS.uk,
+  },
+  {
+    id: "us",
+    Flag: US,
+    label: "ddbx.us",
+    description: "US insiders & Congress",
+    href: APP_STORE_URLS.us,
+  },
+  { id: "eu", Flag: EU, label: "ddbx.eu", description: "Europe", comingSoon: true },
+  { id: "au", Flag: AU, label: "ddbx.au", description: "Australia", comingSoon: true },
+  { id: "ca", Flag: CA, label: "ddbx.ca", description: "Canada", comingSoon: true },
+];

@@ -21,8 +21,8 @@
 import type { ReactNode } from "react";
 
 /** Filled pill — the row's single anchor. Exactly one CTA per market renders
- *  in this style: the App Store link where one exists (UK), otherwise the
- *  explainer is promoted so the row never reads as two equal ghost pills. */
+ *  in this style: the App Store link where one exists (UK, US), otherwise
+ *  the explainer is promoted so the row never reads as two equal ghost pills. */
 const FILLED_CTA =
   "inline-flex items-center gap-2 rounded-full bg-[#5a4128] px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-[#49331f] hover:shadow-lg dark:bg-[#ad9479] dark:text-[#1a140d] dark:hover:bg-[#bda58a]";
 

@@ -52,6 +52,7 @@ import {
   slugToMonth,
 } from "@/components/monthly/monthly-utils";
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
+import { APP_STORE_URLS } from "@/lib/app-store";
 import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
@@ -71,7 +72,6 @@ import {
  *  above the historical table, so without a cap it would push that table off
  *  the page. */
 const TODAY_SKIPPED_CAP = 8;
-const UK_APP_STORE_URL = "https://apps.apple.com/us/app/ddbx-uk/id6762196330";
 
 /** The full shell that every market page mounts. Reads everything from
  *  MarketConfig — adding a new market means writing a new MarketConfig and
@@ -1088,8 +1088,7 @@ export function MarketPage<W>({
           hasTopNotice={!!config.topNotice}
           headline={config.heroHeadline}
           marketLabel={config.marketLabel}
-          primaryCtaHref={config.id === "uk" ? UK_APP_STORE_URL : undefined}
-          primaryCtaLabel={config.id === "uk" ? "Download the app" : undefined}
+          primaryCtaHref={APP_STORE_URLS[config.id]}
           reportLabel={monthShort(latestRecapMonth)}
           subhead={config.heroSubhead}
           todayCount={todayDealings.length}
