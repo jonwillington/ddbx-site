@@ -32,7 +32,10 @@ interface MarketChannelProps {
   news?: NewsPayload | null;
   newsHeading?: string;
   newsFooterNote?: ReactNode;
-  /** Performance summary, or undefined when the market doesn't support it. */
+  /** Whether this market has a Performance tab at all. Capability, not data —
+   *  drives the tab from first paint so it doesn't pop in once dealings load. */
+  supportsPerformance: boolean;
+  /** Performance summary. May be empty (sampleSize 0) while dealings load. */
   performance?: ChannelPerformanceSummary;
   discretionEnabled: boolean;
   performanceHref: string;
@@ -49,26 +52,22 @@ export function MarketChannel({
   news,
   newsHeading = "Market news",
   newsFooterNote,
+  supportsPerformance,
   performance,
   discretionEnabled,
   performanceHref,
   appHref,
 }: MarketChannelProps) {
   const hasNews = news !== undefined;
-  const hasPerf = !!performance && performance.sampleSize > 0;
+  // Capability, not data: the Performance tab exists (and defaults) from the
+  // first paint so it never pops in or steals focus once dealings load.
+  const hasPerf = supportsPerformance;
+  const perfReady = !!performance && performance.sampleSize > 0;
 
   const prevNewsUrlsRef = useRef<Set<string> | null>(null);
   const [newNewsUrls, setNewNewsUrls] = useState<Set<string>>(new Set());
   const [tab, setTab] = useState<TabId>(hasPerf ? "performance" : "news");
-
-  // If performance arrives after first render (dealings load async), snap the
-  // default to it — but only while the user hasn't touched the tabs and News
-  // is still on its initial selection.
   const touchedRef = useRef(false);
-
-  useEffect(() => {
-    if (!touchedRef.current && hasPerf) setTab("performance");
-  }, [hasPerf]);
 
   useEffect(() => {
     if (!news || news.items.length === 0) return;
@@ -125,12 +124,16 @@ export function MarketChannel({
 
   const body =
     activeTab === "performance" && hasPerf ? (
-      <ChannelPerformance
-        appHref={appHref}
-        discretionEnabled={discretionEnabled}
-        performanceHref={performanceHref}
-        summary={performance}
-      />
+      perfReady ? (
+        <ChannelPerformance
+          appHref={appHref}
+          discretionEnabled={discretionEnabled}
+          performanceHref={performanceHref}
+          summary={performance!}
+        />
+      ) : (
+        <PerfSkeleton />
+      )
     ) : (
       <NewsStrip
         footerNote={newsFooterNote}
@@ -195,6 +198,36 @@ function TabButton({
       <span className={active ? "" : "text-muted"}>{icon}</span>
       {label}
     </button>
+  );
+}
+
+function PerfSkeleton() {
+  return (
+    <div className="px-5 lg:px-4 py-4 space-y-5">
+      <div className="flex items-start gap-4">
+        <div className="flex-1 space-y-1.5">
+          <Skeleton className="h-2.5 w-16" />
+          <Skeleton className="h-7 w-20" />
+        </div>
+        <div className="flex-1 flex flex-col items-end space-y-1.5">
+          <Skeleton className="h-2.5 w-16" />
+          <Skeleton className="h-7 w-20" />
+        </div>
+      </div>
+      <Skeleton className="h-8 w-full rounded-lg" />
+      <div className="space-y-2">
+        <Skeleton className="h-2.5 w-28" />
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-3 w-full" />
+        ))}
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-2.5 w-24" />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-3 w-full" />
+        ))}
+      </div>
+    </div>
   );
 }
 

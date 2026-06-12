@@ -53,10 +53,8 @@ import {
 } from "@/components/monthly/monthly-utils";
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
 import { APP_STORE_URLS } from "@/lib/app-store";
-import {
-  buildChannelPerformance,
-  hasChannelPerformance,
-} from "@/lib/performance/channel-summary";
+import { buildChannelPerformance } from "@/lib/performance/channel-summary";
+import { makeDummyDealing } from "@/components/discretion/dummy-row";
 import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
@@ -76,6 +74,9 @@ import {
  *  above the historical table, so without a cap it would push that table off
  *  the page. */
 const TODAY_SKIPPED_CAP = 8;
+/** Discretion mode: how many of the most recent disclosure days stay fully
+ *  readable in the historical list. Older days blur behind fabricated rows. */
+const REAL_HISTORY_DAYS = 2;
 
 /** The full shell that every market page mounts. Reads everything from
  *  MarketConfig — adding a new market means writing a new MarketConfig and
@@ -208,14 +209,12 @@ export function MarketPage<W>({
    *  Computed straight from the dealings already in memory (each carries a
    *  server-precomputed livePerformance), so the channel needs no extra fetch.
    *  Only built for markets that ship the backtest. */
+  const supportsChannelPerf = !!config.supportsChannelPerformance;
   const channelPerformance = useMemo(
     () =>
-      config.supportsChannelPerformance
-        ? buildChannelPerformance(dealings)
-        : undefined,
-    [config.supportsChannelPerformance, dealings],
+      supportsChannelPerf ? buildChannelPerformance(dealings) : undefined,
+    [supportsChannelPerf, dealings],
   );
-  const hasChannelPerf = hasChannelPerformance(channelPerformance);
   const channelAppHref = APP_STORE_URLS[config.id] ?? APP_STORE_URLS.uk;
   const channelPerfHref = config.id === "uk" ? "/portfolio" : "/performance";
   const channelDiscretion = gating?.enabled ?? false;
@@ -971,6 +970,27 @@ export function MarketPage<W>({
 
   /* ───────── Render ──────────────────────────────────────────────────── */
 
+  // Discretion list-gating: keep the most recent couple of disclosure days
+  // fully readable, blur everything older behind fabricated rows so the public
+  // site only ever shows a sliver of real history — the rest is "open the app"
+  // territory. Only the markets that opt into gating (UK today) are affected.
+  const recentRealDays = useMemo(() => {
+    const past = dealings
+      .map((d) => d.disclosedDate.slice(0, 10))
+      .filter((iso) => iso < todayIso);
+    const distinct = [...new Set(past)].sort().reverse();
+
+    return new Set(distinct.slice(0, REAL_HISTORY_DAYS));
+  }, [dealings, todayIso]);
+
+  const listGatingEnabled = gating?.enabled ?? false;
+  const isRowGated = (d: MarketDealing<W>) => {
+    if (!listGatingEnabled) return false;
+    const day = d.disclosedDate.slice(0, 10);
+
+    return day < todayIso && !recentRealDays.has(day);
+  };
+
   // One dealing row with the shared table props bound — used by every day
   // group (the Today group + the month/day buckets). The by-gain list keeps
   // its own inline row because it shows the date column (no hideDate).
@@ -982,33 +1002,50 @@ export function MarketPage<W>({
     d: MarketDealing<W>,
     indent = false,
     hideInsider = false,
-  ) => (
-    <MarketRow
-      key={d.key}
-      hideDate
-      RowActionCell={config.RowActionCell}
-      RowNameBadge={config.RowNameBadge}
-      benchmarkBars={benchmarkBars}
-      benchmarkCurrent={benchmarkCurrent}
-      benchmarkEntry={benchmarkEntry(d)}
-      benchmarkLabel={config.benchmarkLabel}
-      chartMode={chartMode}
-      dealing={d}
-      fmt={config.priceFormat}
-      formatTickerDisplay={config.formatTickerDisplay}
-      hideInsider={hideInsider}
-      indent={indent}
-      isMuted={config.isRowMuted}
-      locale={config.locale}
-      noPosteriorData={stockNoPosteriorData(d)}
-      selected={selectedKey === d.key}
-      showLogo={logosEnabled}
-      stockBars={stockBars[d.ticker]}
-      stockCurrentMajor={stockCurrent(d.ticker)}
-      stockEntry={stockEntry(d)}
-      onSelect={() => setSelectedKey(d.key)}
-    />
-  );
+  ) => {
+    const blurred = isRowGated(d);
+    // Render a fabricated stand-in (same height) so no real data hits the DOM.
+    const rd = blurred ? makeDummyDealing(d) : d;
+    const row = (
+      <MarketRow
+        key={rd.key}
+        hideDate
+        RowActionCell={config.RowActionCell}
+        RowNameBadge={config.RowNameBadge}
+        benchmarkBars={benchmarkBars}
+        benchmarkCurrent={benchmarkCurrent}
+        benchmarkEntry={benchmarkEntry(rd)}
+        benchmarkLabel={config.benchmarkLabel}
+        chartMode={chartMode}
+        dealing={rd}
+        fmt={config.priceFormat}
+        formatTickerDisplay={config.formatTickerDisplay}
+        hideInsider={hideInsider}
+        indent={indent}
+        isMuted={config.isRowMuted}
+        locale={config.locale}
+        noPosteriorData={blurred ? false : stockNoPosteriorData(d)}
+        selected={!blurred && selectedKey === d.key}
+        showLogo={logosEnabled}
+        stockBars={blurred ? undefined : stockBars[d.ticker]}
+        stockCurrentMajor={blurred ? undefined : stockCurrent(d.ticker)}
+        stockEntry={blurred ? undefined : stockEntry(d)}
+        onSelect={blurred ? () => {} : () => setSelectedKey(d.key)}
+      />
+    );
+
+    if (!blurred) return row;
+
+    return (
+      <div
+        key={d.key}
+        aria-hidden
+        className="pointer-events-none select-none [filter:blur(5px)]"
+      >
+        {row}
+      </div>
+    );
+  };
   const renderDayRow = (d: MarketDealing<W>) => renderRow(d);
 
   // The prominent ("suggested") rows of a day. When the market opts into
@@ -1097,7 +1134,7 @@ export function MarketPage<W>({
     );
 
   return (
-    <DefaultLayout drawerRight={hasNewsSource || hasChannelPerf}>
+    <DefaultLayout drawerRight={hasNewsSource || supportsChannelPerf}>
       <section className="pb-8 space-y-6">
         {/* Shared hero — first content under the navbar. Perf moved to
             /performance; the old title + description block is dropped
@@ -1198,6 +1235,7 @@ export function MarketPage<W>({
           newsHeading={config.newsHeading}
           performance={channelPerformance}
           performanceHref={channelPerfHref}
+          supportsPerformance={supportsChannelPerf}
           variant="inline"
         />
 
@@ -1531,6 +1569,7 @@ export function MarketPage<W>({
         newsHeading={config.newsHeading}
         performance={channelPerformance}
         performanceHref={channelPerfHref}
+        supportsPerformance={supportsChannelPerf}
         variant="aside"
       />
 
