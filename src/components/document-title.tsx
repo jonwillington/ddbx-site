@@ -38,7 +38,7 @@ export function DocumentTitle() {
           return `${market.label} director profile with dealing history and signal context on ddbx.`;
         }
 
-        return `AI-analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;
+        return `Analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;
       })();
 
       // Lead with the standardised brand strapline so every shared ddbx link
