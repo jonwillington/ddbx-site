@@ -183,6 +183,15 @@ function localPathForMarket(
   return canonicalPath;
 }
 
+/** "Get in touch" / support address for the market that owns this route —
+ *  `trades@` on the market's own domain (UK → trades@ddbx.uk, US → trades@
+ *  ddbx.us, SE/NL → trades@ddbx.eu). Falls back to ddbx.uk. */
+export function marketContactEmail(pathname: string, hostname?: string): string {
+  const market = marketForPath(pathname, hostname);
+
+  return `trades@${MARKET_HOST_BY_ID[market.id] ?? "ddbx.uk"}`;
+}
+
 /** Resolve a route to its owning market. UK is the default for paths that
  *  don't match a more specific market prefix. */
 export function marketForPath(

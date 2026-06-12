@@ -10,6 +10,7 @@ import {
   type MarketChoice,
 } from "@/components/market-chooser-modal";
 import { APP_CHOICES } from "@/lib/app-store";
+import { marketContactEmail } from "@/lib/markets/registry";
 
 type LegalPage = "privacy" | "cookies" | "terms" | "contact" | null;
 
@@ -95,14 +96,17 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 function ContactContent() {
+  const { pathname } = useLocation();
+  const email = marketContactEmail(pathname);
+
   return (
     <p>
       Get in touch at{" "}
       <a
         className="text-foreground/90 underline underline-offset-2 hover:text-foreground"
-        href="mailto:jonathanwillington@gmail.com"
+        href={`mailto:${email}`}
       >
-        jonathanwillington@gmail.com
+        {email}
       </a>
       .
     </p>
@@ -245,6 +249,9 @@ function CookieContent() {
 }
 
 function TermsContent() {
+  const { pathname } = useLocation();
+  const email = marketContactEmail(pathname);
+
   return (
     <>
       <p>Last updated: 1 April 2026</p>
@@ -325,7 +332,7 @@ function TermsContent() {
         content and suspend or terminate any account at our discretion. You are
         solely responsible for the content you post. To report content or a
         user, use the in-app report and block controls or contact us at{" "}
-        <a href="mailto:trades@ddbx.us">trades@ddbx.us</a>.
+        <a href={`mailto:${email}`}>{email}</a>.
       </p>
 
       <SectionTitle>Governing law</SectionTitle>
