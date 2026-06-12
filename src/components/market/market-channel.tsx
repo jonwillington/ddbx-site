@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
 import type { NewsItem, NewsPayload } from "@/lib/markets/types";
+import type { ChannelPerformanceSummary } from "@/lib/performance/channel-summary";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowTopRightOnSquareIcon,
+  ChartBarIcon,
   NewspaperIcon,
 } from "@heroicons/react/24/outline";
+
+import { ChannelPerformance } from "./channel-performance";
 
 import { Skeleton } from "@/components/skeleton";
 
@@ -17,27 +21,54 @@ function hostnameFromUrl(url: string): string {
   }
 }
 
-interface MarketTodayDrawerProps {
+type TabId = "performance" | "news";
+
+interface MarketChannelProps {
+  /** "aside" = fixed lg+ right rail. "inline" = full-width card in the mobile
+   *  page flow (the rail is hidden on small screens). */
+  variant: "aside" | "inline";
   /** Optional news. null = loading skeleton; undefined = market has no news
-   *  source yet (the whole drawer is hidden). */
+   *  source. */
   news?: NewsPayload | null;
-  /** Heading rendered above the news strip. Defaults to "Market news". */
   newsHeading?: string;
-  /** Caption rendered below the news strip. */
   newsFooterNote?: ReactNode;
+  /** Performance summary, or undefined when the market doesn't support it. */
+  performance?: ChannelPerformanceSummary;
+  discretionEnabled: boolean;
+  performanceHref: string;
+  appHref: string;
 }
 
-/** Persistent right-hand drawer, lg+ only. Now news-only — today's filings
- *  graduated to the page hero. When a market has no news source we render
- *  nothing so the main content can use the full width. */
-export function MarketTodayDrawer({
+/** The right-hand channel. Two tabs — Performance (the just-shipped backtest
+ *  stats, condensed) and News. Performance is the default when the market
+ *  supports it; markets without it fall back to News-only. Rendered twice by
+ *  the page: as a fixed rail on lg+ and inline on mobile (where the rail is
+ *  hidden), so the channel is finally visible on phones. */
+export function MarketChannel({
+  variant,
   news,
   newsHeading = "Market news",
   newsFooterNote,
-}: MarketTodayDrawerProps) {
-  const hasNewsSource = news !== undefined;
+  performance,
+  discretionEnabled,
+  performanceHref,
+  appHref,
+}: MarketChannelProps) {
+  const hasNews = news !== undefined;
+  const hasPerf = !!performance && performance.sampleSize > 0;
+
   const prevNewsUrlsRef = useRef<Set<string> | null>(null);
   const [newNewsUrls, setNewNewsUrls] = useState<Set<string>>(new Set());
+  const [tab, setTab] = useState<TabId>(hasPerf ? "performance" : "news");
+
+  // If performance arrives after first render (dealings load async), snap the
+  // default to it — but only while the user hasn't touched the tabs and News
+  // is still on its initial selection.
+  const touchedRef = useRef(false);
+
+  useEffect(() => {
+    if (!touchedRef.current && hasPerf) setTab("performance");
+  }, [hasPerf]);
 
   useEffect(() => {
     if (!news || news.items.length === 0) return;
@@ -56,45 +87,131 @@ export function MarketTodayDrawer({
     }
   }, [news]);
 
-  if (!hasNewsSource) return null;
+  // Keep the active tab valid if a capability disappears.
+  const activeTab: TabId = useMemo(() => {
+    if (tab === "performance" && !hasPerf) return "news";
+    if (tab === "news" && !hasNews) return "performance";
+
+    return tab;
+  }, [tab, hasPerf, hasNews]);
+
+  if (!hasNews && !hasPerf) return null;
+
+  const selectTab = (next: TabId) => {
+    touchedRef.current = true;
+    setTab(next);
+  };
+
+  const tabs = (
+    <div className="flex items-center gap-1">
+      {hasPerf && (
+        <TabButton
+          active={activeTab === "performance"}
+          icon={<ChartBarIcon className="w-4 h-4" />}
+          label="Performance"
+          onClick={() => selectTab("performance")}
+        />
+      )}
+      {hasNews && (
+        <TabButton
+          active={activeTab === "news"}
+          icon={<NewspaperIcon className="w-4 h-4" />}
+          label="News"
+          onClick={() => selectTab("news")}
+        />
+      )}
+    </div>
+  );
+
+  const body =
+    activeTab === "performance" && hasPerf ? (
+      <ChannelPerformance
+        appHref={appHref}
+        discretionEnabled={discretionEnabled}
+        performanceHref={performanceHref}
+        summary={performance}
+      />
+    ) : (
+      <NewsStrip
+        footerNote={newsFooterNote}
+        heading={newsHeading}
+        newNewsUrls={newNewsUrls}
+        news={news ?? null}
+      />
+    );
+
+  if (variant === "inline") {
+    return (
+      <aside className="lg:hidden rounded-xl border border-[#e8e0d5] dark:border-separator bg-[#faf7f2] dark:bg-surface overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-[#e8e0d5] dark:border-separator">
+          {tabs}
+        </div>
+        <div className="max-h-[60vh] overflow-y-auto overscroll-contain">
+          {body}
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-[#e8e0d5] dark:border-separator bg-[#faf7f2] dark:bg-surface z-20">
       {/* Header — matches navbar h-16 */}
-      <div className="h-16 px-5 flex items-center border-b border-[#e8e0d5] dark:border-separator shrink-0">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <NewspaperIcon className="w-4 h-4 text-muted shrink-0" />
-          <span className="text-sm font-semibold truncate">{newsHeading}</span>
-        </div>
+      <div className="h-16 px-4 flex items-center border-b border-[#e8e0d5] dark:border-separator shrink-0">
+        {tabs}
       </div>
 
-      {/* News fills the whole drawer now. */}
       <div className="relative flex-1 min-h-0">
         <div className="absolute inset-x-0 top-0 h-4 pointer-events-none z-[1] bg-gradient-to-b from-[#faf7f2] dark:from-surface to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-4 pointer-events-none z-[1] bg-gradient-to-t from-[#faf7f2] dark:from-surface to-transparent" />
-        <div className="h-full overflow-y-auto overscroll-contain">
-          <NewsStrip
-            footerNote={newsFooterNote}
-            newNewsUrls={newNewsUrls}
-            news={news}
-          />
-        </div>
+        <div className="h-full overflow-y-auto overscroll-contain">{body}</div>
       </div>
     </aside>
   );
 }
 
+function TabButton({
+  label,
+  icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  icon: ReactNode;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      aria-selected={active}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+        active
+          ? "bg-[#5a4128]/15 text-[#3d2b1a] dark:text-[#ad9479]"
+          : "text-muted hover:text-foreground"
+      }`}
+      role="tab"
+      type="button"
+      onClick={onClick}
+    >
+      <span className={active ? "" : "text-muted"}>{icon}</span>
+      {label}
+    </button>
+  );
+}
+
 function NewsStrip({
   news,
+  heading,
   footerNote,
   newNewsUrls,
 }: {
   news: NewsPayload | null | undefined;
+  heading: string;
   footerNote?: ReactNode;
   newNewsUrls: Set<string>;
 }) {
   return (
     <div className="px-5 lg:px-4 py-4">
+      <p className="sr-only">{heading}</p>
       {news === null ? (
         <ul className="space-y-4">
           {Array.from({ length: 10 }).map((_, i) => (

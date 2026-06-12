@@ -30,7 +30,7 @@ import {
   MemberClusterRow,
 } from "./market-row";
 import { type SparkBar } from "./market-row-spark";
-import { MarketTodayDrawer } from "./market-today-drawer";
+import { MarketChannel } from "./market-channel";
 import { MarketTodayEmpty } from "./market-today-empty";
 import { MarketTodayHero } from "./market-today-hero";
 import {
@@ -53,6 +53,10 @@ import {
 } from "@/components/monthly/monthly-utils";
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
 import { APP_STORE_URLS } from "@/lib/app-store";
+import {
+  buildChannelPerformance,
+  hasChannelPerformance,
+} from "@/lib/performance/channel-summary";
 import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
@@ -199,6 +203,22 @@ export function MarketPage<W>({
     config.fetchNews ? null : null,
   );
   const hasNewsSource = !!config.fetchNews;
+
+  /** Condensed performance stats for the right-hand channel's Performance tab.
+   *  Computed straight from the dealings already in memory (each carries a
+   *  server-precomputed livePerformance), so the channel needs no extra fetch.
+   *  Only built for markets that ship the backtest. */
+  const channelPerformance = useMemo(
+    () =>
+      config.supportsChannelPerformance
+        ? buildChannelPerformance(dealings)
+        : undefined,
+    [config.supportsChannelPerformance, dealings],
+  );
+  const hasChannelPerf = hasChannelPerformance(channelPerformance);
+  const channelAppHref = APP_STORE_URLS[config.id] ?? APP_STORE_URLS.uk;
+  const channelPerfHref = config.id === "uk" ? "/portfolio" : "/performance";
+  const channelDiscretion = gating?.enabled ?? false;
 
   /** API market param for monthly endpoints. UK omits it (the worker defaults
    *  to "UK"); other markets pass their uppercased id ("US" | "NL" | "SE"),
@@ -1077,7 +1097,7 @@ export function MarketPage<W>({
     );
 
   return (
-    <DefaultLayout drawerRight={hasNewsSource}>
+    <DefaultLayout drawerRight={hasNewsSource || hasChannelPerf}>
       <section className="pb-8 space-y-6">
         {/* Shared hero — first content under the navbar. Perf moved to
             /performance; the old title + description block is dropped
@@ -1166,6 +1186,20 @@ export function MarketPage<W>({
             onSelect={(d) => setSelectedKey(d.key)}
           />
         )}
+
+        {/* Mobile-only channel. The fixed right rail is hidden on phones, so
+            Performance + News would otherwise be invisible there — surface the
+            same tabbed channel inline, right under Today. */}
+        <MarketChannel
+          appHref={channelAppHref}
+          discretionEnabled={channelDiscretion}
+          news={hasNewsSource ? news : undefined}
+          newsFooterNote={config.newsFooterNote}
+          newsHeading={config.newsHeading}
+          performance={channelPerformance}
+          performanceHref={channelPerfHref}
+          variant="inline"
+        />
 
         {/* Today's skipped (muted) filings. The analysed ones surface as cards
             in the hero above; their low-signal tail renders here as ordinary
@@ -1489,10 +1523,15 @@ export function MarketPage<W>({
         )}
       </section>
 
-      <MarketTodayDrawer
+      <MarketChannel
+        appHref={channelAppHref}
+        discretionEnabled={channelDiscretion}
         news={hasNewsSource ? news : undefined}
         newsFooterNote={config.newsFooterNote}
         newsHeading={config.newsHeading}
+        performance={channelPerformance}
+        performanceHref={channelPerfHref}
+        variant="aside"
       />
 
       <MarketDetailDrawer

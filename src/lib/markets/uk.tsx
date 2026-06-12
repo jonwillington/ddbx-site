@@ -410,6 +410,7 @@ export const UkMarket: MarketConfig<Dealing> = {
   // Discretion gating: first drawer of the UK day is free; subsequent drawers
   // render the dummy body under a blur with a "use the app" overlay.
   useGating: useUkGating,
+  supportsChannelPerformance: true,
   DummyDetailBody: UkDummyDetailBody,
   AnalysisOverlay: BlurredAnalysisOverlay,
   renderEmptyState: () => <>No UK disclosures stored yet.</>,

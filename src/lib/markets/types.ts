@@ -503,6 +503,13 @@ export interface MarketConfig<W = unknown> {
   /** Overlay rendered above the blurred dummy body — the "open the app" CTA.
    *  Positioned absolutely inside the drawer body. */
   AnalysisOverlay?: ComponentType;
+
+  /** When true, the right-hand channel grows a "Performance" tab that mirrors
+   *  the /portfolio backtest stats (picks-vs-market alpha, sector leaderboard,
+   *  style race, top picks) from the dealings already in memory. Markets
+   *  without the backtest leave this unset and the channel stays News-only.
+   *  Today only UK ships the backtest, so only UK sets this. */
+  supportsChannelPerformance?: boolean;
 }
 
 /** Whether the per-row performance number (and the inline sparkline)
