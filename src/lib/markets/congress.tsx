@@ -3,7 +3,7 @@
 // so "Signal" is the deterministic triage verdict (jurisdiction + notable
 // size/options) rather than a Rating. Buys only — sales/junk are dropped
 // server-side. Member portraits (public-domain) show in the detail drawer.
-import type { MarketConfig, MarketDealing, Tone } from "@/lib/markets/types";
+import type { GatingInfo, MarketConfig, MarketDealing, Tone } from "@/lib/markets/types";
 import type { Analysis, GovDealing } from "@/types/ddbx";
 import type { PriceFormat } from "@/components/position-card";
 
@@ -11,9 +11,13 @@ import { useEffect, useState } from "react";
 import { BoltIcon } from "@heroicons/react/24/solid";
 
 import { api } from "@/lib/api";
+import { AnalysisSection } from "@/components/analysis-section";
+import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
+import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { RatingBadge } from "@/components/rating-badge";
 import { PositionCard } from "@/components/position-card";
 import { MiniPriceChart } from "@/components/mini-price-chart";
+import { useDiscretion } from "@/lib/discretion";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -596,6 +600,46 @@ function CongressDetailBody({
   );
 }
 
+function CongressDummyDetailBody({
+  dealing,
+}: {
+  dealing: MarketDealing<GovDealing>;
+}) {
+  const dummyDealing: MarketDealing<GovDealing> = {
+    ...dealing,
+    raw: {
+      ...dealing.raw,
+      analysis: DUMMY_ANALYSIS,
+      rating: DUMMY_ANALYSIS.rating,
+      rating_explain: {
+        headline: "Context suggests this purchase deserves a closer look.",
+        factors: [
+          { sign: "pos", text: "Position size is meaningful for this filer." },
+          {
+            sign: "neutral",
+            text: "Committee and timing context support deeper review.",
+          },
+        ],
+      },
+    },
+  };
+
+  return <AnalysisSection analysis={dummyDealing.raw.analysis!} />;
+}
+
+function useCongressGating(): GatingInfo {
+  const d = useDiscretion({
+    marketId: "usg",
+    timeZone: "America/New_York",
+  });
+
+  return {
+    enabled: d.enabled,
+    hasFullAccess: d.hasFullAccess,
+    recordView: d.recordView,
+  };
+}
+
 /** Raw-filing facts folded into the drawer's standard metadata grid (see
  *  MarketConfig.detailFields). The disclosed band is the primary money figure —
  *  the STOCK Act discloses ranges, so we show the bracket rather than the
@@ -955,6 +999,9 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   RowNameBadge: CongressRowNameBadge,
   DetailPosition: CongressDetailPosition,
   DetailBody: CongressDetailBody,
+  useGating: useCongressGating,
+  DummyDetailBody: CongressDummyDetailBody,
+  AnalysisOverlay: BlurredAnalysisOverlay,
   detailFields: congressDetailFields,
   // Right-hand news bar — reuse the US market feed (/api/news/us); Congress
   // trades US equities, so US business headlines are the right context.

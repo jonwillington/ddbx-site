@@ -18,6 +18,7 @@
 import type { HolidaySource } from "@/lib/bank-holidays";
 import type { MarketSession } from "@/lib/market-status";
 import type {
+  GatingInfo,
   MarketConfig,
   MarketDealing,
   MarketStats,
@@ -27,12 +28,15 @@ import type {
 import { type EuRowGroup, groupRows, isEuSignal } from "@/lib/markets/sweden";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { AnalysisSection } from "@/components/analysis-section";
+import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
+import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 import { DisclosureSection } from "@/components/disclosure-section";
 import { DetailField } from "@/components/market/detail-field";
 import { PriceFormat } from "@/components/position-card";
+import { useDiscretion } from "@/lib/discretion";
 
 /** Euronext Amsterdam — continuous trading 09:00–17:30 Europe/Amsterdam,
  *  closing call 17:30, official close 17:35. We use 17:30 to align with
@@ -434,6 +438,36 @@ function NetherlandsDetailBody({
   );
 }
 
+function NetherlandsDummyDetailBody({
+  dealing,
+}: {
+  dealing: MarketDealing<EuRowGroup>;
+}) {
+  const g = dealing.raw;
+  const dummyDealing: MarketDealing<EuRowGroup> = {
+    ...dealing,
+    raw: {
+      ...g,
+      primary: { ...g.primary, analysis: DUMMY_ANALYSIS },
+    },
+  };
+
+  return <NetherlandsDetailBody dealing={dummyDealing} />;
+}
+
+function useNetherlandsGating(): GatingInfo {
+  const d = useDiscretion({
+    marketId: "nl",
+    timeZone: EURONEXT_AMSTERDAM.timeZone,
+  });
+
+  return {
+    enabled: d.enabled,
+    hasFullAccess: d.hasFullAccess,
+    recordView: d.recordView,
+  };
+}
+
 /* ─── MarketConfig ───────────────────────────────────────────────────── */
 
 export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
@@ -529,14 +563,15 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   },
   RowActionCell: NetherlandsRowActionCell,
   DetailBody: NetherlandsDetailBody,
+  useGating: useNetherlandsGating,
+  DummyDetailBody: NetherlandsDummyDetailBody,
+  AnalysisOverlay: BlurredAnalysisOverlay,
   // Dutch business-press feeds (NOS Economie, NRC Economie, Volkskrant
   // Economie, NU.nl Economie). Worker pipeline: pipeline/nl-news.ts.
   fetchNews: () => api.nlNews(),
   newsHeading: "Dutch market news",
   newsFooterNote:
     "Third-party headlines (NOS Economie, NRC Economie, Volkskrant Economie, NU.nl Economie); opens in a new tab.",
-  // No useGating — Netherlands ships unmoderated like Sweden until you
-  // decide whether to gate NL behind the iOS app.
   renderEmptyState: ({ stats }) => {
     const total = stats?.total ?? 0;
 

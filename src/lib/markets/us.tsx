@@ -9,6 +9,7 @@
 import type { HolidaySource } from "@/lib/bank-holidays";
 import type { MarketSession } from "@/lib/market-status";
 import type {
+  GatingInfo,
   MarketConfig,
   MarketDealing,
   MarketStats,
@@ -26,6 +27,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { AnalysisSection } from "@/components/analysis-section";
+import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
+import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { DisclosureSection } from "@/components/disclosure-section";
 import { DetailField } from "@/components/market/detail-field";
 import { MiniPriceChart } from "@/components/mini-price-chart";
@@ -33,6 +36,7 @@ import { PositionCard, type PriceFormat } from "@/components/position-card";
 import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
+import { useDiscretion } from "@/lib/discretion";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -603,6 +607,26 @@ function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
   );
 }
 
+function UsDummyDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
+  const group = dealing.raw;
+  const dummyDealing: MarketDealing<UsRowGroup> = {
+    ...dealing,
+    raw: { ...group, analysis: DUMMY_ANALYSIS },
+  };
+
+  return <UsDetailBody dealing={dummyDealing} />;
+}
+
+function useUsGating(): GatingInfo {
+  const d = useDiscretion({ marketId: "us", timeZone: NYSE.timeZone });
+
+  return {
+    enabled: d.enabled,
+    hasFullAccess: d.hasFullAccess,
+    recordView: d.recordView,
+  };
+}
+
 /* ─── MarketConfig ───────────────────────────────────────────────────── */
 
 export const UsMarket: MarketConfig<UsRowGroup> = {
@@ -709,6 +733,9 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   RowActionCell: UsRowActionCell,
   DetailBody: UsDetailBody,
   DetailPosition: UsDetailPosition,
+  useGating: useUsGating,
+  DummyDetailBody: UsDummyDetailBody,
+  AnalysisOverlay: BlurredAnalysisOverlay,
   renderEmptyState: ({ view, stats, setView }) => {
     const total = stats?.total ?? 0;
     const interesting = stats?.viewCounts.interesting ?? 0;

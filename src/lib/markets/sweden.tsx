@@ -15,6 +15,7 @@
 import type { HolidaySource } from "@/lib/bank-holidays";
 import type { MarketSession } from "@/lib/market-status";
 import type {
+  GatingInfo,
   MarketConfig,
   MarketDealing,
   MarketStats,
@@ -26,10 +27,13 @@ import { defaultRatingHeroFilters, isSignalDealing } from "@/lib/markets/types";
 import { api } from "@/lib/api";
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 import { AnalysisSection } from "@/components/analysis-section";
+import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
+import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { DisclosureSection } from "@/components/disclosure-section";
 import { DetailField } from "@/components/market/detail-field";
 import { PriceFormat } from "@/components/position-card";
 import { RatingBadge } from "@/components/rating-badge";
+import { useDiscretion } from "@/lib/discretion";
 
 /** Nasdaq Stockholm — continuous trading 09:00–17:30 Europe/Stockholm,
  *  closing call at 17:25, official close at 17:30. We use the official
@@ -520,6 +524,36 @@ function SwedenDetailBody({ dealing }: { dealing: MarketDealing<EuRowGroup> }) {
   );
 }
 
+function SwedenDummyDetailBody({
+  dealing,
+}: {
+  dealing: MarketDealing<EuRowGroup>;
+}) {
+  const g = dealing.raw;
+  const dummyDealing: MarketDealing<EuRowGroup> = {
+    ...dealing,
+    raw: {
+      ...g,
+      primary: { ...g.primary, analysis: DUMMY_ANALYSIS },
+    },
+  };
+
+  return <SwedenDetailBody dealing={dummyDealing} />;
+}
+
+function useSwedenGating(): GatingInfo {
+  const d = useDiscretion({
+    marketId: "se",
+    timeZone: NASDAQ_STOCKHOLM.timeZone,
+  });
+
+  return {
+    enabled: d.enabled,
+    hasFullAccess: d.hasFullAccess,
+    recordView: d.recordView,
+  };
+}
+
 /* ─── MarketConfig ───────────────────────────────────────────────────── */
 
 export const SwedenMarket: MarketConfig<EuRowGroup> = {
@@ -617,6 +651,9 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   },
   RowActionCell: SwedenRowActionCell,
   DetailBody: SwedenDetailBody,
+  useGating: useSwedenGating,
+  DummyDetailBody: SwedenDummyDetailBody,
+  AnalysisOverlay: BlurredAnalysisOverlay,
   // No DetailPosition — Swedish instruments are keyed by ISIN; the
   // ticker-based price history endpoint doesn't cover them yet.
   // Swedish business-press feeds (DI, DN Ekonomi, SVT Ekonomi, Börsvärlden)
@@ -625,7 +662,6 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   newsHeading: "Swedish market news",
   newsFooterNote:
     "Third-party headlines (Dagens industri, DN Ekonomi, SVT Ekonomi, Börsvärlden); opens in a new tab.",
-  // No useGating — Sweden mirrors /us, no discretion mode.
   // No useMetricMode — price history isn't wired for ISIN-quoted Swedish
   // instruments yet, so there's no alpha-vs-raw axis to toggle.
   renderEmptyState: ({ stats }) => {
