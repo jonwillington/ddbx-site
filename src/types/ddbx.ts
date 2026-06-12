@@ -573,6 +573,23 @@ export interface MonthlyMetrics {
   best_return: number | null;    // best single since-disclosure return, ratio
   worst_return: number | null;   // worst, ratio
   benchmark_return: number | null; // FTSE All-Share over the month, ratio
+  /** The month's buys split by buy-style (contrarian / momentum / neutral),
+   *  each slice with its own since-disclosure return + alpha medians. Slices
+   *  with zero buys are omitted; absent entirely on summaries generated before
+   *  the field shipped. */
+  style_split?: MonthlyStyleSlice[];
+}
+
+/** One buy-style's slice of the month: how many buys, how much money, and how
+ *  the style performed (median since-disclosure return, and median alpha vs
+ *  the benchmark over each buy's own disclosure→as-of window). Return fields
+ *  are null when no buy in the slice has usable price data. */
+export interface MonthlyStyleSlice {
+  style: "contrarian" | "momentum" | "neutral";
+  buy_count: number;
+  total_value_gbp: number;
+  median_return: number | null;
+  median_alpha: number | null;
 }
 
 /** Path-aware summary of an item's post-disclosure move, computed by scanning
@@ -608,6 +625,9 @@ export interface MonthlyFeaturedItem {
   feature_reason: MonthlyFeatureReason;
   /** Cluster signal for this buy, when part of one. Mirrors Dealing.cluster. */
   cluster?: ClusterInfo | null;
+  /** Buy-style kind at disclosure (contrarian / momentum / neutral). Mirrors
+   *  Dealing.buy_style.kind; null when the classifier had no honest answer. */
+  buy_style?: BuyStyle["kind"] | null;
   /** Downsampled price bars over the featured window. */
   chart: MonthlyChartBar[];
   // --- LLM narrative (Opus + web_search) ---
@@ -635,8 +655,14 @@ export interface MonthlySummary {
 
 /** Strategy universes the monthly performance chart can switch between.
  *  `every_buy` is the broad series; the rating-based universes narrow to the
- *  analysis signal. */
-export type MonthlyPerfUniverse = "every_buy" | "significant" | "noteworthy";
+ *  analysis signal; the style universes narrow to the buy-style classifier
+ *  (contrarian = bought into a drawdown, momentum = bought into strength). */
+export type MonthlyPerfUniverse =
+  | "every_buy"
+  | "significant"
+  | "noteworthy"
+  | "contrarian"
+  | "momentum";
 
 /** One universe's read-time alpha series for the month: equal-weight £100/buy,
  *  entered on each buy's disclosure-day close and marked to the latest close,
