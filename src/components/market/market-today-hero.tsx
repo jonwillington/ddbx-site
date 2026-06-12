@@ -55,7 +55,7 @@ interface MarketTodayHeroProps<W> {
  *  tidy two/three-up grid. Shared by the live cards AND the loading
  *  skeleton so the layout doesn't jump when data lands. */
 const TODAY_CAROUSEL_CLASS =
-  "flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-2 lg:gap-4 lg:overflow-visible lg:pb-0 2xl:grid-cols-3";
+  "flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden [touch-action:pan-x] pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-2 lg:gap-4 lg:overflow-visible lg:[touch-action:auto] lg:pb-0 2xl:grid-cols-3";
 /** One card slot inside the carousel — fixed-width + peek on mobile, auto
  *  in the lg+ grid. */
 const TODAY_CARD_SLOT_CLASS = "w-[72%] shrink-0 snap-start lg:w-auto lg:shrink";
