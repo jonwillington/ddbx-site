@@ -14,6 +14,10 @@
 
 const APP_STORE_URL = "https://apps.apple.com/app/id6762196330";
 const API_BASE = "https://api.ddbx.uk/api";
+// Standardised brand strapline. Led onto every shared-link description so any
+// ddbx link unfurls with the same claim (mirrors index.html, document-title.tsx
+// and the rendered card images in ddbx-data: summary-image.ts `TAGLINE`).
+const TAGLINE = "The world's largest insider market intelligence platform";
 // Generated 1200×630 card served by the Worker. It internally redirects to the
 // company logo / a default image on any failure, so it's always a safe og:image.
 const cardImage = (id) => `${API_BASE}/dealings/${encodeURIComponent(id)}/og.png`;
@@ -75,7 +79,7 @@ function buildMeta(d, id) {
   if (d.trade_date) bits.push(tradeDate(d.trade_date));
   if (d.analysis?.rating) bits.push(`Rated ${cap(d.analysis.rating)}`);
   bits.push("see the full analysis on ddbx");
-  const description = bits.join(" · ");
+  const description = `${TAGLINE}. ${bits.join(" · ")}`;
 
   return { title, description, ticker: bareTicker(d.ticker) };
 }
@@ -133,7 +137,7 @@ function page({ title, description, image, url, largeImage, plain }) {
 function fallback(url) {
   return page({
     title: "ddbx · Director Dealings",
-    description: "Track director and insider share dealings. See the analysis on ddbx.",
+    description: `${TAGLINE}. Track director and insider share dealings. See the analysis on ddbx.`,
     image: "https://ddbx.uk/apple-icon-180x180.png",
     url,
     largeImage: false,

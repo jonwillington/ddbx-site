@@ -27,14 +27,23 @@ export function DocumentTitle() {
       return market.config.documentTitle;
     })();
     const pageDescription = (() => {
-      if (pathname === "/portfolio" || pathname.endsWith("/performance")) {
-        return `Track ${market.label} insider performance versus benchmark indices on ddbx.`;
-      }
-      if (pathname.startsWith("/directors/") || /\/directors\//.test(pathname)) {
-        return `${market.label} director profile with dealing history and signal context on ddbx.`;
-      }
+      const specific = (() => {
+        if (pathname === "/portfolio" || pathname.endsWith("/performance")) {
+          return `Track ${market.label} insider performance versus benchmark indices on ddbx.`;
+        }
+        if (
+          pathname.startsWith("/directors/") ||
+          /\/directors\//.test(pathname)
+        ) {
+          return `${market.label} director profile with dealing history and signal context on ddbx.`;
+        }
 
-      return `AI-analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;
+        return `AI-analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;
+      })();
+
+      // Lead with the standardised brand strapline so every shared ddbx link
+      // unfurls with the same claim (mirrors index.html + functions/t/[id].js).
+      return `${siteConfig.tagline}. ${specific}`;
     })();
     const pageUrl = `${window.location.origin}${pathname}${search}${hash}`;
 
