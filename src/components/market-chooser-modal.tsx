@@ -9,8 +9,10 @@ import { AppModal } from "@/components/app-modal";
  *  app-store links next — pass whatever `href` the cell should open. */
 export interface MarketChoice {
   id: string;
-  /** Country / region flag for the cell. */
+  /** Country / region flag (rendered as a small decorative badge). */
   Flag?: FlagComponent;
+  /** Primary brand mark for this market row (app icon / logo). */
+  logoSrc?: string;
   /** Primary label, e.g. "ddbx.uk". */
   label: string;
   /** Secondary line, e.g. "UK director dealings · @ddbxuk". */
@@ -51,12 +53,31 @@ export function MarketChooserModal({
         {choices.map((c) => {
           const inner = (
             <>
-              {c.Flag && (
-                <c.Flag
-                  className="h-6 w-9 shrink-0 rounded-[3px] object-cover shadow-sm ring-1 ring-black/10 dark:ring-white/10"
-                  title=""
-                />
-              )}
+              <div className="relative shrink-0">
+                <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-black/10 bg-white p-1.5 shadow-sm dark:border-white/15 dark:bg-[#17120d]">
+                  {c.logoSrc ? (
+                    <img
+                      alt=""
+                      className="max-h-full max-w-full object-contain"
+                      loading="lazy"
+                      src={c.logoSrc}
+                    />
+                  ) : c.Flag ? (
+                    <c.Flag
+                      className="h-6 w-9 rounded-[3px] object-cover"
+                      title=""
+                    />
+                  ) : null}
+                </div>
+                {c.Flag && c.logoSrc && (
+                  <span className="absolute -bottom-1 -right-1 overflow-hidden rounded-sm border border-black/10 bg-white p-0.5 shadow-sm dark:border-white/15 dark:bg-[#1b1510]">
+                    <c.Flag
+                      className="h-[12px] w-[18px] rounded-[1px] object-cover"
+                      title=""
+                    />
+                  </span>
+                )}
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold">{c.label}</div>
                 {c.description && (

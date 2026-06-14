@@ -10,7 +10,7 @@ import {
   MarketChooserModal,
   type MarketChoice,
 } from "@/components/market-chooser-modal";
-import { APP_CHOICES } from "@/lib/app-store";
+import { APP_CHOICES, IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
 import { marketContactEmail } from "@/lib/markets/registry";
 
 type LegalPage = "privacy" | "cookies" | "terms" | "contact" | null;
@@ -22,6 +22,7 @@ const FOLLOW_CHOICES: MarketChoice[] = [
   {
     id: "uk",
     Flag: GB,
+    logoSrc: IOS_APP_LOGO_BY_MARKET.uk,
     label: "ddbx.uk",
     description: "UK director dealings · @ddbxuk",
     href: "https://x.com/ddbxuk",
@@ -29,13 +30,35 @@ const FOLLOW_CHOICES: MarketChoice[] = [
   {
     id: "us",
     Flag: US,
+    logoSrc: IOS_APP_LOGO_BY_MARKET.us,
     label: "ddbx.us",
     description: "US insiders & Congress · @ddbxus",
     href: "https://x.com/ddbxus",
   },
-  { id: "eu", Flag: EU, label: "ddbx.eu", description: "Europe", comingSoon: true },
-  { id: "au", Flag: AU, label: "ddbx.au", description: "Australia", comingSoon: true },
-  { id: "ca", Flag: CA, label: "ddbx.ca", description: "Canada", comingSoon: true },
+  {
+    id: "eu",
+    Flag: EU,
+    logoSrc: IOS_APP_LOGO_BY_MARKET.eu,
+    label: "ddbx.eu",
+    description: "Europe",
+    comingSoon: true,
+  },
+  {
+    id: "au",
+    Flag: AU,
+    logoSrc: IOS_APP_LOGO_BY_MARKET.au,
+    label: "ddbx.au",
+    description: "Australia",
+    comingSoon: true,
+  },
+  {
+    id: "ca",
+    Flag: CA,
+    logoSrc: IOS_APP_LOGO_BY_MARKET.ca,
+    label: "ddbx.ca",
+    description: "Canada",
+    comingSoon: true,
+  },
 ];
 
 const LEGAL_LINKS: {
@@ -379,7 +402,7 @@ export default function DefaultLayout({
 
   return (
     <div
-      className={`relative flex flex-col min-h-screen bg-[#f5f0e8] dark:bg-background pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
+      className={`relative flex flex-col min-h-screen bg-[#f5f0e8] dark:bg-background pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
     >
       <div className="sticky top-0 z-40">
         <Navbar />
@@ -490,16 +513,18 @@ export default function DefaultLayout({
         </div>
       </footer>
 
-      {/* Persistent mobile download CTA — a fixed, always-reachable tap target
-       *  that opens the same per-market app chooser as the footer badge.
-       *  Hidden from `md` up, where the footer CTA and hero suffice. */}
-      <div className="fixed bottom-0 inset-x-0 z-40 md:hidden border-t border-separator/60 bg-[#f5f0e8]/90 dark:bg-background/85 backdrop-blur-lg px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+      {/* Persistent mobile download CTA — an always-reachable tap target that
+       *  opens the same per-market app chooser as the footer badge. The button
+       *  floats over a transparent blur that fades into the page (no hard bar),
+       *  so content scrolling beneath it stays legible. Hidden from `md` up,
+       *  where the footer CTA and hero suffice. */}
+      <div className="pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden px-4 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-[#f5f0e8]/85 via-[#f5f0e8]/40 to-transparent dark:from-background/85 dark:via-background/40 backdrop-blur-md [mask-image:linear-gradient(to_top,black_55%,transparent)]">
         <button
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5a4128] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#4a351f] dark:bg-[#ad9479] dark:text-background dark:hover:bg-[#bca588]"
+          className="pointer-events-auto flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#5a4128] px-5 py-4 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#4a351f] dark:bg-[#ad9479] dark:text-background dark:hover:bg-[#bca588]"
           type="button"
           onClick={() => setAppsOpen(true)}
         >
-          <ArrowDownTrayIcon className="h-4 w-4 shrink-0" />
+          <ArrowDownTrayIcon className="h-5 w-5 shrink-0" />
           <span>Download the app</span>
         </button>
       </div>
