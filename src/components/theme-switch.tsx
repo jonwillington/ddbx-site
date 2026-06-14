@@ -5,6 +5,22 @@ export interface ThemeSwitchProps {
   className?: string;
 }
 
+/** Page background per theme — mirrors `--background` in globals.css. Light is
+ *  the warm beige; dark is the near-black warm brown (≈ oklch(13.5% .022 55)).
+ *  Kept as hex so Safari's older theme-color parser accepts it. */
+const THEME_BG = { light: "#f5f0e8", dark: "#15110d" } as const;
+
+/** Repaint Safari's address bar / bottom toolbar to match the active theme.
+ *  Safari reads `<meta name="theme-color">` on load but not on class changes,
+ *  so we rewrite it ourselves whenever the theme flips. */
+function syncThemeColorMeta(theme: "light" | "dark") {
+  const meta = document.querySelector<HTMLMetaElement>(
+    'meta[name="theme-color"]',
+  );
+
+  if (meta) meta.content = THEME_BG[theme];
+}
+
 export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -21,6 +37,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
 
       setTheme(next);
       root.classList.toggle("dark", next === "dark");
+      syncThemeColorMeta(next);
     };
 
     resolve();
@@ -41,6 +58,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
+    syncThemeColorMeta(newTheme);
   }, [theme]);
 
   if (!isMounted) return <div className="w-6 h-6" />;
