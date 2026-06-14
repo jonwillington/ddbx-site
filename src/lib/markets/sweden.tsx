@@ -274,6 +274,7 @@ export function groupRows(rows: EuDealing[]): EuRowGroup[] {
  *  is representative of the whole group on these dimensions. */
 function isCleanBuyGroup(g: EuRowGroup): boolean {
   const d = g.primary;
+  if (!d || !d.reporter) return false;
   const t = translateNature(d.nature).tone;
 
   if (t !== "buy") return false;
@@ -358,6 +359,7 @@ function SwedenRowActionCell({
   // Group keys carry PCA / programme / amendment, so reading the primary
   // leg's flags is representative of the entire group.
   const d = dealing.raw.primary;
+  if (!d || !d.reporter) return null;
   const chips: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
   // PCA and Programme weaken the signal — surfaced as the only chips that
@@ -407,6 +409,7 @@ function fmtNativePrice(n: number | null, ccy: string): string {
 function SwedenDetailBody({ dealing }: { dealing: MarketDealing<EuRowGroup> }) {
   const g = dealing.raw;
   const d = g.primary;
+  if (!d || !d.reporter) return null;
   const flags: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
   if (d.reporter.is_closely_associated)
@@ -633,7 +636,11 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
       limit: 500,
       view: "interesting",
     });
-    const groups = groupRows(r.dealings);
+    const safeRows = r.dealings.filter(
+      (d): d is (typeof r.dealings)[number] =>
+        !!d && typeof d === "object" && !!d.reporter,
+    );
+    const groups = groupRows(safeRows);
     const stats: MarketStats = {
       // viewCounts now report logical-event counts (post-collapse), which is
       // the user-facing number ("12 filings today" instead of "47 legs across

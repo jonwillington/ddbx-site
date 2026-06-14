@@ -54,7 +54,7 @@ export function MarketChooserModal({
           const inner = (
             <>
               <div className="relative shrink-0">
-                <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-black/10 bg-white p-1.5 shadow-sm dark:border-white/15 dark:bg-[#17120d]">
+                <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-black/10 bg-[#f3eee6] p-1.5 shadow-sm dark:border-white/15 dark:bg-[#17120d]">
                   {c.logoSrc ? (
                     <img
                       alt=""
@@ -64,15 +64,15 @@ export function MarketChooserModal({
                     />
                   ) : c.Flag ? (
                     <c.Flag
-                      className="h-6 w-9 rounded-[3px] object-cover"
+                      className="h-8 w-8 rounded-full object-cover"
                       title=""
                     />
                   ) : null}
                 </div>
                 {c.Flag && c.logoSrc && (
-                  <span className="absolute -bottom-1 -right-1 overflow-hidden rounded-sm border border-black/10 bg-white p-0.5 shadow-sm dark:border-white/15 dark:bg-[#1b1510]">
+                  <span className="absolute -bottom-1 -right-1 overflow-hidden rounded-full border border-black/10 bg-[#f3eee6] p-0.5 shadow-sm dark:border-white/15 dark:bg-[#1b1510]">
                     <c.Flag
-                      className="h-[12px] w-[18px] rounded-[1px] object-cover"
+                      className="h-[14px] w-[14px] rounded-full object-cover"
                       title=""
                     />
                   </span>

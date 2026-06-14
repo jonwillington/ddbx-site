@@ -199,6 +199,7 @@ function translateRole(role: string | undefined): string | undefined {
  *  logic stays uniform. */
 function isCleanBuyGroup(g: EuRowGroup): boolean {
   const d = g.primary;
+  if (!d || !d.reporter) return false;
   const t = translateNature(d.nature).tone;
 
   if (t !== "buy") return false;
@@ -270,6 +271,7 @@ function NetherlandsRowActionCell({
   dealing: MarketDealing<EuRowGroup>;
 }) {
   const d = dealing.raw.primary;
+  if (!d || !d.reporter) return null;
   const chips: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
   // Weak-signal caveats only (PCA / Programme / Amendment), matching Sweden.
@@ -328,6 +330,7 @@ function NetherlandsDetailBody({
 }) {
   const g = dealing.raw;
   const d = g.primary;
+  if (!d || !d.reporter) return null;
   const flags: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
   if (d.reporter.is_closely_associated)
@@ -546,7 +549,11 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
       limit: 500,
       view: "interesting",
     });
-    const groups = groupRows(r.dealings);
+    const safeRows = r.dealings.filter(
+      (d): d is (typeof r.dealings)[number] =>
+        !!d && typeof d === "object" && !!d.reporter,
+    );
+    const groups = groupRows(safeRows);
     const stats: MarketStats = {
       total: groups.length,
       viewCounts: { all: groups.length },

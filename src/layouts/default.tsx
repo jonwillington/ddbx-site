@@ -518,15 +518,21 @@ export default function DefaultLayout({
        *  floats over a transparent blur that fades into the page (no hard bar),
        *  so content scrolling beneath it stays legible. Hidden from `md` up,
        *  where the footer CTA and hero suffice. */}
-      <div className="pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden px-4 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-[#f5f0e8]/85 via-[#f5f0e8]/40 to-transparent dark:from-background/85 dark:via-background/40 backdrop-blur-md [mask-image:linear-gradient(to_top,black_55%,transparent)]">
-        <button
-          className="pointer-events-auto flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#5a4128] px-5 py-4 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#4a351f] dark:bg-[#ad9479] dark:text-background dark:hover:bg-[#bca588]"
-          type="button"
-          onClick={() => setAppsOpen(true)}
-        >
-          <ArrowDownTrayIcon className="h-5 w-5 shrink-0" />
-          <span>Download the app</span>
-        </button>
+      <div className="pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-t from-[#f5f0e8]/85 via-[#f5f0e8]/40 to-transparent dark:from-background/85 dark:via-background/40 backdrop-blur-md [mask-image:linear-gradient(to_top,black_55%,transparent)]"
+        />
+        <div className="relative px-4 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <button
+            className="pointer-events-auto flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#5a4128] px-5 py-4 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#4a351f] dark:bg-[#ad9479] dark:text-background dark:hover:bg-[#bca588]"
+            type="button"
+            onClick={() => setAppsOpen(true)}
+          >
+            <ArrowDownTrayIcon className="h-5 w-5 shrink-0" />
+            <span>Download the app</span>
+          </button>
+        </div>
       </div>
 
       <LegalDrawer page={legalPage} onClose={closeLegal} />
