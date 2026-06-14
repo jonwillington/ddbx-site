@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
+import { ArrowDownTrayIcon } from "@heroicons/react/20/solid";
 
 import { AppDrawer } from "@/components/app-drawer";
 import { Navbar } from "@/components/navbar";
@@ -378,7 +379,7 @@ export default function DefaultLayout({
 
   return (
     <div
-      className={`relative flex flex-col min-h-screen bg-[#f5f0e8] dark:bg-background ${drawerRight ? "lg:mr-80" : ""}`}
+      className={`relative flex flex-col min-h-screen bg-[#f5f0e8] dark:bg-background pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
     >
       <div className="sticky top-0 z-40">
         <Navbar />
@@ -488,6 +489,20 @@ export default function DefaultLayout({
           </div>
         </div>
       </footer>
+
+      {/* Persistent mobile download CTA — a fixed, always-reachable tap target
+       *  that opens the same per-market app chooser as the footer badge.
+       *  Hidden from `md` up, where the footer CTA and hero suffice. */}
+      <div className="fixed bottom-0 inset-x-0 z-40 md:hidden border-t border-separator/60 bg-[#f5f0e8]/90 dark:bg-background/85 backdrop-blur-lg px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+        <button
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5a4128] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#4a351f] dark:bg-[#ad9479] dark:text-background dark:hover:bg-[#bca588]"
+          type="button"
+          onClick={() => setAppsOpen(true)}
+        >
+          <ArrowDownTrayIcon className="h-4 w-4 shrink-0" />
+          <span>Download the app</span>
+        </button>
+      </div>
 
       <LegalDrawer page={legalPage} onClose={closeLegal} />
 
