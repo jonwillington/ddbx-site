@@ -144,16 +144,7 @@ export function MarketChannel({
     );
 
   if (variant === "inline") {
-    return (
-      <aside className="lg:hidden rounded-xl border border-[#e8e0d5] dark:border-separator bg-[#faf7f2] dark:bg-surface overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-[#e8e0d5] dark:border-separator">
-          {tabs}
-        </div>
-        <div className="max-h-[60vh] overflow-y-auto overscroll-contain">
-          {body}
-        </div>
-      </aside>
-    );
+    return null;
   }
 
   return (

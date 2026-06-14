@@ -205,7 +205,10 @@ export interface EuRowGroup {
 export function groupRows(rows: EuDealing[]): EuRowGroup[] {
   const map = new Map<string, EuRowGroup>();
 
-  for (const r of rows) {
+  for (const r of rows as Array<EuDealing | null | undefined>) {
+    // Defensive: skip malformed/null payload rows so one bad record doesn't
+    // take down the full render.
+    if (!r || !r.reporter) continue;
     const key = [
       r.lei,
       r.reporter.name,

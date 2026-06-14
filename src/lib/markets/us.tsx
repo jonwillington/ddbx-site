@@ -115,7 +115,10 @@ export interface UsRowGroup {
 export function groupRows(rows: UsDealing[]): UsRowGroup[] {
   const map = new Map<string, UsRowGroup>();
 
-  for (const r of rows) {
+  for (const r of rows as Array<UsDealing | null | undefined>) {
+    // Defensive: tolerate malformed/null rows from the API payload rather than
+    // crashing the whole market render on one bad entry.
+    if (!r || !r.reporter) continue;
     const key = `${r.filing_id}|${r.transaction_code}|${r.reporter.cik}`;
     let g = map.get(key);
 
@@ -358,6 +361,7 @@ function UsRowActionCell({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
   const row = group.primary;
   const suffix: Array<{ label: string; tone: Tone }> = [];
 
+  if (!row) return null;
   if (row.is_amendment) suffix.push({ label: "Amendment", tone: "neutral" });
   if (row.is_late) suffix.push({ label: "Late filing", tone: "neutral" });
 

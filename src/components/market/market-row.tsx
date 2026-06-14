@@ -759,6 +759,9 @@ export function MarketRow<W>({
     : dealing.insiderName;
   const valueLabel =
     dealing.value != null ? fmt.formatValue(dealing.value) : "—";
+  const mobileDateLabel = tradeDiffers
+    ? `Filed ${shortDate(dealing.disclosedDate, locale)} (Trade ${shortDate(dealing.tradeDate, locale)})`
+    : `Filed ${shortDate(dealing.disclosedDate, locale)}`;
 
   return (
     <button
@@ -770,18 +773,8 @@ export function MarketRow<W>({
     >
       {/* ── Mobile (<md) ── */}
       <div className="md:hidden px-3 py-2.5">
-        <div className="mb-1.5 flex items-baseline justify-between gap-2">
-          <span className="text-[11px] text-foreground/50 font-medium">
-            {shortDate(dealing.disclosedDate, locale)}
-            {tradeDiffers && (
-              <span className="text-[10px] text-muted/70 ml-1.5">
-                · trade {shortDate(dealing.tradeDate, locale)}
-              </span>
-            )}
-          </span>
-          <div className="flex items-center gap-1">
-            <RowActionCell dealing={dealing} />
-          </div>
+        <div className="text-[10px] font-medium text-foreground/55 mb-1.5">
+          {mobileDateLabel}
         </div>
         <div className="flex items-start gap-2.5">
           {indent && <div aria-hidden className="w-4 shrink-0" />}
@@ -793,18 +786,23 @@ export function MarketRow<W>({
               <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-[#e8e0d5] dark:bg-surface-secondary shrink-0">
                 {ticker}
               </span>
-              <span className="text-[13px] font-medium truncate">
+              <span className="text-[14px] font-semibold truncate">
                 {company}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-              <ClusterChip cluster={dealing.cluster} />
-              <BuyStyleChip buyStyle={dealing.buyStyle} />
-              {RowNameBadge && <RowNameBadge dealing={dealing} />}
-              {!hideInsider && (
-                <span className="text-[11px] text-muted truncate">
-                  {insiderLine}
-                </span>
+            {!hideInsider && (
+              <div className="text-[12px] text-muted mt-0.5 truncate">
+                {insiderLine}
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 mt-1 min-w-0">
+              <RowActionCell dealing={dealing} />
+              {RowNameBadge ? (
+                <RowNameBadge dealing={dealing} />
+              ) : dealing.buyStyle ? (
+                <BuyStyleChip buyStyle={dealing.buyStyle} />
+              ) : (
+                <ClusterChip cluster={dealing.cluster} />
               )}
             </div>
           </div>
@@ -818,7 +816,7 @@ export function MarketRow<W>({
           </div>
         </div>
         {(metricPct != null || noPosteriorData) && (
-          <div className="mt-1.5 flex flex-wrap items-center justify-end gap-1.5 animate-content-in">
+          <div className="mt-1.5 flex flex-wrap items-center justify-end gap-1.5 animate-content-in opacity-85">
             {metricPct != null ? (
               showAlpha ? (
                 <>
