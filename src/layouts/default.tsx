@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
-import { ArrowDownTrayIcon } from "@heroicons/react/20/solid";
 
 import { AppDrawer } from "@/components/app-drawer";
 import { Navbar } from "@/components/navbar";
@@ -10,8 +9,31 @@ import {
   MarketChooserModal,
   type MarketChoice,
 } from "@/components/market-chooser-modal";
-import { APP_CHOICES, IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
-import { marketContactEmail } from "@/lib/markets/registry";
+import {
+  APP_CHOICES,
+  IOS_APP_LOGO_BY_MARKET,
+  appStoreUrlForMarketId,
+} from "@/lib/app-store";
+import { marketContactEmail, marketForPath } from "@/lib/markets/registry";
+
+/** Shared styling for the floating mobile download CTA — solid pill, rendered
+ *  as an `<a>` (direct App Store link) or a `<button>` (chooser fallback). */
+const DOWNLOAD_CTA_CLASS =
+  "pointer-events-auto flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#5a4128] px-5 py-4 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#4a351f] dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90";
+
+/** Apple wordmark glyph for the App Store CTA. */
+function AppleGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="currentColor"
+      viewBox="0 0 384 512"
+    >
+      <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+    </svg>
+  );
+}
 
 type LegalPage = "privacy" | "cookies" | "terms" | "contact" | null;
 
@@ -390,6 +412,16 @@ export default function DefaultLayout({
   const [followOpen, setFollowOpen] = useState(false);
   const [appsOpen, setAppsOpen] = useState(false);
   const legalPage = pathToLegalPage(location.pathname);
+  // Direct App Store link for the market that owns this route, so the mobile
+  // floating CTA jumps straight to the right listing (UK site → UK app, US →
+  // US app) instead of opening the chooser. Undefined for app-less markets
+  // (SE/NL) — those fall back to the chooser modal.
+  const directAppUrl = appStoreUrlForMarketId(
+    marketForPath(
+      location.pathname,
+      typeof window === "undefined" ? undefined : window.location.hostname,
+    ).id,
+  );
   const closeLegal = useCallback(() => {
     navigate("/");
   }, [navigate]);
@@ -513,25 +545,42 @@ export default function DefaultLayout({
         </div>
       </footer>
 
-      {/* Persistent mobile download CTA — an always-reachable tap target that
-       *  opens the same per-market app chooser as the footer badge. The button
-       *  floats over a transparent blur that fades into the page (no hard bar),
-       *  so content scrolling beneath it stays legible. Hidden from `md` up,
-       *  where the footer CTA and hero suffice. */}
+      {/* Persistent mobile download CTA — an always-reachable tap target. When
+       *  the route's market has a live app it jumps straight to that App Store
+       *  listing (UK site → UK app, US → US app); app-less markets (SE/NL) fall
+       *  back to the chooser. The button floats over a transparent blur that
+       *  fades into the page (no hard bar), so content scrolling beneath it
+       *  stays legible. Hidden from `md` up, where the footer CTA and hero
+       *  suffice. */}
       <div className="pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden">
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-t from-[#f5f0e8]/85 via-[#f5f0e8]/40 to-transparent dark:from-background/85 dark:via-background/40 backdrop-blur-md [mask-image:linear-gradient(to_top,black_55%,transparent)]"
         />
         <div className="relative px-4 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <button
-            className="pointer-events-auto flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#5a4128] px-5 py-4 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#4a351f] dark:bg-[#ad9479] dark:text-background dark:hover:bg-[#bca588]"
-            type="button"
-            onClick={() => setAppsOpen(true)}
-          >
-            <ArrowDownTrayIcon className="h-5 w-5 shrink-0" />
-            <span>Download the app</span>
-          </button>
+          {directAppUrl ? (
+            <a
+              className={DOWNLOAD_CTA_CLASS}
+              href={directAppUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <AppleGlyph className="h-5 w-5 shrink-0" />
+              <span>Download the app</span>
+            </a>
+          ) : (
+            <button
+              className={DOWNLOAD_CTA_CLASS}
+              type="button"
+              onClick={() => setAppsOpen(true)}
+            >
+              <AppleGlyph className="h-5 w-5 shrink-0" />
+              <span>Download the app</span>
+            </button>
+          )}
+          <p className="pointer-events-none mt-2 text-center text-xs text-foreground/55">
+            Start your 7-day free trial. On iOS now — Android July 2026.
+          </p>
         </div>
       </div>
 

@@ -22,6 +22,16 @@ export const APP_STORE_URLS: Record<string, string> = {
   us: "https://apps.apple.com/us/app/ddbx-us/id6772091960",
 };
 
+/** Direct App Store URL for the market that owns a route, or undefined when
+ *  that market has no live app. Congress (`usg`) ships inside the US app, so
+ *  it resolves to the US listing; SE/NL have no app yet (caller falls back to
+ *  the market chooser). */
+export function appStoreUrlForMarketId(id: string): string | undefined {
+  if (id === "usg") return APP_STORE_URLS.us;
+
+  return APP_STORE_URLS[id];
+}
+
 /** Per-market app links for the footer download chooser — same shape and
  *  ordering as the social `FOLLOW_CHOICES` so the breadth of markets is
  *  always one tap away. Live markets carry an `href`; the rest are
