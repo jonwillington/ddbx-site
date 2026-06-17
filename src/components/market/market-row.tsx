@@ -805,7 +805,6 @@ export function MarketRow<W>({
   stockBars,
   benchmarkBars,
   fmt,
-  benchmarkLabel,
   RowActionCell,
   RowNameBadge,
   hideDate,
