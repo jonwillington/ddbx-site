@@ -106,7 +106,10 @@ export function MarketTodayHero<W>({
   // empty-day path keeps "Today" because its status already shows in the
   // anchor panel beside the gainers grid.
   const isBusyDay = todayDealings.length > 0;
-  const showStatusHeader = Boolean(view) && isBusyDay;
+  // Show the status title whenever the body is the deal grid OR its loading
+  // skeleton — both represent "scanning today's market". The empty-day path
+  // keeps "Today" because its status already shows in the anchor panel.
+  const showStatusHeader = Boolean(view) && (isBusyDay || loading);
   const headerMeta = showStatusHeader
     ? [todayMeta, view?.sub].filter(Boolean).join(" · ")
     : todayMeta;
