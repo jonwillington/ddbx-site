@@ -49,6 +49,7 @@ import {
   PerformanceChart,
   pctAtIndex,
 } from "@/components/performance/performance-chart";
+import { PerformanceHighlights } from "@/components/performance/performance-highlights";
 import { ViewModeToggle } from "@/components/performance/view-mode-toggle";
 import { SectorLeaderboard } from "@/components/performance/sector-leaderboard";
 import { SectorDrilldownSheet } from "@/components/performance/sector-drilldown-sheet";
@@ -213,6 +214,15 @@ function UkPerformancePage() {
 
             {perf.config.mode === "overall" ? (
               <>
+                <PerformanceHighlights
+                  isComputing={perf.isComputing}
+                  latestDate={
+                    perf.result.strategy[perf.result.strategy.length - 1]?.date ?? null
+                  }
+                  rows={perf.result.contributors}
+                  timeWindow={perf.config.timeWindow}
+                />
+
                 <div
                   className={`rounded-xl border border-separator bg-surface/40 p-3 ${perf.isComputing ? "opacity-70" : ""} transition-opacity`}
                 >

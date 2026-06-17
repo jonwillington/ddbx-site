@@ -88,6 +88,13 @@ export interface MarketConfig {
     tweets: boolean;
     /** Monthly retrospective article + banner (GET /api/monthly-summary). */
     monthlySummary: boolean;
+    /** Analyst consensus + price targets on the company surface (the `analyst`
+     *  block on CompanyStats — Yahoo financialData + recommendationTrend).
+     *  US-first: coverage is strong and clean there; UK is patchy (half the
+     *  sample were single-analyst stubs, plus GBp/GBP + USD-ADR currency
+     *  pitfalls), so it stays off until the pipeline reconciles those. See
+     *  ddbx-ios-app/investigations/2026-06-14-analyst-data-plan.md. */
+    analystTargets: boolean;
   };
 }
 
@@ -114,6 +121,13 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       news: true,
       tweets: true,
       monthlySummary: true,
+      // On since 2026-06-15: buildAnalystView reconciles UK units (Yahoo serves
+      // .L targets in pence mislabelled GBP → divided to pounds to match the
+      // de-penced stats; USD-ADR targets like PRU/DGE are dropped, since they
+      // can't be reconciled to a GBp price without FX). ~40% of UK issuers carry
+      // a reliable block; the rest (incl. the USD-ADR FTSE giants) show the
+      // empty state. FX-converting those ADR targets is the next improvement.
+      analystTargets: true,
     },
   },
   US: {
@@ -162,6 +176,9 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       // it gates the worker's own posting only.
       tweets: true,
       monthlySummary: false,
+      // US analyst coverage is strong + clean (spike 2026-06-15: 12/15 with a
+      // real consensus). First market to surface the `analyst` block.
+      analystTargets: true,
     },
   },
   SE: {
@@ -185,6 +202,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       news: true,
       tweets: false,
       monthlySummary: false,
+      analystTargets: false,
     },
   },
   NL: {
@@ -208,6 +226,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       news: true,
       tweets: false,
       monthlySummary: false,
+      analystTargets: false,
     },
   },
   USG: {
@@ -243,6 +262,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       // flip never back-posts the catalogue. Posting code reads this flag.
       tweets: true,
       monthlySummary: false,
+      analystTargets: false,
     },
   },
 };
@@ -1477,6 +1497,10 @@ export interface GovReporter {
   /** Official member portrait (public-domain), served from our R2 mirror at
    *  /api/gov/photo/:bioguide. Absent when the member has no Bioguide id. */
   photo_url?: string;
+  /** Short, strictly-factual biography (2-3 sentences: party + seat + tenure,
+   *  prior career, committee focus) shown atop the member's profile drawer.
+   *  Authored in-chat and seeded; absent for members without one yet. */
+  bio?: string;
   /** Member-profile context (advisor-managed status, net worth) — drives and
    *  explains the rating. Absent for unassessed members. */
   profile?: GovMemberProfile;
