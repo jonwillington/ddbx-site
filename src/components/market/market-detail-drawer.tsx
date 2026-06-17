@@ -253,13 +253,13 @@ export function MarketDetailDrawer<W>({
                     big header — the top bar stays clean on open. */}
                 {showLogo && (
                   <CompanyLogo
-                    className={`transition-opacity duration-200 ${scrolled ? "opacity-100" : "opacity-0"}`}
+                    className={`transition-opacity duration-200 ${scrolled || gated ? "opacity-100" : "opacity-0"}`}
                     size={32}
                     ticker={rawTicker}
                   />
                 )}
                 <span
-                  className={`font-mono text-xs bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded shrink-0 transition-opacity duration-200 ${scrolled ? "opacity-100" : "opacity-0"}`}
+                  className={`font-mono text-xs bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded shrink-0 transition-opacity duration-200 ${scrolled || gated ? "opacity-100" : "opacity-0"}`}
                 >
                   {ticker}
                 </span>
@@ -273,7 +273,7 @@ export function MarketDetailDrawer<W>({
                 )}
                 <span
                   className={`font-semibold text-sm truncate flex-1 min-w-0 transition-opacity duration-200
-                  ${scrolled ? "opacity-100" : "opacity-0"}`}
+                  ${scrolled || gated ? "opacity-100" : "opacity-0"}`}
                 >
                   {company}
                 </span>
@@ -286,239 +286,222 @@ export function MarketDetailDrawer<W>({
                 </button>
               </div>
 
-              <div className="relative flex-1 min-h-0">
-                <div
-                  ref={scrollRef}
-                  className="h-full overflow-y-auto overflow-x-hidden overscroll-contain"
-                  onScroll={recompute}
-                >
+              {gated ? (
+                // Locked gated view: the drawer doesn't scroll — the app CTA
+                // sits centered over a faint, static blur of the analysis. The
+                // full table is the teaser; here the drawer is purely the
+                // conversion prompt.
+                <div className="relative flex-1 min-h-0 overflow-hidden">
                   <div
-                    ref={contentRef}
-                    className="px-5 pb-5 pt-1 md:px-8 md:pb-8 md:pt-2 space-y-6"
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 select-none overflow-hidden px-5 pt-4 opacity-25 md:px-8 [filter:blur(6px)]"
                   >
-                    {/* Company on top, the person who made the buy beneath,
+                    <BodyComponent allDealings={allDealings} dealing={active} />
+                  </div>
+                  <div className="absolute inset-0 z-10 flex items-center justify-center px-4">
+                    {AnalysisOverlay && <AnalysisOverlay />}
+                  </div>
+                </div>
+              ) : (
+                <div className="relative flex-1 min-h-0">
+                  <div
+                    ref={scrollRef}
+                    className="h-full overflow-y-auto overflow-x-hidden overscroll-contain"
+                    onScroll={recompute}
+                  >
+                    <div
+                      ref={contentRef}
+                      className="px-5 pb-5 pt-1 md:px-8 md:pb-8 md:pt-2 space-y-6"
+                    >
+                      {/* Company on top, the person who made the buy beneath,
                         tied together by an org-chart connector so the header
                         reads "this purchase was made by this person". */}
-                    <div>
-                      <div className="flex items-center gap-4">
-                        {showLogo && (
-                          <CompanyLogo size={56} ticker={rawTicker} />
-                        )}
-                        <h1 className="text-3xl font-bold leading-tight tracking-tight flex-1 min-w-0">
-                          {company}
-                        </h1>
-                        <ClusterChip
-                          className="shrink-0"
-                          cluster={active.cluster}
-                        />
-                        <BuyStyleChip
-                          buyStyle={active.buyStyle}
-                          className="shrink-0"
-                        />
-                      </div>
-
-                      <div className="flex items-stretch">
-                        {/* Curved elbow connector — drops from under the logo
-                            and sweeps into the buyer's avatar, in a soft brand
-                            tint so the company→person link reads at a glance. */}
-                        <div
-                          aria-hidden
-                          className={`relative shrink-0 ${showLogo ? "w-14" : "w-5"}`}
-                        >
-                          <div
-                            className={`absolute top-0 bottom-1/2 rounded-bl-[14px] border-b-2 border-l-2 border-[#5a4128]/25 dark:border-[#ad9479]/30 ${showLogo ? "left-7 right-1.5" : "left-2 right-0"}`}
+                      <div>
+                        <div className="flex items-center gap-4">
+                          {showLogo && (
+                            <CompanyLogo size={56} ticker={rawTicker} />
+                          )}
+                          <h1 className="text-3xl font-bold leading-tight tracking-tight flex-1 min-w-0">
+                            {company}
+                          </h1>
+                          <ClusterChip
+                            className="shrink-0"
+                            cluster={active.cluster}
+                          />
+                          <BuyStyleChip
+                            buyStyle={active.buyStyle}
+                            className="shrink-0"
                           />
                         </div>
-                        <div className="flex items-center gap-3 py-2">
-                          {/* Only show a portrait when we actually have one
+
+                        <div className="flex items-stretch">
+                          {/* Curved elbow connector — drops from under the logo
+                            and sweeps into the buyer's avatar, in a soft brand
+                            tint so the company→person link reads at a glance. */}
+                          <div
+                            aria-hidden
+                            className={`relative shrink-0 ${showLogo ? "w-14" : "w-5"}`}
+                          >
+                            <div
+                              className={`absolute top-0 bottom-1/2 rounded-bl-[14px] border-b-2 border-l-2 border-[#5a4128]/25 dark:border-[#ad9479]/30 ${showLogo ? "left-7 right-1.5" : "left-2 right-0"}`}
+                            />
+                          </div>
+                          <div className="flex items-center gap-3 py-2">
+                            {/* Only show a portrait when we actually have one
                               (Congress members). Other markets have no insider
                               images, so we skip the placeholder initials bubble
                               and let the connector run straight to the name. */}
-                          {active.insiderPhotoUrl && (
-                            <div className="relative shrink-0">
-                              <InsiderAvatar
-                                name={active.insiderName}
-                                photoUrl={active.insiderPhotoUrl}
-                                size={44}
-                              />
-                              <span
-                                aria-hidden
-                                className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-[#5a4128]/15 dark:ring-[#ad9479]/20"
-                              />
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <div className="text-[10px] uppercase tracking-wide text-muted mb-0.5">
-                              {insiderLabel}
-                            </div>
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="text-base font-semibold truncate">
-                                {active.insiderName}
-                              </span>
-                              {active.party && (
-                                <PartyChip party={active.party} />
-                              )}
-                              <ChamberChip chamber={active.chamber} />
-                            </div>
-                            {active.insiderRole && (
-                              <div className="text-xs text-muted truncate">
-                                {active.insiderRole}
+                            {active.insiderPhotoUrl && (
+                              <div className="relative shrink-0">
+                                <InsiderAvatar
+                                  name={active.insiderName}
+                                  photoUrl={active.insiderPhotoUrl}
+                                  size={44}
+                                />
+                                <span
+                                  aria-hidden
+                                  className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-[#5a4128]/15 dark:ring-[#ad9479]/20"
+                                />
                               </div>
                             )}
+                            <div className="min-w-0">
+                              <div className="text-[10px] uppercase tracking-wide text-muted mb-0.5">
+                                {insiderLabel}
+                              </div>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="text-base font-semibold truncate">
+                                  {active.insiderName}
+                                </span>
+                                {active.party && (
+                                  <PartyChip party={active.party} />
+                                )}
+                                <ChamberChip chamber={active.chamber} />
+                              </div>
+                              {active.insiderRole && (
+                                <div className="text-xs text-muted truncate">
+                                  {active.insiderRole}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
-                      {detailFields ? (
-                        detailFields(active)
-                          .filter(
-                            (f): f is { label: string; value: ReactNode } =>
-                              !!f,
-                          )
-                          .map((f) => (
-                            <div key={f.label} className="min-w-0">
-                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                                {f.label}
-                              </dt>
-                              <dd className="text-sm font-medium">{f.value}</dd>
-                            </div>
-                          ))
-                      ) : (
-                        <>
-                          <div>
-                            <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                              Action
-                            </dt>
-                            <dd className="text-sm font-medium">
-                              {active.actionLabel}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                              Amount
-                            </dt>
-                            <dd className="text-sm font-medium">
-                              {valueLabel}
-                            </dd>
-                          </div>
-                          {active.shares > 0 && (
+                      <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
+                        {detailFields ? (
+                          detailFields(active)
+                            .filter(
+                              (f): f is { label: string; value: ReactNode } =>
+                                !!f,
+                            )
+                            .map((f) => (
+                              <div key={f.label} className="min-w-0">
+                                <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                  {f.label}
+                                </dt>
+                                <dd className="text-sm font-medium">
+                                  {f.value}
+                                </dd>
+                              </div>
+                            ))
+                        ) : (
+                          <>
                             <div>
                               <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                                Shares
-                              </dt>
-                              <dd className="text-sm font-medium tabular-nums">
-                                {sharesLabel}
-                              </dd>
-                            </div>
-                          )}
-                          {industryLabel && (
-                            <div className="min-w-0">
-                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                                Industry
-                              </dt>
-                              <dd className="text-sm font-medium truncate">
-                                {industryLabel}
-                              </dd>
-                            </div>
-                          )}
-                          {confidenceLabel && (
-                            <div>
-                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                                Confidence
-                              </dt>
-                              <dd className="text-sm font-medium tabular-nums">
-                                {confidenceLabel}
-                              </dd>
-                            </div>
-                          )}
-                          {catalystLabel && (
-                            <div>
-                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                                Catalyst
+                                Action
                               </dt>
                               <dd className="text-sm font-medium">
-                                {catalystLabel}
+                                {active.actionLabel}
                               </dd>
                             </div>
-                          )}
-                        </>
+                            <div>
+                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                Amount
+                              </dt>
+                              <dd className="text-sm font-medium">
+                                {valueLabel}
+                              </dd>
+                            </div>
+                            {active.shares > 0 && (
+                              <div>
+                                <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                  Shares
+                                </dt>
+                                <dd className="text-sm font-medium tabular-nums">
+                                  {sharesLabel}
+                                </dd>
+                              </div>
+                            )}
+                            {industryLabel && (
+                              <div className="min-w-0">
+                                <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                  Industry
+                                </dt>
+                                <dd className="text-sm font-medium truncate">
+                                  {industryLabel}
+                                </dd>
+                              </div>
+                            )}
+                            {confidenceLabel && (
+                              <div>
+                                <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                  Confidence
+                                </dt>
+                                <dd className="text-sm font-medium tabular-nums">
+                                  {confidenceLabel}
+                                </dd>
+                              </div>
+                            )}
+                            {catalystLabel && (
+                              <div>
+                                <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                  Catalyst
+                                </dt>
+                                <dd className="text-sm font-medium">
+                                  {catalystLabel}
+                                </dd>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </dl>
+
+                      {DetailPosition && <DetailPosition dealing={active} />}
+
+                      {leadWithBody && (
+                        <BodyComponent
+                          allDealings={allDealings}
+                          dealing={active}
+                        />
                       )}
-                    </dl>
 
-                    {gated ? (
-                      // Gated drawer: lead with the locked analysis so the app
-                      // CTA is the first thing in view on open (the gate card
-                      // is sticky inside the blurred body). The unblurred
-                      // position card + recent buys sit below for scrollers.
-                      <>
-                        <div className="relative">
-                          <div
-                            aria-hidden
-                            className="pointer-events-none select-none opacity-40"
-                            style={{ filter: "blur(5px)" }}
-                          >
-                            <BodyComponent
-                              allDealings={allDealings}
-                              dealing={active}
-                            />
-                          </div>
-                          {AnalysisOverlay && <AnalysisOverlay />}
-                        </div>
+                      <RecentBuysSection
+                        allDealings={allDealings}
+                        currentDealing={active}
+                        fmt={fmt}
+                        formatTickerDisplay={formatTickerDisplay}
+                        locale={locale}
+                        onSelect={
+                          onSelectDealing ? handleSelectRelated : undefined
+                        }
+                      />
 
-                        {DetailPosition && <DetailPosition dealing={active} />}
-
-                        <RecentBuysSection
+                      {!leadWithBody && (
+                        <BodyComponent
                           allDealings={allDealings}
-                          currentDealing={active}
-                          fmt={fmt}
-                          formatTickerDisplay={formatTickerDisplay}
-                          locale={locale}
-                          onSelect={
-                            onSelectDealing ? handleSelectRelated : undefined
-                          }
+                          dealing={active}
                         />
-                      </>
-                    ) : (
-                      <>
-                        {DetailPosition && <DetailPosition dealing={active} />}
-
-                        {leadWithBody && (
-                          <BodyComponent
-                            allDealings={allDealings}
-                            dealing={active}
-                          />
-                        )}
-
-                        <RecentBuysSection
-                          allDealings={allDealings}
-                          currentDealing={active}
-                          fmt={fmt}
-                          formatTickerDisplay={formatTickerDisplay}
-                          locale={locale}
-                          onSelect={
-                            onSelectDealing ? handleSelectRelated : undefined
-                          }
-                        />
-
-                        {!leadWithBody && (
-                          <BodyComponent
-                            allDealings={allDealings}
-                            dealing={active}
-                          />
-                        )}
-                      </>
-                    )}
+                      )}
+                    </div>
                   </div>
+                  {!atBottom && (
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-12 bg-gradient-to-t from-background to-transparent"
+                    />
+                  )}
                 </div>
-                {!atBottom && (
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-12 bg-gradient-to-t from-background to-transparent"
-                  />
-                )}
-              </div>
+              )}
             </>
           )}
         </Drawer.Content>

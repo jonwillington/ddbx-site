@@ -1506,6 +1506,7 @@ export function MarketPage<W>({
                                 weekday={day.weekday}
                               />
                               {config.id === "uk" &&
+                                !collapsed &&
                                 dailySummaries.get(day.key) && (
                                   <MarketDaySummaryRow
                                     headline={

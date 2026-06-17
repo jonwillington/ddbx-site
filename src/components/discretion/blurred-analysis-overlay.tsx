@@ -22,32 +22,24 @@ export function BlurredAnalysisOverlay({
   footnote = "Free on iOS · No account required",
 }: BlurredAnalysisOverlayProps) {
   return (
-    // Overlay layer spans the full blurred body; the card inside is `sticky`
-    // so it stays pinned in view while the user scrolls the (unreadable)
-    // analysis beneath it, rather than scrolling away with it.
-    <div className="pointer-events-none absolute inset-0 z-10 px-4">
-      <div className="pointer-events-auto sticky top-6 mx-auto w-full max-w-md rounded-2xl border border-[#e8e0d5] dark:border-separator bg-[#faf7f2]/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
-        <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#5a4128]/10 text-[#5a4128] dark:text-[#ad9479] mb-4">
-          <LockClosedIcon className="w-5 h-5" />
-        </span>
-        <h3 className="text-lg font-semibold mb-1">{title}</h3>
-        <p className="text-sm text-muted leading-relaxed mb-4">{body}</p>
-        <ul className="text-left text-sm space-y-1.5 mb-5">
-          {benefits.map((line) => (
-            <li
-              key={line}
-              className="flex items-start gap-2 text-foreground/80"
-            >
-              <span className="text-[#5a4128] dark:text-[#ad9479] mt-0.5">
-                ✓
-              </span>
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
-        <AppStoreBadge size="md" />
-        <p className="text-[11px] text-muted/60 mt-3">{footnote}</p>
-      </div>
+    // Just the card — the caller positions it (the gated drawer centers it in
+    // a locked, non-scrolling viewport).
+    <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-[#e8e0d5] dark:border-separator bg-[#faf7f2]/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
+      <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#5a4128]/10 text-[#5a4128] dark:text-[#ad9479] mb-4">
+        <LockClosedIcon className="w-5 h-5" />
+      </span>
+      <h3 className="text-lg font-semibold mb-1">{title}</h3>
+      <p className="text-sm text-muted leading-relaxed mb-4">{body}</p>
+      <ul className="text-left text-sm space-y-1.5 mb-5">
+        {benefits.map((line) => (
+          <li key={line} className="flex items-start gap-2 text-foreground/80">
+            <span className="text-[#5a4128] dark:text-[#ad9479] mt-0.5">✓</span>
+            <span>{line}</span>
+          </li>
+        ))}
+      </ul>
+      <AppStoreBadge size="md" />
+      <p className="text-[11px] text-muted/60 mt-3">{footnote}</p>
     </div>
   );
 }
