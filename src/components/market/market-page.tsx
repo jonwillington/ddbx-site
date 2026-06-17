@@ -73,6 +73,10 @@ import {
  *  above the historical table, so without a cap it would push that table off
  *  the page. */
 const TODAY_SKIPPED_CAP = 8;
+/** Discretion mode: how many of the most recent disclosure days stay fully
+ *  expanded in the historical list. Older days collapse to a single deal plus
+ *  an "X more deals" row that nudges toward the app. */
+const REAL_HISTORY_DAYS = 2;
 const FIRST_UNLOCK_CONFIRM =
   "Use today's free full analysis on this filing? You can unlock one full drawer per day on the web.";
 
@@ -1011,6 +1015,23 @@ export function MarketPage<W>({
   );
   const renderDayRow = (d: MarketDealing<W>) => renderRow(d);
 
+  // Discretion list collapse: keep the most recent REAL_HISTORY_DAYS disclosure
+  // days fully expanded; older days collapse to a single deal + an "X more"
+  // nudge row. Only active when discretion gating is on (UK teaser today).
+  const recentRealDays = useMemo(() => {
+    const past = dealings
+      .map((d) => d.disclosedDate.slice(0, 10))
+      .filter((iso) => iso < todayIso);
+
+    return new Set(
+      [...new Set(past)].sort().reverse().slice(0, REAL_HISTORY_DAYS),
+    );
+  }, [dealings, todayIso]);
+  const isDayCollapsed = (dayKey: string) =>
+    (gating?.enabled ?? false) &&
+    dayKey < todayIso &&
+    !recentRealDays.has(dayKey);
+
   const openDealing = useCallback(
     (d: MarketDealing<W>) => {
       if (
@@ -1462,6 +1483,10 @@ export function MarketPage<W>({
 
                           const isIntroDay =
                             day.key === introDayKey && !intro.dismissed;
+                          const collapsed = isDayCollapsed(day.key);
+                          const collapsedDeals = collapsed
+                            ? [...day.suggested, ...day.skipped]
+                            : [];
 
                           return (
                             <div
@@ -1493,7 +1518,29 @@ export function MarketPage<W>({
                                     onOpen={() => setOpenSummaryDate(day.key)}
                                   />
                                 )}
-                              {config.clusterByPerson ? (
+                              {collapsed ? (
+                                // Older day under discretion: show the single
+                                // most notable deal (suggested ranks first),
+                                // then nudge the rest into the app.
+                                <>
+                                  {collapsedDeals[0] &&
+                                    renderDayRow(collapsedDeals[0])}
+                                  {collapsedDeals.length > 1 && (
+                                    <a
+                                      className="flex items-center justify-center gap-1 px-4 py-2.5 text-[12px] font-medium text-[#5a4128] transition-colors hover:bg-[#5a4128]/[0.05] dark:text-[#ad9479] dark:hover:bg-[#ad9479]/[0.06]"
+                                      href={channelAppHref}
+                                      rel="noreferrer"
+                                      target="_blank"
+                                    >
+                                      {collapsedDeals.length - 1} more{" "}
+                                      {collapsedDeals.length - 1 === 1
+                                        ? "deal"
+                                        : "deals"}{" "}
+                                      recorded on this day — view in the app
+                                    </a>
+                                  )}
+                                </>
+                              ) : config.clusterByPerson ? (
                                 // Person-grouped markets (Congress): fold the
                                 // WHOLE day — suggested + skipped — into one
                                 // group per member, so a member never appears

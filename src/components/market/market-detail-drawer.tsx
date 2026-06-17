@@ -447,51 +447,17 @@ export function MarketDetailDrawer<W>({
                       )}
                     </dl>
 
-                    {DetailPosition && <DetailPosition dealing={active} />}
-
-                    {leadWithBody && (
+                    {gated ? (
+                      // Gated drawer: lead with the locked analysis so the app
+                      // CTA is the first thing in view on open (the gate card
+                      // is sticky inside the blurred body). The unblurred
+                      // position card + recent buys sit below for scrollers.
                       <>
-                        {gated ? (
-                          <div className="relative">
-                            <div
-                              aria-hidden
-                              className="pointer-events-none select-none"
-                              style={{ filter: "blur(4px)" }}
-                            >
-                              <BodyComponent
-                                allDealings={allDealings}
-                                dealing={active}
-                              />
-                            </div>
-                            {AnalysisOverlay && <AnalysisOverlay />}
-                          </div>
-                        ) : (
-                          <BodyComponent
-                            allDealings={allDealings}
-                            dealing={active}
-                          />
-                        )}
-                      </>
-                    )}
-
-                    <RecentBuysSection
-                      allDealings={allDealings}
-                      currentDealing={active}
-                      fmt={fmt}
-                      formatTickerDisplay={formatTickerDisplay}
-                      locale={locale}
-                      onSelect={
-                        onSelectDealing ? handleSelectRelated : undefined
-                      }
-                    />
-
-                    {!leadWithBody &&
-                      (gated ? (
                         <div className="relative">
                           <div
                             aria-hidden
-                            className="pointer-events-none select-none"
-                            style={{ filter: "blur(4px)" }}
+                            className="pointer-events-none select-none opacity-40"
+                            style={{ filter: "blur(5px)" }}
                           >
                             <BodyComponent
                               allDealings={allDealings}
@@ -500,12 +466,50 @@ export function MarketDetailDrawer<W>({
                           </div>
                           {AnalysisOverlay && <AnalysisOverlay />}
                         </div>
-                      ) : (
-                        <BodyComponent
+
+                        {DetailPosition && <DetailPosition dealing={active} />}
+
+                        <RecentBuysSection
                           allDealings={allDealings}
-                          dealing={active}
+                          currentDealing={active}
+                          fmt={fmt}
+                          formatTickerDisplay={formatTickerDisplay}
+                          locale={locale}
+                          onSelect={
+                            onSelectDealing ? handleSelectRelated : undefined
+                          }
                         />
-                      ))}
+                      </>
+                    ) : (
+                      <>
+                        {DetailPosition && <DetailPosition dealing={active} />}
+
+                        {leadWithBody && (
+                          <BodyComponent
+                            allDealings={allDealings}
+                            dealing={active}
+                          />
+                        )}
+
+                        <RecentBuysSection
+                          allDealings={allDealings}
+                          currentDealing={active}
+                          fmt={fmt}
+                          formatTickerDisplay={formatTickerDisplay}
+                          locale={locale}
+                          onSelect={
+                            onSelectDealing ? handleSelectRelated : undefined
+                          }
+                        />
+
+                        {!leadWithBody && (
+                          <BodyComponent
+                            allDealings={allDealings}
+                            dealing={active}
+                          />
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
                 {!atBottom && (
