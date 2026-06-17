@@ -7,7 +7,6 @@ import type { MarketStatusView } from "./market-anchor-card";
 
 import {
   LiveWash,
-  MarketAnchorCard,
   MarketAnchorPanel,
   useMarketStatusView,
 } from "./market-anchor-card";
@@ -101,31 +100,51 @@ export function MarketTodayHero<W>({
 
   const view = useMarketStatusView(session, holidaySource);
   const bestEntries = (recentBest ?? []).slice(0, BEST_GRID_CAP);
-  // Full-day closures (weekend, bank holiday) make the "Today · SATURDAY"
-  // header read as filler — the anchor card carries the date context.
-  // Suppress on those days regardless of whether late filings landed
-  // (Sweden's regulator publishes on Saturdays); keep it for live /
-  // pre-open / after-hours when the framing is still meaningful.
+  // On busy days the market status takes over the section title — the
+  // pulsing dot + headline ("Scanning today's market for deals") replaces
+  // the bare "Today", with the close time folded into the date meta. The
+  // empty-day path keeps "Today" because its status already shows in the
+  // anchor panel beside the gainers grid.
+  const isBusyDay = todayDealings.length > 0;
+  const showStatusHeader = Boolean(view) && isBusyDay;
+  const headerMeta = showStatusHeader
+    ? [todayMeta, view?.sub].filter(Boolean).join(" · ")
+    : todayMeta;
+  // Full-day closures (weekend, bank holiday) make the bare "Today ·
+  // SATURDAY" header read as filler. Suppress it then — but not when the
+  // status header is showing (busy day), since that header carries its own
+  // context. Sweden's regulator publishes on Saturdays, so this case is real.
   const hideTodayHeader =
-    view?.closureKind === "weekend" || view?.closureKind === "holiday";
+    !showStatusHeader &&
+    (view?.closureKind === "weekend" || view?.closureKind === "holiday");
 
   return (
     <section className="relative z-10">
       {!hideTodayHeader && (
         <header className="mb-4 flex items-end justify-between gap-4 md:mb-5">
           <div className="min-w-0">
-            <h2
-              className="animate-today-hero-item text-[30px] font-semibold leading-none tracking-[-0.035em] md:text-[34px]"
-              style={{ animationDelay: todayHeroDelay(0) }}
-            >
-              {todayTitle}
-            </h2>
-            {todayMeta && (
+            {showStatusHeader && view ? (
+              <h2
+                className="animate-today-hero-item flex items-center gap-3 text-[30px] font-semibold leading-[1.05] tracking-[-0.035em] md:text-[34px]"
+                style={{ animationDelay: todayHeroDelay(0) }}
+              >
+                <HeaderStatusDot view={view} />
+                <span>{view.headline}</span>
+              </h2>
+            ) : (
+              <h2
+                className="animate-today-hero-item text-[30px] font-semibold leading-none tracking-[-0.035em] md:text-[34px]"
+                style={{ animationDelay: todayHeroDelay(0) }}
+              >
+                {todayTitle}
+              </h2>
+            )}
+            {headerMeta && (
               <div
                 className="animate-today-hero-item mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted md:text-[11px]"
                 style={{ animationDelay: todayHeroDelay(0, 25) }}
               >
-                {todayMeta}
+                {headerMeta}
               </div>
             )}
           </div>
@@ -145,25 +164,13 @@ export function MarketTodayHero<W>({
           {/* Mobile: snap carousel so a busy day doesn't push the table
               1800px down the page — peek the next card at the right edge to
               signal swipe. lg+: spreads to a tidy two/three-up grid. The
-              market-status anchor rides along as the first card (pinned
-              ahead of the deals) rather than a full-width banner — so once
-              there's at least one deal, "Scanning the market" is just one
-              card in the row. */}
+              market status no longer rides as a card here — it's promoted
+              into the section title above, so the grid is deal cards only. */}
           <div className={TODAY_CAROUSEL_CLASS}>
-            {view && (
-              <div className={TODAY_CARD_SLOT_CLASS}>
-                <div
-                  className="animate-today-hero-item h-full"
-                  style={{ animationDelay: todayHeroDelay(1) }}
-                >
-                  <MarketAnchorCard view={view} />
-                </div>
-              </div>
-            )}
             {mainDealings.map((d, index) => (
               <div key={d.key} className={TODAY_CARD_SLOT_CLASS}>
                 <TodayCard
-                  animationDelay={todayHeroDelay(index + 2)}
+                  animationDelay={todayHeroDelay(index + 1)}
                   dealing={d}
                   fmt={fmt}
                   formatTickerDisplay={formatTickerDisplay}
@@ -207,6 +214,28 @@ export function MarketTodayHero<W>({
         </div>
       )}
     </section>
+  );
+}
+
+/** Status indicator that sits to the left of the Today header title — a
+ *  green pulse while the market is live (the "scanning" signal), a static
+ *  tinted dot for pre-open / closed. Mirrors the anchor panel's bullet but
+ *  sized to ride alongside the big title rather than a small eyebrow. */
+function HeaderStatusDot({ view }: { view: MarketStatusView }) {
+  if (view.isLive) {
+    return (
+      <span aria-hidden className="relative inline-flex h-2.5 w-2.5 shrink-0">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2E7D32] opacity-70" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#2E7D32]" />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      aria-hidden
+      className={`inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${view.dotClass}`}
+    />
   );
 }
 

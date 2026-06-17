@@ -50,44 +50,13 @@ export function useMarketStatusView(
   return describeStatus(status, session);
 }
 
-/** Standalone bordered anchor — rides as the first card in today's deal
- *  grid on busy days (pinned ahead of the deals), so it reads as one card
- *  in the row rather than a full-width banner. Padding matches the deal
- *  cards (p-5/p-6). On empty days the Today hero instead drops this card's
- *  content into a shared container with the gainers grid, via
- *  `MarketAnchorPanel`. */
-export function MarketAnchorCard({ view }: { view: MarketStatusView }) {
-  return (
-    <div
-      className={`relative flex h-full flex-col overflow-hidden rounded-xl border p-4 transition-colors md:p-5 ${
-        view.isLive
-          ? "border-[#2E7D32]/30 bg-[#2E7D32]/[0.06] dark:bg-[#2E7D32]/[0.15]"
-          : "border-black/[0.08] bg-[#faf7f2] dark:border-white/[0.08] dark:bg-surface"
-      }`}
-    >
-      {view.isLive && <LiveWash />}
-      <MarketAnchorPanel compact view={view} />
-    </div>
-  );
-}
-
-/** Bare content of the anchor — eyebrow chip, headline, sub. No outer
- *  border / radius / background so it can be embedded inside the shared
- *  empty-day container without doubling-up chrome.
- *
- *  `compact` is the busy-day in-grid variant: it rides as one card in the
- *  deal grid, so it shrinks the headline to the deal-card title scale and
- *  top-aligns (drops `flex-1`) instead of stretching and bottom-pinning the
- *  sub — that keeps it from being the row's height-driver and lines its
- *  content up with the deal cards beside it. The default (empty-day hero)
- *  keeps the large stretched headline, where there's room for it. */
-export function MarketAnchorPanel({
-  view,
-  compact = false,
-}: {
-  view: MarketStatusView;
-  compact?: boolean;
-}) {
+/** Bare content of the anchor — eyebrow chip, big headline, sub. No
+ *  outer border / radius / background so it can be embedded inside the
+ *  shared empty-day container without doubling-up chrome. Used by the
+ *  empty-day hero panel alongside the "biggest gainers" grid; on busy
+ *  days the live status instead rides in the Today header (see
+ *  `market-today-hero.tsx`) rather than as a standalone card. */
+export function MarketAnchorPanel({ view }: { view: MarketStatusView }) {
   return (
     <>
       <div className="relative flex items-center gap-2">
@@ -104,21 +73,11 @@ export function MarketAnchorPanel({
           {view.eyebrow}
         </span>
       </div>
-      <div
-        className={
-          compact
-            ? "relative mt-3 text-[18px] font-semibold leading-tight tracking-[-0.03em] md:text-[20px]"
-            : "relative mt-4 flex-1 text-[28px] font-semibold leading-[1.1] tracking-[-0.035em] md:text-[34px]"
-        }
-      >
+      <div className="relative mt-4 flex-1 text-[28px] font-semibold leading-[1.1] tracking-[-0.035em] md:text-[34px]">
         {view.headline}
       </div>
       {view.sub && (
-        <div
-          className={`relative text-[11px] font-semibold uppercase tracking-[0.18em] text-muted ${
-            compact ? "mt-2" : "mt-6"
-          }`}
-        >
+        <div className="relative mt-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
           {view.sub}
         </div>
       )}
