@@ -5,6 +5,8 @@ import type { MarketSession } from "@/lib/market-status";
 import type { HolidaySource } from "@/lib/bank-holidays";
 import type { MarketStatusView } from "./market-anchor-card";
 
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
 import {
   LiveWash,
   MarketAnchorPanel,
@@ -52,14 +54,9 @@ interface MarketTodayHeroProps<W> {
   recentBestReady?: boolean;
 }
 
-/** Mobile: a horizontal snap carousel that peeks the next card; lg+: a
- *  tidy two/three-up grid. Shared by the live cards AND the loading
- *  skeleton so the layout doesn't jump when data lands. */
-const TODAY_CAROUSEL_CLASS =
-  "flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden [touch-action:pan-x] pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-2 lg:gap-4 lg:overflow-visible lg:[touch-action:auto] lg:pb-0 2xl:grid-cols-3";
-/** One card slot inside the carousel — fixed-width + peek on mobile, auto
- *  in the lg+ grid. */
-const TODAY_CARD_SLOT_CLASS = "w-[72%] shrink-0 snap-start lg:w-auto lg:shrink";
+/** Desktop grid for Today's deals. Mobile uses the pinned scroll-through deck. */
+const TODAY_GRID_CLASS =
+  "hidden lg:grid lg:grid-cols-2 lg:gap-4 2xl:grid-cols-3";
 
 /** Today surface — section heading, then either today's deal cards
  *  (busy day) or the anchor + best-this-week side-by-side (empty day).
@@ -81,7 +78,7 @@ export function MarketTodayHero<W>({
   recentBest,
   recentBestReady,
 }: MarketTodayHeroProps<W>) {
-  const { title: todayTitle, meta: todayMeta } = formatToday(todayIso, locale);
+  const dateLabel = formatTodayDate(todayIso, locale);
   const sortedDealings = [...todayDealings].sort(compareDealingImportance);
   // The hero surfaces the day's analysed/primary filings as cards. Skipped
   // (muted) filings render as ordinary rows under a "Today" group in the
@@ -91,113 +88,75 @@ export function MarketTodayHero<W>({
     isMuted ? !isMuted(d) : d.isPurchase,
   );
   const BEST_GRID_CAP = 6;
-  const countLabel =
-    todayDealings.length === 0
-      ? ""
-      : todayDealings.length === 1
-        ? "1 filing"
-        : `${todayDealings.length} filings`;
-
   const view = useMarketStatusView(session, holidaySource);
   const bestEntries = (recentBest ?? []).slice(0, BEST_GRID_CAP);
-  // On busy days the market status takes over the section title — the
-  // pulsing dot + headline ("Scanning today's market for deals") replaces
-  // the bare "Today", with the close time folded into the date meta. The
-  // empty-day path keeps "Today" because its status already shows in the
-  // anchor panel beside the gainers grid.
   const isBusyDay = todayDealings.length > 0;
-  // Show the status title whenever the body is the deal grid OR its loading
-  // skeleton — both represent "scanning today's market". The empty-day path
-  // keeps "Today" because its status already shows in the anchor panel.
-  const showStatusHeader = Boolean(view) && (isBusyDay || loading);
-  const headerMeta = showStatusHeader
-    ? [todayMeta, view?.sub].filter(Boolean).join(" · ")
-    : todayMeta;
-  // Full-day closures (weekend, bank holiday) make the bare "Today ·
-  // SATURDAY" header read as filler. Suppress it then — but not when the
-  // status header is showing (busy day), since that header carries its own
-  // context. Sweden's regulator publishes on Saturdays, so this case is real.
+  // Full-day closures (weekend, bank holiday) with nothing to show make the
+  // header read as filler — suppress it then. A closed day that still has
+  // filings (Sweden publishes Saturdays) keeps the header.
   const hideTodayHeader =
-    !showStatusHeader &&
+    !isBusyDay &&
+    !loading &&
     (view?.closureKind === "weekend" || view?.closureKind === "holiday");
 
   return (
     <section className="relative z-10">
+      {/* On busy mobile days the heading is pinned *inside* the deck (so it
+          stays as context while the cards shuffle) — hide this flow copy
+          there to avoid a duplicate. Desktop + empty/loading keep it here. */}
       {!hideTodayHeader && (
-        <header className="mb-4 flex items-end justify-between gap-4 md:mb-5">
-          <div className="min-w-0">
-            {showStatusHeader && view ? (
-              <h2
-                className="animate-today-hero-item flex items-center gap-3 text-[30px] font-semibold leading-[1.05] tracking-[-0.035em] md:text-[34px]"
-                style={{ animationDelay: todayHeroDelay(0) }}
-              >
-                <HeaderStatusDot view={view} />
-                <span>{view.headline}</span>
-              </h2>
-            ) : (
-              <h2
-                className="animate-today-hero-item text-[30px] font-semibold leading-none tracking-[-0.035em] md:text-[34px]"
-                style={{ animationDelay: todayHeroDelay(0) }}
-              >
-                {todayTitle}
-              </h2>
-            )}
-            {headerMeta && (
-              <div
-                className="animate-today-hero-item mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted md:text-[11px]"
-                style={{ animationDelay: todayHeroDelay(0, 25) }}
-              >
-                {headerMeta}
-              </div>
-            )}
-          </div>
-          {countLabel && (
-            <div
-              className="animate-today-hero-item shrink-0 text-xs text-muted tabular-nums"
-              style={{ animationDelay: todayHeroDelay(0, 50) }}
-            >
-              {countLabel}
-            </div>
-          )}
+        <header
+          className={`mb-4 md:mb-5 ${isBusyDay || loading ? "hidden lg:block" : ""}`}
+        >
+          <TodayHeading animate dateLabel={dateLabel} />
         </header>
       )}
 
       {todayDealings.length > 0 ? (
         <>
-          {/* Mobile: snap carousel so a busy day doesn't push the table
-              1800px down the page — peek the next card at the right edge to
-              signal swipe. lg+: spreads to a tidy two/three-up grid. The
-              market status no longer rides as a card here — it's promoted
-              into the section title above, so the grid is deal cards only. */}
-          <div className={TODAY_CAROUSEL_CLASS}>
+          {/* Mobile: page-scroll narrative deck. The hero pins while the user
+              scrolls through each filing, then releases once the last card
+              has passed. Desktop remains a static grid. */}
+          <MobilePinnedTodayDeck
+            dateLabel={dateLabel}
+            dealings={mainDealings}
+            fmt={fmt}
+            formatTickerDisplay={formatTickerDisplay}
+            selectedKey={selectedKey}
+            showLogo={showLogo}
+            onSelect={onSelect}
+          />
+          <div className={TODAY_GRID_CLASS}>
             {mainDealings.map((d, index) => (
-              <div key={d.key} className={TODAY_CARD_SLOT_CLASS}>
-                <TodayCard
-                  animationDelay={todayHeroDelay(index + 1)}
-                  dealing={d}
-                  fmt={fmt}
-                  formatTickerDisplay={formatTickerDisplay}
-                  isMuted={isMuted}
-                  selected={selectedKey === d.key}
-                  showLogo={showLogo}
-                  onSelect={() => onSelect(d)}
-                />
-              </div>
+              <TodayCard
+                key={d.key}
+                animationDelay={todayHeroDelay(index + 1)}
+                dealing={d}
+                fmt={fmt}
+                formatTickerDisplay={formatTickerDisplay}
+                isMuted={isMuted}
+                selected={selectedKey === d.key}
+                showLogo={showLogo}
+                onSelect={() => onSelect(d)}
+              />
             ))}
           </div>
         </>
       ) : loading ? (
-        <div className={TODAY_CAROUSEL_CLASS}>
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className={`${TODAY_CARD_SLOT_CLASS} animate-today-hero-item`}
-              style={{ animationDelay: todayHeroDelay(i + 1) }}
-            >
-              <TodayCardSkeleton />
-            </div>
-          ))}
-        </div>
+        <>
+          <MobilePinnedTodayDeckSkeleton />
+          <div className={TODAY_GRID_CLASS}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="animate-today-hero-item"
+                style={{ animationDelay: todayHeroDelay(i + 1) }}
+              >
+                <TodayCardSkeleton />
+              </div>
+            ))}
+          </div>
+        </>
       ) : view ? (
         <EmptyDayContainer
           bestEntries={bestEntries}
@@ -220,25 +179,26 @@ export function MarketTodayHero<W>({
   );
 }
 
-/** Status indicator that sits to the left of the Today header title — a
- *  green pulse while the market is live (the "scanning" signal), a static
- *  tinted dot for pre-open / closed. Mirrors the anchor panel's bullet but
- *  sized to ride alongside the big title rather than a small eyebrow. */
-function HeaderStatusDot({ view }: { view: MarketStatusView }) {
-  if (view.isLive) {
-    return (
-      <span aria-hidden className="relative inline-flex h-2.5 w-2.5 shrink-0">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2E7D32] opacity-70" />
-        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#2E7D32]" />
-      </span>
-    );
-  }
-
+/** "Today's deals · 17 June" — shared by the flow header (desktop / empty
+ *  days, with the entrance animation) and the deck's pinned header (static,
+ *  so it doesn't fight the scroll transforms). */
+function TodayHeading({
+  dateLabel,
+  animate = false,
+}: {
+  dateLabel: string;
+  animate?: boolean;
+}) {
   return (
-    <span
-      aria-hidden
-      className={`inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${view.dotClass}`}
-    />
+    <h2
+      className={`text-[19px] font-semibold leading-tight tracking-[-0.025em] md:text-[22px] ${animate ? "animate-today-hero-item" : ""}`}
+      style={animate ? { animationDelay: todayHeroDelay(0) } : undefined}
+    >
+      Today&rsquo;s deals
+      {dateLabel && (
+        <span className="font-normal text-muted"> · {dateLabel}</span>
+      )}
+    </h2>
   );
 }
 
@@ -327,6 +287,608 @@ function TodayCard<W>({
         </p>
       )}
     </button>
+  );
+}
+
+/** The big, full-bleed card the mobile wallet deck flips through — one
+ *  filing in focus at a time, so it goes large and technical: a tag row up
+ *  top (rating lives here now, not crammed beside the name), the full
+ *  un-truncated company name, the headline value, the complete thesis, and
+ *  a monospaced stat grid pinned to the bottom. Fills its parent's height
+ *  (the deck stage is sized to the viewport) so there's no dead space. */
+function TodayDeckCard<W>({
+  dealing,
+  selected,
+  onSelect,
+  fmt,
+  showLogo,
+  formatTickerDisplay,
+}: {
+  dealing: MarketDealing<W>;
+  selected: boolean;
+  onSelect: () => void;
+  fmt: PriceFormat;
+  showLogo: boolean;
+  formatTickerDisplay?: (ticker: string) => string;
+}) {
+  const tickerLabel = formatTickerDisplay
+    ? formatTickerDisplay(dealing.ticker || "—")
+    : dealing.ticker || "—";
+  const valueLabel =
+    dealing.value != null ? fmt.formatValue(dealing.value) : "—";
+  const insiderBits = [dealing.insiderName, dealing.insiderRole]
+    .filter(Boolean)
+    .join(" · ");
+
+  const ret = dealing.livePerformance?.return_pct_trade ?? null;
+  const returnLabel =
+    ret != null ? `${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%` : null;
+  const returnTone =
+    ret == null
+      ? ""
+      : ret >= 0
+        ? "text-emerald-600 dark:text-emerald-400"
+        : "text-rose-600 dark:text-rose-400";
+
+  // Factual, non-analysis stats — safe to show even under discretion. The
+  // rating/thesis (analysis) stay gated below. Capped to two tidy rows;
+  // sector already shows in the eyebrow so it's left out here.
+  const stats: { label: string; value: string; tone?: string }[] = [];
+
+  if (dealing.shares)
+    stats.push({ label: "Shares", value: dealing.shares.toLocaleString() });
+  if (dealing.entryPrice != null)
+    stats.push({ label: "Entry", value: fmt.formatPrice(dealing.entryPrice) });
+  if (returnLabel)
+    stats.push({ label: "Return", value: returnLabel, tone: returnTone });
+  stats.push({ label: "Traded", value: formatStatDate(dealing.tradeDate) });
+  stats.push({
+    label: "Disclosed",
+    value: formatStatDate(dealing.disclosedDate),
+  });
+  if (dealing.legCount > 1)
+    stats.push({ label: "Tranches", value: String(dealing.legCount) });
+  else if (dealing.catalystWindow)
+    stats.push({ label: "Catalyst", value: dealing.catalystWindow });
+
+  const shownStats = stats.slice(0, 6);
+
+  return (
+    <button
+      className={`group flex w-full flex-col overflow-hidden rounded-[20px] border bg-[#faf7f2] p-5 text-left shadow-[0_18px_44px_-16px_rgba(30,21,6,0.26)] transition-colors duration-150 dark:bg-surface md:p-6
+        ${
+          selected
+            ? "border-[#5a4128]/40 bg-[#5a4128]/[0.04] dark:border-[#ad9479]/40 dark:bg-[#5a4128]/[0.18]"
+            : "border-black/[0.08] dark:border-white/[0.08]"
+        }`}
+      onClick={onSelect}
+    >
+      {/* Tag row — ticker + sector eyebrow on the left, rating on the right.
+          Moving the rating up here frees the name to use the full width. */}
+      <div className="flex items-center justify-between gap-3">
+        <span className="truncate font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-muted">
+          {tickerLabel}
+          {dealing.sector ? ` · ${dealing.sector}` : ""}
+        </span>
+        {DISCRETION_ENABLED ? (
+          <ViewAnalysisCta className="shrink-0" />
+        ) : (
+          dealing.rating && (
+            <RatingBadge
+              className="shrink-0 !h-[22px] !w-auto !rounded-full !px-2.5 !py-0 !text-[11px] !leading-none"
+              rating={dealing.rating}
+            />
+          )
+        )}
+      </div>
+
+      {/* Identity */}
+      <div className="mt-3.5 flex items-start gap-3.5">
+        {showLogo ? (
+          <CompanyLogo
+            className="ring-1 ring-black/[0.04] dark:ring-white/[0.05] shrink-0"
+            size={48}
+            ticker={dealing.ticker || ""}
+          />
+        ) : (
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-sm font-semibold text-muted dark:bg-surface-secondary">
+            {tickerLabel.slice(0, 3)}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[22px] font-semibold leading-[1.1] tracking-[-0.03em]">
+            {dealing.company || "—"}
+          </h3>
+          {insiderBits && (
+            <div className="mt-1 text-[12.5px] leading-snug text-muted">
+              {insiderBits}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Headline value */}
+      <div className="mt-4 flex items-end gap-2.5">
+        <span className="text-[34px] font-semibold leading-none tracking-[-0.045em] tabular-nums">
+          {valueLabel}
+        </span>
+        {returnLabel && (
+          <span
+            className={`mb-0.5 text-[14px] font-semibold tabular-nums ${returnTone}`}
+          >
+            {returnLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Thesis — full, un-truncated (gated under discretion). */}
+      {!DISCRETION_ENABLED && dealing.summary && (
+        <p className="mt-3.5 text-[13.5px] leading-relaxed text-foreground/65 dark:text-foreground/65">
+          {dealing.summary}
+        </p>
+      )}
+
+      {/* Technical stat grid. */}
+      {shownStats.length > 0 && (
+        <dl className="mt-5 grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-black/[0.07] bg-black/[0.06] dark:border-white/[0.07] dark:bg-white/[0.06]">
+          {shownStats.map((s) => (
+            <div
+              key={s.label}
+              className="flex flex-col gap-0.5 bg-[#faf7f2] px-3 py-2 dark:bg-surface"
+            >
+              <dt className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted/80">
+                {s.label}
+              </dt>
+              <dd
+                className={`truncate font-mono text-[12.5px] font-medium tabular-nums ${s.tone ?? ""}`}
+              >
+                {s.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </button>
+  );
+}
+
+/** Compact "12 Jun" date for the stat grid. */
+function formatStatDate(iso: string): string {
+  const d = new Date(`${iso}T12:00:00`);
+
+  if (Number.isNaN(d.getTime())) return "—";
+
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+/* ───────── Mobile pinned "wallet" deck ──────────────────────────────────
+ *
+ * Today's cards flip through like an Apple Wallet deck on mobile. The hero
+ * above fills the first screen with just the front card peeking up to invite
+ * a scroll. As you scroll in, the deck pins: the "Today's deals" bar fades in
+ * and anchors to the top, and scrolling scrubs the cards — the front card
+ * lifts up and dissolves while the next rises to take its place. Scroller dots
+ * beneath track position. Driven imperatively by one rAF-throttled scroll
+ * listener so no React render runs per frame.
+ */
+const STAGE_TOP_PX = 64; // pin offset — sits flush under the navbar
+const HEADER_ALLOWANCE = 44; // height of the pinned "Today's deals" bar
+const HEADER_FADE_PX = 56; // scroll distance over which the bar fades in/anchors
+const DECK_RISE_PX = 200; // scroll distance over which the card rises to centre
+const DOTS_ALLOWANCE = 34; // space the scroller dots take beneath the deck
+const STAGE_BOTTOM_GAP = 96; // room kept below the deck (mobile download bar)
+const MIN_STAGE_PX = 360; // skeleton floor so short viewports still fit a card
+const MAX_BEHIND = 2; // how many waiting cards stay visible behind the front
+const BEHIND_SCALE = 0.05; // scale lost per layer of depth
+const BEHIND_OFFSET = 12; // px each waiting card is nudged down behind the front
+const BEHIND_DIM = 0.16; // opacity lost per layer of depth (recede into stack)
+
+/** Ken Perlin's smootherstep (6x⁵−15x⁴+10x³): zero 1st & 2nd derivatives at
+ *  both ends, so motion eases in and out with no kink. `x` is clamped to 0..1. */
+function smootherstep(x: number): number {
+  const t = x < 0 ? 0 : x > 1 ? 1 : x;
+
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+/** Reflects `prefers-reduced-motion: reduce`. When set we skip the scroll
+ *  choreography entirely and render a plain stacked column. */
+function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(mql.matches);
+
+    sync();
+    mql.addEventListener("change", sync);
+
+    return () => mql.removeEventListener("change", sync);
+  }, []);
+
+  return reduced;
+}
+
+function MobilePinnedTodayDeck<W>({
+  dealings,
+  selectedKey,
+  onSelect,
+  fmt,
+  showLogo,
+  formatTickerDisplay,
+  dateLabel,
+}: {
+  dealings: MarketDealing<W>[];
+  selectedKey?: string | null;
+  onSelect: (d: MarketDealing<W>) => void;
+  fmt: PriceFormat;
+  showLogo: boolean;
+  formatTickerDisplay?: (ticker: string) => string;
+  dateLabel: string;
+}) {
+  const n = dealings.length;
+  const reduced = useReducedMotion();
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const deckRef = useRef<HTMLDivElement | null>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const dotRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const [cardH, setCardH] = useState(0);
+  const [viewportH, setViewportH] = useState(0);
+  const hasDots = n > 1;
+
+  // The header sticks to the top and the card+dots stick to the bottom (just
+  // above the download bar) — the lit hero fills the gap between. The track
+  // must stay taller than the viewport for the whole scrub so the bottom-pinned
+  // card never un-sticks before the last transition lands; hence the +viewport.
+  const step = cardH > 0 ? Math.max(300, Math.round(cardH + 56)) : 0;
+  const trackH =
+    cardH > 0 && viewportH > 0
+      ? viewportH + STAGE_BOTTOM_GAP + Math.max(0, n - 1) * step
+      : undefined;
+
+  // Measure the tallest card to size the pinned card-stage. Re-runs on resize
+  // and whenever a card reflows (text wrap at a new width). Each cardRef wraps
+  // a TodayDeckCard whose root element carries the real (content) height.
+  useLayoutEffect(() => {
+    if (reduced || n === 0) return;
+
+    const measure = () => {
+      setViewportH(window.innerHeight);
+
+      let max = 0;
+
+      for (const wrap of cardRefs.current.slice(0, n)) {
+        const card = wrap?.firstElementChild as HTMLElement | null;
+
+        if (card) max = Math.max(max, card.offsetHeight);
+      }
+      if (max > 0) setCardH(max);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+
+    cardRefs.current.slice(0, n).forEach((wrap) => {
+      const card = wrap?.firstElementChild;
+
+      if (card) ro.observe(card);
+    });
+    window.addEventListener("resize", measure);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [reduced, n, dealings]);
+
+  // Scroll-scrub the deck. `progress` is measured in cards (0 → n-1): how far
+  // the front of the stack has advanced. Each card's distance from the front
+  // (`d`) maps to a transform — positive `d` waits behind, negative `d` is
+  // being dealt away above.
+  useEffect(() => {
+    if (reduced || n === 0 || cardH === 0) return;
+
+    let raf = 0;
+    const stepNow = step;
+
+    const apply = () => {
+      raf = 0;
+      const track = trackRef.current;
+
+      if (!track) return;
+      const rect = track.getBoundingClientRect();
+      // A departing card lifts up off the bottom-pinned stage into the lit gap
+      // and dissolves — roughly half the viewport of travel.
+      const exit = window.innerHeight * 0.55;
+
+      // Header bar snaps in quickly right as the deck locks to the top.
+      if (headerRef.current) {
+        const headerIn = Math.max(
+          0,
+          Math.min(
+            1,
+            (STAGE_TOP_PX + HEADER_FADE_PX - rect.top) / HEADER_FADE_PX,
+          ),
+        );
+
+        headerRef.current.style.opacity = headerIn.toFixed(3);
+      }
+
+      // Card rises from its peeking spot at the bottom up to centre and
+      // resolves from semi-faded to solid over a longer, eased ramp — a soft
+      // low teaser on the hero that glides into a crisp, centred card as the
+      // section takes over.
+      if (deckRef.current) {
+        const rise = smootherstep(
+          Math.max(
+            0,
+            Math.min(
+              1,
+              (STAGE_TOP_PX + DECK_RISE_PX - rect.top) / DECK_RISE_PX,
+            ),
+          ),
+        );
+        const lift = Math.max(
+          0,
+          window.innerHeight / 2 - 110 - DOTS_ALLOWANCE - cardH / 2,
+        );
+
+        deckRef.current.style.transform = `translate3d(0, ${(-rise * lift).toFixed(1)}px, 0)`;
+        deckRef.current.style.opacity = (0.4 + 0.6 * rise).toFixed(3);
+      }
+
+      const raw = Math.max(
+        0,
+        Math.min(n - 1, (STAGE_TOP_PX - rect.top) / stepNow),
+      );
+      // "Point of no return": ease the *fractional* part of progress with
+      // smootherstep so each transition dwells near the start (cards settle),
+      // accelerates hard through the midpoint (the commit/tipping point), then
+      // eases into the next resting position. Cards feel like they snap into
+      // place without ever hijacking the native scroll.
+      const base = Math.floor(raw);
+      const progress = base + smootherstep(raw - base);
+
+      for (let i = 0; i < n; i++) {
+        const el = cardRefs.current[i];
+
+        if (!el) continue;
+        const d = i - progress;
+        let translateY: number;
+        let scale: number;
+        let opacity: number;
+        let interactive: boolean;
+
+        if (d >= 0) {
+          // Waiting in the stack (d === 0 is the live front card). Each layer
+          // sits lower, smaller and dimmer so it reads as depth behind the
+          // front card rather than a competing card. The deepest layer fades
+          // fully out so cards don't pop in/out at the stack boundary.
+          const depth = Math.min(d, MAX_BEHIND);
+
+          scale = 1 - BEHIND_SCALE * depth;
+          translateY = BEHIND_OFFSET * depth;
+          const dim = 1 - BEHIND_DIM * depth;
+          const edgeFade = Math.max(0, Math.min(1, MAX_BEHIND + 1 - d));
+
+          opacity = Math.min(dim, edgeFade);
+          interactive = d < 0.5;
+        } else {
+          // Being dealt away: lift clear of the pin line and dissolve. It holds
+          // near-full opacity through the early/occluding phase, then fades out
+          // on a smootherstep curve so the hand-off reads as a soft, eased
+          // dissolve rather than a hard cut or a muddy cross-fade.
+          const gone = Math.min(1, -d);
+          const fade = smootherstep(Math.max(0, (gone - 0.3) / 0.7));
+
+          translateY = -gone * exit;
+          scale = 1 + 0.02 * gone;
+          opacity = 1 - fade;
+          interactive = false;
+        }
+
+        el.style.transform = `translate3d(0, ${translateY.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
+        el.style.opacity = opacity.toFixed(3);
+        el.style.zIndex = String(Math.round(1000 - d * 10));
+        el.style.pointerEvents = interactive ? "auto" : "none";
+      }
+
+      // Scroller dots — the active dot stretches into a pill as progress
+      // lands on it, so it doubles as a position read-out across the deck.
+      for (let j = 0; j < dotRefs.current.length; j++) {
+        const dot = dotRefs.current[j];
+
+        if (!dot) continue;
+        const near = Math.max(0, 1 - Math.abs(j - progress));
+
+        dot.style.width = `${(6 + 12 * near).toFixed(1)}px`;
+        dot.style.opacity = (0.28 + 0.72 * near).toFixed(3);
+      }
+    };
+
+    // Snap-on-settle — the "point of no return". When scrolling stops in the
+    // middle of a transition, ease the page to the nearest card boundary so
+    // the deck always comes to rest on a whole card (and a half-committed
+    // swipe past the midpoint completes rather than drifting back). Native
+    // scroll is never blocked; we only nudge once it goes idle.
+    let idle = 0;
+
+    const snap = () => {
+      const track = trackRef.current;
+
+      if (!track) return;
+      const rect = track.getBoundingClientRect();
+      const raw = (STAGE_TOP_PX - rect.top) / stepNow;
+
+      // Only while genuinely mid-deck — let the user enter/leave the ends free.
+      if (raw <= 0.05 || raw >= n - 1.05) return;
+      const target = Math.round(raw);
+
+      if (Math.abs(raw - target) < 0.04) return; // already settled
+      window.scrollTo({
+        top: window.scrollY + rect.top - STAGE_TOP_PX + target * stepNow,
+        behavior: "smooth",
+      });
+    };
+
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(apply);
+      clearTimeout(idle);
+      idle = window.setTimeout(snap, 130);
+    };
+
+    apply();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      clearTimeout(idle);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [n, reduced, cardH, step]);
+
+  if (n === 0) return null;
+
+  // Reduced-motion (or any non-scrolling fallback): plain stacked column,
+  // with the heading restored inline (the flow copy is hidden on mobile-busy).
+  if (reduced) {
+    return (
+      <div className="lg:hidden">
+        <div className="mb-4">
+          <TodayHeading dateLabel={dateLabel} />
+        </div>
+        <div className="space-y-4">
+          {dealings.map((dealing) => (
+            <TodayDeckCard
+              key={dealing.key}
+              dealing={dealing}
+              fmt={fmt}
+              formatTickerDisplay={formatTickerDisplay}
+              selected={selectedKey === dealing.key}
+              showLogo={showLogo}
+              onSelect={() => onSelect(dealing)}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={trackRef}
+      className="relative flex flex-col lg:hidden"
+      style={{ height: trackH }}
+    >
+      {/* Header bar — sticks to the top, full-bleed, on top of everything, and
+          fades in only as the deck anchors (invisible while you're still on the
+          hero with just the card peeking up). pointer-events-none so it never
+          steals taps from the card beneath it. */}
+      <div
+        ref={headerRef}
+        className="pointer-events-none sticky top-[64px] z-30 -mx-4 border-b border-black/[0.07] bg-[#f5f0e8] px-4 py-3.5 dark:border-white/[0.07] dark:bg-background md:-mx-6 md:px-6"
+        style={{ opacity: 0 }}
+      >
+        <TodayHeading dateLabel={dateLabel} />
+      </div>
+
+      {/* Spacer pushes the card's natural position to the foot of the track, so
+          `sticky bottom` holds it pinned low for the whole scroll instead of
+          letting it snap up under the header. */}
+      <div className="flex-1" />
+
+      {/* Card + dots — stick low (just above the download bar) so the card
+          peeks there beneath the hero, then `apply()` lifts it to centre and
+          fades it to solid as the deck anchors. The lit hero fills the gap. */}
+      <div
+        ref={deckRef}
+        className="sticky z-10 will-change-transform"
+        style={{ bottom: STAGE_BOTTOM_GAP, opacity: 0.4 }}
+      >
+        <div className="relative" style={{ height: cardH || undefined }}>
+          {dealings.map((dealing, index) => (
+            <div
+              key={dealing.key}
+              ref={(el) => {
+                cardRefs.current[index] = el;
+              }}
+              className="absolute inset-0 flex items-start justify-center will-change-transform"
+              style={{
+                transformOrigin: "center center",
+                // Start nested so the first paint already looks like a stack.
+                transform: `translate3d(0, ${BEHIND_OFFSET * Math.min(index, MAX_BEHIND)}px, 0) scale(${1 - BEHIND_SCALE * Math.min(index, MAX_BEHIND)})`,
+                opacity:
+                  index > MAX_BEHIND
+                    ? 0
+                    : 1 - BEHIND_DIM * Math.min(index, MAX_BEHIND),
+                zIndex: 1000 - index * 10,
+              }}
+            >
+              <TodayDeckCard
+                dealing={dealing}
+                fmt={fmt}
+                formatTickerDisplay={formatTickerDisplay}
+                selected={selectedKey === dealing.key}
+                showLogo={showLogo}
+                onSelect={() => onSelect(dealing)}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Scroller dots — how many filings, and where you are in the deck. */}
+        {hasDots && (
+          <div
+            aria-hidden
+            className="flex items-center justify-center gap-1.5 pt-3"
+            style={{ height: DOTS_ALLOWANCE }}
+          >
+            {dealings.map((dealing, j) => (
+              <span
+                key={dealing.key}
+                ref={(el) => {
+                  dotRefs.current[j] = el;
+                }}
+                className="h-1.5 rounded-full bg-foreground"
+                style={{
+                  width: j === 0 ? 18 : 6,
+                  opacity: j === 0 ? 1 : 0.28,
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MobilePinnedTodayDeckSkeleton() {
+  return (
+    <div
+      className="relative lg:hidden"
+      style={{
+        height: `max(${MIN_STAGE_PX}px, calc(100svh - ${STAGE_TOP_PX + HEADER_ALLOWANCE + STAGE_BOTTOM_GAP}px))`,
+      }}
+    >
+      {Array.from({ length: MAX_BEHIND + 1 }).map((_, i) => (
+        <div
+          key={i}
+          className="absolute inset-0 flex items-center justify-center"
+          style={{
+            transformOrigin: "center center",
+            transform: `translate3d(0, ${BEHIND_OFFSET * i}px, 0) scale(${1 - BEHIND_SCALE * i})`,
+            opacity: 1 - BEHIND_DIM * i,
+            zIndex: 1000 - i * 10,
+          }}
+        >
+          <TodayCardSkeleton hero />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -501,21 +1063,30 @@ function BestThisWeekCellSkeleton({ showLogo }: { showLogo: boolean }) {
   );
 }
 
-function TodayCardSkeleton() {
+function TodayCardSkeleton({ hero = false }: { hero?: boolean }) {
   return (
-    <div className="h-full rounded-xl border border-black/[0.08] bg-[#faf7f2] p-4 dark:border-white/[0.08] dark:bg-surface md:p-5">
-      <div className="flex items-start gap-4">
+    <div
+      className={`w-full border border-black/[0.08] bg-[#faf7f2] dark:border-white/[0.08] dark:bg-surface ${hero ? "rounded-[20px] p-5 shadow-[0_18px_44px_-16px_rgba(30,21,6,0.26)] md:p-6" : "h-full rounded-xl p-4 md:p-5"}`}
+    >
+      <div className={`flex items-start gap-3.5 ${hero ? "" : "gap-4"}`}>
         <Skeleton circle h={48} w={48} />
         <div className="min-w-0 flex-1 space-y-2">
-          <Skeleton className="h-5 w-3/4 rounded" />
+          <Skeleton className={`${hero ? "h-6" : "h-5"} w-3/4 rounded`} />
           <Skeleton className="h-3 w-1/2 rounded" />
-          <Skeleton className="h-6 w-28 rounded" />
+          <Skeleton className={`${hero ? "h-8" : "h-6"} w-28 rounded`} />
         </div>
       </div>
       <div className="mt-4 space-y-1.5">
         <Skeleton className="h-3 w-full rounded" />
         <Skeleton className="h-3 w-5/6 rounded" />
       </div>
+      {hero && (
+        <div className="mt-5 grid grid-cols-3 gap-px overflow-hidden rounded-xl">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 rounded-none" />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -526,19 +1097,11 @@ function todayHeroDelay(index: number, extraMs = 0): string {
   return `${50 + index * 75 + extraMs}ms`;
 }
 
-/** Split into a big "Today" anchor and a smaller all-caps date meta so the
- *  masthead can stack cleanly on narrow viewports. */
-function formatToday(
-  iso: string,
-  locale = "en-GB",
-): { title: string; meta: string } {
+/** "17 June" — the date that rides alongside the "Today's deals" header. */
+function formatTodayDate(iso: string, locale = "en-GB"): string {
   const d = new Date(`${iso}T12:00:00`);
 
-  if (Number.isNaN(d.getTime())) return { title: "Today", meta: "" };
-  const weekday = d.toLocaleDateString(locale, { weekday: "long" });
-  const day = d.toLocaleDateString(locale, { day: "numeric" });
-  const month = d.toLocaleDateString(locale, { month: "long" });
-  const year = d.toLocaleDateString(locale, { year: "numeric" });
+  if (Number.isNaN(d.getTime())) return "";
 
-  return { title: "Today", meta: `${weekday} · ${day} ${month} ${year}` };
+  return d.toLocaleDateString(locale, { day: "numeric", month: "long" });
 }
