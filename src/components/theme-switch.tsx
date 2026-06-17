@@ -5,20 +5,45 @@ export interface ThemeSwitchProps {
   className?: string;
 }
 
-/** Page background per theme — mirrors `--background` in globals.css. Light is
- *  the warm beige; dark is the near-black warm brown (≈ oklch(13.5% .022 55)).
- *  Kept as hex so Safari's older theme-color parser accepts it. */
-const THEME_BG = { light: "#f5f0e8", dark: "#15110d" } as const;
+/** rgb(…)/rgba(…) → #rrggbb. Safari's theme-color parser is happiest with hex. */
+function rgbToHex(rgb: string): string {
+  const m = rgb.match(/\d+(\.\d+)?/g);
 
-/** Repaint Safari's address bar / bottom toolbar to match the active theme.
- *  Safari reads `<meta name="theme-color">` on load but not on class changes,
- *  so we rewrite it ourselves whenever the theme flips. */
-function syncThemeColorMeta(theme: "light" | "dark") {
-  const meta = document.querySelector<HTMLMetaElement>(
-    'meta[name="theme-color"]',
-  );
+  if (!m || m.length < 3) return rgb;
+  const hex = m
+    .slice(0, 3)
+    .map((n) => Math.round(Number(n)).toString(16).padStart(2, "0"))
+    .join("");
 
-  if (meta) meta.content = THEME_BG[theme];
+  return `#${hex}`;
+}
+
+/** Repaint Safari's status bar + bottom toolbar to match the active theme.
+ *
+ *  Two gotchas this works around:
+ *  1. The palette is oklch, which Safari's theme-color parser rejects — so we
+ *     read the *resolved* `--background` off the DOM (browser does the maths)
+ *     and hand Safari a plain hex. This also guarantees the bar can never
+ *     drift from the real page background.
+ *  2. Safari only repaints when the theme-color meta node is (re)inserted, not
+ *     when an existing node's `content` mutates — so replace the node wholesale
+ *     on every theme flip. Run *after* the `.dark` class is toggled. */
+function syncThemeColorMeta() {
+  const probe = document.createElement("div");
+
+  probe.style.cssText =
+    "background-color:var(--background);position:fixed;width:0;height:0;opacity:0;pointer-events:none;";
+  document.body.appendChild(probe);
+  const resolved = getComputedStyle(probe).backgroundColor;
+
+  probe.remove();
+
+  document.querySelector('meta[name="theme-color"]')?.remove();
+  const meta = document.createElement("meta");
+
+  meta.name = "theme-color";
+  meta.content = rgbToHex(resolved);
+  document.head.appendChild(meta);
 }
 
 export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
@@ -37,7 +62,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
 
       setTheme(next);
       root.classList.toggle("dark", next === "dark");
-      syncThemeColorMeta(next);
+      syncThemeColorMeta();
     };
 
     resolve();
@@ -58,7 +83,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
-    syncThemeColorMeta(newTheme);
+    syncThemeColorMeta();
   }, [theme]);
 
   if (!isMounted) return <div className="w-6 h-6" />;
