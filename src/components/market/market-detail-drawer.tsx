@@ -263,7 +263,7 @@ export function MarketDetailDrawer<W>({
                 >
                   {ticker}
                 </span>
-                {active.rating && (
+                {active.rating && !gated && (
                   <RatingBadge
                     className={`shrink-0 transition-opacity duration-200 ${
                       scrolled ? "opacity-100" : "opacity-0"
@@ -312,8 +312,8 @@ export function MarketDetailDrawer<W>({
                           cluster={active.cluster}
                         />
                         <BuyStyleChip
-                          className="shrink-0"
                           buyStyle={active.buyStyle}
+                          className="shrink-0"
                         />
                       </div>
 
@@ -399,7 +399,9 @@ export function MarketDetailDrawer<W>({
                             <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
                               Amount
                             </dt>
-                            <dd className="text-sm font-medium">{valueLabel}</dd>
+                            <dd className="text-sm font-medium">
+                              {valueLabel}
+                            </dd>
                           </div>
                           {active.shares > 0 && (
                             <div>
@@ -456,12 +458,18 @@ export function MarketDetailDrawer<W>({
                               className="pointer-events-none select-none"
                               style={{ filter: "blur(4px)" }}
                             >
-                              <BodyComponent allDealings={allDealings} dealing={active} />
+                              <BodyComponent
+                                allDealings={allDealings}
+                                dealing={active}
+                              />
                             </div>
                             {AnalysisOverlay && <AnalysisOverlay />}
                           </div>
                         ) : (
-                          <BodyComponent allDealings={allDealings} dealing={active} />
+                          <BodyComponent
+                            allDealings={allDealings}
+                            dealing={active}
+                          />
                         )}
                       </>
                     )}
@@ -472,7 +480,9 @@ export function MarketDetailDrawer<W>({
                       fmt={fmt}
                       formatTickerDisplay={formatTickerDisplay}
                       locale={locale}
-                      onSelect={onSelectDealing ? handleSelectRelated : undefined}
+                      onSelect={
+                        onSelectDealing ? handleSelectRelated : undefined
+                      }
                     />
 
                     {!leadWithBody &&
@@ -483,12 +493,18 @@ export function MarketDetailDrawer<W>({
                             className="pointer-events-none select-none"
                             style={{ filter: "blur(4px)" }}
                           >
-                            <BodyComponent allDealings={allDealings} dealing={active} />
+                            <BodyComponent
+                              allDealings={allDealings}
+                              dealing={active}
+                            />
                           </div>
                           {AnalysisOverlay && <AnalysisOverlay />}
                         </div>
                       ) : (
-                        <BodyComponent allDealings={allDealings} dealing={active} />
+                        <BodyComponent
+                          allDealings={allDealings}
+                          dealing={active}
+                        />
                       ))}
                   </div>
                 </div>
