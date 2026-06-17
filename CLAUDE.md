@@ -61,9 +61,11 @@ app remains the canonical surface. One flag governs every gating surface
 **Toggle precedence** (highest wins):
 1. URL: `?discretion=on|off|reset` — `reset` clears the override, the rest stick via localStorage. Lets you flip the live site from any browser without a redeploy.
 2. localStorage: `ddbx.discretion.override` (written by the URL param).
-3. Env: `VITE_DISCRETION_MODE=off` in `.env.production`.
+3. Env: `VITE_DISCRETION_MODE` in `.env.production` (currently `on`).
 
-Default is `on`; the build currently ships with the env set to `off`.
+Default is `on`, and the production build ships with the env set to `on` —
+so the gated teaser is the default experience for every visitor. Set the
+env to `off` (or use `?discretion=off` per-browser) to get the full UX.
 
 - **Drawer cap**: the **first** deal opened today shows full analysis; subsequent drawers render dummy text (`src/components/discretion/dummy-analysis.ts`) under a CSS blur with a CTA overlay. Position card and price chart stay unblurred.
 - **Performance contributors**: list past the first few names blurs to nudge installs.
