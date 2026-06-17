@@ -873,14 +873,9 @@ export function MarketRow<W>({
       : metricPct >= 0
         ? "text-[#1e6b18] dark:text-[#5cd84a]"
         : "text-[#8b2020] dark:text-[#e84d4d]";
-  const ratedLabel = DISCRETION_ENABLED
-    ? "In app"
-    : dealing.rating && dealing.isPurchase
-      ? "Rated"
-      : "Unrated";
-  const ratedClass = DISCRETION_ENABLED
-    ? "text-[#5a4128] dark:text-[#ad9479]"
-    : dealing.rating && dealing.isPurchase
+  const ratedLabel = dealing.rating && dealing.isPurchase ? "Rated" : "Unrated";
+  const ratedClass =
+    dealing.rating && dealing.isPurchase
       ? "text-[#1e6b18] dark:text-[#5cd84a]"
       : "text-muted/80";
 
@@ -911,20 +906,23 @@ export function MarketRow<W>({
                 </span>
               </div>
             </div>
-            {DISCRETION_ENABLED && (
-              <div className="shrink-0">
-                <ViewAnalysisCta className="text-[11px] px-3 py-1" />
-              </div>
-            )}
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div
+            className={`grid gap-2 ${DISCRETION_ENABLED ? "grid-cols-2" : "grid-cols-3"}`}
+          >
             <MobileFact label="Purchase" value={compactValueLabel} />
             <MobileFact
               label="Performance"
               value={performanceLabel}
               valueClassName={performanceClass}
             />
-            <MobileFact label="Rated" value={ratedLabel} valueClassName={ratedClass} />
+            {!DISCRETION_ENABLED && (
+              <MobileFact
+                label="Rated"
+                value={ratedLabel}
+                valueClassName={ratedClass}
+              />
+            )}
           </div>
         </div>
       </div>
