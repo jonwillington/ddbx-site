@@ -54,7 +54,6 @@ import {
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
 import { APP_STORE_URLS } from "@/lib/app-store";
 import { buildChannelPerformance } from "@/lib/performance/channel-summary";
-import { makeDummyDealing } from "@/components/discretion/dummy-row";
 import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
@@ -74,9 +73,6 @@ import {
  *  above the historical table, so without a cap it would push that table off
  *  the page. */
 const TODAY_SKIPPED_CAP = 8;
-/** Discretion mode: how many of the most recent disclosure days stay fully
- *  readable in the historical list. Older days blur behind fabricated rows. */
-const REAL_HISTORY_DAYS = 2;
 const FIRST_UNLOCK_CONFIRM =
   "Use today's free full analysis on this filing? You can unlock one full drawer per day on the web.";
 
@@ -217,8 +213,7 @@ export function MarketPage<W>({
    *  Only built for markets that ship the backtest. */
   const supportsChannelPerf = !!config.supportsChannelPerformance;
   const channelPerformance = useMemo(
-    () =>
-      supportsChannelPerf ? buildChannelPerformance(dealings) : undefined,
+    () => (supportsChannelPerf ? buildChannelPerformance(dealings) : undefined),
     [supportsChannelPerf, dealings],
   );
   const channelAppHref = APP_STORE_URLS[config.id] ?? APP_STORE_URLS.uk;
@@ -976,27 +971,6 @@ export function MarketPage<W>({
 
   /* ───────── Render ──────────────────────────────────────────────────── */
 
-  // Discretion list-gating: keep the most recent couple of disclosure days
-  // fully readable, blur everything older behind fabricated rows so the public
-  // site only ever shows a sliver of real history — the rest is "open the app"
-  // territory. Only the markets that opt into gating (UK today) are affected.
-  const recentRealDays = useMemo(() => {
-    const past = dealings
-      .map((d) => d.disclosedDate.slice(0, 10))
-      .filter((iso) => iso < todayIso);
-    const distinct = [...new Set(past)].sort().reverse();
-
-    return new Set(distinct.slice(0, REAL_HISTORY_DAYS));
-  }, [dealings, todayIso]);
-
-  const listGatingEnabled = gating?.enabled ?? false;
-  const isRowGated = (d: MarketDealing<W>) => {
-    if (!listGatingEnabled) return false;
-    const day = d.disclosedDate.slice(0, 10);
-
-    return day < todayIso && !recentRealDays.has(day);
-  };
-
   // One dealing row with the shared table props bound — used by every day
   // group (the Today group + the month/day buckets). The by-gain list keeps
   // its own inline row because it shows the date column (no hideDate).
@@ -1008,54 +982,33 @@ export function MarketPage<W>({
     d: MarketDealing<W>,
     indent = false,
     hideInsider = false,
-  ) => {
-    const blurred = isRowGated(d);
-    // Render a fabricated stand-in (same height) so no real data hits the DOM.
-    const rd = blurred ? makeDummyDealing(d) : d;
-    const row = (
-      <MarketRow
-        key={rd.key}
-        hideDate
-        RowActionCell={config.RowActionCell}
-        RowNameBadge={config.RowNameBadge}
-        benchmarkBars={benchmarkBars}
-        benchmarkCurrent={benchmarkCurrent}
-        benchmarkEntry={benchmarkEntry(rd)}
-        benchmarkLabel={config.benchmarkLabel}
-        chartMode={chartMode}
-        dealing={rd}
-        fmt={config.priceFormat}
-        formatTickerDisplay={config.formatTickerDisplay}
-        hideInsider={hideInsider}
-        indent={indent}
-        isMuted={config.isRowMuted}
-        locale={config.locale}
-        noPosteriorData={blurred ? false : stockNoPosteriorData(d)}
-        selected={!blurred && selectedKey === d.key}
-        showLogo={logosEnabled}
-        stockBars={blurred ? undefined : stockBars[d.ticker]}
-        stockCurrentMajor={blurred ? undefined : stockCurrent(d.ticker)}
-        stockEntry={blurred ? undefined : stockEntry(d)}
-        onSelect={blurred ? () => {} : () => openDealing(d)}
-      />
-    );
-
-    if (!blurred) return row;
-
-    return (
-      <div
-        key={d.key}
-        aria-hidden
-        className="relative pointer-events-none select-none"
-      >
-        <div className="opacity-70 saturate-[0.7]">{row}</div>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#faf7f2]/80 via-[#faf7f2]/35 to-[#faf7f2]/80 dark:from-surface/85 dark:via-surface/45 dark:to-surface/85" />
-        <div className="pointer-events-none absolute right-3 top-3 rounded-full border border-[#d8d0c6] bg-[#faf7f2]/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#7a634b] dark:border-separator dark:bg-surface/95 dark:text-[#c9b49f]">
-          App-only history
-        </div>
-      </div>
-    );
-  };
+  ) => (
+    <MarketRow
+      key={d.key}
+      hideDate
+      RowActionCell={config.RowActionCell}
+      RowNameBadge={config.RowNameBadge}
+      benchmarkBars={benchmarkBars}
+      benchmarkCurrent={benchmarkCurrent}
+      benchmarkEntry={benchmarkEntry(d)}
+      benchmarkLabel={config.benchmarkLabel}
+      chartMode={chartMode}
+      dealing={d}
+      fmt={config.priceFormat}
+      formatTickerDisplay={config.formatTickerDisplay}
+      hideInsider={hideInsider}
+      indent={indent}
+      isMuted={config.isRowMuted}
+      locale={config.locale}
+      noPosteriorData={stockNoPosteriorData(d)}
+      selected={selectedKey === d.key}
+      showLogo={logosEnabled}
+      stockBars={stockBars[d.ticker]}
+      stockCurrentMajor={stockCurrent(d.ticker)}
+      stockEntry={stockEntry(d)}
+      onSelect={() => openDealing(d)}
+    />
+  );
   const renderDayRow = (d: MarketDealing<W>) => renderRow(d);
 
   const openDealing = useCallback(
