@@ -12,7 +12,7 @@
 // and humans without the app (meta-refreshed to the App Store). No User-Agent
 // sniffing — crawlers ignore the redirect, humans follow it.
 
-const APP_STORE_URL = "https://apps.apple.com/app/id6762196330";
+const APP_STORE_URL = "https://apps.apple.com/us/app/ddbx-uk/id6762196330";
 const API_BASE = "https://api.ddbx.uk/api";
 // Standardised brand strapline. Led onto every shared-link description so any
 // ddbx link unfurls with the same claim (mirrors index.html, document-title.tsx
@@ -85,14 +85,11 @@ function buildMeta(d, id) {
 }
 
 function page({ title, description, image, url, largeImage, plain }) {
-  // `plain` suppresses the unfurl image card entirely — used by the automated
-  // X "Full analysis" reply, where the parent tweet already carries the card
-  // image and a second big card in the thread is just redundant. Everywhere
-  // else (iMessage / Slack / manual shares) keeps the rich card.
-  const imageMeta = plain
-    ? ""
-    : `\n<meta property="og:image" content="${esc(image)}">
-<meta name="twitter:card" content="${largeImage ? "summary_large_image" : "summary"}">
+  // `plain` is used by the automated X reply. We keep an image so the unfurl
+  // still looks branded, but downgrade to a compact summary card rather than
+  // the full-width large-image card used on normal shares.
+  const imageMeta = `\n<meta property="og:image" content="${esc(image)}">
+<meta name="twitter:card" content="${plain ? "summary" : (largeImage ? "summary_large_image" : "summary")}">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <meta name="twitter:image" content="${esc(image)}">`;
@@ -110,24 +107,34 @@ function page({ title, description, image, url, largeImage, plain }) {
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(url)}">${imageMeta}
-<meta http-equiv="refresh" content="0; url=${esc(APP_STORE_URL)}">
+<meta name="apple-itunes-app" content="app-id=6762196330">
+<meta http-equiv="refresh" content="2; url=${esc(APP_STORE_URL)}">
 <style>
   :root { color-scheme: light dark; }
   body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
          background:#f5f0e8; color:#1E1506; display:flex; min-height:100vh;
          align-items:center; justify-content:center; text-align:center; padding:24px; }
-  .card { max-width:420px; }
-  h1 { font-size:20px; font-weight:600; margin:0 0 8px; }
-  p { font-size:15px; color:#6b5d49; margin:0 0 24px; }
+  .card { max-width:520px; background:#fffaf2; border:1px solid #d6c7b0; border-radius:20px; padding:24px 22px; box-shadow:0 8px 36px rgba(30,21,6,0.08); }
+  .badge { display:inline-flex; border:1px solid #d6c7b0; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600; letter-spacing:0.6px; text-transform:uppercase; color:#6b5d49; margin:0 0 14px; }
+  h1 { font-size:24px; font-weight:700; letter-spacing:-0.3px; margin:0 0 10px; line-height:1.2; }
+  p { font-size:15px; color:#6b5d49; margin:0 0 20px; line-height:1.45; }
+  .small { font-size:13px; color:#7a6a53; margin-top:14px; }
+  .cta { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
   a.btn { display:inline-block; background:#1E1506; color:#f5f0e8; text-decoration:none;
           padding:12px 22px; border-radius:999px; font-weight:600; font-size:15px; }
+  a.ghost { background:transparent; color:#1E1506; border:1px solid #bda98a; }
 </style>
 </head>
 <body>
   <div class="card">
+    <span class="badge">ddbx app analysis</span>
     <h1>${esc(title)}</h1>
     <p>${esc(description)}</p>
-    <a class="btn" href="${esc(APP_STORE_URL)}">Get ddbx</a>
+    <div class="cta">
+      <a class="btn" href="${esc(APP_STORE_URL)}">Open in iOS app</a>
+      <a class="btn ghost" href="https://ddbx.uk">Continue on web</a>
+    </div>
+    <p class="small">Redirecting to the App Store…</p>
   </div>
 </body>
 </html>`;
@@ -148,7 +155,7 @@ export async function onRequestGet(context) {
   const { params, request } = context;
   const id = params.id;
   const url = `https://ddbx.uk/t/${id}`;
-  // `?card=plain` → suppress the unfurl image (the automated X reply uses it).
+  // `?card=plain` → compact X card (keeps branded image, avoids full-width card).
   const plain = new URL(request.url).searchParams.get("card") === "plain";
   const headers = {
     "content-type": "text/html; charset=utf-8",
