@@ -98,19 +98,17 @@ export function MarketHero({
    *  promising/maybe). */
   todaySignalCount?: number;
 }) {
-  const resolvedHeadline =
-    headline ??
-    subhead ?? (
-      <>
-        Which directors have been buying shares in{" "}
-        <span className="text-[#5a4128] dark:text-[#ad9479]">{marketLabel}</span>{" "}
-        companies?
-      </>
-    );
+  const resolvedHeadline = headline ?? subhead ?? (
+    <>
+      Which directors have been buying shares in{" "}
+      <span className="text-[#5a4128] dark:text-[#ad9479]">{marketLabel}</span>{" "}
+      companies?
+    </>
+  );
   const displaySubhead = headline ? subhead : undefined;
 
   return (
-    <header className="relative w-screen left-1/2 -translate-x-1/2 -mt-4 md:-mt-6 min-h-[120px] md:min-h-[380px] flex flex-col overflow-hidden animate-content-in">
+    <header className="relative w-screen left-1/2 -translate-x-1/2 -mt-4 md:-mt-6 min-h-[58svh] md:min-h-[380px] flex flex-col overflow-hidden animate-content-in">
       <style>{`
         @keyframes hero-spotlight-breathe {
           0%, 100% { opacity: 0.85; transform: scale(1); }
@@ -227,15 +225,14 @@ export function MarketHero({
         }
       `}</style>
 
-      {/* Atmospheric backdrop — md+ only. On mobile the hero collapses to a
-          compact headline on the plain page colour; the animated atmosphere
-          felt heavy in the small viewport. Order matters: warm floor sits
+      {/* Atmospheric backdrop. Now on every breakpoint — the tall mobile hero
+          leans on it to feel like a lit stage. Order matters: warm floor sits
           behind so the shimmer + spotlight feel like they're cast on a
           surface; the vignette goes last so light falls off toward the
           corners. This wrapper is position:static so its absolute children
           still anchor to the <header> and keep their z-order relative to the
           headline. */}
-      <div aria-hidden className="hidden md:block">
+      <div aria-hidden className="block">
         <div aria-hidden className="hero-warm-floor z-0" />
         <div aria-hidden className="hero-shimmer z-0" />
         <div aria-hidden className="hero-spotlight z-0" />
@@ -289,7 +286,7 @@ export function MarketHero({
         }`}
       >
         <div className="space-y-3 md:space-y-5">
-          <h1 className="mx-auto max-w-[550px] text-balance text-[26px] font-semibold tracking-tight leading-[1.1] md:text-[52px] md:leading-[1.05]">
+          <h1 className="mx-auto max-w-[550px] text-balance text-[36px] font-semibold tracking-tight leading-[1.06] md:text-[52px] md:leading-[1.05]">
             {resolvedHeadline}
           </h1>
           {displaySubhead && (
@@ -334,7 +331,11 @@ export function MarketHero({
               </button>
             )}
             {onViewReport && (
-              <button className={GHOST_CTA} type="button" onClick={onViewReport}>
+              <button
+                className={GHOST_CTA}
+                type="button"
+                onClick={onViewReport}
+              >
                 View {reportLabel} Report
               </button>
             )}

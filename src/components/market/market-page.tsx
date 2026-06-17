@@ -1246,7 +1246,10 @@ export function MarketPage<W>({
             of "Today" — always visible and never narrowed by the Signal /
             Strength controls, which govern only the historical table below. */}
         {!config.hideTodayHero && todaySkipped.length > 0 && (
-          <section className="animate-content-in">
+          // Hidden on mobile: the pinned deck is the whole "today" surface
+          // there, so the skipped tail would just be redundant cards above the
+          // table. Desktop keeps it as the "Also today" group.
+          <section className="hidden animate-content-in md:block">
             <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
               Also today · {todaySkipped.length} skipped
             </div>
