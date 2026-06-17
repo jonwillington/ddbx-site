@@ -25,6 +25,8 @@ import { BuyStyleChip } from "@/components/buy-style-chip";
 import { PartyChip } from "@/components/party-chip";
 import { ChamberChip } from "@/components/chamber-chip";
 import { Tooltip } from "@/components/tooltip";
+import { ViewAnalysisCta } from "@/components/discretion/view-analysis-cta";
+import { DISCRETION_ENABLED } from "@/lib/discretion";
 
 /** Generic fallbacks for the table-header tooltips. A market overrides any of
  *  these via MarketConfig.columnHelp; anything it leaves unset uses these so
@@ -43,7 +45,13 @@ const DEFAULT_COLUMN_HELP: Record<MarketColumnKey, string> = {
 
 /** A column header label with an info tooltip explaining what the column means
  *  for the active market. */
-function HeaderLabel({ help, children }: { help: string; children: ReactNode }) {
+function HeaderLabel({
+  help,
+  children,
+}: {
+  help: string;
+  children: ReactNode;
+}) {
   return (
     <Tooltip
       className="inline-flex items-center gap-1 cursor-help align-middle"
@@ -531,8 +539,23 @@ export function MarketClusterRow<W>({
 }
 
 /** Round insider avatar — member portrait when present, else initials. */
-export function InsiderAvatar({ name, photoUrl, size = 28 }: { name: string; photoUrl?: string; size?: number }) {
-  const initials = name.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+export function InsiderAvatar({
+  name,
+  photoUrl,
+  size = 28,
+}: {
+  name: string;
+  photoUrl?: string;
+  size?: number;
+}) {
+  const initials = name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   if (photoUrl) {
     return (
       <img
@@ -549,6 +572,7 @@ export function InsiderAvatar({ name, photoUrl, size = 28 }: { name: string; pho
       />
     );
   }
+
   return (
     <div
       className="rounded-full bg-black/[0.06] dark:bg-white/10 shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted"
@@ -604,7 +628,9 @@ export function MemberClusterRow({
   // Lives in the Action column (desktop) / right stack (mobile), not by the name.
   const SignalChip = ({ className = "" }: { className?: string }) =>
     signalCount > 0 ? (
-      <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 ${className}`}>
+      <span
+        className={`inline-flex items-center justify-center whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 ${className}`}
+      >
         {signalCount} signal
       </span>
     ) : null;
@@ -622,19 +648,30 @@ export function MemberClusterRow({
           <ChevronDownIcon
             className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           />
-          <InsiderAvatar name={insiderName} photoUrl={insiderPhotoUrl} size={32} />
+          <InsiderAvatar
+            name={insiderName}
+            photoUrl={insiderPhotoUrl}
+            size={32}
+          />
           <div className="flex-1 min-w-0">
             <div className="flex items-center min-w-0">
-              <span className="text-[13px] font-semibold truncate">{insiderName}</span>
+              <span className="text-[13px] font-semibold truncate">
+                {insiderName}
+              </span>
               <PartyChip className="ml-2" party={party} />
-              <ChamberChip className="ml-1.5" chamber={chamber} />
+              <ChamberChip chamber={chamber} className="ml-1.5" />
             </div>
             <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
           </div>
           <div className="shrink-0 flex flex-col items-end gap-0.5">
-            <span className="text-sm font-semibold tabular-nums">{totalValueLabel}</span>
+            <span className="text-sm font-semibold tabular-nums">
+              {totalValueLabel}
+            </span>
             {aggReturnPct != null && (
-              <DeltaBadge suffix={aggShowAlpha ? "pp" : undefined} value={aggReturnPct} />
+              <DeltaBadge
+                suffix={aggShowAlpha ? "pp" : undefined}
+                value={aggReturnPct}
+              />
             )}
             <SignalChip />
           </div>
@@ -650,18 +687,26 @@ export function MemberClusterRow({
             <ChevronDownIcon
               className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             />
-            <InsiderAvatar name={insiderName} photoUrl={insiderPhotoUrl} size={30} />
+            <InsiderAvatar
+              name={insiderName}
+              photoUrl={insiderPhotoUrl}
+              size={30}
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-center min-w-0">
-                <span className="text-[13px] font-semibold truncate leading-tight">{insiderName}</span>
+                <span className="text-[13px] font-semibold truncate leading-tight">
+                  {insiderName}
+                </span>
                 <PartyChip className="ml-2" party={party} />
-                <ChamberChip className="ml-1.5" chamber={chamber} />
+                <ChamberChip chamber={chamber} className="ml-1.5" />
               </div>
               <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
             </div>
           </div>
           <div className="w-24 shrink-0 px-3 py-2.5 flex items-center justify-end border-r border-black/[0.06] dark:border-white/[0.06]">
-            <span className="text-sm font-semibold tabular-nums">{totalValueLabel}</span>
+            <span className="text-sm font-semibold tabular-nums">
+              {totalValueLabel}
+            </span>
           </div>
           <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
             <span className="text-[11px] font-semibold tabular-nums text-muted/70">
@@ -670,7 +715,10 @@ export function MemberClusterRow({
           </div>
           <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
             {aggReturnPct != null ? (
-              <DeltaBadge suffix={aggShowAlpha ? "pp" : undefined} value={aggReturnPct} />
+              <DeltaBadge
+                suffix={aggShowAlpha ? "pp" : undefined}
+                value={aggReturnPct}
+              />
             ) : (
               <span className="text-[11px] text-muted/50">—</span>
             )}
@@ -722,9 +770,15 @@ export function MarketRow<W>({
   hideInsider = false,
 }: MarketRowProps<W>) {
   const showAlpha = chartMode.axis === "market";
-  const muted = isMuted
-    ? isMuted(dealing)
-    : !dealing.rating || !dealing.isPurchase;
+  // Discretion mode hides the rating from the list (see ViewAnalysisCta). The
+  // default muting is rating-derived (dim = unrated/skipped), so leaving it on
+  // would leak the very signal we're hiding — keep every row at full weight so
+  // the list "shows all trades clearly" and the signal lives only in the app.
+  const muted = DISCRETION_ENABLED
+    ? false
+    : isMuted
+      ? isMuted(dealing)
+      : !dealing.rating || !dealing.isPurchase;
   const tradeDay = dealing.tradeDate.slice(0, 10);
   const disclosedDay = dealing.disclosedDate.slice(0, 10);
   const tradeDiffers = tradeDay !== disclosedDay;
@@ -747,7 +801,7 @@ export function MarketRow<W>({
   // honest "No data yet" rather than a misleading +0.0%.
   const metricPct = noPosteriorData
     ? null
-    : livePct ?? (showAlpha ? alpha : stockPct);
+    : (livePct ?? (showAlpha ? alpha : stockPct));
 
   const rawTicker = dealing.ticker || "—";
   const ticker = formatTickerDisplay
@@ -796,7 +850,11 @@ export function MarketRow<W>({
               </div>
             )}
             <div className="flex items-center gap-1.5 mt-1 min-w-0">
-              <RowActionCell dealing={dealing} />
+              {DISCRETION_ENABLED ? (
+                <ViewAnalysisCta />
+              ) : (
+                <RowActionCell dealing={dealing} />
+              )}
               {RowNameBadge ? (
                 <RowNameBadge dealing={dealing} />
               ) : dealing.buyStyle ? (
@@ -896,7 +954,10 @@ export function MarketRow<W>({
         <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
           {metricPct != null ? (
             <span className="animate-content-in">
-              <DeltaBadge suffix={showAlpha ? "pp" : undefined} value={metricPct} />
+              <DeltaBadge
+                suffix={showAlpha ? "pp" : undefined}
+                value={metricPct}
+              />
             </span>
           ) : noPosteriorData ? (
             <span className="text-[11px] text-muted/60">No data yet</span>
@@ -905,7 +966,11 @@ export function MarketRow<W>({
           )}
         </div>
         <div className="w-40 shrink-0 px-2 py-2.5 flex flex-col items-center justify-center gap-1">
-          <RowActionCell dealing={dealing} />
+          {DISCRETION_ENABLED ? (
+            <ViewAnalysisCta />
+          ) : (
+            <RowActionCell dealing={dealing} />
+          )}
         </div>
       </div>
     </button>

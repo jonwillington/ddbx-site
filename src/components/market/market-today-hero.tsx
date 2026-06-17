@@ -16,6 +16,8 @@ import { compareDealingImportance } from "./market-utils";
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { Skeleton } from "@/components/skeleton";
+import { ViewAnalysisCta } from "@/components/discretion/view-analysis-cta";
+import { DISCRETION_ENABLED } from "@/lib/discretion";
 
 export interface RecentBestEntry<W> {
   dealing: MarketDealing<W>;
@@ -266,11 +268,15 @@ function TodayCard<W>({
             <h3 className="min-w-0 truncate text-[18px] font-semibold leading-tight tracking-[-0.03em]">
               {dealing.company || "—"}
             </h3>
-            {dealing.rating && (
-              <RatingBadge
-                className="shrink-0 !h-[20px] !w-auto !rounded-full !px-2 !py-0 !text-[10px] !leading-none"
-                rating={dealing.rating}
-              />
+            {DISCRETION_ENABLED ? (
+              <ViewAnalysisCta className="shrink-0" />
+            ) : (
+              dealing.rating && (
+                <RatingBadge
+                  className="shrink-0 !h-[20px] !w-auto !rounded-full !px-2 !py-0 !text-[10px] !leading-none"
+                  rating={dealing.rating}
+                />
+              )
             )}
           </div>
           <div className="mt-1 truncate text-[12px] text-muted">
@@ -281,7 +287,9 @@ function TodayCard<W>({
           </div>
         </div>
       </div>
-      {dealing.summary && (
+      {/* The summary is the thesis preview — kept off the teaser surface under
+          discretion so the analysis (rating + reasoning) stays an app-only draw. */}
+      {!DISCRETION_ENABLED && dealing.summary && (
         <p className="mt-4 line-clamp-2 text-[13px] leading-relaxed text-foreground/55 dark:text-foreground/60 md:line-clamp-3">
           {dealing.summary}
         </p>
