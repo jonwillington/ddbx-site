@@ -290,24 +290,23 @@ export function MarketRowSkeleton({
   return (
     <div className="w-full">
       {/* Mobile */}
-      <div className="md:hidden px-3 py-2.5">
-        <div className="mb-1.5 flex items-baseline justify-between gap-2">
-          <Skeleton className="h-3 w-20 rounded" />
-          <Skeleton className="h-4 w-14 rounded-full" />
-        </div>
-        <div className="flex items-start gap-2.5">
-          <Skeleton circle className="shrink-0 mt-0.5" h={28} w={28} />
-          <div className="flex-1 min-w-0 space-y-1">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-3.5 w-10 rounded" />
-              <Skeleton className="h-3.5 flex-1 rounded" />
+      <div className="md:hidden px-3 py-3">
+        <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-white/50 dark:bg-white/[0.03] p-3.5 space-y-3">
+          <Skeleton className="h-3 w-32 rounded" />
+          <div className="flex items-start gap-3">
+            <Skeleton circle className="shrink-0 mt-0.5" h={38} w={38} />
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-12 rounded-md" />
+                <Skeleton className="h-5 flex-1 rounded" />
+              </div>
             </div>
-            <Skeleton className="h-3 w-2/3 rounded" />
           </div>
-          <Skeleton className="h-4 w-14 rounded shrink-0" />
-        </div>
-        <div className="mt-1.5 flex items-center gap-1.5">
-          <Skeleton className="h-4 w-14 rounded-full" />
+          <div className="grid grid-cols-3 gap-2">
+            <Skeleton className="h-[54px] rounded-xl" />
+            <Skeleton className="h-[54px] rounded-xl" />
+            <Skeleton className="h-[54px] rounded-xl" />
+          </div>
         </div>
       </div>
 
@@ -366,6 +365,56 @@ export function DeltaBadge({
       {value.toFixed(1)}
       {suffix}
     </span>
+  );
+}
+
+function compactNotation(value: number): string {
+  return new Intl.NumberFormat("en-GB", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  })
+    .format(value)
+    .replaceAll("K", "k")
+    .replaceAll("M", "m")
+    .replaceAll("B", "b");
+}
+
+function formatCompactValue(value: number, fmt: PriceFormat): string {
+  const abs = Math.abs(value);
+  if (abs < 10_000) return fmt.formatValue(value);
+
+  const sample = fmt.formatValue(abs);
+  const firstDigit = sample.search(/\d/);
+  const lastDigit = sample.search(/\d(?!.*\d)/);
+  if (firstDigit < 0 || lastDigit < firstDigit) return fmt.formatValue(value);
+
+  const prefix = sample.slice(0, firstDigit);
+  const suffix = sample.slice(lastDigit + 1);
+  const compact = compactNotation(abs);
+
+  return `${value < 0 ? "-" : ""}${prefix}${compact}${suffix}`;
+}
+
+function MobileFact({
+  label,
+  value,
+  valueClassName = "",
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="rounded-xl bg-black/[0.04] dark:bg-white/[0.06] px-3 py-2.5">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+        {label}
+      </div>
+      <div
+        className={`mt-1 text-[15px] font-semibold tabular-nums leading-tight ${valueClassName}`}
+      >
+        {value}
+      </div>
+    </div>
   );
 }
 
@@ -813,9 +862,28 @@ export function MarketRow<W>({
     : dealing.insiderName;
   const valueLabel =
     dealing.value != null ? fmt.formatValue(dealing.value) : "—";
+  const compactValueLabel =
+    dealing.value != null ? formatCompactValue(dealing.value, fmt) : "—";
   const mobileDateLabel = tradeDiffers
     ? `Filed ${shortDate(dealing.disclosedDate, locale)} (Trade ${shortDate(dealing.tradeDate, locale)})`
     : `Filed ${shortDate(dealing.disclosedDate, locale)}`;
+  const performanceLabel = metricPct != null ? `${metricPct >= 0 ? "+" : ""}${metricPct.toFixed(1)}${showAlpha ? "pp" : "%"}` : "No data yet";
+  const performanceClass =
+    metricPct == null
+      ? "text-muted/70"
+      : metricPct >= 0
+        ? "text-[#1e6b18] dark:text-[#5cd84a]"
+        : "text-[#8b2020] dark:text-[#e84d4d]";
+  const ratedLabel = DISCRETION_ENABLED
+    ? "In app"
+    : dealing.rating && dealing.isPurchase
+      ? "Rated"
+      : "Unrated";
+  const ratedClass = DISCRETION_ENABLED
+    ? "text-[#5a4128] dark:text-[#ad9479]"
+    : dealing.rating && dealing.isPurchase
+      ? "text-[#1e6b18] dark:text-[#5cd84a]"
+      : "text-muted/80";
 
   return (
     <button
@@ -826,71 +894,40 @@ export function MarketRow<W>({
       onClick={onSelect}
     >
       {/* ── Mobile (<md) ── */}
-      <div className="md:hidden px-3 py-2.5">
-        <div className="text-[10px] font-medium text-foreground/55 mb-1.5">
+      <div className="md:hidden px-3 py-3">
+        <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-white/50 dark:bg-white/[0.03] p-3.5 space-y-3">
+          <div className="text-[10px] font-medium text-foreground/55">
           {mobileDateLabel}
-        </div>
-        <div className="flex items-start gap-2.5">
-          {indent && <div aria-hidden className="w-4 shrink-0" />}
-          {showLogo && (
-            <CompanyLogo className="mt-0.5" size={28} ticker={rawTicker} />
-          )}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-[#e8e0d5] dark:bg-surface-secondary shrink-0">
-                {ticker}
-              </span>
-              <span className="text-[14px] font-semibold truncate">
-                {company}
-              </span>
-            </div>
-            {!hideInsider && (
-              <div className="text-[12px] text-muted mt-0.5 truncate">
-                {insiderLine}
-              </div>
-            )}
-            <div className="flex items-center gap-1.5 mt-1 min-w-0">
-              {DISCRETION_ENABLED ? (
-                <ViewAnalysisCta />
-              ) : (
-                <RowActionCell dealing={dealing} />
-              )}
-              {RowNameBadge ? (
-                <RowNameBadge dealing={dealing} />
-              ) : dealing.buyStyle ? (
-                <BuyStyleChip buyStyle={dealing.buyStyle} />
-              ) : (
-                <ClusterChip cluster={dealing.cluster} />
-              )}
-            </div>
           </div>
-          <div className="shrink-0 text-sm font-semibold tabular-nums leading-tight text-right">
-            {valueLabel}
-            {dealing.legCount > 1 && (
-              <div className="text-[10px] text-muted/80 mt-0.5 font-normal">
-                {dealing.legCount} fills
+          <div className="flex items-start gap-3">
+            {indent && <div aria-hidden className="w-4 shrink-0" />}
+            {showLogo && <CompanyLogo className="mt-0.5" size={38} ticker={rawTicker} />}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[12px] font-semibold px-2 py-0.5 rounded-md bg-[#e8e0d5] dark:bg-surface-secondary shrink-0">
+                  {ticker}
+                </span>
+                <span className="text-[17px] font-semibold truncate leading-tight">
+                  {company}
+                </span>
+              </div>
+            </div>
+            {DISCRETION_ENABLED && (
+              <div className="shrink-0">
+                <ViewAnalysisCta className="text-[11px] px-3 py-1" />
               </div>
             )}
           </div>
-        </div>
-        {(metricPct != null || noPosteriorData) && (
-          <div className="mt-1.5 flex flex-wrap items-center justify-end gap-1.5 animate-content-in opacity-85">
-            {metricPct != null ? (
-              showAlpha ? (
-                <>
-                  <DeltaBadge suffix="pp" value={metricPct} />
-                  <span className="text-[10px] text-muted/70">
-                    vs {benchmarkLabel}
-                  </span>
-                </>
-              ) : (
-                <DeltaBadge value={metricPct} />
-              )
-            ) : (
-              <span className="text-[11px] text-muted/60">No data yet</span>
-            )}
+          <div className="grid grid-cols-3 gap-2">
+            <MobileFact label="Purchase" value={compactValueLabel} />
+            <MobileFact
+              label="Performance"
+              value={performanceLabel}
+              valueClassName={performanceClass}
+            />
+            <MobileFact label="Rated" value={ratedLabel} valueClassName={ratedClass} />
           </div>
-        )}
+        </div>
       </div>
 
       {/* ── Desktop (md+) ── */}
