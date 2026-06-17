@@ -626,10 +626,23 @@ function useUsGating(): GatingInfo {
 
   return {
     enabled: d.enabled,
+    freeQuota: d.freeQuota,
+    viewedCount: d.viewedCount,
     hasFullAccess: d.hasFullAccess,
     recordView: d.recordView,
   };
 }
+
+const UsAnalysisOverlay = () => (
+  <BlurredAnalysisOverlay
+    body="You've used today's free web unlock. Open the app for full analysis on every Form 4 purchase."
+    benefits={[
+      "Full filing-level thesis, evidence, and risk callouts",
+      "See footnotes, ownership context, and signal drivers",
+      "Track insiders and follow new buys in real time",
+    ]}
+  />
+);
 
 /* ─── MarketConfig ───────────────────────────────────────────────────── */
 
@@ -739,7 +752,7 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   DetailPosition: UsDetailPosition,
   useGating: useUsGating,
   DummyDetailBody: UsDummyDetailBody,
-  AnalysisOverlay: BlurredAnalysisOverlay,
+  AnalysisOverlay: UsAnalysisOverlay,
   renderEmptyState: ({ view, stats, setView }) => {
     const total = stats?.total ?? 0;
     const interesting = stats?.viewCounts.interesting ?? 0;

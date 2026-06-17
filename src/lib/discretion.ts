@@ -145,6 +145,8 @@ export interface Discretion {
   enabled: boolean;
   listCap: number;
   viewedDealIds: string[];
+  viewedCount: number;
+  freeQuota: number;
   recordView: (dealId: string) => void;
   /** True if the deal is the first opened today (the freebie) — or if discretion is disabled. */
   hasFullAccess: (dealId: string) => boolean;
@@ -177,6 +179,8 @@ export function useDiscretion({
     enabled: DISCRETION_ENABLED,
     listCap: LIST_CAP,
     viewedDealIds: state.viewedDealIds,
+    viewedCount: state.viewedDealIds.length,
+    freeQuota: FREE_DRAWER_QUOTA,
     recordView: (dealId) => recordView(dealId, marketId, timeZone),
     hasFullAccess: (dealId: string) => {
       if (!DISCRETION_ENABLED) return true;

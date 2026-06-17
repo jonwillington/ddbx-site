@@ -77,6 +77,8 @@ const TODAY_SKIPPED_CAP = 8;
 /** Discretion mode: how many of the most recent disclosure days stay fully
  *  readable in the historical list. Older days blur behind fabricated rows. */
 const REAL_HISTORY_DAYS = 2;
+const FIRST_UNLOCK_CONFIRM =
+  "Use today's free full analysis on this filing? You can unlock one full drawer per day on the web.";
 
 /** The full shell that every market page mounts. Reads everything from
  *  MarketConfig — adding a new market means writing a new MarketConfig and
@@ -174,6 +176,10 @@ export function MarketPage<W>({
   );
   const useGating = config.useGating;
   const gating = useGating ? useGating() : undefined;
+  const previewMode = gating?.enabled === true;
+  const unlocksLeftToday = previewMode
+    ? Math.max(0, gating.freeQuota - gating.viewedCount)
+    : 0;
 
   /** Live stock prices keyed by ticker — close_pence column raw values plus
    *  the price date, because US rows need dated FX conversion. */
@@ -1030,7 +1036,7 @@ export function MarketPage<W>({
         stockBars={blurred ? undefined : stockBars[d.ticker]}
         stockCurrentMajor={blurred ? undefined : stockCurrent(d.ticker)}
         stockEntry={blurred ? undefined : stockEntry(d)}
-        onSelect={blurred ? () => {} : () => setSelectedKey(d.key)}
+        onSelect={blurred ? () => {} : () => openDealing(d)}
       />
     );
 
@@ -1040,13 +1046,34 @@ export function MarketPage<W>({
       <div
         key={d.key}
         aria-hidden
-        className="pointer-events-none select-none [filter:blur(5px)]"
+        className="relative pointer-events-none select-none"
       >
-        {row}
+        <div className="opacity-70 saturate-[0.7]">{row}</div>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#faf7f2]/80 via-[#faf7f2]/35 to-[#faf7f2]/80 dark:from-surface/85 dark:via-surface/45 dark:to-surface/85" />
+        <div className="pointer-events-none absolute right-3 top-3 rounded-full border border-[#d8d0c6] bg-[#faf7f2]/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#7a634b] dark:border-separator dark:bg-surface/95 dark:text-[#c9b49f]">
+          App-only history
+        </div>
       </div>
     );
   };
   const renderDayRow = (d: MarketDealing<W>) => renderRow(d);
+
+  const openDealing = useCallback(
+    (d: MarketDealing<W>) => {
+      if (
+        previewMode &&
+        unlocksLeftToday > 0 &&
+        (gating?.viewedCount ?? 0) === 0 &&
+        typeof window !== "undefined"
+      ) {
+        const ok = window.confirm(FIRST_UNLOCK_CONFIRM);
+
+        if (!ok) return;
+      }
+      setSelectedKey(d.key);
+    },
+    [gating?.viewedCount, previewMode, setSelectedKey, unlocksLeftToday],
+  );
 
   // The prominent ("suggested") rows of a day. When the market opts into
   // company clustering, multiple same-company buys on the same day collapse
@@ -1220,7 +1247,7 @@ export function MarketPage<W>({
             showLogo={logosEnabled}
             todayDealings={todayDealings}
             todayIso={todayIso}
-            onSelect={(d) => setSelectedKey(d.key)}
+            onSelect={openDealing}
           />
         )}
 
@@ -1340,6 +1367,21 @@ export function MarketPage<W>({
               onSignalFilterChange={setSignalFilter}
               onViewMode={setViewMode}
             />
+            {previewMode && (
+              <div className="flex flex-wrap items-center gap-2 border-t border-[#e8e0d5]/70 px-4 py-2 dark:border-separator/40">
+                <span className="inline-flex items-center rounded-full border border-[#d8d0c6] bg-[#f4eee6] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#7a634b] dark:border-separator dark:bg-white/[0.03] dark:text-[#c9b49f]">
+                  Web preview
+                </span>
+                <span className="text-xs text-foreground/70">
+                  {gating.freeQuota} full analysis per day on web
+                </span>
+                <span className="text-xs font-medium text-foreground/70">
+                  {unlocksLeftToday > 0
+                    ? `${unlocksLeftToday} unlock left today`
+                    : "No unlocks left today"}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -1376,7 +1418,7 @@ export function MarketPage<W>({
                   stockBars={stockBars[d.ticker]}
                   stockCurrentMajor={stockCurrent(d.ticker)}
                   stockEntry={stockEntry(d)}
-                  onSelect={() => setSelectedKey(d.key)}
+                  onSelect={() => openDealing(d)}
                 />
               ))}
             </div>
@@ -1588,7 +1630,7 @@ export function MarketPage<W>({
         locale={config.locale}
         showLogo={logosEnabled}
         onClose={() => setSelectedKey(null)}
-        onSelectDealing={(d) => setSelectedKey(d.key)}
+        onSelectDealing={openDealing}
       />
 
       {/* "What are we looking for?" — checklist markets get the full-screen

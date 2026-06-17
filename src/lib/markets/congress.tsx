@@ -635,10 +635,24 @@ function useCongressGating(): GatingInfo {
 
   return {
     enabled: d.enabled,
+    freeQuota: d.freeQuota,
+    viewedCount: d.viewedCount,
     hasFullAccess: d.hasFullAccess,
     recordView: d.recordView,
   };
 }
+
+const CongressAnalysisOverlay = () => (
+  <BlurredAnalysisOverlay
+    title="Unlock the full Congress brief"
+    body="You've used today's free web unlock. Open the app to see the full breakdown for every filing."
+    benefits={[
+      "Committee-overlap context and rating factors for each filing",
+      "Disclosure-lag view: move since trade vs since public filing",
+      "Track each member's recent history in one place",
+    ]}
+  />
+);
 
 /** Raw-filing facts folded into the drawer's standard metadata grid (see
  *  MarketConfig.detailFields). The disclosed band is the primary money figure —
@@ -1001,7 +1015,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   DetailBody: CongressDetailBody,
   useGating: useCongressGating,
   DummyDetailBody: CongressDummyDetailBody,
-  AnalysisOverlay: BlurredAnalysisOverlay,
+  AnalysisOverlay: CongressAnalysisOverlay,
   detailFields: congressDetailFields,
   // Right-hand news bar — reuse the US market feed (/api/news/us); Congress
   // trades US equities, so US business headlines are the right context.

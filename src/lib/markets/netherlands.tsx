@@ -466,10 +466,23 @@ function useNetherlandsGating(): GatingInfo {
 
   return {
     enabled: d.enabled,
+    freeQuota: d.freeQuota,
+    viewedCount: d.viewedCount,
     hasFullAccess: d.hasFullAccess,
     recordView: d.recordView,
   };
 }
+
+const NetherlandsAnalysisOverlay = () => (
+  <BlurredAnalysisOverlay
+    body="You've used today's free web unlock. Open the app for full analysis on every Dutch filing."
+    benefits={[
+      "Full AI thesis and risk breakdown on each PDMR buy",
+      "Review filing details with cleaner context",
+      "Follow fresh insider disclosures as they land",
+    ]}
+  />
+);
 
 /* ─── MarketConfig ───────────────────────────────────────────────────── */
 
@@ -572,7 +585,7 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   DetailBody: NetherlandsDetailBody,
   useGating: useNetherlandsGating,
   DummyDetailBody: NetherlandsDummyDetailBody,
-  AnalysisOverlay: BlurredAnalysisOverlay,
+  AnalysisOverlay: NetherlandsAnalysisOverlay,
   // Dutch business-press feeds (NOS Economie, NRC Economie, Volkskrant
   // Economie, NU.nl Economie). Worker pipeline: pipeline/nl-news.ts.
   fetchNews: () => api.nlNews(),

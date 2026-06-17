@@ -309,10 +309,23 @@ function useUkGating(): GatingInfo {
 
   return {
     enabled: d.enabled,
+    freeQuota: d.freeQuota,
+    viewedCount: d.viewedCount,
     hasFullAccess: d.hasFullAccess,
     recordView: d.recordView,
   };
 }
+
+const UkAnalysisOverlay = () => (
+  <BlurredAnalysisOverlay
+    body="You've used today's free web unlock. The app gives you the full breakdown on every UK filing."
+    benefits={[
+      "Full AI thesis, evidence, and risk breakdown on every filing",
+      "Real-time alerts when a director buys",
+      "Track each director's hit-rate across UK names",
+    ]}
+  />
+);
 
 /* ─── MarketConfig ───────────────────────────────────────────────────── */
 
@@ -412,6 +425,6 @@ export const UkMarket: MarketConfig<Dealing> = {
   useGating: useUkGating,
   supportsChannelPerformance: true,
   DummyDetailBody: UkDummyDetailBody,
-  AnalysisOverlay: BlurredAnalysisOverlay,
+  AnalysisOverlay: UkAnalysisOverlay,
   renderEmptyState: () => <>No UK disclosures stored yet.</>,
 };

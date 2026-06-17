@@ -535,6 +535,10 @@ export interface GatingInfo {
   /** Whether gating is on for this session at all. False = treat every
    *  drawer as fully-accessible. */
   enabled: boolean;
+  /** How many full-analysis opens are free per day in this market. */
+  freeQuota: number;
+  /** How many unique deals the reader has opened today in this market. */
+  viewedCount: number;
   /** True if the viewer is allowed to see real content for this deal. */
   hasFullAccess: (dealId: string) => boolean;
   /** Called by the shell when a drawer opens. Idempotent per dealId. */

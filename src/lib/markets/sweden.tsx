@@ -555,10 +555,23 @@ function useSwedenGating(): GatingInfo {
 
   return {
     enabled: d.enabled,
+    freeQuota: d.freeQuota,
+    viewedCount: d.viewedCount,
     hasFullAccess: d.hasFullAccess,
     recordView: d.recordView,
   };
 }
+
+const SwedenAnalysisOverlay = () => (
+  <BlurredAnalysisOverlay
+    body="You've used today's free web unlock. Open the app for full analysis on every Swedish filing."
+    benefits={[
+      "Full AI thesis and risk breakdown on each PDMR buy",
+      "Deeper context behind the filing and instrument",
+      "Follow new insider disclosures as they arrive",
+    ]}
+  />
+);
 
 /* ─── MarketConfig ───────────────────────────────────────────────────── */
 
@@ -663,7 +676,7 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   DetailBody: SwedenDetailBody,
   useGating: useSwedenGating,
   DummyDetailBody: SwedenDummyDetailBody,
-  AnalysisOverlay: BlurredAnalysisOverlay,
+  AnalysisOverlay: SwedenAnalysisOverlay,
   // No DetailPosition — Swedish instruments are keyed by ISIN; the
   // ticker-based price history endpoint doesn't cover them yet.
   // Swedish business-press feeds (DI, DN Ekonomi, SVT Ekonomi, Börsvärlden)
