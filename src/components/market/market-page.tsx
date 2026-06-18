@@ -1345,7 +1345,7 @@ export function MarketPage<W>({
               onViewMode={setViewMode}
             />
             {previewMode && (
-              <div className="flex flex-wrap items-center gap-2 border-t border-[#e8e0d5]/70 px-4 py-2 dark:border-separator/40">
+              <div className="hidden flex-wrap items-center gap-2 border-t border-[#e8e0d5]/70 px-4 py-2 md:flex dark:border-separator/40">
                 <span className="inline-flex items-center rounded-full border border-[#d8d0c6] bg-[#f4eee6] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#7a634b] dark:border-separator dark:bg-white/[0.03] dark:text-[#c9b49f]">
                   Web preview
                 </span>
