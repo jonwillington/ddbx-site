@@ -29,16 +29,19 @@ const FILLED_CTA =
 const GHOST_CTA =
   "inline-flex items-center rounded-full bg-[#6b503921] px-6 py-3 text-base font-semibold text-[#5a4128] backdrop-blur-sm transition-all hover:bg-[#6b50382e] dark:bg-[#ad9479]/15 dark:text-[#ad9479] dark:hover:bg-[#ad9479]/25";
 
-/** Disclosure-pulse anchor points. Hand-placed in the side gutters — x stays
- *  outside the ~40-60% centre column so a ripple never crosses the headline,
- *  y stays above the bottom dissolve. Delays are deliberately uneven across
- *  the shared 9s cycle so somewhere on the stage blips roughly every second. */
-const PULSE_POINTS: {
+type PulsePoint = {
   left: string;
   top: string;
   size: number;
   delay: number;
-}[] = [
+};
+
+/** Disclosure-pulse anchor points for desktop. Hand-placed in the side
+ *  gutters — x stays outside the ~40-60% centre column so a ripple never
+ *  crosses the headline, y stays above the bottom dissolve. Delays are
+ *  deliberately uneven across the shared 9s cycle so somewhere on the stage
+ *  blips roughly every second. */
+const PULSE_POINTS: PulsePoint[] = [
   { left: "9%", top: "30%", size: 10, delay: 0 },
   { left: "20%", top: "60%", size: 8, delay: 2.1 },
   { left: "28%", top: "22%", size: 9, delay: 4.6 },
@@ -47,6 +50,20 @@ const PULSE_POINTS: {
   { left: "84%", top: "56%", size: 11, delay: 3.7 },
   { left: "78%", top: "40%", size: 8, delay: 6.0 },
   { left: "91%", top: "32%", size: 10, delay: 8.1 },
+];
+
+/** Mobile anchor points. The centred headline fills the full width here, so
+ *  the desktop gutter trick doesn't apply — instead we keep pulses (and the
+ *  ~5x ripple spread) out of the headline's vertical band, confined to a top
+ *  band above it and a band below it, with margin so a ripple never reaches
+ *  the text. Fewer, smaller blips so the narrow stage doesn't read as busy. */
+const MOBILE_PULSE_POINTS: PulsePoint[] = [
+  { left: "16%", top: "9%", size: 8, delay: 0 },
+  { left: "80%", top: "11%", size: 9, delay: 2.1 },
+  { left: "46%", top: "6%", size: 7, delay: 4.6 },
+  { left: "20%", top: "64%", size: 9, delay: 1.2 },
+  { left: "82%", top: "66%", size: 8, delay: 3.7 },
+  { left: "58%", top: "70%", size: 7, delay: 6.0 },
 ];
 
 export function MarketHero({
@@ -264,8 +281,24 @@ export function MarketHero({
             delays vary so no two blips read as twins. */}
         {PULSE_POINTS.map((p) => (
           <span
-            key={`${p.left}-${p.top}`}
-            className="hero-pulse z-[2]"
+            key={`d-${p.left}-${p.top}`}
+            className="hero-pulse z-[2] hidden md:block"
+            style={{
+              left: p.left,
+              top: p.top,
+              width: p.size,
+              height: p.size,
+              animationDelay: `${p.delay}s`,
+            }}
+          >
+            <span className="hero-pulse-ring" />
+            <span className="hero-pulse-ring hero-pulse-ring-2" />
+          </span>
+        ))}
+        {MOBILE_PULSE_POINTS.map((p) => (
+          <span
+            key={`m-${p.left}-${p.top}`}
+            className="hero-pulse z-[2] md:hidden"
             style={{
               left: p.left,
               top: p.top,
