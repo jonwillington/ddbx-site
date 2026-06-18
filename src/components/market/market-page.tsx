@@ -1315,35 +1315,39 @@ export function MarketPage<W>({
             ref={filterBarRef}
             className="sticky top-[64px] z-20 -mx-4 md:-mx-6 bg-[#faf7f2] dark:bg-surface rounded-t-xl border-b border-[#e8e0d5]/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
           >
-            <MarketFilterBar
-              extraFilterValues={extraFilterValues}
-              extraFilters={allExtraFilters.map((ef) => ({
-                id: ef.id,
-                label: ef.label,
-                question: ef.question,
-                description: ef.description,
-                kind: ef.kind,
-                options: ef.options,
-                defaultValue: ef.defaultValue,
-              }))}
-              heroFilterId={heroFilterId}
-              heroFilters={config.heroFilters?.map((f) => ({
-                id: f.id,
-                label: f.label,
-              }))}
-              search={search}
-              signalFilter={signalFilter}
-              trailing={chartModeToggle}
-              viewMode={viewMode}
-              onExtraFilterChange={(id, value) =>
-                setExtraFilterValues((prev) => ({ ...prev, [id]: value }))
-              }
-              onHeroFilterChange={setHeroFilterId}
-              onReset={resetFilters}
-              onSearch={setSearch}
-              onSignalFilterChange={setSignalFilter}
-              onViewMode={setViewMode}
-            />
+            {/* Search + filters are hidden on mobile — the wrapper stays so the
+                table keeps its rounded top edge and the -mt-6 tuck anchor. */}
+            <div className="hidden md:block">
+              <MarketFilterBar
+                extraFilterValues={extraFilterValues}
+                extraFilters={allExtraFilters.map((ef) => ({
+                  id: ef.id,
+                  label: ef.label,
+                  question: ef.question,
+                  description: ef.description,
+                  kind: ef.kind,
+                  options: ef.options,
+                  defaultValue: ef.defaultValue,
+                }))}
+                heroFilterId={heroFilterId}
+                heroFilters={config.heroFilters?.map((f) => ({
+                  id: f.id,
+                  label: f.label,
+                }))}
+                search={search}
+                signalFilter={signalFilter}
+                trailing={chartModeToggle}
+                viewMode={viewMode}
+                onExtraFilterChange={(id, value) =>
+                  setExtraFilterValues((prev) => ({ ...prev, [id]: value }))
+                }
+                onHeroFilterChange={setHeroFilterId}
+                onReset={resetFilters}
+                onSearch={setSearch}
+                onSignalFilterChange={setSignalFilter}
+                onViewMode={setViewMode}
+              />
+            </div>
             {previewMode && (
               <div className="hidden flex-wrap items-center gap-2 border-t border-[#e8e0d5]/70 px-4 py-2 md:flex dark:border-separator/40">
                 <span className="inline-flex items-center rounded-full border border-[#d8d0c6] bg-[#f4eee6] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#7a634b] dark:border-separator dark:bg-white/[0.03] dark:text-[#c9b49f]">
