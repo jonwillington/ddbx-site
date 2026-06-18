@@ -887,43 +887,49 @@ export function MarketRow<W>({
         ${selected ? "bg-[#5a4128]/[0.07] dark:bg-[#5a4128]/[0.20]" : "hover:bg-black/[0.03] dark:hover:bg-white/5"}`}
       onClick={onSelect}
     >
-      {/* ── Mobile (<md) ── */}
-      <div className="md:hidden px-3 py-3">
-        <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-white/50 dark:bg-white/[0.03] p-3.5 space-y-3">
-          <div className="text-[10px] font-medium text-foreground/55">
+      {/* ── Mobile (<md) ──
+          Flat rows separated by the day/section container's divider — no
+          per-deal card box, so the surrounding container is the single box
+          (avoids the box-in-a-box look). */}
+      <div className="md:hidden px-4 py-3.5 space-y-3">
+        <div className="text-[10px] font-medium text-foreground/55">
           {mobileDateLabel}
-          </div>
-          <div className="flex items-start gap-3">
-            {indent && <div aria-hidden className="w-4 shrink-0" />}
-            {showLogo && <CompanyLogo className="mt-0.5" size={38} ticker={rawTicker} />}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[12px] font-semibold px-2 py-0.5 rounded-md bg-[#e8e0d5] dark:bg-surface-secondary shrink-0">
-                  {ticker}
-                </span>
-                <span className="text-[17px] font-semibold truncate leading-tight">
-                  {company}
-                </span>
-              </div>
+        </div>
+        <div className="flex items-start gap-3">
+          {indent && <div aria-hidden className="w-4 shrink-0" />}
+          {showLogo && <CompanyLogo className="mt-0.5" size={38} ticker={rawTicker} />}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[12px] font-semibold px-2 py-0.5 rounded-md bg-[#e8e0d5] dark:bg-surface-secondary shrink-0">
+                {ticker}
+              </span>
+              <span className="text-[17px] font-semibold truncate leading-tight">
+                {company}
+              </span>
             </div>
-          </div>
-          <div
-            className={`grid gap-2 ${DISCRETION_ENABLED ? "grid-cols-2" : "grid-cols-3"}`}
-          >
-            <MobileFact label="Purchase" value={compactValueLabel} />
-            <MobileFact
-              label="Performance"
-              value={performanceLabel}
-              valueClassName={performanceClass}
-            />
-            {!DISCRETION_ENABLED && (
-              <MobileFact
-                label="Rated"
-                value={ratedLabel}
-                valueClassName={ratedClass}
-              />
+            {!hideInsider && insiderLine && (
+              <div className="mt-1 text-[12px] text-muted truncate">
+                {insiderLine}
+              </div>
             )}
           </div>
+        </div>
+        <div
+          className={`grid gap-2 ${DISCRETION_ENABLED ? "grid-cols-2" : "grid-cols-3"}`}
+        >
+          <MobileFact label="Purchase" value={compactValueLabel} />
+          <MobileFact
+            label="Performance"
+            value={performanceLabel}
+            valueClassName={performanceClass}
+          />
+          {!DISCRETION_ENABLED && (
+            <MobileFact
+              label="Rated"
+              value={ratedLabel}
+              valueClassName={ratedClass}
+            />
+          )}
         </div>
       </div>
 
