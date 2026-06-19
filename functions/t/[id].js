@@ -20,9 +20,13 @@
 
 const APP_STORE_URL = "https://apps.apple.com/us/app/ddbx-uk/id6762196330";
 const API_BASE = "https://api.ddbx.uk/api";
-// Generated 1200×630 card served by the Worker. It internally redirects to the
-// company logo / a default image on any failure, so it's always a safe og:image.
-const cardImage = (id) => `${API_BASE}/dealings/${encodeURIComponent(id)}/og.png`;
+// Share links unfurl with the clean per-market ddbx wordmark — the same OG art
+// the rest of the site uses (see functions/_middleware.js): light on UK/EU, dark
+// on US. We deliberately DON'T use the Worker's dynamic per-trade card here: the
+// tweet/iMessage text already carries the deal detail, so the image stays pure
+// brand. Same-origin so it resolves on whichever domain served the page.
+const wordmarkImage = (origin, host) =>
+  `${origin}/${String(host).toLowerCase().endsWith("ddbx.us") ? "og-us.png" : "og-uk.png"}`;
 
 // Company logo via Logo.dev (mirrors src/components/company-logo.tsx + the iOS
 // app + the worker card kit). Same publishable token they all ship — safe in
@@ -261,12 +265,12 @@ function bodyHtml(f) {
   </div>`;
 }
 
-function page({ title, description, image, url, largeImage, plain, funnel, gaId, dealId }) {
-  // `plain` is used by the automated X reply. We keep an image so the unfurl
-  // still looks branded, but downgrade to a compact summary card rather than
-  // the full-width large-image card used on normal shares.
+function page({ title, description, image, url, funnel, gaId, dealId }) {
+  // The unfurl is the clean per-market ddbx wordmark, so we always serve the
+  // full-width large-image card — there's no longer a second detail card to
+  // avoid (the old `?card=plain` downgrade existed for the per-trade card).
   const imageMeta = `\n<meta property="og:image" content="${esc(image)}">
-<meta name="twitter:card" content="${plain ? "summary" : (largeImage ? "summary_large_image" : "summary")}">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <meta name="twitter:image" content="${esc(image)}">`;
@@ -350,13 +354,12 @@ function page({ title, description, image, url, largeImage, plain, funnel, gaId,
 }
 
 // Minimal fallback: keep the site's default OG, still funnel humans to the trial.
-function fallback(url, gaId, dealId) {
+function fallback(url, gaId, dealId, origin, host) {
   return page({
     title: "ddbx · Director Dealings",
     description: `Track director and insider share dealings. See the analysis on ddbx.`,
-    image: "https://ddbx.uk/apple-icon-180x180.png",
+    image: wordmarkImage(origin, host),
     url,
-    largeImage: false,
     funnel: null,
     gaId,
     dealId,
@@ -370,8 +373,6 @@ export async function onRequestGet(context) {
   const url = `https://ddbx.uk/t/${id}`;
   // GA4 measurement ID by the host actually serving the page (uk/us/eu).
   const gaId = gaIdForHost(reqUrl.hostname);
-  // `?card=plain` → compact X card (keeps branded image, avoids full-width card).
-  const plain = reqUrl.searchParams.get("card") === "plain";
   const headers = {
     "content-type": "text/html; charset=utf-8",
     "cache-control": "public, s-maxage=3600, max-age=600",
@@ -382,17 +383,16 @@ export async function onRequestGet(context) {
       headers: { accept: "application/json" },
       cf: { cacheTtl: 3600, cacheEverything: true },
     });
-    if (!res.ok) return new Response(fallback(url, gaId, id), { headers });
+    if (!res.ok) return new Response(fallback(url, gaId, id, reqUrl.origin, reqUrl.hostname), { headers });
     const d = await res.json();
     const meta = buildMeta(d, id);
-    // Generated 1200×630 card (Worker route). The card endpoint itself redirects
-    // to the company logo / default image on any failure, so this is always safe.
-    const image = cardImage(id);
+    // Clean per-market ddbx wordmark (light UK/EU, dark US) — not the per-trade card.
+    const image = wordmarkImage(reqUrl.origin, reqUrl.hostname);
     return new Response(
-      page({ title: meta.title, description: meta.description, image, url, largeImage: true, plain, funnel: meta.funnel, gaId, dealId: id }),
+      page({ title: meta.title, description: meta.description, image, url, funnel: meta.funnel, gaId, dealId: id }),
       { headers }
     );
   } catch {
-    return new Response(fallback(url, gaId, id), { headers });
+    return new Response(fallback(url, gaId, id, reqUrl.origin, reqUrl.hostname), { headers });
   }
 }
