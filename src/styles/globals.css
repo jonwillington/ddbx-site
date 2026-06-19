@@ -11,6 +11,18 @@
 
 body {
   font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  /* iOS 26 Safari ignores <meta name="theme-color"> and instead tints the top
+     status bar + bottom toolbar from the background-color of the body (or of a
+     fixed/sticky element at the edge). Our page colour lived only on an inner
+     shell div, so the chrome sampled an unthemed body. Paint the themed colour
+     on the body itself — matching the shell — so both toolbars track the page
+     and re-tint on the light/dark toggle (the class flip is a CSS recalc Safari
+     re-samples). The theme-color meta is kept for older iOS + Android Chrome. */
+  background-color: #f5f0e8;
+}
+
+.dark body {
+  background-color: var(--background);
 }
 
 @keyframes ho-ticker {
