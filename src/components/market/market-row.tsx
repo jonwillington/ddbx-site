@@ -675,8 +675,12 @@ export function MemberClusterRow({
   const countLabel = `${count} ${count === 1 ? "buy" : "buys"}${insiderRole ? ` · ${insiderRole}` : ""}`;
   // Same rounded-md/px-2/text-[11px] chip family as PartyChip / ClusterChip.
   // Lives in the Action column (desktop) / right stack (mobile), not by the name.
+  // Discretion mode hides the rating-derived signal everywhere in the list (the
+  // child rows swap their rating for a "View analysis" nudge — see MarketRow);
+  // the member master row must hide its signal count too, or the collapsed
+  // cluster leaks the very signal we're gating behind the app.
   const SignalChip = ({ className = "" }: { className?: string }) =>
-    signalCount > 0 ? (
+    !DISCRETION_ENABLED && signalCount > 0 ? (
       <span
         className={`inline-flex items-center justify-center whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 ${className}`}
       >

@@ -387,16 +387,16 @@ function TodayDeckCard<W>({
         {showLogo ? (
           <CompanyLogo
             className="ring-1 ring-black/[0.04] dark:ring-white/[0.05] shrink-0"
-            size={48}
+            size={64}
             ticker={dealing.ticker || ""}
           />
         ) : (
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-sm font-semibold text-muted dark:bg-surface-secondary">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-base font-semibold text-muted dark:bg-surface-secondary">
             {tickerLabel.slice(0, 3)}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="text-[22px] font-semibold leading-[1.1] tracking-[-0.03em]">
+          <h3 className="text-[27px] font-semibold leading-[1.05] tracking-[-0.03em]">
             {dealing.company || "—"}
           </h3>
           {insiderBits && (
@@ -421,8 +421,9 @@ function TodayDeckCard<W>({
         )}
       </div>
 
-      {/* Thesis — full, un-truncated (gated under discretion). */}
-      {!DISCRETION_ENABLED && dealing.summary && (
+      {/* One-liner thesis — surfaced even under discretion to make the featured
+          card more engaging (a teaser sliver, not the full analysis). */}
+      {dealing.summary && (
         <p className="mt-3.5 text-[13.5px] leading-relaxed text-foreground/65 dark:text-foreground/65">
           {dealing.summary}
         </p>
@@ -474,7 +475,7 @@ function formatStatDate(iso: string): string {
 const STAGE_TOP_PX = 64; // pin offset — sits flush under the navbar
 const HEADER_ALLOWANCE = 44; // height of the pinned "Today's deals" bar
 const HEADER_FADE_PX = 56; // scroll distance over which the bar fades in/anchors
-const DECK_RISE_PX = 200; // scroll distance over which the card rises to centre
+const DECK_RISE_PX = 120; // scroll distance over which the card rises to centre
 const DOTS_ALLOWANCE = 34; // space the scroller dots take beneath the deck
 const STAGE_BOTTOM_GAP = 96; // room kept below the deck (mobile download bar)
 const MIN_STAGE_PX = 360; // skeleton floor so short viewports still fit a card
@@ -635,7 +636,7 @@ function MobilePinnedTodayDeck<W>({
         );
 
         deckRef.current.style.transform = `translate3d(0, ${(-rise * lift).toFixed(1)}px, 0)`;
-        deckRef.current.style.opacity = (0.4 + 0.6 * rise).toFixed(3);
+        deckRef.current.style.opacity = (0.6 + 0.4 * rise).toFixed(3);
       }
 
       const raw = Math.max(
@@ -806,7 +807,7 @@ function MobilePinnedTodayDeck<W>({
       <div
         ref={deckRef}
         className="sticky z-10 will-change-transform"
-        style={{ bottom: STAGE_BOTTOM_GAP, opacity: 0.4 }}
+        style={{ bottom: STAGE_BOTTOM_GAP, opacity: 0.6 }}
       >
         <div className="relative" style={{ height: cardH || undefined }}>
           {dealings.map((dealing, index) => (
