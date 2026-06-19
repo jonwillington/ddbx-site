@@ -77,6 +77,14 @@ body {
   animation: content-fade-in 320ms ease-out both;
 }
 
+/* vaul adds an ::after to bottom drawers (top:100%, height:200%, background
+   inherit) to mask overscroll past the edge. On the detached, rounded, inset
+   confirm sheet that filler renders as a squared block in the bottom-2 gap.
+   The sheet doesn't scroll, so the filler is pure distortion — drop it. */
+.unlock-confirm-sheet::after {
+  display: none !important;
+}
+
 @keyframes today-hero-item-in {
   from {
     opacity: 0;

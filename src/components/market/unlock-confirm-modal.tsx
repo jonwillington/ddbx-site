@@ -76,7 +76,7 @@ export function UnlockConfirmModal({
       >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/50" />
-          <Drawer.Content className="fixed bottom-2 inset-x-2 z-50 rounded-2xl border border-black/10 bg-background shadow-2xl outline-none dark:border-white/10">
+          <Drawer.Content className="unlock-confirm-sheet fixed bottom-2 inset-x-2 z-50 rounded-2xl border border-black/10 bg-background shadow-2xl outline-none dark:border-white/10">
             <div className="flex shrink-0 justify-center pb-1 pt-3">
               <Drawer.Handle className="!w-10 !bg-black/15 dark:!bg-white/20" />
             </div>
