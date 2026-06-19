@@ -247,11 +247,11 @@ function TodayCard<W>({
         {showLogo ? (
           <CompanyLogo
             className="ring-1 ring-black/[0.04] dark:ring-white/[0.05] shrink-0"
-            size={48}
+            size={56}
             ticker={dealing.ticker || ""}
           />
         ) : (
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-xs font-semibold text-muted dark:bg-surface-secondary">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-sm font-semibold text-muted dark:bg-surface-secondary">
             {tickerLabel.slice(0, 3)}
           </div>
         )}
@@ -282,7 +282,7 @@ function TodayCard<W>({
       {/* The summary is the thesis preview — kept off the teaser surface under
           discretion so the analysis (rating + reasoning) stays an app-only draw. */}
       {!DISCRETION_ENABLED && dealing.summary && (
-        <p className="mt-4 line-clamp-2 text-[13px] leading-relaxed text-foreground/55 dark:text-foreground/60 md:line-clamp-3">
+        <p className="mt-4 text-[13px] leading-relaxed text-foreground/55 dark:text-foreground/60">
           {dealing.summary}
         </p>
       )}
@@ -387,11 +387,11 @@ function TodayDeckCard<W>({
         {showLogo ? (
           <CompanyLogo
             className="ring-1 ring-black/[0.04] dark:ring-white/[0.05] shrink-0"
-            size={64}
+            size={80}
             ticker={dealing.ticker || ""}
           />
         ) : (
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-base font-semibold text-muted dark:bg-surface-secondary">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-lg font-semibold text-muted dark:bg-surface-secondary">
             {tickerLabel.slice(0, 3)}
           </div>
         )}
