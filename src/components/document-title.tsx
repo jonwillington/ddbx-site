@@ -41,9 +41,7 @@ export function DocumentTitle() {
         return `Analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;
       })();
 
-      // Lead with the standardised brand strapline so every shared ddbx link
-      // unfurls with the same claim (mirrors index.html + functions/t/[id].js).
-      return `${siteConfig.tagline}. ${specific}`;
+      return specific;
     })();
     const pageUrl = `${window.location.origin}${pathname}${search}${hash}`;
 

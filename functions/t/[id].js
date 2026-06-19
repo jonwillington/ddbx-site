@@ -20,10 +20,6 @@
 
 const APP_STORE_URL = "https://apps.apple.com/us/app/ddbx-uk/id6762196330";
 const API_BASE = "https://api.ddbx.uk/api";
-// Standardised brand strapline. Led onto every shared-link description so any
-// ddbx link unfurls with the same claim (mirrors index.html, document-title.tsx
-// and the rendered card images in ddbx-data: summary-image.ts `TAGLINE`).
-const TAGLINE = "The world's largest insider market intelligence platform";
 // Generated 1200×630 card served by the Worker. It internally redirects to the
 // company logo / a default image on any failure, so it's always a safe og:image.
 const cardImage = (id) => `${API_BASE}/dealings/${encodeURIComponent(id)}/og.png`;
@@ -185,7 +181,7 @@ function buildMeta(d, id) {
   if (d.trade_date) bits.push(tradeDate(d.trade_date));
   if (rating) bits.push(`Rated ${cap(rating)}`);
   bits.push("see the full analysis on ddbx");
-  const description = `${TAGLINE}. ${bits.join(" · ")}`;
+  const description = bits.join(" · ");
 
   return {
     title,
@@ -246,9 +242,8 @@ function bodyHtml(f) {
     return `<div class="card">
     ${LOGO}
     <h1>Director &amp; insider dealings, rated and analysed</h1>
-    <p class="summary">${esc(TAGLINE)}. Every disclosure scored against a 6-point signal check, with the full thesis, evidence and price history in the app.</p>
+    <p class="summary">Every disclosure scored against a 6-point signal check, with the full thesis, evidence and price history in the app.</p>
     ${CTA}
-    <p class="tagline">${esc(TAGLINE)}</p>
   </div>`;
   }
   const metaBits = [f.role, f.dateStr].filter(Boolean).map(esc).join(" · ");
@@ -262,7 +257,6 @@ function bodyHtml(f) {
     ${f.checklist ? checksHtml(f.checklist) : ""}
     <p class="unlock">Full thesis, supporting evidence &amp; price history — in the app.</p>
     ${CTA}
-    <p class="tagline">${esc(TAGLINE)}</p>
     ${f.ticker ? ATTRIBUTION : ""}
   </div>`;
 }
@@ -359,7 +353,7 @@ function page({ title, description, image, url, largeImage, plain, funnel, gaId,
 function fallback(url, gaId, dealId) {
   return page({
     title: "ddbx · Director Dealings",
-    description: `${TAGLINE}. Track director and insider share dealings. See the analysis on ddbx.`,
+    description: `Track director and insider share dealings. See the analysis on ddbx.`,
     image: "https://ddbx.uk/apple-icon-180x180.png",
     url,
     largeImage: false,
