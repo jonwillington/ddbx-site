@@ -44,6 +44,18 @@
       content="The world's largest insider market intelligence platform. Analysed UK director dealings and insider transactions, updated throughout the trading day."
       name="description"
     />
+    <!-- Open Graph / Twitter share image. The ddbx wordmark is the default
+         (light, UK); functions/_middleware.js swaps it to the dark variant
+         (og-us.png) on ddbx.us, since every domain serves this same static
+         shell to crawlers. Per-trade /t/{id} links set their own image. -->
+    <meta content="website" property="og:type" />
+    <meta content="https://ddbx.uk/og-uk.png" property="og:image" />
+    <meta content="1200" property="og:image:width" />
+    <meta content="675" property="og:image:height" />
+    <meta content="ddbx — insider market intelligence" property="og:image:alt" />
+    <meta content="summary_large_image" name="twitter:card" />
+    <meta content="@ddbxuk" name="twitter:site" />
+    <meta content="https://ddbx.uk/og-uk.png" name="twitter:image" />
     <meta
       key="viewport"
       content="viewport-fit=cover, width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"

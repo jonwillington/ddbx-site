@@ -18,9 +18,11 @@ const API_BASE = "https://api.ddbx.uk/api";
 // ddbx link unfurls with the same claim (mirrors index.html, document-title.tsx
 // and the rendered card images in ddbx-data: summary-image.ts `TAGLINE`).
 const TAGLINE = "The world's largest insider market intelligence platform";
-// Generated 1200×630 card served by the Worker. It internally redirects to the
-// company logo / a default image on any failure, so it's always a safe og:image.
-const cardImage = (id) => `${API_BASE}/dealings/${encodeURIComponent(id)}/og.png`;
+// Shared links unfurl with the ddbx wordmark, by market: light on ddbx.uk (the
+// default), dark on ddbx.us. Same-origin so it resolves on whichever domain
+// served the link. Mirrors the homepage rule in functions/_middleware.js.
+const ogImageFor = (origin, host) =>
+  `${origin}/${host.endsWith("ddbx.us") ? "og-us.png" : "og-uk.png"}`;
 
 function esc(s) {
   return String(s ?? "")
@@ -140,23 +142,27 @@ function page({ title, description, image, url, largeImage, plain }) {
 </html>`;
 }
 
-// Minimal fallback: keep the site's default OG, still send humans to the store.
-function fallback(url) {
+// Minimal fallback: keep the site's default OG (wordmark), still send humans to
+// the store.
+function fallback(url, image) {
   return page({
     title: "ddbx · Director Dealings",
     description: `${TAGLINE}. Track director and insider share dealings. See the analysis on ddbx.`,
-    image: "https://ddbx.uk/apple-icon-180x180.png",
+    image,
     url,
-    largeImage: false,
+    largeImage: true,
   });
 }
 
 export async function onRequestGet(context) {
   const { params, request } = context;
   const id = params.id;
+  const reqUrl = new URL(request.url);
   const url = `https://ddbx.uk/t/${id}`;
+  // Brand the unfurl with the ddbx wordmark, by market (light UK / dark US).
+  const image = ogImageFor(reqUrl.origin, reqUrl.hostname.toLowerCase());
   // `?card=plain` → compact X card (keeps branded image, avoids full-width card).
-  const plain = new URL(request.url).searchParams.get("card") === "plain";
+  const plain = reqUrl.searchParams.get("card") === "plain";
   const headers = {
     "content-type": "text/html; charset=utf-8",
     "cache-control": "public, s-maxage=3600, max-age=600",
@@ -167,17 +173,14 @@ export async function onRequestGet(context) {
       headers: { accept: "application/json" },
       cf: { cacheTtl: 3600, cacheEverything: true },
     });
-    if (!res.ok) return new Response(fallback(url), { headers });
+    if (!res.ok) return new Response(fallback(url, image), { headers });
     const d = await res.json();
     const meta = buildMeta(d, id);
-    // Generated 1200×630 card (Worker route). The card endpoint itself redirects
-    // to the company logo / default image on any failure, so this is always safe.
-    const image = cardImage(id);
     return new Response(
       page({ title: meta.title, description: meta.description, image, url, largeImage: true, plain }),
       { headers }
     );
   } catch {
-    return new Response(fallback(url), { headers });
+    return new Response(fallback(url, image), { headers });
   }
 }
