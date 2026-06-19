@@ -15,6 +15,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { DailySummarySheet } from "./daily-summary-banner";
 import { MarketChartModeToggle } from "./market-chart-mode-toggle";
 import { MarketDetailDrawer } from "./market-detail-drawer";
+import { UnlockConfirmModal } from "./unlock-confirm-modal";
 import { MarketExplainerExperience } from "./market-explainer-experience";
 import { MarketExplainerSheet } from "./market-explainer-sheet";
 import { MarketFilterBar, type MarketViewMode } from "./market-filter-bar";
@@ -78,7 +79,7 @@ const TODAY_SKIPPED_CAP = 8;
  *  an "X more deals" row that nudges toward the app. */
 const REAL_HISTORY_DAYS = 2;
 const FIRST_UNLOCK_CONFIRM =
-  "Use today's free full analysis on this filing? You can unlock one full drawer per day on the web.";
+  "You can unlock one full analysis drawer per day on the web. Open this filing's full analysis now?";
 
 /** The full shell that every market page mounts. Reads everything from
  *  MarketConfig — adding a new market means writing a new MarketConfig and
@@ -1032,17 +1033,20 @@ export function MarketPage<W>({
     dayKey < todayIso &&
     !recentRealDays.has(dayKey);
 
+  // Key of the filing awaiting the "spend today's free unlock" confirmation.
+  // Non-null drives our own confirm sheet/modal (UnlockConfirmModal) in place
+  // of a native window.confirm; null when nothing is pending.
+  const [pendingUnlockKey, setPendingUnlockKey] = useState<string | null>(null);
   const openDealing = useCallback(
     (d: MarketDealing<W>) => {
       if (
         previewMode &&
         unlocksLeftToday > 0 &&
-        (gating?.viewedCount ?? 0) === 0 &&
-        typeof window !== "undefined"
+        (gating?.viewedCount ?? 0) === 0
       ) {
-        const ok = window.confirm(FIRST_UNLOCK_CONFIRM);
+        setPendingUnlockKey(d.key);
 
-        if (!ok) return;
+        return;
       }
       setSelectedKey(d.key);
     },
@@ -1636,6 +1640,18 @@ export function MarketPage<W>({
         showLogo={logosEnabled}
         onClose={() => setSelectedKey(null)}
         onSelectDealing={openDealing}
+      />
+
+      <UnlockConfirmModal
+        message={FIRST_UNLOCK_CONFIRM}
+        open={pendingUnlockKey != null}
+        onCancel={() => setPendingUnlockKey(null)}
+        onConfirm={() => {
+          const key = pendingUnlockKey;
+
+          setPendingUnlockKey(null);
+          if (key) setSelectedKey(key);
+        }}
       />
 
       {/* "What are we looking for?" — checklist markets get the full-screen
