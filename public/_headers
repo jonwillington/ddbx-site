@@ -3,7 +3,7 @@
 # currently uses inline bootstrap/style blocks). Tighten further once those
 # are nonce/hash-based.
 /*
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://static.ads-twitter.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; connect-src 'self' https://api.ddbx.uk https://*.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://analytics.twitter.com https://t.co https://static.ads-twitter.com; frame-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; form-action 'self'; worker-src 'self' blob:; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://static.ads-twitter.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; connect-src 'self' https://api.ddbx.uk https://*.cartocdn.com https://*.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://analytics.twitter.com https://t.co https://static.ads-twitter.com; frame-src 'none'; upgrade-insecure-requests
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
