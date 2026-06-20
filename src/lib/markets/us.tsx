@@ -611,7 +611,11 @@ function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
   );
 }
 
-function UsDummyDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
+function UsDummyDetailBody({
+  dealing,
+}: {
+  dealing: MarketDealing<UsRowGroup>;
+}) {
   const group = dealing.raw;
   const dummyDealing: MarketDealing<UsRowGroup> = {
     ...dealing,
@@ -635,12 +639,12 @@ function useUsGating(): GatingInfo {
 
 const UsAnalysisOverlay = () => (
   <BlurredAnalysisOverlay
-    body="You've used today's free web unlock. Open the app for full analysis on every Form 4 purchase."
     benefits={[
       "Full filing-level thesis, evidence, and risk callouts",
       "See footnotes, ownership context, and signal drivers",
       "Track insiders and follow new buys in real time",
     ]}
+    body="You've used today's free web unlock. Open the app for full analysis on every Form 4 purchase."
   />
 );
 
@@ -651,8 +655,9 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   title: "US Form 4 (preview)",
   documentTitle: "ddbx · Director Dealings — US Form 4 Filings",
   // US-market copy uses US English (analyzed, not analysed).
+  heroHeadline: "Start following the money.",
   heroSubhead:
-    "Follow the money. Every US insider purchase on Form 4, rated as it lands.",
+    "Every open-market stock purchase a US insider files on Form 4, screened and rated the moment it lands, so you catch the buys that matter.",
   session: NYSE,
   holidays: US_EXCHANGE_HOLIDAYS,
   description: (

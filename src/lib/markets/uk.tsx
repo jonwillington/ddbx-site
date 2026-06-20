@@ -318,12 +318,12 @@ function useUkGating(): GatingInfo {
 
 const UkAnalysisOverlay = () => (
   <BlurredAnalysisOverlay
-    body="You've used today's free web unlock. The app gives you the full breakdown on every UK filing."
     benefits={[
       "Full AI thesis, evidence, and risk breakdown on every filing",
       "Real-time alerts when a director buys",
       "Track each director's hit-rate across UK names",
     ]}
+    body="You've used today's free web unlock. The app gives you the full breakdown on every UK filing."
   />
 );
 
@@ -333,8 +333,9 @@ export const UkMarket: MarketConfig<Dealing> = {
   id: "uk",
   title: "UK director dealings (preview)",
   documentTitle: "ddbx · Director Dealings — UK Insider Transactions",
+  heroHeadline: "Start following the money.",
   heroSubhead:
-    "Follow the money. Every UK director purchase, rated as it lands.",
+    "Every open-market share purchase by a UK company director, screened and rated the moment it's filed, so you catch the buys that matter as they land.",
   session: LSE,
   holidays: UK_BANK_HOLIDAYS_SOURCE,
   description: (

@@ -17,7 +17,7 @@ const TICKER_LOGO_DOMAIN: Record<string, string> = {
   "BRK.A": "berkshirehathaway.com",
 };
 
-function logoUrl(ticker: string, sizePx: number): string {
+export function logoUrl(ticker: string, sizePx: number): string {
   // Keep the LSE `.L` suffix in the URL — Logo.dev's database is keyed on
   // exchange-qualified symbols for UK rows. Stripping it returns either a
   // generic placeholder (HSBA, ULVR, LLOY, BARC) or the wrong company
@@ -27,9 +27,11 @@ function logoUrl(ticker: string, sizePx: number): string {
   const pixelSize = Math.max(48, Math.round(sizePx * 3));
 
   const domain = TICKER_LOGO_DOMAIN[ticker.toUpperCase()];
+
   if (domain) {
     return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=${pixelSize}&format=png&retina=true`;
   }
+
   return `https://img.logo.dev/ticker/${encodeURIComponent(ticker)}?token=${LOGO_DEV_TOKEN}&size=${pixelSize}&format=png&retina=true`;
 }
 

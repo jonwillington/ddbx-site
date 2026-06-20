@@ -1147,8 +1147,10 @@ export function MarketPage<W>({
             renders via <BetaTag/> in App.tsx so it persists across route
             changes instead of remounting with each MarketHero. */}
         <MarketHero
+          hasRightDrawer={hasNewsSource || supportsChannelPerf}
           hasTopNotice={!!config.topNotice}
           headline={config.heroHeadline}
+          marketId={config.id}
           marketLabel={config.marketLabel}
           primaryCtaHref={APP_STORE_URLS[config.id]}
           reportLabel={monthShort(latestRecapMonth)}
