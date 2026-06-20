@@ -80,7 +80,7 @@ export function HeroNotificationStack({
           100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
         }
 
-        .hns-stack { position: relative; height: 226px; }
+        .hns-stack { position: relative; height: 176px; }
         .hns-item {
           position: absolute;
           left: 50%;
