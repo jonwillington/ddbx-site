@@ -4,22 +4,20 @@ import { useLocation } from "react-router-dom";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { MarketSwitcher } from "@/components/market-switcher";
+import { APP_STORE_URLS, appStoreUrlForMarketId } from "@/lib/app-store";
 import {
   marketDashboardPath,
   marketForPath,
   marketHref,
-  marketPerformancePath,
 } from "@/lib/markets/registry";
 
 export const Navbar = () => {
   const location = useLocation();
   const market = marketForPath(location.pathname);
-  // Dashboard and Performance both route within the active market. The
-  // dashboard sits at the market's root (/, /us, /se); performance lives
-  // under it (/portfolio for UK historical reasons, /:market/performance
-  // otherwise).
+  // Dashboard stays in-app; secondary nav action now points to the market's
+  // app listing (with UK fallback where a market-specific listing isn't live).
   const dashboardHref = marketHref(market, marketDashboardPath(market));
-  const performanceHref = marketHref(market, marketPerformancePath(market));
+  const downloadHref = appStoreUrlForMarketId(market.id) ?? APP_STORE_URLS.uk;
 
   const navItems = [
     {
@@ -29,10 +27,9 @@ export const Navbar = () => {
         p === dashboardHref || (market.id === "uk" && p === "/"),
     },
     {
-      label: "Performance",
-      href: performanceHref,
-      match: (p: string) =>
-        p === performanceHref || (market.id === "uk" && p === "/portfolio"),
+      label: "Download app",
+      href: downloadHref,
+      external: true,
     },
   ];
 
@@ -50,18 +47,24 @@ export const Navbar = () => {
           <MarketSwitcher />
           <ul className="hidden gap-4 md:flex">
             {navItems.map((item) => {
-              const active = item.match(location.pathname);
+              const active = item.match?.(location.pathname) ?? false;
 
               return (
                 <li key={item.href}>
                   <a
-                    className={clsx(
-                      "text-sm transition-colors",
-                      active
-                        ? "text-[#5a4128] font-medium"
-                        : "text-foreground hover:text-[#5a4128]",
-                    )}
+                    className={clsx("text-sm transition-colors", {
+                      "text-[#5a4128] dark:text-[#d8c4af] font-medium":
+                        active && !item.external,
+                      "text-foreground hover:text-[#5a4128]":
+                        !active || item.external,
+                    })}
+                    data-ga-event={
+                      item.external ? "cta_nav_download_app" : undefined
+                    }
+                    data-ga-label={item.external ? `Nav ${market.id}` : undefined}
                     href={item.href}
+                    rel={item.external ? "noopener noreferrer" : undefined}
+                    target={item.external ? "_blank" : undefined}
                   >
                     {item.label}
                   </a>

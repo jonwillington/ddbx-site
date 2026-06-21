@@ -26,6 +26,34 @@ const TRIGGER_CLASS =
   "flex items-center gap-1.5 rounded-full border border-separator/70 bg-surface/60 px-2 py-1 text-sm text-foreground/80 hover:bg-surface transition-colors";
 
 type Section = { region: MarketRegion; markets: MarketRegistryEntry[] };
+type ThemeChoice = "light" | "dark";
+
+function currentThemeChoice(): ThemeChoice {
+  if (typeof window === "undefined") return "dark";
+  const saved = window.localStorage.getItem("theme");
+
+  if (saved === "light" || saved === "dark") return saved;
+  if (document.documentElement.classList.contains("dark")) return "dark";
+
+  return "light";
+}
+
+function withThemeParam(href: string): string {
+  if (typeof window === "undefined") return href;
+  try {
+    const url = new URL(href, window.location.origin);
+
+    url.searchParams.set("theme", currentThemeChoice());
+    // Keep relative links relative for same-origin route hops.
+    const relative =
+      url.origin === window.location.origin &&
+      (href.startsWith("/") || !/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(href));
+
+    return relative ? `${url.pathname}${url.search}${url.hash}` : url.toString();
+  } catch {
+    return href;
+  }
+}
 
 /** Market picker in the navbar. Desktop gets an anchored dropdown; on
  *  mobile (< lg, matching the filter bar's sheet breakpoint) it opens a
@@ -220,7 +248,7 @@ function MarketOptions({
           {section.markets.map((m) => {
             const isCurrent = m.code === current.code;
             const isLoading = loadingCode === m.code;
-            const href = marketHref(m, marketDashboardPath(m));
+            const href = withThemeParam(marketHref(m, marketDashboardPath(m)));
 
             return (
               <a

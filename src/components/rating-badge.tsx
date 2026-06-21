@@ -26,7 +26,7 @@ const LABELS: Record<BadgeRating, string> = {
 
 // Three visual tiers mirroring the iOS app (Theme.ratingColor + ratingBadge):
 //   significant → FILLED: solid brown bg, white label, filled check, no border
-//   noteworthy  → OUTLINED: transparent bg, brown label + 1px border, outline check
+//   noteworthy  → OUTLINED: transparent bg, brown label + soft (40%) border, outline check
 //   minor/routine/skipped → soft tint: 12% bg, no icon, no border
 // Base colours match iOS: sig #6b2f0a / dark #e8a878; note #4a3520 / dark #c4a882;
 // minor #7e766c; routine #b0a898.
@@ -34,7 +34,7 @@ const STYLES: Record<BadgeRating, string> = {
   significant:
     "bg-[#6b2f0a] text-white border-transparent dark:bg-[#e8a878] dark:text-[#3a1d08]",
   noteworthy:
-    "bg-transparent text-[#4a3520] border-[#4a3520] dark:text-[#c4a882] dark:border-[#c4a882]",
+    "bg-transparent text-[#4a3520] border-[#4a3520]/40 dark:text-[#c4a882] dark:border-[#c4a882]/40",
   minor: "bg-[#7e766c]/12 text-[#7e766c] border-transparent font-normal",
   routine: "bg-[#b0a898]/12 text-[#b0a898] border-transparent font-normal",
   skipped:

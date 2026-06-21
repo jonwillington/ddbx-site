@@ -1574,15 +1574,24 @@ export function MarketPage<W>({
                                     renderDayRow(collapsedDeals[0])}
                                   {collapsedDeals.length > 1 && (
                                     <a
-                                      aria-label={`${collapsedDeals.length - 1} more deals recorded on this day — view in the app`}
+                                      aria-label={`${collapsedDeals.length - 1} more ${
+                                        config.clusterByPerson
+                                          ? "trades"
+                                          : "deals"
+                                      } recorded on this day — view in the app`}
                                       className="flex items-center justify-center gap-1 px-4 py-2.5 text-[12px] font-medium text-[#5a4128] transition-colors hover:bg-[#5a4128]/[0.05] dark:text-[#ad9479] dark:hover:bg-[#ad9479]/[0.06]"
                                       data-ga-event="cta_collapsed_day_view_in_app"
-                                      data-ga-label={`${collapsedDeals.length - 1} more deals`}
+                                      data-ga-label={`${collapsedDeals.length - 1} more ${
+                                        config.clusterByPerson
+                                          ? "trades"
+                                          : "deals"
+                                      }`}
                                       href={channelAppHref}
                                       rel="noreferrer"
                                       target="_blank"
                                     >
-                                      + {collapsedDeals.length - 1} more...
+                                      + {collapsedDeals.length - 1} more{" "}
+                                      {config.clusterByPerson ? "trades" : "deals"}...
                                     </a>
                                   )}
                                 </>

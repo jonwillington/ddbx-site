@@ -38,6 +38,15 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
   useEffect(() => {
     const root = document.documentElement;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const url = new URL(window.location.href);
+    const urlTheme = url.searchParams.get("theme");
+
+    if (urlTheme === "light" || urlTheme === "dark") {
+      localStorage.setItem("theme", urlTheme);
+      // Consume the transfer param once so internal links stay clean.
+      url.searchParams.delete("theme");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    }
 
     // No saved choice → follow the OS. Once the user toggles, the saved
     // value wins and OS changes are ignored (see the guard in onChange).
