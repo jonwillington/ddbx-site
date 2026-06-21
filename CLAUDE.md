@@ -22,6 +22,16 @@ Cloned alongside this one in the same parent dir:
 
 See `~/CLAUDE.md` for the system-wide map.
 
+## Editorial house style source
+
+Canonical house-style writing rules are defined in
+`../ddbx-data/worker/llm/prompts.ts` as `HOUSE_STYLE_RULES`.
+
+When changing reader-facing copy constraints in this repo, reference that
+constant so wording stays aligned with API-generated recaps and analysis copy.
+If you need to change the rules themselves, update `ddbx-data` first, then
+apply matching wording updates here.
+
 ## URLs
 
 | Purpose | URL |

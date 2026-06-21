@@ -34,8 +34,8 @@ export function buildMarketFaq({
       question: "Is this financial advice?",
       answer: (
         <>
-          No. ddbx rates the <em>conviction</em> behind insider buys — how well
-          each one clears our six-point check — and shows the reasoning.
+          No. ddbx rates the <em>conviction</em> behind insider buys (how well
+          each one clears our six-point check) and shows the reasoning.
           It&apos;s information, never a recommendation, and never a guarantee.
           What you do with it is your call.
         </>
@@ -46,9 +46,9 @@ export function buildMarketFaq({
       answer: (
         <>
           Every open-market purchase by a {insiderTerm}, screened and rated the
-          moment it&apos;s filed {filingPhrase} — with the full thesis, the
-          evidence behind the rating, the risks, and the price history. You see
-          the buys as they land, not when they become news.
+          moment it&apos;s filed {filingPhrase}. You get the full thesis, the
+          evidence behind the rating, the risks, and the price history, and you
+          see the buys as they land, not when they become news.
         </>
       ),
     },
@@ -57,12 +57,12 @@ export function buildMarketFaq({
       answer: (
         <>
           They tell you the kind of price the insider bought <em>into</em>. A{" "}
-          <strong>Contrarian</strong> buy is one made into weakness — well below
+          <strong>Contrarian</strong> buy is one made into weakness, well below
           the recent high, while the crowd is selling. A{" "}
           <strong>Momentum</strong> buy is one made into strength, near a rising
           high. Contrarian is the one to watch: an insider buying when others
-          are running, who then turns out right, is the sharpest read we tag —
-          though it&apos;s a signal of conviction, not a promise it pays off.
+          are running, who then turns out right, is the sharpest read we tag. It
+          signals conviction, not a promise it pays off.
         </>
       ),
     },
@@ -70,14 +70,14 @@ export function buildMarketFaq({
       question: "Is it free?",
       answer: hasApp ? (
         <>
-          The app is free to start — a 7-day trial, cancel anytime. You
+          The app is free to start, a 7-day trial you can cancel anytime. You
           don&apos;t need an account to look around the web, and the first full
           analysis each day is free here too.
         </>
       ) : (
         <>
-          Yes — this market is free to browse on the web while it&apos;s in
-          beta. No account needed. A dedicated app for it is on the way.
+          Yes. This market is free to browse on the web while it&apos;s in beta.
+          No account needed, and a dedicated app for it is on the way.
         </>
       ),
     },
@@ -90,8 +90,8 @@ export function buildMarketFaq({
         </>
       ) : (
         <>
-          We publish each buy as it&apos;s filed, throughout the day — so the
-          list is always current. Real-time push alerts arrive with this
+          We publish each buy as it&apos;s filed, throughout the day, so the list
+          is always current. Real-time push alerts arrive with this
           market&apos;s app.
         </>
       ),
@@ -100,7 +100,7 @@ export function buildMarketFaq({
       question: "Do you promise returns?",
       answer: (
         <>
-          No. We surface the signal and show our working; we don&apos;t promise
+          No. We surface the signal and show our working. We don&apos;t promise
           a buy will go up, and a high rating is conviction in the <em>buy</em>,
           not a forecast of the price. Insider buying is one input, not a sure
           thing.
