@@ -24,6 +24,7 @@ import type {
 import type { EuDealing } from "@/types/ddbx";
 
 import { defaultRatingHeroFilters, isSignalDealing } from "@/lib/markets/types";
+import { buildMarketFaq } from "@/lib/markets/faq";
 import { api } from "@/lib/api";
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 import { AnalysisSection } from "@/components/analysis-section";
@@ -580,7 +581,12 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   title: "Sweden director dealings (preview)",
   documentTitle: "ddbx · Director Dealings — Swedish PDMR Disclosures",
   heroSubhead:
-    "Follow the money. Every Swedish insider purchase, rated as it lands.",
+    "Follow the money. Every Swedish insider purchase, rated as it lands — so you see it as it's filed, not when it's news.",
+  faq: buildMarketFaq({
+    insiderTerm: "Swedish insider",
+    filingPhrase: "to Finansinspektionen",
+    hasApp: false,
+  }),
   session: NASDAQ_STOCKHOLM,
   holidays: SE_EXCHANGE_HOLIDAYS,
   description: (

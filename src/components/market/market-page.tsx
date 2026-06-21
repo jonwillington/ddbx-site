@@ -32,6 +32,7 @@ import {
 } from "./market-row";
 import { type SparkBar } from "./market-row-spark";
 import { MarketChannel } from "./market-channel";
+import { MarketFaq } from "./market-faq";
 import { MarketTodayEmpty } from "./market-today-empty";
 import { MarketTodayHero } from "./market-today-hero";
 import {
@@ -1612,6 +1613,8 @@ export function MarketPage<W>({
             <div className="text-[10px] opacity-70">{stats.debugBreakdown}</div>
           </div>
         )}
+
+        <MarketFaq items={config.faq} />
       </section>
 
       <MarketChannel

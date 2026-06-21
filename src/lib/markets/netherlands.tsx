@@ -27,6 +27,7 @@ import type {
 
 import { type EuRowGroup, groupRows, isEuSignal } from "@/lib/markets/sweden";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
+import { buildMarketFaq } from "@/lib/markets/faq";
 import { AnalysisSection } from "@/components/analysis-section";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
@@ -491,7 +492,12 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   title: "Netherlands director dealings (preview)",
   documentTitle: "ddbx · Director Dealings — Dutch PDMR Disclosures",
   heroSubhead:
-    "Follow the money. Every Dutch insider purchase, rated as it lands.",
+    "Follow the money. Every Dutch insider purchase, rated as it lands — so you see it as it's filed, not when it's news.",
+  faq: buildMarketFaq({
+    insiderTerm: "Dutch insider",
+    filingPhrase: "to the AFM",
+    hasApp: false,
+  }),
   session: EURONEXT_AMSTERDAM,
   holidays: NL_EXCHANGE_HOLIDAYS,
   description: (

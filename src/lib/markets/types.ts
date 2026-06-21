@@ -27,6 +27,9 @@ import type {
   RatingChecklist,
 } from "@/types/ddbx";
 
+/** One question/answer pair in a market's foot-of-page FAQ. */
+export type MarketFaqItem = { question: ReactNode; answer: ReactNode };
+
 /** Triage label string. Markets are free to use their own taxonomies — the
  *  hero / today card just renders whatever the adapter produces. */
 export type Tone = "buy" | "sell" | "plan" | "grant" | "exercise" | "neutral";
@@ -279,6 +282,11 @@ export interface MarketConfig<W = unknown> {
   /** One-line hero subhead for first-time visitors — what the product does
    *  for this market. Rendered under the headline on md+ viewports only. */
   heroSubhead?: ReactNode;
+  /** Optional objection-handling FAQ rendered at the foot of the market page,
+   *  above the footer. Doubles as the page's no-guarantee surface — the
+   *  "is this advice?" / "do you promise returns?" answers live here. Build
+   *  with `buildMarketFaq()` so the wording stays consistent across markets. */
+  faq?: MarketFaqItem[];
   /** Explainer paragraph under the title. Markdown-y JSX is fine. */
   description: ReactNode;
   /** Optional override for the "What are we looking for?" sheet body. Markets

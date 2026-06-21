@@ -19,6 +19,7 @@ import { InformationCircleIcon as InformationCircleOutlineIcon } from "@heroicon
 
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
+import { buildMarketFaq } from "@/lib/markets/faq";
 import { AnalysisSection } from "@/components/analysis-section";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
@@ -335,7 +336,12 @@ export const UkMarket: MarketConfig<Dealing> = {
   documentTitle: "ddbx · Director Dealings — UK Insider Transactions",
   heroHeadline: "Start following the money.",
   heroSubhead:
-    "Every open-market share purchase by a UK company director, screened and rated the moment it's filed, so you catch the buys that matter as they land.",
+    "Every open-market share purchase by a UK company director, screened and rated the moment it's filed — so you're early to the ones that matter, not reading about them in the news.",
+  faq: buildMarketFaq({
+    insiderTerm: "UK company director",
+    filingPhrase: "with the LSE",
+    hasApp: true,
+  }),
   session: LSE,
   holidays: UK_BANK_HOLIDAYS_SOURCE,
   description: (

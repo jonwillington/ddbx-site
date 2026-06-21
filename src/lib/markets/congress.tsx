@@ -4,6 +4,7 @@
 // size/options) rather than a Rating. Buys only — sales/junk are dropped
 // server-side. Member portraits (public-domain) show in the detail drawer.
 import type { GatingInfo, MarketConfig, MarketDealing, Tone } from "@/lib/markets/types";
+import { buildMarketFaq } from "@/lib/markets/faq";
 import type { Analysis, GovDealing } from "@/types/ddbx";
 import type { PriceFormat } from "@/components/position-card";
 
@@ -826,7 +827,12 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   ),
   // US-market copy uses US English.
   heroSubhead:
-    "Follow the money. Every US Congress STOCK Act purchase, rated as it lands.",
+    "Follow the money. Every US Congress STOCK Act purchase, rated as it lands — so you see it as it's filed, not when it's news.",
+  faq: buildMarketFaq({
+    insiderTerm: "member of Congress",
+    filingPhrase: "in a STOCK Act report",
+    hasApp: true,
+  }),
   description: (
     <>
       US Congress <strong className="text-foreground/75">STOCK Act</strong> Periodic

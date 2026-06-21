@@ -26,6 +26,7 @@ import type {
 import { useEffect, useMemo, useState } from "react";
 
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
+import { buildMarketFaq } from "@/lib/markets/faq";
 import { AnalysisSection } from "@/components/analysis-section";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
@@ -657,7 +658,12 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   // US-market copy uses US English (analyzed, not analysed).
   heroHeadline: "Start following the money.",
   heroSubhead:
-    "Every open-market stock purchase a US insider files on Form 4, screened and rated the moment it lands, so you catch the buys that matter.",
+    "Every open-market stock purchase a US insider files on Form 4, screened and rated the moment it lands — so you're early to the ones that matter, not reading about them in the news.",
+  faq: buildMarketFaq({
+    insiderTerm: "US insider",
+    filingPhrase: "on a Form 4",
+    hasApp: true,
+  }),
   session: NYSE,
   holidays: US_EXCHANGE_HOLIDAYS,
   description: (
