@@ -60,7 +60,7 @@ import {
   slugToMonth,
 } from "@/components/monthly/monthly-utils";
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
-import { APP_STORE_URLS } from "@/lib/app-store";
+import { APP_STORE_URLS, appStoreUrlForMarketId } from "@/lib/app-store";
 import { buildChannelPerformance } from "@/lib/performance/channel-summary";
 import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
@@ -1197,7 +1197,7 @@ export function MarketPage<W>({
           headline={config.heroHeadline}
           marketId={config.id}
           marketLabel={config.marketLabel}
-          primaryCtaHref={APP_STORE_URLS[config.id]}
+          primaryCtaHref={appStoreUrlForMarketId(config.id)}
           reportLabel={monthShort(latestRecapMonth)}
           subhead={config.heroSubhead}
           todayCount={todayDealings.length}

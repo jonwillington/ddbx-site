@@ -141,14 +141,74 @@ const US_DEALS: HeroDeal[] = [
   },
 ];
 
+// Congress (`usg`) ships inside the US app, so it reuses the US app icon/label.
+// Unlike the corporate markets — which beacon the company HQ — the interesting
+// geo here is the *member's home state*, so each pin sits on the state the
+// Representative/Senator represents (and that spreads pins across the map rather
+// than clustering them on company HQs or stacking them all on DC). Dollar bands
+// (not exact fills) match how Periodic Transaction Reports disclose.
+const USG_DEALS: HeroDeal[] = [
+  {
+    id: "nvda",
+    ticker: "NVDA",
+    icon: "/ios-app-icon-us.png",
+    app: "ddbx.us",
+    tag: "NEW FILING",
+    lead: "NVDA · NVIDIA",
+    body: "Senator from Texas disclosed a $250k–$500k buy, filed 38 days after the trade.",
+    city: "Texas",
+    lng: -97.743,
+    lat: 30.267,
+  },
+  {
+    id: "lmt",
+    ticker: "LMT",
+    icon: "/ios-app-icon-us.png",
+    app: "ddbx.us",
+    tag: "SIGNAL",
+    lead: "LMT · Lockheed Martin",
+    body: "Virginia Representative on Armed Services bought $15k–$50k — a committee-jurisdiction overlap.",
+    city: "Virginia",
+    lng: -77.434,
+    lat: 37.541,
+  },
+  {
+    id: "jpm",
+    ticker: "JPM",
+    icon: "/ios-app-icon-us.png",
+    app: "ddbx.us",
+    tag: "JUST IN",
+    lead: "JPM · JPMorgan",
+    body: "New York Representative on Financial Services disclosed a $50k–$100k purchase.",
+    city: "New York",
+    lng: -74.009,
+    lat: 40.708,
+  },
+  {
+    id: "msft",
+    ticker: "MSFT",
+    icon: "/ios-app-icon-us.png",
+    app: "ddbx.us",
+    tag: "BREAKING",
+    lead: "MSFT · Microsoft",
+    body: "Florida Senator's spouse bought $100k–$250k, the family's largest tech position this year.",
+    city: "Florida",
+    lng: -81.686,
+    lat: 27.766,
+  },
+];
+
 const UK_MAP: HeroMapConfig = { center: [-1.9, 53.0], zoom: 5.4, flyZoom: 8.5 };
 const US_MAP: HeroMapConfig = { center: [-97, 39], zoom: 3.1, flyZoom: 5.6 };
 
-/** Anything other than "us" falls back to UK (matches the notification stack). */
+/** Congress trades sit on US companies, so it shares the US-wide map view. */
 export function dealsForMarket(marketId?: string): HeroDeal[] {
-  return marketId === "us" ? US_DEALS : UK_DEALS;
+  if (marketId === "us") return US_DEALS;
+  if (marketId === "usg") return USG_DEALS;
+
+  return UK_DEALS;
 }
 
 export function mapConfigForMarket(marketId?: string): HeroMapConfig {
-  return marketId === "us" ? US_MAP : UK_MAP;
+  return marketId === "us" || marketId === "usg" ? US_MAP : UK_MAP;
 }

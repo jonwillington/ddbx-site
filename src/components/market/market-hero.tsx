@@ -135,10 +135,11 @@ export function MarketHero({
   );
   const displaySubhead = headline ? subhead : undefined;
 
-  /** App markets (UK, US) get the two-column desktop hero: text on the left,
-   *  the notification app-showcase panel on the right. Markets without an App
-   *  Store link (NL, SE, Congress) keep the original centred layout. Mobile is
-   *  centred on every market — the showcase panel is desktop-only. */
+  /** App markets (UK, US, Congress — which ships inside the US app) get the
+   *  two-column desktop hero: text on the left, the notification app-showcase
+   *  panel on the right. Markets without an App Store link (NL, SE) keep the
+   *  original centred layout. Mobile is centred on every market — the showcase
+   *  panel is desktop-only. */
   const appShowcase = !!primaryCtaHref;
   // Shared deal-radar clock — drives the full-bleed background map and the
   // foreground notification stack from one source so they stay in lockstep.
