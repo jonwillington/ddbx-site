@@ -49,6 +49,8 @@ export function AppStoreBadge({
     <a
       aria-label="Download on the App Store"
       className={`inline-block opacity-80 hover:opacity-100 transition-opacity ${className}`}
+      data-ga-event="cta_download_app_store_badge"
+      data-ga-label="Download on the App Store"
       href={APP_STORE_URL}
       rel="noopener noreferrer"
       target="_blank"

@@ -44,11 +44,15 @@ declare global {
     };
     __DDBX_GA_MEASUREMENT_ID?: string;
     __DDBX_GA_BOOTSTRAPPED?: boolean;
+    __DDBX_GA_CLICK_TRACKING_BOOTSTRAPPED?: boolean;
     __DDBX_TWQ_BOOTSTRAPPED?: boolean;
   }
 }
 
 type ConsentStatus = "accepted" | "unknown";
+
+const CLICK_TARGET_SELECTOR =
+  "[data-ga-event],a[href],button,summary,[role='button'],input[type='button'],input[type='submit']";
 
 function readStored(): ConsentStatus {
   if (typeof window === "undefined") return "unknown";
@@ -86,6 +90,7 @@ export function bootstrapAnalytics(): void {
   window.gtag("js", new Date());
   window.gtag("config", measurementId, { send_page_view: false });
   window.gtag("set", "user_properties", { market, host });
+  bootstrapClickTracking();
   // The initial page_view is fired by DocumentTitle's mount effect (gtag is
   // defined by the time React mounts, since this runs at module load), so we
   // don't fire one here — doing so would double-count the landing page.
@@ -97,6 +102,90 @@ export function bootstrapAnalytics(): void {
     "https://www.googletagmanager.com/gtag/js?id=" +
     encodeURIComponent(measurementId);
   document.head.appendChild(script);
+}
+
+/** Global delegated click tracking for GA4.
+ *  Every actionable click emits a named event. Use `data-ga-event` to override
+ *  the event name and `data-ga-label` to override the label on any element. */
+function bootstrapClickTracking(): void {
+  if (typeof window === "undefined") return;
+  if (window.__DDBX_GA_CLICK_TRACKING_BOOTSTRAPPED) return;
+  window.__DDBX_GA_CLICK_TRACKING_BOOTSTRAPPED = true;
+
+  document.addEventListener(
+    "click",
+    (e) => {
+      const origin = e.target;
+
+      if (!(origin instanceof Element)) return;
+      const target = origin.closest(CLICK_TARGET_SELECTOR);
+
+      if (!(target instanceof HTMLElement)) return;
+
+      const eventName = inferEventName(target);
+      const eventLabel = inferEventLabel(target);
+      const destination =
+        target instanceof HTMLAnchorElement ? target.href : undefined;
+
+      window.gtag?.("event", eventName, {
+        event_category: "engagement",
+        event_label: eventLabel,
+        page_path: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+        click_type: target.tagName.toLowerCase(),
+        destination,
+      });
+    },
+    true,
+  );
+}
+
+function inferEventName(el: HTMLElement): string {
+  const explicit = sanitizeEventName(el.dataset.gaEvent);
+
+  if (explicit) return explicit;
+  if (el instanceof HTMLAnchorElement) return "click_link";
+  if (el.tagName.toLowerCase() === "summary") return "click_disclosure";
+  if (el.getAttribute("role") === "button") return "click_role_button";
+  if (el instanceof HTMLInputElement) return "click_input_button";
+
+  return "click_button";
+}
+
+function inferEventLabel(el: HTMLElement): string {
+  const explicit = cleanLabel(el.dataset.gaLabel);
+
+  if (explicit) return explicit;
+  const aria = cleanLabel(el.getAttribute("aria-label"));
+
+  if (aria) return aria;
+  if (el instanceof HTMLAnchorElement) {
+    const text = cleanLabel(el.textContent);
+
+    return text || cleanLabel(el.pathname) || "link";
+  }
+
+  return cleanLabel(el.textContent) || el.tagName.toLowerCase();
+}
+
+function sanitizeEventName(value: string | undefined): string | null {
+  if (!value) return null;
+  const cleaned = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40);
+
+  if (!cleaned) return null;
+  if (!/^[a-z]/.test(cleaned)) return `click_${cleaned}`.slice(0, 40);
+
+  return cleaned;
+}
+
+function cleanLabel(value: string | null | undefined): string | undefined {
+  const cleaned = value?.replace(/\s+/g, " ").trim();
+
+  return cleaned ? cleaned.slice(0, 120) : undefined;
 }
 
 // X (Twitter) Ads conversion-tracking base pixel. Mirrors the official

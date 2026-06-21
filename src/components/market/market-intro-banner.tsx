@@ -64,6 +64,8 @@ export function MarketIntroBanner({
             {onExplain && (
               <button
                 className="font-medium text-foreground underline decoration-from-font underline-offset-2 hover:opacity-70"
+                data-ga-event="cta_intro_what_we_look_for"
+                data-ga-label="What we look for"
                 onClick={onExplain}
               >
                 What we look for
@@ -75,6 +77,8 @@ export function MarketIntroBanner({
       <button
         aria-label="Dismiss"
         className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
+        data-ga-event="cta_intro_dismiss"
+        data-ga-label="Dismiss intro banner"
         onClick={onDismiss}
       >
         <XMarkIcon className="h-4 w-4" />

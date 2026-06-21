@@ -983,6 +983,8 @@ export function MarketPage<W>({
                 ? "border-[#d8d0c6] bg-[#f4eee6] text-[#7a634b] dark:border-separator dark:bg-white/[0.03] dark:text-[#c9b49f]"
                 : "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-700/60 dark:bg-emerald-900/20 dark:text-emerald-300"
             }`}
+            data-ga-event="cta_web_preview_explain"
+            data-ga-label={`Web preview ${previewMode ? "on" : "off"}`}
             type="button"
           >
             {previewMode ? (
@@ -1472,6 +1474,8 @@ export function MarketPage<W>({
                               <span className="mx-2 text-muted">·</span>
                               <span
                                 className="cursor-pointer text-sm font-medium text-[#5a4128] hover:underline dark:text-[#ad9479]"
+                                data-ga-event="cta_view_month_report"
+                                data-ga-label={`View report ${monthIso}`}
                                 role="button"
                                 tabIndex={0}
                                 onClick={(e) => {
@@ -1572,6 +1576,8 @@ export function MarketPage<W>({
                                     <a
                                       aria-label={`${collapsedDeals.length - 1} more deals recorded on this day — view in the app`}
                                       className="flex items-center justify-center gap-1 px-4 py-2.5 text-[12px] font-medium text-[#5a4128] transition-colors hover:bg-[#5a4128]/[0.05] dark:text-[#ad9479] dark:hover:bg-[#ad9479]/[0.06]"
+                                      data-ga-event="cta_collapsed_day_view_in_app"
+                                      data-ga-label={`${collapsedDeals.length - 1} more deals`}
                                       href={channelAppHref}
                                       rel="noreferrer"
                                       target="_blank"

@@ -44,11 +44,23 @@ export function UnlockConfirmModal({
 
   const buttons = (
     <div className="mt-5 flex flex-col gap-2">
-      <button className={CONFIRM_CLASS} type="button" onClick={onConfirm}>
+      <button
+        className={CONFIRM_CLASS}
+        data-ga-event="cta_unlock_confirm"
+        data-ga-label={confirmLabel}
+        type="button"
+        onClick={onConfirm}
+      >
         <LockOpenIcon className="h-4 w-4 shrink-0" />
         {confirmLabel}
       </button>
-      <button className={CANCEL_CLASS} type="button" onClick={onCancel}>
+      <button
+        className={CANCEL_CLASS}
+        data-ga-event="cta_unlock_cancel"
+        data-ga-label={cancelLabel}
+        type="button"
+        onClick={onCancel}
+      >
         {cancelLabel}
       </button>
     </div>
@@ -92,6 +104,8 @@ export function UnlockConfirmModal({
               <button
                 aria-label="Close"
                 className={`${CLOSE_CLASS} absolute right-3 top-2`}
+                data-ga-event="cta_unlock_close"
+                data-ga-label="Unlock modal close"
                 type="button"
                 onClick={onCancel}
               >
@@ -122,6 +136,8 @@ export function UnlockConfirmModal({
       <button
         aria-label="Cancel"
         className="absolute inset-0 z-0 cursor-default bg-black/50"
+        data-ga-event="cta_unlock_overlay_close"
+        data-ga-label="Unlock modal overlay close"
         tabIndex={-1}
         type="button"
         onClick={onCancel}
@@ -135,6 +151,8 @@ export function UnlockConfirmModal({
         <button
           aria-label="Close"
           className={`${CLOSE_CLASS} absolute right-4 top-4`}
+          data-ga-event="cta_unlock_close"
+          data-ga-label="Unlock modal close"
           type="button"
           onClick={onCancel}
         >

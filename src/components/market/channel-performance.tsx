@@ -141,6 +141,8 @@ function FullBacktestLink({ href }: { href: string }) {
   return (
     <Link
       className="flex items-center justify-between rounded-lg border border-[#e8e0d5] dark:border-separator bg-surface/40 px-3 py-2 text-xs font-medium text-foreground/80 hover:text-[#5a4128] dark:hover:text-[#ad9479] transition-colors"
+      data-ga-event="cta_channel_run_backtest"
+      data-ga-label="Run your own backtest"
       to={href}
     >
       <span>Run your own backtest</span>
@@ -247,6 +249,8 @@ function Contributors({
       {gated && hiddenCount > 0 && (
         <a
           className="relative block mt-1 group"
+          data-ga-event="cta_channel_see_all_picks_in_app"
+          data-ga-label={`See all ${rows.length} picks in app`}
           href={appHref}
           rel="noopener noreferrer"
           target="_blank"
@@ -287,6 +291,8 @@ function ContributorRow({ row }: { row: ChannelContributor }) {
     <li>
       <Link
         className="flex items-baseline justify-between gap-2 text-xs group"
+        data-ga-event="cta_channel_open_contributor_deal"
+        data-ga-label={`${row.ticker} ${row.id}`}
         to={`/dealings/${row.id}`}
       >
         <span className="min-w-0">
