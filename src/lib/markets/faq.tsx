@@ -53,6 +53,20 @@ export function buildMarketFaq({
       ),
     },
     {
+      question: "What do the Contrarian and Momentum tags mean?",
+      answer: (
+        <>
+          They tell you the kind of price the insider bought <em>into</em>. A{" "}
+          <strong>Contrarian</strong> buy is one made into weakness — well below
+          the recent high, while the crowd is selling. A{" "}
+          <strong>Momentum</strong> buy is one made into strength, near a rising
+          high. Contrarian is the one to watch: an insider buying when others
+          are running, who then turns out right, is the sharpest read we tag —
+          though it&apos;s a signal of conviction, not a promise it pays off.
+        </>
+      ),
+    },
+    {
       question: "Is it free?",
       answer: hasApp ? (
         <>
