@@ -63,6 +63,7 @@ export function MarketFilterBar({
   onExtraFilterChange,
   onReset,
   trailing,
+  searchStatus,
 }: {
   viewMode: MarketViewMode;
   onViewMode: (v: MarketViewMode) => void;
@@ -91,6 +92,9 @@ export function MarketFilterBar({
   /** Optional element rendered ml-auto on the right — currently used for the
    *  chart-mode toggle. */
   trailing?: ReactNode;
+  /** Optional compact status element shown inline with the search input
+   *  (used for discretion/web-preview state). */
+  searchStatus?: ReactNode;
 }) {
   const showStrength =
     signalFilter !== "all" &&
@@ -107,6 +111,7 @@ export function MarketFilterBar({
         value={search}
         onChange={(e) => onSearch(e.target.value)}
       />
+      {searchStatus && <div className="shrink-0">{searchStatus}</div>}
 
       {/* Filters live in a drawer at every width now (search stays inline). The
           drawer has room to explain each axis; inline dropdowns didn't. Kept

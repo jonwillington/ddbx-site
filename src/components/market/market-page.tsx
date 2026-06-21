@@ -8,7 +8,12 @@ import type {
 } from "@/lib/markets/types";
 import type { MonthlySummaryListItem } from "@/types/ddbx";
 
-import { CalendarDaysIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import {
+  CalendarDaysIcon,
+  ChevronDownIcon,
+  LockClosedIcon,
+  LockOpenIcon,
+} from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -35,6 +40,7 @@ import { MarketChannel } from "./market-channel";
 import { MarketFaq } from "./market-faq";
 import { MarketTodayEmpty } from "./market-today-empty";
 import { MarketTodayHero } from "./market-today-hero";
+import { Tooltip } from "@/components/tooltip";
 import {
   bucketByMonth,
   buildUniversalFilters,
@@ -961,6 +967,42 @@ export function MarketPage<W>({
       onChange={setChartMode}
     />
   );
+  const previewStatus =
+    gating &&
+    (() => {
+      const tooltipText = previewMode
+        ? `Web preview is on: you can open ${gating.freeQuota} full analysis${gating.freeQuota === 1 ? "" : "es"} per day on web. Use the app for unlimited full analysis.`
+        : "Web preview is off: full analysis is unlocked on web.";
+
+      return (
+        <Tooltip className="inline-flex" content={tooltipText}>
+          <button
+            aria-label="Explain web preview mode"
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-help ${
+              previewMode
+                ? "border-[#d8d0c6] bg-[#f4eee6] text-[#7a634b] dark:border-separator dark:bg-white/[0.03] dark:text-[#c9b49f]"
+                : "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-700/60 dark:bg-emerald-900/20 dark:text-emerald-300"
+            }`}
+            type="button"
+          >
+            {previewMode ? (
+              <LockClosedIcon className="h-3.5 w-3.5 shrink-0" />
+            ) : (
+              <LockOpenIcon className="h-3.5 w-3.5 shrink-0" />
+            )}
+            <span>
+              Web preview {previewMode ? "on" : "off"}
+              {previewMode &&
+                ` · ${
+                  unlocksLeftToday > 0
+                    ? `${unlocksLeftToday} unlock left`
+                    : "no unlocks left"
+                }`}
+            </span>
+          </button>
+        </Tooltip>
+      );
+    })();
 
   /* ───────── Handlers ────────────────────────────────────────────────── */
 
@@ -1342,6 +1384,7 @@ export function MarketPage<W>({
                   label: f.label,
                 }))}
                 search={search}
+                searchStatus={previewStatus}
                 signalFilter={signalFilter}
                 trailing={chartModeToggle}
                 viewMode={viewMode}
@@ -1355,21 +1398,6 @@ export function MarketPage<W>({
                 onViewMode={setViewMode}
               />
             </div>
-            {previewMode && (
-              <div className="hidden flex-wrap items-center gap-2 border-t border-[#e8e0d5]/70 px-4 py-2 md:flex dark:border-separator/40">
-                <span className="inline-flex items-center rounded-full border border-[#d8d0c6] bg-[#f4eee6] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#7a634b] dark:border-separator dark:bg-white/[0.03] dark:text-[#c9b49f]">
-                  Web preview
-                </span>
-                <span className="text-xs text-foreground/70">
-                  {gating.freeQuota} full analysis per day on web
-                </span>
-                <span className="text-xs font-medium text-foreground/70">
-                  {unlocksLeftToday > 0
-                    ? `${unlocksLeftToday} unlock left today`
-                    : "No unlocks left today"}
-                </span>
-              </div>
-            )}
           </div>
         )}
 
