@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { BetaTag } from "@/components/market/beta-tag";
 import { CookieBanner } from "@/components/cookie-banner";
 import { DocumentTitle } from "@/components/document-title";
+import AccountDeletionPage from "@/pages/account-deletion";
 import PerformancePage from "@/pages/performance";
 import DirectorPage from "@/pages/director";
 import CongressPreviewPage from "@/pages/congress-preview";
@@ -27,6 +28,9 @@ function App() {
         <Route element={<MarketHomePage />} path="/privacy" />
         <Route element={<MarketHomePage />} path="/cookies" />
         <Route element={<MarketHomePage />} path="/terms" />
+        {/* Hidden, unlinked page for app-store account-deletion requirements.
+            Deletion itself happens in-app; this just documents the steps. */}
+        <Route element={<AccountDeletionPage />} path="/account-deletion" />
         <Route element={<PerformancePage />} path="/portfolio" />
         <Route element={<PerformancePage />} path="/performance" />
         <Route element={<PerformancePage />} path="/us/performance" />
