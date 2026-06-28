@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { siteConfig } from "@/config/site";
@@ -19,17 +20,27 @@ export const Navbar = () => {
   const dashboardHref = marketHref(market, marketDashboardPath(market));
   const downloadHref = appStoreUrlForMarketId(market.id) ?? APP_STORE_URLS.uk;
 
+  // Scroll-revealed download CTA: fades in once the user scrolls past the hero,
+  // fades back out at the top.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 160);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const navItems = [
     {
-      label: "Dashboard",
+      label: "Deals",
       href: dashboardHref,
       match: (p: string) =>
         p === dashboardHref || (market.id === "uk" && p === "/"),
     },
     {
-      label: "Download app",
-      href: downloadHref,
-      external: true,
+      label: "Brokers",
+      href: "/brokers",
+      match: (p: string) => p.startsWith("/brokers") || p.startsWith("/compare"),
     },
   ];
 
@@ -53,18 +64,10 @@ export const Navbar = () => {
                 <li key={item.href}>
                   <a
                     className={clsx("text-sm transition-colors", {
-                      "text-[#5a4128] dark:text-[#d8c4af] font-medium":
-                        active && !item.external,
-                      "text-foreground hover:text-[#5a4128]":
-                        !active || item.external,
+                      "text-[#5a4128] dark:text-[#d8c4af] font-medium": active,
+                      "text-foreground hover:text-[#5a4128]": !active,
                     })}
-                    data-ga-event={
-                      item.external ? "cta_nav_download_app" : undefined
-                    }
-                    data-ga-label={item.external ? `Nav ${market.id}` : undefined}
                     href={item.href}
-                    rel={item.external ? "noopener noreferrer" : undefined}
-                    target={item.external ? "_blank" : undefined}
                   >
                     {item.label}
                   </a>
@@ -74,6 +77,21 @@ export const Navbar = () => {
           </ul>
         </div>
         <div className="flex items-center gap-3 md:gap-4">
+          <a
+            className={clsx(
+              "hidden items-center gap-1.5 rounded-full bg-[#5a4128] px-4 py-1.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#4a351f] dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90 md:inline-flex",
+              scrolled
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none -translate-y-1 opacity-0",
+            )}
+            data-ga-event="cta_nav_download_app"
+            data-ga-label={`Nav ${market.id}`}
+            href={downloadHref}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Download app
+          </a>
           <ThemeSwitch />
         </div>
       </header>

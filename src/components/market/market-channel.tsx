@@ -38,7 +38,6 @@ interface MarketChannelProps {
   /** Performance summary. May be empty (sampleSize 0) while dealings load. */
   performance?: ChannelPerformanceSummary;
   discretionEnabled: boolean;
-  performanceHref: string;
   appHref: string;
 }
 
@@ -55,7 +54,6 @@ export function MarketChannel({
   supportsPerformance,
   performance,
   discretionEnabled,
-  performanceHref,
   appHref,
 }: MarketChannelProps) {
   const hasNews = news !== undefined;
@@ -128,7 +126,6 @@ export function MarketChannel({
         <ChannelPerformance
           appHref={appHref}
           discretionEnabled={discretionEnabled}
-          performanceHref={performanceHref}
           summary={performance!}
         />
       ) : (
@@ -204,6 +201,11 @@ function PerfSkeleton() {
           <Skeleton className="h-2.5 w-16" />
           <Skeleton className="h-7 w-20" />
         </div>
+      </div>
+      <Skeleton className="h-3 w-32" />
+      <div className="space-y-2">
+        <Skeleton className="h-2.5 w-24" />
+        <Skeleton className="h-12 w-full rounded-md" />
       </div>
       <Skeleton className="h-8 w-full rounded-lg" />
       <div className="space-y-2">

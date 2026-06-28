@@ -14,7 +14,14 @@ import {
   LockClosedIcon,
   LockOpenIcon,
 } from "@heroicons/react/24/outline";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { DailySummarySheet } from "./daily-summary-banner";
@@ -40,7 +47,6 @@ import { MarketChannel } from "./market-channel";
 import { MarketFaq } from "./market-faq";
 import { MarketTodayEmpty } from "./market-today-empty";
 import { MarketTodayHero } from "./market-today-hero";
-import { Tooltip } from "@/components/tooltip";
 import {
   bucketByMonth,
   buildUniversalFilters,
@@ -54,6 +60,8 @@ import {
   todayKeyIso,
 } from "./market-utils";
 
+import { BrokerReviewsPromo } from "@/components/brokers/broker-reviews-promo";
+import { Tooltip } from "@/components/tooltip";
 import {
   monthShort,
   monthSlug,
@@ -229,7 +237,6 @@ export function MarketPage<W>({
     [supportsChannelPerf, dealings],
   );
   const channelAppHref = APP_STORE_URLS[config.id] ?? APP_STORE_URLS.uk;
-  const channelPerfHref = config.id === "uk" ? "/portfolio" : "/performance";
   const channelDiscretion = gating?.enabled ?? false;
 
   /** API market param for monthly endpoints. UK omits it (the worker defaults
@@ -912,34 +919,50 @@ export function MarketPage<W>({
       return config.isRowMuted ? !config.isRowMuted(d) : d.isPurchase;
     });
 
-    return inWindow
-      .map((d) => {
-        // Server snapshot's trade-anchor return first (renders the gainers grid
-        // immediately), client computation as the fallback. Congress rows have
-        // no entryPrice, so the snapshot is the only way they rank by gain.
-        let returnPct = d.livePerformance?.return_pct_trade ?? null;
+    return (
+      inWindow
+        .map((d) => {
+          // Server snapshot's trade-anchor return first (renders the gainers grid
+          // immediately), client computation as the fallback. Congress rows have
+          // no entryPrice, so the snapshot is the only way they rank by gain.
+          let returnPct = d.livePerformance?.return_pct_trade ?? null;
 
-        if (returnPct == null) {
-          const current = stockCurrent(d.ticker);
+          if (returnPct == null) {
+            const current = stockCurrent(d.ticker);
 
-          returnPct =
-            d.entryPrice != null && current != null && d.entryPrice > 0
-              ? ((current - d.entryPrice) / d.entryPrice) * 100
-              : null;
-        }
+            returnPct =
+              d.entryPrice != null && current != null && d.entryPrice > 0
+                ? ((current - d.entryPrice) / d.entryPrice) * 100
+                : null;
+          }
 
-        return { dealing: d, returnPct };
-      })
-      .sort((a, b) => {
-        // Items with a return go first, ranked by gain; everything else
-        // tail-sorted by value so we always have six cells on screen.
-        if (a.returnPct != null && b.returnPct != null)
-          return b.returnPct - a.returnPct;
-        if (a.returnPct != null) return -1;
-        if (b.returnPct != null) return 1;
+          return { dealing: d, returnPct };
+        })
+        .sort((a, b) => {
+          // Items with a return go first, ranked by gain; everything else
+          // tail-sorted by value so we always have six cells on screen.
+          if (a.returnPct != null && b.returnPct != null)
+            return b.returnPct - a.returnPct;
+          if (a.returnPct != null) return -1;
+          if (b.returnPct != null) return 1;
 
-        return (b.dealing.value ?? 0) - (a.dealing.value ?? 0);
-      });
+          return (b.dealing.value ?? 0) - (a.dealing.value ?? 0);
+        })
+        // One row per company — the highest-performing trade. The list is
+        // already gain-descending, so the first occurrence of each ticker is
+        // the best. Tickerless rows key on their own dealing key so they
+        // stay distinct (matches the same-day folding rule in market-utils).
+        .filter(
+          ((seen) => (x) => {
+            const key = x.dealing.ticker || x.dealing.key;
+
+            if (seen.has(key)) return false;
+            seen.add(key);
+
+            return true;
+          })(new Set<string>()),
+        )
+    );
   }, [
     searchedDealings,
     todayDealings,
@@ -1276,6 +1299,12 @@ export function MarketPage<W>({
           />
         )}
 
+        {/* Mobile-only UK broker teaser. The broker comparison lives in the
+            fixed right rail on desktop (hidden on phones), so surface a compact
+            promo under the Today deck to route mobile readers to /compare.
+            UK only — the directory is a UK trading-platform comparison. */}
+        {config.id === "uk" && <BrokerReviewsPromo className="md:hidden" />}
+
         {/* Mobile-only channel. The fixed right rail is hidden on phones, so
             Performance + News would otherwise be invisible there — surface the
             same tabbed channel inline, right under Today. */}
@@ -1286,7 +1315,6 @@ export function MarketPage<W>({
           newsFooterNote={config.newsFooterNote}
           newsHeading={config.newsHeading}
           performance={channelPerformance}
-          performanceHref={channelPerfHref}
           supportsPerformance={supportsChannelPerf}
           variant="inline"
         />
@@ -1452,6 +1480,12 @@ export function MarketPage<W>({
               // "YYYY-MM" from any day in the bucket to match the recap index.
               const monthIso = month.days[0]?.key.slice(0, 7);
               const hasReport = !!monthIso && recapMonthSet.has(monthIso);
+              // Days that actually render something — used to slot the mobile
+              // broker promo after the first two, so empty days (which render
+              // nothing) don't throw the position off.
+              const contentDays = month.days.filter(
+                (d) => d.suggested.length > 0 || d.skipped.length > 0,
+              );
 
               return (
                 <div key={month.key}>
@@ -1521,12 +1555,7 @@ export function MarketPage<W>({
                         valueColumnClass={config.priceFormat.valueColumnClass}
                       />
                       <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
-                        {month.days.map((day) => {
-                          const hasContent =
-                            day.suggested.length > 0 || day.skipped.length > 0;
-
-                          if (!hasContent) return null;
-
+                        {contentDays.map((day, dayIdx) => {
                           const isIntroDay =
                             day.key === introDayKey && !intro.dismissed;
                           const collapsed = isDayCollapsed(day.key);
@@ -1535,105 +1564,117 @@ export function MarketPage<W>({
                             : [];
 
                           return (
-                            <div
-                              key={day.key}
-                              className={`rounded-xl overflow-hidden bg-white dark:bg-surface-secondary ${
-                                isIntroDay
-                                  ? ""
-                                  : "divide-y divide-black/[0.06] dark:divide-separator"
-                              }`}
-                            >
-                              <MarketDayHeader
-                                day={day.day}
-                                isoDate={day.key}
-                                locale={config.locale}
-                                skippedCount={day.skipped.length}
-                                suggestedCount={day.suggested.length}
-                                weekday={day.weekday}
-                              />
-                              {config.id === "uk" &&
-                                !collapsed &&
-                                dailySummaries.get(day.key) && (
-                                  <MarketDaySummaryRow
-                                    headline={
-                                      dailySummaries.get(day.key)!.headline
-                                    }
-                                    isToday={day.key === todayIso}
-                                    valueColumnClass={
-                                      config.priceFormat.valueColumnClass
-                                    }
-                                    onOpen={() => setOpenSummaryDate(day.key)}
-                                  />
-                                )}
-                              {collapsed ? (
-                                // Older day under discretion: show the single
-                                // most notable deal (suggested ranks first),
-                                // then nudge the rest into the app.
-                                <>
-                                  {collapsedDeals[0] &&
-                                    renderDayRow(collapsedDeals[0])}
-                                  {collapsedDeals.length > 1 && (
-                                    <a
-                                      aria-label={`${collapsedDeals.length - 1} more ${
-                                        config.clusterByPerson
-                                          ? "trades"
-                                          : "deals"
-                                      } recorded on this day — view in the app`}
-                                      className="flex items-center justify-center gap-1 px-4 py-2.5 text-[12px] font-medium text-[#5a4128] transition-colors hover:bg-[#5a4128]/[0.05] dark:text-[#ad9479] dark:hover:bg-[#ad9479]/[0.06]"
-                                      data-ga-event="cta_collapsed_day_view_in_app"
-                                      data-ga-label={`${collapsedDeals.length - 1} more ${
-                                        config.clusterByPerson
-                                          ? "trades"
-                                          : "deals"
-                                      }`}
-                                      href={channelAppHref}
-                                      rel="noreferrer"
-                                      target="_blank"
-                                    >
-                                      + {collapsedDeals.length - 1} more{" "}
-                                      {config.clusterByPerson ? "trades" : "deals"}...
-                                    </a>
+                            <Fragment key={day.key}>
+                              <div
+                                className={`rounded-xl overflow-hidden bg-white dark:bg-surface-secondary ${
+                                  isIntroDay
+                                    ? ""
+                                    : "divide-y divide-black/[0.06] dark:divide-separator"
+                                }`}
+                              >
+                                <MarketDayHeader
+                                  day={day.day}
+                                  isoDate={day.key}
+                                  locale={config.locale}
+                                  skippedCount={day.skipped.length}
+                                  suggestedCount={day.suggested.length}
+                                  weekday={day.weekday}
+                                />
+                                {config.id === "uk" &&
+                                  !collapsed &&
+                                  dailySummaries.get(day.key) && (
+                                    <MarketDaySummaryRow
+                                      headline={
+                                        dailySummaries.get(day.key)!.headline
+                                      }
+                                      isToday={day.key === todayIso}
+                                      valueColumnClass={
+                                        config.priceFormat.valueColumnClass
+                                      }
+                                      onOpen={() => setOpenSummaryDate(day.key)}
+                                    />
                                   )}
-                                </>
-                              ) : config.clusterByPerson ? (
-                                // Person-grouped markets (Congress): fold the
-                                // WHOLE day — suggested + skipped — into one
-                                // group per member, so a member never appears
-                                // as both a cluster and loose rows. No corporate
-                                // intro banner.
-                                <>
-                                  {renderSuggestedRows([
-                                    ...day.suggested,
-                                    ...day.skipped,
-                                  ])}
-                                </>
-                              ) : isIntroDay ? (
-                                <>
-                                  {/* Grouped "signal" panel — the intro banner
+                                {collapsed ? (
+                                  // Older day under discretion: show the single
+                                  // most notable deal (suggested ranks first),
+                                  // then nudge the rest into the app.
+                                  <>
+                                    {collapsedDeals[0] &&
+                                      renderDayRow(collapsedDeals[0])}
+                                    {collapsedDeals.length > 1 && (
+                                      <a
+                                        aria-label={`${collapsedDeals.length - 1} more ${
+                                          config.clusterByPerson
+                                            ? "trades"
+                                            : "deals"
+                                        } recorded on this day — view in the app`}
+                                        className="flex items-center justify-center gap-1 px-4 py-2.5 text-[12px] font-medium text-[#5a4128] transition-colors hover:bg-[#5a4128]/[0.05] dark:text-[#ad9479] dark:hover:bg-[#ad9479]/[0.06]"
+                                        data-ga-event="cta_collapsed_day_view_in_app"
+                                        data-ga-label={`${collapsedDeals.length - 1} more ${
+                                          config.clusterByPerson
+                                            ? "trades"
+                                            : "deals"
+                                        }`}
+                                        href={channelAppHref}
+                                        rel="noreferrer"
+                                        target="_blank"
+                                      >
+                                        + {collapsedDeals.length - 1} more{" "}
+                                        {config.clusterByPerson
+                                          ? "trades"
+                                          : "deals"}
+                                        ...
+                                      </a>
+                                    )}
+                                  </>
+                                ) : config.clusterByPerson ? (
+                                  // Person-grouped markets (Congress): fold the
+                                  // WHOLE day — suggested + skipped — into one
+                                  // group per member, so a member never appears
+                                  // as both a cluster and loose rows. No corporate
+                                  // intro banner.
+                                  <>
+                                    {renderSuggestedRows([
+                                      ...day.suggested,
+                                      ...day.skipped,
+                                    ])}
+                                  </>
+                                ) : isIntroDay ? (
+                                  <>
+                                    {/* Grouped "signal" panel — the intro banner
                                       as a curved header wrapping the analysed
                                       rows on a tinted, ringed inset card, so a
                                       newcomer sees exactly which filings cleared
                                       the check. Skipped rows sit outside it. */}
-                                  <div className="m-2 overflow-hidden rounded-xl bg-[#faf7f2] ring-1 ring-black/[0.07] divide-y divide-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10 dark:divide-separator">
-                                    <MarketIntroBanner
-                                      onDismiss={intro.dismiss}
-                                      onExplain={() => setExplainerOpen(true)}
-                                    />
-                                    {renderSuggestedRows(day.suggested)}
-                                  </div>
-                                  {day.skipped.length > 0 && (
-                                    <div className="divide-y divide-black/[0.06] border-t border-black/[0.06] dark:divide-separator dark:border-separator">
-                                      {day.skipped.map(renderDayRow)}
+                                    <div className="m-2 overflow-hidden rounded-xl bg-[#faf7f2] ring-1 ring-black/[0.07] divide-y divide-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10 dark:divide-separator">
+                                      <MarketIntroBanner
+                                        onDismiss={intro.dismiss}
+                                        onExplain={() => setExplainerOpen(true)}
+                                      />
+                                      {renderSuggestedRows(day.suggested)}
                                     </div>
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  {renderSuggestedRows(day.suggested)}
-                                  {day.skipped.map(renderDayRow)}
-                                </>
-                              )}
-                            </div>
+                                    {day.skipped.length > 0 && (
+                                      <div className="divide-y divide-black/[0.06] border-t border-black/[0.06] dark:divide-separator dark:border-separator">
+                                        {day.skipped.map(renderDayRow)}
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    {renderSuggestedRows(day.suggested)}
+                                    {day.skipped.map(renderDayRow)}
+                                  </>
+                                )}
+                              </div>
+                              {/* Broker teaser slotted into the table after the
+                                  first two days (UK only) — a thin one-line bar
+                                  on all breakpoints, beside the right rail. */}
+                              {monthIdx === 0 &&
+                                config.id === "uk" &&
+                                dayIdx === 1 && (
+                                  <BrokerReviewsPromo variant="bar" />
+                                )}
+                            </Fragment>
                           );
                         })}
                       </div>
@@ -1667,7 +1708,6 @@ export function MarketPage<W>({
         newsFooterNote={config.newsFooterNote}
         newsHeading={config.newsHeading}
         performance={channelPerformance}
-        performanceHref={channelPerfHref}
         supportsPerformance={supportsChannelPerf}
         variant="aside"
       />

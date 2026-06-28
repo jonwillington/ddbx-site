@@ -4,6 +4,8 @@ import { BetaTag } from "@/components/market/beta-tag";
 import { CookieBanner } from "@/components/cookie-banner";
 import { DocumentTitle } from "@/components/document-title";
 import AccountDeletionPage from "@/pages/account-deletion";
+import BrokerDetailPage from "@/pages/broker-detail";
+import ComparePage from "@/pages/compare";
 import PerformancePage from "@/pages/performance";
 import DirectorPage from "@/pages/director";
 import CongressPreviewPage from "@/pages/congress-preview";
@@ -51,6 +53,10 @@ function App() {
         <Route element={<NetherlandsPreviewPage />} path="/nl-preview" />
         <Route element={<NetherlandsPreviewPage />} path="/nl" />
         <Route element={<UkPreviewPage />} path="/uk-preview" />
+        {/* Broker comparison + affiliate directory (UK). Always public. */}
+        <Route element={<ComparePage />} path="/compare" />
+        <Route element={<ComparePage />} path="/brokers" />
+        <Route element={<BrokerDetailPage />} path="/brokers/:slug" />
       </Routes>
       <CookieBanner />
     </div>

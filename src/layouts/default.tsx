@@ -402,10 +402,14 @@ export default function DefaultLayout({
   children,
   drawerRight,
   ticker,
+  hideMobileCta,
 }: {
   children: React.ReactNode;
   drawerRight?: boolean;
   ticker?: React.ReactNode;
+  /** Suppress the floating mobile "Download app" CTA — used on pages that
+   *  have their own primary mobile action (e.g. the broker "Visit" bar). */
+  hideMobileCta?: boolean;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -552,7 +556,9 @@ export default function DefaultLayout({
        *  fades into the page (no hard bar), so content scrolling beneath it
        *  stays legible. Hidden from `md` up, where the footer CTA and hero
        *  suffice. */}
-      <div className="pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden">
+      <div
+        className={`pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden ${hideMobileCta ? "hidden" : ""}`}
+      >
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-t from-[#f5f0e8]/85 via-[#f5f0e8]/40 to-transparent dark:from-background/85 dark:via-background/40 backdrop-blur-md [mask-image:linear-gradient(to_top,black_55%,transparent)]"

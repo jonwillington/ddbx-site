@@ -23,6 +23,9 @@ export function DocumentTitle() {
       if (pathname.startsWith("/directors/") || /\/directors\//.test(pathname)) {
         return `${siteConfig.brand} · Director (${market.label}) — ${siteConfig.name}`;
       }
+      if (pathname === "/compare" || pathname.startsWith("/brokers")) {
+        return `Compare UK trading platforms — fees, ISAs & SIPPs — ${siteConfig.name}`;
+      }
 
       return market.config.documentTitle;
     })();
@@ -36,6 +39,9 @@ export function DocumentTitle() {
           /\/directors\//.test(pathname)
         ) {
           return `${market.label} director profile with dealing history and signal context on ddbx.`;
+        }
+        if (pathname === "/compare" || pathname.startsWith("/brokers")) {
+          return "Compare the UK’s main trading and investing platforms side by side — fees, ISAs, SIPPs, fractional shares and FSCS protection.";
         }
 
         return `Analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;

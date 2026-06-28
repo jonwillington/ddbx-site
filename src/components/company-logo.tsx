@@ -35,6 +35,15 @@ export function logoUrl(ticker: string, sizePx: number): string {
   return `https://img.logo.dev/ticker/${encodeURIComponent(ticker)}?token=${LOGO_DEV_TOKEN}&size=${pixelSize}&format=png&retina=true`;
 }
 
+/** Logo.dev DOMAIN lookup — for entities we identify by website rather than an
+ *  exchange ticker (e.g. broker-comparison platforms). Oversamples like
+ *  `logoUrl` so cached responses re-use across DPRs. */
+export function domainLogoUrl(domain: string, sizePx: number): string {
+  const pixelSize = Math.max(48, Math.round(sizePx * 3));
+
+  return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=${pixelSize}&format=png&retina=true`;
+}
+
 function monogram(ticker: string): string {
   return ticker.replace(/\.L$/, "").slice(0, 3);
 }

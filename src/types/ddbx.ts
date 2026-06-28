@@ -1602,3 +1602,190 @@ export interface GovDealing {
    *  `Dealing.cluster`. */
   cluster?: ClusterInfo | null;
 }
+
+// ============================================================================
+// Broker comparison / affiliate directory
+// ============================================================================
+// Editorial, hand-curated comparison of retail trading/investment platforms.
+// Not scraped — served from a typed constant module (worker/data/uk-brokers.ts,
+// mirroring worker/fixtures.ts) via GET /api/brokers?market=UK. Consumed by
+// ddbx-site's /compare grid + /brokers/:slug detail pages; iOS/Android may
+// consume later. Market-scoped from day one (UK only today) so US/EU rows drop
+// in without route or schema changes — same pattern as EuDealing's `market`.
+//
+// Compliance note (see ddbx-data/investigations/broker-comparison/fca-compliance.md):
+// multi-asset brokers are listed for their mainstream investing/ISA side only.
+// `assets.crypto` / `assets.options` are factual feature flags — consumers must
+// NOT surface a CTA or affiliate link to high-risk (CFD/crypto) products.
+
+/** Markets the broker directory covers. UK-only today; append to widen the
+ *  union (US, EU) — same as-const + guard idiom as MARKETS / EU_MARKETS. */
+export const BROKER_MARKETS = ["UK"] as const;
+export type BrokerMarket = (typeof BROKER_MARKETS)[number];
+
+export function isBrokerMarket(v: unknown): v is BrokerMarket {
+  return (
+    typeof v === "string" &&
+    (BROKER_MARKETS as readonly string[]).includes(v)
+  );
+}
+
+/** Editorial award badges. `top_pick` is the overall recommendation crown
+ *  (Freetrade + Trading 212 today); the rest are "best for X" entry points so
+ *  every reader finds a relevant pick. Closed set so the UI can map each to a
+ *  label/icon. */
+export const BROKER_BADGES = [
+  "top_pick",
+  "best_for_beginners",
+  "best_for_isa",
+  "best_for_sipp",
+  "best_for_lisa",
+  "lowest_cost",
+  "best_for_fractional",
+  "best_for_us_stocks",
+  "best_for_funds",
+  "best_for_active_traders",
+] as const;
+export type BrokerBadge = (typeof BROKER_BADGES)[number];
+
+/** Fees & costs. All monetary fields GBP; percent fields are plain numbers
+ *  where 0.45 means 0.45%. 0 = genuinely free; null = unknown or N/A. */
+export interface BrokerFees {
+  /** Flat platform/account fee per month in GBP (0 if none). */
+  platform_fee_monthly_gbp: number | null;
+  /** Percentage platform/custody fee per year (e.g. 0.25 = 0.25%). */
+  platform_fee_pct: number | null;
+  /** Free-text caveat on the platform fee (caps, tiers, per-account). */
+  platform_fee_note: string | null;
+  /** Commission per UK share trade in GBP (0 = commission-free). */
+  trade_commission_uk_gbp: number | null;
+  /** Commission per US share trade in GBP (0 = commission-free). */
+  trade_commission_us_gbp: number | null;
+  /** Per-deal charge for funds/OEICs in GBP, where it differs from shares. */
+  fund_dealing_gbp: number | null;
+  /** FX / currency-conversion fee on non-GBP trades as a percent. */
+  fx_fee_pct: number | null;
+  /** Withdrawal fee in GBP (0 if free). */
+  withdrawal_fee_gbp: number | null;
+  /** Free-text inactivity-fee note (null if none). */
+  inactivity_fee_note: string | null;
+  /** Minimum to open/fund an account in GBP (0 if none). */
+  min_deposit_gbp: number | null;
+  /** One-line plain-English summary of the charging model. */
+  fee_model: string | null;
+}
+
+/** Which tax wrappers / account types the platform offers. true = offered,
+ *  false = not offered, null = unknown. */
+export interface BrokerAccounts {
+  /** General (taxable) investment account. */
+  gia: boolean | null;
+  /** Stocks & Shares ISA. */
+  stocks_isa: boolean | null;
+  /** Self-invested personal pension (self-select). A managed personal pension
+   *  is NOT a SIPP — flag false and explain in sipp_note. */
+  sipp: boolean | null;
+  /** Lifetime ISA. */
+  lisa: boolean | null;
+  /** Junior ISA. */
+  jisa: boolean | null;
+  isa_note: string | null;
+  sipp_note: string | null;
+}
+
+/** Investable assets & market access. true = available, false = not, null =
+ *  unknown. crypto/options are factual flags only — do not promote (see the
+ *  compliance note above). */
+export interface BrokerAssets {
+  uk_shares: boolean | null;
+  us_shares: boolean | null;
+  /** Markets beyond UK/US (Europe, Asia, etc.). */
+  global_shares: boolean | null;
+  etfs: boolean | null;
+  /** OEICs / unit trusts. */
+  mutual_funds: boolean | null;
+  investment_trusts: boolean | null;
+  fractional_shares: boolean | null;
+  bonds_gilts: boolean | null;
+  options: boolean | null;
+  crypto: boolean | null;
+  /** Count of exchanges/countries if the platform publishes one. */
+  num_markets: number | null;
+}
+
+/** Trust signals & platform features. */
+export interface BrokerTrust {
+  /** FSCS £85k protection applies. */
+  fscs_protected: boolean | null;
+  /** Primary regulator, usually "FCA". */
+  regulator: string | null;
+  year_founded: number | null;
+  headquarters: string | null;
+  /** Pays interest on uninvested cash. */
+  interest_on_cash: boolean | null;
+  interest_on_cash_note: string | null;
+  /** Recurring / scheduled auto-investing. */
+  auto_invest: boolean | null;
+  /** Automatic dividend reinvestment (DRIP). */
+  dividend_reinvestment: boolean | null;
+  web_platform: boolean | null;
+  mobile_app: boolean | null;
+  /** Apple App Store rating (0–5). */
+  app_store_rating: number | null;
+  /** Google Play rating (0–5). */
+  play_store_rating: number | null;
+  trustpilot_rating: number | null;
+}
+
+/** One retail platform in the comparison directory. */
+export interface BrokerOffer {
+  /** URL slug, e.g. "freetrade". Stable key for /brokers/:slug. */
+  slug: string;
+  /** Display name, e.g. "Freetrade". */
+  name: string;
+  /** Jurisdiction this row describes. */
+  market: BrokerMarket;
+  /** Logo asset URL (optional; filled in as assets land). */
+  logo_url?: string | null;
+  /** Canonical homepage (non-affiliate). */
+  website_url: string;
+  /** One-line "who this is best for". */
+  tagline: string;
+  /** 2–3 sentence neutral review (detail page). */
+  summary: string | null;
+  /** Detail-page bullet points. */
+  pros: string[];
+  cons: string[];
+  /** Editorial award badges. */
+  badges: BrokerBadge[];
+  /** Overall top pick (the recommendation crown). */
+  recommended: boolean;
+  /** Editorial sort weight (lower = higher); optional. */
+  rank?: number | null;
+
+  /** Whether a referral/affiliate link exists for this platform. */
+  has_affiliate: boolean | null;
+  /** The owner's affiliate/referral URL. Null until supplied — consumers must
+   *  fall back to website_url and render the link without a referral. */
+  affiliate_url: string | null;
+  /** Current new-customer incentive headline, if any. */
+  offer_headline: string | null;
+  /** Brief offer T&Cs. */
+  offer_terms: string | null;
+  /** ISO date the offer expires, or null for open-ended. */
+  offer_expires: string | null;
+
+  fees: BrokerFees;
+  accounts: BrokerAccounts;
+  assets: BrokerAssets;
+  trust: BrokerTrust;
+
+  /** ISO date the figures were last checked against official sources. */
+  last_verified: string;
+  /** URLs backing the data (official fee pages etc.). */
+  sources: string[];
+  /** Map of important field paths → the source URL backing each. */
+  field_sources?: Record<string, string>;
+  /** Editorial confidence/caveat notes (not shown to users). */
+  confidence_notes?: string | null;
+}

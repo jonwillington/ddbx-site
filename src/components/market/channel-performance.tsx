@@ -18,7 +18,7 @@ import type {
 } from "@/lib/performance/channel-summary";
 
 import { Link } from "react-router-dom";
-import { ArrowRightIcon, LockClosedIcon } from "@heroicons/react/24/outline";
+import { LockClosedIcon } from "@heroicons/react/24/outline";
 
 import { formatSignedPct } from "@/lib/performance/format";
 
@@ -26,14 +26,19 @@ interface Props {
   summary: ChannelPerformanceSummary;
   /** When true, gate the contributors behind the app CTA. */
   discretionEnabled: boolean;
-  /** Route to the full interactive backtest (e.g. "/portfolio"). */
-  performanceHref: string;
   /** App Store URL for this market. */
   appHref: string;
 }
 
 /** Rows that stay unblurred before the contributors CTA kicks in. */
 const UNBLURRED = 2;
+
+/** The losing side of the picks-vs-market pair dims to this. */
+const MUTED_OPACITY = 0.45;
+
+/** Most cells the beat-the-market waffle will draw — past this it switches to a
+ *  proportional fill so a busy market doesn't sprawl down the rail. */
+const WAFFLE_MAX_CELLS = 40;
 
 const STYLE_LABEL: Record<
   ChannelPerformanceSummary["styles"][number]["kind"],
@@ -60,17 +65,52 @@ function toneClass(ratio: number | null): string {
     : "text-[#8b2020] dark:text-[#e84d4d]";
 }
 
+// Comparison-aware tint for the picks-vs-market pair: the side that's more
+// extreme in its direction stays saturated, the other dims. Mixed signs stay
+// saturated since colour alone separates them. Port of the /portfolio
+// hero-card `tint` (itself a port of iOS `heroTint`).
+function pairTone(
+  value: number | null,
+  other: number | null,
+): { className: string; muted: boolean } {
+  if (value == null || other == null) {
+    return { className: toneClass(value), muted: false };
+  }
+  const valuePos = value >= 0;
+  const otherPos = other >= 0;
+  const mutedSameDir = valuePos
+    ? value < other // both up: smaller gain dims
+    : value > other; // both down: shallower loss dims
+
+  return {
+    className: toneClass(value),
+    muted: valuePos === otherPos && mutedSameDir,
+  };
+}
+
+/** "+4.1pp" / "−2.0pp" from a ratio. Percentage points, to match the gap the
+ *  full backtest reports. Non-finite → "—". */
+function formatSignedPp(ratio: number | null): string {
+  if (ratio == null || !Number.isFinite(ratio)) return "—";
+  const pp = ratio * 100;
+  const sign = pp > 0 ? "+" : pp < 0 ? "−" : "";
+
+  return `${sign}${Math.abs(pp).toFixed(1)}pp`;
+}
+
 export function ChannelPerformance({
   summary,
   discretionEnabled,
-  performanceHref,
   appHref,
 }: Props) {
   return (
     <div className="px-5 lg:px-4 py-4 space-y-5">
       <HeadlineAlpha summary={summary} />
 
-      <FullBacktestLink href={performanceHref} />
+      <MarketBeat
+        count={summary.marketBeatCount}
+        total={summary.marketBeatTotal}
+      />
 
       {summary.sectors.length > 0 && (
         <SectorLeaderboard sectors={summary.sectors} />
@@ -87,30 +127,86 @@ export function ChannelPerformance({
   );
 }
 
+/** "14 Jun" from an ISO `YYYY-MM-DD`, formatted in UTC so the day never drifts.
+ *  Mirrors the app's "Updated d MMM" caption. */
+function formatUpdated(iso: string): string {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+}
+
+/** Honest label for the slice the headline reflects — mirrors the app naming
+ *  the signal it's showing rather than implying every buy. */
+const UNIVERSE_LABEL: Record<
+  ChannelPerformanceSummary["headlineUniverse"],
+  string
+> = {
+  every_buy: "Director picks",
+  suggested: "Suggested picks",
+  significant: "Significant picks",
+  noteworthy: "Noteworthy picks",
+};
+
 function HeadlineAlpha({ summary }: { summary: ChannelPerformanceSummary }) {
-  const { picksReturnPct, benchmarkReturnPct, sampleSize } = summary;
+  const {
+    picksReturnPct,
+    benchmarkReturnPct,
+    alphaPct,
+    lastUpdated,
+    headlineUniverse,
+  } = summary;
+
+  const picksTone = pairTone(picksReturnPct, benchmarkReturnPct);
+  const benchTone = pairTone(benchmarkReturnPct, picksReturnPct);
 
   return (
     <div>
       <div className="flex items-start gap-4">
         <Stat
           align="left"
-          label="Director picks"
-          tone={toneClass(picksReturnPct)}
+          label={UNIVERSE_LABEL[headlineUniverse]}
+          muted={picksTone.muted}
+          tone={picksTone.className}
           value={formatSignedPct(picksReturnPct)}
         />
         <Stat
           align="right"
           label="The market"
-          tone={toneClass(benchmarkReturnPct)}
+          muted={benchTone.muted}
+          tone={benchTone.className}
           value={formatSignedPct(benchmarkReturnPct)}
         />
       </div>
+
+      {alphaPct != null && <AlphaGap alphaPct={alphaPct} />}
+
       <p className="mt-2 text-[10px] text-muted">
-        Equal-weight, since disclosure · {sampleSize} director buy
-        {sampleSize === 1 ? "" : "s"}
+        Last 30 days
+        {lastUpdated ? ` · Updated ${formatUpdated(lastUpdated)}` : ""}
       </p>
     </div>
+  );
+}
+
+/** Names the gap the two numbers leave implicit — the whole pitch in one line. */
+function AlphaGap({ alphaPct }: { alphaPct: number }) {
+  const ahead = alphaPct >= 0;
+
+  return (
+    <p
+      className={`mt-2 text-xs font-medium tabular-nums ${
+        ahead
+          ? "text-[#1e6b18] dark:text-[#5cd84a]"
+          : "text-[#8b2020] dark:text-[#e84d4d]"
+      }`}
+    >
+      {formatSignedPp(alphaPct)}{" "}
+      <span className="font-normal text-foreground/70">
+        {ahead ? "ahead of the market" : "behind the market"}
+      </span>
+    </p>
   );
 }
 
@@ -119,35 +215,65 @@ function Stat({
   value,
   align,
   tone,
+  muted,
 }: {
   label: string;
   value: string;
   align: "left" | "right";
   tone: string;
+  muted: boolean;
 }) {
   return (
     <div className={`flex-1 ${align === "right" ? "text-right" : "text-left"}`}>
       <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
         {label}
       </div>
-      <div className={`text-2xl font-semibold tabular-nums ${tone}`}>
+      <div
+        className={`text-2xl font-semibold tabular-nums ${tone}`}
+        style={muted ? { opacity: MUTED_OPACITY } : undefined}
+      >
         {value}
       </div>
     </div>
   );
 }
 
-function FullBacktestLink({ href }: { href: string }) {
+/** Beat-the-market waffle — one square per buy (green = beat the market), so
+ *  the reader sees how *often* directors won, not just by how much. Above
+ *  WAFFLE_MAX_CELLS it shows a proportional fill instead of a cell per buy. */
+function MarketBeat({ count, total }: { count: number; total: number }) {
+  if (total === 0) return null;
+
+  const rate = count / total;
+  const cells = Math.min(total, WAFFLE_MAX_CELLS);
+  const greens =
+    total <= WAFFLE_MAX_CELLS ? count : Math.round(rate * WAFFLE_MAX_CELLS);
+
   return (
-    <Link
-      className="flex items-center justify-between rounded-lg border border-[#e8e0d5] dark:border-separator bg-surface/40 px-3 py-2 text-xs font-medium text-foreground/80 hover:text-[#5a4128] dark:hover:text-[#ad9479] transition-colors"
-      data-ga-event="cta_channel_run_backtest"
-      data-ga-label="Run your own backtest"
-      to={href}
-    >
-      <span>Run your own backtest</span>
-      <ArrowRightIcon className="w-3.5 h-3.5" />
-    </Link>
+    <section className="space-y-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <SectionHeading>Beat the market</SectionHeading>
+        <span className="text-[10px] text-muted tabular-nums">
+          {count} of {total} buys · {Math.round(rate * 100)}%
+        </span>
+      </div>
+      <div
+        aria-hidden
+        className="grid gap-1"
+        style={{ gridTemplateColumns: "repeat(10, minmax(0, 1fr))" }}
+      >
+        {Array.from({ length: cells }).map((_, i) => (
+          <span
+            key={i}
+            className={`aspect-square rounded-sm ${
+              i < greens
+                ? "bg-[#1e6b18]/80 dark:bg-[#5cd84a]/80"
+                : "bg-foreground/10"
+            }`}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 

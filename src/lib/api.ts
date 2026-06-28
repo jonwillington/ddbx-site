@@ -1,4 +1,6 @@
 import type {
+  BrokerBadge,
+  BrokerOffer,
   DailySummaryResponse,
   Dealing,
   DirectorDetail,
@@ -110,6 +112,17 @@ export const api = {
     get<{ items: UkNewsItem[]; fetched_at: string | null }>("/news/se"),
   nlNews: () =>
     get<{ items: UkNewsItem[]; fetched_at: string | null }>("/news/nl"),
+  /** Broker-comparison / affiliate directory for a market (UK default). The
+   *  list is small and long-cached, so the detail page reuses it via
+   *  `broker(slug)` rather than hitting a per-slug endpoint. */
+  brokers: (market = "UK") =>
+    get<{ brokers: BrokerOffer[] }>(`/brokers?market=${market}`).then(
+      (r) => r.brokers,
+    ),
+  broker: (slug: string, market = "UK") =>
+    get<{ brokers: BrokerOffer[] }>(`/brokers?market=${market}`).then(
+      (r) => r.brokers.find((b) => b.slug === slug) ?? null,
+    ),
   version: () => get<{ latest: string | null; total: number }>("/version"),
   /** UK daily summary for a given YYYY-MM-DD. Returns null on 404 — the
    *  endpoint 404s for days the team hasn't written one for yet, which
@@ -204,6 +217,8 @@ export interface EuDealingsStats {
 }
 
 export type {
+  BrokerBadge,
+  BrokerOffer,
   DailySummaryResponse,
   Dealing,
   DirectorDetail,
