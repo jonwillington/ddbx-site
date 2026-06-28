@@ -15,17 +15,30 @@
  *  card and its avatar; respects prefers-reduced-motion (everything rests
  *  static). Rebuilt from the original screenshot in markup — no bitmap. */
 import type { HeroDeal } from "./hero-deal-data";
+
+import { useLayoutEffect, useRef, useState } from "react";
+
 import { CompanyLogo } from "@/components/company-logo";
 
-/** Slot transforms by depth from the front (0 = newest/front … 3 = exiting).
- *  Same width for all; depth is pure centre-scale + a small downward nudge, so
- *  lower cards sit concentrically beneath the front with even side rims. */
+/** Slot styling by depth from the front (0 = newest/front … 3 = exiting). Same
+ *  width logic for all; depth is pure centre-scale, so lower cards sit
+ *  concentrically beneath the front with even side rims. */
 const SLOTS = [
-  { y: 0, width: 100, opacity: 1, zIndex: 30 },
-  { y: 58, width: 90, opacity: 1, zIndex: 20 },
-  { y: 106, width: 82, opacity: 1, zIndex: 10 },
-  { y: 146, width: 76, opacity: 0, zIndex: 5 },
+  { width: 100, opacity: 1, zIndex: 30 },
+  { width: 90, opacity: 1, zIndex: 20 },
+  { width: 82, opacity: 1, zIndex: 10 },
+  { width: 76, opacity: 0, zIndex: 5 },
 ];
+
+/** Vertical offset of each behind card *relative to the measured front-card
+ *  height*, so the rim peeking below the front is constant no matter how many
+ *  lines the front notification's copy wraps to. Index 0 (the front) is pinned
+ *  at y=0; the rest are `frontHeight + offset`. */
+const BEHIND_Y = [0, -37, 11, 51];
+
+/** Gap reserved below the front card so the deepest visible card's rim clears
+ *  the App Store button beneath the stack. */
+const STACK_TAIL = 80;
 
 /** How many cards are kept mounted: 3 visible slots + 1 exiting. */
 const RENDERED = SLOTS.length;
@@ -41,6 +54,26 @@ export function HeroNotificationStack({
 }) {
   const n = deals.length;
   const frontDeal = deals[((tick % n) + n) % n];
+
+  // Measure the live front card so the cards behind can be offset from its real
+  // height (set before paint, so there's no flash; re-measured on resize since
+  // copy re-wraps as the column narrows).
+  const frontRef = useRef<HTMLDivElement | null>(null);
+  const [frontH, setFrontH] = useState(96);
+
+  useLayoutEffect(() => {
+    const el = frontRef.current;
+
+    if (!el) return;
+    const measure = () => setFrontH(el.offsetHeight);
+
+    measure();
+    const ro = new ResizeObserver(measure);
+
+    ro.observe(el);
+
+    return () => ro.disconnect();
+  }, [tick]);
 
   // Render the newest `RENDERED` ticks as cards. Offset 0 = front (newest),
   // higher offsets sit lower/smaller; the last is mid-exit. Keying by the card's
@@ -80,7 +113,10 @@ export function HeroNotificationStack({
           100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
         }
 
-        .hns-stack { position: relative; height: 176px; }
+        .hns-stack {
+          position: relative;
+          transition: height 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
         .hns-item {
           position: absolute;
           left: 50%;
@@ -144,7 +180,7 @@ export function HeroNotificationStack({
         .hns-sk-app { width: 58px; height: 9px; }
         .hns-sk-line { width: 82%; height: 10px; margin-top: 2px; }
         @media (prefers-reduced-motion: reduce) {
-          .hns-item { transition: none; }
+          .hns-item, .hns-stack { transition: none; }
           .hns-item.is-front .hns-card,
           .hns-avatar { animation: none; }
         }
@@ -159,17 +195,19 @@ export function HeroNotificationStack({
         ticker={frontDeal.ticker}
       />
 
-      <div className="hns-stack">
+      <div className="hns-stack" style={{ height: frontH + STACK_TAIL }}>
         {cards.map(({ cardTick, offset, deal }) => {
           const slot = SLOTS[offset];
           const compact = offset > 0;
+          const y = offset === 0 ? 0 : frontH + BEHIND_Y[offset];
 
           return (
             <div
               key={cardTick}
+              ref={offset === 0 ? frontRef : undefined}
               className={`hns-item depth-${Math.min(offset, 2)}${offset === 0 ? " is-front" : ""}`}
               style={{
-                transform: `translate(-50%, ${slot.y}px)`,
+                transform: `translate(-50%, ${y}px)`,
                 width: `${slot.width}%`,
                 opacity: slot.opacity,
                 zIndex: slot.zIndex,
