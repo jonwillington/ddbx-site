@@ -22,6 +22,8 @@ import { Skeleton } from "@/components/skeleton";
 import { CompanyLogo } from "@/components/company-logo";
 import { ClusterChip } from "@/components/cluster-chip";
 import { BuyStyleChip } from "@/components/buy-style-chip";
+import { CommentCountChip } from "@/components/comment-count-chip";
+import { commentCountFor } from "@/lib/comment-counts";
 import { PartyChip } from "@/components/party-chip";
 import { ChamberChip } from "@/components/chamber-chip";
 import { Tooltip } from "@/components/tooltip";
@@ -115,6 +117,11 @@ export function MarketRowHeader({
       </div>
       <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
         <HeaderLabel help={help.performance}>{perfLabel}</HeaderLabel>
+      </div>
+      <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
+        <HeaderLabel help="Readers are discussing these trades in the app. Counts shown here; the conversation lives in the app.">
+          Comments
+        </HeaderLabel>
       </div>
       <div className="w-40 shrink-0 px-2 py-1.5 text-center">
         <HeaderLabel help={help.action}>Action</HeaderLabel>
@@ -271,6 +278,7 @@ export function MarketDaySummaryRow({
         />
         <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
         <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+        <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
         <div className="w-40 shrink-0 px-2 py-2.5" />
       </div>
     </button>
@@ -337,6 +345,9 @@ export function MarketRowSkeleton({
         </div>
         <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
           <Skeleton className="h-5 w-14 rounded-full" />
+        </div>
+        <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <Skeleton className="h-5 w-10 rounded-md" />
         </div>
         <div className="w-40 shrink-0 px-2 py-2.5 flex items-center justify-center">
           <Skeleton className="h-5 w-20 rounded-full" />
@@ -574,6 +585,7 @@ export function MarketClusterRow<W>({
             </span>
           </div>
           <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
           <div className="w-40 shrink-0 px-2 py-2.5" />
         </div>
       </button>
@@ -776,6 +788,7 @@ export function MemberClusterRow({
               <span className="text-[11px] text-muted/50">—</span>
             )}
           </div>
+          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
           <div className="w-40 shrink-0 px-2 py-2.5 flex items-center justify-center">
             <SignalChip />
           </div>
@@ -861,7 +874,7 @@ export function MarketRow<W>({
     : rawTicker;
   const company = dealing.company || "—";
   const insiderLine = dealing.insiderRole
-    ? `${dealing.insiderName} (${dealing.insiderRole})`
+    ? `${dealing.insiderRole} · ${dealing.insiderName}`
     : dealing.insiderName;
   const valueLabel =
     dealing.value != null ? fmt.formatValue(dealing.value) : "—";
@@ -877,6 +890,7 @@ export function MarketRow<W>({
       : metricPct >= 0
         ? "text-[#1e6b18] dark:text-[#5cd84a]"
         : "text-[#8b2020] dark:text-[#e84d4d]";
+  const commentCount = commentCountFor(dealing);
   const ratedLabel = dealing.rating && dealing.isPurchase ? "Rated" : "Unrated";
   const ratedClass =
     dealing.rating && dealing.isPurchase
@@ -907,6 +921,7 @@ export function MarketRow<W>({
               <span className="font-mono text-[12px] font-semibold px-2 py-0.5 rounded-md bg-[#e8e0d5] dark:bg-surface-secondary shrink-0">
                 {ticker}
               </span>
+              <CommentCountChip count={commentCount} />
               <span className="text-[17px] font-semibold truncate leading-tight">
                 {company}
               </span>
@@ -964,8 +979,6 @@ export function MarketRow<W>({
               {company}
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-              <ClusterChip cluster={dealing.cluster} />
-              <BuyStyleChip buyStyle={dealing.buyStyle} />
               {RowNameBadge && <RowNameBadge dealing={dealing} />}
               {!hideInsider && (
                 <span className="text-[11px] text-muted truncate">
@@ -973,6 +986,12 @@ export function MarketRow<W>({
                 </span>
               )}
             </div>
+          </div>
+          {/* Signal chips pinned to the right of the cell, vertically centred —
+              cluster / momentum / contrarian read as a column down the table. */}
+          <div className="shrink-0 flex items-center gap-1.5">
+            <BuyStyleChip buyStyle={dealing.buyStyle} />
+            <ClusterChip cluster={dealing.cluster} />
           </div>
         </div>
         <div
@@ -1005,6 +1024,13 @@ export function MarketRow<W>({
             </span>
           ) : noPosteriorData ? (
             <span className="text-[11px] text-muted/60">No data yet</span>
+          ) : (
+            <span className="text-[11px] text-muted/50">—</span>
+          )}
+        </div>
+        <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          {commentCount > 0 ? (
+            <CommentCountChip count={commentCount} />
           ) : (
             <span className="text-[11px] text-muted/50">—</span>
           )}

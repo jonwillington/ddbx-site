@@ -17,7 +17,9 @@ import { compareDealingImportance } from "./market-utils";
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { Skeleton } from "@/components/skeleton";
+import { CommentCountChip } from "@/components/comment-count-chip";
 import { ViewAnalysisCta } from "@/components/discretion/view-analysis-cta";
+import { commentCountFor } from "@/lib/comment-counts";
 import { DISCRETION_ENABLED } from "@/lib/discretion";
 
 export interface RecentBestEntry<W> {
@@ -227,7 +229,7 @@ function TodayCard<W>({
   const muted = isMuted ? isMuted(dealing) : !dealing.isPurchase;
   const valueLabel =
     dealing.value != null ? fmt.formatValue(dealing.value) : "—";
-  const insiderBits = [tickerLabel, dealing.insiderName, dealing.insiderRole]
+  const insiderBits = [tickerLabel, dealing.insiderRole, dealing.insiderName]
     .filter(Boolean)
     .join(" · ");
 
@@ -274,6 +276,11 @@ function TodayCard<W>({
           <div className="mt-1 truncate text-[12px] text-muted">
             {insiderBits}
           </div>
+          {commentCountFor(dealing) > 0 && (
+            <div className="mt-2">
+              <CommentCountChip count={commentCountFor(dealing)} />
+            </div>
+          )}
           <div className="mt-3 text-[22px] font-semibold tabular-nums leading-none tracking-[-0.04em]">
             {valueLabel}
           </div>
@@ -316,7 +323,7 @@ function TodayDeckCard<W>({
     : dealing.ticker || "—";
   const valueLabel =
     dealing.value != null ? fmt.formatValue(dealing.value) : "—";
-  const insiderBits = [dealing.insiderName, dealing.insiderRole]
+  const insiderBits = [dealing.insiderRole, dealing.insiderName]
     .filter(Boolean)
     .join(" · ");
 
@@ -402,6 +409,11 @@ function TodayDeckCard<W>({
           {insiderBits && (
             <div className="mt-1 text-[12.5px] leading-snug text-muted">
               {insiderBits}
+            </div>
+          )}
+          {commentCountFor(dealing) > 0 && (
+            <div className="mt-2">
+              <CommentCountChip count={commentCountFor(dealing)} />
             </div>
           )}
         </div>

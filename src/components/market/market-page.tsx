@@ -1672,7 +1672,10 @@ export function MarketPage<W>({
                               {monthIdx === 0 &&
                                 config.id === "uk" &&
                                 dayIdx === 1 && (
-                                  <BrokerReviewsPromo variant="bar" />
+                                  <BrokerReviewsPromo
+                                    className="hidden md:flex"
+                                    variant="bar"
+                                  />
                                 )}
                             </Fragment>
                           );

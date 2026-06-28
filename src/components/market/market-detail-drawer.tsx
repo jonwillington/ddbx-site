@@ -10,6 +10,8 @@ import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { ClusterChip } from "@/components/cluster-chip";
 import { BuyStyleChip } from "@/components/buy-style-chip";
+import { CommentCountChip } from "@/components/comment-count-chip";
+import { commentCountFor } from "@/lib/comment-counts";
 import { PartyChip } from "@/components/party-chip";
 import { ChamberChip } from "@/components/chamber-chip";
 import { RecentBuysSection } from "@/components/market/recent-buys-section";
@@ -228,7 +230,7 @@ export function MarketDetailDrawer<W>({
               <Drawer.Title className="sr-only">{company}</Drawer.Title>
               <Drawer.Description className="sr-only">
                 {active.insiderRole
-                  ? `${active.insiderName} (${active.insiderRole})`
+                  ? `${active.insiderRole} · ${active.insiderName}`
                   : active.insiderName}
               </Drawer.Description>
 
@@ -331,6 +333,10 @@ export function MarketDetailDrawer<W>({
                           <BuyStyleChip
                             buyStyle={active.buyStyle}
                             className="shrink-0"
+                          />
+                          <CommentCountChip
+                            className="shrink-0"
+                            count={commentCountFor(active)}
                           />
                         </div>
 
