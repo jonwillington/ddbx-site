@@ -6,6 +6,7 @@ import { DocumentTitle } from "@/components/document-title";
 import AccountDeletionPage from "@/pages/account-deletion";
 import BrokerDetailPage from "@/pages/broker-detail";
 import ComparePage from "@/pages/compare";
+import DownloadPage from "@/pages/download";
 import PerformancePage from "@/pages/performance";
 import DirectorPage from "@/pages/director";
 import CongressPreviewPage from "@/pages/congress-preview";
@@ -54,6 +55,8 @@ function App() {
         <Route element={<NetherlandsPreviewPage />} path="/nl" />
         <Route element={<UkPreviewPage />} path="/uk-preview" />
         {/* Broker comparison + affiliate directory (UK). Always public. */}
+        {/* Conversion-focused UK app-install landing page. Public, ungated. */}
+        <Route element={<DownloadPage />} path="/download" />
         <Route element={<ComparePage />} path="/compare" />
         <Route element={<ComparePage />} path="/brokers" />
         <Route element={<BrokerDetailPage />} path="/brokers/:slug" />
