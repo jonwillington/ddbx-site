@@ -26,6 +26,22 @@ import { marketForPath } from "@/lib/markets/registry";
 
 type MarketId = "uk" | "us";
 
+// Credibility guardrails for the winners wall. The wall is social proof, so it
+// must read as "smart money", not a penny-stock pump screen.
+//   - Returns outside [MIN, MAX] are dropped: < MIN isn't a compelling "winner";
+//     > MAX is almost always a data glitch (illiquid micro-cap, unadjusted
+//     split) and a +4000% next to a chart torpedoes trust.
+//   - Sub-floor share prices are excluded — penny/sub-dollar names have
+//     unreliable cached prices and aren't a credible insider signal.
+const MIN_RETURN_PCT = 5;
+const MAX_RETURN_PCT = 300;
+const US_PRICE_FLOOR_USD = 1;
+const UK_PRICE_FLOOR_GBP = 0.05;
+/** Pull a bigger shortlist than we show, then keep the best survivors after the
+ *  chart-bar recompute drops any whose price history contradicts the headline. */
+const WINNERS_SHORTLIST = 18;
+const WINNERS_SHOWN = 6;
+
 const gbp0 = new Intl.NumberFormat("en-GB", {
   style: "currency",
   currency: "GBP",
@@ -108,31 +124,41 @@ function isoDaysAgo(n: number): string {
   return t.toISOString().slice(0, 10);
 }
 
-/** Generic biggest-winner picker over any wire row. Prefers the last 30 days;
- *  if that window is thin (markets go quiet), widens to 90 so the wall is never
- *  embarrassingly empty. Sorted by trade-anchored return, best first, deduped
- *  to one card per company (its best-performing buy). */
+/** Generic candidate-shortlist picker over any wire row. Prefers the last 30
+ *  days; if that window is thin (markets go quiet), widens to 90 so the wall is
+ *  never embarrassingly empty. Sorted by trade-anchored return, best first,
+ *  deduped to one company. Excludes sub-`priceFloor` penny names (unreliable
+ *  prices) and obviously-glitched returns. This is only a SHORTLIST — the final
+ *  displayed return is recomputed from the chart bars (see the page effect) so
+ *  the headline number and the trend line can never disagree. */
 function pickWinners<T>(
   items: T[],
   want: number,
   cfg: {
     isBuy: (x: T) => boolean;
     getReturn: (x: T) => number | null | undefined;
+    getPrice: (x: T) => number | null | undefined;
     getTicker: (x: T) => string;
     getTradeDate: (x: T) => string;
     toWinner: (x: T) => Winner;
   },
+  priceFloor: number,
 ): Winner[] {
   const build = (windowDays: number): Winner[] => {
     const since = isoDaysAgo(windowDays);
     const ranked = items
-      .filter(
-        (x) =>
+      .filter((x) => {
+        const r = cfg.getReturn(x);
+
+        return (
           cfg.isBuy(x) &&
           cfg.getTradeDate(x) >= since &&
-          typeof cfg.getReturn(x) === "number" &&
-          (cfg.getReturn(x) as number) > 0,
-      )
+          (cfg.getPrice(x) ?? 0) >= priceFloor &&
+          typeof r === "number" &&
+          r > MIN_RETURN_PCT &&
+          r <= MAX_RETURN_PCT
+        );
+      })
       .sort(
         (a, b) => (cfg.getReturn(b) as number) - (cfg.getReturn(a) as number),
       );
@@ -161,25 +187,31 @@ function pickWinners<T>(
 async function selectUkWinners(want: number): Promise<Winner[]> {
   const dealings = await api.dealings();
 
-  return pickWinners<Dealing>(dealings, want, {
-    isBuy: (d) => d.tx_type === "buy" && d.is_open_market_buy !== false,
-    getReturn: (d) => d.live_performance?.return_pct_trade,
-    getTicker: (d) => d.ticker,
-    getTradeDate: (d) => d.trade_date,
-    toWinner: (d) => ({
-      id: d.id,
-      ticker: d.ticker,
-      company: stripTickerSuffix(d.company, d.ticker),
-      returnPct: d.live_performance!.return_pct_trade as number,
-      asOf: d.live_performance?.as_of,
-      buyerName: d.director.name,
-      buyerRole: d.director.role || undefined,
-      metaLine: `Bought ${gbp0.format(d.value_gbp)} of shares at £${(
-        d.price_pence / 100
-      ).toFixed(2)}`,
-      tradeDate: d.trade_date,
-    }),
-  });
+  return pickWinners<Dealing>(
+    dealings,
+    want,
+    {
+      isBuy: (d) => d.tx_type === "buy" && d.is_open_market_buy !== false,
+      getReturn: (d) => d.live_performance?.return_pct_trade,
+      getPrice: (d) => d.price_pence / 100,
+      getTicker: (d) => d.ticker,
+      getTradeDate: (d) => d.trade_date,
+      toWinner: (d) => ({
+        id: d.id,
+        ticker: d.ticker,
+        company: stripTickerSuffix(d.company, d.ticker),
+        returnPct: d.live_performance!.return_pct_trade as number,
+        asOf: d.live_performance?.as_of,
+        buyerName: d.director.name,
+        buyerRole: d.director.role || undefined,
+        metaLine: `Bought ${gbp0.format(d.value_gbp)} of shares at £${(
+          d.price_pence / 100
+        ).toFixed(2)}`,
+        tradeDate: d.trade_date,
+      }),
+    },
+    UK_PRICE_FLOOR_GBP,
+  );
 }
 
 /** Flatten a US reporter's multi-checkbox roles into one short label. */
@@ -203,24 +235,30 @@ function usMetaLine(d: UsDealing): string {
 async function selectUsWinners(want: number): Promise<Winner[]> {
   const { dealings } = await api.usDealings({ view: "all" });
 
-  return pickWinners<UsDealing>(dealings, want, {
-    // Form 4 code "P" + acquired = an open-market purchase by an insider.
-    isBuy: (d) => d.transaction_code === "P" && d.acquired_disposed === "A",
-    getReturn: (d) => d.live_performance?.return_pct_trade,
-    getTicker: (d) => d.ticker,
-    getTradeDate: (d) => d.trade_date,
-    toWinner: (d) => ({
-      id: d.id,
-      ticker: d.ticker,
-      company: d.company,
-      returnPct: d.live_performance!.return_pct_trade as number,
-      asOf: d.live_performance?.as_of,
-      buyerName: d.reporter.name,
-      buyerRole: usRoleLabel(d.reporter),
-      metaLine: usMetaLine(d),
-      tradeDate: d.trade_date,
-    }),
-  });
+  return pickWinners<UsDealing>(
+    dealings,
+    want,
+    {
+      // Form 4 code "P" + acquired = an open-market purchase by an insider.
+      isBuy: (d) => d.transaction_code === "P" && d.acquired_disposed === "A",
+      getReturn: (d) => d.live_performance?.return_pct_trade,
+      getPrice: (d) => d.price,
+      getTicker: (d) => d.ticker,
+      getTradeDate: (d) => d.trade_date,
+      toWinner: (d) => ({
+        id: d.id,
+        ticker: d.ticker,
+        company: d.company,
+        returnPct: d.live_performance!.return_pct_trade as number,
+        asOf: d.live_performance?.as_of,
+        buyerName: d.reporter.name,
+        buyerRole: usRoleLabel(d.reporter),
+        metaLine: usMetaLine(d),
+        tradeDate: d.trade_date,
+      }),
+    },
+    US_PRICE_FLOOR_USD,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -495,28 +533,49 @@ export default function DownloadPage() {
     setWinners(null);
     (async () => {
       try {
-        const picks = await cfg.selectWinners(6);
+        // Shortlist by the server's return (cheap, avoids fetching bars for the
+        // whole feed), then fetch each candidate's price history.
+        const picks = await cfg.selectWinners(WINNERS_SHORTLIST);
 
         if (!live) return;
-        setWinners(picks);
 
-        // Fetch trend bars per winner, in parallel; fill in as they land.
         const withBars = await Promise.all(
           picks.map(async (wn) => {
             try {
-              const raw = await api.priceHistory(wn.ticker, 75);
+              // 120d covers trades up to the 90d fallback window plus a buffer.
+              const raw = await api.priceHistory(wn.ticker, 120);
               const bars = raw
                 .filter((b) => b.date >= wn.tradeDate)
                 .map((b) => ({ date: b.date, close: b.close_pence }));
 
-              return { ...wn, bars: bars.length >= 2 ? bars : undefined };
+              if (bars.length < 2) return null;
+              const first = bars[0].close;
+              const last = bars[bars.length - 1].close;
+
+              if (!first) return null;
+              // Recompute the headline return from the SAME bars the chart
+              // draws (trade-day close -> latest close) so the number and the
+              // line are one measurement and can never contradict.
+              const returnPct = ((last - first) / first) * 100;
+
+              return { ...wn, bars, returnPct };
             } catch {
-              return wn;
+              return null;
             }
           }),
         );
 
-        if (live) setWinners(withBars);
+        // Keep only credible, still-rising winners; show the best survivors.
+        const valid = withBars
+          .flatMap((w) => (w ? [w] : []))
+          .filter(
+            (w) =>
+              w.returnPct >= MIN_RETURN_PCT && w.returnPct <= MAX_RETURN_PCT,
+          )
+          .sort((a, b) => b.returnPct - a.returnPct)
+          .slice(0, WINNERS_SHOWN);
+
+        if (live) setWinners(valid);
       } catch {
         if (live) setWinners([]);
       }
