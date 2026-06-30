@@ -55,8 +55,9 @@ function App() {
         <Route element={<NetherlandsPreviewPage />} path="/nl" />
         <Route element={<UkPreviewPage />} path="/uk-preview" />
         {/* Broker comparison + affiliate directory (UK). Always public. */}
-        {/* Conversion-focused UK app-install landing page. Public, ungated. */}
-        <Route element={<DownloadPage />} path="/download" />
+        {/* Conversion-focused app-install landing pages. Public, ungated. */}
+        <Route element={<DownloadPage market="uk" />} path="/download" />
+        <Route element={<DownloadPage market="us" />} path="/us/download" />
         <Route element={<ComparePage />} path="/compare" />
         <Route element={<ComparePage />} path="/brokers" />
         <Route element={<BrokerDetailPage />} path="/brokers/:slug" />

@@ -1,12 +1,16 @@
-// Conversion-focused UK landing page on /download. Single job: get the visitor
-// to install the iOS app and start the 7-day free trial. Reuses the hero
-// notification-stack "hook" and inherits the floating mobile download CTA from
-// DefaultLayout (which resolves /download -> UK app via marketForPath). It is
-// intentionally PUBLIC and ungated — it does NOT import @/lib/discretion, so
-// the winner proof is always shown in full (the data is the hook here).
+// Conversion-focused app-install landing page, one per market:
+//   /download      -> UK  (ddbx.uk app)
+//   /us/download   -> US  (ddbx.us app)
+// Single job: get the visitor to install the iOS app and start the 7-day free
+// trial. Reuses the hero notification-stack "hook" and inherits the floating
+// mobile download CTA from DefaultLayout (which resolves the route -> the right
+// App Store listing via marketForPath). Intentionally PUBLIC and ungated — it
+// does NOT import @/lib/discretion, so the winner proof is always shown in full
+// (the data is the hook here).
 //
 // Returns are shown, so the page carries a past-performance / not-advice note.
-import type { Dealing } from "@/types/ddbx";
+import type { ReactNode } from "react";
+import type { Dealing, UsDealing, UsReporter } from "@/types/ddbx";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -18,11 +22,17 @@ import { api } from "@/lib/api";
 import { APP_STORE_URLS } from "@/lib/app-store";
 import { stripTickerSuffix } from "@/lib/display-name";
 
-const APP_URL = APP_STORE_URLS.uk;
+type MarketId = "uk" | "us";
 
 const gbp0 = new Intl.NumberFormat("en-GB", {
   style: "currency",
   currency: "GBP",
+  maximumFractionDigits: 0,
+});
+
+const usd0 = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
   maximumFractionDigits: 0,
 });
 
@@ -44,13 +54,19 @@ function AppleGlyph({ className }: { className?: string }) {
   );
 }
 
-function DownloadButton({ gaLabel }: { gaLabel: string }) {
+function DownloadButton({
+  appUrl,
+  gaLabel,
+}: {
+  appUrl: string;
+  gaLabel: string;
+}) {
   return (
     <a
       className={CTA_CLASS}
       data-ga-event="cta_download_lp"
       data-ga-label={gaLabel}
-      href={APP_URL}
+      href={appUrl}
       rel="noopener noreferrer"
       target="_blank"
     >
@@ -61,12 +77,23 @@ function DownloadButton({ gaLabel }: { gaLabel: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Winner selection
+// Winner selection — normalised so the card is market-blind
 // ---------------------------------------------------------------------------
 
+/** A single winner card's data, normalised away from the per-market wire row so
+ *  one `WinnerCard` renders both UK `Dealing`s and US `UsDealing`s. */
 interface Winner {
-  d: Dealing;
+  id: string;
+  ticker: string;
+  company: string;
   returnPct: number;
+  asOf?: string | null;
+  buyerName: string;
+  buyerRole?: string;
+  /** e.g. "Bought £4,071 of shares at £0.04" / "Bought $120,000 at $14.20". */
+  metaLine: string;
+  /** Trade date — the bars fetch anchors the trend line here. */
+  tradeDate: string;
   bars?: { date: string; close: number }[];
 }
 
@@ -79,47 +106,119 @@ function isoDaysAgo(n: number): string {
   return t.toISOString().slice(0, 10);
 }
 
-/** Pick the biggest open-market-buy winners. Prefers the last 30 days; if that
- *  window is thin (markets go quiet), it widens to 90 so the wall is never
- *  embarrassingly empty. Sorted by trade-anchored return, best first, and
- *  deduped to one card per company — its best-performing buy. */
-function pickWinners(dealings: Dealing[], want: number): Winner[] {
-  const candidates = (windowDays: number): Winner[] => {
+/** Generic biggest-winner picker over any wire row. Prefers the last 30 days;
+ *  if that window is thin (markets go quiet), widens to 90 so the wall is never
+ *  embarrassingly empty. Sorted by trade-anchored return, best first, deduped
+ *  to one card per company (its best-performing buy). */
+function pickWinners<T>(
+  items: T[],
+  want: number,
+  cfg: {
+    isBuy: (x: T) => boolean;
+    getReturn: (x: T) => number | null | undefined;
+    getTicker: (x: T) => string;
+    getTradeDate: (x: T) => string;
+    toWinner: (x: T) => Winner;
+  },
+): Winner[] {
+  const build = (windowDays: number): Winner[] => {
     const since = isoDaysAgo(windowDays);
-
-    const ranked = dealings
+    const ranked = items
       .filter(
-        (d) =>
-          d.tx_type === "buy" &&
-          d.is_open_market_buy !== false &&
-          d.trade_date >= since &&
-          typeof d.live_performance?.return_pct_trade === "number" &&
-          (d.live_performance.return_pct_trade as number) > 0,
+        (x) =>
+          cfg.isBuy(x) &&
+          cfg.getTradeDate(x) >= since &&
+          typeof cfg.getReturn(x) === "number" &&
+          (cfg.getReturn(x) as number) > 0,
       )
-      .map((d) => ({
-        d,
-        returnPct: d.live_performance!.return_pct_trade as number,
-      }))
-      .sort((a, b) => b.returnPct - a.returnPct);
+      .sort(
+        (a, b) => (cfg.getReturn(b) as number) - (cfg.getReturn(a) as number),
+      );
 
-    // One company per card — keep the first (highest-return) buy per ticker.
     const seen = new Set<string>();
+    const out: Winner[] = [];
 
-    return ranked.filter((w) => {
-      const key = w.d.ticker.toUpperCase();
+    for (const x of ranked) {
+      const key = cfg.getTicker(x).toUpperCase();
 
-      if (seen.has(key)) return false;
+      if (seen.has(key)) continue;
       seen.add(key);
+      out.push(cfg.toWinner(x));
+    }
 
-      return true;
-    });
+    return out;
   };
 
-  const recent = candidates(30);
+  const recent = build(30);
 
   if (recent.length >= Math.min(want, 4)) return recent.slice(0, want);
 
-  return candidates(90).slice(0, want);
+  return build(90).slice(0, want);
+}
+
+async function selectUkWinners(want: number): Promise<Winner[]> {
+  const dealings = await api.dealings();
+
+  return pickWinners<Dealing>(dealings, want, {
+    isBuy: (d) => d.tx_type === "buy" && d.is_open_market_buy !== false,
+    getReturn: (d) => d.live_performance?.return_pct_trade,
+    getTicker: (d) => d.ticker,
+    getTradeDate: (d) => d.trade_date,
+    toWinner: (d) => ({
+      id: d.id,
+      ticker: d.ticker,
+      company: stripTickerSuffix(d.company, d.ticker),
+      returnPct: d.live_performance!.return_pct_trade as number,
+      asOf: d.live_performance?.as_of,
+      buyerName: d.director.name,
+      buyerRole: d.director.role || undefined,
+      metaLine: `Bought ${gbp0.format(d.value_gbp)} of shares at £${(
+        d.price_pence / 100
+      ).toFixed(2)}`,
+      tradeDate: d.trade_date,
+    }),
+  });
+}
+
+/** Flatten a US reporter's multi-checkbox roles into one short label. */
+function usRoleLabel(r: UsReporter): string | undefined {
+  if (r.officer_title) return r.officer_title;
+  if (r.roles.includes("officer")) return "Officer";
+  if (r.roles.includes("director")) return "Director";
+  if (r.roles.includes("ten_percent_owner")) return "10% owner";
+
+  return undefined;
+}
+
+function usMetaLine(d: UsDealing): string {
+  if (d.value != null && d.price != null) {
+    return `Bought ${usd0.format(d.value)} of stock at $${d.price.toFixed(2)}`;
+  }
+
+  return `Bought ${d.shares.toLocaleString("en-US")} shares`;
+}
+
+async function selectUsWinners(want: number): Promise<Winner[]> {
+  const { dealings } = await api.usDealings({ view: "all" });
+
+  return pickWinners<UsDealing>(dealings, want, {
+    // Form 4 code "P" + acquired = an open-market purchase by an insider.
+    isBuy: (d) => d.transaction_code === "P" && d.acquired_disposed === "A",
+    getReturn: (d) => d.live_performance?.return_pct_trade,
+    getTicker: (d) => d.ticker,
+    getTradeDate: (d) => d.trade_date,
+    toWinner: (d) => ({
+      id: d.id,
+      ticker: d.ticker,
+      company: d.company,
+      returnPct: d.live_performance!.return_pct_trade as number,
+      asOf: d.live_performance?.as_of,
+      buyerName: d.reporter.name,
+      buyerRole: usRoleLabel(d.reporter),
+      metaLine: usMetaLine(d),
+      tradeDate: d.trade_date,
+    }),
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -127,8 +226,8 @@ function pickWinners(dealings: Dealing[], want: number): Winner[] {
 // ---------------------------------------------------------------------------
 
 /** Area-filled trend line, rebased to 0% at the first bar so it reads as the
- *  share-price journey since the director bought. Green when it ends up. Pure
- *  SVG, no axes — it's a feeling, not a dashboard. */
+ *  share-price journey since the buy. Green when it ends up. Pure SVG, no axes
+ *  — it's a feeling, not a dashboard. */
 function TrendChart({
   bars,
   id,
@@ -203,19 +302,25 @@ function TrendChart({
 // Winner card
 // ---------------------------------------------------------------------------
 
-function WinnerCard({ winner }: { winner: Winner }) {
-  const { d, returnPct, bars } = winner;
-  const company = stripTickerSuffix(d.company, d.ticker);
-  const pricePerShare = d.price_pence / 100;
-  const asOf = d.live_performance?.as_of;
+function WinnerCard({
+  winner,
+  appUrl,
+  gaPrefix,
+}: {
+  winner: Winner;
+  appUrl: string;
+  gaPrefix: string;
+}) {
+  const { ticker, company, returnPct, asOf, buyerName, buyerRole, metaLine } =
+    winner;
 
   return (
     <div className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-[#e0d8cc] dark:border-border/60 bg-white/70 dark:bg-surface-secondary/40 p-5 shadow-sm">
       <div className="flex items-center gap-3">
-        <CompanyLogo size={40} ticker={d.ticker} />
+        <CompanyLogo size={40} ticker={ticker} />
         <div className="min-w-0">
           <p className="truncate font-semibold leading-tight">{company}</p>
-          <p className="truncate text-xs text-foreground/50">{d.ticker}</p>
+          <p className="truncate text-xs text-foreground/50">{ticker}</p>
         </div>
         <div className="ml-auto text-right">
           <p className="text-2xl font-bold tabular-nums text-[#1f9d63] dark:text-[#3ad48c]">
@@ -228,25 +333,20 @@ function WinnerCard({ winner }: { winner: Winner }) {
       </div>
 
       <div className="my-4">
-        {bars ? (
-          <TrendChart bars={bars} id={d.id} />
+        {winner.bars ? (
+          <TrendChart bars={winner.bars} id={winner.id} />
         ) : (
           <div aria-hidden className="h-[96px] w-full" />
         )}
       </div>
 
       <p className="text-sm text-foreground/70">
-        <span className="font-medium text-foreground/90">
-          {d.director.name}
-        </span>
-        {d.director.role ? (
-          <span className="text-foreground/55"> · {d.director.role}</span>
+        <span className="font-medium text-foreground/90">{buyerName}</span>
+        {buyerRole ? (
+          <span className="text-foreground/55"> · {buyerRole}</span>
         ) : null}
       </p>
-      <p className="mt-1 text-sm text-foreground/55">
-        Bought {gbp0.format(d.value_gbp)} of shares at £
-        {pricePerShare.toFixed(2)}
-      </p>
+      <p className="mt-1 text-sm text-foreground/55">{metaLine}</p>
       {asOf ? (
         <p className="mt-2 text-[11px] text-foreground/40">
           Prices as of {asOf}
@@ -258,8 +358,8 @@ function WinnerCard({ winner }: { winner: Winner }) {
       <a
         className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full border border-[#d8cfc2] px-3.5 py-1.5 text-[13px] font-medium text-[#5a4128] transition-colors hover:bg-[#5a4128]/[0.06] dark:border-border/70 dark:text-[#ad9479] dark:hover:bg-white/5"
         data-ga-event="cta_download_lp"
-        data-ga-label={`LP card analysis · ${d.ticker}`}
-        href={APP_URL}
+        data-ga-label={`${gaPrefix} card analysis · ${ticker}`}
+        href={appUrl}
         rel="noopener noreferrer"
         target="_blank"
       >
@@ -271,48 +371,135 @@ function WinnerCard({ winner }: { winner: Winner }) {
 }
 
 // ---------------------------------------------------------------------------
+// Per-market config
+// ---------------------------------------------------------------------------
+
+interface LandingConfig {
+  marketId: MarketId;
+  appUrl: string;
+  gaPrefix: string;
+  heroHeadline: ReactNode;
+  heroSub: ReactNode;
+  proofKicker: string;
+  winnersHeading: ReactNode;
+  winnersSub: string;
+  winnersCtaSub: string;
+  whatSub: string;
+  steps: { title: string; body: string }[];
+  finalSub: string;
+  /** "director" / "insider" — used in the returns disclaimer. */
+  buyerNoun: string;
+  selectWinners: (want: number) => Promise<Winner[]>;
+}
+
+const CONFIG: Record<MarketId, LandingConfig> = {
+  uk: {
+    marketId: "uk",
+    appUrl: APP_STORE_URLS.uk,
+    gaPrefix: "LP",
+    heroHeadline: (
+      <>The people who run Britain’s companies just bought their own shares.</>
+    ),
+    heroSub: (
+      <>
+        When a director puts their own money into the business they run, it’s
+        worth a look. ddbx tracks every UK director share purchase — and shows
+        you how they’ve done.
+      </>
+    ),
+    proofKicker: "Last 30 days",
+    winnersHeading: <>Directors bought these. Here’s how they’ve done.</>,
+    winnersSub:
+      "Real, recent open-market purchases by UK directors — and the share-price move since they bought.",
+    winnersCtaSub: "See every director buy as it happens — free for 7 days.",
+    whatSub:
+      "The simplest way to follow what company insiders are doing with their own money.",
+    steps: [
+      {
+        title: "Every filing, decoded",
+        body: "UK directors must disclose when they buy shares in their own company. We read every one the moment it lands — no spreadsheets, no RNS jargon.",
+      },
+      {
+        title: "Follow the smart money",
+        body: "See who's buying, how senior they are, how much they put in, and the price they paid. The people closest to a business, voting with their own money.",
+      },
+      {
+        title: "Track how it played out",
+        body: "Live price tracking shows how each director's buy has performed since — so you can see whose conviction actually paid off.",
+      },
+    ],
+    finalSub:
+      "Every UK director buy, decoded and tracked — in your pocket. Try it free for 7 days.",
+    buyerNoun: "director",
+    selectWinners: selectUkWinners,
+  },
+  us: {
+    marketId: "us",
+    appUrl: APP_STORE_URLS.us,
+    gaPrefix: "LP US",
+    heroHeadline: <>America’s company insiders just bought their own stock.</>,
+    heroSub: (
+      <>
+        When the people who run a business buy its stock with their own money,
+        it’s worth a look. ddbx tracks every US insider purchase — and shows you
+        how they’ve done.
+      </>
+    ),
+    proofKicker: "Last 30 days",
+    winnersHeading: <>Insiders bought these. Here’s how they’ve done.</>,
+    winnersSub:
+      "Real, recent open-market purchases by US insiders — and the share-price move since they bought.",
+    winnersCtaSub: "See every insider buy as it happens — free for 7 days.",
+    whatSub:
+      "The simplest way to follow what company insiders are doing with their own money.",
+    steps: [
+      {
+        title: "Every Form 4, decoded",
+        body: "US insiders must file with the SEC when they buy their own stock. We read every Form 4 the moment it lands — no EDGAR, no jargon.",
+      },
+      {
+        title: "Follow the smart money",
+        body: "See who's buying — CEOs, directors, big holders — how much they put in, and the price they paid. The people closest to a business, voting with their own money.",
+      },
+      {
+        title: "Track how it played out",
+        body: "Live price tracking shows how each insider's buy has performed since — so you can see whose conviction actually paid off.",
+      },
+    ],
+    finalSub:
+      "Every US insider buy, decoded and tracked — in your pocket. Try it free for 7 days.",
+    buyerNoun: "insider",
+    selectWinners: selectUsWinners,
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
-const STEPS: { title: string; body: string }[] = [
-  {
-    title: "Every filing, decoded",
-    body: "UK directors must disclose when they buy shares in their own company. We read every one the moment it lands — no spreadsheets, no RNS jargon.",
-  },
-  {
-    title: "Follow the smart money",
-    body: "See who's buying, how senior they are, how much they put in, and the price they paid. The people closest to a business, voting with their own money.",
-  },
-  {
-    title: "Track how it played out",
-    body: "Live price tracking shows how each director's buy has performed since — so you can see whose conviction actually paid off.",
-  },
-];
-
-export default function DownloadPage() {
-  const radar = useDealRadar("uk", true);
+export default function DownloadPage({ market = "uk" }: { market?: MarketId }) {
+  const cfg = CONFIG[market];
+  const radar = useDealRadar(cfg.marketId, true);
   const [winners, setWinners] = useState<Winner[] | null>(null);
 
   useEffect(() => {
     let live = true;
 
+    setWinners(null);
     (async () => {
       try {
-        const dealings = await api.dealings();
+        const picks = await cfg.selectWinners(6);
 
         if (!live) return;
-        const picks = pickWinners(dealings, 6);
-
         setWinners(picks);
 
         // Fetch trend bars per winner, in parallel; fill in as they land.
         const withBars = await Promise.all(
           picks.map(async (wn) => {
             try {
-              const raw = await api.priceHistory(wn.d.ticker, 75);
-              const since = wn.d.trade_date;
+              const raw = await api.priceHistory(wn.ticker, 75);
               const bars = raw
-                .filter((b) => b.date >= since)
+                .filter((b) => b.date >= wn.tradeDate)
                 .map((b) => ({ date: b.date, close: b.close_pence }));
 
               return { ...wn, bars: bars.length >= 2 ? bars : undefined };
@@ -331,7 +518,7 @@ export default function DownloadPage() {
     return () => {
       live = false;
     };
-  }, []);
+  }, [cfg]);
 
   return (
     <DefaultLayout>
@@ -350,19 +537,19 @@ export default function DownloadPage() {
               copy leads and the stack sits to the right. */}
           <div className="order-2 text-center md:order-1 md:text-left">
             <h1 className="mx-auto max-w-[560px] text-balance text-[34px] font-semibold leading-[1.06] tracking-tight md:mx-0 md:text-[52px]">
-              The people who run Britain’s companies just bought their own
-              shares.
+              {cfg.heroHeadline}
             </h1>
             <p className="mx-auto mt-5 max-w-[460px] text-balance text-base leading-relaxed text-foreground/65 md:mx-0 md:text-lg">
-              When a director puts their own money into the business they run,
-              it’s worth a look. ddbx tracks every UK director share purchase —
-              and shows you how they’ve done.
+              {cfg.heroSub}
             </p>
             {/* On mobile the floating bottom bar carries the install CTA, so
                 the hero button would just duplicate it — desktop has no
                 floating bar, so it shows there. */}
             <div className="mt-7 hidden flex-col items-center gap-2.5 md:flex md:items-start">
-              <DownloadButton gaLabel="LP hero" />
+              <DownloadButton
+                appUrl={cfg.appUrl}
+                gaLabel={`${cfg.gaPrefix} hero`}
+              />
               <p className="text-sm text-foreground/55">
                 Start your <span className="font-medium">7-day free trial</span>
                 . Cancel anytime · iPhone
@@ -379,14 +566,13 @@ export default function DownloadPage() {
       <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-medium uppercase tracking-wider text-[#5a4128] dark:text-[#ad9479]">
-            Last 30 days
+            {cfg.proofKicker}
           </p>
           <h2 className="mt-2 text-balance text-3xl font-semibold tracking-tight md:text-4xl">
-            Directors bought these. Here’s how they’ve done.
+            {cfg.winnersHeading}
           </h2>
           <p className="mt-3 text-balance text-foreground/60">
-            Real, recent open-market purchases by UK directors — and the
-            share-price move since they bought.
+            {cfg.winnersSub}
           </p>
         </div>
 
@@ -398,15 +584,23 @@ export default function DownloadPage() {
                   className="h-[280px] animate-pulse rounded-3xl border border-[#e0d8cc] dark:border-border/60 bg-white/40 dark:bg-surface-secondary/30"
                 />
               ))
-            : winners.map((w) => <WinnerCard key={w.d.id} winner={w} />)}
+            : winners.map((w) => (
+                <WinnerCard
+                  key={w.id}
+                  appUrl={cfg.appUrl}
+                  gaPrefix={cfg.gaPrefix}
+                  winner={w}
+                />
+              ))}
         </div>
 
         {winners && winners.length > 0 && (
           <div className="mt-10 flex flex-col items-center gap-2.5">
-            <DownloadButton gaLabel="LP winners" />
-            <p className="text-sm text-foreground/55">
-              See every director buy as it happens — free for 7 days.
-            </p>
+            <DownloadButton
+              appUrl={cfg.appUrl}
+              gaLabel={`${cfg.gaPrefix} winners`}
+            />
+            <p className="text-sm text-foreground/55">{cfg.winnersCtaSub}</p>
           </div>
         )}
       </section>
@@ -419,12 +613,11 @@ export default function DownloadPage() {
               What is ddbx?
             </h2>
             <p className="mt-3 text-balance text-foreground/60">
-              The simplest way to follow what company insiders are doing with
-              their own money.
+              {cfg.whatSub}
             </p>
           </div>
           <div className="mt-10 grid gap-8 md:grid-cols-3">
-            {STEPS.map((s, i) => (
+            {cfg.steps.map((s, i) => (
               <div key={s.title} className="text-center md:text-left">
                 <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#5a4128] text-base font-semibold text-white dark:bg-white dark:text-[#1a140d] md:mx-0">
                   {i + 1}
@@ -445,18 +638,20 @@ export default function DownloadPage() {
           Start following the smart money today.
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-balance text-foreground/65">
-          Every UK director buy, decoded and tracked — in your pocket. Try it
-          free for 7 days.
+          {cfg.finalSub}
         </p>
         <div className="mt-8 flex flex-col items-center gap-2.5">
-          <DownloadButton gaLabel="LP footer" />
+          <DownloadButton
+            appUrl={cfg.appUrl}
+            gaLabel={`${cfg.gaPrefix} footer`}
+          />
           <p className="text-sm text-foreground/55">
             7-day free trial · Cancel anytime · iPhone
           </p>
         </div>
 
         <p className="mx-auto mt-12 max-w-xl text-xs leading-relaxed text-foreground/40">
-          Returns shown are the share-price change since each director’s
+          Returns shown are the share-price change since each {cfg.buyerNoun}’s
           purchase, as of the latest cached close. Past performance is not a
           reliable indicator of future results. ddbx is information, not
           financial advice — capital is at risk.
