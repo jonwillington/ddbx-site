@@ -55,9 +55,11 @@ function App() {
         <Route element={<NetherlandsPreviewPage />} path="/nl" />
         <Route element={<UkPreviewPage />} path="/uk-preview" />
         {/* Broker comparison + affiliate directory (UK). Always public. */}
-        {/* Conversion-focused app-install landing pages. Public, ungated. */}
-        <Route element={<DownloadPage market="uk" />} path="/download" />
-        <Route element={<DownloadPage market="us" />} path="/us/download" />
+        {/* Conversion-focused app-install landing pages. Public, ungated.
+            Market is resolved inside the page (host- + path-aware): /download
+            follows the host (ddbx.us -> US), /us/download forces US anywhere. */}
+        <Route element={<DownloadPage />} path="/download" />
+        <Route element={<DownloadPage />} path="/us/download" />
         <Route element={<ComparePage />} path="/compare" />
         <Route element={<ComparePage />} path="/brokers" />
         <Route element={<BrokerDetailPage />} path="/brokers/:slug" />

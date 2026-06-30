@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import type { Dealing, UsDealing, UsReporter } from "@/types/ddbx";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import { CompanyLogo } from "@/components/company-logo";
 import { useDealRadar } from "@/components/market/hero-deal-radar";
@@ -21,6 +22,7 @@ import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import { APP_STORE_URLS } from "@/lib/app-store";
 import { stripTickerSuffix } from "@/lib/display-name";
+import { marketForPath } from "@/lib/markets/registry";
 
 type MarketId = "uk" | "us";
 
@@ -477,7 +479,12 @@ const CONFIG: Record<MarketId, LandingConfig> = {
 // Page
 // ---------------------------------------------------------------------------
 
-export default function DownloadPage({ market = "uk" }: { market?: MarketId }) {
+export default function DownloadPage() {
+  // Resolve the market the same way the rest of the site does — host- and
+  // path-aware (ddbx.us -> US, ddbx.uk -> UK; the /us/download route forces US
+  // on any host). A fixed per-route prop would show UK content on the US host.
+  const { pathname } = useLocation();
+  const market: MarketId = marketForPath(pathname).id === "us" ? "us" : "uk";
   const cfg = CONFIG[market];
   const radar = useDealRadar(cfg.marketId, true);
   const [winners, setWinners] = useState<Winner[] | null>(null);
