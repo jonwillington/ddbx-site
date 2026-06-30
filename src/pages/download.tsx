@@ -197,7 +197,7 @@ function WinnerCard({ winner }: { winner: Winner }) {
   const asOf = d.live_performance?.as_of;
 
   return (
-    <div className="flex flex-col rounded-3xl border border-[#e0d8cc] dark:border-border/60 bg-white/70 dark:bg-surface-secondary/40 p-5 shadow-sm">
+    <div className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-[#e0d8cc] dark:border-border/60 bg-white/70 dark:bg-surface-secondary/40 p-5 shadow-sm">
       <div className="flex items-center gap-3">
         <CompanyLogo size={40} ticker={d.ticker} />
         <div className="min-w-0">
@@ -239,6 +239,20 @@ function WinnerCard({ winner }: { winner: Winner }) {
           Prices as of {asOf}
         </p>
       ) : null}
+
+      {/* The full analysis (the "why") lives in the app — this nudges the tap.
+          Labelled per-ticker so GA shows which winners pull installs. */}
+      <a
+        className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full border border-[#d8cfc2] px-3.5 py-1.5 text-[13px] font-medium text-[#5a4128] transition-colors hover:bg-[#5a4128]/[0.06] dark:border-border/70 dark:text-[#ad9479] dark:hover:bg-white/5"
+        data-ga-event="cta_download_lp"
+        data-ga-label={`LP card analysis · ${d.ticker}`}
+        href={APP_URL}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        View analysis
+        <span aria-hidden>→</span>
+      </a>
     </div>
   );
 }
@@ -321,17 +335,20 @@ export default function DownloadPage() {
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-10 md:grid-cols-2 md:py-16">
           {/* On mobile the stack comes first (it's the hook); on desktop the
               copy leads and the stack sits to the right. */}
-          <div className="order-2 md:order-1">
-            <h1 className="max-w-[560px] text-balance text-[34px] font-semibold leading-[1.06] tracking-tight md:text-[52px]">
+          <div className="order-2 text-center md:order-1 md:text-left">
+            <h1 className="mx-auto max-w-[560px] text-balance text-[34px] font-semibold leading-[1.06] tracking-tight md:mx-0 md:text-[52px]">
               The people who run Britain’s companies just bought their own
               shares.
             </h1>
-            <p className="mt-5 max-w-[460px] text-balance text-base leading-relaxed text-foreground/65 md:text-lg">
+            <p className="mx-auto mt-5 max-w-[460px] text-balance text-base leading-relaxed text-foreground/65 md:mx-0 md:text-lg">
               When a director puts their own money into the business they run,
               it’s worth a look. ddbx tracks every UK director share purchase —
               and shows you how they’ve done.
             </p>
-            <div className="mt-7 flex flex-col items-start gap-2.5">
+            {/* On mobile the floating bottom bar carries the install CTA, so
+                the hero button would just duplicate it — desktop has no
+                floating bar, so it shows there. */}
+            <div className="mt-7 hidden flex-col items-center gap-2.5 md:flex md:items-start">
               <DownloadButton gaLabel="LP hero" />
               <p className="text-sm text-foreground/55">
                 Start your <span className="font-medium">7-day free trial</span>
