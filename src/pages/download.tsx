@@ -81,12 +81,13 @@ function isoDaysAgo(n: number): string {
 
 /** Pick the biggest open-market-buy winners. Prefers the last 30 days; if that
  *  window is thin (markets go quiet), it widens to 90 so the wall is never
- *  embarrassingly empty. Sorted by trade-anchored return, best first. */
+ *  embarrassingly empty. Sorted by trade-anchored return, best first, and
+ *  deduped to one card per company — its best-performing buy. */
 function pickWinners(dealings: Dealing[], want: number): Winner[] {
   const candidates = (windowDays: number): Winner[] => {
     const since = isoDaysAgo(windowDays);
 
-    return dealings
+    const ranked = dealings
       .filter(
         (d) =>
           d.tx_type === "buy" &&
@@ -100,6 +101,18 @@ function pickWinners(dealings: Dealing[], want: number): Winner[] {
         returnPct: d.live_performance!.return_pct_trade as number,
       }))
       .sort((a, b) => b.returnPct - a.returnPct);
+
+    // One company per card — keep the first (highest-return) buy per ticker.
+    const seen = new Set<string>();
+
+    return ranked.filter((w) => {
+      const key = w.d.ticker.toUpperCase();
+
+      if (seen.has(key)) return false;
+      seen.add(key);
+
+      return true;
+    });
   };
 
   const recent = candidates(30);
