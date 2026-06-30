@@ -332,7 +332,7 @@ export default function DownloadPage() {
               "radial-gradient(ellipse 60% 55% at 70% 18%, rgba(255,248,232,0.7) 0%, transparent 60%)",
           }}
         />
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-10 md:grid-cols-2 md:py-16">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-10 pt-1 md:grid-cols-2 md:py-16">
           {/* On mobile the stack comes first (it's the hook); on desktop the
               copy leads and the stack sits to the right. */}
           <div className="order-2 text-center md:order-1 md:text-left">
