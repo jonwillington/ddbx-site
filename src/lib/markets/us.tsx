@@ -681,7 +681,7 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   ),
   marketLabel: "US",
   locale: "en-US",
-  topNotice: "The US is in BETA currently.",
+  // US app is fully live (paywall + 7-day trial active) — no longer beta.
   priceFormat: USD_FORMAT,
   // The prices API returns native USD already: `price_pence` is the minor
   // unit (cents = USD * 100), NOT GBP-equivalent pence. So recover native
