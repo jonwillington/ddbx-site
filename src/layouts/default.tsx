@@ -565,6 +565,8 @@ export default function DefaultLayout({
         />
         <div className="relative px-4 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {directAppUrl ? (
+            // Live-app market (UK/US): lead with the offer, not the mechanic —
+            // "Start your free trial" converts better than "Download the app".
             <a
               className={DOWNLOAD_CTA_CLASS}
               href={directAppUrl}
@@ -572,9 +574,10 @@ export default function DefaultLayout({
               target="_blank"
             >
               <AppleGlyph className="h-5 w-5 shrink-0" />
-              <span>Download the app</span>
+              <span>Start your free trial</span>
             </a>
           ) : (
+            // App-less market (SE/NL): no trial to offer — opens the chooser.
             <button
               className={DOWNLOAD_CTA_CLASS}
               type="button"
@@ -585,7 +588,9 @@ export default function DefaultLayout({
             </button>
           )}
           <p className="pointer-events-none mt-2 text-center text-xs text-foreground/55">
-            Start your 7-day free trial. On iOS now — Android July 2026.
+            {directAppUrl
+              ? "7 days free, cancel anytime. iOS now — Android July 2026."
+              : "Start your 7-day free trial. On iOS now — Android July 2026."}
           </p>
         </div>
       </div>
