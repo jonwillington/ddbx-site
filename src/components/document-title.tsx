@@ -26,6 +26,13 @@ export function DocumentTitle() {
       if (pathname === "/compare" || pathname.startsWith("/brokers")) {
         return `Compare UK trading platforms — fees, ISAs & SIPPs — ${siteConfig.name}`;
       }
+      // App-install landing pages (/download, /us/download) — conversion copy,
+      // distinct from the generic market-listing homepage title.
+      if (pathname.endsWith("/download")) {
+        return market.id === "us"
+          ? `Get ddbx — follow US insider stock buys · 7-day free trial`
+          : `Get ddbx — follow UK director share buys · 7-day free trial`;
+      }
 
       return market.config.documentTitle;
     })();
@@ -42,6 +49,11 @@ export function DocumentTitle() {
         }
         if (pathname === "/compare" || pathname.startsWith("/brokers")) {
           return "Compare the UK’s main trading and investing platforms side by side — fees, ISAs, SIPPs, fractional shares and FSCS protection.";
+        }
+        if (pathname.endsWith("/download")) {
+          return market.id === "us"
+            ? "See which US insiders are buying their own stock — with live performance tracking. Start your 7-day free trial on the ddbx iOS app."
+            : "See which UK directors are buying shares in their own companies — with live performance tracking. Start your 7-day free trial on the ddbx iOS app.";
         }
 
         return `Analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;
