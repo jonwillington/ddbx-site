@@ -10,6 +10,7 @@ import DownloadPage from "@/pages/download";
 import PerformancePage from "@/pages/performance";
 import DirectorPage from "@/pages/director";
 import CongressPreviewPage from "@/pages/congress-preview";
+import DjtPreviewPage from "@/pages/djt-preview";
 import MarketHomePage from "@/pages/market-home";
 import NetherlandsPreviewPage from "@/pages/netherlands-preview";
 import SwedenPreviewPage from "@/pages/sweden-preview";
@@ -49,6 +50,7 @@ function App() {
             (per-market insider detail). */}
         <Route element={<CongressPreviewPage />} path="/directors" />
         <Route element={<CongressPreviewPage />} path="/congress" />
+        <Route element={<DjtPreviewPage />} path="/djt" />
         <Route element={<SwedenPreviewPage />} path="/se-preview" />
         <Route element={<SwedenPreviewPage />} path="/se" />
         <Route element={<NetherlandsPreviewPage />} path="/nl-preview" />

@@ -1,47 +1,31 @@
 import { useEffect, useState } from "react";
 
+import { API_BASE } from "@/lib/api";
+
 /**
- * Logo.dev config. Free tier requires attribution via `LogoDevAttribution`
- * once per logo-bearing screen. Token is the same publishable key the iOS
- * app ships (safe in the client per logo.dev docs).
+ * Logo.dev is now reached through our own Worker proxy (`/api/logo/*`) rather
+ * than `img.logo.dev` directly. The proxy holds the token, applies ticker→domain
+ * overrides, passes `fallback=404`, and fingerprints junk favicons (e.g. the
+ * WordPress default that AIE.L resolves to) — so all that logic lives in ONE
+ * place (ddbx-data pipeline/logo.ts) and a bad logo is fixed by a worker deploy,
+ * not a site/iOS/Android release. On a 404 the proxy returns nothing and the
+ * `onError` path below shows the monogram. Free tier still requires attribution
+ * via `LogoDevAttribution` once per logo-bearing screen.
  */
-const LOGO_DEV_TOKEN = "pk_aFXx8Wx5TrenY0XbJuUMrA";
 const LOGO_DEV_ATTRIBUTION_URL = "https://logo.dev";
 
-// Logo.dev's TICKER lookup mis-resolves a few dual-class symbols (BRK.B →
-// London Stock Exchange's logo). For these, fetch Logo.dev's DOMAIN endpoint
-// with the company's real domain instead. Mirrors the worker card kit
-// (ddbx-data summary-image.ts) + iOS/Android CompanyLogo. Extend as needed.
-const TICKER_LOGO_DOMAIN: Record<string, string> = {
-  "BRK.B": "berkshirehathaway.com",
-  "BRK.A": "berkshirehathaway.com",
-};
-
-export function logoUrl(ticker: string, sizePx: number): string {
-  // Keep the LSE `.L` suffix in the URL — Logo.dev's database is keyed on
-  // exchange-qualified symbols for UK rows. Stripping it returns either a
-  // generic placeholder (HSBA, ULVR, LLOY, BARC) or the wrong company
-  // (TSCO → Tractor Supply, IAG → Insurance Australia). Matches iOS.
-  // Oversample like iOS — keeps the request URL stable regardless of DPR
-  // so cached responses re-use across @1x/@2x viewports.
-  const pixelSize = Math.max(48, Math.round(sizePx * 3));
-
-  const domain = TICKER_LOGO_DOMAIN[ticker.toUpperCase()];
-
-  if (domain) {
-    return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=${pixelSize}&format=png&retina=true`;
-  }
-
-  return `https://img.logo.dev/ticker/${encodeURIComponent(ticker)}?token=${LOGO_DEV_TOKEN}&size=${pixelSize}&format=png&retina=true`;
+// The proxy serves one canonical pixel size, so callers no longer pass a size
+// into the URL (kept in the signature for call-site stability; the rendered box
+// size is applied by CSS). `.L` and other exchange suffixes are preserved — the
+// server keys Logo.dev on the exchange-qualified symbol.
+export function logoUrl(ticker: string, _sizePx?: number): string {
+  return `${API_BASE}/logo/ticker/${encodeURIComponent(ticker)}`;
 }
 
-/** Logo.dev DOMAIN lookup — for entities we identify by website rather than an
- *  exchange ticker (e.g. broker-comparison platforms). Oversamples like
- *  `logoUrl` so cached responses re-use across DPRs. */
-export function domainLogoUrl(domain: string, sizePx: number): string {
-  const pixelSize = Math.max(48, Math.round(sizePx * 3));
-
-  return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=${pixelSize}&format=png&retina=true`;
+/** Proxy DOMAIN lookup — for entities we identify by website rather than an
+ *  exchange ticker (e.g. broker-comparison platforms). */
+export function domainLogoUrl(domain: string, _sizePx?: number): string {
+  return `${API_BASE}/logo/domain/${encodeURIComponent(domain)}`;
 }
 
 function monogram(ticker: string): string {

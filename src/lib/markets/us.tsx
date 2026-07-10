@@ -310,7 +310,7 @@ export function toMarketDealing(group: UsRowGroup): MarketDealing<UsRowGroup> {
 
 /* ─── Slot components ────────────────────────────────────────────────── */
 
-function ActionChip({
+export function ActionChip({
   label,
   tone,
   size = "md",
@@ -388,7 +388,11 @@ function UsRowActionCell({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
   );
 }
 
-function UsDetailPosition({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
+export function UsDetailPosition({
+  dealing,
+}: {
+  dealing: MarketDealing<UsRowGroup>;
+}) {
   const group = dealing.raw;
   const ticker = group.primary.ticker;
   const tradeDate = group.primary.trade_date.slice(0, 10);
@@ -465,7 +469,7 @@ function UsDetailPosition({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
   );
 }
 
-function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
+export function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
   const group = dealing.raw;
   const row = group.primary;
 

@@ -54,6 +54,11 @@ const WORKER_BASE = (() => {
 //   VITE_API_BASE=https://director-dealings.<your-subdomain>.workers.dev/api
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "/api";
 
+/** The `/api` base the app fetches from — `/api` in dev (Vite-proxied to
+ *  wrangler), the full Worker URL in prod. Exported so non-JSON consumers like
+ *  the company-logo image proxy resolve to the same origin. */
+export const API_BASE = BASE;
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
 
@@ -169,6 +174,19 @@ export const api = {
     return get<{ dealings: UsDealing[]; stats: UsDealingsStats }>(
       `/us-dealings${suffix}`,
     );
+  },
+  /** Trump Media (DJT) insider Form 4 feed — all transaction types (grants,
+   *  sales, buys), newest disclosure first. Same UsDealing wire shape as
+   *  usDealings, but no view mask / rating / triage (the DJT vertical is a raw
+   *  company-insider feed). See ddbx-data /api/djt-dealings. */
+  djtDealings: (opts: { limit?: number; reporter?: string } = {}) => {
+    const qs = new URLSearchParams();
+
+    if (opts.limit != null) qs.set("limit", String(opts.limit));
+    if (opts.reporter) qs.set("reporter", opts.reporter);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+
+    return get<{ dealings: UsDealing[] }>(`/djt-dealings${suffix}`);
   },
   euScrape: async (from: string, to: string): Promise<EuScrapeResult> => {
     // Dry-run EU scrape (currently Sweden FI). Returns parsed rows without

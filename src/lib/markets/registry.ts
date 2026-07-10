@@ -18,6 +18,7 @@ import {
 } from "country-flag-icons/react/3x2";
 
 import { CongressMarket } from "./congress";
+import { DjtMarket } from "./djt";
 import { NetherlandsMarket } from "./netherlands";
 import { SwedenMarket } from "./sweden";
 import { UkMarket } from "./uk";
@@ -84,6 +85,16 @@ export const MARKETS: MarketRegistryEntry[] = [
     config: CongressMarket as MarketConfig,
   },
   {
+    id: "djt",
+    code: "DJT",
+    label: "Trump Media",
+    route: "/djt",
+    canonicalRoute: "/djt",
+    Flag: US,
+    region: "north-america",
+    config: DjtMarket as MarketConfig,
+  },
+  {
     id: "se",
     code: "SE",
     label: "SE",
@@ -111,6 +122,8 @@ const MARKET_HOST_BY_ID: Record<string, string> = {
   // Congress lives on the US domain at /congress (the US Form 4 market owns
   // the ddbx.us root). Clicking it from any other domain crosses over.
   usg: "ddbx.us",
+  // Trump Media insiders ride the US domain at /djt (like Congress).
+  djt: "ddbx.us",
   se: "ddbx.eu",
   nl: "ddbx.eu",
 };
@@ -224,6 +237,10 @@ export function marketForPath(
     pathname === "/directors"
   )
     return MARKETS.find((m) => m.id === "usg") ?? uk;
+  // Trump Media insiders — explicit before the host default so /djt wins on
+  // ddbx.us (whose root is the US Form 4 market).
+  if (pathname === "/djt" || pathname.startsWith("/djt/"))
+    return MARKETS.find((m) => m.id === "djt") ?? uk;
 
   if (host && HOST_DEFAULT_MARKET[host]) {
     return byId(HOST_DEFAULT_MARKET[host]) ?? uk;

@@ -530,6 +530,25 @@ export interface MarketOverview {
   narrative: string;             // 1-2 sentence macro context
 }
 
+/** Live intraday index quote for the "market open, no deals yet" empty state in
+ *  the consumer apps. Unlike `MarketOverview` (a settled open-to-close move with
+ *  an LLM "why", written at end of day), this is a pure-numbers snapshot of the
+ *  headline index's move SO FAR today: today's open vs the latest traded level,
+ *  both from Yahoo. No narrative — the macro "why" stays an end-of-day product.
+ *  Served by GET /api/index-quote, gated on the `marketOverview` capability. The
+ *  apps only request it while their market is open, and decide whether to show
+ *  it; the server returns the freshest intraday figures it can. */
+export interface LiveIndexQuote {
+  ticker: string;                // e.g. "^FTSE"
+  label: string;                 // e.g. "FTSE 100"
+  open: number;                  // today's opening level, in index points
+  current: number;               // latest traded level, in index points
+  pct: number;                   // open-to-current % move
+  /** Downsampled intraday close series (chronological, ~40 points) for a
+   *  sparkline. Optional: absent on older clients/cache or thin data. */
+  series?: number[];
+}
+
 /** Close-of-day prose recap, synthesised by Opus from the full tape. */
 export interface DailySummary {
   date: string;                  // ISO YYYY-MM-DD
