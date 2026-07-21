@@ -11,6 +11,13 @@
     "Liberation Mono", monospace;
   /* bg-content1 shim — light mode: surface white; dark mode: warm dark surface via var() cascade */
   --color-content1: var(--content1, var(--surface));
+
+  /* Key-risk markers. Warm amber rather than the evidence-against red: a
+     risk is a caveat to weigh, not a verdict against the deal, and the red
+     was already spoken for. Sits in the palette's own hue family (h≈58)
+     so it reads as brand rather than as a system warning colour.
+     Mirrors `Color.riskAmber` in the iOS app's Theme.swift. */
+  --color-risk: oklch(63.7% 0.141 58);
 }
 
 body {

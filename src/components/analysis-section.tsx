@@ -58,7 +58,7 @@ export function AnalysisSection({ analysis }: { analysis: Analysis }) {
       {analysis.key_risks.length > 0 && (
         <div>
           <h4 className="text-sm font-semibold mb-1">Key risks</h4>
-          <ul className="text-sm list-disc pl-5 text-foreground/90 space-y-1">
+          <ul className="text-sm list-disc pl-5 text-foreground/90 space-y-1 marker:text-risk">
             {analysis.key_risks.map((r, i) => (
               <li key={i}>{r}</li>
             ))}

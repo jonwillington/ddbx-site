@@ -190,11 +190,6 @@ export function MarketDetailDrawer<W>({
   // come from the deep-analysis pipeline, so they're absent on unanalysed
   // dealings (and on markets without an analysis layer).
   const industryLabel = active?.sector ?? null;
-  const confidenceLabel =
-    active && active.confidence != null
-      ? `${Math.round(active.confidence * 100)}%`
-      : null;
-  const catalystLabel = active?.catalystWindow ?? null;
 
   // Detached, floating panel (vaul "side drawer" style): a gap on every
   // free edge + rounded corners so it reads as a card lifted off the page
@@ -448,26 +443,11 @@ export function MarketDetailDrawer<W>({
                                 </dd>
                               </div>
                             )}
-                            {confidenceLabel && (
-                              <div>
-                                <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                                  Confidence
-                                </dt>
-                                <dd className="text-sm font-medium tabular-nums">
-                                  {confidenceLabel}
-                                </dd>
-                              </div>
-                            )}
-                            {catalystLabel && (
-                              <div>
-                                <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
-                                  Catalyst
-                                </dt>
-                                <dd className="text-sm font-medium">
-                                  {catalystLabel}
-                                </dd>
-                              </div>
-                            )}
+                            {/* Confidence + catalyst deliberately absent: they
+                                describe the *analysis*, not the filing, and
+                                AnalysisSection already states them. They used
+                                to render in both places. Markets that override
+                                detailFields never showed them here anyway. */}
                           </>
                         )}
                       </dl>
