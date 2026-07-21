@@ -39,7 +39,7 @@ const CHECKS: {
 }[] = [
   {
     key: "open_market_buy",
-    title: "Open-market buy",
+    title: "Was it an open-market buy?",
     body: "They paid for the shares themselves on the open market. Not an option grant, a vesting, or an internal transfer.",
     passLine: (c) =>
       c.price
@@ -48,7 +48,7 @@ const CHECKS: {
   },
   {
     key: "senior_insider",
-    title: "Senior insider",
+    title: "Was it a senior insider?",
     body: "The buyer is a CEO, CFO, or a board member close to the business, not a junior name on the register.",
     passLine: (c) =>
       c.role
@@ -57,27 +57,27 @@ const CHECKS: {
   },
   {
     key: "meaningful_conviction",
-    title: "Meaningful conviction",
+    title: "Did they show real conviction?",
     body: "The amount is large relative to what they earn, so it reads as a real commitment rather than a token.",
     passLine: (c) => `${c.value} of personal capital. That is not a token.`,
   },
   {
     key: "no_alternative_explanation",
-    title: "No scheme or plan",
+    title: "Was the timing their own call?",
     body: "Nothing mechanical explains the timing: no dividend reinvestment, no pre-arranged trading plan, no contractual or tax deadline.",
     passLine: () =>
       "Nothing mechanical explains the timing — no plan, no scheme, no deadline forcing it.",
   },
   {
     key: "supporting_context_found",
-    title: "Supporting context",
+    title: "Does the context hold up?",
     body: "Either there is news that makes the timing make sense, or nothing public argues against it. A buy in a quiet period can be the strongest kind.",
     passLine: (c) =>
       `The timing holds up against everything public about ${c.company}.`,
   },
   {
     key: "no_major_counter_signal",
-    title: "No major counter-signal",
+    title: "Is the picture otherwise clean?",
     body: "Nothing serious points the other way: no other insiders selling at the same time, no open investigation, no sign the business is still getting worse.",
     passLine: () =>
       "No insiders selling against it, no open investigation, nothing pointing the other way.",
