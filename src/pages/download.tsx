@@ -56,8 +56,8 @@ const usd0 = new Intl.NumberFormat("en-US", {
 
 /** Filled brown App Store pill — same anchor styling as the market hero so the
  *  page reads as the same product. */
-const CTA_CLASS =
-  "inline-flex items-center justify-center gap-2.5 rounded-full bg-[#5a4128] px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-[#49331f] hover:shadow-lg dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90";
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+const CTA_CLASS = `inline-flex items-center justify-center gap-2.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-7 py-3.5 text-base font-semibold shadow-md transition-all hover:shadow-lg`;
 
 function AppleGlyph({ className }: { className?: string }) {
   return (

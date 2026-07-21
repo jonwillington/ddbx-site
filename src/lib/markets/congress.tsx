@@ -13,6 +13,7 @@ import { BoltIcon } from "@heroicons/react/24/solid";
 
 import { api } from "@/lib/api";
 import { AnalysisSection } from "@/components/analysis-section";
+import { chip } from "@/components/chip";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { RatingBadge } from "@/components/rating-badge";
@@ -138,7 +139,7 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
 function CongressRowNameBadge({ dealing }: { dealing: MarketDealing<GovDealing> }) {
   if (dealing.raw.asset_type !== "option") return null;
   return (
-    <span className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-600 dark:text-violet-300">
+    <span className={`${chip()} bg-violet-500/10 text-violet-600 dark:text-violet-300`}>
       <BoltIcon className="h-3 w-3 shrink-0" />
       Options
     </span>
@@ -420,19 +421,20 @@ function CongressTraderProfile({
   const nw = netWorthLabel(p);
   if (adv == null && !nw && !p.note) return null;
 
-  const chip =
+  // Tint + label colour only — the hairline derives from the label.
+  const profileChip =
     adv === true
-      ? { text: "Advisor-managed", cls: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300" }
+      ? { text: "Advisor-managed", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300" }
       : adv === false
-        ? { text: "Self-directed", cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" }
-        : { text: "Management unconfirmed", cls: "border-foreground/15 bg-transparent text-foreground/45" };
+        ? { text: "Self-directed", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" }
+        : { text: "Management unconfirmed", cls: "bg-transparent text-foreground/45" };
 
   return (
     <section className="space-y-1.5 border-t border-foreground/10 pt-4">
       <h3 className="text-base font-semibold">Trader profile</h3>
       <div className="flex flex-wrap items-center gap-2">
-        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium ${chip.cls}`}>
-          {chip.text}
+        <span className={`${chip()} ${profileChip.cls}`}>
+          {profileChip.text}
         </span>
         {nw && (
           <span className="text-sm text-foreground/70">

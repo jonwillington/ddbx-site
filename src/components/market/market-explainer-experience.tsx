@@ -111,8 +111,8 @@ const PULSE_POINTS: {
   { left: "91%", top: "46%", size: 11, delay: 7.5 },
 ];
 
-const FILLED_CTA =
-  "inline-flex items-center gap-2 rounded-full bg-[#ad9479] px-6 py-3 text-base font-semibold text-[#1a140d] shadow-md transition-all hover:bg-[#bda58a] hover:shadow-lg";
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+const FILLED_CTA = `inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg`;
 
 const GHOST_CTA =
   "inline-flex items-center rounded-full border border-white/15 px-6 py-3 text-base font-semibold text-[#e9e1d4] transition-colors hover:bg-white/[0.06]";

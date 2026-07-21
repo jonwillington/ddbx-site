@@ -57,6 +57,7 @@ const DECOY = [
   { ticker: "•••", returnPct: 0.061 },
 ];
 
+import { BUTTON_FILLED_GROUP, BUTTON_RADIUS } from "@/components/button";
 function toneClass(ratio: number | null): string {
   if (ratio == null) return "text-muted";
 
@@ -401,7 +402,9 @@ function Contributors({
           </div>
 
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#5a4128] text-white text-[11px] font-medium px-3 py-1.5 shadow-lg group-hover:bg-[#3d2b1a] transition-colors">
+            <span
+              className={`inline-flex items-center gap-1.5 ${BUTTON_RADIUS} ${BUTTON_FILLED_GROUP} text-[11px] font-medium px-3 py-1.5 shadow-lg transition-colors`}
+            >
               <LockClosedIcon className="w-3 h-3" />
               See all {rows.length} picks in the app
             </span>

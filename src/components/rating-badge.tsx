@@ -4,6 +4,14 @@ import { CheckCircleIcon as CheckCircleSolidIcon } from "@heroicons/react/20/sol
 import { CheckCircleIcon as CheckCircleOutlineIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 
+import {
+  CHIP_BASE,
+  CHIP_HAIRLINE,
+  CHIP_HAIRLINE_FILLED,
+  CHIP_SIZE,
+  type ChipSize,
+} from "@/components/chip";
+
 /** Badge tier — the analyst ratings plus "skipped" (unanalysed rows), which
  *  sits below routine as the smallest step in the size + colour taper. */
 type BadgeRating = Rating | "skipped";
@@ -25,20 +33,33 @@ const LABELS: Record<BadgeRating, string> = {
 };
 
 // Three visual tiers mirroring the iOS app (Theme.ratingColor + ratingBadge):
-//   significant → FILLED: solid brown bg, white label, filled check, no border
-//   noteworthy  → OUTLINED: transparent bg, brown label + soft (40%) border, outline check
-//   minor/routine/skipped → soft tint: 12% bg, no icon, no border
+//   significant → FILLED: solid brown bg, contrasting label, filled check
+//   noteworthy  → OUTLINED: transparent bg, brown label, outline check
+//   minor/routine/skipped → soft tint, no icon
 // Base colours match iOS: sig #6b2f0a / dark #e8a878; note #4a3520 / dark #c4a882;
 // minor #7e766c; routine #b0a898.
+//
+// Tint + label colour only. Every tier's hairline now derives from its own
+// label colour via CHIP_HAIRLINE, which is what lets the quiet tiers keep a
+// defined edge without a per-tier border table — the filled top tier is the
+// one exception (see BORDER below).
 const STYLES: Record<BadgeRating, string> = {
-  significant:
-    "bg-[#6b2f0a] text-white border-transparent dark:bg-[#e8a878] dark:text-[#3a1d08]",
-  noteworthy:
-    "bg-transparent text-[#4a3520] border-[#4a3520]/40 dark:text-[#c4a882] dark:border-[#c4a882]/40",
-  minor: "bg-[#7e766c]/12 text-[#7e766c] border-transparent font-normal",
-  routine: "bg-[#b0a898]/12 text-[#b0a898] border-transparent font-normal",
-  skipped:
-    "bg-transparent text-[#a89e8c] border-[#d8d0c6]/45 font-normal dark:text-foreground/40",
+  significant: "bg-[#6b2f0a] text-white dark:bg-[#e8a878] dark:text-[#3a1d08]",
+  noteworthy: "bg-transparent text-[#4a3520] dark:text-[#c4a882]",
+  minor: "bg-[#7e766c]/12 text-[#7e766c]",
+  routine: "bg-[#b0a898]/12 text-[#b0a898]",
+  skipped: "bg-transparent text-[#a89e8c] dark:text-foreground/40",
+};
+
+// Only the filled tier opts out of the currentColor hairline: its label is
+// white (or near-black in dark mode), so a 25% rim would read as an inner
+// highlight rather than an edge.
+const BORDER: Record<BadgeRating, string> = {
+  significant: CHIP_HAIRLINE_FILLED,
+  noteworthy: CHIP_HAIRLINE,
+  minor: CHIP_HAIRLINE,
+  routine: CHIP_HAIRLINE,
+  skipped: CHIP_HAIRLINE,
 };
 
 // Check-circle icon per tier — filled for significant, outline for noteworthy,
@@ -50,16 +71,20 @@ const ICON: Partial<Record<BadgeRating, "solid" | "outline">> = {
 
 // Size steps down by tier so the badge's physical prominence tapers evenly
 // significant → noteworthy → minor → routine → skipped, reinforcing the
-// colour/weight gradient above. Drives the mobile pill text and the md+ boxed
-// badge's width / padding / text. (The Today cards force their own compact
-// size via `!`-important overrides, so this only shapes the table/drawer
-// badges.)
-const SIZES: Record<BadgeRating, string> = {
-  significant: "text-[10px] md:w-28 md:py-1.5 md:text-[13px]",
-  noteworthy: "text-[10px] md:w-24 md:py-1 md:text-xs",
-  minor: "text-[10px] md:w-20 md:py-0.5 md:text-[11px]",
-  routine: "text-[9px] md:w-16 md:py-0.5 md:text-[10px]",
-  skipped: "text-[9px] md:w-14 md:py-0.5 md:text-[10px]",
+// colour gradient above.
+//
+// These used to be fixed md:w-28/24/20/16/14 boxes with md:px-0, which is why
+// a long label like SIGNIFICANT ran flush to the pill's edge — there was no
+// side padding to give, only a width the label had to fit inside. They're now
+// the shared CHIP_SIZE steps, so a rating badge is padded exactly like every
+// other chip and sizes to its own label. The Action column loses its uniform
+// width blocks; the tier still reads from type size, colour and icon.
+const SIZES: Record<BadgeRating, ChipSize> = {
+  significant: "lg",
+  noteworthy: "md",
+  minor: "sm",
+  routine: "sm",
+  skipped: "sm",
 };
 
 export function RatingBadge({
@@ -75,24 +100,18 @@ export function RatingBadge({
   return (
     <span
       className={clsx(
-        // Mobile: a light auto-width pill so it reads as a tag, not a block.
-        // md+: a fixed-width boxed badge. Size (width/padding/text) comes from
-        // SIZES so it tapers by tier.
-        "inline-flex items-center justify-center gap-1 rounded-full border px-2.5 py-0.5 font-medium md:px-0 md:font-semibold",
-        STYLES[normalized] ??
-          "bg-neutral-500/15 text-neutral-400 border-neutral-500/30",
-        SIZES[normalized],
+        CHIP_BASE,
+        BORDER[normalized] ?? CHIP_HAIRLINE,
+        CHIP_SIZE[SIZES[normalized] ?? "sm"],
+        STYLES[normalized] ?? "bg-neutral-500/15 text-neutral-400",
         className,
       )}
     >
       {icon === "solid" && (
-        <CheckCircleSolidIcon className="h-3 w-3 shrink-0" aria-hidden />
+        <CheckCircleSolidIcon aria-hidden className="h-3 w-3 shrink-0" />
       )}
       {icon === "outline" && (
-        <CheckCircleOutlineIcon
-          className="h-3 w-3 shrink-0"
-          aria-hidden
-        />
+        <CheckCircleOutlineIcon aria-hidden className="h-3 w-3 shrink-0" />
       )}
       {LABELS[normalized] ?? rating}
     </span>

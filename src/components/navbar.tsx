@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { MarketSwitcher } from "@/components/market-switcher";
@@ -23,10 +24,13 @@ export const Navbar = () => {
   // Scroll-revealed download CTA: fades in once the user scrolls past the hero,
   // fades back out at the top.
   const [scrolled, setScrolled] = useState(false);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 160);
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
+
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -40,7 +44,8 @@ export const Navbar = () => {
     {
       label: "Brokers",
       href: "/brokers",
-      match: (p: string) => p.startsWith("/brokers") || p.startsWith("/compare"),
+      match: (p: string) =>
+        p.startsWith("/brokers") || p.startsWith("/compare"),
     },
   ];
 
@@ -79,7 +84,7 @@ export const Navbar = () => {
         <div className="flex items-center gap-3 md:gap-4">
           <a
             className={clsx(
-              "hidden items-center gap-1.5 rounded-full bg-[#5a4128] px-4 py-1.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#4a351f] dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90 md:inline-flex",
+              `hidden items-center gap-1.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-4 py-1.5 text-sm font-medium transition-all duration-300 md:inline-flex`,
               scrolled
                 ? "translate-y-0 opacity-100"
                 : "pointer-events-none -translate-y-1 opacity-0",

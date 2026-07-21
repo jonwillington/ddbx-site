@@ -1,6 +1,7 @@
 import { ChatBubbleLeftEllipsisIcon } from "@heroicons/react/24/solid";
 import clsx from "clsx";
 
+import { chip } from "@/components/chip";
 import { Tooltip } from "@/components/tooltip";
 
 /** Comment-count chip — hints that readers are discussing this trade in the
@@ -9,8 +10,7 @@ import { Tooltip } from "@/components/tooltip";
  *  nothing to tease (count 0), so callers drop it in unconditionally. See
  *  src/lib/comment-counts.ts for how the count is derived. */
 
-const BASE =
-  "inline-flex items-center justify-center gap-1 rounded-md border border-transparent whitespace-nowrap px-2 py-0.5 text-[11px] font-medium bg-black/[0.06] text-muted dark:bg-white/[0.08] dark:text-foreground/55";
+const BASE = `${chip()} bg-black/[0.06] text-muted dark:bg-white/[0.08] dark:text-foreground/55`;
 
 export function CommentCountChip({
   count,

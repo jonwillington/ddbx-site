@@ -8,11 +8,10 @@ import {
 import { Drawer } from "vaul";
 
 import { useMediaQuery } from "@/lib/use-media-query";
-
-const CONFIRM_CLASS =
-  "flex w-full items-center justify-center gap-2 rounded-2xl bg-[#5a4128] px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#4a351f] dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90";
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+const CONFIRM_CLASS = `flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3.5 text-sm font-semibold transition-colors`;
 const CANCEL_CLASS =
-  "flex w-full items-center justify-center rounded-2xl px-5 py-3 text-sm font-medium text-muted transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
+  "flex w-full items-center justify-center rounded-lg px-5 py-3 text-sm font-medium text-muted transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const CLOSE_CLASS =
   "inline-flex h-8 w-8 items-center justify-center rounded-full text-muted/80 transition-colors hover:bg-black/[0.06] hover:text-foreground dark:hover:bg-white/[0.08]";
 
@@ -162,7 +161,9 @@ export function UnlockConfirmModal({
           <LockClosedIcon className="h-3 w-3 shrink-0" />
           Web preview on
         </span>
-        <h2 className="mt-3 text-lg font-semibold tracking-[-0.02em]">{title}</h2>
+        <h2 className="mt-3 text-lg font-semibold tracking-[-0.02em]">
+          {title}
+        </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">{message}</p>
         {buttons}
       </div>

@@ -6,6 +6,7 @@ import {
 } from "@heroicons/react/24/solid";
 import clsx from "clsx";
 
+import { chip } from "@/components/chip";
 import { Tooltip } from "@/components/tooltip";
 
 /** Buy-style signal chip — what kind of price action the director bought into,
@@ -14,8 +15,7 @@ import { Tooltip } from "@/components/tooltip";
  *  majority and gets no chip, so the signal stays overt rather than wallpaper.
  *  Returns null otherwise, so callers can drop it in unconditionally. */
 
-const BASE =
-  "inline-flex items-center justify-center gap-1 rounded-md border border-transparent whitespace-nowrap px-2 py-0.5 text-[11px] font-medium";
+const BASE = chip();
 
 const STYLES = {
   contrarian: {

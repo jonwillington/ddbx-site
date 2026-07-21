@@ -14,6 +14,7 @@ import { useMemo, useState } from "react";
 import { returnTextClass } from "./monthly-utils";
 
 import { PerformanceChart } from "@/components/performance/performance-chart";
+import { BUTTON_SELECTED } from "@/components/button";
 import { formatSignedPct } from "@/lib/performance/format";
 
 /** Per-universe alpha for the month. Reuses the backtest PerformanceChart by
@@ -56,7 +57,7 @@ export function MonthlyPerformanceSection({
               key={s.universe}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 s.universe === active.universe
-                  ? "bg-[#5a4128] text-white dark:bg-[#ad9479] dark:text-[#1a140d]"
+                  ? BUTTON_SELECTED
                   : "text-muted hover:text-foreground"
               }`}
               type="button"
@@ -133,7 +134,7 @@ function ViewToggle({
           key={opt.key}
           className={`rounded-full px-3 py-1 font-medium transition-colors ${
             value === opt.key
-              ? "bg-[#5a4128] text-white dark:bg-[#ad9479] dark:text-[#1a140d]"
+              ? BUTTON_SELECTED
               : "text-muted hover:text-foreground"
           }`}
           type="button"

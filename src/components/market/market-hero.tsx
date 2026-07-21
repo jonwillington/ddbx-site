@@ -20,14 +20,15 @@
  *  popping when the user navigates to a beta market. */
 import type { ReactNode } from "react";
 
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+
 import { HeroDealMapLayer, useDealRadar } from "./hero-deal-radar";
 import { HeroNotificationStack } from "./hero-notification-stack";
 
 /** Filled pill — the row's single anchor. Exactly one CTA per market renders
  *  in this style: the App Store link where one exists (UK, US), otherwise
  *  the explainer is promoted so the row never reads as two equal ghost pills. */
-const FILLED_CTA =
-  "inline-flex items-center gap-2 rounded-full bg-[#5a4128] px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-[#49331f] hover:shadow-lg dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90";
+const FILLED_CTA = `inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg`;
 
 const GHOST_CTA =
   "inline-flex items-center rounded-full bg-[#6b503921] px-6 py-3 text-base font-semibold text-[#5a4128] backdrop-blur-sm transition-all hover:bg-[#6b50382e] dark:bg-[#ad9479]/15 dark:text-[#ad9479] dark:hover:bg-[#ad9479]/25";
@@ -525,7 +526,7 @@ export function MarketHero({
                 {notifRow}
                 <div className="mt-7">
                   <a
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#5a4128] px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-[#49331f] hover:shadow-lg dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90"
+                    className={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg`}
                     data-ga-event="cta_hero_download_app"
                     data-ga-label="Hero desktop download"
                     href={primaryCtaHref}
@@ -563,7 +564,7 @@ export function MarketHero({
               </div>
               {headlineBlock}
               <a
-                className="hidden md:inline-flex items-center justify-center gap-2 rounded-full bg-[#5a4128] px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-[#49331f] hover:shadow-lg dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90"
+                className={`hidden md:inline-flex items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg`}
                 data-ga-event="cta_hero_download_app"
                 data-ga-label="Hero compact download"
                 href={primaryCtaHref}

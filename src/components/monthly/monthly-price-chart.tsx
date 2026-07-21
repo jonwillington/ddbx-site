@@ -21,6 +21,7 @@ interface Bar {
  *  downsampled bars the API already embedded; "YTD"/"Max" lazily fetch wider
  *  history via /api/prices/history (UK pence → GBP). A dashed reference line
  *  marks the copycat entry price and a dot marks the disclosure date. */
+import { BUTTON_SELECTED } from "@/components/button";
 export function MonthlyPriceChart({
   ticker,
   monthBars,
@@ -141,7 +142,7 @@ export function MonthlyPriceChart({
               key={opt.key}
               className={`rounded-full px-3 py-1 font-medium transition-colors ${
                 period === opt.key
-                  ? "bg-[#5a4128] text-white dark:bg-[#ad9479] dark:text-[#1a140d]"
+                  ? BUTTON_SELECTED
                   : "text-muted hover:text-foreground"
               }`}
               type="button"

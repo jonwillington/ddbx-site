@@ -1,10 +1,17 @@
+import type { BrokerBadge, BrokerOffer } from "@/lib/api";
+
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
 import { GiftIcon } from "@heroicons/react/24/outline";
 
-import type { BrokerBadge, BrokerOffer } from "@/lib/api";
-
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import {
+  CHIP_BASE,
+  CHIP_HAIRLINE,
+  CHIP_HAIRLINE_FILLED,
+  CHIP_SIZE,
+} from "@/components/chip";
 import { domainLogoUrl } from "@/components/company-logo";
 import {
   BROKER_DISCLAIMERS,
@@ -23,7 +30,10 @@ function domainFromUrl(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
-    return url.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+    return url
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .split("/")[0];
   }
 }
 
@@ -98,10 +108,11 @@ export function BadgeChip({ badge }: { badge: BrokerBadge }) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide leading-none",
+        CHIP_BASE,
+        CHIP_SIZE.sm,
         isTop
-          ? "bg-[#5a4128] text-white dark:bg-[#d8c4af] dark:text-[#1a140d]"
-          : "bg-[#e8e0d5] text-foreground/70 dark:bg-surface-secondary",
+          ? `${CHIP_HAIRLINE_FILLED} bg-[#5a4128] text-white dark:bg-[#d8c4af] dark:text-[#1a140d]`
+          : `${CHIP_HAIRLINE} bg-[#e8e0d5] text-foreground/70 dark:bg-surface-secondary`,
       )}
     >
       {badgeLabel(badge)}
@@ -178,7 +189,9 @@ export function RatingsStrip({
   if (!items.length) return null;
 
   return (
-    <div className={clsx("flex flex-wrap items-center gap-x-5 gap-y-2", className)}>
+    <div
+      className={clsx("flex flex-wrap items-center gap-x-5 gap-y-2", className)}
+    >
       {items.map((i) => (
         <span key={i.label} className="inline-flex items-center gap-1.5">
           <StarRating value={i.value} />
@@ -193,9 +206,7 @@ export function RatingsStrip({
  *  than the compact grid Tick on a long spec page. */
 export function BoolValue({ value }: { value: boolean | null | undefined }) {
   if (value === true)
-    return (
-      <span className="text-[#17935a] dark:text-[#5fd39a]">✓ Yes</span>
-    );
+    return <span className="text-[#17935a] dark:text-[#5fd39a]">✓ Yes</span>;
   if (value === false) return <span className="text-foreground/55">No</span>;
 
   return <span className="text-foreground/40">Not stated</span>;
@@ -229,10 +240,9 @@ export function BrokerVisitLink({
   return (
     <a
       className={clsx(
-        "inline-flex items-center justify-center gap-1.5 rounded-xl font-semibold transition-colors",
+        `inline-flex items-center justify-center gap-1.5 ${BUTTON_RADIUS} font-semibold transition-colors`,
         size === "lg" ? "px-5 py-3 text-sm" : "px-3.5 py-2 text-sm",
-        variant === "primary" &&
-          "bg-[#5a4128] text-white hover:bg-[#4a351f] dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90",
+        variant === "primary" && BUTTON_FILLED,
         variant === "secondary" &&
           "ring-1 ring-separator text-foreground hover:bg-surface",
         variant === "grey" &&
@@ -326,10 +336,15 @@ export function BrokerBuyBox({ broker: b }: { broker: BrokerOffer }) {
           )}
         </div>
       </div>
-      {b.offer_headline && <OfferBadge className="mt-3" text={b.offer_headline} />}
+      {b.offer_headline && (
+        <OfferBadge className="mt-3" text={b.offer_headline} />
+      )}
       <dl className="mt-3 space-y-1.5 text-xs">
         <BuyFact label="Platform fee" value={platformFeeSummary(b.fees)} />
-        <BuyFact label="UK trade" value={fmtMoney(b.fees.trade_commission_uk_gbp)} />
+        <BuyFact
+          label="UK trade"
+          value={fmtMoney(b.fees.trade_commission_uk_gbp)}
+        />
         <BuyFact label="FX fee" value={fmtPct(b.fees.fx_fee_pct)} />
         <BuyFact label="Accounts" value={accounts} />
       </dl>

@@ -3,6 +3,7 @@ import type { FlagComponent } from "country-flag-icons/react/3x2";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
 
 import { AppModal } from "@/components/app-modal";
+import { chip } from "@/components/chip";
 
 /** One destination cell in the chooser. Generic on purpose: the same modal
  *  surfaces our per-market social accounts today and will surface per-market
@@ -97,7 +98,7 @@ export function MarketChooserModal({
                 className="flex items-center gap-3 rounded-xl border border-black/[0.06] bg-black/[0.01] p-3.5 opacity-60 dark:border-white/[0.06] dark:bg-white/[0.02]"
               >
                 {inner}
-                <span className="shrink-0 rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted dark:border-white/15">
+                <span className={`${chip()} shrink-0 text-muted`}>
                   Coming soon
                 </span>
               </div>

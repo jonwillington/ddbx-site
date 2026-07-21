@@ -6,12 +6,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 
-import { api, type BrokerOffer } from "@/lib/api";
-
 import { BrokerLogo } from "./broker-ui";
+
+import { api, type BrokerOffer } from "@/lib/api";
 
 const LOGO_COUNT = 5;
 
+import { BUTTON_FILLED_GROUP, BUTTON_RADIUS } from "@/components/button";
 export function BrokerReviewsPromo({
   brokers: provided,
   className,
@@ -106,7 +107,9 @@ export function BrokerReviewsPromo({
           </h3>
         </div>
 
-        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#5a4128] px-3 py-2 text-xs font-semibold text-white transition-colors group-hover:bg-[#4a351f] dark:bg-white dark:text-[#1a140d] dark:group-hover:bg-white/90">
+        <span
+          className={`inline-flex shrink-0 items-center gap-1.5 ${BUTTON_RADIUS} ${BUTTON_FILLED_GROUP} px-3 py-2 text-xs font-semibold transition-colors`}
+        >
           View all
           <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
         </span>
@@ -152,7 +155,7 @@ export function BrokerReviewsPromo({
 
       <span
         ref={buttonRef}
-        className={`mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#5a4128] px-4 py-2.5 text-sm font-semibold text-white transition-all duration-500 ease-out group-hover:bg-[#4a351f] dark:bg-white dark:text-[#1a140d] dark:group-hover:bg-white/90 ${
+        className={`mt-4 inline-flex items-center gap-1.5 ${BUTTON_RADIUS} ${BUTTON_FILLED_GROUP} px-4 py-2.5 text-sm font-semibold transition-all duration-500 ease-out ${
           revealed ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
         }`}
       >

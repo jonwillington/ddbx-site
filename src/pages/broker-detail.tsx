@@ -16,6 +16,7 @@ import {
   OfferBadge,
   RatingsStrip,
 } from "@/components/brokers/broker-ui";
+import { BUTTON_SELECTED } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
 import { subtitle, title } from "@/components/primitives";
 import { api, type BrokerOffer } from "@/lib/api";
@@ -337,7 +338,7 @@ export default function BrokerDetailPage() {
                 <a
                   className={
                     activeId === item.id
-                      ? "inline-flex rounded-lg bg-[#5a4128] px-3 py-1.5 text-xs font-medium text-white dark:bg-[#d8c4af] dark:text-[#1a140d]"
+                      ? `inline-flex rounded-lg ${BUTTON_SELECTED} px-3 py-1.5 text-xs font-medium`
                       : "inline-flex rounded-lg px-3 py-1.5 text-xs font-medium text-foreground/70 transition-colors hover:bg-surface hover:text-foreground"
                   }
                   href={`#${item.id}`}

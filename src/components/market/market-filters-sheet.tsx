@@ -9,8 +9,9 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 
-import { useMediaQuery } from "@/lib/use-media-query";
 import { SIGNAL_FILTER_OPTIONS, VIEW_OPTIONS } from "./market-filter-bar";
+
+import { useMediaQuery } from "@/lib/use-media-query";
 
 interface ExtraFilter {
   id: string;
@@ -27,6 +28,7 @@ interface ExtraFilter {
  *  Each accordion shows its current value collapsed and expands to reveal the
  *  control + a one-line explanation, so a many-axis panel stays scannable. The
  *  chart-mode toggle is passed through verbatim (`trailing`). */
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 export function MarketFiltersSheet({
   viewMode,
   onViewMode,
@@ -73,7 +75,9 @@ export function MarketFiltersSheet({
   const toggle = (id: string) =>
     setOpen((prev) => {
       const next = new Set(prev);
+
       next.has(id) ? next.delete(id) : next.add(id);
+
       return next;
     });
 
@@ -172,8 +176,8 @@ export function MarketFiltersSheet({
             )}
 
             {extraFilters?.map((ef) => {
-              const value =
-                extraFilterValues?.[ef.id] ?? ef.defaultValue ?? "";
+              const value = extraFilterValues?.[ef.id] ?? ef.defaultValue ?? "";
+
               return (
                 <Accordion
                   key={ef.id}
@@ -230,7 +234,7 @@ export function MarketFiltersSheet({
             </button>
             <Drawer.Close asChild>
               <button
-                className="flex-1 rounded-full bg-[#5a4128] py-3 text-sm font-medium text-white transition-colors hover:bg-[#49331f]"
+                className={`flex-1 ${BUTTON_RADIUS} ${BUTTON_FILLED} py-3 text-sm font-medium transition-colors`}
                 type="button"
               >
                 Done
@@ -247,15 +251,18 @@ export function MarketFiltersSheet({
 function summarizeExtra(ef: ExtraFilter, value: string): string {
   if (ef.kind === "multiselect") {
     const ids = value.split(",").filter(Boolean);
+
     if (ids.length === 0) return "All";
     const labels = ids.map(
       (id) => ef.options.find((o) => o.id === id)?.label ?? id,
     );
+
     return labels.length <= 2
       ? labels.join(", ")
       : `${labels.slice(0, 2).join(", ")} +${labels.length - 2}`;
   }
   const id = value || ef.defaultValue || ef.options[0]?.id;
+
   return ef.options.find((o) => o.id === id)?.label ?? "All";
 }
 
@@ -386,13 +393,16 @@ function MultiSelect({
   const selected = new Set(value.split(",").filter(Boolean));
   const flip = (id: string) => {
     const next = new Set(selected);
+
     next.has(id) ? next.delete(id) : next.add(id);
     onChange([...next].join(","));
   };
+
   return (
     <div className="flex flex-wrap gap-1.5">
       {options.map((opt) => {
         const on = selected.has(opt.id);
+
         return (
           <button
             key={opt.id}

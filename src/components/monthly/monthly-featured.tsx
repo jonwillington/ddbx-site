@@ -7,6 +7,7 @@ import { MonthlyPriceChart } from "./monthly-price-chart";
 import { Prose } from "./monthly-prose";
 import { featureBadge, returnTextClass, sentimentOrder } from "./monthly-utils";
 
+import { chip } from "@/components/chip";
 import { formatSignedPct } from "@/lib/performance/format";
 import { CompanyLogo } from "@/components/company-logo";
 
@@ -60,9 +61,7 @@ function FeaturedCard({ item }: { item: MonthlyFeaturedItem }) {
               {item.ticker}
             </span>
           </div>
-          <span
-            className={`mt-1.5 inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${badge.className}`}
-          >
+          <span className={`${chip("md")} mt-1.5 ${badge.className}`}>
             {badge.label}
           </span>
         </div>

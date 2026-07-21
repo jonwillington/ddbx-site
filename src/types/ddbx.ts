@@ -606,6 +606,34 @@ export interface MonthlyChartBar {
   close_pence: number;   // raw stored scale (e.g. pence)
 }
 
+/** One ticker's daily-close series inside a Performance price bundle
+ *  (GET /api/performance/prices-bundle), columnar to keep the document
+ *  compact: `d[i]` pairs with `p[i]`. `p` is always major units of
+ *  `currency`; `m` marks tickers whose legacy `close_pence` representation
+ *  is minor units (×100 — UK pence / US cents), letting clients rebuild the
+ *  legacy value without duplicating the per-market unit table. */
+export interface PerfBundleSeries {
+  t: string;             // ticker, as keyed in the `prices` cache
+  currency: string;      // ISO 4217 code of `p`
+  m: boolean;            // legacy close_pence unit is minor (×100)
+  d: string[];           // ISO YYYY-MM-DD, ascending
+  p: number[];           // daily closes, major units
+}
+
+/** Aggregated price document for the iOS Performance tab: every dealing
+ *  ticker's series plus the market benchmark in one response, replacing the
+ *  per-ticker /api/prices/history fan-out. scope "window" = tickers with a
+ *  dealing in the recent rolling window; "all" = every dealing ticker. Both
+ *  scopes serve the same `days` bar depth so client caches can mix them. */
+export interface PerfPricesBundle {
+  asOf: string;                    // ISO timestamp of the build
+  market: "UK" | "US";
+  scope: "window" | "all";
+  days: number;                    // bar depth each series was cut to
+  benchmark: PerfBundleSeries | null;  // ^FTAS (UK) / ^GSPC (US)
+  series: PerfBundleSeries[];
+}
+
 /** A same-issuer cluster surfaced for the month. Rolled up from the read-time
  *  per-dealing `cluster` signal (see ClusterInfo) so the article and the row
  *  chip always agree. Closed-end investment trusts are already excluded by the

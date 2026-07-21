@@ -14,12 +14,12 @@ import {
   IOS_APP_LOGO_BY_MARKET,
   appStoreUrlForMarketId,
 } from "@/lib/app-store";
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { marketContactEmail, marketForPath } from "@/lib/markets/registry";
 
 /** Shared styling for the floating mobile download CTA — solid pill, rendered
  *  as an `<a>` (direct App Store link) or a `<button>` (chooser fallback). */
-const DOWNLOAD_CTA_CLASS =
-  "pointer-events-auto flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[#5a4128] px-5 py-4 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#4a351f] dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90";
+const DOWNLOAD_CTA_CLASS = `pointer-events-auto flex w-full items-center justify-center gap-2.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-4 text-base font-semibold shadow-lg transition-colors`;
 
 /** Apple wordmark glyph for the App Store CTA. */
 function AppleGlyph({ className }: { className?: string }) {

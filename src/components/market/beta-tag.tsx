@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 
+import { chip } from "@/components/chip";
 import { marketForPath } from "@/lib/markets/registry";
 import { useMediaQuery } from "@/lib/use-media-query";
 
@@ -85,7 +86,9 @@ export function BetaTag() {
             "transform 480ms cubic-bezier(0.16, 0.84, 0.34, 1), opacity 320ms ease-out",
         }}
       >
-        <span className="rounded-full bg-amber-500/25 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+        <span
+          className={`${chip()} bg-amber-500/25 text-amber-900 dark:text-amber-200`}
+        >
           Beta
         </span>
         <span key={textKey} className="beta-tag-text">

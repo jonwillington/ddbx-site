@@ -20,7 +20,7 @@ import {
 
 import { Skeleton } from "@/components/skeleton";
 import { CompanyLogo } from "@/components/company-logo";
-import { ClusterChip } from "@/components/cluster-chip";
+import { chip } from "@/components/chip";
 import { BuyStyleChip } from "@/components/buy-style-chip";
 import { CommentCountChip } from "@/components/comment-count-chip";
 import { commentCountFor } from "@/lib/comment-counts";
@@ -369,7 +369,9 @@ export function DeltaBadge({
 
   return (
     <span
-      className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap tabular-nums"
+      className={`${chip("md")} tabular-nums`}
+      // border-current/25 in the hairline picks this up, so the edge tracks
+      // the magnitude-scaled colour without a second computed value.
       style={{ backgroundColor: bg, color: text }}
     >
       {value >= 0 ? "▲" : "▼"} {sign}
@@ -392,11 +394,13 @@ function compactNotation(value: number): string {
 
 function formatCompactValue(value: number, fmt: PriceFormat): string {
   const abs = Math.abs(value);
+
   if (abs < 10_000) return fmt.formatValue(value);
 
   const sample = fmt.formatValue(abs);
   const firstDigit = sample.search(/\d/);
   const lastDigit = sample.search(/\d(?!.*\d)/);
+
   if (firstDigit < 0 || lastDigit < firstDigit) return fmt.formatValue(value);
 
   const prefix = sample.slice(0, firstDigit);
@@ -457,9 +461,9 @@ interface MarketRowProps<W> {
   fmt: PriceFormat;
   benchmarkLabel: string;
   RowActionCell: ComponentType<{ dealing: MarketDealing<W> }>;
-  /** Optional badge slotted into the name column beside the ClusterChip —
-   *  for per-market read-time signals (e.g. Congress "options"). Should
-   *  return null when it has nothing to show. */
+  /** Optional badge slotted into the name column — for per-market read-time
+   *  signals (e.g. Congress "options"). Should return null when it has
+   *  nothing to show. */
   RowNameBadge?: ComponentType<{ dealing: MarketDealing<W> }>;
   hideDate?: boolean;
   /** Suppress the insider name/role subtitle — used for child rows inside a
@@ -685,7 +689,7 @@ export function MemberClusterRow({
 }) {
   const [open, setOpen] = useState(false); // collapsed → one tidy row per member; expand for the buys + connector
   const countLabel = `${count} ${count === 1 ? "buy" : "buys"}${insiderRole ? ` · ${insiderRole}` : ""}`;
-  // Same rounded-md/px-2/text-[11px] chip family as PartyChip / ClusterChip.
+  // Same chip() family as PartyChip / BuyStyleChip.
   // Lives in the Action column (desktop) / right stack (mobile), not by the name.
   // Discretion mode hides the rating-derived signal everywhere in the list (the
   // child rows swap their rating for a "View analysis" nudge — see MarketRow);
@@ -694,7 +698,7 @@ export function MemberClusterRow({
   const SignalChip = ({ className = "" }: { className?: string }) =>
     !DISCRETION_ENABLED && signalCount > 0 ? (
       <span
-        className={`inline-flex items-center justify-center whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 ${className}`}
+        className={`${chip()} bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ${className}`}
       >
         {signalCount} signal
       </span>
@@ -883,7 +887,10 @@ export function MarketRow<W>({
   const mobileDateLabel = tradeDiffers
     ? `Filed ${shortDate(dealing.disclosedDate, locale)} (Trade ${shortDate(dealing.tradeDate, locale)})`
     : `Filed ${shortDate(dealing.disclosedDate, locale)}`;
-  const performanceLabel = metricPct != null ? `${metricPct >= 0 ? "+" : ""}${metricPct.toFixed(1)}${showAlpha ? "pp" : "%"}` : "No data yet";
+  const performanceLabel =
+    metricPct != null
+      ? `${metricPct >= 0 ? "+" : ""}${metricPct.toFixed(1)}${showAlpha ? "pp" : "%"}`
+      : "No data yet";
   const performanceClass =
     metricPct == null
       ? "text-muted/70"
@@ -915,10 +922,14 @@ export function MarketRow<W>({
         </div>
         <div className="flex items-start gap-3">
           {indent && <div aria-hidden className="w-4 shrink-0" />}
-          {showLogo && <CompanyLogo className="mt-0.5" size={38} ticker={rawTicker} />}
+          {showLogo && (
+            <CompanyLogo className="mt-0.5" size={38} ticker={rawTicker} />
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[12px] font-semibold px-2 py-0.5 rounded-md bg-[#e8e0d5] dark:bg-surface-secondary shrink-0">
+              <span
+                className={`${chip("md")} shrink-0 text-[#5a4128] dark:text-foreground/75 bg-[#e8e0d5] dark:bg-surface-secondary`}
+              >
                 {ticker}
               </span>
               <CommentCountChip count={commentCount} />
@@ -988,10 +999,10 @@ export function MarketRow<W>({
             </div>
           </div>
           {/* Signal chips pinned to the right of the cell, vertically centred —
-              cluster / momentum / contrarian read as a column down the table. */}
+              momentum / contrarian read as a column down the table. The cluster
+              chip used to sit here too; it now shows only in the detail drawer. */}
           <div className="shrink-0 flex items-center gap-1.5">
             <BuyStyleChip buyStyle={dealing.buyStyle} />
-            <ClusterChip cluster={dealing.cluster} />
           </div>
         </div>
         <div
