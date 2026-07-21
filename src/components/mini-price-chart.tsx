@@ -35,6 +35,10 @@ const PRE_BUY_CONTEXT_DAYS = 5;
 
 const CHART_HEIGHT = 168;
 
+/** Bar depth requested per ticker. Matches `historyDays` in the iOS deal
+ *  detail view so both clients cut "Max" to the same window. */
+const HISTORY_DAYS = 1825;
+
 /** Marker `size` multipliers. lightweight-charts scales a circle's radius by
  *  `clamp(barSpacing, 12, 30) · size · 0.8`; with only a handful of bars the
  *  spacing caps at 30, so the default size 1 renders an oversized ~24px dot
@@ -108,7 +112,10 @@ export function MiniPriceChart({
     }
     setAllBars([]);
     api
-      .priceHistory(tickerForApi, 365)
+      // Five years, matching iOS's historyDays. At 365 the "Max" tab was a
+      // one-year max, which for an older holding is not the shape of the
+      // story — the buy sat at the very left edge with nothing before it.
+      .priceHistory(tickerForApi, HISTORY_DAYS)
       .then((bars) =>
         setAllBars(
           // sanitiseBars drops non-positive / corrupt closes and collapses

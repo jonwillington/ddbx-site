@@ -67,6 +67,35 @@ async function get<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+/** In-memory response cache with a five-minute TTL, matching the Worker's
+ *  own max-age on /api/prices/*. Ports `PriceHistoryCache` from the iOS
+ *  APIClient: re-opening a deal used to refetch its whole series and show
+ *  the loading state again, even seconds later.
+ *
+ *  Stores the in-flight promise rather than the resolved value, so two
+ *  components mounting in the same tick share one request instead of
+ *  racing. A rejected lookup is evicted so the next caller retries. */
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const responseCache = new Map<
+  string,
+  { at: number; value: Promise<unknown> }
+>();
+
+function cached<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const hit = responseCache.get(key);
+
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value as Promise<T>;
+
+  const value = load().catch((err) => {
+    responseCache.delete(key);
+    throw err;
+  });
+
+  responseCache.set(key, { at: Date.now(), value });
+
+  return value;
+}
+
 export const api = {
   dealings: (rating?: Rating) =>
     get<{ dealings: Dealing[] }>(
@@ -90,9 +119,11 @@ export const api = {
       `/prices/on?ticker=${encodeURIComponent(ticker)}&date=${date}`,
     ).then((r) => r.price),
   priceHistory: (ticker: string, days = 90) =>
-    get<{ bars: { date: string; close_pence: number }[] }>(
-      `/prices/history?ticker=${encodeURIComponent(ticker)}&days=${days}`,
-    ).then((r) => r.bars),
+    cached(`history:${ticker}:${days}`, () =>
+      get<{ bars: { date: string; close_pence: number }[] }>(
+        `/prices/history?ticker=${encodeURIComponent(ticker)}&days=${days}`,
+      ).then((r) => r.bars),
+    ),
   gbpPerUsdHistory: (days = 730) =>
     get<{ rates: { date: string; gbp_per_usd: number }[] }>(
       `/fx/gbp-per-usd?days=${days}`,
@@ -145,7 +176,9 @@ export const api = {
   /** USG — congressional (House STOCK Act) dealings. view=signal returns the
    *  triage-cleared set (jurisdiction + notable/marquee); view=all the raw
    *  buy stream. Buys only (sales/junk dropped server-side). */
-  govDealings: (opts: { view?: "signal" | "all"; ticker?: string; limit?: number } = {}) => {
+  govDealings: (
+    opts: { view?: "signal" | "all"; ticker?: string; limit?: number } = {},
+  ) => {
     const qs = new URLSearchParams();
 
     if (opts.view) qs.set("view", opts.view);
