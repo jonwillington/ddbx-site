@@ -595,7 +595,7 @@ export function MarketClusterRow<W>({
       </button>
 
       {open && (
-        <div className="divide-y divide-black/[0.06] dark:divide-separator bg-black/[0.015] dark:bg-white/[0.02]">
+        <div className="divide-y divide-black/[0.06] dark:divide-separator bg-black/[0.015] dark:bg-white/[0.035]">
           {children}
         </div>
       )}
@@ -803,7 +803,7 @@ export function MemberClusterRow({
         // The member's buys, flush so the ticker column stays aligned/pure.
         // No connector rule — the grouping under the member already conveys
         // they're all the same person.
-        <div className="bg-black/[0.015] dark:bg-white/[0.02] divide-y divide-black/[0.06] dark:divide-separator">
+        <div className="bg-black/[0.015] dark:bg-white/[0.035] divide-y divide-black/[0.06] dark:divide-separator">
           {children}
         </div>
       )}
@@ -908,7 +908,7 @@ export function MarketRow<W>({
     <button
       className={`w-full text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40
         ${muted ? "opacity-65" : ""}
-        ${muted && !selected ? "bg-black/[0.025] dark:bg-white/[0.025]" : ""}
+        ${muted && !selected ? "bg-black/[0.025] dark:bg-white/[0.04]" : ""}
         ${selected ? "bg-[#5a4128]/[0.07] dark:bg-[#5a4128]/[0.20]" : "hover:bg-black/[0.03] dark:hover:bg-white/5"}`}
       onClick={onSelect}
     >

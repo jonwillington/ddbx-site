@@ -51,29 +51,42 @@ body {
    that matches the warm beige light mode (~hue 55-78).
    Unlayered rules beat @layer base, so these win over heroui/variables.css.
    ─────────────────────────────────────────────────────────────────────────── */
+/* Lightness lifted to match the iOS dark set (Theme.swift, commit 6436953).
+   The old values bottomed out around L17, which read as near-black with a
+   brown cast: cards sat only ~3.5L off the page so the layering disappeared
+   on OLED, and because every hairline here is alpha-over-background
+   (divide-white/10 and friends) the rules went with it. Hue and chroma were
+   already right and don't move — this is a lightness-only change, widening
+   from +5L at the background to +9L at the border so the stack separates.
+   iOS measured these as slightly lighter than the old web tokens on its
+   larger flat areas; the same reasoning applies to full-width page sections
+   here. */
 .dark {
-  /* bg-content1 shim value */
-  --content1:           oklch(21%   0.024 55);
+  /* bg-content1 shim value — shadows --surface, so it moves with it or
+     modals read a step darker than the cards they sit above. */
+  --content1:           oklch(26%   0.024 55);
 
-  --background:         oklch(17%   0.022 55);  /* soft warm charcoal      */
-  --foreground:         oklch(92%   0.012 78);  /* warm off-white          */
+  --background:         oklch(22%   0.022 55);  /* warm charcoal           */
+  --foreground:         oklch(93%   0.012 78);  /* warm off-white          */
 
-  --surface:            oklch(20.5% 0.024 55);  /* cards / panels          */
-  --surface-foreground: oklch(92%   0.012 78);
-  --surface-secondary:  oklch(23.5% 0.022 55);
-  --surface-tertiary:   oklch(26%   0.020 55);
+  --surface:            oklch(26%   0.024 55);  /* cards / panels          */
+  --surface-foreground: oklch(93%   0.012 78);
+  --surface-secondary:  oklch(30%   0.022 55);
+  /* No iOS counterpart (it stops at surfaceSecondary) — kept proportional,
+     sitting between surface-secondary and border. */
+  --surface-tertiary:   oklch(33%   0.020 55);
 
-  --overlay:            oklch(21%   0.024 55);  /* modals / popovers       */
-  --overlay-foreground: oklch(92%   0.012 78);
+  --overlay:            oklch(26%   0.024 55);  /* modals / popovers       */
+  --overlay-foreground: oklch(93%   0.012 78);
 
-  --muted:              oklch(62%   0.020 65);  /* secondary text          */
-  --scrollbar:          oklch(36%   0.020 55);
+  --muted:              oklch(67%   0.020 65);  /* secondary text          */
+  --scrollbar:          oklch(42%   0.020 55);  /* stays above --border    */
 
-  --default:            oklch(26%   0.022 55);
-  --default-foreground: oklch(92%   0.012 78);
+  --default:            oklch(30%   0.022 55);  /* tracks surface-secondary */
+  --default-foreground: oklch(93%   0.012 78);
 
-  --border:             oklch(29%   0.022 55);  /* outlines                */
-  --separator:          oklch(26%   0.022 55);  /* dividers                */
+  --border:             oklch(38%   0.022 55);  /* outlines                */
+  --separator:          oklch(34%   0.022 55);  /* dividers                */
 }
 
 @keyframes skeleton-pulse {

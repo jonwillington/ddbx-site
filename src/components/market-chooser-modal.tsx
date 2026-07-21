@@ -95,7 +95,7 @@ export function MarketChooserModal({
               <div
                 key={c.id}
                 aria-disabled="true"
-                className="flex items-center gap-3 rounded-xl border border-black/[0.06] bg-black/[0.01] p-3.5 opacity-60 dark:border-white/[0.06] dark:bg-white/[0.02]"
+                className="flex items-center gap-3 rounded-xl border border-black/[0.06] bg-black/[0.01] p-3.5 opacity-60 dark:border-white/[0.06] dark:bg-white/[0.035]"
               >
                 {inner}
                 <span className={`${chip()} shrink-0 text-muted`}>
