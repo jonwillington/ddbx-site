@@ -24,7 +24,11 @@ import { AnalysisSection } from "@/components/analysis-section";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { MiniPriceChart } from "@/components/mini-price-chart";
-import { PositionCard, type PriceFormat } from "@/components/position-card";
+import {
+  BenchmarkVerdict,
+  PositionCard,
+  type PriceFormat,
+} from "@/components/position-card";
 import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
 import { UK_BANK_HOLIDAYS_SOURCE } from "@/lib/bank-holidays";
@@ -252,31 +256,44 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
           </p>
         </div>
       )}
-      {currentPrice != null && d.value_gbp != null && (
-        <PositionCard
-          benchmark={{
-            entry: ftseEntry,
-            current: ftseCurrent,
-            label: FTSE_LABEL,
-          }}
-          current={currentPrice}
-          entry={entryPrice}
-          fmt={GBP_FORMAT}
-          muted={isNonMarketBuy}
-          originalValue={d.value_gbp}
-          shares={d.shares}
-        />
-      )}
-      <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
+      {/* One card: the position figures, the chart they describe, and the
+          benchmark verdict as a footer. These were two stacked cards whose
+          numbers overlapped — the chart's own legend repeated Entry, Now and
+          the return the tiles above already showed. Merged per iOS b64f22f. */}
+      <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4 space-y-4">
+        {currentPrice != null && d.value_gbp != null && (
+          <PositionCard
+            current={currentPrice}
+            entry={entryPrice}
+            fmt={GBP_FORMAT}
+            muted={isNonMarketBuy}
+            originalValue={d.value_gbp}
+            shares={d.shares}
+          />
+        )}
         <MiniPriceChart
           disclosedDate={disclosedDate ?? undefined}
           entryPrice={entryPrice}
           fmt={GBP_FORMAT}
           muted={isNonMarketBuy}
+          showFigures={currentPrice == null || d.value_gbp == null}
           tickerForApi={ticker}
           tickerForDisplay={ticker.replace(/\.L$/, "")}
           tradeDate={tradeDate}
         />
+        {currentPrice != null && (
+          <BenchmarkVerdict
+            anchorDate={anchorDate}
+            anchorLabel={anchorsOnDisclosure ? "disclosure" : "trade"}
+            benchmark={{
+              entry: ftseEntry,
+              current: ftseCurrent,
+              label: FTSE_LABEL,
+            }}
+            muted={isNonMarketBuy}
+            stockPct={(currentPrice - entryPrice) / entryPrice}
+          />
+        )}
       </div>
     </div>
   );

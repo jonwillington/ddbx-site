@@ -1,5 +1,3 @@
-import { Skeleton } from "@/components/skeleton";
-
 /** Market-agnostic price formatting bundle. Each market supplies one of these
  *  so the component can render quote prices, domestic-currency values, and
  *  multiply quote units → domestic units (pence → GBP = 0.01, USD → USD = 1). */
@@ -21,10 +19,85 @@ export interface BenchmarkProps {
   label: string;
 }
 
-/** Position card: Entry / Now / Return, plus optional benchmark cell.
- *  Generalised from the UK pence/GBP-flavoured component — both markets
- *  feed it through a PriceFormat bundle. Internal consistency heuristic
+/** The vs-benchmark result as a sentence, for the foot of the merged price
+ *  card.
+ *
+ *  This used to be a fourth tile showing the benchmark's own return with a
+ *  "+3.2pp alpha" sub-line — two more numbers in a card that already had
+ *  six, and the one figure a reader actually wants (did this beat the
+ *  market?) left as an inference. iOS made the same change: the verdict is
+ *  a clause, and the magnitude follows it.
+ */
+export function BenchmarkVerdict({
+  stockPct,
+  benchmark,
+  anchorDate,
+  anchorLabel = "trade",
+  muted = false,
+}: {
+  stockPct: number;
+  benchmark: BenchmarkProps;
+  /** ISO date the comparison is measured from — both legs share it. */
+  anchorDate: string;
+  /** What that date *is*, so the sentence stays true when the reader has
+   *  switched the drawer to the disclosure anchor. */
+  anchorLabel?: "trade" | "disclosure";
+  muted?: boolean;
+}) {
+  if (benchmark.entry == null || benchmark.current == null) return null;
+
+  const benchmarkPct = (benchmark.current - benchmark.entry) / benchmark.entry;
+  const alphaPct = stockPct - benchmarkPct;
+  const ahead = alphaPct >= 0;
+  const when = new Date(anchorDate).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const upText = "text-[#1e6b18] dark:text-[#5cd84a]";
+  const downText = "text-[#8b2020] dark:text-[#e84d4d]";
+
+  // A non-open-market entry isn't a price anyone paid, so "outperformed"
+  // would be claiming a result that wasn't earned. State the benchmark's
+  // own move and stop there.
+  if (muted) {
+    return (
+      <p className="text-xs leading-relaxed text-muted">
+        The {benchmark.label} has moved{" "}
+        <span className="tabular-nums">
+          {benchmarkPct >= 0 ? "+" : ""}
+          {(benchmarkPct * 100).toFixed(1)}%
+        </span>{" "}
+        since the {anchorLabel} on {when}.
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-xs leading-relaxed text-muted">
+      Since the {anchorLabel} on {when}, this purchase has{" "}
+      <span className={`font-semibold ${ahead ? upText : downText}`}>
+        {ahead ? "outperformed" : "underperformed"}
+      </span>{" "}
+      the {benchmark.label} by{" "}
+      <span
+        className={`font-semibold tabular-nums ${ahead ? upText : downText}`}
+      >
+        {Math.abs(alphaPct * 100).toFixed(1)}pp
+      </span>
+      .
+    </p>
+  );
+}
+
+/** Position card: Entry / Now / Return.
+ *  Generalised from the UK pence/GBP-flavoured component — every market
+ *  feeds it through a PriceFormat bundle. Internal consistency heuristic
  *  (shares × entry vs originalValue) preserved from UK.
+ *
+ *  The benchmark is no longer a fourth tile: it reads as prose beneath the
+ *  chart via `BenchmarkVerdict`, so the card stays three figures wide.
  */
 export function PositionCard({
   entry,
@@ -32,7 +105,6 @@ export function PositionCard({
   shares = 0,
   originalValue = 0,
   fmt,
-  benchmark,
   muted = false,
   hideAmounts = false,
 }: {
@@ -41,10 +113,7 @@ export function PositionCard({
   shares?: number;
   originalValue?: number;
   fmt: PriceFormat;
-  /** When provided, renders a 4th tile. Pass `{ entry: null, current: null }`
-   *  to show a loading skeleton; omit the prop entirely to hide the tile. */
-  benchmark?: BenchmarkProps;
-  /** When true, the Now / Return / alpha cells render in neutral styling
+  /** When true, the Now / Return cells render in neutral styling
    *  instead of buy-green / sell-red, and the Return tile drops its coloured
    *  fill. Used for non-open-market trades (awards, schemes, placings) where
    *  the % is real but the green "winner" framing would mislead — the director
@@ -81,15 +150,7 @@ export function PositionCard({
   const gainLoss = currentValue - originalValue;
   const gainSign = gainLoss >= 0 ? "+" : "";
 
-  const benchmarkPct =
-    benchmark?.entry != null && benchmark?.current != null
-      ? (benchmark.current - benchmark.entry) / benchmark.entry
-      : null;
-  const alphaPct = benchmarkPct != null ? stockPct - benchmarkPct : null;
-  const ahead = alphaPct != null && alphaPct >= 0;
-
   const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${(n * 100).toFixed(1)}%`;
-  const fmtPp = (n: number) => `${n >= 0 ? "+" : ""}${(n * 100).toFixed(1)}pp`;
 
   const upText = "text-[#1e6b18] dark:text-[#5cd84a]";
   const downText = "text-[#8b2020] dark:text-[#e84d4d]";
@@ -102,12 +163,9 @@ export function PositionCard({
   // and the Return tile's coloured fill, keeping the numbers in neutral ink.
   const trendText = muted ? "text-foreground" : up ? upText : downText;
   const returnBg = muted ? neutralBg : up ? upBg : downBg;
-  const alphaText = muted ? "text-muted" : ahead ? upText : downText;
-
-  const cols = benchmark ? "sm:grid-cols-4" : "sm:grid-cols-3";
 
   return (
-    <div className={`grid gap-3 grid-cols-2 ${cols}`}>
+    <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
       <div className="rounded-xl bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
         <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
           Entry
@@ -152,35 +210,6 @@ export function PositionCard({
           </div>
         )}
       </div>
-
-      {benchmark &&
-        (benchmarkPct != null ? (
-          <div className="rounded-xl bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
-            <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
-              vs {benchmark.label}
-            </div>
-            <div className="text-2xl font-bold tabular-nums text-foreground/50">
-              {fmtPct(benchmarkPct)}
-            </div>
-            {muted ? (
-              <div className="text-xs font-semibold mt-1 text-muted">N/A</div>
-            ) : (
-              alphaPct != null && (
-                <div className={`text-xs font-semibold mt-1 ${alphaText}`}>
-                  {fmtPp(alphaPct)} alpha
-                </div>
-              )
-            )}
-          </div>
-        ) : (
-          <div className="rounded-xl bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
-            <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
-              vs {benchmark.label}
-            </div>
-            <Skeleton className="h-8 w-20 mt-1" />
-            <Skeleton className="h-3 w-16 mt-2" />
-          </div>
-        ))}
     </div>
   );
 }

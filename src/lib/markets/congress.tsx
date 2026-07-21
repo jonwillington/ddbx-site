@@ -3,21 +3,26 @@
 // so "Signal" is the deterministic triage verdict (jurisdiction + notable
 // size/options) rather than a Rating. Buys only — sales/junk are dropped
 // server-side. Member portraits (public-domain) show in the detail drawer.
-import type { GatingInfo, MarketConfig, MarketDealing, Tone } from "@/lib/markets/types";
-import { buildMarketFaq } from "@/lib/markets/faq";
+import type {
+  GatingInfo,
+  MarketConfig,
+  MarketDealing,
+  Tone,
+} from "@/lib/markets/types";
 import type { Analysis, GovDealing } from "@/types/ddbx";
 import type { PriceFormat } from "@/components/position-card";
 
 import { useEffect, useState } from "react";
 import { BoltIcon } from "@heroicons/react/24/solid";
 
+import { buildMarketFaq } from "@/lib/markets/faq";
 import { api } from "@/lib/api";
 import { AnalysisSection } from "@/components/analysis-section";
 import { chip } from "@/components/chip";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { RatingBadge } from "@/components/rating-badge";
-import { PositionCard } from "@/components/position-card";
+import { BenchmarkVerdict, PositionCard } from "@/components/position-card";
 import { MiniPriceChart } from "@/components/mini-price-chart";
 import { useDiscretion } from "@/lib/discretion";
 
@@ -28,15 +33,23 @@ const USD_FORMAT: PriceFormat = {
   formatPrice: (n) => `$${n.toFixed(2)}`,
   // Approximate — PTR amounts are disclosed as ranges, so the value column is a
   // band midpoint, not an exact figure. The precise band shows in the row cell.
-  formatValue: (n) => (n >= 1_000_000 ? `~$${(n / 1_000_000).toFixed(1)}M` : `~$${Math.round(n / 1000)}k`),
+  formatValue: (n) =>
+    n >= 1_000_000
+      ? `~$${(n / 1_000_000).toFixed(1)}M`
+      : `~$${Math.round(n / 1000)}k`,
   quoteToValue: 1,
 };
 
 /** Amounts are disclosed as a BAND — format the range, never a false-precision
  *  point value. */
-const k = (n: number): string => (n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(n % 1_000_000 ? 1 : 0)}M` : `$${Math.round(n / 1000)}k`);
+const k = (n: number): string =>
+  n >= 1_000_000
+    ? `$${(n / 1_000_000).toFixed(n % 1_000_000 ? 1 : 0)}M`
+    : `$${Math.round(n / 1000)}k`;
+
 function formatBand(min: number | null, max: number | null): string {
   if (min == null) return "—";
+
   return max == null ? `over ${k(min)}` : `${k(min)}–${k(max)}`;
 }
 
@@ -53,18 +66,61 @@ function reporterCommittees(d: GovDealing): string[] {
 }
 
 const US_STATES: Record<string, string> = {
-  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
-  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
-  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
-  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
-  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi",
-  MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire",
-  NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina",
-  ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania",
-  RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee",
-  TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington",
-  WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
-  PR: "Puerto Rico", GU: "Guam", VI: "U.S. Virgin Islands", AS: "American Samoa",
+  AL: "Alabama",
+  AK: "Alaska",
+  AZ: "Arizona",
+  AR: "Arkansas",
+  CA: "California",
+  CO: "Colorado",
+  CT: "Connecticut",
+  DE: "Delaware",
+  FL: "Florida",
+  GA: "Georgia",
+  HI: "Hawaii",
+  ID: "Idaho",
+  IL: "Illinois",
+  IN: "Indiana",
+  IA: "Iowa",
+  KS: "Kansas",
+  KY: "Kentucky",
+  LA: "Louisiana",
+  ME: "Maine",
+  MD: "Maryland",
+  MA: "Massachusetts",
+  MI: "Michigan",
+  MN: "Minnesota",
+  MS: "Mississippi",
+  MO: "Missouri",
+  MT: "Montana",
+  NE: "Nebraska",
+  NV: "Nevada",
+  NH: "New Hampshire",
+  NJ: "New Jersey",
+  NM: "New Mexico",
+  NY: "New York",
+  NC: "North Carolina",
+  ND: "North Dakota",
+  OH: "Ohio",
+  OK: "Oklahoma",
+  OR: "Oregon",
+  PA: "Pennsylvania",
+  RI: "Rhode Island",
+  SC: "South Carolina",
+  SD: "South Dakota",
+  TN: "Tennessee",
+  TX: "Texas",
+  UT: "Utah",
+  VT: "Vermont",
+  VA: "Virginia",
+  WA: "Washington",
+  WV: "West Virginia",
+  WI: "Wisconsin",
+  WY: "Wyoming",
+  DC: "District of Columbia",
+  PR: "Puerto Rico",
+  GU: "Guam",
+  VI: "U.S. Virgin Islands",
+  AS: "American Samoa",
   MP: "Northern Mariana Islands",
 };
 
@@ -74,6 +130,7 @@ const US_STATES: Record<string, string> = {
 const stateLine = (r: GovDealing["reporter"]): string => {
   if (!r.state) return r.chamber === "senate" ? "Senate" : "House";
   const name = US_STATES[r.state] ?? r.state;
+
   return r.district != null ? `${name}-${r.district}` : name;
 };
 
@@ -84,11 +141,15 @@ const stateLine = (r: GovDealing["reporter"]): string => {
 function cleanCompany(name: string): string {
   const cleaned = name
     .trim()
-    .replace(/[\s,–-]*\b(Class\s+[A-Z0-9]+\s+)?(Common|Ordinary)\s+(Stock|Shares)\b.*$/i, "")
+    .replace(
+      /[\s,–-]*\b(Class\s+[A-Z0-9]+\s+)?(Common|Ordinary)\s+(Stock|Shares)\b.*$/i,
+      "",
+    )
     .replace(/[\s,–-]*\bAmerican\s+Depositary\s+(Shares|Receipts)\b.*$/i, "")
     .replace(/[\s,–-]*\bDepositary\s+(Shares|Receipts)\b.*$/i, "")
     .replace(/[\s,–-]+$/, "")
     .trim();
+
   return cleaned || name.trim();
 }
 
@@ -97,6 +158,7 @@ function cleanCompany(name: string): string {
 export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
   const buy = d.transaction_type === "purchase";
   const isOption = d.asset_type === "option";
+
   return {
     key: d.id,
     id: d.id,
@@ -136,17 +198,28 @@ export function toMarketDealing(d: GovDealing): MarketDealing<GovDealing> {
 // Options marker for the name column — party lives on the member row (it's a
 // person attribute, redundant on each of their trades). Same rounded-md shape
 // as the cluster chip, violet tint to stay distinct.
-function CongressRowNameBadge({ dealing }: { dealing: MarketDealing<GovDealing> }) {
+function CongressRowNameBadge({
+  dealing,
+}: {
+  dealing: MarketDealing<GovDealing>;
+}) {
   if (dealing.raw.asset_type !== "option") return null;
+
   return (
-    <span className={`${chip()} bg-violet-500/10 text-violet-600 dark:text-violet-300`}>
+    <span
+      className={`${chip()} bg-violet-500/10 text-violet-600 dark:text-violet-300`}
+    >
       <BoltIcon className="h-3 w-3 shrink-0" />
       Options
     </span>
   );
 }
 
-function CongressRowActionCell({ dealing }: { dealing: MarketDealing<GovDealing> }) {
+function CongressRowActionCell({
+  dealing,
+}: {
+  dealing: MarketDealing<GovDealing>;
+}) {
   // Just the classification rating (not the pipeline-internal verdict). The
   // options marker now lives in the name column beside the cluster chip; size
   // is in the value column + the drawer's exact disclosed band.
@@ -171,9 +244,11 @@ function closeOnOrBefore(
   date: string,
 ): number | null {
   let best: { date: string; close_pence: number } | null = null;
+
   for (const b of bars) {
     if (b.date <= date && (!best || b.date > best.date)) best = b;
   }
+
   return best?.close_pence ?? null;
 }
 
@@ -200,6 +275,7 @@ function DisclosureGapCallout({
   const lp = d.live_performance;
   const rt = lp?.return_pct_trade;
   const rd = lp?.return_pct_disclosed;
+
   if (rt == null || rd == null) return null;
 
   const gap = rt - rd; // ≈ the move captured during the disclosure blackout
@@ -331,32 +407,47 @@ function CongressDetailPosition({
 
   return (
     <div className="space-y-4">
-      {entry != null && current != null ? (
-        <PositionCard
-          hideAmounts
-          benchmark={{ entry: spEntry, current: spCurrent, label: SPY_LABEL }}
-          current={current}
-          entry={entry}
-          fmt={USD_FORMAT}
-        />
-      ) : (
+      {entry == null || current == null ? (
         <p className="text-sm italic text-muted">
           No price data cached for {ticker} yet.
         </p>
-      )}
+      ) : null}
 
       <DisclosureGapCallout dealing={dealing} />
       {entry != null && (
-        <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
+        /* Position figures, chart and benchmark verdict as one card — the
+           chart's legend used to repeat the tiles' own numbers. Per iOS
+           b64f22f. */
+        <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4 space-y-4">
+          {current != null && (
+            <PositionCard
+              hideAmounts
+              current={current}
+              entry={entry}
+              fmt={USD_FORMAT}
+            />
+          )}
           <MiniPriceChart
             disclosedDate={disclosedDate}
             entryPrice={entry}
             fmt={USD_FORMAT}
             normalizeClose={(closePence) => closePence / 100}
+            showFigures={current == null}
             tickerForApi={ticker}
             tickerForDisplay={ticker}
             tradeDate={tradeDate}
           />
+          {current != null && (
+            <BenchmarkVerdict
+              anchorDate={tradeDate}
+              benchmark={{
+                entry: spEntry,
+                current: spCurrent,
+                label: SPY_LABEL,
+              }}
+              stockPct={(current - entry) / entry}
+            />
+          )}
         </div>
       )}
     </div>
@@ -395,15 +486,20 @@ function formatMoneyShort(n: number): string {
   if (n >= 1_000_000)
     return `$${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
   if (n >= 1_000) return `$${Math.round(n / 1_000)}k`;
+
   return `$${n}`;
 }
 
-function netWorthLabel(p: NonNullable<GovDealing["reporter"]["profile"]>): string | null {
+function netWorthLabel(
+  p: NonNullable<GovDealing["reporter"]["profile"]>,
+): string | null {
   const lo = p.net_worth_min ?? null;
   const hi = p.net_worth_max ?? null;
+
   if (lo == null && hi == null) return null;
   if (lo != null && hi != null && lo !== hi)
     return `${formatMoneyShort(lo)}–${formatMoneyShort(hi)}`;
+
   return `~${formatMoneyShort((lo ?? hi) as number)}`;
 }
 
@@ -416,18 +512,29 @@ function CongressTraderProfile({
   reporter: GovDealing["reporter"];
 }) {
   const p = reporter.profile;
+
   if (!p) return null;
   const adv = p.advisor_managed;
   const nw = netWorthLabel(p);
+
   if (adv == null && !nw && !p.note) return null;
 
   // Tint + label colour only — the hairline derives from the label.
   const profileChip =
     adv === true
-      ? { text: "Advisor-managed", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300" }
+      ? {
+          text: "Advisor-managed",
+          cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+        }
       : adv === false
-        ? { text: "Self-directed", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" }
-        : { text: "Management unconfirmed", cls: "bg-transparent text-foreground/45" };
+        ? {
+            text: "Self-directed",
+            cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+          }
+        : {
+            text: "Management unconfirmed",
+            cls: "bg-transparent text-foreground/45",
+          };
 
   return (
     <section className="space-y-1.5 border-t border-foreground/10 pt-4">
@@ -559,15 +666,17 @@ function CongressDetailBody({
         <section className="space-y-2 border-t border-foreground/10 pt-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold">Wider filing assessment</h3>
+              <h3 className="text-base font-semibold">
+                Wider filing assessment
+              </h3>
               {confidence && (
                 <span className="text-xs text-foreground/45">{confidence}</span>
               )}
             </div>
             <p className="mt-1 text-xs text-muted">
-              Members often disclose many trades in one report. This buy was 1 of{" "}
-              {filingSize} positions filed together — here&apos;s the read on the
-              whole batch.
+              Members often disclose many trades in one report. This buy was 1
+              of {filingSize} positions filed together — here&apos;s the read on
+              the whole batch.
             </p>
           </div>
           <GovAnalysisNarrative analysis={d.analysis} />
@@ -595,7 +704,12 @@ function CongressDetailBody({
 
       <div className="text-xs text-foreground/45">
         Amounts are disclosed as ranges (STOCK Act). ·{" "}
-        <a className="underline underline-offset-2 hover:text-foreground/70" href={d.ptr_link} rel="noreferrer" target="_blank">
+        <a
+          className="underline underline-offset-2 hover:text-foreground/70"
+          href={d.ptr_link}
+          rel="noreferrer"
+          target="_blank"
+        >
           View original filing
         </a>
       </div>
@@ -647,13 +761,13 @@ function useCongressGating(): GatingInfo {
 
 const CongressAnalysisOverlay = () => (
   <BlurredAnalysisOverlay
-    title="Unlock the full Congress brief"
-    body="You've used today's free web unlock. Open the app to see the full breakdown for every filing."
     benefits={[
       "Committee-overlap context and rating factors for each filing",
       "Disclosure-lag view: move since trade vs since public filing",
       "Track each member's recent history in one place",
     ]}
+    body="You've used today's free web unlock. Open the app to see the full breakdown for every filing."
+    title="Unlock the full Congress brief"
   />
 );
 
@@ -692,7 +806,10 @@ const isGovSignal = (d: MarketDealing<GovDealing>): boolean =>
 function CongressExplainer() {
   const meta: { label: string; value: string }[] = [
     { label: "Source", value: "US House Clerk + Senate eFD — STOCK Act PTRs" },
-    { label: "Who files", value: "Representatives & Senators, their spouses & dependents" },
+    {
+      label: "Who files",
+      value: "Representatives & Senators, their spouses & dependents",
+    },
     { label: "Amounts", value: "Disclosed as ranges, never exact figures" },
     { label: "Timing", value: "Filed up to ~45 days after the trade" },
   ];
@@ -837,12 +954,13 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   }),
   description: (
     <>
-      US Congress <strong className="text-foreground/75">STOCK Act</strong> Periodic
-      Transaction Reports — what Representatives and Senators (and their spouses)
-      are buying. Official House Clerk and Senate eFD filings, parsed and triaged
-      automatically. <strong className="text-foreground/75">Signal</strong> = trades
-      with a committee-jurisdiction edge, a cross-member cluster, or that are
-      notable by size/leverage (large bets, options).{" "}
+      US Congress <strong className="text-foreground/75">STOCK Act</strong>{" "}
+      Periodic Transaction Reports — what Representatives and Senators (and
+      their spouses) are buying. Official House Clerk and Senate eFD filings,
+      parsed and triaged automatically.{" "}
+      <strong className="text-foreground/75">Signal</strong> = trades with a
+      committee-jurisdiction edge, a cross-member cluster, or that are notable
+      by size/leverage (large bets, options).{" "}
       <strong className="text-foreground/75">All</strong> shows every buy.
     </>
   ),
@@ -962,6 +1080,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
       ],
       predicate: (value, d) => {
         const adv = d.raw.reporter.profile?.advisor_managed;
+
         return value === "advised" ? adv === true : adv === false;
       },
     },
@@ -980,7 +1099,9 @@ export const CongressMarket: MarketConfig<GovDealing> = {
       ],
       predicate: (value, d) => {
         const nw = d.raw.reporter.profile?.net_worth_max ?? null;
+
         if (nw == null) return false;
+
         return value === "0" ? nw < 10_000_000 : nw >= Number(value);
       },
     },
@@ -1007,12 +1128,15 @@ export const CongressMarket: MarketConfig<GovDealing> = {
     const r = await api.govDealings({ view: "all", limit: 500 });
     const dealings = r.dealings.map(toMarketDealing);
     const latest = dealings[0]?.disclosedDate;
+
     return {
       dealings,
       stats: {
         total: dealings.length,
         viewCounts: { all: dealings.length },
-        latestDisclosedLabel: latest ? `Latest disclosure ${latest}` : undefined,
+        latestDisclosedLabel: latest
+          ? `Latest disclosure ${latest}`
+          : undefined,
       },
     };
   },
@@ -1032,6 +1156,9 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   newsFooterNote:
     "Third-party headlines (CNBC, MarketWatch, Yahoo Finance, Seeking Alpha); opens in a new tab.",
   renderEmptyState: () => (
-    <>No congressional buys stored yet — the ingest cron fills this every few hours.</>
+    <>
+      No congressional buys stored yet — the ingest cron fills this every few
+      hours.
+    </>
   ),
 };

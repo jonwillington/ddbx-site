@@ -443,21 +443,25 @@ export function UsDetailPosition({
 
   return (
     <div className="mb-4 space-y-4">
-      {currentUsd != null && group.total_value != null && (
-        <PositionCard
-          current={currentUsd}
-          entry={entryPrice}
-          fmt={USD_FORMAT}
-          originalValue={group.total_value}
-          shares={group.total_shares}
-        />
-      )}
-      <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
+      {/* Position figures and the chart they describe share one card — the
+          chart's legend used to repeat Entry / Now / return from the tiles
+          directly above it. Merged per iOS b64f22f. */}
+      <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4 space-y-4">
+        {currentUsd != null && group.total_value != null && (
+          <PositionCard
+            current={currentUsd}
+            entry={entryPrice}
+            fmt={USD_FORMAT}
+            originalValue={group.total_value}
+            shares={group.total_shares}
+          />
+        )}
         <MiniPriceChart
           disclosedDate={group.primary.disclosed_date?.slice(0, 10)}
           entryPrice={entryPrice}
           fmt={USD_FORMAT}
           normalizeClose={normalizeUsdClose}
+          showFigures={currentUsd == null || group.total_value == null}
           tickerForApi={ticker}
           tickerForDisplay={ticker}
           tradeDate={tradeDate}

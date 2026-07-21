@@ -58,6 +58,7 @@ export function MiniPriceChart({
   fmt,
   normalizeClose,
   muted = false,
+  showFigures = true,
 }: {
   tickerForApi: string;
   tickerForDisplay: string;
@@ -80,6 +81,12 @@ export function MiniPriceChart({
    *  placings) where the movement is real but the "winner / loser" framing
    *  would mislead. Mirrors the iOS MiniPriceChart `isMuted` flag. */
   muted?: boolean;
+  /** Set false when the chart sits inside the merged price card, where the
+   *  position tiles already carry Entry / Now / Return. The chart then shows
+   *  only what it alone knows — the period range and the marker key. Without
+   *  this the same three figures rendered twice, inches apart, which is the
+   *  duplication iOS removed in b64f22f. */
+  showFigures?: boolean;
 }) {
   const [period, setPeriod] = useState<Period>("around");
   const [allBars, setAllBars] = useState<{ date: string; close: number }[]>([]);
@@ -419,7 +426,7 @@ export function MiniPriceChart({
         <span className="text-[10px] text-muted uppercase tracking-wider font-medium">
           {tickerForDisplay}
         </span>
-        {hasReturn && (
+        {hasReturn && showFigures && (
           <span
             className={`text-[10px] font-semibold tabular-nums ${trendText}`}
           >
@@ -447,20 +454,24 @@ export function MiniPriceChart({
 
       {nowPrice !== null && (
         <div className="flex items-center gap-3 shrink-0 border-t border-black/[0.07] dark:border-white/[0.07] pt-2">
-          <span className="text-[10px] text-muted">
-            Entry{" "}
-            <span className="font-mono tabular-nums text-foreground/70">
-              {fmt.formatPrice(entryPrice)}
-            </span>
-          </span>
-          <span className="text-[10px] text-muted">
-            Now{" "}
-            <span
-              className={`font-mono tabular-nums font-semibold ${trendText}`}
-            >
-              {fmt.formatPrice(nowPrice)}
-            </span>
-          </span>
+          {showFigures && (
+            <>
+              <span className="text-[10px] text-muted">
+                Entry{" "}
+                <span className="font-mono tabular-nums text-foreground/70">
+                  {fmt.formatPrice(entryPrice)}
+                </span>
+              </span>
+              <span className="text-[10px] text-muted">
+                Now{" "}
+                <span
+                  className={`font-mono tabular-nums font-semibold ${trendText}`}
+                >
+                  {fmt.formatPrice(nowPrice)}
+                </span>
+              </span>
+            </>
+          )}
           {periodHigh !== null && periodLow !== null && (
             <span className="text-[10px] text-muted ml-auto">
               <span className="font-mono tabular-nums">
