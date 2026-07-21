@@ -14,7 +14,7 @@ import type {
 } from "@/lib/markets/types";
 import type { Dealing, TriageVerdict } from "@/types/ddbx";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { InformationCircleIcon as InformationCircleOutlineIcon } from "@heroicons/react/24/outline";
 
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
@@ -28,6 +28,7 @@ import { PositionCard, type PriceFormat } from "@/components/position-card";
 import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
 import { UK_BANK_HOLIDAYS_SOURCE } from "@/lib/bank-holidays";
+import { useDashboardMetricMode } from "@/lib/dashboard-metric-mode";
 import { isSuggestedDealing } from "@/lib/dealing-classify";
 import { useDiscretion } from "@/lib/discretion";
 import { LSE } from "@/lib/market-status";
@@ -129,8 +130,8 @@ function UkRowActionCell({ dealing }: { dealing: MarketDealing<Dealing> }) {
 function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
   const d = dealing.raw;
   const ticker = d.ticker;
-  const entryPrice = d.price_pence;
   const tradeDate = d.trade_date.slice(0, 10);
+  const disclosedDate = d.disclosed_date?.slice(0, 10) ?? null;
   // A buy the pipeline classified as not-open-market (award / scheme /
   // placing). The entry "price" wasn't paid at market, so the entry→now
   // return isn't a like-for-like gain. Mute the green "winner" framing and
@@ -140,6 +141,29 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [ftseEntry, setFtseEntry] = useState<number | null>(null);
   const [ftseCurrent, setFtseCurrent] = useState<number | null>(null);
+  const [stockBars, setStockBars] = useState<
+    { date: string; close: number }[] | null
+  >(null);
+
+  // The drawer used to hardcode the trade-date anchor while the list rows
+  // honoured the shared metric mode — which defaults to *disclosure*. So
+  // opening a row could show a different Return than the row itself did.
+  // Read the same store the rows read.
+  const { anchor } = useDashboardMetricMode("uk");
+  const anchorsOnDisclosure = anchor === "disclosure" && disclosedDate != null;
+  const anchorDate = anchorsOnDisclosure ? disclosedDate! : tradeDate;
+
+  // Entry the return is measured from. Trade anchor = the price actually
+  // filed. Disclosure anchor = the close a reader could have bought at once
+  // the news surfaced, which is the point of that mode. Resolved with the
+  // same first-bar-on-or-after rule the list rows use (market-page.tsx
+  // `stockEntry`) so the two surfaces can't disagree.
+  const entryPrice = useMemo(() => {
+    if (!anchorsOnDisclosure) return d.price_pence;
+    const post = stockBars?.find((b) => b.date >= disclosedDate!);
+
+    return post?.close ?? d.price_pence;
+  }, [anchorsOnDisclosure, stockBars, disclosedDate, d.price_pence]);
 
   useEffect(() => {
     if (!ticker) return;
@@ -173,7 +197,11 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
       .priceHistory(FTSE_TICKER, 365)
       .then((bars) => {
         if (cancelled) return;
-        const match = bars.find((b) => b.date === tradeDate);
+        // Benchmark leg has to anchor on the same date as the stock leg,
+        // or the alpha figure compares two different windows. Falls back
+        // to the other date when the anchor day has no bar.
+        const at = (iso: string) => bars.find((b) => b.date >= iso);
+        const match = at(anchorDate) ?? at(tradeDate);
 
         setFtseEntry(match?.close_pence ?? null);
       })
@@ -184,7 +212,27 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
     return () => {
       cancelled = true;
     };
-  }, [tradeDate]);
+  }, [tradeDate, anchorDate]);
+
+  // Stock history, for the disclosure-anchored entry close above.
+  useEffect(() => {
+    if (!ticker) return;
+    let cancelled = false;
+
+    api
+      .priceHistory(ticker, 365)
+      .then((bars) => {
+        if (cancelled) return;
+        setStockBars(bars.map((b) => ({ date: b.date, close: b.close_pence })));
+      })
+      .catch(() => {
+        if (!cancelled) setStockBars(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ticker]);
 
   return (
     <div className="mb-4 space-y-4">
@@ -221,7 +269,7 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
       )}
       <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
         <MiniPriceChart
-          disclosedDate={(d.disclosed_date || d.trade_date).slice(0, 10)}
+          disclosedDate={disclosedDate ?? undefined}
           entryPrice={entryPrice}
           fmt={GBP_FORMAT}
           muted={isNonMarketBuy}

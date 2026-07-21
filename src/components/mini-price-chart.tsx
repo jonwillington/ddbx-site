@@ -18,6 +18,7 @@ import {
 } from "lightweight-charts";
 
 import { api } from "@/lib/api";
+import { barForDate, sanitiseBars } from "@/lib/prices";
 
 type Period = "around" | "ytd" | "max";
 
@@ -103,14 +104,19 @@ export function MiniPriceChart({
       .priceHistory(tickerForApi, 365)
       .then((bars) =>
         setAllBars(
-          bars
-            .map((b) => ({
-              date: b.date,
-              close: normalize(b.close_pence, b.date),
-            }))
-            .filter(
-              (b): b is { date: string; close: number } => b.close != null,
-            ),
+          // sanitiseBars drops non-positive / corrupt closes and collapses
+          // same-day duplicates before anything downstream sees them — the
+          // Low/High readout and the return both read straight off this.
+          sanitiseBars(
+            bars
+              .map((b) => ({
+                date: b.date,
+                close: normalize(b.close_pence, b.date),
+              }))
+              .filter(
+                (b): b is { date: string; close: number } => b.close != null,
+              ),
+          ),
         ),
       )
       .catch(() => {});
@@ -138,11 +144,45 @@ export function MiniPriceChart({
     return allBars;
   }, [allBars, period, tradeDate]);
 
+  /** The series as plotted. When disclosure post-dates the last close the
+   *  line is extended flat out to that date, so the disclosure marker has a
+   *  line to sit on instead of being silently dropped while its legend entry
+   *  still rendered. Mirrors `postTradePoints` in the iOS chart (631f634);
+   *  gated on having a real line already so we never fabricate one. */
+  const plotted = useMemo(() => {
+    if (bars.length < 2) return bars;
+    const last = bars[bars.length - 1];
+
+    if (disclosedDate && disclosedDate > last.date) {
+      return [...bars, { date: disclosedDate, close: last.close }];
+    }
+
+    return bars;
+  }, [bars, disclosedDate]);
+
+  /** Resolved once and shared by the canvas and the legend below, so the
+   *  key can never advertise a marker the chart didn't draw. */
+  const placement = useMemo(() => {
+    const sameDay = !disclosedDate || disclosedDate === tradeDate;
+
+    return {
+      sameDay,
+      tradeBar: barForDate(plotted, tradeDate),
+      discBar: sameDay ? null : barForDate(plotted, disclosedDate),
+    };
+  }, [plotted, tradeDate, disclosedDate]);
+
   const lastBar = allBars[allBars.length - 1];
-  const up = lastBar ? lastBar.close >= entryPrice : true;
-  const returnPct = lastBar
+  // entryPrice can arrive as 0 on a malformed filing; guard the divisor
+  // rather than rendering an Infinity return.
+  const hasReturn = lastBar != null && entryPrice > 0;
+  const returnPct = hasReturn
     ? ((lastBar.close - entryPrice) / entryPrice) * 100
     : 0;
+  // Sub-0.05% moves read as noise, not a win or a loss — iOS renders them
+  // in neutral ink so a -0.0% deal doesn't flash red.
+  const flat = Math.abs(returnPct) < 0.05;
+  const up = hasReturn ? lastBar.close >= entryPrice : true;
 
   const isDark =
     typeof document !== "undefined" &&
@@ -153,9 +193,10 @@ export function MiniPriceChart({
   // Non-open-market trades drop the green/red framing — the price path is
   // real but the director didn't buy at the entry price, so the movement
   // isn't a "win".
-  const trendText = muted ? "text-foreground/60" : up ? upText : downText;
+  const neutral = muted || flat;
+  const trendText = neutral ? "text-foreground/60" : up ? upText : downText;
 
-  const lineColor = muted
+  const lineColor = neutral
     ? isDark
       ? "rgba(255,255,255,0.5)"
       : "rgba(0,0,0,0.45)"
@@ -166,7 +207,7 @@ export function MiniPriceChart({
       : isDark
         ? "#e84d4d"
         : "#8b2020";
-  const fillColor = muted
+  const fillColor = neutral
     ? isDark
       ? "rgba(255,255,255,0.08)"
       : "rgba(0,0,0,0.05)"
@@ -184,7 +225,7 @@ export function MiniPriceChart({
   useEffect(() => {
     const container = containerRef.current;
 
-    if (!container || bars.length < 2) return;
+    if (!container || plotted.length < 2) return;
 
     const chart = createChart(container, {
       width: container.clientWidth,
@@ -250,7 +291,9 @@ export function MiniPriceChart({
       crosshairMarkerBorderColor: isDark ? "#1a1a1a" : "#ffffff",
     });
 
-    series.setData(bars.map((b) => ({ time: b.date as Time, value: b.close })));
+    series.setData(
+      plotted.map((b) => ({ time: b.date as Time, value: b.close })),
+    );
 
     // Director's paid price — faint dotted baseline. Kept subtle so the
     // price action stays the main visual.
@@ -263,34 +306,30 @@ export function MiniPriceChart({
       title: "",
     });
 
-    // Trade + disclosure markers. lightweight-charts snaps each marker
-    // to the first bar at-or-after the requested date, matching how
-    // weekend disclosures land on the next trading-day bar. Text labels
-    // are dropped — the dates live in the meta row above the chart.
+    // Trade + disclosure markers, seated on the bars `placement` resolved —
+    // exact day, else the nearest *prior* close, so a weekend or bank-holiday
+    // event anchors to the last price the market knew rather than drifting
+    // into the next session's move. Text labels are dropped: the dates live
+    // in the legend row above.
     const markers: SeriesMarker<Time>[] = [];
-    const tradeBar = bars.find((b) => b.date >= tradeDate);
 
-    if (tradeBar) {
+    if (placement.tradeBar) {
       markers.push({
-        time: tradeBar.date as Time,
+        time: placement.tradeBar.date as Time,
         position: "inBar",
         color: lineColor,
         shape: "circle",
         size: TRADE_MARKER_SIZE,
       });
     }
-    if (disclosedDate && disclosedDate !== tradeDate) {
-      const discBar = bars.find((b) => b.date >= disclosedDate);
-
-      if (discBar) {
-        markers.push({
-          time: discBar.date as Time,
-          position: "inBar",
-          color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.45)",
-          shape: "circle",
-          size: DISCLOSED_MARKER_SIZE,
-        });
-      }
+    if (placement.discBar) {
+      markers.push({
+        time: placement.discBar.date as Time,
+        position: "inBar",
+        color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.45)",
+        shape: "circle",
+        size: DISCLOSED_MARKER_SIZE,
+      });
     }
     if (markers.length > 0) {
       createSeriesMarkers(series, markers);
@@ -308,7 +347,7 @@ export function MiniPriceChart({
     // stick, because the library re-fits on its first paint and again whenever
     // the ResizeObserver applies a new width. So pin in a rAF and re-pin on
     // every resize.
-    const lastIdx = bars.length - 1;
+    const lastIdx = plotted.length - 1;
     const pinRange = () => {
       const w = container.clientWidth;
       const rightPad = w > 0 ? (16 * lastIdx) / w : 0;
@@ -356,15 +395,7 @@ export function MiniPriceChart({
       seriesRef.current = null;
       setScrub(null);
     };
-  }, [
-    bars,
-    entryPrice,
-    tradeDate,
-    disclosedDate,
-    lineColor,
-    fillColor,
-    isDark,
-  ]);
+  }, [plotted, placement, entryPrice, lineColor, fillColor, isDark]);
 
   const visiblePrices = bars.map((b) => b.close);
   const periodHigh = visiblePrices.length ? Math.max(...visiblePrices) : null;
@@ -377,10 +408,10 @@ export function MiniPriceChart({
       month: "short",
     });
   const tradeLabel = formatShort(tradeDate);
-  const disclosedLabel =
-    disclosedDate && disclosedDate !== tradeDate
-      ? formatShort(disclosedDate)
-      : null;
+  // Only key a marker the canvas actually drew. `placement.discBar` is null
+  // when disclosure shares the trade's day (one dot, relabelled) or when it
+  // resolved to no bar at all.
+  const disclosedLabel = placement.discBar ? formatShort(disclosedDate!) : null;
 
   return (
     <div className="flex flex-col gap-2">
@@ -388,7 +419,7 @@ export function MiniPriceChart({
         <span className="text-[10px] text-muted uppercase tracking-wider font-medium">
           {tickerForDisplay}
         </span>
-        {lastBar && (
+        {hasReturn && (
           <span
             className={`text-[10px] font-semibold tabular-nums ${trendText}`}
           >
@@ -451,7 +482,8 @@ export function MiniPriceChart({
             className="inline-block w-1.5 h-1.5 rounded-full"
             style={{ backgroundColor: lineColor }}
           />
-          Trade <span className="tabular-nums">{tradeLabel}</span>
+          {placement.sameDay && disclosedDate ? "Traded & disclosed" : "Trade"}{" "}
+          <span className="tabular-nums">{tradeLabel}</span>
         </span>
         {disclosedLabel && (
           <span className="flex items-center gap-1.5">
@@ -459,8 +491,7 @@ export function MiniPriceChart({
               aria-hidden
               className="inline-block w-1.5 h-1.5 rounded-full bg-foreground/40"
             />
-            Disclosed{" "}
-            <span className="tabular-nums">{disclosedLabel}</span>
+            Disclosed <span className="tabular-nums">{disclosedLabel}</span>
           </span>
         )}
       </div>
@@ -468,7 +499,7 @@ export function MiniPriceChart({
       {/* Bleed past the card's p-4 so the plot runs edge-to-edge. The meta
           rows above stay padded; only the canvas reaches the card borders. */}
       <div className="relative -mx-4" style={{ height: CHART_HEIGHT }}>
-        {bars.length >= 2 ? (
+        {plotted.length >= 2 ? (
           <div ref={containerRef} className="h-full w-full" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">

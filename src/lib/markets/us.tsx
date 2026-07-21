@@ -454,9 +454,7 @@ export function UsDetailPosition({
       )}
       <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4">
         <MiniPriceChart
-          disclosedDate={(
-            group.primary.disclosed_date || group.primary.trade_date
-          ).slice(0, 10)}
+          disclosedDate={group.primary.disclosed_date?.slice(0, 10)}
           entryPrice={entryPrice}
           fmt={USD_FORMAT}
           normalizeClose={normalizeUsdClose}
@@ -469,7 +467,11 @@ export function UsDetailPosition({
   );
 }
 
-export function UsDetailBody({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
+export function UsDetailBody({
+  dealing,
+}: {
+  dealing: MarketDealing<UsRowGroup>;
+}) {
   const group = dealing.raw;
   const row = group.primary;
 
