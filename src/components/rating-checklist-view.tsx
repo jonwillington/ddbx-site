@@ -1,6 +1,6 @@
 import type { RatingChecklist } from "@/types/ddbx";
 
-import { InformationCircleIcon } from "@heroicons/react/20/solid";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
 
 export const CHECKLIST_LABELS: {
   key: keyof RatingChecklist;
@@ -45,12 +45,15 @@ export const CHECKLIST_LABELS: {
   },
 ];
 
-function InfoIcon() {
-  return (
-    <InformationCircleIcon className="w-3.5 h-3.5 shrink-0 text-muted/50 group-hover/tip:text-muted/80 transition-colors" />
-  );
-}
-
+/** The six criteria behind a rating, each expandable to its explanation.
+ *
+ *  The explanations used to live in hover-only tooltips, which meant they
+ *  were unreachable on touch — i.e. on most of the site's traffic. They're
+ *  now disclosure rows: tap or click a criterion to read why it matters.
+ *  iOS solved the same problem by making the checklist a tap-through to a
+ *  sheet of per-criterion cards; inline is the web-native equivalent and
+ *  keeps the scannable pass/fail column intact.
+ */
 export function RatingChecklistView({
   checklist,
 }: {
@@ -62,8 +65,8 @@ export function RatingChecklistView({
     <div>
       <div className="flex items-baseline justify-between mb-3">
         <h3 className="text-lg font-bold">Rating checklist</h3>
-        <span className="text-xs text-muted">
-          {passed} of {CHECKLIST_LABELS.length} criteria met
+        <span className="text-xs text-muted tabular-nums">
+          {passed}/{CHECKLIST_LABELS.length} met
         </span>
       </div>
       <ul className="divide-y divide-black/10 dark:divide-white/10 border-y border-black/10 dark:border-white/10">
@@ -71,33 +74,35 @@ export function RatingChecklistView({
           const ok = checklist[key];
 
           return (
-            <li key={key} className="flex items-center gap-3 py-2.5">
-              <span
-                aria-label={ok ? "passed" : "failed"}
-                className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold shrink-0
-                  ${
-                    ok
-                      ? "bg-[#1e6b18]/[0.12] text-[#1e6b18] dark:bg-[#5cd84a]/[0.15] dark:text-[#5cd84a]"
-                      : "bg-[#8b2020]/[0.12] text-[#8b2020] dark:bg-[#e84d4d]/[0.15] dark:text-[#e84d4d]"
-                  }`}
-              >
-                {ok ? "✓" : "✗"}
-              </span>
-              <span
-                className={`text-sm ${ok ? "text-foreground" : "text-foreground/60"} relative group/tip inline-flex items-center gap-1.5 cursor-default`}
-              >
-                {label}
-                <InfoIcon />
-                <span
-                  className="pointer-events-none absolute left-0 top-full mt-1.5 z-50
-                  opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150
-                  w-64 rounded-lg bg-[#1e1a16] dark:bg-[#e8e2da]
-                  text-[#e8e2da] dark:text-[#1e1a16]
-                  text-xs px-3 py-2.5 leading-relaxed shadow-2xl"
-                >
+            <li key={key}>
+              <details className="group/row">
+                <summary className="flex items-center gap-3 py-2.5 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                  <span
+                    aria-label={ok ? "passed" : "failed"}
+                    className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold shrink-0
+                      ${
+                        ok
+                          ? "bg-[#1e6b18]/[0.12] text-[#1e6b18] dark:bg-[#5cd84a]/[0.15] dark:text-[#5cd84a]"
+                          : "bg-[#8b2020]/[0.12] text-[#8b2020] dark:bg-[#e84d4d]/[0.15] dark:text-[#e84d4d]"
+                      }`}
+                  >
+                    {ok ? "✓" : "✗"}
+                  </span>
+                  <span
+                    className={`flex-1 min-w-0 text-sm ${ok ? "text-foreground" : "text-foreground/60"}`}
+                  >
+                    {label}
+                  </span>
+                  <ChevronDownIcon
+                    aria-hidden
+                    className="w-4 h-4 shrink-0 text-muted/50 transition-transform duration-200 group-open/row:rotate-180"
+                  />
+                </summary>
+                {/* Aligned under the label, clearing the tick's gutter. */}
+                <p className="pl-8 pr-2 pb-3 -mt-0.5 text-xs leading-relaxed text-muted">
                   {tooltip}
-                </span>
-              </span>
+                </p>
+              </details>
             </li>
           );
         })}
