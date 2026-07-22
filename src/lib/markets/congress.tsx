@@ -20,6 +20,7 @@ import { api } from "@/lib/api";
 import { AnalysisSection } from "@/components/analysis-section";
 import { chip } from "@/components/chip";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
+import { IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { RatingBadge } from "@/components/rating-badge";
 import { BenchmarkVerdict, PositionCard } from "@/components/position-card";
@@ -765,8 +766,11 @@ const CongressAnalysisOverlay = () => (
       "Committee-overlap context and rating factors for each filing",
       "Disclosure-lag view: move since trade vs since public filing",
       "Track each member's recent history in one place",
+      "Performance since trade vs the S&P 500 on every buy",
+      "Insider Form 4 buys alongside Congress, in the same app",
     ]}
     body="You've used today's free web unlock. Open the app to see the full breakdown for every filing."
+    logoSrc={IOS_APP_LOGO_BY_MARKET.us}
     title="Unlock the full Congress brief"
   />
 );

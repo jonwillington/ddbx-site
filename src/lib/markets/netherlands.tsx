@@ -487,9 +487,10 @@ function useNetherlandsGating(): GatingInfo {
 const NetherlandsAnalysisOverlay = () => (
   <BlurredAnalysisOverlay
     benefits={[
-      "Full AI thesis and risk breakdown on each PDMR buy",
+      "Full thesis and risk breakdown on each PDMR buy",
       "Review filing details with cleaner context",
       "Follow fresh insider disclosures as they land",
+      "The rating checklist behind every signal",
     ]}
     body="You've used today's free web unlock. Open the app for full analysis on every Dutch filing."
   />

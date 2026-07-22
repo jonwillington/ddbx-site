@@ -22,6 +22,7 @@ import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { buildMarketFaq } from "@/lib/markets/faq";
 import { AnalysisSection } from "@/components/analysis-section";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
+import { IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { MiniPriceChart } from "@/components/mini-price-chart";
 import {
@@ -393,11 +394,14 @@ function useUkGating(): GatingInfo {
 const UkAnalysisOverlay = () => (
   <BlurredAnalysisOverlay
     benefits={[
-      "Full AI thesis, evidence, and risk breakdown on every filing",
+      "Full thesis, evidence, and risk breakdown on every filing",
       "Real-time alerts when a director buys",
       "Track each director's hit-rate across UK names",
+      "Performance since trade vs the FTSE All-Share on every buy",
+      "Daily recap of the filings that matter",
     ]}
     body="You've used today's free web unlock. The app gives you the full breakdown on every UK filing."
+    logoSrc={IOS_APP_LOGO_BY_MARKET.uk}
   />
 );
 

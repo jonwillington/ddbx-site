@@ -29,6 +29,7 @@ import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { buildMarketFaq } from "@/lib/markets/faq";
 import { AnalysisSection } from "@/components/analysis-section";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
+import { IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { DisclosureSection } from "@/components/disclosure-section";
 import { DetailField } from "@/components/market/detail-field";
@@ -661,8 +662,11 @@ const UsAnalysisOverlay = () => (
       "Full filing-level thesis, evidence, and risk callouts",
       "See footnotes, ownership context, and signal drivers",
       "Track insiders and follow new buys in real time",
+      "Performance since trade vs the S&P 500 on every buy",
+      "Congress trades with committee context, in the same app",
     ]}
     body="You've used today's free web unlock. Open the app for full analysis on every Form 4 purchase."
+    logoSrc={IOS_APP_LOGO_BY_MARKET.us}
   />
 );
 

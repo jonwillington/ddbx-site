@@ -576,9 +576,10 @@ function useSwedenGating(): GatingInfo {
 const SwedenAnalysisOverlay = () => (
   <BlurredAnalysisOverlay
     benefits={[
-      "Full AI thesis and risk breakdown on each PDMR buy",
+      "Full thesis and risk breakdown on each PDMR buy",
       "Deeper context behind the filing and instrument",
       "Follow new insider disclosures as they arrive",
+      "The rating checklist behind every signal",
     ]}
     body="You've used today's free web unlock. Open the app for full analysis on every Swedish filing."
   />
