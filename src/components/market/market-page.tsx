@@ -905,7 +905,7 @@ export function MarketPage<W>({
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-help ${
               previewMode
                 ? "border-[#d8d0c6] bg-[#f4eee6] text-[#7a634b] dark:border-separator dark:bg-white/[0.03] dark:text-[#c9b49f]"
-                : "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-700/60 dark:bg-emerald-900/20 dark:text-emerald-300"
+                : "border-positive/25 bg-positive/10 text-positive dark:border-positive/30 dark:bg-positive/10"
             }`}
             data-ga-event="cta_web_preview_explain"
             data-ga-label={`Web preview ${previewMode ? "on" : "off"}`}

@@ -404,28 +404,35 @@ export function benchmarkReturnPct(
 
 /** Tone ramp used by the delta badge. Magnitude grows up to ~30% before
  *  saturating. Mirrors the UK dashboard styling so all markets get the same
- *  visual language. */
+ *  visual language.
+ *
+ *  Each colour is a light-dark() pair (globals.css sets color-scheme per
+ *  mode): light mode darkens ink with magnitude, dark mode brightens it.
+ *  Both ramps are anchored on the canonical --positive/--negative hues
+ *  (145 green / 25 red) so chips and sparklines land on the same green as
+ *  the channel rail and teasers instead of a private emerald. */
 export function deltaStyle(delta: number): { bg: string; text: string } {
   const abs = Math.abs(delta);
   const t = Math.min(abs / 30, 1);
+  const pos = delta >= 0;
+  const hue = pos ? 145 : 25;
 
-  if (delta >= 0) {
-    const bgAlpha = (0.08 + t * 0.22).toFixed(2);
-    const l = Math.round(42 - t * 18);
-    const c = (0.1 + t * 0.14).toFixed(3);
+  // Light ink: 42→24L green, 45→29L red — deepens as the move grows.
+  const lLight = pos ? Math.round(42 - t * 18) : Math.round(45 - t * 16);
+  // Dark ink: starts at the token lightness (78/64L) and brightens a touch.
+  const lDark = pos ? Math.round(72 + t * 8) : Math.round(62 + t * 8);
+  const cLight = (0.1 + t * 0.14).toFixed(3);
+  const cDark = (0.12 + t * 0.08).toFixed(3);
+  const bgAlphaLight = (0.08 + t * 0.22).toFixed(2);
+  // The bright dark-mode ink needs less wash behind it to register.
+  const bgAlphaDark = (0.1 + t * 0.14).toFixed(2);
 
-    return {
-      bg: `oklch(${l}% ${c} 155 / ${bgAlpha})`,
-      text: `oklch(${l}% ${c} 155)`,
-    };
-  }
-  const bgAlpha = (0.08 + t * 0.22).toFixed(2);
-  const l = Math.round(45 - t * 16);
-  const c = (0.1 + t * 0.14).toFixed(3);
+  const inkLight = `oklch(${lLight}% ${cLight} ${hue})`;
+  const inkDark = `oklch(${lDark}% ${cDark} ${hue})`;
 
   return {
-    bg: `oklch(${l}% ${c} 18 / ${bgAlpha})`,
-    text: `oklch(${l}% ${c} 18)`,
+    bg: `light-dark(oklch(${lLight}% ${cLight} ${hue} / ${bgAlphaLight}), oklch(${lDark}% ${cDark} ${hue} / ${bgAlphaDark}))`,
+    text: `light-dark(${inkLight}, ${inkDark})`,
   };
 }
 

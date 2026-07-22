@@ -132,7 +132,7 @@ export function ContributorsList({
               </div>
               <div className="text-right">
                 <div
-                  className={`text-sm font-semibold ${displayPositive ? "text-[#1e6b18] dark:text-[#5cd84a]" : "text-[#8b2020] dark:text-[#e84d4d]"}`}
+                  className={`text-sm font-semibold ${displayPositive ? "text-positive" : "text-negative"}`}
                 >
                   {formatPct(displayReturn)}
                 </div>

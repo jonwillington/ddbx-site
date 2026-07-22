@@ -706,7 +706,7 @@ export function MemberClusterRow({
   const SignalChip = ({ className = "" }: { className?: string }) =>
     !DISCRETION_ENABLED && signalCount > 0 ? (
       <span
-        className={`${chip()} bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ${className}`}
+        className={`${chip()} bg-positive/10 text-positive ${className}`}
       >
         {signalCount} signal
       </span>

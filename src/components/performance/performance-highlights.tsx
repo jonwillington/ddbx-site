@@ -134,7 +134,7 @@ export function PerformanceHighlights({
           </div>
           <div className="text-right shrink-0">
             <div
-              className={`text-2xl font-semibold tabular-nums ${selected.returnPct >= 0 ? "text-[#1e6b18] dark:text-[#5cd84a]" : "text-[#8b2020] dark:text-[#e84d4d]"}`}
+              className={`text-2xl font-semibold tabular-nums ${selected.returnPct >= 0 ? "text-positive" : "text-negative"}`}
             >
               {formatPct(selected.returnPct)}
             </div>
@@ -159,7 +159,7 @@ export function PerformanceHighlights({
             label="Biggest paper gain"
             row={bestGain}
             value={formatSignedGbp(bestGain.currentValue - bestGain.deployed)}
-            valueClass="text-[#1e6b18] dark:text-[#5cd84a]"
+            valueClass="text-positive"
           />
         )}
         {worstLoss != null && (
@@ -167,7 +167,7 @@ export function PerformanceHighlights({
             label="Biggest drawdown"
             row={worstLoss}
             value={formatSignedGbp(worstLoss.currentValue - worstLoss.deployed)}
-            valueClass="text-[#8b2020] dark:text-[#e84d4d]"
+            valueClass="text-negative"
           />
         )}
       </div>

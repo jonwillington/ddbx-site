@@ -103,43 +103,95 @@ export function CollapsedDayTeaser<W>({
   const extra = seen.size - shown.length;
 
   const formatTotal = fmt.formatValueCompact ?? fmt.formatValue;
+  // Stable per-day phrasing pick: a stack of identical "N buys cleared our
+  // checks this day" cards reads as a template, so each headline kind keeps a
+  // few equivalent phrasings and the day's first deal key chooses one. The
+  // hash is deterministic, so a day keeps its wording across renders/visits.
+  const seedKey = deals[0]?.key ?? "";
+  let seed = deals.length;
+
+  for (let i = 0; i < seedKey.length; i++) seed += seedKey.charCodeAt(i);
+
   const pctLabel =
     teaser.kind === "performance" ? `+${teaser.pct.toFixed(1)}%` : "";
   const emphasis = "font-semibold text-foreground";
-  const headline =
-    teaser.kind === "performance" ? (
-      <>
-        {teaser.buyCount === 1
-          ? "This buy is now up "
-          : "One of these buys is now up "}
-        <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-          {pctLabel}
-        </span>{" "}
-        since disclosure
-      </>
-    ) : teaser.kind === "value" ? (
-      <>
-        <span className={emphasis}>{formatTotal(teaser.total)}</span> bought
-        across{" "}
-        {teaser.companyCount === 1
-          ? "one company"
-          : `${teaser.companyCount} companies`}
-      </>
-    ) : teaser.kind === "signal" ? (
-      <>
-        <span className={emphasis}>
-          {teaser.count === 1 ? "1 buy" : `${teaser.count} buys`}
-        </span>{" "}
-        cleared our checks this day
-      </>
-    ) : (
-      <>
-        <span className={emphasis}>
-          {teaser.count === 1 ? "1 filing" : `${teaser.count} filings`}
-        </span>{" "}
-        recorded this day
-      </>
-    );
+  const pct = <span className="font-semibold text-positive">{pctLabel}</span>;
+  const variants: React.ReactNode[] =
+    teaser.kind === "performance"
+      ? teaser.buyCount === 1
+        ? [
+            <>This buy is now up {pct} since disclosure</>,
+            <>This buy has climbed {pct} since disclosure</>,
+            <>Up {pct} since the director bought in</>,
+          ]
+        : [
+            <>One of these buys is now up {pct} since disclosure</>,
+            <>The best of these buys is up {pct} since disclosure</>,
+            <>A buy from this day is up {pct} and counting</>,
+          ]
+      : teaser.kind === "value"
+        ? [
+            <>
+              <span className={emphasis}>{formatTotal(teaser.total)}</span>{" "}
+              bought across{" "}
+              {teaser.companyCount === 1
+                ? "one company"
+                : `${teaser.companyCount} companies`}
+            </>,
+            <>
+              Directors put{" "}
+              <span className={emphasis}>{formatTotal(teaser.total)}</span> into{" "}
+              {teaser.companyCount === 1
+                ? "one company"
+                : `${teaser.companyCount} companies`}
+            </>,
+            <>
+              <span className={emphasis}>{formatTotal(teaser.total)}</span> of
+              buying in a single day
+            </>,
+          ]
+        : teaser.kind === "signal"
+          ? [
+              <>
+                <span className={emphasis}>
+                  {teaser.count === 1 ? "1 buy" : `${teaser.count} buys`}
+                </span>{" "}
+                cleared our checks this day
+              </>,
+              <>
+                <span className={emphasis}>
+                  {teaser.count === 1 ? "1 buy" : `${teaser.count} buys`}
+                </span>{" "}
+                made the cut this day
+              </>,
+              <>
+                <span className={emphasis}>
+                  {teaser.count === 1 ? "A buy" : `${teaser.count} buys`}
+                </span>{" "}
+                here passed our checks
+              </>,
+            ]
+          : [
+              <>
+                <span className={emphasis}>
+                  {teaser.count === 1 ? "1 filing" : `${teaser.count} filings`}
+                </span>{" "}
+                recorded this day
+              </>,
+              <>
+                <span className={emphasis}>
+                  {teaser.count === 1 ? "1 filing" : `${teaser.count} filings`}
+                </span>{" "}
+                hit the register this day
+              </>,
+              <>
+                <span className={emphasis}>
+                  {teaser.count === 1 ? "1 filing" : `${teaser.count} filings`}
+                </span>{" "}
+                landed this day
+              </>,
+            ];
+  const headline = variants[seed % variants.length];
 
   const avatarSize = variant === 0 ? 32 : 26;
   const stack = showLogo && shown.length > 0 && (
@@ -164,22 +216,29 @@ export function CollapsedDayTeaser<W>({
   );
 
   const text = (
-    <span className="min-w-0 flex-1">
-      <span className="block text-[15px] leading-snug text-foreground/90">
-        {headline}
-      </span>
-      {/* Revealed on hover/keyboard focus only — the headline carries the row,
-          and the whole card is already the App Store link (see aria-label). */}
-      <span className="mt-0.5 block text-[11px] font-medium text-[#5a4128] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 dark:text-[#ad9479]">
-        See the full day in the app <span aria-hidden>→</span>
-      </span>
+    <span className="block min-w-0 flex-1 text-[17px] leading-snug text-foreground/90">
+      {headline}
+    </span>
+  );
+
+  // Hover/focus affordance: a pill that fades and slides in beside the avatar
+  // stack. It sits in normal flow (opacity-only reveal) so nothing reflows on
+  // hover, and the headline stays vertically centred — the old reveal was a
+  // hidden second text line that reserved its own height and pushed the
+  // headline off-centre.
+  const cta = (
+    <span
+      aria-hidden
+      className="hidden shrink-0 items-center gap-1 rounded-full border border-[#5a4128]/25 px-3 py-1 text-[11px] font-medium text-[#5a4128] opacity-0 transition-all duration-200 -translate-x-1 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 sm:inline-flex dark:border-[#ad9479]/25 dark:text-[#ad9479]"
+    >
+      Full day in the app <span aria-hidden>→</span>
     </span>
   );
 
   return (
     <a
       aria-label={`${deals.length} ${deals.length === 1 ? "filing" : "filings"} recorded on this day — view in the app`}
-      className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+      className="group flex items-center gap-4 px-4 py-5 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
       data-ga-event="cta_collapsed_day_view_in_app"
       data-ga-label={`${teaser.kind} · ${deals.length} deals`}
       href={appHref}
@@ -187,6 +246,7 @@ export function CollapsedDayTeaser<W>({
       target="_blank"
     >
       {text}
+      {cta}
       {stack}
     </a>
   );

@@ -70,10 +70,10 @@ function tintClass(t: Tint): string {
   switch (t) {
     case "pos":
     case "pos-muted":
-      return "text-[#1e6b18] dark:text-[#5cd84a]";
+      return "text-positive";
     case "neg":
     case "neg-muted":
-      return "text-[#8b2020] dark:text-[#e84d4d]";
+      return "text-negative";
     default:
       return "";
   }

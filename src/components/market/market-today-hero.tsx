@@ -335,7 +335,7 @@ function TodayDeckCard<W>({
     ret == null
       ? ""
       : ret >= 0
-        ? "text-emerald-600 dark:text-emerald-400"
+        ? "text-positive"
         : "text-rose-600 dark:text-rose-400";
 
   // Factual, non-analysis stats — safe to show even under discretion. The
@@ -1022,7 +1022,7 @@ function BestThisWeekCell<W>({
     returnPct == null
       ? "text-muted"
       : returnPct >= 0
-        ? "text-emerald-600 dark:text-emerald-400"
+        ? "text-positive"
         : "text-rose-600 dark:text-rose-400";
 
   return (

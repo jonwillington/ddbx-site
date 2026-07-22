@@ -67,8 +67,8 @@ function toneClass(ratio: number | null): string {
   if (ratio == null) return "text-muted";
 
   return ratio >= 0
-    ? "text-[#1e6b18] dark:text-[#5cd84a]"
-    : "text-[#8b2020] dark:text-[#e84d4d]";
+    ? "text-positive"
+    : "text-negative";
 }
 
 // Comparison-aware tint for the picks-vs-market pair: the side that's more
@@ -173,7 +173,7 @@ function HeadlineAlpha({
     <section className="relative overflow-hidden rounded-2xl border border-[#d8cec1]/70 bg-white/45 px-4 py-4 shadow-[0_12px_32px_-28px_rgba(61,43,26,0.7)] dark:border-border/70 dark:bg-surface-secondary/35">
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-12 -top-16 h-36 w-36 rounded-full bg-[#4f8a48]/10 blur-2xl dark:bg-[#5cd84a]/10"
+        className="pointer-events-none absolute -right-12 -top-16 h-36 w-36 rounded-full bg-positive/10 blur-2xl"
       />
       <div className="relative">
         <div className="flex items-center justify-between gap-3">
@@ -230,8 +230,8 @@ function Verdict({ alphaPct }: { alphaPct: number }) {
   const toneClass = level
     ? "text-foreground"
     : ahead
-      ? "text-[#1e6b18] dark:text-[#5cd84a]"
-      : "text-[#8b2020] dark:text-[#e84d4d]";
+      ? "text-positive"
+      : "text-negative";
 
   return (
     <p
@@ -296,7 +296,7 @@ function MarketBeat({ count, total }: { count: number; total: number }) {
             {count} of {total} buys
           </p>
         </div>
-        <span className="text-2xl font-semibold tracking-tight text-[#1e6b18] tabular-nums dark:text-[#5cd84a]">
+        <span className="text-2xl font-semibold tracking-tight text-positive tabular-nums">
           {Math.round(rate * 100)}%
         </span>
       </div>
@@ -306,7 +306,7 @@ function MarketBeat({ count, total }: { count: number; total: number }) {
         role="img"
       >
         <div
-          className="h-full rounded-full bg-[#4f8548] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] dark:bg-[#5cd84a]/80"
+          className="h-full rounded-full bg-positive shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] dark:bg-positive/80"
           style={{ width: `${rate * 100}%` }}
         />
       </div>
@@ -344,8 +344,8 @@ function SectorLeaderboard({
               <div
                 className={
                   s.meanAlphaPct >= 0
-                    ? "h-full rounded-full bg-[#1e6b18]/70 dark:bg-[#5cd84a]/70"
-                    : "h-full rounded-full bg-[#8b2020]/70 dark:bg-[#e84d4d]/70"
+                    ? "h-full rounded-full bg-positive/70"
+                    : "h-full rounded-full bg-negative/70"
                 }
                 style={{
                   width: `${Math.max(6, (Math.abs(s.meanAlphaPct) / max) * 100)}%`,
@@ -433,7 +433,7 @@ function Contributors({
           rel="noopener noreferrer"
           target="_blank"
         >
-          <div className="relative h-10 overflow-hidden">
+          <div className="relative h-12 overflow-hidden">
             <div
               aria-hidden
               className="pointer-events-none select-none space-y-1.5 opacity-50"
@@ -452,7 +452,7 @@ function Contributors({
                     <span className="block h-2.5 w-24 rounded bg-foreground/15" />
                     <span className="block h-2 w-12 rounded bg-foreground/10" />
                   </span>
-                  <span className="text-lg font-bold text-[#1e6b18] tabular-nums dark:text-[#5cd84a]">
+                  <span className="text-lg font-bold text-positive tabular-nums">
                     {formatSignedPct(d.returnPct)}
                   </span>
                 </div>
@@ -460,7 +460,10 @@ function Contributors({
             </div>
           </div>
 
-          <span className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#d0c8be]/60 px-4 py-2 text-[11px] font-medium text-[#5a4128] transition-colors group-hover:border-[#5a4128]/35 group-hover:bg-[#f1ebe2]/60 dark:border-border/60 dark:text-[#ad9479] dark:group-hover:border-[#ad9479]/35 dark:group-hover:bg-surface-secondary/60">
+          {/* Pulled up over the decoy's fade — the ghost row disappears
+              *behind* the button instead of leaving a dead strip of
+              faded-to-nothing pixels between the list and the CTA. */}
+          <span className="relative -mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#d0c8be]/60 bg-[#f5f0e8]/80 px-4 py-2 text-[11px] font-medium text-[#5a4128] backdrop-blur-sm transition-colors group-hover:border-[#5a4128]/35 group-hover:bg-[#f1ebe2]/80 dark:border-border/60 dark:bg-surface/80 dark:text-[#ad9479] dark:group-hover:border-[#ad9479]/35 dark:group-hover:bg-surface-secondary/80">
             <LockClosedIcon className="h-3 w-3 opacity-70" />
             Unlock {hiddenCount} more {hiddenCount === 1 ? "pick" : "picks"} in
             the app
@@ -493,7 +496,7 @@ function ContributorCard({
       <Link
         className={`block rounded-xl border px-3 py-2.5 transition-all group ${
           hero
-            ? "border-[#cfc5b8]/80 bg-white/45 shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] hover:border-[#1e6b18]/30 hover:bg-white/70 dark:border-border/70 dark:bg-surface-secondary/35 dark:hover:border-[#5cd84a]/30"
+            ? "border-[#cfc5b8]/80 bg-white/45 shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] hover:border-positive/30 hover:bg-white/70 dark:border-border/70 dark:bg-surface-secondary/35"
             : "border-[#d0c8be]/50 hover:bg-[#f1ebe2]/60 dark:border-border/50 dark:hover:bg-surface-secondary/60"
         }`}
         data-ga-event="cta_channel_open_contributor_deal"
@@ -524,7 +527,7 @@ function ContributorCard({
         </span>
 
         {hero && formatStake && (
-          <span className="mt-2.5 flex items-baseline gap-1 border-t border-[#1e6b18]/15 dark:border-[#5cd84a]/15 pt-2 text-[11px] tabular-nums text-muted">
+          <span className="mt-2.5 flex items-baseline gap-1 border-t border-positive/15 pt-2 text-[11px] tabular-nums text-muted">
             {formatStake(STAKE)} at disclosure →
             <span className="font-semibold text-foreground">
               {formatStake(STAKE * (1 + row.returnPct))} today

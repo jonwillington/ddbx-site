@@ -18,6 +18,24 @@
      so it reads as brand rather than as a system warning colour.
      Mirrors `Color.riskAmber` in the iOS app's Theme.swift. */
   --color-risk: oklch(63.7% 0.141 58);
+
+  /* Canonical up/down colours — THE green and THE red for returns, deltas
+     and verdicts, in both modes. Everything directional (delta chips,
+     sparklines, the channel verdict, teaser boasts) must read from these
+     rather than inventing a local emerald/lime. Light values match the old
+     #1e6b18 / #8b2020 inks; dark values match the #5cd84a / #e84d4d pair
+     the channel rail already used — that pair carries on the warm brown
+     surfaces where tailwind's emerald-300/400 went muddy. */
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+}
+
+:root {
+  /* Enables light-dark() (see deltaStyle in market-utils.ts) and gives UA
+     chrome — scrollbars, form controls — the right scheme per mode. */
+  color-scheme: light;
+  --positive: oklch(45% 0.13 145);
+  --negative: oklch(44% 0.145 25);
 }
 
 body {
@@ -62,6 +80,12 @@ body {
    larger flat areas; the same reasoning applies to full-width page sections
    here. */
 .dark {
+  color-scheme: dark;
+  /* Directional pair — bright enough to carry on the warm charcoal
+     (≈ #5cd84a / #e84d4d, the greens the channel rail proved out). */
+  --positive:           oklch(78%   0.19  145);
+  --negative:           oklch(64%   0.185 25);
+
   /* bg-content1 shim value — shadows --surface, so it moves with it or
      modals read a step darker than the cards they sit above. */
   --content1:           oklch(26%   0.024 55);

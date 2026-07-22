@@ -121,11 +121,13 @@ export function MarketRowSpark({
       <polyline
         fill="none"
         points={pointsString}
-        stroke={lineColor}
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={1.25}
-        style={{ transition: "stroke 200ms ease-in-out" }}
+        // stroke lives in style, not the presentation attribute: the colour
+        // is a light-dark() pair, which is CSS — attribute parsing of modern
+        // colour functions is spottier than the style path.
+        style={{ stroke: lineColor, transition: "stroke 200ms ease-in-out" }}
       />
     </svg>
   );
