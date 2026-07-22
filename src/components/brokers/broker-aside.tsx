@@ -30,9 +30,10 @@ function recommendedOrder(brokers: BrokerOffer[]): BrokerOffer[] {
   });
 }
 
-/** Detail-page rail: a conversion buy-box for the broker being viewed, plus a
- *  side-nav of every review so readers can flick between platforms without
- *  going back to the grid. Same fixed shell as BrokerAside. */
+/** Detail-page rail: the conversion buy-box for the broker being viewed stays
+ *  pinned at the top (always in view), with a side-nav of every review
+ *  scrolling independently beneath it and the disclosure pinned at the foot.
+ *  Same fixed shell as BrokerAside. */
 export function BrokerNavAside({
   brokers,
   current,
@@ -55,55 +56,62 @@ export function BrokerNavAside({
           Compare all
         </a>
       </div>
+
+      {/* Pinned buy box — the featured broker's CTA never scrolls away. */}
+      <div className="shrink-0 border-b border-[#e8e0d5] px-4 py-4 dark:border-separator">
+        <BrokerBuyBox broker={current} />
+      </div>
+
+      {/* Only the platform nav scrolls. */}
       <div className="relative flex-1 min-h-0">
         <div className="absolute inset-x-0 top-0 h-4 pointer-events-none z-[1] bg-gradient-to-b from-[#faf7f2] dark:from-surface to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-4 pointer-events-none z-[1] bg-gradient-to-t from-[#faf7f2] dark:from-surface to-transparent" />
-        <div className="h-full overflow-y-auto overscroll-contain">
-          <div className="space-y-4 px-4 py-4">
-            <BrokerBuyBox broker={current} />
+        <nav
+          aria-label="All broker reviews"
+          className="h-full overflow-y-auto overscroll-contain px-4 py-3"
+        >
+          <p className="px-1 pb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/45">
+            All platforms
+          </p>
+          <ul className="space-y-0.5">
+            {ordered.map((b) => {
+              const active = b.slug === current.slug;
 
-            <nav aria-label="All broker reviews">
-              <p className="px-1 pb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/45">
-                All platforms
-              </p>
-              <ul className="space-y-0.5">
-                {ordered.map((b) => {
-                  const active = b.slug === current.slug;
+              return (
+                <li key={b.slug}>
+                  <a
+                    aria-current={active ? "page" : undefined}
+                    className={
+                      active
+                        ? "flex items-center gap-2.5 rounded-lg bg-background px-2 py-2 ring-1 ring-[#e8e0d5] dark:bg-white/[0.07] dark:ring-white/[0.08]"
+                        : "flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+                    }
+                    href={`/brokers/${b.slug}`}
+                  >
+                    <BrokerLogo broker={b} size={28} />
+                    <span
+                      className={
+                        active
+                          ? "min-w-0 flex-1 truncate text-[13px] font-bold text-foreground"
+                          : "min-w-0 flex-1 truncate text-[13px] font-medium text-foreground/75"
+                      }
+                    >
+                      {b.name}
+                    </span>
+                    <span className="shrink-0 text-[11px] tabular-nums text-foreground/45">
+                      {platformFeeSummary(b.fees)}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
 
-                  return (
-                    <li key={b.slug}>
-                      <a
-                        aria-current={active ? "page" : undefined}
-                        className={
-                          active
-                            ? "flex items-center gap-2.5 rounded-lg bg-background px-2 py-2 ring-1 ring-[#e8e0d5] dark:bg-white/[0.07] dark:ring-white/[0.08]"
-                            : "flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
-                        }
-                        href={`/brokers/${b.slug}`}
-                      >
-                        <BrokerLogo broker={b} size={28} />
-                        <span
-                          className={
-                            active
-                              ? "min-w-0 flex-1 truncate text-[13px] font-bold text-foreground"
-                              : "min-w-0 flex-1 truncate text-[13px] font-medium text-foreground/75"
-                          }
-                        >
-                          {b.name}
-                        </span>
-                        <span className="shrink-0 text-[11px] tabular-nums text-foreground/45">
-                          {platformFeeSummary(b.fees)}
-                        </span>
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-
-            <BrokerDisclosure />
-          </div>
-        </div>
+      {/* Pinned disclosure — stays visible at the point of engagement. */}
+      <div className="shrink-0 border-t border-[#e8e0d5] px-4 py-3 dark:border-separator">
+        <BrokerDisclosure className="!border-0 !bg-transparent !p-0 !text-[11px] !leading-4" />
       </div>
     </aside>
   );
