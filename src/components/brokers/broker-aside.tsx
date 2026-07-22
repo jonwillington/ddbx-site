@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 
 import {
   BadgeChip,
-  BrokerBuyBox,
   BrokerDisclosure,
   BrokerLogo,
   BrokerVisitLink,
@@ -30,9 +29,9 @@ function recommendedOrder(brokers: BrokerOffer[]): BrokerOffer[] {
   });
 }
 
-/** Detail-page rail: the conversion buy-box for the broker being viewed stays
- *  pinned at the top (always in view), with a side-nav of every review
- *  scrolling independently beneath it and the disclosure pinned at the foot.
+/** Detail-page rail: a pure selector — a side-nav of every review so readers
+ *  can flick between platforms without going back to the grid. The current
+ *  broker's conversion panel lives beside the article (sticky), not here.
  *  Same fixed shell as BrokerAside. */
 export function BrokerNavAside({
   brokers,
@@ -57,12 +56,7 @@ export function BrokerNavAside({
         </a>
       </div>
 
-      {/* Pinned buy box — the featured broker's CTA never scrolls away. */}
-      <div className="shrink-0 border-b border-[#e8e0d5] px-4 py-4 dark:border-separator">
-        <BrokerBuyBox broker={current} />
-      </div>
-
-      {/* Only the platform nav scrolls. */}
+      {/* The platform nav scrolls. */}
       <div className="relative flex-1 min-h-0">
         <div className="absolute inset-x-0 top-0 h-4 pointer-events-none z-[1] bg-gradient-to-b from-[#faf7f2] dark:from-surface to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-4 pointer-events-none z-[1] bg-gradient-to-t from-[#faf7f2] dark:from-surface to-transparent" />

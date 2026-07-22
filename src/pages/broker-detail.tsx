@@ -13,6 +13,7 @@ import {
   BrokerComplianceNote,
   BrokerLogo,
   BrokerVisitLink,
+  OfferBadge,
   StarRating,
 } from "@/components/brokers/broker-ui";
 import { BUTTON_SELECTED } from "@/components/button";
@@ -134,107 +135,164 @@ function BrokerReview({
     <DefaultLayout drawerRight hideMobileCta>
       <BrokerNavAside brokers={brokers} current={b} />
 
-      <div className="mx-auto w-full max-w-[760px] pb-24 lg:pb-14">
+      <div className="mx-auto w-full max-w-[1040px] pb-24 lg:pb-14">
         <ReviewHeader broker={b} facts={heroFacts} />
 
-        <article className="mt-8">
-          <p className="text-lg font-medium leading-relaxed text-foreground/90">
-            {b.summary}
-          </p>
+        <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+          <article className="min-w-0 max-w-[760px]">
+            <p className="text-lg font-medium leading-relaxed text-foreground/90">
+              {b.summary}
+            </p>
 
-          <ProsAndCons broker={b} />
+            <ProsAndCons broker={b} />
 
-          <CostSection broker={b} brokers={brokers} />
+            <CostSection broker={b} brokers={brokers} />
 
-          <PlatformSection broker={b} />
+            <PlatformSection broker={b} />
 
-          {b.offer_headline && (
-            <section
-              className="scroll-mt-24 border-t border-separator py-6"
-              id="offer"
-            >
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/45">
-                Current offer
-              </p>
-              <h2 className="mt-1.5 max-w-xl text-xl font-bold leading-tight tracking-tight text-foreground sm:text-2xl">
-                {b.offer_headline}
-              </h2>
-              {b.offer_terms && (
-                <details className="group mt-3">
-                  <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm text-foreground/55 hover:text-foreground [&::-webkit-details-marker]:hidden">
-                    <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
-                    Read the terms
-                  </summary>
-                  <p className="mt-2.5 max-w-2xl text-sm leading-6 text-foreground/65">
-                    {b.offer_terms}
-                  </p>
-                </details>
-              )}
-            </section>
-          )}
-
-          {faqs.length > 0 && (
-            <section
-              className="scroll-mt-24 border-t border-separator py-8"
-              id="faq"
-            >
-              <SectionHeading eyebrow="The details">
-                Questions about {b.name}
-              </SectionHeading>
-              <div className="mt-5 border-t border-separator">
-                {faqs.map((item) => (
-                  <details
-                    key={item.question}
-                    className="group border-b border-separator"
-                  >
-                    <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-4 text-sm font-semibold text-foreground/90 [&::-webkit-details-marker]:hidden">
-                      {item.question}
-                      <ChevronDownIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/40 transition-transform group-open:rotate-180" />
+            {b.offer_headline && (
+              <section
+                className="scroll-mt-24 border-t border-separator py-6"
+                id="offer"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/45">
+                  Current offer
+                </p>
+                <h2 className="mt-1.5 max-w-xl text-xl font-bold leading-tight tracking-tight text-foreground sm:text-2xl">
+                  {b.offer_headline}
+                </h2>
+                {b.offer_terms && (
+                  <details className="group mt-3">
+                    <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm text-foreground/55 hover:text-foreground [&::-webkit-details-marker]:hidden">
+                      <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
+                      Read the terms
                     </summary>
-                    <p className="max-w-2xl pb-4 text-sm leading-6 text-foreground/65">
-                      {item.answer}
+                    <p className="mt-2.5 max-w-2xl text-sm leading-6 text-foreground/65">
+                      {b.offer_terms}
                     </p>
                   </details>
-                ))}
-              </div>
-              <script
-                dangerouslySetInnerHTML={{
-                  __html: JSON.stringify(faqJsonLd),
-                }}
-                type="application/ld+json"
-              />
-            </section>
-          )}
+                )}
+              </section>
+            )}
 
-          {related.length > 0 && (
-            <nav className="border-t border-separator py-6">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/45">
-                More broker reviews
-              </p>
-              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2.5">
-                {related.map((item) => (
-                  <a
-                    key={item.slug}
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground/70 transition-colors hover:text-foreground"
-                    href={`/brokers/${item.slug}`}
-                  >
-                    {item.name}
-                    <ArrowRightIcon className="h-3.5 w-3.5" />
-                  </a>
-                ))}
-              </div>
-            </nav>
-          )}
+            {faqs.length > 0 && (
+              <section
+                className="scroll-mt-24 border-t border-separator py-8"
+                id="faq"
+              >
+                <SectionHeading eyebrow="The details">
+                  Questions about {b.name}
+                </SectionHeading>
+                <div className="mt-5 border-t border-separator">
+                  {faqs.map((item) => (
+                    <details
+                      key={item.question}
+                      className="group border-b border-separator"
+                    >
+                      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-4 text-sm font-semibold text-foreground/90 [&::-webkit-details-marker]:hidden">
+                        {item.question}
+                        <ChevronDownIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/40 transition-transform group-open:rotate-180" />
+                      </summary>
+                      <p className="max-w-2xl pb-4 text-sm leading-6 text-foreground/65">
+                        {item.answer}
+                      </p>
+                    </details>
+                  ))}
+                </div>
+                <script
+                  dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(faqJsonLd),
+                  }}
+                  type="application/ld+json"
+                />
+              </section>
+            )}
 
-          <div className="space-y-4 border-t border-separator pt-6">
-            <SourceNote broker={b} />
-            <BrokerComplianceNote />
-          </div>
-        </article>
+            {related.length > 0 && (
+              <nav className="border-t border-separator py-6">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/45">
+                  More broker reviews
+                </p>
+                <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2.5">
+                  {related.map((item) => (
+                    <a
+                      key={item.slug}
+                      className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground/70 transition-colors hover:text-foreground"
+                      href={`/brokers/${item.slug}`}
+                    >
+                      {item.name}
+                      <ArrowRightIcon className="h-3.5 w-3.5" />
+                    </a>
+                  ))}
+                </div>
+              </nav>
+            )}
+
+            <div className="space-y-4 border-t border-separator pt-6">
+              <SourceNote broker={b} />
+              <BrokerComplianceNote />
+            </div>
+          </article>
+
+          <StickyBuyPanel broker={b} />
+        </div>
       </div>
 
       <MobileVisitBar broker={b} />
     </DefaultLayout>
+  );
+}
+
+/** The active broker's conversion panel, sat beside the article and sticky as
+ *  the reader scrolls. Carries the facts the header band doesn't (accounts,
+ *  protection, regulator) so the two don't repeat each other. */
+function StickyBuyPanel({ broker: b }: { broker: BrokerOffer }) {
+  return (
+    <aside className="hidden lg:block lg:sticky lg:top-24">
+      <div className="rounded-2xl border border-[#5a4128]/25 bg-background/60 p-4 dark:border-[#d8c4af]/25">
+        <div className="flex items-center gap-3">
+          <BrokerLogo broker={b} size={44} />
+          <div className="min-w-0">
+            <p className="truncate font-bold text-foreground">{b.name}</p>
+            {b.trust.trustpilot_rating != null && (
+              <StarRating value={b.trust.trustpilot_rating} />
+            )}
+          </div>
+        </div>
+        {b.offer_headline && (
+          <OfferBadge className="mt-3" text={b.offer_headline} />
+        )}
+        <BrokerVisitLink
+          broker={b}
+          className="mt-4 w-full"
+          placement="verdict"
+          size="lg"
+        />
+        <p className="mt-2 text-center text-[10px] leading-4 text-foreground/45">
+          Capital at risk. We may earn a commission.
+        </p>
+        <dl className="mt-4 border-t border-separator pt-1 text-[13px]">
+          <PanelFact label="ISA" value={b.accounts.stocks_isa ? "Yes" : "No"} />
+          <PanelFact label="SIPP" value={b.accounts.sipp ? "Yes" : "No"} />
+          <PanelFact
+            label="FSCS"
+            value={b.trust.fscs_protected ? "Up to £85k" : "Not listed"}
+          />
+          {b.trust.regulator && (
+            <PanelFact label="Regulated by" value={b.trust.regulator} />
+          )}
+        </dl>
+      </div>
+    </aside>
+  );
+}
+
+function PanelFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4 border-b border-separator/70 py-2 last:border-b-0">
+      <dt className="text-foreground/50">{label}</dt>
+      <dd className="text-right font-semibold text-foreground/85">{value}</dd>
+    </div>
   );
 }
 
