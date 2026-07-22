@@ -63,10 +63,12 @@ import { BrokerReviewsPromo } from "@/components/brokers/broker-reviews-promo";
 import { CollapsedDayTeaser } from "@/components/discretion/collapsed-day-teaser";
 import { Tooltip } from "@/components/tooltip";
 import {
+  monthLabel,
   monthShort,
   monthSlug,
   slugToMonth,
 } from "@/components/monthly/monthly-utils";
+import { MonthUnlockModal } from "@/components/discretion/month-unlock-modal";
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
 import { APP_STORE_URLS, appStoreUrlForMarketId } from "@/lib/app-store";
 import { buildChannelPerformance } from "@/lib/performance/channel-summary";
@@ -659,6 +661,26 @@ export function MarketPage<W>({
       }),
     [filteredDealings, config.locale, config.isSkipped, stockCurrentForDealing],
   );
+
+  // Months the recap index knows about but the dealings payload doesn't
+  // reach (the fetch covers ~two months) — rendered as locked app-only
+  // month headers below the real buckets so the archive's depth shows.
+  const appOnlyMonths = useMemo(() => {
+    const bucketIsos = new Set(
+      monthBuckets.map((m) => m.days[0]?.key.slice(0, 7)),
+    );
+
+    return recapMonths.filter((r) => !bucketIsos.has(r.month));
+  }, [monthBuckets, recapMonths]);
+
+  // Month gate: a clicked month opens the "it's in the app" modal instead
+  // of expanding. Newest month always expands; older months gate only
+  // while discretion is on. {label, count} of the month awaiting the
+  // modal; null when closed.
+  const [unlockMonth, setUnlockMonth] = useState<{
+    label: string;
+    count: number | null;
+  } | null>(null);
 
   // Freshness of the server-precomputed return badges — the latest close date
   // across the loaded dealings' live-performance snapshots. Surfaced as a
@@ -1300,7 +1322,12 @@ export function MarketPage<W>({
         {filteredDealings.length > 0 && viewMode === "chronological" && (
           <div className="space-y-6 animate-content-in -mt-6 -mx-4 md:-mx-6">
             {monthBuckets.map((month, monthIdx) => {
-              const monthOpen = openMonths?.has(month.key) ?? false;
+              // Older months gate behind the app while discretion is on:
+              // the header stays (the archive's depth is the point) but a
+              // click opens the month-unlock modal instead of expanding.
+              const monthGated = (gating?.enabled ?? false) && monthIdx > 0;
+              const monthOpen =
+                !monthGated && (openMonths?.has(month.key) ?? false);
               // bucketByMonth keys on "<MonthName>-<year>"; derive the ISO
               // "YYYY-MM" from any day in the bucket to match the recap index.
               const monthIso = month.days[0]?.key.slice(0, 7);
@@ -1322,7 +1349,22 @@ export function MarketPage<W>({
                   >
                     <button
                       className={`w-full flex items-center justify-between px-6 py-5 hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors bg-[#faf7f2] dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-xl"} ${monthOpen ? "" : "rounded-b-xl"}`}
-                      onClick={() => toggleMonth(month.key)}
+                      data-ga-event={
+                        monthGated ? "cta_month_unlock_open" : undefined
+                      }
+                      data-ga-label={
+                        monthGated
+                          ? `${month.label} ${month.year} · ${month.count}`
+                          : undefined
+                      }
+                      onClick={() =>
+                        monthGated
+                          ? setUnlockMonth({
+                              label: `${month.label} ${month.year}`,
+                              count: month.count,
+                            })
+                          : toggleMonth(month.key)
+                      }
                     >
                       <div className="flex items-center gap-3 text-left">
                         <CalendarDaysIcon className="w-5 h-5 text-muted shrink-0" />
@@ -1363,9 +1405,13 @@ export function MarketPage<W>({
                               : `${month.suggestedCount} analysed`
                             : `${month.count} ${month.count === 1 ? "filing" : "filings"}`}
                         </span>
-                        <ChevronDownIcon
-                          className={`w-5 h-5 text-muted shrink-0 transition-transform duration-200 ${monthOpen ? "rotate-180" : ""}`}
-                        />
+                        {monthGated ? (
+                          <LockClosedIcon className="w-4 h-4 text-muted shrink-0" />
+                        ) : (
+                          <ChevronDownIcon
+                            className={`w-5 h-5 text-muted shrink-0 transition-transform duration-200 ${monthOpen ? "rotate-180" : ""}`}
+                          />
+                        )}
                       </div>
                     </button>
                   </div>
@@ -1530,6 +1576,54 @@ export function MarketPage<W>({
                 </div>
               );
             })}
+
+            {/* Months the fetch doesn't reach — locked headers so the
+                archive reads deeper than the free window. A click opens
+                the same month-unlock modal, minus a count. */}
+            {appOnlyMonths.map((r) => (
+              <div key={r.month} className="pt-3">
+                <button
+                  className="w-full flex items-center justify-between rounded-xl px-6 py-5 bg-[#faf7f2] transition-colors hover:bg-black/[0.03] dark:bg-surface dark:hover:bg-white/[0.03]"
+                  data-ga-event="cta_month_unlock_open"
+                  data-ga-label={`${monthLabel(r.month)} · app-only`}
+                  onClick={() =>
+                    setUnlockMonth({ label: monthLabel(r.month), count: null })
+                  }
+                >
+                  <div className="flex items-center gap-3 text-left">
+                    <CalendarDaysIcon className="w-5 h-5 text-muted shrink-0" />
+                    <div className="text-xl font-semibold">
+                      {monthLabel(r.month)}
+                      <span className="mx-2 text-muted">·</span>
+                      <span
+                        className="cursor-pointer text-sm font-medium text-[#5a4128] hover:underline dark:text-[#ad9479]"
+                        data-ga-event="cta_view_month_report"
+                        data-ga-label={`View report ${r.month}`}
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRecap(r.month);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            openRecap(r.month);
+                          }
+                        }}
+                      >
+                        View Report
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs text-muted">In the app</span>
+                    <LockClosedIcon className="w-4 h-4 text-muted shrink-0" />
+                  </div>
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
@@ -1578,6 +1672,14 @@ export function MarketPage<W>({
         showLogo={logosEnabled}
         onClose={() => setSelectedKey(null)}
         onSelectDealing={openDealing}
+      />
+
+      <MonthUnlockModal
+        appHref={channelAppHref}
+        count={unlockMonth?.count ?? null}
+        monthLabel={unlockMonth?.label ?? ""}
+        open={unlockMonth != null}
+        onClose={() => setUnlockMonth(null)}
       />
 
       <UnlockConfirmModal
