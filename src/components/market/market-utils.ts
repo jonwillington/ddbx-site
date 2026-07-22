@@ -262,6 +262,7 @@ export function buildUniversalFilters<W>(
   const sectors = [
     ...new Set(dealings.map((d) => d.sector).filter((s): s is string => !!s)),
   ].sort();
+
   if (sectors.length >= 2) {
     filters.push({
       id: "industry",
@@ -272,7 +273,8 @@ export function buildUniversalFilters<W>(
       kind: "multiselect",
       options: sectors.map((s) => ({ id: s, label: s })),
       defaultValue: "",
-      predicate: (value, d) => !!d.sector && value.split(",").includes(d.sector),
+      predicate: (value, d) =>
+        !!d.sector && value.split(",").includes(d.sector),
     });
   }
 
@@ -486,20 +488,27 @@ export function livePerfValue(
 ): number | null {
   if (!lp) return null;
   const trade = chartMode.anchor === "trade";
+
   if (chartMode.axis === "market") {
     return trade ? lp.alpha_pct_trade : lp.alpha_pct_disclosed;
   }
+
   return trade ? lp.return_pct_trade : lp.return_pct_disclosed;
 }
 
 /** Latest "prices as of" ISO date across a set of dealings — the max as_of in
  *  their live-performance snapshots. Null when none carry one. Surfaced as a
  *  "Prices as of …" caption so the reader knows how fresh the badges are. */
-export function latestPricesAsOf<W>(dealings: MarketDealing<W>[]): string | null {
+export function latestPricesAsOf<W>(
+  dealings: MarketDealing<W>[],
+): string | null {
   let max: string | null = null;
+
   for (const d of dealings) {
     const asOf = d.livePerformance?.as_of;
+
     if (asOf && (max == null || asOf > max)) max = asOf;
   }
+
   return max;
 }

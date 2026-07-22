@@ -1,7 +1,11 @@
+import type {
+  ContributorRow,
+  PerformanceTimeWindow,
+} from "@/lib/performance/types";
+
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import type { ContributorRow, PerformanceTimeWindow } from "@/lib/performance/types";
 import { TIME_WINDOWS } from "@/lib/performance/types";
 
 interface Props {
@@ -21,6 +25,7 @@ function formatPct(value: number): string {
 function formatSignedGbp(value: number): string {
   const sign = value >= 0 ? "+" : "-";
   const abs = Math.abs(value);
+
   if (abs >= 10_000) return `${sign}£${(abs / 1_000).toFixed(1)}k`;
 
   return `${sign}£${Math.round(abs)}`;
@@ -29,6 +34,7 @@ function formatSignedGbp(value: number): string {
 function formatDay(iso: string | null): string {
   if (iso == null) return "today";
   const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
+
   if (Number.isNaN(d.getTime())) return iso;
 
   return d.toLocaleDateString("en-GB", {
@@ -45,14 +51,13 @@ export function PerformanceHighlights({
   isComputing,
 }: Props) {
   const topPerformers = useMemo(() => {
-    return [...rows]
-      .sort((a, b) => b.returnPct - a.returnPct)
-      .slice(0, 4);
+    return [...rows].sort((a, b) => b.returnPct - a.returnPct).slice(0, 4);
   }, [rows]);
 
   const bestGain = useMemo(() => {
     return rows.reduce<ContributorRow | null>((best, row) => {
       const pnl = row.currentValue - row.deployed;
+
       if (best == null) return row;
       const bestPnl = best.currentValue - best.deployed;
 
@@ -63,6 +68,7 @@ export function PerformanceHighlights({
   const worstLoss = useMemo(() => {
     return rows.reduce<ContributorRow | null>((worst, row) => {
       const pnl = row.currentValue - row.deployed;
+
       if (worst == null) return row;
       const worstPnl = worst.currentValue - worst.deployed;
 
@@ -75,7 +81,9 @@ export function PerformanceHighlights({
     if (topPerformers.length === 0) return null;
     if (selectedDealId == null) return topPerformers[0];
 
-    return topPerformers.find((r) => r.dealId === selectedDealId) ?? topPerformers[0];
+    return (
+      topPerformers.find((r) => r.dealId === selectedDealId) ?? topPerformers[0]
+    );
   }, [selectedDealId, topPerformers]);
 
   if (rows.length === 0 || selected == null) return null;
@@ -84,7 +92,9 @@ export function PerformanceHighlights({
   const selectedPnl = selected.currentValue - selected.deployed;
 
   return (
-    <section className={`space-y-3 ${isComputing ? "opacity-70" : ""} transition-opacity`}>
+    <section
+      className={`space-y-3 ${isComputing ? "opacity-70" : ""} transition-opacity`}
+    >
       <div className="text-xs text-muted px-1">
         {windowLabel} · Updated {formatDay(latestDate)}
       </div>
@@ -115,8 +125,12 @@ export function PerformanceHighlights({
 
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="text-base font-semibold truncate">{selected.company}</div>
-            <div className="text-xs text-muted">{selected.state === "open" ? "Open position" : "Closed position"}</div>
+            <div className="text-base font-semibold truncate">
+              {selected.company}
+            </div>
+            <div className="text-xs text-muted">
+              {selected.state === "open" ? "Open position" : "Closed position"}
+            </div>
           </div>
           <div className="text-right shrink-0">
             <div
@@ -181,8 +195,12 @@ function StatCard({
         {label}
       </div>
       <div className="text-sm font-semibold truncate">{row.company}</div>
-      <div className={`text-xl font-semibold tabular-nums ${valueClass}`}>{value}</div>
-      <div className="text-xs text-muted">{formatPct(row.returnPct)} since entry</div>
+      <div className={`text-xl font-semibold tabular-nums ${valueClass}`}>
+        {value}
+      </div>
+      <div className="text-xs text-muted">
+        {formatPct(row.returnPct)} since entry
+      </div>
     </Link>
   );
 }

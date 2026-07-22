@@ -23,11 +23,15 @@
  *  of popping when the user navigates to a beta market. */
 import type { ReactNode } from "react";
 
-import { BUTTON_FILLED, BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
-import { chip } from "@/components/chip";
-
 import { HeroDealMapLayer, useDealRadar } from "./hero-deal-radar";
 import { HeroNotificationStack } from "./hero-notification-stack";
+
+import {
+  BUTTON_FILLED,
+  BUTTON_GHOST,
+  BUTTON_RADIUS,
+} from "@/components/button";
+import { chip } from "@/components/chip";
 
 /** Filled primary — the row's single anchor. Exactly one CTA per market
  *  renders in this style: the App Store link where one exists (UK, US),
@@ -462,105 +466,108 @@ export function MarketHero({
               aria-hidden
               className="pointer-events-none absolute inset-0 z-0 hidden md:block"
             >
-            <HeroDealMapLayer
-              activeIndex={radar.activeIndex}
-              deals={radar.deals}
-              isDark={radar.isDark}
-              mapConfig={radar.mapConfig}
-            />
-          </div>
-          {/* General wash entering from the far (left) edge of the screen,
+              <HeroDealMapLayer
+                activeIndex={radar.activeIndex}
+                deals={radar.deals}
+                isDark={radar.isDark}
+                mapConfig={radar.mapConfig}
+              />
+            </div>
+            {/* General wash entering from the far (left) edge of the screen,
               fading out past the headline — keeps the text legible and melts
               the map's left edge into the page. */}
-          <div
-            aria-hidden
-            className="hero-left-scrim pointer-events-none absolute inset-0 z-[5] hidden md:block"
-          />
-          {/* Warm pool of light over the headline column — see
+            <div
+              aria-hidden
+              className="hero-left-scrim pointer-events-none absolute inset-0 z-[5] hidden md:block"
+            />
+            {/* Warm pool of light over the headline column — see
               .hero-spotlight-app above. Same z as the scrim; DOM order puts it
               on top. */}
-          <div
-            aria-hidden
-            className="hero-spotlight-app pointer-events-none absolute inset-0 z-[5] hidden md:block"
-          />
-        </>
-      )}
-
-      <div aria-hidden className="block">
-        <div aria-hidden className="hero-warm-floor z-0" />
-        {/* Spotlight + shimmer light the stage on non-app markets. App markets
-            drop the animated backdrop entirely: desktop has the live map, and
-            mobile leads with the notification scroller instead. */}
-        {!appShowcase && (
-          <>
-            <div aria-hidden className="hero-shimmer z-0" />
-            <div aria-hidden className="hero-spotlight z-0" />
+            <div
+              aria-hidden
+              className="hero-spotlight-app pointer-events-none absolute inset-0 z-[5] hidden md:block"
+            />
           </>
         )}
-        <div aria-hidden className="hero-vignette z-[1] pointer-events-none" />
 
-        {/* Mobile-only edge dissolves: the top fade melts into the navbar and
+        <div aria-hidden className="block">
+          <div aria-hidden className="hero-warm-floor z-0" />
+          {/* Spotlight + shimmer light the stage on non-app markets. App markets
+            drop the animated backdrop entirely: desktop has the live map, and
+            mobile leads with the notification scroller instead. */}
+          {!appShowcase && (
+            <>
+              <div aria-hidden className="hero-shimmer z-0" />
+              <div aria-hidden className="hero-spotlight z-0" />
+            </>
+          )}
+          <div
+            aria-hidden
+            className="hero-vignette z-[1] pointer-events-none"
+          />
+
+          {/* Mobile-only edge dissolves: the top fade melts into the navbar and
           the bottom fade resolves into the page colour, since the mobile
           stage is full-bleed with no frame of its own. From md up the framed
           panel's border IS the edge, so these fades switch off — a crisp
           boundary is the point of the frame. */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 z-[6] bg-gradient-to-b from-[#f5f0e8] dark:from-background to-transparent md:hidden" />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] dark:hidden md:hidden"
-          style={{
-            background:
-              "linear-gradient(to top, #f5f0e8 0%, rgba(245,240,232,0.94) 20%, rgba(245,240,232,0.58) 48%, rgba(245,240,232,0) 82%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] hidden dark:block dark:md:hidden"
-          style={{
-            background:
-              "linear-gradient(to top, var(--color-background, #15110d) 0%, rgba(21,17,13,0.85) 32%, rgba(21,17,13,0.4) 60%, transparent 100%)",
-          }}
-        />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-24 z-[6] bg-gradient-to-b from-[#f5f0e8] dark:from-background to-transparent md:hidden" />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] dark:hidden md:hidden"
+            style={{
+              background:
+                "linear-gradient(to top, #f5f0e8 0%, rgba(245,240,232,0.94) 20%, rgba(245,240,232,0.58) 48%, rgba(245,240,232,0) 82%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] hidden dark:block dark:md:hidden"
+            style={{
+              background:
+                "linear-gradient(to top, var(--color-background, #15110d) 0%, rgba(21,17,13,0.85) 32%, rgba(21,17,13,0.4) 60%, transparent 100%)",
+            }}
+          />
 
-        {/* Disclosure pulses — kept clear of the centre column (~40-60%)
+          {/* Disclosure pulses — kept clear of the centre column (~40-60%)
             where the headline sits, and of the bottom fade. Sizes and
             delays vary so no two blips read as twins. On the app-market
             desktop the map's own beacon replaces these, so they're dropped
             there (mobile still gets them — no map on phones). */}
-        {!appShowcase &&
-          PULSE_POINTS.map((p) => (
-            <span
-              key={`d-${p.left}-${p.top}`}
-              className="hero-pulse z-[2] hidden md:block"
-              style={{
-                left: p.left,
-                top: p.top,
-                width: p.size,
-                height: p.size,
-                animationDelay: `${p.delay}s`,
-              }}
-            >
-              <span className="hero-pulse-ring" />
-              <span className="hero-pulse-ring hero-pulse-ring-2" />
-            </span>
-          ))}
-        {!appShowcase &&
-          MOBILE_PULSE_POINTS.map((p) => (
-            <span
-              key={`m-${p.left}-${p.top}`}
-              className="hero-pulse z-[2] md:hidden"
-              style={{
-                left: p.left,
-                top: p.top,
-                width: p.size,
-                height: p.size,
-                animationDelay: `${p.delay}s`,
-              }}
-            >
-              <span className="hero-pulse-ring" />
-              <span className="hero-pulse-ring hero-pulse-ring-2" />
-            </span>
-          ))}
+          {!appShowcase &&
+            PULSE_POINTS.map((p) => (
+              <span
+                key={`d-${p.left}-${p.top}`}
+                className="hero-pulse z-[2] hidden md:block"
+                style={{
+                  left: p.left,
+                  top: p.top,
+                  width: p.size,
+                  height: p.size,
+                  animationDelay: `${p.delay}s`,
+                }}
+              >
+                <span className="hero-pulse-ring" />
+                <span className="hero-pulse-ring hero-pulse-ring-2" />
+              </span>
+            ))}
+          {!appShowcase &&
+            MOBILE_PULSE_POINTS.map((p) => (
+              <span
+                key={`m-${p.left}-${p.top}`}
+                className="hero-pulse z-[2] md:hidden"
+                style={{
+                  left: p.left,
+                  top: p.top,
+                  width: p.size,
+                  height: p.size,
+                  animationDelay: `${p.delay}s`,
+                }}
+              >
+                <span className="hero-pulse-ring" />
+                <span className="hero-pulse-ring hero-pulse-ring-2" />
+              </span>
+            ))}
         </div>
       </div>
 

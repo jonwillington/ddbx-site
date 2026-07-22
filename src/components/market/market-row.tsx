@@ -163,6 +163,7 @@ export function MarketDayHeader({
       </span>
     </span>
   );
+
   if (variant === "rail") {
     return (
       <div className="hidden xl:block pt-2 text-left">

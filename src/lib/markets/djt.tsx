@@ -39,11 +39,17 @@ function DjtRowActionCell({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
 
   return (
     <div className="flex flex-wrap gap-1 justify-center">
-      <ActionChip label={dealing.actionLabel} size="sm" tone={dealing.actionTone} />
+      <ActionChip
+        label={dealing.actionLabel}
+        size="sm"
+        tone={dealing.actionTone}
+      />
       {row.is_amendment && (
         <ActionChip label="Amendment" size="sm" tone="neutral" />
       )}
-      {row.is_late && <ActionChip label="Late filing" size="sm" tone="neutral" />}
+      {row.is_late && (
+        <ActionChip label="Late filing" size="sm" tone="neutral" />
+      )}
     </div>
   );
 }

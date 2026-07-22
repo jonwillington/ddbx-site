@@ -49,7 +49,9 @@ function withThemeParam(href: string): string {
       url.origin === window.location.origin &&
       (href.startsWith("/") || !/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(href));
 
-    return relative ? `${url.pathname}${url.search}${url.hash}` : url.toString();
+    return relative
+      ? `${url.pathname}${url.search}${url.hash}`
+      : url.toString();
   } catch {
     return href;
   }

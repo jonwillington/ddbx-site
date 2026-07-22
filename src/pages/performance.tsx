@@ -11,7 +11,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { useUrlParam } from "@/lib/use-url-overlay";
-
 import DefaultLayout from "@/layouts/default";
 import { Skeleton } from "@/components/skeleton";
 import { subtitle, title } from "@/components/primitives";
@@ -217,7 +216,8 @@ function UkPerformancePage() {
                 <PerformanceHighlights
                   isComputing={perf.isComputing}
                   latestDate={
-                    perf.result.strategy[perf.result.strategy.length - 1]?.date ?? null
+                    perf.result.strategy[perf.result.strategy.length - 1]
+                      ?.date ?? null
                   }
                   rows={perf.result.contributors}
                   timeWindow={perf.config.timeWindow}

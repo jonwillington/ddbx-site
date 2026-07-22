@@ -20,7 +20,10 @@ export function DocumentTitle() {
       if (pathname === "/portfolio" || pathname.endsWith("/performance")) {
         return `${siteConfig.brand} · Portfolio (${market.label}) — ${siteConfig.name}`;
       }
-      if (pathname.startsWith("/directors/") || /\/directors\//.test(pathname)) {
+      if (
+        pathname.startsWith("/directors/") ||
+        /\/directors\//.test(pathname)
+      ) {
         return `${siteConfig.brand} · Director (${market.label}) — ${siteConfig.name}`;
       }
       if (pathname === "/compare" || pathname.startsWith("/brokers")) {
@@ -97,6 +100,7 @@ function setMeta(
 
   if (existing instanceof HTMLMetaElement) {
     existing.setAttribute("content", content);
+
     return;
   }
   const tag = document.createElement("meta");

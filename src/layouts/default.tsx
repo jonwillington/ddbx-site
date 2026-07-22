@@ -187,8 +187,8 @@ function PrivacyContent() {
         API functionality. Cloudflare&apos;s own privacy policy governs their
         processing of network-level data. If you accept the cookie banner, we
         also load Google Analytics 4 (aggregate usage statistics) and the X
-        (Twitter) Ads conversion pixel (to measure ad-driven installs) — see
-        the Cookie Policy for details.
+        (Twitter) Ads conversion pixel (to measure ad-driven installs) — see the
+        Cookie Policy for details.
       </p>
 
       <SectionTitle>Your rights</SectionTitle>
@@ -246,8 +246,8 @@ function CookieContent() {
       <SectionTitle>Analytics &amp; marketing (requires consent)</SectionTitle>
       <p>
         If you click <strong>&quot;Agree to cookies&quot;</strong> on the
-        banner, we load the following scripts. Until you agree, none of them
-        are loaded and no cookies are set by them.
+        banner, we load the following scripts. Until you agree, none of them are
+        loaded and no cookies are set by them.
       </p>
       <ul className="list-disc pl-5 space-y-1">
         <li>
@@ -256,8 +256,8 @@ function CookieContent() {
         </li>
         <li>
           <strong>X (Twitter) conversion pixel</strong> — measures whether
-          visitors arriving from X ads go on to install the iOS app or sign
-          up. Loaded from <code>static.ads-twitter.com</code>.
+          visitors arriving from X ads go on to install the iOS app or sign up.
+          Loaded from <code>static.ads-twitter.com</code>.
         </li>
       </ul>
       <p>
@@ -289,9 +289,9 @@ function TermsContent() {
     <>
       <p>Last updated: 1 April 2026</p>
       <p>
-        By accessing and using ddbx (&quot;the Service&quot;, whether at ddbx.uk,
-        ddbx.us, or in the ddbx mobile apps), you agree to be bound by these
-        Terms &amp; Conditions. If you do not agree, please do not use the
+        By accessing and using ddbx (&quot;the Service&quot;, whether at
+        ddbx.uk, ddbx.us, or in the ddbx mobile apps), you agree to be bound by
+        these Terms &amp; Conditions. If you do not agree, please do not use the
         Service.
       </p>
 
@@ -351,20 +351,20 @@ function TermsContent() {
 
       <SectionTitle>Community content and conduct</SectionTitle>
       <p>
-        The ddbx apps let users post comments and other content
-        (&quot;user content&quot;) and interact with other users. There is zero
-        tolerance for objectionable content or abusive behaviour. By posting,
-        you agree not to submit content that is unlawful, harassing,
-        threatening, hateful, defamatory, obscene, or otherwise objectionable,
-        and not to abuse, harass, or impersonate other users.
+        The ddbx apps let users post comments and other content (&quot;user
+        content&quot;) and interact with other users. There is zero tolerance
+        for objectionable content or abusive behaviour. By posting, you agree
+        not to submit content that is unlawful, harassing, threatening, hateful,
+        defamatory, obscene, or otherwise objectionable, and not to abuse,
+        harass, or impersonate other users.
       </p>
       <p>
-        You can report objectionable content and block abusive users from
-        within the apps. We review reports and remove objectionable content,
-        ejecting users who post it, within 24 hours. We may remove any user
-        content and suspend or terminate any account at our discretion. You are
-        solely responsible for the content you post. To report content or a
-        user, use the in-app report and block controls or contact us at{" "}
+        You can report objectionable content and block abusive users from within
+        the apps. We review reports and remove objectionable content, ejecting
+        users who post it, within 24 hours. We may remove any user content and
+        suspend or terminate any account at our discretion. You are solely
+        responsible for the content you post. To report content or a user, use
+        the in-app report and block controls or contact us at{" "}
         <a href={`mailto:${email}`}>{email}</a>.
       </p>
 

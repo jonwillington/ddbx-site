@@ -85,42 +85,42 @@ function Body({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3 text-center">
-          <Stat label="Picks" muted={false} value={formatPct(stratPct)} />
-          <Stat muted label="Benchmark" value={formatPct(benchPct)} />
-          <Stat
-            color={positive ? "oklch(36% 0.16 155)" : "oklch(38% 0.16 18)"}
-            label="Alpha"
-            muted={false}
-            value={`${positive ? "+" : "−"}${Math.abs(alpha).toFixed(1)}pp`}
-          />
-        </div>
-
-        {scrubIdx != null && scrubDate && (
-          <div className="text-[11px] text-muted flex items-center gap-3 justify-between border-t border-separator/60 pt-2">
-            <span className="font-mono tabular-nums">{scrubDate}</span>
-            <span className="flex items-center gap-3">
-              {scrubPicks != null && (
-                <span className="font-mono tabular-nums">
-                  {formatPct(scrubPicks / 100)}
-                </span>
-              )}
-              {scrubBench != null && (
-                <span className="font-mono tabular-nums text-muted/70">
-                  {formatPct(scrubBench / 100)}
-                </span>
-              )}
-            </span>
-          </div>
-        )}
-
-        <div className="rounded-xl border border-separator bg-surface/40 p-3">
-          <PerformanceChart
-            result={sector.result}
-            viewMode={viewMode}
-            onScrub={setScrubIdx}
-          />
-        </div>
+        <Stat label="Picks" muted={false} value={formatPct(stratPct)} />
+        <Stat muted label="Benchmark" value={formatPct(benchPct)} />
+        <Stat
+          color={positive ? "oklch(36% 0.16 155)" : "oklch(38% 0.16 18)"}
+          label="Alpha"
+          muted={false}
+          value={`${positive ? "+" : "−"}${Math.abs(alpha).toFixed(1)}pp`}
+        />
       </div>
+
+      {scrubIdx != null && scrubDate && (
+        <div className="text-[11px] text-muted flex items-center gap-3 justify-between border-t border-separator/60 pt-2">
+          <span className="font-mono tabular-nums">{scrubDate}</span>
+          <span className="flex items-center gap-3">
+            {scrubPicks != null && (
+              <span className="font-mono tabular-nums">
+                {formatPct(scrubPicks / 100)}
+              </span>
+            )}
+            {scrubBench != null && (
+              <span className="font-mono tabular-nums text-muted/70">
+                {formatPct(scrubBench / 100)}
+              </span>
+            )}
+          </span>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-separator bg-surface/40 p-3">
+        <PerformanceChart
+          result={sector.result}
+          viewMode={viewMode}
+          onScrub={setScrubIdx}
+        />
+      </div>
+    </div>
   );
 }
 

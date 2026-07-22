@@ -696,6 +696,7 @@ export function MarketPage<W>({
         if (d.suggested.length > 0) dates.add(d.key);
       }
     }
+
     return Array.from(dates);
   }, [monthBuckets]);
   const dailySummaries = useDailySummaries(config.id, summaryDates);
@@ -1397,8 +1398,8 @@ export function MarketPage<W>({
                                   day={day.day}
                                   isoDate={day.key}
                                   locale={config.locale}
-                                  weekday={day.weekday}
                                   variant="rail"
+                                  weekday={day.weekday}
                                 />
                                 <div
                                   className={`rounded-xl overflow-hidden bg-white dark:bg-surface-secondary ${

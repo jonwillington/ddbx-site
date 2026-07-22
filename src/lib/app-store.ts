@@ -1,6 +1,6 @@
-import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
-
 import type { MarketChoice } from "@/components/market-chooser-modal";
+
+import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 
 /** Market logos pulled from iOS assets.
  *  UK/US use their actual AppIcon assets; other markets use the shared brand

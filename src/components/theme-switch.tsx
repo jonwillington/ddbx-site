@@ -45,7 +45,11 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
       localStorage.setItem("theme", urlTheme);
       // Consume the transfer param once so internal links stay clean.
       url.searchParams.delete("theme");
-      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+      window.history.replaceState(
+        {},
+        "",
+        `${url.pathname}${url.search}${url.hash}`,
+      );
     }
 
     // No saved choice → follow the OS. Once the user toggles, the saved

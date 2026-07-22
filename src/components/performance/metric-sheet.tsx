@@ -7,7 +7,6 @@ import {
   EXIT_RULES,
   type StrategyConfig,
 } from "@/lib/performance/types";
-
 import { AppDrawer } from "@/components/app-drawer";
 
 export type MetricKind = "picks" | "benchmark";

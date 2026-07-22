@@ -90,8 +90,8 @@ export function buildMarketFaq({
         </>
       ) : (
         <>
-          We publish each buy as it&apos;s filed, throughout the day, so the list
-          is always current. Real-time push alerts arrive with this
+          We publish each buy as it&apos;s filed, throughout the day, so the
+          list is always current. Real-time push alerts arrive with this
           market&apos;s app.
         </>
       ),

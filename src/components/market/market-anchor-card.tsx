@@ -105,10 +105,7 @@ function StatusBullet({
 }) {
   if (isLive) {
     return (
-      <span
-        aria-hidden
-        className="relative inline-flex h-2.5 w-2.5 shrink-0"
-      >
+      <span aria-hidden className="relative inline-flex h-2.5 w-2.5 shrink-0">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2E7D32] opacity-70" />
         <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#2E7D32]" />
       </span>

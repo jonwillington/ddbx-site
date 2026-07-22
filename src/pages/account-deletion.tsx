@@ -32,7 +32,8 @@ export default function AccountDeletionPage() {
               Go to <strong>Settings</strong> (the gear or profile icon).
             </li>
             <li>
-              Tap <strong>Account</strong>, then <strong>Delete account</strong>.
+              Tap <strong>Account</strong>, then <strong>Delete account</strong>
+              .
             </li>
             <li>Confirm when prompted.</li>
           </ol>

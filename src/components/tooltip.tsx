@@ -20,8 +20,10 @@ export function Tooltip({
 
   function show() {
     const el = ref.current;
+
     if (!el) return;
     const r = el.getBoundingClientRect();
+
     setPos({ top: r.top, left: r.left + r.width / 2 });
   }
 
