@@ -39,9 +39,11 @@ type Fact = { label: string; value: React.ReactNode };
  *             (the Stripe/Cursor two-column pattern), separated by a single
  *             hairline and generous vertical air. No stacked eyebrow+title
  *             clusters.
- *  Surfaces → the flat page carries everything. The only raised surface is
- *             `tile`: a borderless low-alpha fill for data blocks (facts,
- *             offer). Nothing else gets a box.
+ *  Surfaces → the review itself sits on `sheet`: one white document against
+ *             the cream page, so content and chrome separate at a glance.
+ *             Inside it the only raised surface is `tile`: a borderless
+ *             low-alpha fill for data blocks (facts, offer). Nothing else
+ *             gets a box.
  *  Rules    → one hairline colour, the same one the rail uses.
  *  Type     → sentence case everywhere; no uppercase, no letterspacing.
  *             Hierarchy comes from size and ink, not decoration.
@@ -51,6 +53,8 @@ type Fact = { label: string; value: React.ReactNode };
  * Chrome (rail, sticky buy panel, mobile bar) is untouched by this system.
  */
 const R = {
+  sheet:
+    "rounded-2xl border border-[#e8e0d5] bg-white shadow-[0_1px_2px_rgba(90,65,40,0.04)] dark:border-white/[0.07] dark:bg-surface",
   rule: "border-[#e8e0d5] dark:border-separator",
   tile: "rounded-xl bg-black/[0.035] dark:bg-white/[0.05]",
   label: "text-[12px] leading-none text-foreground/50",
@@ -183,87 +187,112 @@ function BrokerReview({
       <BrokerNavAside brokers={brokers} current={b} />
 
       <div className="mx-auto w-full max-w-[1040px] pb-24 lg:pb-14">
-        <div ref={headerRef}>
-          <ReviewHeader broker={b} facts={heroFacts} />
+        {/* Breadcrumb lives on the cream page, outside the document sheet. */}
+        <div className="flex items-baseline justify-between gap-4 text-sm">
+          <nav
+            aria-label="Breadcrumb"
+            className="min-w-0 truncate text-foreground/50"
+          >
+            <a
+              className="transition-colors hover:text-foreground"
+              href="/brokers"
+            >
+              Broker reviews
+            </a>
+            <span className="mx-2 text-foreground/25">/</span>
+            <span className="text-foreground/75">{b.name}</span>
+          </nav>
+          <p className="shrink-0 text-xs text-foreground/45">
+            Updated {fmtVerifiedDate(b.last_verified)}
+          </p>
         </div>
 
-        <div className="mt-4 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
-          <article className="min-w-0 max-w-[760px]">
-            {b.summary && (
-              <p className="max-w-[32em] py-10 text-[19px] font-normal leading-[1.65] tracking-[-0.008em] text-foreground/85">
-                {b.summary}
-              </p>
-            )}
-
-            <Section id="verdict" title="Verdict">
-              <div className="grid gap-10 sm:grid-cols-2">
-                <VerdictColumn items={b.pros} title="What works" tone="for" />
-                <VerdictColumn
-                  items={b.cons}
-                  title="What holds it back"
-                  tone="against"
-                />
-              </div>
-            </Section>
-
-            <CostSection broker={b} brokers={brokers} />
-
-            <PlatformSection broker={b} />
-
-            {b.offer_headline && <OfferSection broker={b} />}
-
-            {faqs.length > 0 && (
-              <Section id="faq" title="Questions & answers">
-                <div
-                  className={`divide-y divide-[#e8e0d5] border-t ${R.rule} dark:divide-separator`}
-                >
-                  {faqs.map((item) => (
-                    <details key={item.question} className="group">
-                      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-4 text-[15px] font-medium leading-snug text-foreground transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
-                        {item.question}
-                        <ChevronDownIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/40 transition-transform group-open:rotate-180" />
-                      </summary>
-                      <p className={`max-w-[38em] pb-5 ${R.body}`}>
-                        {item.answer}
-                      </p>
-                    </details>
-                  ))}
-                </div>
-                <script
-                  dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(faqJsonLd),
-                  }}
-                  type="application/ld+json"
-                />
-              </Section>
-            )}
-
-            {related.length > 0 && (
-              <Section title="More reviews">
-                <ul className="grid gap-1 sm:grid-cols-2">
-                  {related.map((item) => (
-                    <li key={item.slug}>
-                      <a
-                        className="group -mx-3 flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
-                        href={`/brokers/${item.slug}`}
-                      >
-                        <BrokerLogo broker={item} size={30} />
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground/75 group-hover:text-foreground">
-                          {item.name}
-                        </span>
-                        <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-foreground/30 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground/60" />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </Section>
-            )}
-
-            <div className={`space-y-4 border-t ${R.rule} pt-8`}>
-              <SourceNote broker={b} />
-              <BrokerComplianceNote />
+        <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+          {/* The review document: header + article on one white sheet. */}
+          <div
+            className={`min-w-0 max-w-[760px] px-5 py-7 sm:px-9 sm:py-9 ${R.sheet}`}
+          >
+            <div ref={headerRef}>
+              <ReviewHeader broker={b} facts={heroFacts} />
             </div>
-          </article>
+
+            <article className="min-w-0">
+              {b.summary && (
+                <p className="max-w-[32em] py-9 text-[19px] font-normal leading-[1.65] tracking-[-0.008em] text-foreground/85">
+                  {b.summary}
+                </p>
+              )}
+
+              <Section id="verdict" title="Verdict">
+                <div className="grid gap-10 sm:grid-cols-2">
+                  <VerdictColumn items={b.pros} title="What works" tone="for" />
+                  <VerdictColumn
+                    items={b.cons}
+                    title="What holds it back"
+                    tone="against"
+                  />
+                </div>
+              </Section>
+
+              <CostSection broker={b} brokers={brokers} />
+
+              <PlatformSection broker={b} />
+
+              {b.offer_headline && <OfferSection broker={b} />}
+
+              {faqs.length > 0 && (
+                <Section id="faq" title="Questions & answers">
+                  <div
+                    className={`divide-y divide-[#e8e0d5] border-t ${R.rule} dark:divide-separator`}
+                  >
+                    {faqs.map((item) => (
+                      <details key={item.question} className="group">
+                        <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-4 text-[15px] font-medium leading-snug text-foreground transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
+                          {item.question}
+                          <ChevronDownIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/40 transition-transform group-open:rotate-180" />
+                        </summary>
+                        <p className={`max-w-[38em] pb-5 ${R.body}`}>
+                          {item.answer}
+                        </p>
+                      </details>
+                    ))}
+                  </div>
+                  <script
+                    dangerouslySetInnerHTML={{
+                      __html: JSON.stringify(faqJsonLd),
+                    }}
+                    type="application/ld+json"
+                  />
+                </Section>
+              )}
+
+              {related.length > 0 && (
+                <Section title="More reviews">
+                  <ul className="grid gap-1 sm:grid-cols-2">
+                    {related.map((item) => (
+                      <li key={item.slug}>
+                        <a
+                          className="group -mx-3 flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+                          href={`/brokers/${item.slug}`}
+                        >
+                          <BrokerLogo broker={item} size={30} />
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground/75 group-hover:text-foreground">
+                            {item.name}
+                          </span>
+                          <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-foreground/30 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground/60" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              <div className={`space-y-4 border-t ${R.rule} pt-8`}>
+                <SourceNote broker={b} />
+                <BrokerComplianceNote />
+              </div>
+            </article>
+          </div>
 
           <StickyBuyPanel broker={b} showIdentity={pastHeader} />
         </div>
@@ -386,26 +415,7 @@ function ReviewHeader({
 }) {
   return (
     <header>
-      <div className="flex items-baseline justify-between gap-4 text-sm">
-        <nav
-          aria-label="Breadcrumb"
-          className="min-w-0 truncate text-foreground/50"
-        >
-          <a
-            className="transition-colors hover:text-foreground"
-            href="/brokers"
-          >
-            Broker reviews
-          </a>
-          <span className="mx-2 text-foreground/25">/</span>
-          <span className="text-foreground/75">{b.name}</span>
-        </nav>
-        <p className="shrink-0 text-xs text-foreground/45">
-          Updated {fmtVerifiedDate(b.last_verified)}
-        </p>
-      </div>
-
-      <div className="mt-10 flex items-start gap-5">
+      <div className="flex items-start gap-5">
         <BrokerLogo broker={b} className="mt-1 rounded-2xl" size={56} />
         <div className="min-w-0">
           <h1 className="text-[34px] font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-[42px]">
