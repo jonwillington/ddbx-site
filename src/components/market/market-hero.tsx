@@ -24,6 +24,7 @@
 import type { ReactNode } from "react";
 
 import { BUTTON_FILLED, BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
+import { chip } from "@/components/chip";
 
 import { HeroDealMapLayer, useDealRadar } from "./hero-deal-radar";
 import { HeroNotificationStack } from "./hero-notification-stack";
@@ -171,6 +172,18 @@ export function MarketHero({
 
   const headlineBlock = (
     <div className="space-y-3 md:space-y-5">
+      {/* Trial promo eyebrow — the offer, called out where the eye lands
+          first instead of buried under the App Store button. Chip-system
+          capsule in the brand brown; app markets only (no trial elsewhere). */}
+      {appShowcase && (
+        <div className={`flex ${ctaJustify}`}>
+          <span
+            className={`${chip("lg")} bg-[#5a4128]/10 text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]`}
+          >
+            7-day free trial · Cancel anytime
+          </span>
+        </div>
+      )}
       <h1
         className={`${headlineAlign} max-w-[600px] text-balance text-[40px] font-semibold tracking-tight leading-[1.05] md:text-[64px] md:leading-[1.02]`}
       >
@@ -593,9 +606,6 @@ export function MarketHero({
                     </svg>
                     Download on the App Store
                   </a>
-                  <p className="mt-2.5 text-center text-xs leading-snug text-foreground/55">
-                    Free for 7 days. Cancel anytime.
-                  </p>
                 </div>
               </div>
             </div>
