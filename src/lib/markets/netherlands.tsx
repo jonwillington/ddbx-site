@@ -528,6 +528,7 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
     </>
   ),
   marketLabel: "Dutch",
+  timelineTitle: "Dutch directors bought into these companies with their own money",
   locale: "en-GB",
   topNotice: "Dutch dealings are in BETA.",
   priceFormat: EUR_FORMAT,

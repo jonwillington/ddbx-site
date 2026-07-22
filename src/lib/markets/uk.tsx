@@ -436,6 +436,7 @@ export const UkMarket: MarketConfig<Dealing> = {
     </>
   ),
   marketLabel: "UK",
+  timelineTitle: "UK directors bought into these companies with their own money",
   locale: "en-GB",
   priceFormat: GBP_FORMAT,
   // For LSE tickers /api/prices already stores pence (close_pence is literal

@@ -301,6 +301,11 @@ export interface MarketConfig<W = unknown> {
   /** Short market label substituted into the shared hero headline
    *  ("Which directors have been buying shares in {marketLabel} companies?"). */
   marketLabel: string;
+  /** One-line plain-English claim rendered above the first day of the
+   *  chronological list — "UK directors bought into these companies with
+   *  their own money". Names the market's own insider term; omit to render
+   *  nothing. */
+  timelineTitle?: string;
   /** Locale used for market-owned dates/numbers in the shared shell. Defaults
    *  to en-US when omitted. */
   locale?: string;

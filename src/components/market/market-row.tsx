@@ -200,6 +200,23 @@ export function MarketDayHeader({
   );
 }
 
+/** Separator rendered between two days whose gap straddles a weekend, in
+ *  both the xl rail view and the sub-xl stacked timeline — a dashed rule
+ *  with a small centred label, so the list reads in trading weeks rather
+ *  than one undifferentiated run of days. Purely decorative: the day
+ *  headers on either side carry the actual dates. */
+export function WeekendBreak() {
+  return (
+    <div aria-hidden className="flex items-center gap-3 px-1">
+      <span className="flex-1 border-t border-dashed border-foreground/15" />
+      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-foreground/40">
+        Weekend
+      </span>
+      <span className="flex-1 border-t border-dashed border-foreground/15" />
+    </div>
+  );
+}
+
 /** Iridescent gradient bubble used in place of a company logo on the
  *  day-summary row — signals "this is AI-generated context, not a deal". */
 function AiAvatar({ size = 28 }: { size?: number }) {

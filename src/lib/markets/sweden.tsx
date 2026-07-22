@@ -615,6 +615,7 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
     </>
   ),
   marketLabel: "Swedish",
+  timelineTitle: "Swedish directors bought into these companies with their own money",
   locale: "en-GB",
   topNotice: "Swedish dealings are in BETA.",
   priceFormat: SEK_FORMAT,

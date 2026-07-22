@@ -705,6 +705,7 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
     </>
   ),
   marketLabel: "US",
+  timelineTitle: "US insiders bought into these companies with their own money",
   locale: "en-US",
   // US app is fully live (paywall + 7-day trial active) — no longer beta.
   priceFormat: USD_FORMAT,

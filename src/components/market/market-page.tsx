@@ -41,6 +41,7 @@ import {
   MarketRowHeader,
   MarketRowSkeleton,
   MemberClusterRow,
+  WeekendBreak,
 } from "./market-row";
 import { type SparkBar } from "./market-row-spark";
 import { MarketChannel } from "./market-channel";
@@ -55,6 +56,7 @@ import {
   livePerfValue,
   shortDate,
   todayKeyIso,
+  weekendBetween,
 } from "./market-utils";
 
 import { BrokerReviewsPromo } from "@/components/brokers/broker-reviews-promo";
@@ -1383,6 +1385,14 @@ export function MarketPage<W>({
                         />
                       </div>
                       <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
+                        {/* Plain-English claim above the first day — names
+                            the market's own insider term and the one fact
+                            that matters: their own money. */}
+                        {monthIdx === 0 && config.timelineTitle && (
+                          <h2 className="px-1 pt-1 text-[15px] font-semibold leading-snug tracking-[-0.01em] text-foreground/85 xl:text-base">
+                            {config.timelineTitle}
+                          </h2>
+                        )}
                         {contentDays.map((day, dayIdx) => {
                           const isIntroDay =
                             day.key === introDayKey && !intro.dismissed;
@@ -1390,9 +1400,17 @@ export function MarketPage<W>({
                           const collapsedDeals = collapsed
                             ? [...day.suggested, ...day.skipped]
                             : [];
+                          // A gap that straddles Sat/Sun gets a labelled
+                          // break so the timeline reads in trading weeks
+                          // rather than one undifferentiated run of days.
+                          const prevDay = contentDays[dayIdx - 1];
+                          const weekendBreak =
+                            prevDay != null &&
+                            weekendBetween(prevDay.key, day.key);
 
                           return (
                             <Fragment key={day.key}>
+                              {weekendBreak && <WeekendBreak />}
                               <div className="xl:grid xl:grid-cols-[4rem_minmax(0,1fr)] xl:items-start xl:gap-3">
                                 <MarketDayHeader
                                   day={day.day}

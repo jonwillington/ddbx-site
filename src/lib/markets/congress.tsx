@@ -974,6 +974,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   explainer: <CongressExplainer />,
   explainerSubtitle: "US Congress · STOCK Act",
   marketLabel: "US Congress",
+  timelineTitle: "Members of Congress traded these companies with their own money",
   locale: "en-US",
   topNotice: "US Congress is an early preview — no manual curation yet.",
   priceFormat: USD_FORMAT,

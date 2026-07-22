@@ -391,6 +391,27 @@ export function todayKeyIso(timeZone?: string, now = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
+/** True when at least one Saturday/Sunday falls strictly between two ISO
+ *  `YYYY-MM-DD` days — used to place the WeekendBreak separator in the
+ *  chronological list. `newerIso` must be the later date. Weekday-only gaps
+ *  (a quiet Wednesday, an exchange holiday midweek) stay unmarked. */
+export function weekendBetween(newerIso: string, olderIso: string): boolean {
+  const newer = Date.parse(`${newerIso}T00:00:00Z`);
+  const older = Date.parse(`${olderIso}T00:00:00Z`);
+
+  if (Number.isNaN(newer) || Number.isNaN(older)) return false;
+
+  const DAY_MS = 86_400_000;
+
+  for (let t = older + DAY_MS; t < newer; t += DAY_MS) {
+    const dow = new Date(t).getUTCDay();
+
+    if (dow === 0 || dow === 6) return true;
+  }
+
+  return false;
+}
+
 export function stockReturnPct(entry: number, currentMajor: number): number {
   return ((currentMajor - entry) / entry) * 100;
 }
