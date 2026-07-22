@@ -9,6 +9,7 @@ import type {
 import type { MonthlySummaryListItem } from "@/types/ddbx";
 
 import {
+  ArrowDownIcon,
   CalendarDaysIcon,
   ChevronDownIcon,
   LockClosedIcon,
@@ -1435,8 +1436,12 @@ export function MarketPage<W>({
                             the market's own insider term and the one fact
                             that matters: their own money. */}
                         {monthIdx === 0 && config.timelineTitle && (
-                          <h2 className="px-1 pt-1 text-[15px] font-semibold leading-snug tracking-[-0.01em] text-foreground/85 xl:text-base">
+                          <h2 className="px-1 pt-2 pb-1 text-xl font-semibold leading-snug tracking-[-0.02em] text-foreground/90 md:text-2xl">
                             {config.timelineTitle}
+                            <ArrowDownIcon
+                              aria-hidden
+                              className="ml-2.5 inline h-5 w-5 -translate-y-0.5 text-foreground/45 md:h-6 md:w-6"
+                            />
                           </h2>
                         )}
                         {contentDays.map((day, dayIdx) => {
