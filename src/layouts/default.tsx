@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 
@@ -17,6 +17,7 @@ import {
 } from "@/lib/app-store";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { marketContactEmail, marketForPath } from "@/lib/markets/registry";
+import { setRailPresent } from "@/lib/rail-presence";
 
 /** Shared styling for the floating mobile download CTA — solid pill, rendered
  *  as an `<a>` (direct App Store link) or a `<button>` (chooser fallback). */
@@ -400,6 +401,15 @@ export default function DefaultLayout({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Tell globally-mounted overlays (cookie banner) whether this page reserves
+  // the fixed right rail, so they can centre within the content column.
+  useEffect(() => {
+    setRailPresent(Boolean(drawerRight));
+
+    return () => setRailPresent(false);
+  }, [drawerRight]);
+
   const [followOpen, setFollowOpen] = useState(false);
   const [appsOpen, setAppsOpen] = useState(false);
   const legalPage = pathToLegalPage(location.pathname);

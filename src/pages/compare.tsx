@@ -18,7 +18,6 @@ import {
   Tick,
 } from "@/components/brokers/broker-ui";
 import DefaultLayout from "@/layouts/default";
-import { title } from "@/components/primitives";
 import { api, type BrokerOffer } from "@/lib/api";
 import { fmtMoney, fmtPct, platformFeeSummary } from "@/lib/brokers";
 
@@ -250,8 +249,8 @@ export default function ComparePage() {
     <DefaultLayout drawerRight>
       <BrokerAside brokers={brokers} />
       <section className="w-full">
-        <header className="mb-6">
-          <h1 className={title({ size: "sm" })}>
+        <header className="mb-5">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
             Compare UK trading platforms
           </h1>
         </header>

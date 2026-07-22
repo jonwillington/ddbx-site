@@ -131,22 +131,6 @@ export function estAnnualCost(
   return { platform, dealing, fx, total: platform + dealing + fx };
 }
 
-/** "#F64C4C" + 0.14 → "rgba(246, 76, 76, 0.14)". Used for the decorative
- *  brand wash on detail-page heros; returns null for missing/malformed hex so
- *  callers fall back to a neutral wash. */
-export function brandTint(
-  hex: string | null | undefined,
-  alpha: number,
-): string | null {
-  if (!hex) return null;
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-
-  if (!m) return null;
-  const n = parseInt(m[1], 16);
-
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
-}
-
 /** Field-relative cost comparison for the "how it compares" context. Lower is
  *  cheaper for every fee field we compare, so the verdict is uniform. */
 export type CompareTone = "good" | "bad" | "neutral";

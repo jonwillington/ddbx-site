@@ -1,24 +1,22 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { useCookieConsent } from "@/lib/cookie-consent";
+import { useRailPresent } from "@/lib/rail-presence";
 
 type Phase = "hidden" | "visible" | "exiting" | "gone";
 const EXIT_DURATION_MS = 350;
 
 export function CookieBanner() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const { needsConsent, accept } = useCookieConsent();
 
-  // Market-list pages render a fixed 20rem news sidebar on lg+ and reserve
-  // `lg:mr-80` for it; the performance, portfolio and director routes don't.
-  // Mirror that here so the banner centres within the content column instead
-  // of drifting under the sidebar. (Every market has a news source, so the
-  // sidebar is present on all non-excluded routes.)
-  const hasRightSidebar =
-    !/(?:^|\/)(performance|portfolio|directors)(?:\/|$)/.test(pathname);
+  // Pages that render a fixed 20rem right rail reserve `lg:mr-80` for it
+  // (DefaultLayout `drawerRight`). The layout reports that here so the banner
+  // centres within the content column instead of drifting under the rail —
+  // and stays truly centred on rail-less pages.
+  const hasRightSidebar = useRailPresent();
   // `hidden` = mounted but translated off-screen, so the next frame can
   // animate it into view. `gone` = unmount.
   const [phase, setPhase] = useState<Phase>(needsConsent ? "hidden" : "gone");
