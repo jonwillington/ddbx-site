@@ -20,7 +20,6 @@ import { api } from "@/lib/api";
 import { AnalysisSection } from "@/components/analysis-section";
 import { chip } from "@/components/chip";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
-import { IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { RatingBadge } from "@/components/rating-badge";
 import { BenchmarkVerdict, PositionCard } from "@/components/position-card";
@@ -760,7 +759,11 @@ function useCongressGating(): GatingInfo {
   };
 }
 
-const CongressAnalysisOverlay = () => (
+const CongressAnalysisOverlay = ({
+  dealing,
+}: {
+  dealing?: { ticker: string };
+}) => (
   <BlurredAnalysisOverlay
     benefits={[
       "Committee-overlap context and rating factors for each filing",
@@ -770,7 +773,7 @@ const CongressAnalysisOverlay = () => (
       "Insider Form 4 buys alongside Congress, in the same app",
     ]}
     body="You've used today's free web unlock. Open the app to see the full breakdown for every filing."
-    logoSrc={IOS_APP_LOGO_BY_MARKET.us}
+    ticker={dealing?.ticker}
     title="Unlock the full Congress brief"
   />
 );

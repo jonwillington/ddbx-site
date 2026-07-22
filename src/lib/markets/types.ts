@@ -509,8 +509,9 @@ export interface MarketConfig<W = unknown> {
     allDealings?: MarketDealing<W>[];
   }>;
   /** Overlay rendered above the blurred dummy body — the "open the app" CTA.
-   *  Positioned absolutely inside the drawer body. */
-  AnalysisOverlay?: ComponentType;
+   *  Positioned absolutely inside the drawer body. Receives the locked
+   *  dealing so the card can lead with the company's own logo. */
+  AnalysisOverlay?: ComponentType<{ dealing?: MarketDealing<W> }>;
 
   /** When true, the right-hand channel grows a "Performance" tab that mirrors
    *  the /portfolio backtest stats (picks-vs-market alpha, sector leaderboard,

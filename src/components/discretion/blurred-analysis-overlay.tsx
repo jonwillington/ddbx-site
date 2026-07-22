@@ -1,6 +1,7 @@
 import { LockClosedIcon } from "@heroicons/react/20/solid";
 
 import { AppStoreBadge } from "@/components/app-store-badge";
+import { CompanyLogo } from "@/components/company-logo";
 
 const DEFAULT_BENEFITS = [
   "Full breakdown on every director deal — thesis, evidence, risks",
@@ -13,9 +14,10 @@ interface BlurredAnalysisOverlayProps {
   body?: string;
   benefits?: string[];
   footnote?: string;
-  /** App icon shown above the title — per-market where one ships (see
-   *  IOS_APP_LOGO_BY_MARKET); the shared brand mark otherwise. */
-  logoSrc?: string;
+  /** Ticker of the locked deal — renders the company's own logo at poster
+   *  size. Markets without resolvable logos (enableLogos: false) omit it
+   *  and get the shared brand mark instead. */
+  ticker?: string;
 }
 
 export function BlurredAnalysisOverlay({
@@ -23,20 +25,25 @@ export function BlurredAnalysisOverlay({
   body = "You've used today's free analysis on the web. The DDBX app gives you the full read on every deal — for free.",
   benefits = DEFAULT_BENEFITS,
   footnote = "Free on iOS · No account required",
-  logoSrc = "/ios-app-logo.svg",
+  ticker,
 }: BlurredAnalysisOverlayProps) {
   return (
     // Just the card — the caller positions it (the gated drawer centers it in
     // a locked, non-scrolling viewport).
     <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-[#e8e0d5] dark:border-separator bg-[#faf7f2]/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
-      {/* The thing being sold, at poster size: the app icon itself, padlocked
-          in the corner. Sells harder than an abstract lock glyph. */}
+      {/* The thing being locked, at poster size: the company whose analysis
+          sits under the blur, padlocked in the corner. Sells the specific
+          unlock, not the brand in the abstract. */}
       <span className="relative mb-4 inline-block">
-        <img
-          alt=""
-          className="h-20 w-20 rounded-[1.25rem] border border-black/10 shadow-lg dark:border-white/10"
-          src={logoSrc}
-        />
+        {ticker ? (
+          <CompanyLogo className="shadow-lg" size={80} ticker={ticker} />
+        ) : (
+          <img
+            alt=""
+            className="h-20 w-20 rounded-[1.25rem] border border-black/10 shadow-lg dark:border-white/10"
+            src="/ios-app-logo.svg"
+          />
+        )}
         <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#1a140d] text-white ring-2 ring-[#faf7f2] dark:bg-white dark:text-[#1a140d] dark:ring-surface">
           <LockClosedIcon className="h-3.5 w-3.5" />
         </span>

@@ -104,7 +104,7 @@ export function MarketDetailDrawer<W>({
     dealing: MarketDealing<W>;
     allDealings?: MarketDealing<W>[];
   }>;
-  AnalysisOverlay?: ComponentType;
+  AnalysisOverlay?: ComponentType<{ dealing?: MarketDealing<W> }>;
   /** App Store listing for the current market. When set and the reader is
    *  spending their daily freebie, FreeAnalysisNotice brackets the article. */
   appHref?: string;
@@ -334,7 +334,7 @@ export function MarketDetailDrawer<W>({
                     <BodyComponent allDealings={allDealings} dealing={active} />
                   </div>
                   <div className="absolute inset-0 z-10 flex items-center justify-center px-4">
-                    {AnalysisOverlay && <AnalysisOverlay />}
+                    {AnalysisOverlay && <AnalysisOverlay dealing={active} />}
                   </div>
                 </div>
               ) : (
