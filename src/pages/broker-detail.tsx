@@ -36,11 +36,18 @@ type Fact = { label: string; value: React.ReactNode };
 /**
  * Shared review language — one system for every article block.
  *
- *  Eyebrow   → brand brown, mono-adjacent tracking (site identity)
+ *  Eyebrow   → ddbx brown caps (site identity), led by a dash in the
+ *              broker's brand colour (page identity) — the hero dash motif
+ *              repeated at every section start.
+ *  Micro     → neutral caps for data labels (fact cells, fee tables) so the
+ *              brown stays reserved for section starts.
  *  Title     → large, tight tracking, high contrast
- *  Body      → 15/27 soft ink, comfortable measure
- *  Surface   → soft warm wash when a block needs isolation
- *  Accent    → #5a4128 (ddbx brown); broker brand_color only on the hero tick
+ *  Body      → 15/26 soft ink; lead 18/32. Comfortable measure everywhere.
+ *  Surfaces  → three, used deliberately: flat page for prose, white card
+ *              (bg-background) for data blocks, brand tint for the offer.
+ *  Brand     → graphics only (dash, bars, icon chips, ticket tint) — never
+ *              running text, so any brand hex stays contrast-safe. Dark mode
+ *              lifts it towards white via color-mix so navy brands survive.
  *
  * Keep chrome (rail, sticky buy panel) alone — this vocabulary is for the
  * article column only.
@@ -48,14 +55,21 @@ type Fact = { label: string; value: React.ReactNode };
 const R = {
   eyebrow:
     "text-[11px] font-bold uppercase tracking-[0.16em] text-[#5a4128] dark:text-[#d8c4af]",
+  micro: "text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/45",
   title:
     "text-[26px] font-bold leading-[1.15] tracking-[-0.022em] text-foreground sm:text-[28px]",
-  body: "text-[15px] leading-7 text-foreground/75",
-  wash: "rounded-2xl bg-[#5a4128]/[0.055] dark:bg-[#d8c4af]/[0.09]",
+  body: "text-[15px] leading-[1.7] text-foreground/75",
+  card: "rounded-2xl border border-[#e8e0d5] bg-background dark:border-separator dark:bg-surface",
   rule: "border-[#e8e0d5] dark:border-separator",
-  brandFill: "bg-[#5a4128] dark:bg-[#d8c4af]",
-  brandSoft: "bg-[#5a4128]/[0.10] dark:bg-[#d8c4af]/[0.16]",
-  brandText: "text-[#5a4128] dark:text-[#d8c4af]",
+  hairline: "border-[#5a4128]/10 dark:border-white/10",
+  // Broker brand colour, graphics only. Dark mode mixes towards white so
+  // near-black brands (Saxo, Fidelity) stay visible on the dark surface.
+  brandFill:
+    "bg-[var(--brand)] dark:bg-[color-mix(in_srgb,var(--brand)_72%,white)]",
+  brandTint:
+    "bg-[color-mix(in_srgb,var(--brand)_9%,transparent)] dark:bg-[color-mix(in_srgb,var(--brand)_16%,transparent)]",
+  brandIcon:
+    "text-[var(--brand)] dark:text-[color-mix(in_srgb,var(--brand)_62%,white)]",
 } as const;
 
 export default function BrokerDetailPage() {
@@ -182,7 +196,10 @@ function BrokerReview({
     <DefaultLayout drawerRight hideMobileCta>
       <BrokerNavAside brokers={brokers} current={b} />
 
-      <div className="mx-auto w-full max-w-[1040px] pb-24 lg:pb-14">
+      <div
+        className="mx-auto w-full max-w-[1040px] pb-24 lg:pb-14"
+        style={{ "--brand": b.brand_color ?? "#5a4128" } as React.CSSProperties}
+      >
         <div ref={headerRef}>
           <ReviewHeader broker={b} facts={heroFacts} />
         </div>
@@ -204,14 +221,16 @@ function BrokerReview({
                 <SectionHeading eyebrow="The details">
                   Questions about {b.name}
                 </SectionHeading>
-                <div className={`mt-6 divide-y ${R.rule} border-y ${R.rule}`}>
+                <div
+                  className={`mt-7 divide-y divide-[#5a4128]/10 border-y ${R.hairline} dark:divide-white/10`}
+                >
                   {faqs.map((item) => (
                     <details key={item.question} className="group">
-                      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 text-[15px] font-semibold leading-snug text-foreground [&::-webkit-details-marker]:hidden">
+                      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 text-[15px] font-semibold leading-snug text-foreground transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
                         {item.question}
-                        <ChevronDownIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#5a4128]/55 transition-transform group-open:rotate-180 dark:text-[#d8c4af]/60" />
+                        <ChevronDownIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/40 transition-transform group-open:rotate-180" />
                       </summary>
-                      <p className={`max-w-2xl pb-5 ${R.body}`}>
+                      <p className={`max-w-[38em] pb-5 ${R.body}`}>
                         {item.answer}
                       </p>
                     </details>
@@ -227,9 +246,9 @@ function BrokerReview({
             )}
 
             {related.length > 0 && (
-              <nav className={`border-t ${R.rule} py-8`}>
-                <p className={R.eyebrow}>More broker reviews</p>
-                <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+              <nav className={`border-t ${R.hairline} py-8`}>
+                <SectionMark eyebrow="More broker reviews" />
+                <ul className="mt-5 grid gap-2 sm:grid-cols-2">
                   {related.map((item) => (
                     <li key={item.slug}>
                       <a
@@ -248,7 +267,7 @@ function BrokerReview({
               </nav>
             )}
 
-            <div className={`space-y-4 border-t ${R.rule} pt-8`}>
+            <div className={`space-y-4 border-t ${R.hairline} pt-8`}>
               <SourceNote broker={b} />
               <BrokerComplianceNote />
             </div>
@@ -368,7 +387,6 @@ function ReviewHeader({
           <span
             aria-hidden="true"
             className={`block h-1.5 w-12 rounded-full ${R.brandFill}`}
-            style={b.brand_color ? { background: b.brand_color } : undefined}
           />
           <h1 className="mt-5 text-[40px] font-bold leading-[0.96] tracking-[-0.035em] text-foreground sm:text-[52px]">
             {b.name}
@@ -381,18 +399,18 @@ function ReviewHeader({
         <BrokerLogo broker={b} className="mt-2 rounded-2xl" size={72} />
       </div>
 
+      {/* gap-px over the rule colour = uniform hairlines on every cell edge,
+          however the grid wraps (2×2 on mobile, 1×4 from sm). */}
       <dl
-        className={`mt-9 grid grid-cols-2 overflow-hidden rounded-2xl border ${R.rule} sm:grid-cols-4`}
+        className={`mt-9 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border ${R.rule} bg-[#e8e0d5] dark:bg-separator sm:grid-cols-4`}
       >
-        {facts.map((fact, index) => (
+        {facts.map((fact) => (
           <div
             key={fact.label}
-            className={`bg-background/50 px-4 py-4 sm:px-5 ${
-              index % 2 === 1 ? `border-l ${R.rule}` : ""
-            } ${index > 1 ? `border-t ${R.rule} sm:border-t-0` : ""} sm:border-l sm:first:border-l-0`}
+            className="bg-background px-4 py-4 dark:bg-surface sm:px-5"
           >
-            <dt className={R.eyebrow}>{fact.label}</dt>
-            <dd className="mt-1.5 truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            <dt className={R.micro}>{fact.label}</dt>
+            <dd className="mt-2 truncate text-[22px] font-bold leading-none tracking-tight text-foreground">
               {fact.value}
             </dd>
           </div>
@@ -405,10 +423,8 @@ function ReviewHeader({
 function Lead({ summary }: { summary: string }) {
   return (
     <section className="py-8">
-      <p className={R.eyebrow}>The brief</p>
-      <p
-        className={`mt-3 max-w-2xl border-l-[3px] border-[#5a4128] pl-5 text-[17px] font-medium leading-8 text-foreground/85 dark:border-[#d8c4af]`}
-      >
+      <SectionMark eyebrow="The brief" />
+      <p className="mt-4 max-w-[36em] text-[18px] font-medium leading-[1.75] tracking-[-0.006em] text-foreground/85">
         {summary}
       </p>
     </section>
@@ -441,56 +457,83 @@ function RatingsLine({ broker: b }: { broker: BrokerOffer }) {
   );
 }
 
+function VerdictColumn({
+  title,
+  items,
+  tone,
+}: {
+  title: string;
+  items: string[];
+  tone: "for" | "against";
+}) {
+  const chip =
+    tone === "for"
+      ? "bg-emerald-600/12 text-emerald-800 dark:bg-emerald-300/15 dark:text-emerald-300"
+      : "bg-[#a74f34]/12 text-[#8f422c] dark:bg-[#e6997d]/15 dark:text-[#e6997d]";
+  const Icon = tone === "for" ? CheckIcon : XMarkIcon;
+
+  return (
+    <div className="px-6 py-6 sm:px-7">
+      <h3 className="flex items-center gap-2.5">
+        <span
+          aria-hidden="true"
+          className={`inline-flex h-[18px] w-[18px] items-center justify-center rounded-full ${chip}`}
+        >
+          <Icon className="h-2.5 w-2.5" strokeWidth={3} />
+        </span>
+        <span className={R.micro}>{title}</span>
+      </h3>
+      <ul className="mt-5 space-y-4">
+        {items.map((item) => (
+          <li
+            key={item}
+            className="flex gap-3.5 text-[14.5px] leading-[1.6] text-foreground/80"
+          >
+            <Icon
+              className={`mt-[5px] h-3.5 w-3.5 shrink-0 ${
+                tone === "for"
+                  ? "text-emerald-700/80 dark:text-emerald-300/80"
+                  : "text-[#a74f34]/80 dark:text-[#e6997d]/80"
+              }`}
+              strokeWidth={2.5}
+            />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ProsAndCons({ broker: b }: { broker: BrokerOffer }) {
   return (
-    <section className="py-4" id="verdict">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl bg-emerald-600/[0.06] px-5 py-5 dark:bg-emerald-400/[0.08]">
-          <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-800 dark:text-emerald-300">
-            <span
-              aria-hidden="true"
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600/15 dark:bg-emerald-300/15"
-            >
-              <CheckIcon className="h-3 w-3" />
-            </span>
-            For
-          </h2>
-          <ul className="mt-4 space-y-3.5">
-            {b.pros.map((item) => (
-              <li
-                key={item}
-                className="flex gap-3 text-[14px] font-medium leading-6 text-foreground/85"
-              >
-                <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="rounded-2xl bg-[#a74f34]/[0.07] px-5 py-5 dark:bg-[#e6997d]/[0.10]">
-          <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8f422c] dark:text-[#e6997d]">
-            <span
-              aria-hidden="true"
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#a74f34]/15 dark:bg-[#e6997d]/15"
-            >
-              <XMarkIcon className="h-3 w-3" />
-            </span>
-            Against
-          </h2>
-          <ul className="mt-4 space-y-3.5">
-            {b.cons.map((item) => (
-              <li
-                key={item}
-                className="flex gap-3 text-[14px] font-medium leading-6 text-foreground/85"
-              >
-                <XMarkIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#a74f34] dark:text-[#e6997d]" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+    <section className="py-6" id="verdict">
+      <SectionMark eyebrow="The verdict" />
+      <div
+        className={`${R.card} mt-5 grid overflow-hidden divide-y divide-[#5a4128]/10 dark:divide-white/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0`}
+      >
+        <VerdictColumn items={b.pros} title="What works" tone="for" />
+        <VerdictColumn
+          items={b.cons}
+          title="What holds it back"
+          tone="against"
+        />
       </div>
     </section>
+  );
+}
+
+/** The hero's brand dash, restated small at the start of every section — the
+ *  thread that carries the broker's identity down the page. */
+function SectionMark({ eyebrow }: { eyebrow: string }) {
+  return (
+    <p className="flex items-center gap-2.5">
+      <span
+        aria-hidden="true"
+        className={`h-[3px] w-6 rounded-full ${R.brandFill}`}
+      />
+      <span className={R.eyebrow}>{eyebrow}</span>
+    </p>
   );
 }
 
@@ -503,8 +546,8 @@ function SectionHeading({
 }) {
   return (
     <div>
-      <p className={R.eyebrow}>{eyebrow}</p>
-      <h2 className={`mt-2 ${R.title}`}>{children}</h2>
+      <SectionMark eyebrow={eyebrow} />
+      <h2 className={`mt-3 ${R.title}`}>{children}</h2>
     </div>
   );
 }
@@ -512,26 +555,26 @@ function SectionHeading({
 function OfferSection({ broker: b }: { broker: BrokerOffer }) {
   return (
     <section className="scroll-mt-24 py-8" id="offer">
+      {/* The one brand-tinted surface on the page — the offer should feel
+          like the broker's own promo ticket, not another ddbx block. */}
       <div
-        className={`${R.wash} border-l-[3px] border-[#5a4128] px-5 py-6 dark:border-[#d8c4af] sm:px-7`}
+        className={`rounded-2xl border border-[color-mix(in_srgb,var(--brand)_22%,transparent)] ${R.brandTint} px-6 py-6 dark:border-[color-mix(in_srgb,var(--brand)_35%,transparent)] sm:px-7`}
       >
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-4 sm:gap-5">
           <span
             aria-hidden="true"
-            className={`mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${R.brandSoft} ${R.brandText}`}
+            className={`mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-background ${R.brandIcon} dark:bg-white/10`}
           >
-            <GiftIcon className="h-5 w-5" />
+            <GiftIcon className="h-[22px] w-[22px]" />
           </span>
           <div className="min-w-0">
-            <p className={R.eyebrow}>Current offer</p>
-            <h2 className="mt-2 max-w-xl text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl">
+            <p className={R.micro}>Current offer</p>
+            <h2 className="mt-2 max-w-xl text-[19px] font-bold leading-snug tracking-[-0.01em] text-foreground sm:text-[21px]">
               {b.offer_headline}
             </h2>
             {b.offer_terms && (
               <details className="group mt-3">
-                <summary
-                  className={`flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium ${R.brandText} hover:opacity-80 [&::-webkit-details-marker]:hidden`}
-                >
+                <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-foreground/60 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
                   <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
                   Read the terms
                 </summary>
@@ -603,70 +646,76 @@ function CostSection({
         </div>
       </div>
 
-      <div className={`mt-6 ${R.wash} px-5 py-6 sm:px-7`}>
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-5xl font-bold tracking-tighter text-foreground sm:text-6xl">
-            {fmtMoneyRound(mine.total)}
-          </span>
-          <span className="text-sm text-foreground/55">
-            estimated each year on £{pot.toLocaleString("en-GB")}
-          </span>
+      <div className={`mt-6 ${R.card} px-6 py-6 sm:px-7 sm:py-7`}>
+        {/* Hero figure + the composition beside it. Proportional figures on
+            the big number (tabular looks loose at display sizes); tabular is
+            reserved for the aligned columns below. */}
+        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+          <div>
+            <span className="block text-[52px] font-bold leading-none tracking-[-0.03em] text-foreground sm:text-[60px]">
+              {fmtMoneyRound(mine.total)}
+            </span>
+            <span className="mt-2 block text-[13px] text-foreground/55">
+              estimated each year on £{pot.toLocaleString("en-GB")}
+            </span>
+          </div>
+          <dl className="flex gap-6 sm:gap-8">
+            {parts.map((part) => (
+              <div key={part.label} className={`border-l pl-4 ${R.hairline}`}>
+                <dt className={R.micro}>{part.label}</dt>
+                <dd className="mt-1.5 text-[17px] font-bold leading-none tracking-tight text-foreground/90">
+                  {fmtMoneyRound(part.value)}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
 
-        <dl className={`mt-5 grid grid-cols-3 gap-3 border-t ${R.rule} pt-5`}>
-          {parts.map((part) => (
-            <div key={part.label}>
-              <dt className={R.eyebrow}>{part.label}</dt>
-              <dd className="mt-1 text-lg font-bold tabular-nums tracking-tight text-foreground">
-                {fmtMoneyRound(part.value)}
-              </dd>
-            </div>
-          ))}
-        </dl>
-
-        <div className="mt-7 space-y-4">
+        {/* Comparison: label · bar · value rows off one shared baseline.
+            Bars square at the baseline, 4px rounded data-end; only this
+            broker's bar wears the brand colour — identity is carried by the
+            row labels, never colour alone. */}
+        <div
+          className={`mt-7 grid grid-cols-[minmax(0,9.5rem)_1fr_auto] items-center gap-x-4 gap-y-3.5 border-t ${R.hairline} pt-6 sm:grid-cols-[minmax(0,11rem)_1fr_auto]`}
+        >
           {rows.map((row) => (
-            <div key={row.label}>
-              <div className="mb-1.5 flex justify-between gap-4 text-[13px]">
+            <div key={row.label} className="contents">
+              <span
+                className={`truncate text-[13px] leading-none ${
+                  row.primary
+                    ? "font-bold text-foreground"
+                    : "text-foreground/55"
+                }`}
+              >
+                {row.label}
+              </span>
+              <span className={`h-[12px] self-center border-l ${R.hairline}`}>
                 <span
-                  className={
+                  className={`block h-full rounded-r-[4px] ${
                     row.primary
-                      ? "font-bold text-foreground"
-                      : "text-foreground/55"
-                  }
-                >
-                  {row.label}
-                </span>
-                <span
-                  className={
-                    row.primary
-                      ? "font-bold tabular-nums text-foreground"
-                      : "font-semibold tabular-nums text-foreground/70"
-                  }
-                >
-                  {fmtMoneyRound(row.total)}
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-[#5a4128]/[0.08] dark:bg-white/[0.08]">
-                <div
-                  className={
-                    row.primary
-                      ? `h-full rounded-full ${R.brandFill}`
-                      : "h-full rounded-full bg-foreground/20"
-                  }
+                      ? R.brandFill
+                      : "bg-foreground/20 dark:bg-white/20"
+                  }`}
                   style={{
                     width: `${Math.max((row.total / max) * 100, 1.5)}%`,
                   }}
                 />
-              </div>
+              </span>
+              <span
+                className={`text-right text-[13px] leading-none tabular-nums ${
+                  row.primary
+                    ? "font-bold text-foreground"
+                    : "font-medium text-foreground/60"
+                }`}
+              >
+                {fmtMoneyRound(row.total)}
+              </span>
             </div>
           ))}
         </div>
 
-        <details className={`group mt-6 border-t ${R.rule} pt-4`}>
-          <summary
-            className={`flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium ${R.brandText} hover:opacity-80 [&::-webkit-details-marker]:hidden`}
-          >
+        <details className={`group mt-7 border-t ${R.hairline} pt-4`}>
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-foreground/70 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
             <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
             Full fee schedule and methodology
           </summary>
@@ -691,7 +740,7 @@ function FeeSchedule({ broker: b }: { broker: BrokerOffer }) {
 
   return (
     <div className="mt-3">
-      <dl className={`divide-y ${R.rule} text-sm`}>
+      <dl className="divide-y divide-[#5a4128]/10 text-sm dark:divide-white/10">
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between gap-6 py-2.5">
             <dt className="text-foreground/55">{label}</dt>
@@ -751,18 +800,23 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
     <section className="scroll-mt-24 py-10" id="platform">
       <SectionHeading eyebrow="At a glance">The platform</SectionHeading>
 
-      <div className="mt-6 space-y-4">
+      {/* A ruled matrix rather than boxes: group label in the left column,
+          capabilities on the right, hairlines doing all the separating. */}
+      <div className={`mt-7 border-t ${R.hairline}`}>
         {groups.map((group) => {
           const items = group.items.filter(([, value]) => value != null);
 
           return (
-            <div key={group.label} className={`${R.wash} px-5 py-4 sm:px-6`}>
-              <h3 className={R.eyebrow}>{group.label}</h3>
-              <ul className="mt-3 grid gap-x-8 sm:grid-cols-2">
+            <div
+              key={group.label}
+              className={`grid gap-x-10 border-b ${R.hairline} py-5 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:py-6`}
+            >
+              <h3 className={`${R.micro} pt-1`}>{group.label}</h3>
+              <ul className="mt-2.5 grid gap-x-10 sm:mt-0 sm:grid-cols-2">
                 {items.map(([label, value]) => (
                   <li
                     key={label}
-                    className="flex items-center justify-between gap-4 border-b border-[#5a4128]/10 py-2.5 text-[14px] dark:border-[#d8c4af]/12"
+                    className="flex items-center justify-between gap-4 py-[7px] text-[14px]"
                   >
                     <span
                       className={
@@ -776,14 +830,15 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
                     {value ? (
                       <CheckIcon
                         aria-label="Yes"
-                        className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300"
+                        className="h-[15px] w-[15px] shrink-0 text-emerald-700 dark:text-emerald-300"
+                        strokeWidth={2.5}
                       />
                     ) : (
                       <span
                         aria-label="No"
-                        className="text-[12px] font-semibold uppercase tracking-[0.08em] text-foreground/30"
+                        className="text-[14px] leading-none text-foreground/30"
                       >
-                        No
+                        —
                       </span>
                     )}
                   </li>
@@ -793,22 +848,27 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
           );
         })}
 
-        <div className={`flex items-start gap-3.5 ${R.wash} px-5 py-5 sm:px-6`}>
+        <div className="flex items-center gap-4 py-5 sm:py-6">
           <span
             aria-hidden="true"
-            className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${R.brandSoft} ${R.brandText}`}
+            className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${R.brandTint} ${R.brandIcon}`}
           >
-            <ShieldCheckIcon className="h-5 w-5" />
+            <ShieldCheckIcon className="h-[22px] w-[22px]" />
           </span>
-          <div>
-            <p className={R.eyebrow}>Protection</p>
-            <p className="mt-1.5 text-[15px] font-medium leading-6 text-foreground/80">
+          <div className="min-w-0">
+            <p className="text-[15px] font-bold leading-snug text-foreground">
               {b.trust.fscs_protected
                 ? "FSCS protected up to £85,000"
                 : "Not listed as FSCS protected"}
-              {b.trust.regulator ? ` · ${b.trust.regulator} regulated` : ""}
-              {b.trust.year_founded ? ` · Founded ${b.trust.year_founded}` : ""}
-              {b.trust.headquarters ? ` · ${b.trust.headquarters}` : ""}
+            </p>
+            <p className="mt-0.5 text-[13px] text-foreground/55">
+              {[
+                b.trust.regulator && `Regulated by the ${b.trust.regulator}`,
+                b.trust.year_founded && `founded ${b.trust.year_founded}`,
+                b.trust.headquarters,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
           </div>
         </div>
@@ -826,7 +886,7 @@ function SourceNote({ broker: b }: { broker: BrokerOffer }) {
 
   return (
     <p className="text-xs leading-5 text-foreground/50">
-      <span className={`${R.eyebrow} mr-1.5 inline`}>Sources</span>
+      <span className={`${R.micro} mr-1.5 inline`}>Sources</span>
       {sources.map(([label, source], index) => (
         <span key={label}>
           <a
