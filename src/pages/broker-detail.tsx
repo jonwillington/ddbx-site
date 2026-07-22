@@ -4,6 +4,7 @@ import {
   ArrowRightIcon,
   CheckIcon,
   ChevronDownIcon,
+  GiftIcon,
   ShieldCheckIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -31,6 +32,31 @@ import {
 } from "@/lib/brokers";
 
 type Fact = { label: string; value: React.ReactNode };
+
+/**
+ * Shared review language — one system for every article block.
+ *
+ *  Eyebrow   → brand brown, mono-adjacent tracking (site identity)
+ *  Title     → large, tight tracking, high contrast
+ *  Body      → 15/27 soft ink, comfortable measure
+ *  Surface   → soft warm wash when a block needs isolation
+ *  Accent    → #5a4128 (ddbx brown); broker brand_color only on the hero tick
+ *
+ * Keep chrome (rail, sticky buy panel) alone — this vocabulary is for the
+ * article column only.
+ */
+const R = {
+  eyebrow:
+    "text-[11px] font-bold uppercase tracking-[0.16em] text-[#5a4128] dark:text-[#d8c4af]",
+  title:
+    "text-[26px] font-bold leading-[1.15] tracking-[-0.022em] text-foreground sm:text-[28px]",
+  body: "text-[15px] leading-7 text-foreground/75",
+  wash: "rounded-2xl bg-[#5a4128]/[0.055] dark:bg-[#d8c4af]/[0.09]",
+  rule: "border-[#e8e0d5] dark:border-separator",
+  brandFill: "bg-[#5a4128] dark:bg-[#d8c4af]",
+  brandSoft: "bg-[#5a4128]/[0.10] dark:bg-[#d8c4af]/[0.16]",
+  brandText: "text-[#5a4128] dark:text-[#d8c4af]",
+} as const;
 
 export default function BrokerDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -162,10 +188,8 @@ function BrokerReview({
         </div>
 
         <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
-          <article className="min-w-0 max-w-[760px]">
-            <p className="text-lg font-medium leading-relaxed text-foreground/90">
-              {b.summary}
-            </p>
+          <article className="min-w-0 max-w-[760px] space-y-2">
+            {b.summary && <Lead summary={b.summary} />}
 
             <ProsAndCons broker={b} />
 
@@ -173,50 +197,21 @@ function BrokerReview({
 
             <PlatformSection broker={b} />
 
-            {b.offer_headline && (
-              <section
-                className="scroll-mt-24 border-t border-separator py-6"
-                id="offer"
-              >
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/45">
-                  Current offer
-                </p>
-                <h2 className="mt-1.5 max-w-xl text-xl font-bold leading-tight tracking-tight text-foreground sm:text-2xl">
-                  {b.offer_headline}
-                </h2>
-                {b.offer_terms && (
-                  <details className="group mt-3">
-                    <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm text-foreground/55 hover:text-foreground [&::-webkit-details-marker]:hidden">
-                      <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
-                      Read the terms
-                    </summary>
-                    <p className="mt-2.5 max-w-2xl text-sm leading-6 text-foreground/65">
-                      {b.offer_terms}
-                    </p>
-                  </details>
-                )}
-              </section>
-            )}
+            {b.offer_headline && <OfferSection broker={b} />}
 
             {faqs.length > 0 && (
-              <section
-                className="scroll-mt-24 border-t border-separator py-8"
-                id="faq"
-              >
+              <section className="scroll-mt-24 py-10" id="faq">
                 <SectionHeading eyebrow="The details">
                   Questions about {b.name}
                 </SectionHeading>
-                <div className="mt-5 border-t border-separator">
+                <div className={`mt-6 divide-y ${R.rule} border-y ${R.rule}`}>
                   {faqs.map((item) => (
-                    <details
-                      key={item.question}
-                      className="group border-b border-separator"
-                    >
-                      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-4 text-sm font-semibold text-foreground/90 [&::-webkit-details-marker]:hidden">
+                    <details key={item.question} className="group">
+                      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 text-[15px] font-semibold leading-snug text-foreground [&::-webkit-details-marker]:hidden">
                         {item.question}
-                        <ChevronDownIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/40 transition-transform group-open:rotate-180" />
+                        <ChevronDownIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#5a4128]/55 transition-transform group-open:rotate-180 dark:text-[#d8c4af]/60" />
                       </summary>
-                      <p className="max-w-2xl pb-4 text-sm leading-6 text-foreground/65">
+                      <p className={`max-w-2xl pb-5 ${R.body}`}>
                         {item.answer}
                       </p>
                     </details>
@@ -232,26 +227,28 @@ function BrokerReview({
             )}
 
             {related.length > 0 && (
-              <nav className="border-t border-separator py-6">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/45">
-                  More broker reviews
-                </p>
-                <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2.5">
+              <nav className={`border-t ${R.rule} py-8`}>
+                <p className={R.eyebrow}>More broker reviews</p>
+                <ul className="mt-4 grid gap-2 sm:grid-cols-2">
                   {related.map((item) => (
-                    <a
-                      key={item.slug}
-                      className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground/70 transition-colors hover:text-foreground"
-                      href={`/brokers/${item.slug}`}
-                    >
-                      {item.name}
-                      <ArrowRightIcon className="h-3.5 w-3.5" />
-                    </a>
+                    <li key={item.slug}>
+                      <a
+                        className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-[#5a4128]/[0.05] dark:hover:bg-white/[0.04]`}
+                        href={`/brokers/${item.slug}`}
+                      >
+                        <BrokerLogo broker={item} size={32} />
+                        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground/80 group-hover:text-foreground">
+                          {item.name}
+                        </span>
+                        <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-foreground/35 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground/60" />
+                      </a>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </nav>
             )}
 
-            <div className="space-y-4 border-t border-separator pt-6">
+            <div className={`space-y-4 border-t ${R.rule} pt-8`}>
               <SourceNote broker={b} />
               <BrokerComplianceNote />
             </div>
@@ -366,40 +363,55 @@ function ReviewHeader({
         </p>
       </div>
 
-      <div className="mt-7 flex items-start justify-between gap-6">
+      <div className="mt-8 flex items-start justify-between gap-6">
         <div className="min-w-0">
           <span
             aria-hidden="true"
-            className="block h-1 w-10 rounded-full bg-foreground"
+            className={`block h-1.5 w-12 rounded-full ${R.brandFill}`}
             style={b.brand_color ? { background: b.brand_color } : undefined}
           />
-          <h1 className="mt-4 text-4xl font-bold leading-[0.98] tracking-[-0.03em] text-foreground sm:text-5xl">
+          <h1 className="mt-5 text-[40px] font-bold leading-[0.96] tracking-[-0.035em] text-foreground sm:text-[52px]">
             {b.name}
           </h1>
-          <p className="mt-3 max-w-xl text-lg font-medium leading-snug text-foreground/70 sm:text-xl">
+          <p className="mt-4 max-w-xl text-lg font-medium leading-snug text-foreground/70 sm:text-xl">
             {b.tagline}
           </p>
           <RatingsLine broker={b} />
         </div>
-        <BrokerLogo broker={b} className="mt-1 rounded-xl" size={64} />
+        <BrokerLogo broker={b} className="mt-2 rounded-2xl" size={72} />
       </div>
 
-      <dl className="mt-7 grid grid-cols-2 border-y-2 border-foreground sm:grid-cols-4">
+      <dl
+        className={`mt-9 grid grid-cols-2 overflow-hidden rounded-2xl border ${R.rule} sm:grid-cols-4`}
+      >
         {facts.map((fact, index) => (
           <div
             key={fact.label}
-            className={`py-3.5 ${index % 2 === 0 ? "pr-4" : "border-l border-separator pl-4"} ${index > 1 ? "border-t border-separator sm:border-t-0" : ""} sm:border-l sm:border-separator sm:px-5 sm:first:border-l-0 sm:first:pl-0`}
+            className={`bg-background/50 px-4 py-4 sm:px-5 ${
+              index % 2 === 1 ? `border-l ${R.rule}` : ""
+            } ${index > 1 ? `border-t ${R.rule} sm:border-t-0` : ""} sm:border-l sm:first:border-l-0`}
           >
-            <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/45">
-              {fact.label}
-            </dt>
-            <dd className="mt-0.5 truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            <dt className={R.eyebrow}>{fact.label}</dt>
+            <dd className="mt-1.5 truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">
               {fact.value}
             </dd>
           </div>
         ))}
       </dl>
     </header>
+  );
+}
+
+function Lead({ summary }: { summary: string }) {
+  return (
+    <section className="py-8">
+      <p className={R.eyebrow}>The brief</p>
+      <p
+        className={`mt-3 max-w-2xl border-l-[3px] border-[#5a4128] pl-5 text-[17px] font-medium leading-8 text-foreground/85 dark:border-[#d8c4af]`}
+      >
+        {summary}
+      </p>
+    </section>
   );
 }
 
@@ -418,7 +430,7 @@ function RatingsLine({ broker: b }: { broker: BrokerOffer }) {
     ratings.reduce((total, item) => total + item.value, 0) / ratings.length;
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
       <StarRating value={average} />
       <span className="text-xs text-foreground/50">
         {ratings
@@ -431,44 +443,54 @@ function RatingsLine({ broker: b }: { broker: BrokerOffer }) {
 
 function ProsAndCons({ broker: b }: { broker: BrokerOffer }) {
   return (
-    <div className="my-8 grid border-y border-separator sm:grid-cols-2">
-      <div className="py-5 sm:pr-7">
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
-          For
-        </h2>
-        <ol className="mt-3 space-y-2.5">
-          {b.pros.map((item, index) => (
-            <li
-              key={item}
-              className="flex gap-3 text-sm font-medium leading-5 text-foreground/85"
+    <section className="py-4" id="verdict">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl bg-emerald-600/[0.06] px-5 py-5 dark:bg-emerald-400/[0.08]">
+          <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-800 dark:text-emerald-300">
+            <span
+              aria-hidden="true"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600/15 dark:bg-emerald-300/15"
             >
-              <span className="w-5 shrink-0 text-[11px] font-bold leading-5 tabular-nums text-emerald-600/70 dark:text-emerald-300/70">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              {item}
-            </li>
-          ))}
-        </ol>
-      </div>
-      <div className="border-t border-separator py-5 sm:border-l sm:border-t-0 sm:pl-7">
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#a74f34] dark:text-[#e6997d]">
-          Against
-        </h2>
-        <ol className="mt-3 space-y-2.5">
-          {b.cons.map((item, index) => (
-            <li
-              key={item}
-              className="flex gap-3 text-sm font-medium leading-5 text-foreground/85"
+              <CheckIcon className="h-3 w-3" />
+            </span>
+            For
+          </h2>
+          <ul className="mt-4 space-y-3.5">
+            {b.pros.map((item) => (
+              <li
+                key={item}
+                className="flex gap-3 text-[14px] font-medium leading-6 text-foreground/85"
+              >
+                <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-2xl bg-[#a74f34]/[0.07] px-5 py-5 dark:bg-[#e6997d]/[0.10]">
+          <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8f422c] dark:text-[#e6997d]">
+            <span
+              aria-hidden="true"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#a74f34]/15 dark:bg-[#e6997d]/15"
             >
-              <span className="w-5 shrink-0 text-[11px] font-bold leading-5 tabular-nums text-[#b75b3d]/70 dark:text-[#e6997d]/70">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              {item}
-            </li>
-          ))}
-        </ol>
+              <XMarkIcon className="h-3 w-3" />
+            </span>
+            Against
+          </h2>
+          <ul className="mt-4 space-y-3.5">
+            {b.cons.map((item) => (
+              <li
+                key={item}
+                className="flex gap-3 text-[14px] font-medium leading-6 text-foreground/85"
+              >
+                <XMarkIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#a74f34] dark:text-[#e6997d]" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -481,13 +503,45 @@ function SectionHeading({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/45">
-        {eyebrow}
-      </p>
-      <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-[28px]">
-        {children}
-      </h2>
+      <p className={R.eyebrow}>{eyebrow}</p>
+      <h2 className={`mt-2 ${R.title}`}>{children}</h2>
     </div>
+  );
+}
+
+function OfferSection({ broker: b }: { broker: BrokerOffer }) {
+  return (
+    <section className="scroll-mt-24 py-8" id="offer">
+      <div
+        className={`${R.wash} border-l-[3px] border-[#5a4128] px-5 py-6 dark:border-[#d8c4af] sm:px-7`}
+      >
+        <div className="flex items-start gap-4">
+          <span
+            aria-hidden="true"
+            className={`mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${R.brandSoft} ${R.brandText}`}
+          >
+            <GiftIcon className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <p className={R.eyebrow}>Current offer</p>
+            <h2 className="mt-2 max-w-xl text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl">
+              {b.offer_headline}
+            </h2>
+            {b.offer_terms && (
+              <details className="group mt-3">
+                <summary
+                  className={`flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium ${R.brandText} hover:opacity-80 [&::-webkit-details-marker]:hidden`}
+                >
+                  <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
+                  Read the terms
+                </summary>
+                <p className={`mt-2.5 max-w-2xl ${R.body}`}>{b.offer_terms}</p>
+              </details>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -515,18 +569,23 @@ function CostSection({
     { label: b.name, total: mine.total, primary: true },
     { label: "Broker average", total: average, primary: false },
     {
-      label: `Cheapest alternative · ${cheapest.name}`,
+      label: `Cheapest · ${cheapest.name}`,
       total: cheapest.total,
       primary: false,
     },
   ];
   const max = Math.max(...rows.map((row) => row.total), 1);
+  const parts = [
+    { label: "Platform", value: mine.platform },
+    { label: "Dealing", value: mine.dealing },
+    { label: "FX", value: mine.fx },
+  ];
 
   return (
-    <section className="scroll-mt-24 border-t border-separator py-8" id="costs">
+    <section className="scroll-mt-24 py-10" id="costs">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionHeading eyebrow="Fees">What it costs</SectionHeading>
-        <div className="inline-flex rounded-lg bg-foreground/[0.06] p-0.5">
+        <div className="inline-flex rounded-lg bg-[#5a4128]/[0.07] p-0.5 dark:bg-white/[0.08]">
           {COST_POTS.map((value) => (
             <button
               key={value}
@@ -544,8 +603,8 @@ function CostSection({
         </div>
       </div>
 
-      <div className="mt-5">
-        <div className="flex flex-wrap items-baseline gap-x-3">
+      <div className={`mt-6 ${R.wash} px-5 py-6 sm:px-7`}>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="text-5xl font-bold tracking-tighter text-foreground sm:text-6xl">
             {fmtMoneyRound(mine.total)}
           </span>
@@ -553,15 +612,22 @@ function CostSection({
             estimated each year on £{pot.toLocaleString("en-GB")}
           </span>
         </div>
-        <p className="mt-1.5 text-xs font-medium text-foreground/45">
-          {fmtMoneyRound(mine.platform)} platform ·{" "}
-          {fmtMoneyRound(mine.dealing)} dealing · {fmtMoneyRound(mine.fx)} FX
-        </p>
 
-        <div className="mt-6 space-y-4">
+        <dl className={`mt-5 grid grid-cols-3 gap-3 border-t ${R.rule} pt-5`}>
+          {parts.map((part) => (
+            <div key={part.label}>
+              <dt className={R.eyebrow}>{part.label}</dt>
+              <dd className="mt-1 text-lg font-bold tabular-nums tracking-tight text-foreground">
+                {fmtMoneyRound(part.value)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="mt-7 space-y-4">
           {rows.map((row) => (
             <div key={row.label}>
-              <div className="mb-1.5 flex justify-between gap-4 text-xs">
+              <div className="mb-1.5 flex justify-between gap-4 text-[13px]">
                 <span
                   className={
                     row.primary
@@ -571,16 +637,22 @@ function CostSection({
                 >
                   {row.label}
                 </span>
-                <span className="font-semibold tabular-nums text-foreground/75">
+                <span
+                  className={
+                    row.primary
+                      ? "font-bold tabular-nums text-foreground"
+                      : "font-semibold tabular-nums text-foreground/70"
+                  }
+                >
                   {fmtMoneyRound(row.total)}
                 </span>
               </div>
-              <div className="h-1 overflow-hidden rounded-full bg-foreground/[0.07]">
+              <div className="h-2 overflow-hidden rounded-full bg-[#5a4128]/[0.08] dark:bg-white/[0.08]">
                 <div
                   className={
                     row.primary
-                      ? "h-full rounded-full bg-[#5a4128] dark:bg-[#d8c4af]"
-                      : "h-full rounded-full bg-foreground/25"
+                      ? `h-full rounded-full ${R.brandFill}`
+                      : "h-full rounded-full bg-foreground/20"
                   }
                   style={{
                     width: `${Math.max((row.total / max) * 100, 1.5)}%`,
@@ -591,8 +663,10 @@ function CostSection({
           ))}
         </div>
 
-        <details className="group mt-6 border-t border-separator/70 pt-4">
-          <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-foreground/65 hover:text-foreground [&::-webkit-details-marker]:hidden">
+        <details className={`group mt-6 border-t ${R.rule} pt-4`}>
+          <summary
+            className={`flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium ${R.brandText} hover:opacity-80 [&::-webkit-details-marker]:hidden`}
+          >
             <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
             Full fee schedule and methodology
           </summary>
@@ -617,17 +691,17 @@ function FeeSchedule({ broker: b }: { broker: BrokerOffer }) {
 
   return (
     <div className="mt-3">
-      <dl className="divide-y divide-separator/60 text-sm">
+      <dl className={`divide-y ${R.rule} text-sm`}>
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between gap-6 py-2.5">
             <dt className="text-foreground/55">{label}</dt>
-            <dd className="text-right font-medium text-foreground/80">
+            <dd className="text-right font-semibold tabular-nums text-foreground/85">
               {value}
             </dd>
           </div>
         ))}
       </dl>
-      <p className="mt-3 text-[11px] leading-5 text-foreground/45">
+      <p className="mt-4 text-[12px] leading-5 text-foreground/45">
         Estimate assumes 12 monthly purchases, split equally between UK and US
         shares. FX applies to the overseas half. Subscription tiers, fee caps
         and fund charges are not modelled.
@@ -674,48 +748,61 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
   ];
 
   return (
-    <section
-      className="scroll-mt-24 border-t border-separator py-8"
-      id="platform"
-    >
+    <section className="scroll-mt-24 py-10" id="platform">
       <SectionHeading eyebrow="At a glance">The platform</SectionHeading>
-      <div className="mt-5 space-y-5">
-        {groups.map((group) => (
-          <div key={group.label} className="grid gap-2 sm:grid-cols-[7rem_1fr]">
-            <h3 className="text-[10px] font-bold uppercase leading-6 tracking-[0.14em] text-foreground/45">
-              {group.label}
-            </h3>
-            <ul className="flex flex-wrap gap-1.5">
-              {group.items
-                .filter(([, value]) => value != null)
-                .map(([label, value]) => (
+
+      <div className="mt-6 space-y-4">
+        {groups.map((group) => {
+          const items = group.items.filter(([, value]) => value != null);
+
+          return (
+            <div key={group.label} className={`${R.wash} px-5 py-4 sm:px-6`}>
+              <h3 className={R.eyebrow}>{group.label}</h3>
+              <ul className="mt-3 grid gap-x-8 sm:grid-cols-2">
+                {items.map(([label, value]) => (
                   <li
                     key={label}
-                    className={
-                      value
-                        ? "inline-flex items-center gap-1.5 rounded-md bg-foreground/[0.06] px-2.5 py-1 text-xs font-semibold text-foreground/90"
-                        : "inline-flex items-center gap-1.5 rounded-md border border-separator px-2.5 py-1 text-xs font-medium text-foreground/35"
-                    }
+                    className="flex items-center justify-between gap-4 border-b border-[#5a4128]/10 py-2.5 text-[14px] dark:border-[#d8c4af]/12"
                   >
+                    <span
+                      className={
+                        value
+                          ? "font-medium text-foreground/85"
+                          : "text-foreground/40"
+                      }
+                    >
+                      {label}
+                    </span>
                     {value ? (
-                      <CheckIcon className="h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-300" />
+                      <CheckIcon
+                        aria-label="Yes"
+                        className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300"
+                      />
                     ) : (
-                      <XMarkIcon className="h-3 w-3 shrink-0" />
+                      <span
+                        aria-label="No"
+                        className="text-[12px] font-semibold uppercase tracking-[0.08em] text-foreground/30"
+                      >
+                        No
+                      </span>
                     )}
-                    {label}
                   </li>
                 ))}
-            </ul>
-          </div>
-        ))}
+              </ul>
+            </div>
+          );
+        })}
 
-        <div className="grid gap-2 border-t border-separator pt-5 sm:grid-cols-[7rem_1fr]">
-          <h3 className="text-[10px] font-bold uppercase leading-6 tracking-[0.14em] text-foreground/45">
-            Protection
-          </h3>
-          <div className="flex items-start gap-2.5 text-sm font-medium leading-6 text-foreground/75">
-            <ShieldCheckIcon className="mt-0.5 h-5 w-5 shrink-0 text-foreground/45" />
-            <p>
+        <div className={`flex items-start gap-3.5 ${R.wash} px-5 py-5 sm:px-6`}>
+          <span
+            aria-hidden="true"
+            className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${R.brandSoft} ${R.brandText}`}
+          >
+            <ShieldCheckIcon className="h-5 w-5" />
+          </span>
+          <div>
+            <p className={R.eyebrow}>Protection</p>
+            <p className="mt-1.5 text-[15px] font-medium leading-6 text-foreground/80">
               {b.trust.fscs_protected
                 ? "FSCS protected up to £85,000"
                 : "Not listed as FSCS protected"}
@@ -738,8 +825,8 @@ function SourceNote({ broker: b }: { broker: BrokerOffer }) {
   ];
 
   return (
-    <p className="text-xs leading-5 text-foreground/45">
-      <span className="font-bold uppercase tracking-[0.14em]">Sources </span>
+    <p className="text-xs leading-5 text-foreground/50">
+      <span className={`${R.eyebrow} mr-1.5 inline`}>Sources</span>
       {sources.map(([label, source], index) => (
         <span key={label}>
           <a
