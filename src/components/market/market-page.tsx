@@ -45,12 +45,9 @@ import {
 import { type SparkBar } from "./market-row-spark";
 import { MarketChannel } from "./market-channel";
 import { MarketFaq } from "./market-faq";
-import { MarketTodayEmpty } from "./market-today-empty";
-import { MarketTodayHero } from "./market-today-hero";
 import {
   bucketByMonth,
   buildUniversalFilters,
-  compareByReturnDesc,
   computeRowMetric,
   groupByCompany,
   groupByPerson,
@@ -85,11 +82,6 @@ import {
   useUrlParam,
 } from "@/lib/use-url-overlay";
 
-/** How many of today's skipped rows to show before the "Show all" toggle.
- *  A busy US Form 4 day can disclose dozens; the standalone Today block sits
- *  above the historical table, so without a cap it would push that table off
- *  the page. */
-const TODAY_SKIPPED_CAP = 8;
 /** Discretion mode: how many of the most recent disclosure days stay fully
  *  expanded in the historical list. Older days collapse to a single deal plus
  *  an "X more deals" row that nudges toward the app. */
@@ -141,8 +133,6 @@ export function MarketPage<W>({
    *  sticky offset vertically aligned at every breakpoint. */
   const [filterBarHeight, setFilterBarHeight] = useState(0);
   const filterBarRef = useRef<HTMLDivElement | null>(null);
-  /** Expands the standalone "Also today" skipped block past TODAY_SKIPPED_CAP. */
-  const [showAllTodaySkipped, setShowAllTodaySkipped] = useState(false);
   const [heroFilterId, setHeroFilterId] = useState<string | null>(
     config.defaultHeroFilter ?? config.heroFilters?.[0]?.id ?? null,
   );
@@ -203,13 +193,6 @@ export function MarketPage<W>({
   const [prices, setPrices] = useState<
     Record<string, { price: number; date?: string }>
   >({});
-  /** Flips to true once the latest-prices fetch has resolved (or settled
-   *  via catch). Drives the empty-day "Biggest gainers" grid: render a
-   *  skeleton until we have prices in hand, then swap in the ranked
-   *  cells in one shot — without this the cells materialize with
-   *  value-sorted fallback ordering and then re-sort once prices land,
-   *  producing a visible jump. */
-  const [pricesLoaded, setPricesLoaded] = useState(false);
   /** Benchmark daily closes keyed by ISO date — raw values from the
    *  prices table (index points). */
   const [benchEntries, setBenchEntries] = useState<Record<string, number>>({});
@@ -413,30 +396,8 @@ export function MarketPage<W>({
       .catch(() => setFxRates({}));
   }, [config.usesGbpPerUsdFx, livePricesEnabled]);
 
-  // Effective TodayEmpty slot — explicit `config.TodayEmpty` wins (bespoke
-  // copy), otherwise the shared MarketTodayEmpty kicks in for any market
-  // that declared a session + holiday source. Markets with neither fall
-  // through to the generic "No filings yet" line further down.
-  const TodayEmptyComponent = config.TodayEmpty
-    ? config.TodayEmpty
-    : config.session && config.holidays
-      ? () => (
-          <MarketTodayEmpty
-            holidays={config.holidays!}
-            session={config.session!}
-          />
-        )
-      : undefined;
-
   useEffect(() => {
-    if (!livePricesEnabled) {
-      // Sweden today — flag ready straight away so the gainers grid
-      // doesn't sit on a perpetual skeleton waiting for prices that
-      // will never arrive.
-      setPricesLoaded(true);
-
-      return;
-    }
+    if (!livePricesEnabled) return;
     if (dealings.length === 0) return;
     const tickers = Array.from(
       new Set(dealings.map((d) => d.ticker).filter(Boolean)),
@@ -451,11 +412,8 @@ export function MarketPage<W>({
         for (const p of list)
           map[p.ticker] = { price: p.price_pence, date: p.date };
         setPrices(map);
-        setPricesLoaded(true);
       })
-      .catch(() => {
-        setPricesLoaded(true);
-      });
+      .catch(() => undefined);
   }, [dealings, config.benchmarkTicker, livePricesEnabled]);
 
   // Benchmark daily-close history — pre-loaded once per market. Kept in
@@ -554,13 +512,9 @@ export function MarketPage<W>({
 
   /* ───────── Derived state ───────────────────────────────────────────── */
 
-  // Filter pipeline:
-  //   searchedDealings = dealings ∩ search    → drives the Today hero
-  //   filteredDealings = searchedDealings ∩ Signal ∩ Strength → drives the table
-  // Today is meant to stay the canonical "what happened today" surface — only
-  // search narrows it. Signal/Strength are table-only controls (the filter bar
-  // sits visually above the table, beneath the Today hero, to make that
-  // boundary obvious).
+  // Filter pipeline: search narrows the source rows first, then Signal,
+  // Strength, and market-specific axes compose over that result for the one
+  // unified filings grid.
   const heroPredicate = useMemo(() => {
     if (!config.heroFilters || !heroFilterId) return null;
 
@@ -691,39 +645,17 @@ export function MarketPage<W>({
     [stockCurrent],
   );
 
-  // Today's skipped (muted) filings. The analysed/primary ones surface as
-  // cards in the Today hero; these render as ordinary rows under a "Today"
-  // group at the top of the chronological table. Mirrors the hero's split
-  // (isRowMuted, or non-purchase when a market declares no mute rule) so every
-  // today filing lands in exactly one place. bucketByMonth excludes today, so
-  // without this the skipped tail would have nowhere to go. Ordered by
-  // mark-to-market return (biggest gainers first), same as the dated clusters.
-  const todaySkipped = useMemo(() => {
-    const isMuted = config.isRowMuted;
-
-    return todayDealings
-      .filter((d) => (isMuted ? isMuted(d) : !d.isPurchase))
-      .sort(compareByReturnDesc(stockCurrentForDealing));
-  }, [todayDealings, config.isRowMuted, stockCurrentForDealing]);
-
   const monthBuckets = useMemo(
     () =>
-      // When the Today hero is suppressed, pass an empty todayIso so
-      // bucketByMonth no longer holds today out — today's filings render as a
-      // normal day in the month list instead of vanishing with the hero.
-      bucketByMonth(filteredDealings, config.hideTodayHero ? "" : todayIso, {
+      // Today belongs in the same chronological grid as every other filing.
+      // Passing no excluded date prevents the bucketer from holding it out for
+      // a separate hero treatment.
+      bucketByMonth(filteredDealings, "", {
         locale: config.locale,
         isSkipped: config.isSkipped,
         currentPriceOf: stockCurrentForDealing,
       }),
-    [
-      filteredDealings,
-      todayIso,
-      config.hideTodayHero,
-      config.locale,
-      config.isSkipped,
-      stockCurrentForDealing,
-    ],
+    [filteredDealings, config.locale, config.isSkipped, stockCurrentForDealing],
   );
 
   // Freshness of the server-precomputed return badges — the latest close date
@@ -764,10 +696,8 @@ export function MarketPage<W>({
         if (d.suggested.length > 0) dates.add(d.key);
       }
     }
-    if (todayDealings.length > 0) dates.add(todayIso);
-
     return Array.from(dates);
-  }, [monthBuckets, todayDealings, todayIso]);
+  }, [monthBuckets]);
   const dailySummaries = useDailySummaries(config.id, summaryDates);
 
   useEffect(() => {
@@ -942,86 +872,8 @@ export function MarketPage<W>({
       .sort((a, b) => b.pct - a.pct);
   }, [filteredDealings, returnPctOf]);
 
-  // Past-month best performers — feeds the right half of the Today
-  // section when today has no filings (weekends, holidays, quiet days).
-  // Looks back 30 days *excluding* today so the gains have room to mean
-  // something — a 7-day window gave us a lot of low-single-digit moves.
-  // Applies the same primary/skipped split rule the Today hero uses,
-  // computes return-since-trade from the live price cache, and sorts by
-  // gain descending. Items without a computable return fall back to the
-  // end ordered by deal value, so the grid still fills out before
-  // prices finish loading.
-  const recentBestPerformingDealings = useMemo<
-    { dealing: MarketDealing<W>; returnPct: number | null }[]
-  >(() => {
-    if (todayDealings.length > 0) return [];
-    const cutoff = new Date(`${todayIso}T00:00:00Z`);
-
-    cutoff.setUTCDate(cutoff.getUTCDate() - 30);
-    const cutoffIso = cutoff.toISOString().slice(0, 10);
-    const inWindow = searchedDealings.filter((d) => {
-      const iso = d.disclosedDate.slice(0, 10);
-
-      if (iso >= todayIso || iso < cutoffIso) return false;
-
-      return config.isRowMuted ? !config.isRowMuted(d) : d.isPurchase;
-    });
-
-    return (
-      inWindow
-        .map((d) => {
-          // Server snapshot's trade-anchor return first (renders the gainers grid
-          // immediately), client computation as the fallback. Congress rows have
-          // no entryPrice, so the snapshot is the only way they rank by gain.
-          let returnPct = d.livePerformance?.return_pct_trade ?? null;
-
-          if (returnPct == null) {
-            const current = stockCurrent(d.ticker);
-
-            returnPct =
-              d.entryPrice != null && current != null && d.entryPrice > 0
-                ? ((current - d.entryPrice) / d.entryPrice) * 100
-                : null;
-          }
-
-          return { dealing: d, returnPct };
-        })
-        .sort((a, b) => {
-          // Items with a return go first, ranked by gain; everything else
-          // tail-sorted by value so we always have six cells on screen.
-          if (a.returnPct != null && b.returnPct != null)
-            return b.returnPct - a.returnPct;
-          if (a.returnPct != null) return -1;
-          if (b.returnPct != null) return 1;
-
-          return (b.dealing.value ?? 0) - (a.dealing.value ?? 0);
-        })
-        // One row per company — the highest-performing trade. The list is
-        // already gain-descending, so the first occurrence of each ticker is
-        // the best. Tickerless rows key on their own dealing key so they
-        // stay distinct (matches the same-day folding rule in market-utils).
-        .filter(
-          ((seen) => (x) => {
-            const key = x.dealing.ticker || x.dealing.key;
-
-            if (seen.has(key)) return false;
-            seen.add(key);
-
-            return true;
-          })(new Set<string>()),
-        )
-    );
-  }, [
-    searchedDealings,
-    todayDealings,
-    todayIso,
-    config.isRowMuted,
-    stockCurrent,
-  ]);
-
   // Drawer should open for any clicked dealing, even ones the active
-  // signal/strength filter would hide — the Today hero surfaces skipped
-  // rows that aren't in `filteredDealings` when signalFilter === "signal".
+  // signal/strength filter would hide, including direct and shared links.
   const selectedDealing = useMemo(
     () =>
       selectedKey
@@ -1231,28 +1083,26 @@ export function MarketPage<W>({
     );
   };
 
-  const emptyState = filteredDealings.length === 0 &&
-    todaySkipped.length === 0 &&
-    !loading && (
-      <div className="bg-[#faf7f2] dark:bg-surface rounded-xl px-4 py-10 text-center text-sm text-muted">
-        {search.trim() ? (
-          <>
-            No filings match{" "}
-            <span className="font-medium text-foreground/70">"{search}"</span>.{" "}
-            <button
-              className="text-foreground/70 underline underline-offset-2 hover:text-foreground"
-              onClick={() => setSearch("")}
-            >
-              Clear search
-            </button>
-          </>
-        ) : config.renderEmptyState ? (
-          config.renderEmptyState({ view, stats, setView })
-        ) : (
-          <>No filings yet.</>
-        )}
-      </div>
-    );
+  const emptyState = filteredDealings.length === 0 && !loading && (
+    <div className="bg-[#faf7f2] dark:bg-surface rounded-xl px-4 py-10 text-center text-sm text-muted">
+      {search.trim() ? (
+        <>
+          No filings match{" "}
+          <span className="font-medium text-foreground/70">"{search}"</span>.{" "}
+          <button
+            className="text-foreground/70 underline underline-offset-2 hover:text-foreground"
+            onClick={() => setSearch("")}
+          >
+            Clear search
+          </button>
+        </>
+      ) : config.renderEmptyState ? (
+        config.renderEmptyState({ view, stats, setView })
+      ) : (
+        <>No filings yet.</>
+      )}
+    </div>
+  );
 
   return (
     <DefaultLayout drawerRight={hasNewsSource || supportsChannelPerf}>
@@ -1315,47 +1165,15 @@ export function MarketPage<W>({
           </div>
         )}
 
-        {/* Today hero — large, dominant section. Replaces both the old
-            mobile-only inline Today card AND the right-drawer "Today's
-            filings" half so the page reads top-down with today front-and-
-            centre instead of tucked into a sidebar. Suppressed for low-volume
-            markets (Congress) that read better without it. */}
-        {!config.hideTodayHero && (
-          <MarketTodayHero
-            TodayEmpty={TodayEmptyComponent}
-            fmt={config.priceFormat}
-            formatTickerDisplay={config.formatTickerDisplay}
-            holidays={config.holidays}
-            isMuted={config.isRowMuted}
-            loading={loading && dealings.length === 0}
-            locale={config.locale}
-            recentBest={recentBestPerformingDealings}
-            // Ready as soon as we have real returns to rank by — which now arrive
-            // with the dealings via live_performance, no price fetch needed. Falls
-            // back to waiting on pricesLoaded for markets without snapshots
-            // (EU/SE), so their grid still fills only once client prices land.
-            recentBestReady={
-              pricesLoaded ||
-              recentBestPerformingDealings.some((e) => e.returnPct != null)
-            }
-            selectedKey={selectedKey}
-            session={config.session}
-            showLogo={logosEnabled}
-            todayDealings={todayDealings}
-            todayIso={todayIso}
-            onSelect={openDealing}
-          />
-        )}
-
         {/* Mobile-only UK broker teaser. The broker comparison lives in the
             fixed right rail on desktop (hidden on phones), so surface a compact
-            promo under the Today deck to route mobile readers to /compare.
+            promo before the filings grid to route mobile readers to /compare.
             UK only — the directory is a UK trading-platform comparison. */}
         {config.id === "uk" && <BrokerReviewsPromo className="md:hidden" />}
 
         {/* Mobile-only channel. The fixed right rail is hidden on phones, so
             Performance + News would otherwise be invisible there — surface the
-            same tabbed channel inline, right under Today. */}
+            same tabbed channel inline before the filings grid. */}
         <MarketChannel
           appHref={channelAppHref}
           benchmarkLabel={config.channelBenchmarkLabel}
@@ -1368,52 +1186,6 @@ export function MarketPage<W>({
           supportsPerformance={supportsChannelPerf}
           variant="inline"
         />
-
-        {/* Today's skipped (muted) filings. The analysed ones surface as cards
-            in the hero above; their low-signal tail renders here as ordinary
-            table rows. Deliberately sits above the filter bar so it stays part
-            of "Today" — always visible and never narrowed by the Signal /
-            Strength controls, which govern only the historical table below. */}
-        {!config.hideTodayHero && todaySkipped.length > 0 && (
-          // Hidden on mobile: the pinned deck is the whole "today" surface
-          // there, so the skipped tail would just be redundant cards above the
-          // table. Desktop keeps it as the "Also today" group.
-          <section className="hidden animate-content-in md:block">
-            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
-              Also today · {todaySkipped.length} skipped
-            </div>
-            <div className="overflow-hidden rounded-xl bg-[#faf7f2] dark:bg-surface">
-              <MarketRowHeader
-                hideDate
-                inset
-                benchmarkLabel={config.benchmarkLabel}
-                chartMode={chartMode}
-                columnHelp={config.columnHelp}
-                valueColumnClass={config.priceFormat.valueColumnClass}
-              />
-              {/* Contrast tray + white card mirrors the month/day cards in the
-                  chronological table below, so the two sections read alike. */}
-              <div className="bg-[#ece8e5] px-3 py-3 dark:bg-black/15">
-                <div className="overflow-hidden rounded-xl bg-white divide-y divide-black/[0.06] dark:divide-separator dark:bg-surface-secondary">
-                  {(showAllTodaySkipped
-                    ? todaySkipped
-                    : todaySkipped.slice(0, TODAY_SKIPPED_CAP)
-                  ).map(renderDayRow)}
-                  {todaySkipped.length > TODAY_SKIPPED_CAP && (
-                    <button
-                      className="w-full px-4 py-2.5 text-center text-xs font-medium text-muted transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                      onClick={() => setShowAllTodaySkipped((v) => !v)}
-                    >
-                      {showAllTodaySkipped
-                        ? "Show fewer"
-                        : `Show all ${todaySkipped.length} skipped`}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
 
         {loading && filteredDealings.length === 0 && (
           <div className="bg-[#faf7f2] dark:bg-surface rounded-xl overflow-hidden animate-content-in">

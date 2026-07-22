@@ -182,9 +182,6 @@ export function MarketDayHeader({
               day
             )}
           </span>
-          <span className="mt-1 block text-[11px] font-medium uppercase tracking-[0.12em] text-foreground/50">
-            {monthLabel}
-          </span>
         </time>
       </div>
     );
