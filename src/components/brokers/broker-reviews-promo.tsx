@@ -74,12 +74,14 @@ export function BrokerReviewsPromo({
     .sort((a, b) => Number(b.recommended) - Number(a.recommended))
     .slice(0, LOGO_COUNT);
 
-  // Thin one-line strip for the deals table — heading + logos + CTA on a single
-  // row. Logos drop off on narrow screens so the row never wraps.
+  // Single-row strip for the deals table — heading + logos + CTA on one row.
+  // Taller than the surrounding deal rows on purpose: it's an editorial
+  // interlude, not another filing. Sub-description truncates before the row
+  // ever wraps.
   if (variant === "bar") {
     return (
       <a
-        className={`group flex items-center gap-4 overflow-hidden rounded-xl border border-[#e8e0d5] bg-gradient-to-br from-[#faf7f2] to-[#f1eae0] px-4 py-3 transition-colors dark:border-separator dark:from-surface dark:to-surface-secondary ${className ?? ""}`}
+        className={`group flex items-center gap-5 overflow-hidden rounded-xl border border-[#e8e0d5] bg-gradient-to-br from-[#faf7f2] to-[#f1eae0] px-5 py-5 transition-colors dark:border-separator dark:from-surface dark:to-surface-secondary ${className ?? ""}`}
         data-ga-event="cta_broker_reviews"
         data-ga-label="market_table_bar"
         href="/compare"
@@ -90,10 +92,10 @@ export function BrokerReviewsPromo({
           {logos.map((b, i) => (
             <span
               key={b.slug}
-              className="rounded-xl ring-2 ring-[#faf7f2] dark:ring-surface"
-              style={{ marginLeft: i === 0 ? 0 : -10, zIndex: LOGO_COUNT - i }}
+              className="rounded-2xl ring-2 ring-[#faf7f2] dark:ring-surface"
+              style={{ marginLeft: i === 0 ? 0 : -14, zIndex: LOGO_COUNT - i }}
             >
-              <BrokerLogo broker={b} size={40} />
+              <BrokerLogo broker={b} size={56} />
             </span>
           ))}
         </div>
@@ -105,6 +107,9 @@ export function BrokerReviewsPromo({
           <h3 className="truncate text-lg font-semibold leading-snug text-foreground md:text-xl">
             Read reviews of UK trading platforms
           </h3>
+          <p className="mt-0.5 truncate text-sm text-foreground/55">
+            Fees, ISAs and sign-up offers — independently ranked.
+          </p>
         </div>
 
         <span
