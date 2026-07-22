@@ -35,6 +35,10 @@ export default defineConfig([
     "**/*.config.js",
     "**/.DS_Store",
     "**/node_modules",
+    // Verbatim copy of ddbx-data/worker/db/types.ts (npm run sync:types).
+    // check:types diffs it byte-for-byte against the canonical file, so the
+    // formatter must never touch it.
+    "src/types/ddbx.ts",
     "**/coverage",
     "**/.next",
     "**/build",

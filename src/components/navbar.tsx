@@ -42,12 +42,18 @@ export const Navbar = () => {
       match: (p: string) =>
         p === dashboardHref || (market.id === "uk" && p === "/"),
     },
-    {
-      label: "Brokers",
-      href: "/brokers",
-      match: (p: string) =>
-        p.startsWith("/brokers") || p.startsWith("/compare"),
-    },
+    // Broker comparison is UK-only content — don't surface it while browsing
+    // other markets (the dashboard promos are likewise config.id === "uk").
+    ...(market.id === "uk"
+      ? [
+          {
+            label: "Brokers",
+            href: "/brokers",
+            match: (p: string) =>
+              p.startsWith("/brokers") || p.startsWith("/compare"),
+          },
+        ]
+      : []),
   ];
 
   return (

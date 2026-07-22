@@ -56,6 +56,7 @@ const FILTER_DEFS: { key: keyof Filters; label: string }[] = [
  *  heuristic only; the grid shows the real figures. */
 function costScore(b: BrokerOffer): number {
   const f = b.fees;
+
   return (
     (f.platform_fee_monthly_gbp ?? 0) * 12 +
     (f.platform_fee_pct ?? 0) * 100 +
@@ -71,6 +72,7 @@ function matchesFilters(b: BrokerOffer, f: Filters): boolean {
   if (f.commissionFree && b.fees.trade_commission_uk_gbp !== 0) return false;
   if (f.fractional && b.assets.fractional_shares !== true) return false;
   if (f.hasOffer && !b.offer_headline) return false;
+
   return true;
 }
 
@@ -228,25 +230,30 @@ export default function ComparePage() {
 
     if (sort === "name") return [...rows].sort(byName);
     if (sort === "cost")
-      return [...rows].sort((a, b) => costScore(a) - costScore(b) || byName(a, b));
+      return [...rows].sort(
+        (a, b) => costScore(a) - costScore(b) || byName(a, b),
+      );
+
     // recommended: top picks first, then editorial rank (nulls last), then name
     return [...rows].sort((a, b) => {
       if (a.recommended !== b.recommended) return a.recommended ? -1 : 1;
       const ra = a.rank ?? Number.MAX_SAFE_INTEGER;
       const rb = b.rank ?? Number.MAX_SAFE_INTEGER;
+
       return ra - rb || byName(a, b);
     });
   }, [brokers, query, filters, sort]);
 
-  const anyFilter =
-    query.trim() !== "" || Object.values(filters).some(Boolean);
+  const anyFilter = query.trim() !== "" || Object.values(filters).some(Boolean);
 
   return (
     <DefaultLayout drawerRight>
       <BrokerAside brokers={brokers} />
       <section className="w-full">
         <header className="mb-6">
-          <h1 className={title({ size: "sm" })}>Compare UK trading platforms</h1>
+          <h1 className={title({ size: "sm" })}>
+            Compare UK trading platforms
+          </h1>
         </header>
 
         {err && (
@@ -499,7 +506,9 @@ function TopPickCard({ broker: b }: { broker: BrokerOffer }) {
         </div>
         {b.badges.includes("top_pick") && <BadgeChip badge="top_pick" />}
       </div>
-      {b.offer_headline && <OfferBadge className="mt-3" text={b.offer_headline} />}
+      {b.offer_headline && (
+        <OfferBadge className="mt-3" text={b.offer_headline} />
+      )}
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-foreground/60">
         <span>Platform fee: {platformFeeSummary(b.fees)}</span>
         <span>UK trade: {fmtMoney(b.fees.trade_commission_uk_gbp)}</span>
@@ -536,7 +545,10 @@ function BrokerCard({ broker: b }: { broker: BrokerOffer }) {
       <p className="mt-1.5 text-xs text-foreground/55">{b.tagline}</p>
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
         <Fact label="Platform fee" value={platformFeeSummary(b.fees)} />
-        <Fact label="UK trade" value={fmtMoney(b.fees.trade_commission_uk_gbp)} />
+        <Fact
+          label="UK trade"
+          value={fmtMoney(b.fees.trade_commission_uk_gbp)}
+        />
         <Fact label="FX fee" value={fmtPct(b.fees.fx_fee_pct)} />
         <Fact label="Min deposit" value={fmtMoney(b.fees.min_deposit_gbp)} />
       </dl>

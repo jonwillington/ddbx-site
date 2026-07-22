@@ -6,9 +6,6 @@
 // content.
 import { useEffect, useState } from "react";
 
-import { api, type BrokerOffer } from "@/lib/api";
-import { platformFeeSummary } from "@/lib/brokers";
-
 import {
   BadgeChip,
   BrokerBuyBox,
@@ -17,6 +14,9 @@ import {
   BrokerVisitLink,
   OfferBadge,
 } from "./broker-ui";
+
+import { api, type BrokerOffer } from "@/lib/api";
+import { platformFeeSummary } from "@/lib/brokers";
 
 /** Detail-page rail: a sticky conversion buy-box for the broker being viewed
  *  (replaces the list's top-picks rail). Same shell as BrokerAside. */
@@ -88,10 +88,14 @@ export function BrokerAside({
                       {b.name}
                     </a>
                   </span>
-                  {b.badges.includes("top_pick") && <BadgeChip badge="top_pick" />}
+                  {b.badges.includes("top_pick") && (
+                    <BadgeChip badge="top_pick" />
+                  )}
                 </div>
                 <p className="mt-2 text-xs text-foreground/55">{b.tagline}</p>
-                {b.offer_headline && <OfferBadge className="mt-2.5" text={b.offer_headline} />}
+                {b.offer_headline && (
+                  <OfferBadge className="mt-2.5" text={b.offer_headline} />
+                )}
                 <p className="mt-2.5 text-[11px] text-foreground/50">
                   Platform fee: {platformFeeSummary(b.fees)}
                 </p>

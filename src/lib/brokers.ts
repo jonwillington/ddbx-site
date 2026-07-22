@@ -23,6 +23,7 @@ export function badgeLabel(b: BrokerBadge): string {
 export function fmtMoney(v: number | null | undefined): string {
   if (v == null) return "—";
   if (v === 0) return "Free";
+
   return `£${v.toLocaleString("en-GB")}`;
 }
 
@@ -30,18 +31,22 @@ export function fmtMoney(v: number | null | undefined): string {
 export function fmtPct(v: number | null | undefined): string {
   if (v == null) return "—";
   if (v === 0) return "0%";
+
   return `${v}%`;
 }
 
 /** One-line platform-fee summary for the grid. */
 export function platformFeeSummary(fees: BrokerOffer["fees"]): string {
   const { platform_fee_monthly_gbp: m, platform_fee_pct: p } = fees;
+
   if (m === 0 && p === 0) return "Free";
   const parts: string[] = [];
+
   if (m) parts.push(`£${m}/mo`);
   if (p) parts.push(`${p}%`);
   if (parts.length) return parts.join(" + ");
   if (m === 0 && p == null) return "No monthly fee";
+
   return "—";
 }
 
@@ -74,6 +79,74 @@ export function sourceLabel(url: string): string {
   }
 }
 
+/** "£49" — rounded to the pound for the illustrative cost model, where pence
+ *  precision would overstate the accuracy of the assumptions. */
+export function fmtMoneyRound(v: number): string {
+  return `£${Math.round(v).toLocaleString("en-GB")}`;
+}
+
+/** "28 Jun 2026" from an ISO date; falls back to the raw string. */
+export function fmtVerifiedDate(iso: string): string {
+  const d = new Date(iso);
+
+  if (Number.isNaN(d.getTime())) return iso;
+
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Illustrative annual-cost model (detail page "what it costs you" section).
+// Assumptions are deliberately simple and stated in the UI: a pot of £P built
+// with monthly buys over the year, 12 trades (half UK, half US), and half the
+// pot's purchases in non-GBP shares (incurring the FX fee once, on the buy).
+// Unknown (null) fees count as £0 — the section carries a caveat. Caps and
+// tier discounts in *_note fields are not modelled.
+// ---------------------------------------------------------------------------
+
+export const COST_POTS = [1_000, 10_000, 50_000] as const;
+
+export interface AnnualCost {
+  platform: number;
+  dealing: number;
+  fx: number;
+  total: number;
+}
+
+export function estAnnualCost(
+  fees: BrokerOffer["fees"],
+  pot: number,
+): AnnualCost {
+  const platform =
+    (fees.platform_fee_monthly_gbp ?? 0) * 12 +
+    ((fees.platform_fee_pct ?? 0) / 100) * pot;
+  const dealing =
+    6 * (fees.trade_commission_uk_gbp ?? 0) +
+    6 * (fees.trade_commission_us_gbp ?? fees.trade_commission_uk_gbp ?? 0);
+  const fx = ((fees.fx_fee_pct ?? 0) / 100) * (pot / 2);
+
+  return { platform, dealing, fx, total: platform + dealing + fx };
+}
+
+/** "#F64C4C" + 0.14 → "rgba(246, 76, 76, 0.14)". Used for the decorative
+ *  brand wash on detail-page heros; returns null for missing/malformed hex so
+ *  callers fall back to a neutral wash. */
+export function brandTint(
+  hex: string | null | undefined,
+  alpha: number,
+): string | null {
+  if (!hex) return null;
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
 /** Field-relative cost comparison for the "how it compares" context. Lower is
  *  cheaper for every fee field we compare, so the verdict is uniform. */
 export type CompareTone = "good" | "bad" | "neutral";
@@ -86,8 +159,10 @@ export function compareToField(
   if (min != null && value <= min) return { label: "Lowest", tone: "good" };
   // within 5% of the average reads as "about average"
   const band = Math.max(Math.abs(avg) * 0.05, 0.001);
+
   if (value < avg - band) return { label: "Below average", tone: "good" };
   if (value > avg + band) return { label: "Above average", tone: "bad" };
+
   return { label: "Around average", tone: "neutral" };
 }
 

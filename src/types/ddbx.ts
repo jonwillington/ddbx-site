@@ -1794,6 +1794,10 @@ export interface BrokerOffer {
   market: BrokerMarket;
   /** Logo asset URL (optional; filled in as assets land). */
   logo_url?: string | null;
+  /** Brand accent hex (e.g. "#00A7E1") for consumer hero tinting. Decorative
+   *  only — consumers must render fine at low opacity over their own surfaces
+   *  and fall back to a neutral wash when null. */
+  brand_color?: string | null;
   /** Canonical homepage (non-affiliate). */
   website_url: string;
   /** One-line "who this is best for". */
