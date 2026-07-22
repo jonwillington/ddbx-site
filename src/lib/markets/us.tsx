@@ -666,7 +666,12 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   title: "US Form 4 (preview)",
   documentTitle: "ddbx · Director Dealings — US Form 4 Filings",
   // US-market copy uses US English (analyzed, not analysed).
-  heroHeadline: "Start following the money.",
+  heroHeadline: (
+    <>
+      Start following the{" "}
+      <span className="text-[#5a4128] dark:text-[#ad9479]">money</span>.
+    </>
+  ),
   heroSubhead:
     "Every open-market stock purchase a US insider files on Form 4, screened and rated the moment it lands — so you're early to the ones that matter, not reading about them in the news.",
   faq: buildMarketFaq({

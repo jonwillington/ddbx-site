@@ -35,8 +35,10 @@ import { HeroNotificationStack } from "./hero-notification-stack";
 const FILLED_CTA = `inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg`;
 
 /** Ghost secondary — same radius and near-black family as the primary, just
- *  turned down. The old brown capsule read as a chip, not a button. */
-const GHOST_CTA = `inline-flex items-center ${BUTTON_RADIUS} ${BUTTON_GHOST} px-6 py-3 text-base font-semibold backdrop-blur-sm transition-all`;
+ *  turned down. The old brown capsule read as a chip, not a button. A visible
+ *  hairline border does the affordance work here: the 7% tint alone dissolved
+ *  into the hero's cream wash and read as a disabled chip. */
+const GHOST_CTA = `inline-flex items-center ${BUTTON_RADIUS} ${BUTTON_GHOST} border border-[#1a140d]/[0.18] dark:border-white/20 px-6 py-3 text-base font-semibold backdrop-blur-sm transition-all`;
 
 type PulsePoint = {
   left: string;
@@ -215,10 +217,12 @@ export function MarketHero({
   );
 
   // Live proof line — the headline asks the question, this shows we're
-  // answering it today. Counts arrive with the page's dealings fetch, so the
-  // line fades in with the data; hidden on mobile where the Today card directly
+  // answering it today. Counts arrive with the page's dealings fetch; on app
+  // markets the line never disappears (a live "watching" state stands in while
+  // the count is 0 or loading) so the column always carries proof under the
+  // CTAs instead of dead space. Hidden on mobile where the Today card directly
   // below carries the same state, bigger.
-  const proofLine = todayCount > 0 && (
+  const proofLine = (todayCount > 0 || appShowcase) && (
     <p
       className={`hidden animate-content-in items-center gap-2 text-sm text-foreground/55 md:flex ${ctaJustify}`}
     >
@@ -226,18 +230,24 @@ export function MarketHero({
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22a06b] opacity-50 motion-reduce:hidden" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22a06b]" />
       </span>
-      {todayCount} filing{todayCount === 1 ? "" : "s"} so far today
-      {todaySignalCount > 0 && (
+      {todayCount > 0 ? (
         <>
-          {" "}
-          · {todaySignalCount} signal{todaySignalCount === 1 ? "" : "s"}
+          {todayCount} filing{todayCount === 1 ? "" : "s"} so far today
+          {todaySignalCount > 0 && (
+            <>
+              {" "}
+              · {todaySignalCount} signal{todaySignalCount === 1 ? "" : "s"}
+            </>
+          )}
         </>
+      ) : (
+        <>Live · watching today&rsquo;s filings as they land</>
       )}
     </p>
   );
 
-  // The live notification stack now carries per-card company avatars so each
-  // depth layer feels like one joined element.
+  // The live notification stack — front card with a badge avatar over its top
+  // edge, thin iOS-style rims behind.
   const notifRow = (
     <div className="min-w-0">
       <HeroNotificationStack deals={radar.deals} tick={radar.tick} />
@@ -318,6 +328,30 @@ export function MarketHero({
             oklch(19% 0.022 55 / 0.55) 34%,
             transparent 54%);
         }
+        /* App-market spotlight — the left scrim alone left the headline half of
+           the frame one flat tone (the scrim colour IS the panel base). This
+           pool of warm light, anchored where the headline sits, breaks the
+           flatness and gives the text a lit stage without costing legibility.
+           Painted after the scrim so it lands on top of it. */
+        .hero-spotlight-app {
+          position: absolute; inset: 0;
+          background:
+            radial-gradient(ellipse 46% 58% at 24% 40%,
+              rgba(255, 248, 232, 0.9) 0%,
+              rgba(255, 248, 232, 0.5) 30%,
+              rgba(255, 249, 235, 0.14) 55%,
+              transparent 72%);
+          will-change: opacity, transform;
+          animation: hero-spotlight-breathe 9s ease-in-out infinite;
+        }
+        :is(.dark) .hero-spotlight-app {
+          background:
+            radial-gradient(ellipse 46% 58% at 24% 40%,
+              rgba(196, 168, 130, 0.16) 0%,
+              rgba(196, 168, 130, 0.08) 30%,
+              rgba(196, 168, 130, 0.03) 55%,
+              transparent 72%);
+        }
         :is(.dark) .hero-spotlight {
           background:
             radial-gradient(ellipse 55% 65% at 50% 32%,
@@ -383,7 +417,7 @@ export function MarketHero({
           100% { opacity: 0;    transform: scale(5.2); }
         }
         @media (prefers-reduced-motion: reduce) {
-          .hero-spotlight, .hero-shimmer { animation: none !important; }
+          .hero-spotlight, .hero-spotlight-app, .hero-shimmer { animation: none !important; }
           .hero-pulse { animation: none !important; opacity: 0.22; }
           .hero-pulse-ring { display: none; }
         }
@@ -428,6 +462,13 @@ export function MarketHero({
           <div
             aria-hidden
             className="hero-left-scrim pointer-events-none absolute inset-0 z-[5] hidden md:block"
+          />
+          {/* Warm pool of light over the headline column — see
+              .hero-spotlight-app above. Same z as the scrim; DOM order puts it
+              on top. */}
+          <div
+            aria-hidden
+            className="hero-spotlight-app pointer-events-none absolute inset-0 z-[5] hidden md:block"
           />
         </>
       )}
@@ -553,7 +594,7 @@ export function MarketHero({
                     Download on the App Store
                   </a>
                   <p className="mt-2.5 text-center text-xs leading-snug text-foreground/55">
-                    Start your 7 day free trial. Price varies on location.
+                    Free for 7 days. Cancel anytime.
                   </p>
                 </div>
               </div>

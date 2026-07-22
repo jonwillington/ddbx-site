@@ -5,10 +5,11 @@
  *  Layout (everything on one centre axis, so it aligns with the App Store button
  *  below it):
  *    - the front card is full width — same width as the button beneath it;
- *    - the cards behind shrink symmetrically toward the centre and peek out the
- *      bottom and sides, like a real grouped notification stack;
- *    - the front deal's company avatar floats *above* the front card and times
- *      in/out as each new notification lands.
+ *    - the cards behind are thin rims peeking below the front card — real iOS
+ *      grouped-notification geometry (~10px per rim), not half-cards;
+ *    - the front deal's company avatar sits half-in / half-out over the front
+ *      card's top edge, badge-style, so avatar + card read as one object; it
+ *      re-mounts (and replays its pop) as each new notification lands.
  *
  *  Motion is CSS transitions between discrete slots (so it can't drift out of
  *  sync with the map) plus a short enter animation on the freshly-mounted front
@@ -25,20 +26,28 @@ import { CompanyLogo } from "@/components/company-logo";
  *  concentrically beneath the front with even side rims. */
 const SLOTS = [
   { width: 100, opacity: 1, zIndex: 30 },
-  { width: 90, opacity: 1, zIndex: 20 },
-  { width: 82, opacity: 1, zIndex: 10 },
-  { width: 76, opacity: 0, zIndex: 5 },
+  { width: 93, opacity: 1, zIndex: 20 },
+  { width: 86, opacity: 1, zIndex: 10 },
+  { width: 80, opacity: 0, zIndex: 5 },
 ];
+
+/** Fixed height of the rim cards behind the front (they carry no content).
+ *  Kept short so a rim only tucks a few px under the front card — the front is
+ *  slightly translucent, and a card edge buried deep beneath it ghosts through
+ *  as a faint outline. */
+const RIM_H = 24;
 
 /** Vertical offset of each behind card *relative to the measured front-card
  *  height*, so the rim peeking below the front is constant no matter how many
  *  lines the front notification's copy wraps to. Index 0 (the front) is pinned
- *  at y=0; the rest are `frontHeight + offset`. */
-const BEHIND_Y = [0, -37, 11, 51];
+ *  at y=0; the rest are `frontHeight + offset`. With RIM_H-tall cards these
+ *  offsets expose ~11px and ~9px rims — thin edges, like a real grouped
+ *  notification stack, not half-cards. */
+const BEHIND_Y = [0, -13, -4, 3];
 
-/** Gap reserved below the front card so the deepest visible card's rim clears
- *  the App Store button beneath the stack. */
-const STACK_TAIL = 80;
+/** Gap reserved below the front card so the deepest visible rim's shadow
+ *  clears the App Store button beneath the stack. */
+const STACK_TAIL = 34;
 
 /** How many cards are kept mounted: 3 visible slots + 1 exiting. */
 const RENDERED = SLOTS.length;
@@ -93,8 +102,9 @@ export function HeroNotificationStack({
       role="img"
     >
       <style>{`
-        /* Reserve space above the stack for the floating avatar. */
-        .hns { padding-top: 92px; }
+        /* Reserve space above the stack for the half of the badge avatar that
+           sits above the front card's top edge. */
+        .hns { padding-top: 30px; }
         .hns-avatar {
           position: absolute;
           top: 0;
@@ -102,8 +112,8 @@ export function HeroNotificationStack({
           transform: translateX(-50%);
           z-index: 40;
           border-radius: 9999px;
-          box-shadow: 0 16px 34px -10px rgba(0, 0, 0, 0.55);
-          border: 3px solid rgba(255, 255, 255, 0.9);
+          box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.45);
+          border: 2px solid rgba(255, 255, 255, 0.9);
           animation: hns-avatar-in 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
         }
         :is(.dark) .hns-avatar { border-color: rgba(255, 255, 255, 0.18); }
@@ -130,28 +140,40 @@ export function HeroNotificationStack({
         }
         .hns-card {
           width: 100%;
-          border-radius: 24px;
-          padding: 13px 17px 15px;
+          border-radius: 22px;
+          padding: 14px 17px 15px;
+          max-height: 140px;
+          overflow: hidden;
           color: #fff;
           text-align: left;
           /* A quiet prop, not the hero of the column — the App Store CTA below
-             is the focus. Lighter slate + softer shadow so the stack recedes;
-             near-opaque so the textured map never bleeds through. */
-          background: rgba(74, 74, 82, 0.92);
+             is the focus. Warm-shifted dark (same temperature family as the
+             dark panel tone) so the card sits in the cream/bronze frame
+             instead of reading as cool slate; near-opaque so the textured map
+             never bleeds through. */
+          background: rgba(72, 66, 59, 0.96);
           -webkit-backdrop-filter: blur(20px) saturate(150%);
           backdrop-filter: blur(20px) saturate(150%);
           border: 0.5px solid rgba(255, 255, 255, 0.14);
           box-shadow: 0 14px 30px -16px rgba(0, 0, 0, 0.3);
+          transition: max-height 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
+                      background 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
         }
-        /* Cards behind recede by getting a touch darker, staying opaque. Their
-           content is skeletoned (below) so they read as quiet backdrop, not
-           competing copy. */
+        /* Cards behind collapse to bare rims — no content, fixed height — and
+           recede by getting a touch darker while staying opaque. The max-height
+           transition lets the outgoing front card shrink into its rim instead
+           of snapping. */
+        .hns-item:not(.is-front) .hns-card {
+          padding: 0;
+          min-height: ${RIM_H}px;
+          max-height: ${RIM_H}px;
+        }
         .hns-item.depth-1 .hns-card {
-          background: rgba(64, 64, 72, 0.93);
+          background: rgba(63, 58, 52, 0.93);
           box-shadow: 0 9px 22px -16px rgba(0, 0, 0, 0.28);
         }
         .hns-item.depth-2 .hns-card {
-          background: rgba(56, 56, 64, 0.94);
+          background: rgba(55, 50, 45, 0.94);
           box-shadow: 0 6px 16px -16px rgba(0, 0, 0, 0.24);
         }
         /* The freshly-mounted front card drops in from just above. */
@@ -161,37 +183,35 @@ export function HeroNotificationStack({
           100% { transform: translateY(0); opacity: 1; }
         }
         .hns-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .hns-item:not(.is-front) .hns-head { margin-bottom: 4px; }
         .hns-icon { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
         .hns-app { font-size: 13px; font-weight: 600; letter-spacing: 0.01em; color: rgba(255, 255, 255, 0.66); }
         .hns-time { margin-left: auto; font-size: 12px; color: rgba(255, 255, 255, 0.42); }
         .hns-body { font-size: 14.5px; line-height: 1.34; color: rgba(255, 255, 255, 0.9); }
-        .hns-item.depth-1 .hns-body { color: rgba(255, 255, 255, 0.72); }
-        .hns-item.depth-2 .hns-body { color: rgba(255, 255, 255, 0.58); }
         .hns-lead { font-weight: 600; color: #fff; }
-        .hns-item.depth-1 .hns-lead { color: rgba(255, 255, 255, 0.86); }
-        .hns-item.depth-2 .hns-lead { color: rgba(255, 255, 255, 0.72); }
-        .hns-bell { margin-right: 2px; }
-        /* Skeleton placeholders for the cards behind — faded rounded bars
-           instead of real copy so they read as quiet backdrop. */
-        .hns-sk { display: block; border-radius: 6px; background: rgba(255, 255, 255, 0.12); }
-        .hns-item.depth-2 .hns-sk { background: rgba(255, 255, 255, 0.09); }
-        .hns-sk-icon { width: 20px; height: 20px; border-radius: 7px; flex-shrink: 0; }
-        .hns-sk-app { width: 58px; height: 9px; }
-        .hns-sk-line { width: 82%; height: 10px; margin-top: 2px; }
+        /* The attention tag ("BREAKING", "JUST IN") — a warm-gold small-caps
+           accent instead of the old bell emoji, so the alert cue reads
+           editorial rather than cartoon. */
+        .hns-tag {
+          margin-right: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          color: #eec584;
+        }
         @media (prefers-reduced-motion: reduce) {
-          .hns-item, .hns-stack { transition: none; }
+          .hns-item, .hns-stack, .hns-card { transition: none; }
           .hns-item.is-front .hns-card,
           .hns-avatar { animation: none; }
         }
       `}</style>
 
-      {/* Floating avatar for the front deal — keyed by tick so it re-mounts and
-          replays its enter animation on every advance. */}
+      {/* Badge avatar for the front deal — half-in / half-out over the card's
+          top edge; keyed by tick so it re-mounts and replays its enter
+          animation on every advance. */}
       <CompanyLogo
         key={tick}
         className="hns-avatar"
-        size={76}
+        size={56}
         ticker={frontDeal.ticker}
       />
 
@@ -213,35 +233,22 @@ export function HeroNotificationStack({
                 zIndex: slot.zIndex,
               }}
             >
-              <div className="hns-card">
-                {compact ? (
-                  // Cards behind: skeleton bars, no real copy — quiet backdrop.
-                  <div aria-hidden>
-                    <div className="hns-head">
-                      <span className="hns-sk hns-sk-icon" />
-                      <span className="hns-sk hns-sk-app" />
-                    </div>
-                    <span className="hns-sk hns-sk-line" />
+              {compact ? (
+                // Cards behind: bare rims, no content — quiet backdrop.
+                <div aria-hidden className="hns-card" />
+              ) : (
+                <div className="hns-card">
+                  <div className="hns-head">
+                    <img alt="" className="hns-icon" src={deal.icon} />
+                    <span className="hns-app">{deal.app}</span>
+                    <span className="hns-time">now</span>
                   </div>
-                ) : (
-                  <>
-                    <div className="hns-head">
-                      <img alt="" className="hns-icon" src={deal.icon} />
-                      <span className="hns-app">{deal.app}</span>
-                      <span className="hns-time">now</span>
-                    </div>
-                    <div className="hns-body">
-                      <span aria-hidden className="hns-bell">
-                        🔔
-                      </span>
-                      <span className="hns-lead">
-                        {deal.tag}: {deal.lead}
-                      </span>
-                      . {deal.body}
-                    </div>
-                  </>
-                )}
-              </div>
+                  <div className="hns-body">
+                    <span className="hns-tag">{deal.tag}</span>
+                    <span className="hns-lead">{deal.lead}</span>. {deal.body}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

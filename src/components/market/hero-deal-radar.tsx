@@ -20,9 +20,10 @@ import {
 
 const HeroDealMap = lazy(() => import("./hero-deal-map"));
 
-/** Time each deal holds front-and-centre. A touch longer than the 2.6s camera
- *  flight so the beacon lands and ripples before the next deal arrives. */
-const STEP_MS = 3400;
+/** Time each deal holds front-and-centre. Long enough past the 2.6s camera
+ *  flight to actually read the notification's two-line copy — the sample
+ *  disclosures are the hero's sales pitch, and unread copy is wasted copy. */
+const STEP_MS = 5000;
 
 const prefersReducedMotion = () =>
   typeof window !== "undefined" &&

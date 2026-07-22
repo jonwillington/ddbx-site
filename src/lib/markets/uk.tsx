@@ -399,7 +399,12 @@ export const UkMarket: MarketConfig<Dealing> = {
   id: "uk",
   title: "UK director dealings (preview)",
   documentTitle: "ddbx · Director Dealings — UK Insider Transactions",
-  heroHeadline: "Start following the money.",
+  heroHeadline: (
+    <>
+      Start following the{" "}
+      <span className="text-[#5a4128] dark:text-[#ad9479]">money</span>.
+    </>
+  ),
   heroSubhead:
     "Every open-market share purchase by a UK company director, screened and rated the moment it's filed — so you're early to the ones that matter, not reading about them in the news.",
   faq: buildMarketFaq({
