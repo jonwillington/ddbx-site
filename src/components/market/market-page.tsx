@@ -1557,6 +1557,7 @@ export function MarketPage<W>({
       />
 
       <UnlockConfirmModal
+        appHref={channelAppHref}
         message={FIRST_UNLOCK_CONFIRM}
         open={pendingUnlockKey != null}
         onCancel={() => setPendingUnlockKey(null)}
