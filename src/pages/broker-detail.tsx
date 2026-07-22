@@ -151,7 +151,7 @@ function BrokerReview({
         <div className="mt-12 grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-16">
           <article className="min-w-0">
             <section>
-              <p className="font-serif text-[1.4rem] leading-[1.55] text-foreground/90 sm:text-[1.55rem]">
+              <p className="text-lg leading-relaxed text-foreground/90 sm:text-xl">
                 {b.summary}
               </p>
               <ProsAndCons broker={b} />
@@ -169,7 +169,7 @@ function BrokerReview({
                 <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/45">
                   Current offer
                 </p>
-                <h2 className="max-w-xl font-serif text-2xl leading-tight text-foreground sm:text-3xl">
+                <h2 className="max-w-xl text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">
                   {b.offer_headline}
                 </h2>
                 {b.offer_terms && (
@@ -271,10 +271,10 @@ function ReviewHeader({ broker: b, facts }: { broker: BrokerOffer; facts: Fact[]
           <BrokerLogo broker={b} size={64} />
         </div>
 
-        <h1 className="font-serif text-5xl leading-[0.95] tracking-[-0.035em] text-foreground sm:text-6xl lg:text-7xl">
+        <h1 className="text-5xl font-semibold leading-[0.95] tracking-[-0.035em] text-foreground sm:text-6xl lg:text-7xl">
           {b.name}
         </h1>
-        <p className="mt-5 max-w-3xl font-serif text-xl leading-snug text-foreground/75 sm:text-2xl">
+        <p className="mt-5 max-w-3xl text-xl leading-snug text-foreground/75 sm:text-2xl">
           {b.tagline}
         </p>
         <RatingsLine broker={b} />
@@ -365,7 +365,7 @@ function VerdictRail({ broker: b }: { broker: BrokerOffer }) {
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground/45">
           The verdict
         </p>
-        <p className="mt-3 font-serif text-2xl leading-snug text-foreground">
+        <p className="mt-3 text-2xl font-semibold leading-snug tracking-tight text-foreground">
           Best for
         </p>
         <p className="mt-1 text-sm leading-6 text-foreground/70">{b.tagline}</p>
@@ -422,7 +422,7 @@ function SectionHeading({
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/45">
         {eyebrow}
       </p>
-      <h2 className="mt-2 font-serif text-3xl tracking-tight text-foreground sm:text-4xl">
+      <h2 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
         {children}
       </h2>
     </div>
@@ -480,7 +480,7 @@ function CostSection({
 
       <div className="mt-7 border-y border-separator py-7">
         <div className="flex flex-wrap items-baseline gap-x-3">
-          <span className="font-serif text-5xl tracking-tight text-foreground sm:text-6xl">
+          <span className="text-5xl font-semibold tracking-tight text-foreground sm:text-6xl">
             {fmtMoneyRound(mine.total)}
           </span>
           <span className="text-sm text-foreground/55">
