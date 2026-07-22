@@ -4,7 +4,6 @@ import {
   ArrowRightIcon,
   CheckIcon,
   ChevronDownIcon,
-  GiftIcon,
   ShieldCheckIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -34,42 +33,29 @@ import {
 type Fact = { label: string; value: React.ReactNode };
 
 /**
- * Shared review language — one system for every article block.
+ * Review design language — flat, editorial, quiet.
  *
- *  Eyebrow   → ddbx brown caps (site identity), led by a dash in the
- *              broker's brand colour (page identity) — the hero dash motif
- *              repeated at every section start.
- *  Micro     → neutral caps for data labels (fact cells, fee tables) so the
- *              brown stays reserved for section starts.
- *  Title     → large, tight tracking, high contrast
- *  Body      → 15/26 soft ink; lead 18/32. Comfortable measure everywhere.
- *  Surfaces  → three, used deliberately: flat page for prose, white card
- *              (bg-background) for data blocks, brand tint for the offer.
- *  Brand     → graphics only (dash, bars, icon chips, ticket tint) — never
- *              running text, so any brand hex stays contrast-safe. Dark mode
- *              lifts it towards white via color-mix so navy brands survive.
+ *  Layout   → every section is heading-left / content-right on one grid
+ *             (the Stripe/Cursor two-column pattern), separated by a single
+ *             hairline and generous vertical air. No stacked eyebrow+title
+ *             clusters.
+ *  Surfaces → the flat page carries everything. The only raised surface is
+ *             `tile`: a borderless low-alpha fill for data blocks (facts,
+ *             offer). Nothing else gets a box.
+ *  Rules    → one hairline colour, the same one the rail uses.
+ *  Type     → sentence case everywhere; no uppercase, no letterspacing.
+ *             Hierarchy comes from size and ink, not decoration.
+ *  Colour   → reserved for meaning: emerald/rust ticks in the verdict, the
+ *             CTA button. No per-broker brand graphics in the article.
  *
- * Keep chrome (rail, sticky buy panel) alone — this vocabulary is for the
- * article column only.
+ * Chrome (rail, sticky buy panel, mobile bar) is untouched by this system.
  */
 const R = {
-  eyebrow:
-    "text-[11px] font-bold uppercase tracking-[0.16em] text-[#5a4128] dark:text-[#d8c4af]",
-  micro: "text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/45",
-  title:
-    "text-[26px] font-bold leading-[1.15] tracking-[-0.022em] text-foreground sm:text-[28px]",
-  body: "text-[15px] leading-[1.7] text-foreground/75",
-  card: "rounded-2xl border border-[#e8e0d5] bg-background dark:border-separator dark:bg-surface",
   rule: "border-[#e8e0d5] dark:border-separator",
-  hairline: "border-[#5a4128]/10 dark:border-white/10",
-  // Broker brand colour, graphics only. Dark mode mixes towards white so
-  // near-black brands (Saxo, Fidelity) stay visible on the dark surface.
-  brandFill:
-    "bg-[var(--brand)] dark:bg-[color-mix(in_srgb,var(--brand)_72%,white)]",
-  brandTint:
-    "bg-[color-mix(in_srgb,var(--brand)_9%,transparent)] dark:bg-[color-mix(in_srgb,var(--brand)_16%,transparent)]",
-  brandIcon:
-    "text-[var(--brand)] dark:text-[color-mix(in_srgb,var(--brand)_62%,white)]",
+  tile: "rounded-xl bg-black/[0.035] dark:bg-white/[0.05]",
+  label: "text-[12px] leading-none text-foreground/50",
+  body: "text-[15px] leading-[1.7] text-foreground/70",
+  subhead: "text-[13px] font-semibold text-foreground/55",
 } as const;
 
 export default function BrokerDetailPage() {
@@ -196,19 +182,29 @@ function BrokerReview({
     <DefaultLayout drawerRight hideMobileCta>
       <BrokerNavAside brokers={brokers} current={b} />
 
-      <div
-        className="mx-auto w-full max-w-[1040px] pb-24 lg:pb-14"
-        style={{ "--brand": b.brand_color ?? "#5a4128" } as React.CSSProperties}
-      >
+      <div className="mx-auto w-full max-w-[1040px] pb-24 lg:pb-14">
         <div ref={headerRef}>
           <ReviewHeader broker={b} facts={heroFacts} />
         </div>
 
-        <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
-          <article className="min-w-0 max-w-[760px] space-y-2">
-            {b.summary && <Lead summary={b.summary} />}
+        <div className="mt-4 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+          <article className="min-w-0 max-w-[760px]">
+            {b.summary && (
+              <p className="max-w-[32em] py-10 text-[19px] font-normal leading-[1.65] tracking-[-0.008em] text-foreground/85">
+                {b.summary}
+              </p>
+            )}
 
-            <ProsAndCons broker={b} />
+            <Section id="verdict" title="Verdict">
+              <div className="grid gap-10 sm:grid-cols-2">
+                <VerdictColumn items={b.pros} title="What works" tone="for" />
+                <VerdictColumn
+                  items={b.cons}
+                  title="What holds it back"
+                  tone="against"
+                />
+              </div>
+            </Section>
 
             <CostSection broker={b} brokers={brokers} />
 
@@ -217,16 +213,13 @@ function BrokerReview({
             {b.offer_headline && <OfferSection broker={b} />}
 
             {faqs.length > 0 && (
-              <section className="scroll-mt-24 py-10" id="faq">
-                <SectionHeading eyebrow="The details">
-                  Questions about {b.name}
-                </SectionHeading>
+              <Section id="faq" title="Questions & answers">
                 <div
-                  className={`mt-7 divide-y divide-[#5a4128]/10 border-y ${R.hairline} dark:divide-white/10`}
+                  className={`divide-y divide-[#e8e0d5] border-t ${R.rule} dark:divide-separator`}
                 >
                   {faqs.map((item) => (
                     <details key={item.question} className="group">
-                      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 text-[15px] font-semibold leading-snug text-foreground transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
+                      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-4 text-[15px] font-medium leading-snug text-foreground transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
                         {item.question}
                         <ChevronDownIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/40 transition-transform group-open:rotate-180" />
                       </summary>
@@ -242,32 +235,31 @@ function BrokerReview({
                   }}
                   type="application/ld+json"
                 />
-              </section>
+              </Section>
             )}
 
             {related.length > 0 && (
-              <nav className={`border-t ${R.hairline} py-8`}>
-                <SectionMark eyebrow="More broker reviews" />
-                <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+              <Section title="More reviews">
+                <ul className="grid gap-1 sm:grid-cols-2">
                   {related.map((item) => (
                     <li key={item.slug}>
                       <a
-                        className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-[#5a4128]/[0.05] dark:hover:bg-white/[0.04]`}
+                        className="group -mx-3 flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                         href={`/brokers/${item.slug}`}
                       >
-                        <BrokerLogo broker={item} size={32} />
-                        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground/80 group-hover:text-foreground">
+                        <BrokerLogo broker={item} size={30} />
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground/75 group-hover:text-foreground">
                           {item.name}
                         </span>
-                        <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-foreground/35 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground/60" />
+                        <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-foreground/30 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground/60" />
                       </a>
                     </li>
                   ))}
                 </ul>
-              </nav>
+              </Section>
             )}
 
-            <div className={`space-y-4 border-t ${R.hairline} pt-8`}>
+            <div className={`space-y-4 border-t ${R.rule} pt-8`}>
               <SourceNote broker={b} />
               <BrokerComplianceNote />
             </div>
@@ -279,6 +271,37 @@ function BrokerReview({
 
       <MobileVisitBar broker={b} />
     </DefaultLayout>
+  );
+}
+
+/** The two-column editorial section: heading in the left column, content in
+ *  the right, one hairline above. Every article block shares this shape so
+ *  the page reads as one continuous ruled document. */
+function Section({
+  id,
+  title,
+  aside,
+  children,
+}: {
+  id?: string;
+  title: string;
+  /** Optional control rendered under the heading (e.g. the pot toggle). */
+  aside?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      className={`grid scroll-mt-24 gap-x-10 gap-y-5 border-t ${R.rule} py-10 sm:grid-cols-[10.5rem_minmax(0,1fr)] sm:py-12`}
+      id={id}
+    >
+      <div>
+        <h2 className="text-[20px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground">
+          {title}
+        </h2>
+        {aside && <div className="mt-4">{aside}</div>}
+      </div>
+      <div className="min-w-0">{children}</div>
+    </section>
   );
 }
 
@@ -382,52 +405,30 @@ function ReviewHeader({
         </p>
       </div>
 
-      <div className="mt-8 flex items-start justify-between gap-6">
+      <div className="mt-10 flex items-start gap-5">
+        <BrokerLogo broker={b} className="mt-1 rounded-2xl" size={56} />
         <div className="min-w-0">
-          <span
-            aria-hidden="true"
-            className={`block h-1.5 w-12 rounded-full ${R.brandFill}`}
-          />
-          <h1 className="mt-5 text-[40px] font-bold leading-[0.96] tracking-[-0.035em] text-foreground sm:text-[52px]">
+          <h1 className="text-[34px] font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-[42px]">
             {b.name}
           </h1>
-          <p className="mt-4 max-w-xl text-lg font-medium leading-snug text-foreground/70 sm:text-xl">
+          <p className="mt-2.5 max-w-xl text-[17px] leading-snug text-foreground/65 sm:text-lg">
             {b.tagline}
           </p>
           <RatingsLine broker={b} />
         </div>
-        <BrokerLogo broker={b} className="mt-2 rounded-2xl" size={72} />
       </div>
 
-      {/* gap-px over the rule colour = uniform hairlines on every cell edge,
-          however the grid wraps (2×2 on mobile, 1×4 from sm). */}
-      <dl
-        className={`mt-9 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border ${R.rule} bg-[#e8e0d5] dark:bg-separator sm:grid-cols-4`}
-      >
+      <dl className="mt-9 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {facts.map((fact) => (
-          <div
-            key={fact.label}
-            className="bg-background px-4 py-4 dark:bg-surface sm:px-5"
-          >
-            <dt className={R.micro}>{fact.label}</dt>
-            <dd className="mt-2 truncate text-[22px] font-bold leading-none tracking-tight text-foreground">
+          <div key={fact.label} className={`${R.tile} px-4 py-3.5`}>
+            <dt className={R.label}>{fact.label}</dt>
+            <dd className="mt-2 truncate text-[17px] font-semibold leading-none tracking-[-0.01em] text-foreground">
               {fact.value}
             </dd>
           </div>
         ))}
       </dl>
     </header>
-  );
-}
-
-function Lead({ summary }: { summary: string }) {
-  return (
-    <section className="py-8">
-      <SectionMark eyebrow="The brief" />
-      <p className="mt-4 max-w-[36em] text-[18px] font-medium leading-[1.75] tracking-[-0.006em] text-foreground/85">
-        {summary}
-      </p>
-    </section>
   );
 }
 
@@ -446,7 +447,7 @@ function RatingsLine({ broker: b }: { broker: BrokerOffer }) {
     ratings.reduce((total, item) => total + item.value, 0) / ratings.length;
 
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+    <div className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1">
       <StarRating value={average} />
       <span className="text-xs text-foreground/50">
         {ratings
@@ -466,35 +467,23 @@ function VerdictColumn({
   items: string[];
   tone: "for" | "against";
 }) {
-  const chip =
-    tone === "for"
-      ? "bg-emerald-600/12 text-emerald-800 dark:bg-emerald-300/15 dark:text-emerald-300"
-      : "bg-[#a74f34]/12 text-[#8f422c] dark:bg-[#e6997d]/15 dark:text-[#e6997d]";
   const Icon = tone === "for" ? CheckIcon : XMarkIcon;
+  const iconInk =
+    tone === "for"
+      ? "text-emerald-700/70 dark:text-emerald-300/70"
+      : "text-[#a74f34]/70 dark:text-[#e6997d]/70";
 
   return (
-    <div className="px-6 py-6 sm:px-7">
-      <h3 className="flex items-center gap-2.5">
-        <span
-          aria-hidden="true"
-          className={`inline-flex h-[18px] w-[18px] items-center justify-center rounded-full ${chip}`}
-        >
-          <Icon className="h-2.5 w-2.5" strokeWidth={3} />
-        </span>
-        <span className={R.micro}>{title}</span>
-      </h3>
-      <ul className="mt-5 space-y-4">
+    <div>
+      <h3 className={R.subhead}>{title}</h3>
+      <ul className="mt-4 space-y-3.5">
         {items.map((item) => (
           <li
             key={item}
-            className="flex gap-3.5 text-[14.5px] leading-[1.6] text-foreground/80"
+            className="flex gap-3 text-[14.5px] leading-[1.6] text-foreground/80"
           >
             <Icon
-              className={`mt-[5px] h-3.5 w-3.5 shrink-0 ${
-                tone === "for"
-                  ? "text-emerald-700/80 dark:text-emerald-300/80"
-                  : "text-[#a74f34]/80 dark:text-[#e6997d]/80"
-              }`}
+              className={`mt-[5px] h-3.5 w-3.5 shrink-0 ${iconInk}`}
               strokeWidth={2.5}
             />
             <span>{item}</span>
@@ -505,86 +494,24 @@ function VerdictColumn({
   );
 }
 
-function ProsAndCons({ broker: b }: { broker: BrokerOffer }) {
-  return (
-    <section className="py-6" id="verdict">
-      <SectionMark eyebrow="The verdict" />
-      <div
-        className={`${R.card} mt-5 grid overflow-hidden divide-y divide-[#5a4128]/10 dark:divide-white/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0`}
-      >
-        <VerdictColumn items={b.pros} title="What works" tone="for" />
-        <VerdictColumn
-          items={b.cons}
-          title="What holds it back"
-          tone="against"
-        />
-      </div>
-    </section>
-  );
-}
-
-/** The hero's brand dash, restated small at the start of every section — the
- *  thread that carries the broker's identity down the page. */
-function SectionMark({ eyebrow }: { eyebrow: string }) {
-  return (
-    <p className="flex items-center gap-2.5">
-      <span
-        aria-hidden="true"
-        className={`h-[3px] w-6 rounded-full ${R.brandFill}`}
-      />
-      <span className={R.eyebrow}>{eyebrow}</span>
-    </p>
-  );
-}
-
-function SectionHeading({
-  eyebrow,
-  children,
-}: {
-  eyebrow: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <SectionMark eyebrow={eyebrow} />
-      <h2 className={`mt-3 ${R.title}`}>{children}</h2>
-    </div>
-  );
-}
-
 function OfferSection({ broker: b }: { broker: BrokerOffer }) {
   return (
-    <section className="scroll-mt-24 py-8" id="offer">
-      {/* The one brand-tinted surface on the page — the offer should feel
-          like the broker's own promo ticket, not another ddbx block. */}
-      <div
-        className={`rounded-2xl border border-[color-mix(in_srgb,var(--brand)_22%,transparent)] ${R.brandTint} px-6 py-6 dark:border-[color-mix(in_srgb,var(--brand)_35%,transparent)] sm:px-7`}
-      >
-        <div className="flex items-start gap-4 sm:gap-5">
-          <span
-            aria-hidden="true"
-            className={`mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-background ${R.brandIcon} dark:bg-white/10`}
-          >
-            <GiftIcon className="h-[22px] w-[22px]" />
-          </span>
-          <div className="min-w-0">
-            <p className={R.micro}>Current offer</p>
-            <h2 className="mt-2 max-w-xl text-[19px] font-bold leading-snug tracking-[-0.01em] text-foreground sm:text-[21px]">
-              {b.offer_headline}
-            </h2>
-            {b.offer_terms && (
-              <details className="group mt-3">
-                <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-foreground/60 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
-                  <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
-                  Read the terms
-                </summary>
-                <p className={`mt-2.5 max-w-2xl ${R.body}`}>{b.offer_terms}</p>
-              </details>
-            )}
-          </div>
-        </div>
+    <Section id="offer" title="Current offer">
+      <div className={`${R.tile} px-6 py-5`}>
+        <p className="max-w-xl text-[17px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
+          {b.offer_headline}
+        </p>
+        {b.offer_terms && (
+          <details className="group mt-3">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-foreground/55 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+              <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
+              Read the terms
+            </summary>
+            <p className={`mt-2.5 max-w-2xl ${R.body}`}>{b.offer_terms}</p>
+          </details>
+        )}
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -624,105 +551,101 @@ function CostSection({
     { label: "FX", value: mine.fx },
   ];
 
-  return (
-    <section className="scroll-mt-24 py-10" id="costs">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <SectionHeading eyebrow="Fees">What it costs</SectionHeading>
-        <div className="inline-flex rounded-lg bg-[#5a4128]/[0.07] p-0.5 dark:bg-white/[0.08]">
-          {COST_POTS.map((value) => (
-            <button
-              key={value}
-              className={
-                pot === value
-                  ? `rounded-md ${BUTTON_SELECTED} px-3 py-1.5 text-xs font-semibold`
-                  : "rounded-md px-3 py-1.5 text-xs font-medium text-foreground/55 hover:text-foreground"
-              }
-              type="button"
-              onClick={() => setPot(value)}
-            >
-              £{value >= 1000 ? `${value / 1000}k` : value}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={`mt-6 ${R.card} px-6 py-6 sm:px-7 sm:py-7`}>
-        {/* Hero figure + the composition beside it. Proportional figures on
-            the big number (tabular looks loose at display sizes); tabular is
-            reserved for the aligned columns below. */}
-        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
-          <div>
-            <span className="block text-[52px] font-bold leading-none tracking-[-0.03em] text-foreground sm:text-[60px]">
-              {fmtMoneyRound(mine.total)}
-            </span>
-            <span className="mt-2 block text-[13px] text-foreground/55">
-              estimated each year on £{pot.toLocaleString("en-GB")}
-            </span>
-          </div>
-          <dl className="flex gap-6 sm:gap-8">
-            {parts.map((part) => (
-              <div key={part.label} className={`border-l pl-4 ${R.hairline}`}>
-                <dt className={R.micro}>{part.label}</dt>
-                <dd className="mt-1.5 text-[17px] font-bold leading-none tracking-tight text-foreground/90">
-                  {fmtMoneyRound(part.value)}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-
-        {/* Comparison: label · bar · value rows off one shared baseline.
-            Bars square at the baseline, 4px rounded data-end; only this
-            broker's bar wears the brand colour — identity is carried by the
-            row labels, never colour alone. */}
-        <div
-          className={`mt-7 grid grid-cols-[minmax(0,9.5rem)_1fr_auto] items-center gap-x-4 gap-y-3.5 border-t ${R.hairline} pt-6 sm:grid-cols-[minmax(0,11rem)_1fr_auto]`}
+  const potToggle = (
+    <div className="inline-flex rounded-lg bg-black/[0.05] p-0.5 dark:bg-white/[0.08]">
+      {COST_POTS.map((value) => (
+        <button
+          key={value}
+          className={
+            pot === value
+              ? `rounded-md ${BUTTON_SELECTED} px-3 py-1.5 text-xs font-semibold`
+              : "rounded-md px-3 py-1.5 text-xs font-medium text-foreground/55 hover:text-foreground"
+          }
+          type="button"
+          onClick={() => setPot(value)}
         >
-          {rows.map((row) => (
-            <div key={row.label} className="contents">
-              <span
-                className={`truncate text-[13px] leading-none ${
-                  row.primary
-                    ? "font-bold text-foreground"
-                    : "text-foreground/55"
-                }`}
-              >
-                {row.label}
-              </span>
-              <span className={`h-[12px] self-center border-l ${R.hairline}`}>
-                <span
-                  className={`block h-full rounded-r-[4px] ${
-                    row.primary
-                      ? R.brandFill
-                      : "bg-foreground/20 dark:bg-white/20"
-                  }`}
-                  style={{
-                    width: `${Math.max((row.total / max) * 100, 1.5)}%`,
-                  }}
-                />
-              </span>
-              <span
-                className={`text-right text-[13px] leading-none tabular-nums ${
-                  row.primary
-                    ? "font-bold text-foreground"
-                    : "font-medium text-foreground/60"
-                }`}
-              >
-                {fmtMoneyRound(row.total)}
-              </span>
+          £{value >= 1000 ? `${value / 1000}k` : value}
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <Section aside={potToggle} id="costs" title="What it costs">
+      {/* Hero figure + the composition beside it. Proportional figures on
+          the big number (tabular looks loose at display sizes); tabular is
+          reserved for the aligned columns below. */}
+      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+        <div>
+          <span className="block text-[44px] font-bold leading-none tracking-[-0.03em] text-foreground sm:text-[52px]">
+            {fmtMoneyRound(mine.total)}
+          </span>
+          <span className="mt-2 block text-[13px] text-foreground/55">
+            estimated each year on £{pot.toLocaleString("en-GB")}
+          </span>
+        </div>
+        <dl className="flex gap-6 sm:gap-8">
+          {parts.map((part) => (
+            <div key={part.label} className={`border-l ${R.rule} pl-4`}>
+              <dt className={R.label}>{part.label}</dt>
+              <dd className="mt-2 text-[16px] font-semibold leading-none tracking-tight text-foreground/90">
+                {fmtMoneyRound(part.value)}
+              </dd>
             </div>
           ))}
-        </div>
-
-        <details className={`group mt-7 border-t ${R.hairline} pt-4`}>
-          <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-foreground/70 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
-            <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
-            Full fee schedule and methodology
-          </summary>
-          <FeeSchedule broker={b} />
-        </details>
+        </dl>
       </div>
-    </section>
+
+      {/* Comparison: label · bar · value rows off one shared baseline. Only
+          this broker's bar carries full ink — identity is in the row labels,
+          never colour alone. */}
+      <div
+        className={`mt-8 grid grid-cols-[minmax(0,9.5rem)_1fr_auto] items-center gap-x-4 gap-y-3.5 border-t ${R.rule} pt-6 sm:grid-cols-[minmax(0,11rem)_1fr_auto]`}
+      >
+        {rows.map((row) => (
+          <div key={row.label} className="contents">
+            <span
+              className={`truncate text-[13px] leading-none ${
+                row.primary
+                  ? "font-semibold text-foreground"
+                  : "text-foreground/55"
+              }`}
+            >
+              {row.label}
+            </span>
+            <span className={`h-[12px] self-center border-l ${R.rule}`}>
+              <span
+                className={`block h-full rounded-r-[4px] ${
+                  row.primary
+                    ? "bg-foreground/80"
+                    : "bg-foreground/20 dark:bg-white/20"
+                }`}
+                style={{
+                  width: `${Math.max((row.total / max) * 100, 1.5)}%`,
+                }}
+              />
+            </span>
+            <span
+              className={`text-right text-[13px] leading-none tabular-nums ${
+                row.primary
+                  ? "font-semibold text-foreground"
+                  : "font-medium text-foreground/60"
+              }`}
+            >
+              {fmtMoneyRound(row.total)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <details className={`group mt-8 border-t ${R.rule} pt-4`}>
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-foreground/60 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+          <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
+          Full fee schedule and methodology
+        </summary>
+        <FeeSchedule broker={b} />
+      </details>
+    </Section>
   );
 }
 
@@ -740,7 +663,7 @@ function FeeSchedule({ broker: b }: { broker: BrokerOffer }) {
 
   return (
     <div className="mt-3">
-      <dl className="divide-y divide-[#5a4128]/10 text-sm dark:divide-white/10">
+      <dl className="divide-y divide-[#e8e0d5] text-sm dark:divide-separator">
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between gap-6 py-2.5">
             <dt className="text-foreground/55">{label}</dt>
@@ -797,26 +720,19 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
   ];
 
   return (
-    <section className="scroll-mt-24 py-10" id="platform">
-      <SectionHeading eyebrow="At a glance">The platform</SectionHeading>
-
-      {/* A ruled matrix rather than boxes: group label in the left column,
-          capabilities on the right, hairlines doing all the separating. */}
-      <div className={`mt-7 border-t ${R.hairline}`}>
+    <Section id="platform" title="The platform">
+      <div className="space-y-8">
         {groups.map((group) => {
           const items = group.items.filter(([, value]) => value != null);
 
           return (
-            <div
-              key={group.label}
-              className={`grid gap-x-10 border-b ${R.hairline} py-5 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:py-6`}
-            >
-              <h3 className={`${R.micro} pt-1`}>{group.label}</h3>
-              <ul className="mt-2.5 grid gap-x-10 sm:mt-0 sm:grid-cols-2">
+            <div key={group.label}>
+              <h3 className={R.subhead}>{group.label}</h3>
+              <ul className="mt-2 grid gap-x-10 sm:grid-cols-2">
                 {items.map(([label, value]) => (
                   <li
                     key={label}
-                    className="flex items-center justify-between gap-4 py-[7px] text-[14px]"
+                    className={`flex items-center justify-between gap-4 border-b ${R.rule} py-2 text-[14px]`}
                   >
                     <span
                       className={
@@ -848,15 +764,10 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
           );
         })}
 
-        <div className="flex items-center gap-4 py-5 sm:py-6">
-          <span
-            aria-hidden="true"
-            className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${R.brandTint} ${R.brandIcon}`}
-          >
-            <ShieldCheckIcon className="h-[22px] w-[22px]" />
-          </span>
+        <div className="flex items-start gap-3">
+          <ShieldCheckIcon className="mt-0.5 h-5 w-5 shrink-0 text-foreground/45" />
           <div className="min-w-0">
-            <p className="text-[15px] font-bold leading-snug text-foreground">
+            <p className="text-[14.5px] font-semibold leading-snug text-foreground">
               {b.trust.fscs_protected
                 ? "FSCS protected up to £85,000"
                 : "Not listed as FSCS protected"}
@@ -873,7 +784,7 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
           </div>
         </div>
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -886,7 +797,7 @@ function SourceNote({ broker: b }: { broker: BrokerOffer }) {
 
   return (
     <p className="text-xs leading-5 text-foreground/50">
-      <span className={`${R.micro} mr-1.5 inline`}>Sources</span>
+      <span className="mr-1 font-semibold text-foreground/55">Sources</span>
       {sources.map(([label, source], index) => (
         <span key={label}>
           <a
