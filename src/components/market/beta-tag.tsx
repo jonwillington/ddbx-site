@@ -72,9 +72,11 @@ export function BetaTag() {
       `}</style>
       <div
         aria-live="polite"
-        className={`absolute top-[80px] md:top-[88px] z-30 items-center gap-2 rounded-full border border-amber-300/40 bg-amber-100/85 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800/60 backdrop-blur-sm px-3.5 py-1 text-sm shadow-sm will-change-transform pointer-events-auto ${
+        className={`absolute top-[80px] md:top-[112px] z-30 items-center gap-2 rounded-full border border-amber-300/40 bg-amber-100/85 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800/60 backdrop-blur-sm px-3.5 py-1 text-sm shadow-sm will-change-transform pointer-events-auto ${
           isDesktop
-            ? "inline-flex left-[max(1rem,calc((100vw-1280px)/2+1.5rem))]"
+            ? // Nested 1rem inside the hero's framed panel (panel left edge =
+              // content column + main's md:px-6 gutter).
+              "inline-flex left-[max(2.5rem,calc((100vw-1280px)/2+2.5rem))]"
             : "flex justify-center left-4 right-4"
         }`}
         style={{

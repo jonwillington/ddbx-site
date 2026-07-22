@@ -12,12 +12,15 @@
  *  dealings the page has already loaded — the hero asks the question, the
  *  live line proves we're answering it.
  *
- *  Layout: page is wrapped in `container max-w-7xl`, so the hero uses the
- *  `w-screen left-1/2 -translate-x-1/2` break-out trick to span the full
- *  viewport edge-to-edge. Fixed `min-h` keeps the hero the same height on
- *  every market — the optional beta notice is rendered absolutely at the
- *  top so it doesn't push the headline around, and slides in instead of
- *  popping when the user navigates to a beta market. */
+ *  Layout: on mobile the backdrop uses the `w-screen left-1/2
+ *  -translate-x-1/2` break-out trick to span the viewport edge-to-edge. From
+ *  `md` up it instead stays inside the content column as a framed, rounded
+ *  panel — a lit stage clipped by a hairline border, one tonal step darker
+ *  than the page, so the section has a defined shape instead of dissolving
+ *  into the cream on every side. Fixed `min-h` keeps the hero the same
+ *  height on every market — the optional beta notice is rendered absolutely
+ *  at the top so it doesn't push the headline around, and slides in instead
+ *  of popping when the user navigates to a beta market. */
 import type { ReactNode } from "react";
 
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
@@ -241,7 +244,7 @@ export function MarketHero({
 
   return (
     <header
-      className={`relative -mt-4 md:-mt-6 min-h-[58svh] flex flex-col animate-content-in ${
+      className={`relative -mt-4 md:mt-0 min-h-[58svh] flex flex-col animate-content-in ${
         appShowcase
           ? hasRightDrawer
             ? "xl:min-h-[560px]"
@@ -294,22 +297,23 @@ export function MarketHero({
               rgba(120, 100, 80, 0.05) 80%,
               rgba(80, 65, 50, 0.10) 100%);
         }
-        /* A general wash that enters from the far (left) edge of the screen and
-           fades out past the headline, so the text stays legible over the
-           panning basemap and the map's left edge dissolves into the page.
-           Themed to match the page (cream in light, near-black in dark). */
+        /* A general wash that enters from the frame's left edge and fades out
+           past the headline, so the text stays legible over the panning
+           basemap and the map's left edge dissolves into the stage. Themed to
+           the framed panel's base tone (a step darker than the page), not the
+           page itself — the scrim only renders md+ where the frame exists. */
         .hero-left-scrim {
           background: linear-gradient(to right,
-            #f5f0e8 0%,
-            rgba(245, 240, 232, 0.97) 14%,
-            rgba(245, 240, 232, 0.55) 34%,
+            #eee6d8 0%,
+            rgba(238, 230, 216, 0.97) 14%,
+            rgba(238, 230, 216, 0.55) 34%,
             transparent 54%);
         }
         :is(.dark) .hero-left-scrim {
           background: linear-gradient(to right,
-            #15110d 0%,
-            rgba(21, 17, 13, 0.97) 14%,
-            rgba(21, 17, 13, 0.55) 34%,
+            oklch(19% 0.022 55) 0%,
+            oklch(19% 0.022 55 / 0.97) 14%,
+            oklch(19% 0.022 55 / 0.55) 34%,
             transparent 54%);
         }
         :is(.dark) .hero-spotlight {
@@ -390,14 +394,15 @@ export function MarketHero({
           corners. This wrapper is position:static so its absolute children
           still anchor to the <header> and keep their z-order relative to the
           headline. */}
-      {/* Full-bleed background breakout. The <header> itself now sits in the
-          normal content column (so it respects the page's right drawer and the
-          content never slides under it); only this layer breaks out to the full
-          viewport width via the left-1/2 / -translate-x-1/2 trick. Its own
-          overflow-hidden clips the map + disclosure pulses. */}
+      {/* Backdrop stage. Mobile breaks out to the full viewport width via the
+          left-1/2 / -translate-x-1/2 trick; from md up it becomes a framed
+          panel inside the content column — rounded, hairline-bordered, one
+          tonal step darker than the page — so the stage reads as a defined
+          instrument rather than a lit region of the page. Its own
+          overflow-hidden clips the map + disclosure pulses either way. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen overflow-hidden z-0"
+        className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen overflow-hidden z-0 md:left-0 md:right-0 md:w-auto md:translate-x-0 md:rounded-3xl md:border md:border-black/[0.08] md:bg-[#eee6d8] dark:md:border-white/[0.08] dark:md:bg-[oklch(19%_0.022_55)]"
       >
         {/* Deal-radar map — the hero's living background on app markets
             (desktop). The atmospheric fades + vignette below blend its edges
@@ -438,13 +443,15 @@ export function MarketHero({
         )}
         <div aria-hidden className="hero-vignette z-[1] pointer-events-none" />
 
-        {/* Top fade dissolves into the navbar; bottom fade passes through a
-          slightly darker tone before resolving to the page colour so the
-          table beneath reads as sitting *under* the lit stage. */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 z-[6] bg-gradient-to-b from-[#f5f0e8] dark:from-background to-transparent" />
+        {/* Mobile-only edge dissolves: the top fade melts into the navbar and
+          the bottom fade resolves into the page colour, since the mobile
+          stage is full-bleed with no frame of its own. From md up the framed
+          panel's border IS the edge, so these fades switch off — a crisp
+          boundary is the point of the frame. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 z-[6] bg-gradient-to-b from-[#f5f0e8] dark:from-background to-transparent md:hidden" />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] dark:hidden"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] dark:hidden md:hidden"
           style={{
             background:
               "linear-gradient(to top, #f5f0e8 0%, rgba(245,240,232,0.94) 20%, rgba(245,240,232,0.58) 48%, rgba(245,240,232,0) 82%)",
@@ -452,7 +459,7 @@ export function MarketHero({
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] hidden dark:block"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[6] hidden dark:block dark:md:hidden"
           style={{
             background:
               "linear-gradient(to top, var(--color-background, #15110d) 0%, rgba(21,17,13,0.85) 32%, rgba(21,17,13,0.4) 60%, transparent 100%)",
@@ -502,7 +509,7 @@ export function MarketHero({
       </div>
 
       <div
-        className={`relative z-10 flex-1 flex flex-col px-4 md:py-16 ${
+        className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 ${
           hasTopNotice ? "pt-16 pb-6" : "py-6"
         }`}
       >
