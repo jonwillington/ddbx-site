@@ -30,12 +30,48 @@
   --color-negative: var(--negative);
 }
 
+/* ─── Warm light theme ───────────────────────────────────────────────────────
+   Light mode ran on HeroUI's stock tokens, which are COLD greys (hue ≈286):
+   muted text at L55 cool-grey on the warm beige page, cold hairlines at
+   L90-92 that vanish on #f5f0e8, and a cold-cast ink that goes grey the
+   moment any /55-/85 opacity modifier touches it. Cool mid-greys over warm
+   cream is exactly the "washed out" recipe.
+
+   Reference point: anthropic.com's ivory palette — page #f0eee6, ink
+   #141413 at FULL strength, muted #87867f used sparingly, hairlines
+   visible (#b0aea5), one saturated accent. The richness comes from warm-
+   NEUTRAL greys + decisive ink + real value steps, not from lighter tints.
+
+   So: same hue family as the dark theme (55-78), chroma kept low so it
+   reads neutral-warm rather than brown, ink darkened and warmed, muted
+   dropped ~7L and warmed, hairlines darkened into visibility. Unlayered,
+   so these win over heroui/variables.css exactly like the .dark block. */
 :root {
   /* Enables light-dark() (see deltaStyle in market-utils.ts) and gives UA
      chrome — scrollbars, form controls — the right scheme per mode. */
   color-scheme: light;
   --positive: oklch(45% 0.13 145);
   --negative: oklch(44% 0.145 25);
+
+  --foreground:         oklch(20% 0.010 65);  /* warm near-black ink       */
+  --surface-foreground: oklch(20% 0.010 65);
+  --overlay-foreground: oklch(20% 0.010 65);
+  --default-foreground: oklch(20% 0.010 65);
+
+  --muted:              oklch(46% 0.022 65);  /* warm taupe, was cold L55  */
+
+  /* Drawer/modal panels read --background: warm ivory, not stock near-white
+     cold grey, so overlays sit in the same family as the page. */
+  --background:         oklch(96.5% 0.010 78);
+
+  /* Chip fills / secondary surfaces — warmed from the stock cold greys. */
+  --surface-secondary:  oklch(94% 0.008 78);
+  --surface-tertiary:   oklch(92% 0.009 78);
+  --default:            oklch(94% 0.008 78);
+
+  --border:             oklch(84% 0.014 70);  /* hairlines into visibility */
+  --separator:          oklch(88% 0.012 70);
+  --scrollbar:          oklch(80% 0.014 70);
 }
 
 body {
