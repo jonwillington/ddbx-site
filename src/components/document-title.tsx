@@ -26,7 +26,12 @@ export function DocumentTitle() {
       ) {
         return `${siteConfig.brand} · Director (${market.label}) — ${siteConfig.name}`;
       }
-      if (pathname === "/compare" || pathname.startsWith("/brokers")) {
+      if (pathname.startsWith("/brokers/")) {
+        const broker = titleCase(pathname.split("/").filter(Boolean).at(-1) ?? "");
+
+        return `${broker} review — fees, accounts & verdict — ${siteConfig.name}`;
+      }
+      if (pathname === "/compare" || pathname === "/brokers") {
         return `Compare UK trading platforms — fees, ISAs & SIPPs — ${siteConfig.name}`;
       }
       // App-install landing pages (/download, /us/download) — conversion copy,
@@ -50,7 +55,14 @@ export function DocumentTitle() {
         ) {
           return `${market.label} director profile with dealing history and signal context on ddbx.`;
         }
-        if (pathname === "/compare" || pathname.startsWith("/brokers")) {
+        if (pathname.startsWith("/brokers/")) {
+          const broker = titleCase(
+            pathname.split("/").filter(Boolean).at(-1) ?? "",
+          );
+
+          return `${broker} review: our verdict on its fees, ISA and SIPP accounts, investment range, features and FSCS protection.`;
+        }
+        if (pathname === "/compare" || pathname === "/brokers") {
           return "Compare the UK’s main trading and investing platforms side by side — fees, ISAs, SIPPs, fractional shares and FSCS protection.";
         }
         if (pathname.endsWith("/download")) {
@@ -88,6 +100,14 @@ export function DocumentTitle() {
   }, [pathname, search, hash]);
 
   return null;
+}
+
+function titleCase(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function setMeta(
