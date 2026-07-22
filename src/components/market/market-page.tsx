@@ -1544,6 +1544,7 @@ export function MarketPage<W>({
         DetailPosition={config.DetailPosition}
         DummyDetailBody={config.DummyDetailBody}
         allDealings={dealings}
+        appHref={channelAppHref}
         dealing={selectedDealing}
         detailFields={config.detailFields}
         fmt={config.priceFormat}

@@ -18,6 +18,42 @@ import { ChamberChip } from "@/components/chamber-chip";
 import { RecentBuysSection } from "@/components/market/recent-buys-section";
 import { InsiderAvatar } from "@/components/market/market-row";
 import { useMediaQuery } from "@/lib/use-media-query";
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+
+/** Warm-tint notice bracketing the freebie article: the reader is told
+ *  they're spending today's one free analysis, with the app as the way to
+ *  read the rest. Rendered twice — top of the article and again after the
+ *  body — so the nudge is there both on open and at read-out. */
+function FreeAnalysisNotice({
+  appHref,
+  position,
+}: {
+  appHref: string;
+  position: "top" | "bottom";
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-[#d8d0c6] bg-[#f4eee6] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-[#5a4128] dark:text-[#c9b49f]">
+          You're using your one free analysis for today
+        </p>
+        <p className="mt-0.5 text-xs leading-relaxed text-[#7a634b] dark:text-[#ad9479]">
+          The app has every analysis, every day.
+        </p>
+      </div>
+      <a
+        className={`${BUTTON_RADIUS} ${BUTTON_FILLED} inline-flex shrink-0 items-center justify-center px-4 py-2.5 text-sm font-semibold transition-colors`}
+        data-ga-event="cta_freebie_download"
+        data-ga-label={`Freebie notice download (${position})`}
+        href={appHref}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Download the app
+      </a>
+    </div>
+  );
+}
 
 /** Deal detail drawer used by every market. Built on vaul so it slides in
  *  from the right as a side panel on md+ and rises as a drag-to-dismiss
@@ -39,6 +75,7 @@ export function MarketDetailDrawer<W>({
   gating,
   DummyDetailBody,
   AnalysisOverlay,
+  appHref,
   showLogo = true,
   formatTickerDisplay,
   insiderLabel = "Insider",
@@ -68,6 +105,9 @@ export function MarketDetailDrawer<W>({
     allDealings?: MarketDealing<W>[];
   }>;
   AnalysisOverlay?: ComponentType;
+  /** App Store listing for the current market. When set and the reader is
+   *  spending their daily freebie, FreeAnalysisNotice brackets the article. */
+  appHref?: string;
   /** Mirror of the row prop — when false, the header + body logo bubbles
    *  are suppressed. Wired from MarketConfig.enableLogos. Default true. */
   showLogo?: boolean;
@@ -175,6 +215,9 @@ export function MarketDetailDrawer<W>({
   const gated =
     gating?.enabled === true && !!active && !gating.hasFullAccess(active.id);
   const BodyComponent = gated && DummyDetailBody ? DummyDetailBody : DetailBody;
+  // The unlocked view IS the daily freebie whenever gating is live — tell the
+  // reader so, at the top and again at the foot of the article.
+  const showFreebieNotice = gating?.enabled === true && !gated && !!appHref;
   const leadWithBody = !!active && !active.rating;
 
   const rawTicker = active?.ticker || "—";
@@ -305,6 +348,10 @@ export function MarketDetailDrawer<W>({
                       ref={contentRef}
                       className="px-5 pb-5 pt-1 md:px-8 md:pb-8 md:pt-2 space-y-6"
                     >
+                      {showFreebieNotice && (
+                        <FreeAnalysisNotice appHref={appHref!} position="top" />
+                      )}
+
                       {/* Company on top, the person who made the buy beneath,
                         tied together by an org-chart connector so the header
                         reads "this purchase was made by this person". */}
@@ -471,6 +518,13 @@ export function MarketDetailDrawer<W>({
                         <BodyComponent
                           allDealings={allDealings}
                           dealing={active}
+                        />
+                      )}
+
+                      {showFreebieNotice && (
+                        <FreeAnalysisNotice
+                          appHref={appHref!}
+                          position="bottom"
                         />
                       )}
                     </div>
