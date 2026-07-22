@@ -15,6 +15,7 @@ import {
 import { compareDealingImportance } from "./market-utils";
 
 import { CompanyLogo } from "@/components/company-logo";
+import { useMediaQuery } from "@/lib/use-media-query";
 import { RatingBadge } from "@/components/rating-badge";
 import { Skeleton } from "@/components/skeleton";
 import { CommentCountChip } from "@/components/comment-count-chip";
@@ -541,6 +542,12 @@ function MobilePinnedTodayDeck<W>({
 }) {
   const n = dealings.length;
   const reduced = useReducedMotion();
+  // The deck only exists below lg (the wrapper is lg:hidden). Without this
+  // gate the scroll/measure effects stayed live after a resize up to desktop
+  // — cardH kept its stale value, the hidden track measured as all-zero
+  // rects, and snap() then "corrected" the page ~64px upward on every scroll
+  // pause, scrubbing the user back to the top.
+  const deckVisible = useMediaQuery("(max-width: 1023.98px)");
   const trackRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const deckRef = useRef<HTMLDivElement | null>(null);
@@ -564,7 +571,7 @@ function MobilePinnedTodayDeck<W>({
   // and whenever a card reflows (text wrap at a new width). Each cardRef wraps
   // a TodayDeckCard whose root element carries the real (content) height.
   useLayoutEffect(() => {
-    if (reduced || n === 0) return;
+    if (reduced || n === 0 || !deckVisible) return;
 
     const measure = () => {
       setViewportH(window.innerHeight);
@@ -593,14 +600,14 @@ function MobilePinnedTodayDeck<W>({
       ro.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [reduced, n, dealings]);
+  }, [reduced, n, dealings, deckVisible]);
 
   // Scroll-scrub the deck. `progress` is measured in cards (0 → n-1): how far
   // the front of the stack has advanced. Each card's distance from the front
   // (`d`) maps to a transform — positive `d` waits behind, negative `d` is
   // being dealt away above.
   useEffect(() => {
-    if (reduced || n === 0 || cardH === 0) return;
+    if (reduced || n === 0 || cardH === 0 || !deckVisible) return;
 
     let raf = 0;
     const stepNow = step;
@@ -611,6 +618,10 @@ function MobilePinnedTodayDeck<W>({
 
       if (!track) return;
       const rect = track.getBoundingClientRect();
+
+      // Hidden track (mid-resize, before the effect tears down) measures as
+      // an all-zero rect — bail rather than scrub from garbage geometry.
+      if (rect.width === 0) return;
       // A departing card lifts up off the bottom-pinned stage into the lit gap
       // and dissolves — roughly half the viewport of travel.
       const exit = window.innerHeight * 0.55;
@@ -732,6 +743,8 @@ function MobilePinnedTodayDeck<W>({
 
       if (!track) return;
       const rect = track.getBoundingClientRect();
+
+      if (rect.width === 0) return;
       const raw = (STAGE_TOP_PX - rect.top) / stepNow;
 
       // Only while genuinely mid-deck — let the user enter/leave the ends free.
@@ -761,7 +774,7 @@ function MobilePinnedTodayDeck<W>({
       clearTimeout(idle);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [n, reduced, cardH, step]);
+  }, [n, reduced, cardH, step, deckVisible]);
 
   if (n === 0) return null;
 
