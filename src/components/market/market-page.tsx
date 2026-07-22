@@ -1401,6 +1401,15 @@ export function MarketPage<W>({
                                   variant="rail"
                                   weekday={day.weekday}
                                 />
+                                {/* Below xl the date sits above the card on
+                                    the well, mirroring the desktop rail, so
+                                    the scroll reads as a dated timeline. */}
+                                <MarketDayHeader
+                                  day={day.day}
+                                  isoDate={day.key}
+                                  locale={config.locale}
+                                  weekday={day.weekday}
+                                />
                                 <div
                                   className={`rounded-xl overflow-hidden bg-white dark:bg-surface-secondary ${
                                     isIntroDay
@@ -1408,12 +1417,6 @@ export function MarketPage<W>({
                                       : "divide-y divide-black/[0.06] dark:divide-separator"
                                   }`}
                                 >
-                                  <MarketDayHeader
-                                    day={day.day}
-                                    isoDate={day.key}
-                                    locale={config.locale}
-                                    weekday={day.weekday}
-                                  />
                                   {config.id === "uk" &&
                                     !collapsed &&
                                     dailySummaries.get(day.key) && (

@@ -132,8 +132,10 @@ export function MarketRowHeader({
 
 /** Date marker rendered for each day inside an open month. At wide desktop
  *  widths `variant="rail"` sits in a dedicated gutter to the left of the day
- *  card; the default inline variant remains inside the card below `xl`, where
- *  the table cannot spare another column. */
+ *  card. Below `xl` the default inline variant sits ABOVE the day card on the
+ *  well background — same big-ordinal typography as the rail, laid
+ *  horizontally with a hairline running to the right edge, so the scroll
+ *  still reads as a dated timeline where the table can't spare a gutter. */
 export function MarketDayHeader({
   weekday,
   day,
@@ -153,14 +155,22 @@ export function MarketDayHeader({
     : "";
   const ordinalMatch = day.match(/^(\d+)(st|nd|rd|th)$/i);
 
-  const dateLine = (
-    <span className="flex items-center gap-3 min-w-0">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/55 shrink-0">
-        {weekday}
-      </span>
-      <span className="text-xs font-semibold text-foreground/80 tabular-nums shrink-0">
-        {day} {monthLabel}
-      </span>
+  const bigDay = (
+    <span
+      className={`block font-semibold leading-none tabular-nums text-foreground/90 ${
+        variant === "rail" ? "mt-1 text-xl" : "text-lg"
+      }`}
+    >
+      {ordinalMatch ? (
+        <>
+          {ordinalMatch[1]}
+          <sup className="ml-px align-super text-[10px] font-semibold leading-none">
+            {ordinalMatch[2]}
+          </sup>
+        </>
+      ) : (
+        day
+      )}
     </span>
   );
 
@@ -171,36 +181,21 @@ export function MarketDayHeader({
           <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-foreground/55">
             {weekday}
           </span>
-          <span className="mt-1 block text-xl font-semibold leading-none tabular-nums text-foreground/90">
-            {ordinalMatch ? (
-              <>
-                {ordinalMatch[1]}
-                <sup className="ml-px align-super text-[10px] font-semibold leading-none">
-                  {ordinalMatch[2]}
-                </sup>
-              </>
-            ) : (
-              day
-            )}
-          </span>
+          {bigDay}
         </time>
       </div>
     );
   }
 
   return (
-    <div className="bg-black/[0.04] dark:bg-white/[0.05] xl:hidden">
-      {/* Mobile — flush left */}
-      <div className="md:hidden flex items-center gap-3 px-4 py-1.5">
-        {dateLine}
-      </div>
-      {/* Desktop — date aligns with the avatar column in the row below */}
-      <div className="hidden md:flex items-stretch">
-        <div className="w-20 shrink-0" />
-        <div className="flex-1 min-w-0 px-3 py-1.5 flex items-center">
-          {dateLine}
-        </div>
-      </div>
+    <div className="mb-2 flex items-center gap-3 px-1 xl:hidden">
+      <time className="flex items-baseline gap-2" dateTime={isoDate}>
+        {bigDay}
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/55">
+          {weekday} · {monthLabel}
+        </span>
+      </time>
+      <span aria-hidden className="h-px flex-1 bg-foreground/10" />
     </div>
   );
 }
