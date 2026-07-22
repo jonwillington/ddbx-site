@@ -84,6 +84,13 @@ const SEK_FORMAT: PriceFormat = {
       currency: "SEK",
       maximumFractionDigits: 0,
     }).format(n),
+  formatValueCompact: (n) =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "SEK",
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(n),
   quoteToValue: 1,
   valueColumnClass: "w-32",
 };
@@ -275,6 +282,7 @@ export function groupRows(rows: EuDealing[]): EuRowGroup[] {
  *  is representative of the whole group on these dimensions. */
 function isCleanBuyGroup(g: EuRowGroup): boolean {
   const d = g.primary;
+
   if (!d || !d.reporter) return false;
   const t = translateNature(d.nature).tone;
 
@@ -360,6 +368,7 @@ function SwedenRowActionCell({
   // Group keys carry PCA / programme / amendment, so reading the primary
   // leg's flags is representative of the entire group.
   const d = dealing.raw.primary;
+
   if (!d || !d.reporter) return null;
   const chips: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
@@ -410,6 +419,7 @@ function fmtNativePrice(n: number | null, ccy: string): string {
 function SwedenDetailBody({ dealing }: { dealing: MarketDealing<EuRowGroup> }) {
   const g = dealing.raw;
   const d = g.primary;
+
   if (!d || !d.reporter) return null;
   const flags: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
@@ -565,12 +575,12 @@ function useSwedenGating(): GatingInfo {
 
 const SwedenAnalysisOverlay = () => (
   <BlurredAnalysisOverlay
-    body="You've used today's free web unlock. Open the app for full analysis on every Swedish filing."
     benefits={[
       "Full AI thesis and risk breakdown on each PDMR buy",
       "Deeper context behind the filing and instrument",
       "Follow new insider disclosures as they arrive",
     ]}
+    body="You've used today's free web unlock. Open the app for full analysis on every Swedish filing."
   />
 );
 

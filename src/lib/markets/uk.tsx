@@ -62,6 +62,13 @@ const GBP_FORMAT: PriceFormat = {
       currency: "GBP",
       maximumFractionDigits: 0,
     }).format(n),
+  formatValueCompact: (n) =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "GBP",
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(n),
   quoteToValue: 0.01,
 };
 

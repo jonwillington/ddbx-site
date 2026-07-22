@@ -93,6 +93,13 @@ const USD_FORMAT: PriceFormat = {
       currency: "USD",
       maximumFractionDigits: 0,
     }).format(n),
+  formatValueCompact: (n) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(n),
   quoteToValue: 1,
 };
 

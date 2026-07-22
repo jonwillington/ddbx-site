@@ -61,6 +61,7 @@ import {
 } from "./market-utils";
 
 import { BrokerReviewsPromo } from "@/components/brokers/broker-reviews-promo";
+import { CollapsedDayTeaser } from "@/components/discretion/collapsed-day-teaser";
 import { Tooltip } from "@/components/tooltip";
 import {
   monthShort,
@@ -911,27 +912,35 @@ export function MarketPage<W>({
     [chartMode, stockEntry, stockCurrent, benchmarkEntry, benchmarkCurrent],
   );
 
+  // Trade-anchor return for one dealing — the server snapshot first (renders
+  // without a price fetch, and matches what the app shows), the client
+  // computation as the fallback. Shared by the by-gain ordering and the
+  // collapsed-day teaser's "up +X%" headline so the two can't disagree.
+  const returnPctOf = useCallback(
+    (d: MarketDealing<W>): number | null => {
+      const snapshot = d.livePerformance?.return_pct_trade ?? null;
+
+      if (snapshot != null) return snapshot;
+      const current = stockCurrent(d.ticker);
+
+      if (d.entryPrice == null || current == null || d.entryPrice <= 0)
+        return null;
+
+      return ((current - d.entryPrice) / d.entryPrice) * 100;
+    },
+    [stockCurrent],
+  );
+
   const byGain = useMemo(() => {
     return filteredDealings
       .map((d) => {
-        // Prefer the server snapshot's trade-anchor return (the "gain since the
-        // buy" this view ranks by) so the list orders + renders without a price
-        // fetch; fall back to the client computation for uncached rows.
-        let pct = d.livePerformance?.return_pct_trade ?? null;
+        const pct = returnPctOf(d);
 
-        if (pct == null) {
-          const current = stockCurrent(d.ticker);
-
-          if (d.entryPrice == null || current == null || d.entryPrice <= 0)
-            return null;
-          pct = ((current - d.entryPrice) / d.entryPrice) * 100;
-        }
-
-        return { dealing: d, pct };
+        return pct == null ? null : { dealing: d, pct };
       })
       .filter((x): x is { dealing: MarketDealing<W>; pct: number } => x != null)
       .sort((a, b) => b.pct - a.pct);
-  }, [filteredDealings, stockCurrent]);
+  }, [filteredDealings, returnPctOf]);
 
   // Past-month best performers — feeds the right half of the Today
   // section when today has no filings (weekends, holidays, quiet days).
@@ -1636,38 +1645,21 @@ export function MarketPage<W>({
                                     />
                                   )}
                                 {collapsed ? (
-                                  // Older day under discretion: show the single
-                                  // most notable deal (suggested ranks first),
-                                  // then nudge the rest into the app.
-                                  <>
-                                    {collapsedDeals[0] &&
-                                      renderDayRow(collapsedDeals[0])}
-                                    {collapsedDeals.length > 1 && (
-                                      <a
-                                        aria-label={`${collapsedDeals.length - 1} more ${
-                                          config.clusterByPerson
-                                            ? "trades"
-                                            : "deals"
-                                        } recorded on this day — view in the app`}
-                                        className="flex items-center justify-center gap-1 px-4 py-2.5 text-[12px] font-medium text-[#5a4128] transition-colors hover:bg-[#5a4128]/[0.05] dark:text-[#ad9479] dark:hover:bg-[#ad9479]/[0.06]"
-                                        data-ga-event="cta_collapsed_day_view_in_app"
-                                        data-ga-label={`${collapsedDeals.length - 1} more ${
-                                          config.clusterByPerson
-                                            ? "trades"
-                                            : "deals"
-                                        }`}
-                                        href={channelAppHref}
-                                        rel="noreferrer"
-                                        target="_blank"
-                                      >
-                                        + {collapsedDeals.length - 1} more{" "}
-                                        {config.clusterByPerson
-                                          ? "trades"
-                                          : "deals"}
-                                        ...
-                                      </a>
-                                    )}
-                                  </>
+                                  // Older day under discretion: no real rows —
+                                  // an avatar-group teaser card with one smart
+                                  // headline (best gain → value → signal →
+                                  // quantity) that links to the app.
+                                  <CollapsedDayTeaser
+                                    appHref={channelAppHref}
+                                    deals={collapsedDeals}
+                                    fmt={config.priceFormat}
+                                    isSignal={
+                                      config.isSignal ?? isSignalDealing
+                                    }
+                                    returnPctOf={returnPctOf}
+                                    showLogo={logosEnabled}
+                                    variant={dayIdx % 2}
+                                  />
                                 ) : config.clusterByPerson ? (
                                   // Person-grouped markets (Congress): fold the
                                   // WHOLE day — suggested + skipped — into one

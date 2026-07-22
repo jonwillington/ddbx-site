@@ -88,6 +88,13 @@ const EUR_FORMAT: PriceFormat = {
       currency: "EUR",
       maximumFractionDigits: 0,
     }).format(n),
+  formatValueCompact: (n) =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "EUR",
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(n),
   quoteToValue: 1,
   valueColumnClass: "w-32",
 };
@@ -200,6 +207,7 @@ function translateRole(role: string | undefined): string | undefined {
  *  logic stays uniform. */
 function isCleanBuyGroup(g: EuRowGroup): boolean {
   const d = g.primary;
+
   if (!d || !d.reporter) return false;
   const t = translateNature(d.nature).tone;
 
@@ -272,6 +280,7 @@ function NetherlandsRowActionCell({
   dealing: MarketDealing<EuRowGroup>;
 }) {
   const d = dealing.raw.primary;
+
   if (!d || !d.reporter) return null;
   const chips: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
@@ -331,6 +340,7 @@ function NetherlandsDetailBody({
 }) {
   const g = dealing.raw;
   const d = g.primary;
+
   if (!d || !d.reporter) return null;
   const flags: Array<{ label: string; tone: "weak" | "neutral" }> = [];
 
@@ -476,12 +486,12 @@ function useNetherlandsGating(): GatingInfo {
 
 const NetherlandsAnalysisOverlay = () => (
   <BlurredAnalysisOverlay
-    body="You've used today's free web unlock. Open the app for full analysis on every Dutch filing."
     benefits={[
       "Full AI thesis and risk breakdown on each PDMR buy",
       "Review filing details with cleaner context",
       "Follow fresh insider disclosures as they land",
     ]}
+    body="You've used today's free web unlock. Open the app for full analysis on every Dutch filing."
   />
 );
 
@@ -533,7 +543,8 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   benchmarkTicker: "^AEX",
   benchmarkLabel: "AEX",
   columnHelp: {
-    disclosed: "Date the transaction was published in the AFM insider register.",
+    disclosed:
+      "Date the transaction was published in the AFM insider register.",
     company: "The company and the PDMR (insider) who dealt in its shares.",
     value: "Approximate value of the transaction in EUR.",
     performance:

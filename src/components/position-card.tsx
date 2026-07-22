@@ -4,6 +4,10 @@
 export interface PriceFormat {
   formatPrice: (n: number) => string;
   formatValue: (n: number) => string;
+  /** Compact headline variant of formatValue ("£2.1M", not "£2,067,389") for
+   *  marketing surfaces like the discretion teaser. Falls back to formatValue
+   *  when a market omits it. */
+  formatValueCompact?: (n: number) => string;
   quoteToValue: number;
   /** Optional Tailwind width class for the Value column in market row tables.
    *  Defaults to `w-24` when omitted; SEK widens it to fit the currency prefix
