@@ -1,0 +1,24 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "uk.ddbx.app",
+      "sha256_cert_fingerprints": [
+        "93:EE:47:BA:93:4F:11:B4:AD:24:8B:38:68:9F:C1:E7:83:C8:DC:EA:23:67:4B:8B:5B:E1:3D:7A:C9:00:EF:AD",
+        "11:93:F9:23:BD:88:23:32:99:6D:80:19:04:8D:55:5F:A3:B9:68:83:6E:1D:80:13:AE:14:22:CA:7B:39:7E:84"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "us.ddbx.app",
+      "sha256_cert_fingerprints": [
+        "93:EE:47:BA:93:4F:11:B4:AD:24:8B:38:68:9F:C1:E7:83:C8:DC:EA:23:67:4B:8B:5B:E1:3D:7A:C9:00:EF:AD",
+        "11:93:F9:23:BD:88:23:32:99:6D:80:19:04:8D:55:5F:A3:B9:68:83:6E:1D:80:13:AE:14:22:CA:7B:39:7E:84"
+      ]
+    }
+  }
+]
