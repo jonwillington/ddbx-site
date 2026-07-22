@@ -1445,6 +1445,7 @@ export function MarketPage<W>({
                                       isSignal={
                                         config.isSignal ?? isSignalDealing
                                       }
+                                      locale={config.locale}
                                       returnPctOf={returnPctOf}
                                       showLogo={logosEnabled}
                                       variant={dayIdx % 2}

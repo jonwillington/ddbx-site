@@ -1,7 +1,11 @@
 import type { PriceFormat } from "@/components/position-card";
 import type { MarketDealing } from "@/lib/markets/types";
 
+import { useState } from "react";
+
 import { CompanyLogo } from "@/components/company-logo";
+import { DayUnlockSheet } from "@/components/discretion/day-unlock-sheet";
+import { useMediaQuery } from "@/lib/use-media-query";
 
 /** What a collapsed day leads with. Picked by `pickDayTeaser`'s priority
  *  ladder: a winning trade beats money moved beats signal count beats raw
@@ -74,6 +78,7 @@ export function CollapsedDayTeaser<W>({
   returnPctOf,
   showLogo = true,
   variant = 0,
+  locale = "en-GB",
 }: {
   deals: MarketDealing<W>[];
   appHref: string;
@@ -82,8 +87,15 @@ export function CollapsedDayTeaser<W>({
   returnPctOf: (d: MarketDealing<W>) => number | null;
   showLogo?: boolean;
   variant?: number;
+  /** Formats the day-unlock sheet's date line. */
+  locale?: string;
 }) {
   const teaser = pickDayTeaser(deals, { isSignal, returnPctOf });
+  // Mobile taps open an explainer sheet (what this day holds, why it's
+  // app-only) instead of bouncing cold to the App Store; md+ keeps the
+  // direct link, where hover already previews the destination.
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // Avatar group: unique companies, the most interesting first (signal buys,
   // then other buys, then the rest), capped with a "+N" chip.
@@ -235,19 +247,59 @@ export function CollapsedDayTeaser<W>({
     </span>
   );
 
+  const ariaLabel = `${deals.length} ${deals.length === 1 ? "filing" : "filings"} recorded on this day — view in the app`;
+  const rowClass =
+    "group flex w-full items-center gap-4 px-4 py-5 text-left transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]";
+
+  if (isDesktop) {
+    return (
+      <a
+        aria-label={ariaLabel}
+        className={rowClass}
+        data-ga-event="cta_collapsed_day_view_in_app"
+        data-ga-label={`${teaser.kind} · ${deals.length} deals`}
+        href={appHref}
+        rel="noreferrer"
+        target="_blank"
+      >
+        {text}
+        {cta}
+        {stack}
+      </a>
+    );
+  }
+
+  const isoDay = deals[0]?.disclosedDate?.slice(0, 10);
+  const dateLabel = isoDay
+    ? new Date(`${isoDay}T00:00:00Z`).toLocaleDateString(locale, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: "UTC",
+      })
+    : "This day";
+
   return (
-    <a
-      aria-label={`${deals.length} ${deals.length === 1 ? "filing" : "filings"} recorded on this day — view in the app`}
-      className="group flex items-center gap-4 px-4 py-5 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
-      data-ga-event="cta_collapsed_day_view_in_app"
-      data-ga-label={`${teaser.kind} · ${deals.length} deals`}
-      href={appHref}
-      rel="noreferrer"
-      target="_blank"
-    >
-      {text}
-      {cta}
-      {stack}
-    </a>
+    <>
+      <button
+        aria-label={ariaLabel}
+        className={rowClass}
+        data-ga-event="cta_collapsed_day_open_sheet"
+        data-ga-label={`${teaser.kind} · ${deals.length} deals`}
+        type="button"
+        onClick={() => setSheetOpen(true)}
+      >
+        {text}
+        {stack}
+      </button>
+      <DayUnlockSheet
+        appHref={appHref}
+        dateLabel={dateLabel}
+        dealCount={deals.length}
+        open={sheetOpen}
+        tickers={uniqueTickers}
+        onClose={() => setSheetOpen(false)}
+      />
+    </>
   );
 }

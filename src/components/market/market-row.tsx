@@ -413,29 +413,6 @@ function formatCompactValue(value: number, fmt: PriceFormat): string {
   return `${value < 0 ? "-" : ""}${prefix}${compact}${suffix}`;
 }
 
-function MobileFact({
-  label,
-  value,
-  valueClassName = "",
-}: {
-  label: string;
-  value: string;
-  valueClassName?: string;
-}) {
-  return (
-    <div className="rounded-xl bg-black/[0.04] dark:bg-white/[0.06] px-3 py-2.5">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-        {label}
-      </div>
-      <div
-        className={`mt-1 text-[15px] font-semibold tabular-nums leading-tight ${valueClassName}`}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
 interface MarketRowProps<W> {
   dealing: MarketDealing<W>;
   selected: boolean;
@@ -887,25 +864,7 @@ export function MarketRow<W>({
     dealing.value != null ? fmt.formatValue(dealing.value) : "—";
   const compactValueLabel =
     dealing.value != null ? formatCompactValue(dealing.value, fmt) : "—";
-  const mobileDateLabel = tradeDiffers
-    ? `Filed ${shortDate(dealing.disclosedDate, locale)} (Trade ${shortDate(dealing.tradeDate, locale)})`
-    : `Filed ${shortDate(dealing.disclosedDate, locale)}`;
-  const performanceLabel =
-    metricPct != null
-      ? `${metricPct >= 0 ? "+" : ""}${metricPct.toFixed(1)}${showAlpha ? "pp" : "%"}`
-      : "No data yet";
-  const performanceClass =
-    metricPct == null
-      ? "text-muted/70"
-      : metricPct >= 0
-        ? "text-[#1e6b18] dark:text-[#5cd84a]"
-        : "text-[#8b2020] dark:text-[#e84d4d]";
   const commentCount = commentCountFor(dealing);
-  const ratedLabel = dealing.rating && dealing.isPurchase ? "Rated" : "Unrated";
-  const ratedClass =
-    dealing.rating && dealing.isPurchase
-      ? "text-[#1e6b18] dark:text-[#5cd84a]"
-      : "text-muted/80";
 
   return (
     <button
@@ -916,54 +875,22 @@ export function MarketRow<W>({
       onClick={onSelect}
     >
       {/* ── Mobile (<md) ──
-          Flat rows separated by the day/section container's divider — no
-          per-deal card box, so the surrounding container is the single box
-          (avoids the box-in-a-box look). */}
-      <div className="md:hidden px-4 py-3.5 space-y-3">
-        <div className="text-[10px] font-medium text-foreground/55">
-          {mobileDateLabel}
-        </div>
-        <div className="flex items-start gap-3">
-          {indent && <div aria-hidden className="w-4 shrink-0" />}
-          {showLogo && (
-            <CompanyLogo className="mt-0.5" size={38} ticker={rawTicker} />
-          )}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span
-                className={`${chip("md")} shrink-0 text-[#5a4128] dark:text-foreground/75 bg-[#e8e0d5] dark:bg-surface-secondary`}
-              >
-                {ticker}
-              </span>
-              <CommentCountChip count={commentCount} />
-              <span className="text-[17px] font-semibold truncate leading-tight">
-                {company}
-              </span>
-            </div>
-            {!hideInsider && insiderLine && (
-              <div className="mt-1 text-[12px] text-muted truncate">
-                {insiderLine}
-              </div>
-            )}
-          </div>
-        </div>
-        <div
-          className={`grid gap-2 ${DISCRETION_ENABLED ? "grid-cols-2" : "grid-cols-3"}`}
-        >
-          <MobileFact label="Purchase" value={compactValueLabel} />
-          <MobileFact
-            label="Performance"
-            value={performanceLabel}
-            valueClassName={performanceClass}
-          />
-          {!DISCRETION_ENABLED && (
-            <MobileFact
-              label="Rated"
-              value={ratedLabel}
-              valueClassName={ratedClass}
-            />
-          )}
-        </div>
+          One dense line: logo · company · comment count · what they paid.
+          The story a phone scroller needs is just "directors bought these
+          on this day, this big" — the day header above the card carries the
+          date, and the drawer carries insider, ticker, performance and the
+          rest. (Performance is deliberately absent: recent deals are always
+          a noisy ~0%, so leading with it undersold every fresh day.) */}
+      <div className="md:hidden px-3.5 py-2.5 flex items-center gap-2.5">
+        {indent && <div aria-hidden className="w-4 shrink-0" />}
+        {showLogo && <CompanyLogo size={28} ticker={rawTicker} />}
+        <span className="flex-1 min-w-0 truncate text-[15px] font-semibold leading-tight">
+          {company}
+        </span>
+        <CommentCountChip count={commentCount} />
+        <span className="shrink-0 text-[15px] font-semibold tabular-nums">
+          {compactValueLabel}
+        </span>
       </div>
 
       {/* ── Desktop (md+) ── */}
