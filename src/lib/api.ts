@@ -101,6 +101,14 @@ export const api = {
     get<{ dealings: Dealing[] }>(
       rating ? `/dealings?rating=${rating}` : "/dealings",
     ).then((r) => r.dealings),
+  /** Windowed history walk — `since` is an inclusive ISO YYYY-MM-DD lower
+   *  bound on disclosed_date; the worker honours `limit` up to 1000 (the
+   *  no-param default is 200, ~a month of UK flow). Feeds surfaces that need
+   *  more history than the default list, e.g. the channel's 90-day backtest. */
+  dealingsWindow: (since: string, limit = 1000) =>
+    get<{ dealings: Dealing[] }>(
+      `/dealings?since=${since}&limit=${limit}`,
+    ).then((r) => r.dealings),
   dealing: (id: string) => get<Dealing>(`/dealings/${id}`),
   portfolio: (fy?: number) =>
     get<Portfolio>(fy != null ? `/portfolio?fy=${fy}` : `/portfolio`),

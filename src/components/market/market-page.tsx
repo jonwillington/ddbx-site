@@ -228,14 +228,53 @@ export function MarketPage<W>({
   const hasNewsSource = !!config.fetchNews;
 
   /** Condensed performance stats for the right-hand channel's Performance tab.
-   *  Computed straight from the dealings already in memory (each carries a
-   *  server-precomputed livePerformance), so the channel needs no extra fetch.
-   *  Only built for markets that ship the backtest. */
+   *  Markets with a `fetchChannelDealings` get the full 90-day backtest window
+   *  (the page's own dealings only reach back ~a month); the tab shows its
+   *  skeleton until that fetch lands and only falls back to the in-memory
+   *  dealings if it fails. Markets without the fetch use the old in-memory
+   *  path directly. */
   const supportsChannelPerf = !!config.supportsChannelPerformance;
-  const channelPerformance = useMemo(
-    () => (supportsChannelPerf ? buildChannelPerformance(dealings) : undefined),
-    [supportsChannelPerf, dealings],
-  );
+  const fetchChannelDealings = config.fetchChannelDealings;
+  const [channelDealings, setChannelDealings] = useState<
+    MarketDealing<W>[] | null
+  >(null);
+  const [channelFetchFailed, setChannelFetchFailed] = useState(false);
+
+  useEffect(() => {
+    if (!supportsChannelPerf || !fetchChannelDealings) return;
+    let cancelled = false;
+
+    fetchChannelDealings()
+      .then((rows) => {
+        if (!cancelled) setChannelDealings(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setChannelFetchFailed(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [supportsChannelPerf, fetchChannelDealings]);
+
+  const channelPerformance = useMemo(() => {
+    if (!supportsChannelPerf) return undefined;
+    if (fetchChannelDealings) {
+      if (channelDealings)
+        return buildChannelPerformance(channelDealings, { assumeBuys: true });
+      // Window still loading: keep the skeleton rather than briefly showing
+      // ~30 days of numbers under a 90-day caption.
+      if (!channelFetchFailed) return undefined;
+    }
+
+    return buildChannelPerformance(dealings);
+  }, [
+    supportsChannelPerf,
+    fetchChannelDealings,
+    channelDealings,
+    channelFetchFailed,
+    dealings,
+  ]);
   const channelAppHref = APP_STORE_URLS[config.id] ?? APP_STORE_URLS.uk;
   const channelDiscretion = gating?.enabled ?? false;
 
@@ -1310,7 +1349,9 @@ export function MarketPage<W>({
             same tabbed channel inline, right under Today. */}
         <MarketChannel
           appHref={channelAppHref}
+          benchmarkLabel={config.channelBenchmarkLabel}
           discretionEnabled={channelDiscretion}
+          formatStake={config.priceFormat.formatValue}
           news={hasNewsSource ? news : undefined}
           newsFooterNote={config.newsFooterNote}
           newsHeading={config.newsHeading}
@@ -1706,7 +1747,9 @@ export function MarketPage<W>({
 
       <MarketChannel
         appHref={channelAppHref}
+        benchmarkLabel={config.channelBenchmarkLabel}
         discretionEnabled={channelDiscretion}
+        formatStake={config.priceFormat.formatValue}
         news={hasNewsSource ? news : undefined}
         newsFooterNote={config.newsFooterNote}
         newsHeading={config.newsHeading}

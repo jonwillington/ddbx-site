@@ -1,8 +1,10 @@
-// Performance tab of the right-hand channel. A compact mirror of the
-// /portfolio backtest, fed by the fetch-free summary in
+// Performance tab of the right-hand channel, following the iOS Performance
+// screen's story structure: a verdict-first hero ("Beating the FTSE
+// All-Share? — Yes, by X"), then winners-only top performers with a £1,000
+// payoff line, then the supporting stats. Fed by the 90-day summary in
 // `lib/performance/channel-summary`. The gating model is deliberate:
 //
-//   • The PROOF is free — the picks-vs-market alpha headline, the sector
+//   • The PROOF is free — the beating-the-index verdict, the sector
 //     leaderboard, and the contrarian/momentum style race all render in full.
 //     They're the hook: "directors beat the market, here's by how much."
 //   • The ACTION is gated — which specific stocks drove it (the contributors)
@@ -20,7 +22,9 @@ import type {
 import { Link } from "react-router-dom";
 import { LockClosedIcon } from "@heroicons/react/24/outline";
 
+import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { formatSignedPct } from "@/lib/performance/format";
+import { BUTTON_FILLED_GROUP, BUTTON_RADIUS } from "@/components/button";
 
 interface Props {
   summary: ChannelPerformanceSummary;
@@ -28,7 +32,16 @@ interface Props {
   discretionEnabled: boolean;
   /** App Store URL for this market. */
   appHref: string;
+  /** Index the live alpha is measured against — names the verdict question.
+   *  Falls back to "the market". */
+  benchmarkLabel?: string;
+  /** Market-currency money formatter; enables the top pick's payoff line. */
+  formatStake?: (n: number) => string;
 }
+
+/** Notional stake behind the payoff line — mirrors the iOS Highlights £1,000
+ *  default ("Bought for £1,000 → now worth …"). */
+const STAKE = 1000;
 
 /** Rows that stay unblurred before the contributors CTA kicks in. */
 const UNBLURRED = 2;
@@ -57,7 +70,6 @@ const DECOY = [
   { ticker: "•••", returnPct: 0.061 },
 ];
 
-import { BUTTON_FILLED_GROUP, BUTTON_RADIUS } from "@/components/button";
 function toneClass(ratio: number | null): string {
   if (ratio == null) return "text-muted";
 
@@ -89,24 +101,23 @@ function pairTone(
   };
 }
 
-/** "+4.1pp" / "−2.0pp" from a ratio. Percentage points, to match the gap the
- *  full backtest reports. Non-finite → "—". */
-function formatSignedPp(ratio: number | null): string {
-  if (ratio == null || !Number.isFinite(ratio)) return "—";
-  const pp = ratio * 100;
-  const sign = pp > 0 ? "+" : pp < 0 ? "−" : "";
-
-  return `${sign}${Math.abs(pp).toFixed(1)}pp`;
-}
-
 export function ChannelPerformance({
   summary,
   discretionEnabled,
   appHref,
+  benchmarkLabel,
+  formatStake,
 }: Props) {
   return (
     <div className="px-5 lg:px-4 py-4 space-y-5">
-      <HeadlineAlpha summary={summary} />
+      <HeadlineAlpha benchmarkLabel={benchmarkLabel} summary={summary} />
+
+      <Contributors
+        appHref={appHref}
+        formatStake={formatStake}
+        gated={discretionEnabled}
+        rows={summary.contributors}
+      />
 
       <MarketBeat
         count={summary.marketBeatCount}
@@ -118,12 +129,6 @@ export function ChannelPerformance({
       )}
 
       {summary.styles.length > 0 && <StyleRace styles={summary.styles} />}
-
-      <Contributors
-        appHref={appHref}
-        gated={discretionEnabled}
-        rows={summary.contributors}
-      />
     </div>
   );
 }
@@ -150,7 +155,16 @@ const UNIVERSE_LABEL: Record<
   noteworthy: "Noteworthy picks",
 };
 
-function HeadlineAlpha({ summary }: { summary: ChannelPerformanceSummary }) {
+/** Verdict-first hero, following the iOS Analysis entry card: it leads with
+ *  the answer to "Beating the {index}?" rather than two bare percentages, and
+ *  the percentages become the supporting pair underneath. */
+function HeadlineAlpha({
+  summary,
+  benchmarkLabel,
+}: {
+  summary: ChannelPerformanceSummary;
+  benchmarkLabel?: string;
+}) {
   const {
     picksReturnPct,
     benchmarkReturnPct,
@@ -164,7 +178,11 @@ function HeadlineAlpha({ summary }: { summary: ChannelPerformanceSummary }) {
 
   return (
     <div>
-      <div className="flex items-start gap-4">
+      <SectionHeading>Beating the {benchmarkLabel ?? "market"}?</SectionHeading>
+
+      {alphaPct != null && <Verdict alphaPct={alphaPct} />}
+
+      <div className="mt-3 flex items-start gap-4">
         <Stat
           align="left"
           label={UNIVERSE_LABEL[headlineUniverse]}
@@ -181,32 +199,40 @@ function HeadlineAlpha({ summary }: { summary: ChannelPerformanceSummary }) {
         />
       </div>
 
-      {alphaPct != null && <AlphaGap alphaPct={alphaPct} />}
-
       <p className="mt-2 text-[10px] text-muted">
-        Last 30 days
+        Last {CHANNEL_WINDOW_DAYS} days
         {lastUpdated ? ` · Updated ${formatUpdated(lastUpdated)}` : ""}
       </p>
     </div>
   );
 }
 
-/** Names the gap the two numbers leave implicit — the whole pitch in one line. */
-function AlphaGap({ alphaPct }: { alphaPct: number }) {
-  const ahead = alphaPct >= 0;
+/** The one-line answer — "Yes, by 4.1pp" — mirroring the iOS beatingVerdict
+ *  copy. Near-zero alpha reads "Level with it" rather than crowning a side. */
+function Verdict({ alphaPct }: { alphaPct: number }) {
+  const pp = alphaPct * 100;
+  const level = Math.abs(pp) < 0.05;
+  const ahead = pp > 0;
+
+  const toneClass = level
+    ? "text-foreground"
+    : ahead
+      ? "text-[#1e6b18] dark:text-[#5cd84a]"
+      : "text-[#8b2020] dark:text-[#e84d4d]";
 
   return (
-    <p
-      className={`mt-2 text-xs font-medium tabular-nums ${
-        ahead
-          ? "text-[#1e6b18] dark:text-[#5cd84a]"
-          : "text-[#8b2020] dark:text-[#e84d4d]"
-      }`}
-    >
-      {formatSignedPp(alphaPct)}{" "}
-      <span className="font-normal text-foreground/70">
-        {ahead ? "ahead of the market" : "behind the market"}
-      </span>
+    <p className={`mt-1.5 text-2xl font-semibold tabular-nums ${toneClass}`}>
+      {level ? (
+        "Level with it"
+      ) : (
+        <>
+          {ahead ? "Yes" : "No"}
+          <span className="font-normal text-foreground/70 text-base">
+            {ahead ? ", by " : ", behind by "}
+          </span>
+          {`${Math.abs(pp).toFixed(1)}pp`}
+        </>
+      )}
     </p>
   );
 }
@@ -230,7 +256,7 @@ function Stat({
         {label}
       </div>
       <div
-        className={`text-2xl font-semibold tabular-nums ${tone}`}
+        className={`text-lg font-semibold tabular-nums ${tone}`}
         style={muted ? { opacity: MUTED_OPACITY } : undefined}
       >
         {value}
@@ -354,10 +380,12 @@ function Contributors({
   rows,
   gated,
   appHref,
+  formatStake,
 }: {
   rows: ChannelContributor[];
   gated: boolean;
   appHref: string;
+  formatStake?: (n: number) => string;
 }) {
   if (rows.length === 0) return null;
 
@@ -366,10 +394,16 @@ function Contributors({
 
   return (
     <section className="space-y-2">
-      <SectionHeading>Top performing picks</SectionHeading>
+      <SectionHeading>Top performers</SectionHeading>
       <ul className="space-y-1">
-        {visible.map((row) => (
-          <ContributorRow key={row.id} row={row} />
+        {visible.map((row, i) => (
+          <ContributorRow
+            key={row.id}
+            payoff={
+              i === 0 && formatStake ? payoffLine(row, formatStake) : null
+            }
+            row={row}
+          />
         ))}
       </ul>
 
@@ -415,28 +449,53 @@ function Contributors({
   );
 }
 
-function ContributorRow({ row }: { row: ChannelContributor }) {
+/** iOS payoff plate, one line: "£1,000 at disclosure → £1,774 today". The
+ *  contributors list is winners-only, so this never shows a loss — same
+ *  guarantee the app's plate makes by rendering only when in profit. */
+function payoffLine(
+  row: ChannelContributor,
+  formatStake: (n: number) => string,
+): string {
+  return `${formatStake(STAKE)} at disclosure → ${formatStake(
+    STAKE * (1 + row.returnPct),
+  )} today`;
+}
+
+function ContributorRow({
+  row,
+  payoff,
+}: {
+  row: ChannelContributor;
+  payoff?: string | null;
+}) {
   return (
     <li>
       <Link
-        className="flex items-baseline justify-between gap-2 text-xs group"
+        className="block text-xs group"
         data-ga-event="cta_channel_open_contributor_deal"
         data-ga-label={`${row.ticker} ${row.id}`}
         to={`/dealings/${row.id}`}
       >
-        <span className="min-w-0">
-          <span className="font-mono text-foreground/90 group-hover:text-[#5a4128] dark:group-hover:text-[#ad9479]">
-            {row.ticker}
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="min-w-0">
+            <span className="font-mono text-foreground/90 group-hover:text-[#5a4128] dark:group-hover:text-[#ad9479]">
+              {row.ticker}
+            </span>
+            <span className="ml-1.5 text-[10px] text-muted truncate">
+              {row.company}
+            </span>
           </span>
-          <span className="ml-1.5 text-[10px] text-muted truncate">
-            {row.company}
+          <span
+            className={`tabular-nums font-medium shrink-0 ${toneClass(row.returnPct)}`}
+          >
+            {formatSignedPct(row.returnPct)}
           </span>
         </span>
-        <span
-          className={`tabular-nums font-medium shrink-0 ${toneClass(row.returnPct)}`}
-        >
-          {formatSignedPct(row.returnPct)}
-        </span>
+        {payoff && (
+          <span className="mt-0.5 block text-[10px] text-muted tabular-nums">
+            {payoff}
+          </span>
+        )}
       </Link>
     </li>
   );

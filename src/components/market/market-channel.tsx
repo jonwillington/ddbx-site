@@ -37,6 +37,11 @@ interface MarketChannelProps {
   supportsPerformance: boolean;
   /** Performance summary. May be empty (sampleSize 0) while dealings load. */
   performance?: ChannelPerformanceSummary;
+  /** Index name the live alpha is measured against ("FTSE All-Share") — names
+   *  the "Beating the …?" verdict. Falls back to "the market". */
+  benchmarkLabel?: string;
+  /** Market-currency money formatter for the top pick's payoff line. */
+  formatStake?: (n: number) => string;
   discretionEnabled: boolean;
   appHref: string;
 }
@@ -53,6 +58,8 @@ export function MarketChannel({
   newsFooterNote,
   supportsPerformance,
   performance,
+  benchmarkLabel,
+  formatStake,
   discretionEnabled,
   appHref,
 }: MarketChannelProps) {
@@ -125,7 +132,9 @@ export function MarketChannel({
       perfReady ? (
         <ChannelPerformance
           appHref={appHref}
+          benchmarkLabel={benchmarkLabel}
           discretionEnabled={discretionEnabled}
+          formatStake={formatStake}
           summary={performance!}
         />
       ) : (

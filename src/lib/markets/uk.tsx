@@ -34,6 +34,7 @@ import { api } from "@/lib/api";
 import { UK_BANK_HOLIDAYS_SOURCE } from "@/lib/bank-holidays";
 import { useDashboardMetricMode } from "@/lib/dashboard-metric-mode";
 import { isSuggestedDealing } from "@/lib/dealing-classify";
+import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { useDiscretion } from "@/lib/discretion";
 import { LSE } from "@/lib/market-status";
 
@@ -501,6 +502,21 @@ export const UkMarket: MarketConfig<Dealing> = {
   // render the dummy body under a blur with a "use the app" overlay.
   useGating: useUkGating,
   supportsChannelPerformance: true,
+  // The channel's 90-day backtest window — the page's own fetch only reaches
+  // back ~a month, so pull the window explicitly. Open-market buys only:
+  // sells and placement-priced awards/schemes (is_open_market_buy === false)
+  // would skew the aggregate the same way iOS's isPlacement exclusion says.
+  fetchChannelDealings: async () => {
+    const since = new Date();
+
+    since.setDate(since.getDate() - CHANNEL_WINDOW_DAYS);
+    const rows = await api.dealingsWindow(since.toISOString().slice(0, 10));
+
+    return rows
+      .filter((d) => d.tx_type === "buy" && d.is_open_market_buy !== false)
+      .map(toMarketDealing);
+  },
+  channelBenchmarkLabel: "FTSE All-Share",
   DummyDetailBody: UkDummyDetailBody,
   AnalysisOverlay: UkAnalysisOverlay,
   renderEmptyState: () => <>No UK disclosures stored yet.</>,

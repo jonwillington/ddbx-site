@@ -518,6 +518,21 @@ export interface MarketConfig<W = unknown> {
    *  without the backtest leave this unset and the channel stays News-only.
    *  Today only UK ships the backtest, so only UK sets this. */
   supportsChannelPerformance?: boolean;
+
+  /** Dedicated fetch backing the channel's Performance tab. The page's own
+   *  dealings load only reaches back ~a month (the API's 200-row default),
+   *  which starves the channel's 90-day window (CHANNEL_WINDOW_DAYS) — the
+   *  window the iOS app deliberately leads with because it carries several
+   *  times the alpha of a 30-day read. Implementations must return genuine
+   *  open-market buys only (sells and placements/awards already dropped);
+   *  the summary builder takes them as the every-buy universe verbatim.
+   *  While the fetch is in flight the tab shows its skeleton; on failure the
+   *  channel falls back to the page's in-memory dealings. */
+  fetchChannelDealings?: () => Promise<MarketDealing<W>[]>;
+  /** Display name of the index the server-computed live alpha is measured
+   *  against (e.g. "FTSE All-Share"), so the channel's "Beating the …?"
+   *  verdict can name it honestly. Falls back to "the market". */
+  channelBenchmarkLabel?: string;
 }
 
 /** Whether the per-row performance number (and the inline sparkline)

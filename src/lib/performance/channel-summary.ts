@@ -1,14 +1,16 @@
-// Channel performance summary — a lightweight, fetch-free read of the
-// performance stats that the full /portfolio backtest computes in detail.
+// Channel performance summary — a lightweight read of the performance stats
+// that the full /portfolio backtest computes in detail.
 //
-// The home page already holds every dealing in memory, and each one carries a
-// server-precomputed `livePerformance` (return + alpha vs the market) plus a
-// `buyStyle` tag. That's enough to mirror the four headline performance
-// surfaces — picks-vs-benchmark alpha, top contributors, the sector
-// leaderboard, and the contrarian/momentum style race — in the right-hand
-// channel without a single extra request. The page stays the destination for
-// the interactive backtest; the channel is the teaser that points at it (and,
-// under discretion mode, at the app).
+// Every dealing carries a server-precomputed `livePerformance` (return +
+// alpha vs the market) plus a `buyStyle` tag, so no price fetches are needed
+// here. The rows themselves come from the market's `fetchChannelDealings`
+// (one request covering the 90-day window the iOS app leads with — the
+// page's own load only reaches back ~a month), falling back to the page's
+// in-memory dealings if that fetch fails. From those rows this mirrors the
+// headline surfaces — the beating-the-index verdict, winners-only top
+// performers, the sector leaderboard, and the contrarian/momentum style race.
+// The page stays the destination for the interactive backtest; the channel is
+// the teaser that points at it (and, under discretion mode, at the app).
 
 import type { MarketDealing } from "@/lib/markets/types";
 import type { PerformanceUniverse } from "@/lib/performance/types";
@@ -66,16 +68,23 @@ export interface ChannelPerformanceSummary {
 
 const MAX_CONTRIBUTORS = 6;
 const MAX_SECTORS = 5;
-/** The channel mirrors the iOS Highlights digest, which is pinned to the last
- *  30 days by disclosure date (anchored to today). Windowing here is what makes
- *  the web numbers match the app — without it we'd average every loaded buy. */
-const WINDOW_DAYS = 30;
 
-/** ISO `YYYY-MM-DD` for the inclusive lower bound of the 30-day window. */
-function windowCutoffISO(): string {
+/** The channel follows the iOS Analysis window default: 90 days, chosen there
+ *  because it carries roughly 6× the alpha of a 30-day window and is the
+ *  shortest window where picks beat the market more often than not. The page's
+ *  default dealings fetch only holds ~a month of history, so markets supply a
+ *  dedicated `fetchChannelDealings` covering this window (see MarketConfig). */
+export const CHANNEL_WINDOW_DAYS = 90;
+/** iOS `minDaysHeldForBest`: a buy younger than this can't headline the top
+ *  performers — day-old spikes aren't a track record. Relaxes when no pick is
+ *  old enough, exactly like the app. */
+const MIN_DAYS_HELD_FOR_TOP = 7;
+
+/** ISO `YYYY-MM-DD` for the day `days` ago (inclusive window lower bound). */
+function isoDaysAgo(days: number): string {
   const d = new Date();
 
-  d.setDate(d.getDate() - WINDOW_DAYS);
+  d.setDate(d.getDate() - days);
 
   return d.toISOString().slice(0, 10);
 }
@@ -174,17 +183,23 @@ function alphaOf(d: MarketDealing): number | null {
   return toRatio(lp.alpha_pct_disclosed ?? lp.alpha_pct_trade);
 }
 
-/** Build the channel's performance summary from the dealings already loaded.
- *  Considers genuine buys only (`isPurchase`) that carry a live return. */
+/** Build the channel's performance summary.
+ *
+ *  `assumeBuys` is for the dedicated channel fetch: those rows are already
+ *  filtered to genuine open-market buys (placements/awards dropped, like iOS
+ *  `isPlacement`), so every row joins the every-buy universe. Without it —
+ *  the fallback over the page's own dealings — we keep the old `isPurchase`
+ *  guard, which for UK narrows to analyst-suggested rows. */
 export function buildChannelPerformance(
   dealings: MarketDealing[],
+  opts: { assumeBuys?: boolean } = {},
 ): ChannelPerformanceSummary {
-  // Match the app: buys disclosed in the last 30 days (inclusive lower bound,
+  // Match the app: buys disclosed inside the window (inclusive lower bound,
   // no upper bound), carrying a live return. ISO dates sort lexicographically.
-  const cutoff = windowCutoffISO();
+  const cutoff = isoDaysAgo(CHANNEL_WINDOW_DAYS);
   const buys = dealings.filter(
     (d) =>
-      d.isPurchase &&
+      (opts.assumeBuys || d.isPurchase) &&
       returnOf(d) != null &&
       d.disclosedDate.slice(0, 10) >= cutoff,
   );
@@ -223,18 +238,31 @@ export function buildChannelPerformance(
   const marketBeatTotal = alphas.length;
   const marketBeatCount = alphas.filter((a) => a > 0).length;
 
-  // Top contributors by since-disclosure return, within the headline slice so
-  // the named picks match the headline number.
-  const contributors: ChannelContributor[] = [...headlineBuys]
-    .sort((a, b) => returnOf(b)! - returnOf(a)!)
-    .slice(0, MAX_CONTRIBUTORS)
-    .map((d) => ({
+  // Top performers, iOS Highlights-style: winners only (a "top performers"
+  // strip must never show a name underwater), at least a week old so a one-day
+  // spike can't headline (relaxed when nothing qualifies), one row per ticker,
+  // within the headline slice so the named picks match the headline number.
+  const winners = headlineBuys.filter((d) => returnOf(d)! > 0);
+  const ageCutoff = isoDaysAgo(MIN_DAYS_HELD_FOR_TOP);
+  const seasoned = winners.filter(
+    (d) => d.disclosedDate.slice(0, 10) <= ageCutoff,
+  );
+  const pool = seasoned.length > 0 ? seasoned : winners;
+  const seenTickers = new Set<string>();
+  const contributors: ChannelContributor[] = [];
+
+  for (const d of [...pool].sort((a, b) => returnOf(b)! - returnOf(a)!)) {
+    if (seenTickers.has(d.ticker)) continue;
+    seenTickers.add(d.ticker);
+    contributors.push({
       id: d.id,
       ticker: d.ticker,
       company: d.company,
       returnPct: returnOf(d)!,
       alphaPct: alphaOf(d),
-    }));
+    });
+    if (contributors.length >= MAX_CONTRIBUTORS) break;
+  }
 
   // Sector leaderboard by mean alpha.
   const bySector = new Map<string, number[]>();
