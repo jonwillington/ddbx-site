@@ -15,7 +15,7 @@ export function MarketFaq({ items }: { items?: MarketFaqItem[] }) {
   return (
     <section
       aria-label="Frequently asked questions"
-      className="mx-auto w-full max-w-5xl px-1 pt-14 md:pt-20"
+      className="w-full pt-14 md:pt-20"
     >
       <div className="grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)] md:gap-16">
         <div className="md:sticky md:top-24 md:self-start">
