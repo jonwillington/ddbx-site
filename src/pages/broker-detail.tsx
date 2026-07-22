@@ -18,6 +18,7 @@ import {
 } from "@/components/brokers/broker-ui";
 import { BUTTON_SELECTED } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
+import appShots from "@/data/broker-app-screenshots.json";
 import { api, type BrokerOffer } from "@/lib/api";
 import {
   COST_POTS,
@@ -233,6 +234,8 @@ function BrokerReview({
                   />
                 </div>
               </Section>
+
+              <AppShotsSection broker={b} />
 
               <CostSection broker={b} brokers={brokers} />
 
@@ -501,6 +504,49 @@ function VerdictColumn({
         ))}
       </ul>
     </div>
+  );
+}
+
+type AppShotsEntry = {
+  appId: number;
+  appName: string;
+  appUrl: string;
+  /** mzstatic base URLs — append a size rendition like /600x1300bb.webp. */
+  screenshots: string[];
+};
+
+/** The broker's own App Store screenshots, hotlinked from Apple's CDN at
+ *  render sizes. Data is baked in by scripts/fetch-app-screenshots.mjs;
+ *  brokers without a resolved app simply skip the section. */
+function AppShotsSection({ broker: b }: { broker: BrokerOffer }) {
+  const entry = (appShots as Record<string, AppShotsEntry>)[b.slug];
+
+  if (!entry?.screenshots.length) return null;
+
+  return (
+    <Section id="app" title="Inside the app">
+      <div className="flex snap-x gap-3 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
+        {entry.screenshots.map((base, index) => (
+          <img
+            key={base}
+            alt={`${b.name} app screenshot ${index + 1}`}
+            className={`h-[300px] w-auto shrink-0 snap-start rounded-xl border ${R.rule}`}
+            decoding="async"
+            loading="lazy"
+            src={`${base}/300x650bb.webp`}
+            srcSet={`${base}/300x650bb.webp 1x, ${base}/600x1300bb.webp 2x`}
+          />
+        ))}
+      </div>
+      <a
+        className="mt-3 inline-block text-[13px] font-medium text-foreground/55 underline underline-offset-2 transition-colors hover:text-foreground"
+        href={entry.appUrl}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        View {entry.appName} on the App Store
+      </a>
+    </Section>
   );
 }
 

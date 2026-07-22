@@ -1,0 +1,245 @@
+{
+  "freetrade": {
+    "appId": 1354479011,
+    "appName": "Freetrade: Trade & Invest",
+    "appUrl": "https://apps.apple.com/gb/app/freetrade-trade-invest/id1354479011",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/11/20/2d/11202d40-d787-bd8a-7cd4-cd0c9024f227/Value_Prop_IOS_Appstore_030626-2__U00282_U0029.jpeg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/f0/c2/e0/f0c2e02d-1538-9892-95b3-cf0cb820b37c/Updated_Main_ASO_Screens__U0028Apple_U0029-3.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/a8/2c/bf/a82cbf04-8d43-27d7-a50f-037b46b75cd0/Updated_Main_ASO_Screens__U0028Apple_U0029-4.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/4c/67/0f/4c670fa7-a012-8f11-496d-9dfa34e587b2/Updated_Main_ASO_Screens__U0028Apple_U0029-5.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/4b/00/8f/4b008fe2-dc1c-62df-6e41-158789c05316/Updated_Main_ASO_Screens__U0028Apple_U0029-6.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/42/0d/c9/420dc966-eb31-01f9-3b14-ce9c6435cec1/Updated_Main_ASO_Screens__U0028Apple_U0029-7.png"
+    ]
+  },
+  "trading-212": {
+    "appId": 566325832,
+    "appName": "Trading 212",
+    "appUrl": "https://apps.apple.com/gb/app/trading-212/id566325832",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a5/5e/8c/a55e8c36-4254-afcf-f9c0-5ea8c35dbaf7/UK-01.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ce/c4/ec/cec4ec61-28c5-0f03-cafb-4f3065aa687f/UK-02.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b9/91/e0/b991e07a-709a-5385-5748-b26f2312b6cc/UK-04.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/23/ec/0a/23ec0a1d-a153-761a-b339-35aec412e9d2/UK-03.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d9/ea/fe/d9eafec8-2070-1bd2-534a-c5d94a48bbfe/UK-05.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b2/33/31/b233312e-1c29-3478-da66-e6a990846de9/UK-06.jpg"
+    ]
+  },
+  "investengine": {
+    "appId": 1394442225,
+    "appName": "InvestEngine: ETF Investing",
+    "appUrl": "https://apps.apple.com/gb/app/investengine-etf-investing/id1394442225",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/4a/51/10/4a511097-46ae-62f0-4fa6-aa8efa0e7e28/01.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b2/7c/89/b27c89af-7201-35a0-5337-02e80981b6fa/02.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/e3/41/6f/e3416fc5-d71e-43fe-1d82-99ebb664c0c0/03.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/7f/2c/4a/7f2c4ae5-f5c8-d1d5-1520-cbaab2aad167/04.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/7f/02/e9/7f02e919-fe74-ea13-87a9-a5eb4ef43ee3/05.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/c8/c4/6c/c8c46c0f-6316-0e4b-eac6-9f065f390191/06.png"
+    ]
+  },
+  "lightyear": {
+    "appId": 1562105616,
+    "appName": "Lightyear: Invest in stocks",
+    "appUrl": "https://apps.apple.com/gb/app/lightyear-invest-in-stocks/id1562105616",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/4a/0a/37/4a0a37ec-374c-bf94-1c43-5234493ffc26/Apple_6-3_inch_01.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/8e/2a/c0/8e2ac026-ac49-dc98-b12e-9c04dff20802/Apple_6-3_inch_02.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/23/88/70/238870db-4555-5556-9d5a-fb07a33dbf09/Apple_6-3_inch_03.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/71/9d/5b/719d5bd6-d3d8-8af1-88bf-369ff4aef80e/Apple_6-3_inch_04.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/e3/8c/c5/e38cc5ad-b30a-9a64-f886-d1b939537791/Apple_6-3_inch_05.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/28/ba/60/28ba6021-5d74-a501-67eb-4891e8dc5c5f/Apple_6-3_inch_06.jpg"
+    ]
+  },
+  "moneybox": {
+    "appId": 1049797239,
+    "appName": "Moneybox - Save and Invest",
+    "appUrl": "https://apps.apple.com/gb/app/moneybox-save-and-invest/id1049797239",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/8e/e7/aa/8ee7aa49-c1f2-aea9-6f6a-5e4f6d5d204f/App-Screen-1-1242x2688.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/50/fa/d9/50fad9fe-4f1d-bdda-2a8b-ee5e0c9f4d62/App-Screen-0-1242x2688.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/f6/ea/34/f6ea3414-117c-5604-5372-d10cbd252082/App-Screen-3-1242x2688.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/3a/6d/ac/3a6dac38-74f0-a53b-af2e-c70ba72ee433/App-Screen-4-1242x2688.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/35/d7/1a/35d71a09-0df0-179f-1fa3-afe1440a3fe3/App-Screen-5-1242x2688.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d0/13/ad/d013add0-1548-bcbc-b951-924910dc7022/App-Screen-6-1242x2688.jpg"
+    ]
+  },
+  "plum": {
+    "appId": 1456139507,
+    "appName": "Plum: Smart Saving & Investing",
+    "appUrl": "https://apps.apple.com/gb/app/plum-smart-saving-investing/id1456139507",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d8/81/0f/d8810f51-27ab-4d33-9f18-6118d6b30be9/6_U00275-iOS-01.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d9/8f/75/d98f7524-ac3d-73f3-3812-92a895fde051/6_U00275-iOS-03.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/e5/48/da/e548da9b-d89a-45bf-4d20-0d38fe491438/6_U00275-iOS-04.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/ec/8c/ba/ec8cba44-8904-5df0-2950-5ffae86cc76c/6_U00275-iOS-02.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/22/4c/28/224c2876-62b3-178b-9a3f-a3b95371ebf0/6_U00275-iOS-06.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/34/37/4a/34374a77-5e9b-ed3a-ac93-cde4deaa479b/6_U00275-iOS-06.jpg"
+    ]
+  },
+  "revolut-invest": {
+    "appId": 932493382,
+    "appName": "Revolut — Mobile Finance",
+    "appUrl": "https://apps.apple.com/gb/app/revolut-mobile-finance/id932493382",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c8/24/01/c8240114-fe5b-67d3-22f9-2799a6defe2f/Screen_1_1242x2208.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/0c/51/57/0c5157b8-b320-467c-4953-5b867177397a/Screen_2_1242x2208.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9a/52/e4/9a52e433-fe67-1bd0-aa10-68f2a840af44/Screen_3_1242x2208.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/98/41/e6/9841e628-617d-8a4a-8a1a-5d9270593fe8/Screen_4_1242x2208.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/3c/36/a8/3c36a89f-69c6-a750-4308-a33ac2a3d029/Screen_5_1242x2208.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/34/21/ad/3421ad80-e35a-08cd-75ca-f3f044250249/Screen_6_1242x2208.jpg"
+    ]
+  },
+  "hargreaves-lansdown": {
+    "appId": 450465506,
+    "appName": "Hargreaves Lansdown",
+    "appUrl": "https://apps.apple.com/gb/app/hargreaves-lansdown/id450465506",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/29/fd/ba/29fdba3b-1ec3-87e6-3f9d-d11c63daaf48/01.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d9/88/88/d9888800-5897-7739-461a-68c04f32e11e/02.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/82/6b/af/826baf62-cfbd-bc39-a1e5-566a433fddf5/03.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/34/13/a8/3413a84b-02a4-4127-fbad-3fb69826b692/04.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/1e/22/07/1e2207b2-5d34-28c3-78af-95d9ad16c2be/05.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/0d/cc/9e/0dcc9e56-bccf-8419-494d-3466bc7c375b/06.png"
+    ]
+  },
+  "aj-bell": {
+    "appId": 557882383,
+    "appName": "AJ Bell: ISA & SIPP investing",
+    "appUrl": "https://apps.apple.com/gb/app/aj-bell-isa-sipp-investing/id557882383",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource112/v4/9c/73/26/9c732668-dd05-d891-6823-3cc957e27d00/91141ffc-c874-4f11-82ab-454d2b3cdb55_AJB_Iphone_Easy_Account_1284x2778_@72x.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource122/v4/40/b5/52/40b552ab-c551-5224-2b8b-fb6b3a2f5ef8/e39fa71d-600c-4fd0-97fd-d1c30b8b4025_AJB_Iphone_Swipe_to_Deal_1284x2778_@72x.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource112/v4/93/04/72/930472f6-5c59-7676-c14a-63f67b502b7f/57bf3a08-9b0a-4366-a0e0-58fa7b77512c_AJB_Iphone_Add_Money_1284x2778@72x.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource122/v4/5e/2e/20/5e2e2020-38d2-91df-75a4-feb3ca795b47/5334184c-1535-42ee-892e-2398e010d420_AJB_Iphone_View_your_portfolio_1284x2778@72x.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource112/v4/9d/cc/3c/9dcc3c8b-9379-000d-04ab-d426ac32e52f/db8aea16-e761-4fe9-990b-c3e9921aa478_AJB_Iphone_News_1284x2778__@72x.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource122/v4/2f/29/29/2f2929d3-99be-6670-8e8d-edeb581b646b/6ee323e5-d423-4cf6-81d5-ff20361d3e20_AJB_Iphone_Bio_metric_1284x2778_@72x.png"
+    ]
+  },
+  "interactive-investor": {
+    "appId": 434714838,
+    "appName": "interactive investor (ii)",
+    "appUrl": "https://apps.apple.com/gb/app/interactive-investor-ii/id434714838",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/aa/fe/6d/aafe6d73-e778-1a54-9024-cb3cd4be1e16/appstore-iphone-01.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/1f/ff/04/1fff042e-d328-8eee-05d0-167f80e26a6a/appstore-iphone-02.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/01/5b/96/015b96f0-bc1c-c5c1-10af-84a1239fd674/appstore-iphone-03.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/31/f6/01/31f60179-dbe3-839c-608b-33d5c4496eb0/appstore-iphone-04.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/56/90/8c/56908c99-e1aa-b327-447c-70a43d6e3b54/appstore-iphone-05.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/11/49/5d/11495db1-95d1-2777-c5f9-cb2b7c677dc9/appstore-iphone-06.png"
+    ]
+  },
+  "vanguard-uk": {
+    "appId": 6476108034,
+    "appName": "Vanguard UK",
+    "appUrl": "https://apps.apple.com/gb/app/vanguard-uk/id6476108034",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/45/27/60/45276002-c1a4-40d7-d71c-3ded677a76be/bb1e5fab-3f3b-489d-9ec6-83f3c299020d_AppStore_6.5.1.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/6d/c9/92/6dc9921d-91ad-c601-6d78-317ad7c5b216/32b5881e-ec06-4a3d-ad2b-7a3d13b87aca_AppStore_6.5.2.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/0f/c9/51/0fc9514a-095b-4aaa-9446-6b37a3e8bf22/f7594d05-bdcd-4a17-850f-3cadc2b8c2cb_AppStore_6.5.3.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/3b/00/36/3b003636-d555-db8f-c321-9a9cbbf52d0a/17ca253d-e719-4e82-a06f-a0ec722fb6b2_AppStore_6.5.4.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/15/d9/a4/15d9a4c8-558b-65b9-5565-de28bb52ee81/86505fe4-546f-47f4-8893-6427cbe73447_AppStore_6.5.5.png"
+    ]
+  },
+  "fidelity-uk": {
+    "appId": 1462211125,
+    "appName": "Fidelity - Manage Investments",
+    "appUrl": "https://apps.apple.com/gb/app/fidelity-manage-investments/id1462211125",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource126/v4/78/8d/78/788d7894-710c-68b0-2832-fcd6aff1af82/3589e79e-33d6-4b07-ac45-59c5a21a1ca2_1_6.5.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource116/v4/2c/81/4d/2c814dbc-2474-0352-6b16-cfd9bedb8137/f4763bec-9639-485b-8742-eecde80b3b5d_2_6.5.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource116/v4/94/73/cc/9473cc45-ea9c-3985-ba34-0da94f8826a3/b18945fc-2365-4cd9-b974-7546d8896da6_3_6.5.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource116/v4/ec/13/24/ec1324d6-03ad-a154-0c9d-84b397c236ef/74d29bbc-0dc2-40f8-a81f-7f54b2f5fdb8_4_6.5.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource126/v4/d8/37/51/d83751da-2fb3-79b0-68fa-718bce08f57d/ea8cd151-58a4-4671-9a9e-9cccab4761e6_5_6.5.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource116/v4/98/70/47/98704706-7405-da3c-44e6-005f858a90fd/6e9a46ca-849a-4287-b75e-302d7c571728_6_6.5.png"
+    ]
+  },
+  "charles-stanley-direct": {
+    "appId": 1297304657,
+    "appName": "Charles Stanley Direct",
+    "appUrl": "https://apps.apple.com/gb/app/charles-stanley-direct/id1297304657",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/41/ad/a7/41ada70e-58c1-9057-2186-40ca064949e3/OneCS-iPhone-6.5-front-01.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/37/a9/d8/37a9d8a3-d055-f6c7-12ce-840144e6c51c/OneCS-iPhone-6.5-front-02.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/cb/9a/af/cb9aaf1d-97eb-1b6a-7c44-3661bf50524f/OneCS-iPhone-6.5-front-09.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/e5/7d/84/e57d8472-2724-64b1-b4c6-6cfcd8966dc3/OneCS-iPhone-6.5-front-10.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/5f/53/6a/5f536aed-0cc2-08bb-c408-28f988e5c32e/OneCS-iPhone-6.5-front-06.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b3/3f/27/b33f27fd-71bc-b44e-02a2-46fb8d93bee3/OneCS-iPhone-6.5-front-03.jpg"
+    ]
+  },
+  "etoro": {
+    "appId": 674984916,
+    "appName": "etoro: Trade & Invest",
+    "appUrl": "https://apps.apple.com/gb/app/etoro-trade-invest/id674984916",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/0f/7d/a8/0f7da8d2-e471-7a0a-ab9b-5b6eb227a1b9/01.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/2a/09/aa/2a09aa75-e774-65be-a806-583577450ee9/02.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/ef/3d/bb/ef3dbbe2-c94b-546d-b0b4-ae3eff30ae47/03.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/33/e5/2c/33e52c78-1f01-f479-cf2e-9d6806faace4/10.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/cb/d6/5f/cbd65f5c-ffb4-ee86-bb97-c682b2d6680d/04.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/f0/e2/d0/f0e2d0cd-d1fb-2393-b2a8-45f3d8571305/11.jpg"
+    ]
+  },
+  "ig": {
+    "appId": 6702015912,
+    "appName": "IG Invest: Stocks. ISA. Crypto",
+    "appUrl": "https://apps.apple.com/gb/app/ig-invest-stocks-isa-crypto/id6702015912",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/02/d4/5b/02d45be7-20cd-e212-153a-5f9a560ee5c0/Crypto_0_commission_ASO.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/8c/7a/f8/8c7af890-ec7b-6a5e-72ac-cd707a1601ee/AppStore_Reskin_1242_x_2688_IOS__01.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/96/ea/71/96ea7107-16c3-9c07-44d0-7e7410cbd793/AppStore_Reskin_1242_x_2688_IOS__02.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/1d/3d/c1/1d3dc1b4-547f-03ab-016b-bc2c85b1e6dc/AppStore_Reskin_1242_x_2688_IOS__04-1.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/7a/3d/a2/7a3da21c-41b1-480e-46f6-ee543e39dafb/AppStore_Reskin_1242_x_2688_IOS__03.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/88/d9/93/88d99389-9fd6-a826-3c45-8ae47d5a12be/AppStore_Reskin_1242_x_2688_IOS__05.png"
+    ]
+  },
+  "xtb": {
+    "appId": 949905889,
+    "appName": "XTB Online Investing",
+    "appUrl": "https://apps.apple.com/gb/app/xtb-online-investing/id949905889",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/ba/bc/c7/babcc7d9-c8b9-a8a0-69fa-f69ff2bdd069/UK_Mobile-stores_App-store-Phone_General_1_ESMA72.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/7a/51/93/7a519395-65c2-4ad7-870e-f7f92f4b9448/UK_Mobile-stores_App-store-Phone_General_2_ESMA72.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9f/19/c6/9f19c614-4c6d-8e47-72d9-69156bc44db5/UK_Mobile-stores_App-store-Phone_General_3_ESMA72.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/cf/57/6f/cf576f85-bea3-3836-9908-6a67ab723385/UK_Mobile-stores_App-store-Phone_General_4_ESMA72.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/70/86/99/7086996c-c8d8-0046-a1d4-90442ee05ac4/UK_Mobile-stores_App-store-Phone_General_5_ESMA72.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/0a/0e/a9/0a0ea917-28f6-5964-f6f7-1a1ddcd82894/UK_Mobile-stores_App-store-Phone_General_6_ESMA72.png"
+    ]
+  },
+  "saxo": {
+    "appId": 486341512,
+    "appName": "SaxoTrader | Trade + Invest",
+    "appUrl": "https://apps.apple.com/gb/app/saxotrader-trade-invest/id486341512",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/b8/db/32/b8db325e-73f9-03d4-8b5c-fd7805b191ac/iOS_-_EN__U00231_1290x2796.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/88/17/16/88171601-096b-e752-492d-a0444952b11f/iOS_-_EN__U00232_1290x2796.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/98/5b/e0/985be070-8b05-c005-5e49-02e90becca43/iOS_-_EN__U00233_1290x2796.jpg"
+    ]
+  },
+  "nutmeg": {
+    "appId": 1127250193,
+    "appName": "J.P. Morgan Personal Investing",
+    "appUrl": "https://apps.apple.com/gb/app/j-p-morgan-personal-investing/id1127250193",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/11/50/74/115074e3-83fe-8dd5-6e61-566464a7c2bd/CS_JPMPI_UK_BRN_INVEST__BRAND-AWARENESS_IOS_APP_STORE_PNG_1242x2688__01.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/4e/25/03/4e2503fa-661e-5619-344f-c208c7c3bdf0/CS_JPMPI_UK_BRN_INVEST__BRAND-AWARENESS_IOS_APP_STORE_PNG_1242x2688__02.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/53/3f/52/533f52d0-ab3b-c755-20e5-119db0eb12f1/CS_JPMPI_UK_BRN_INVEST__BRAND-AWARENESS_IOS_APP_STORE_PNG_1242x2688__03.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/90/6b/4d/906b4dd2-c970-aa6e-f47e-e5c7279f73bc/CS_JPMPI_UK_BRN_INVEST__BRAND-AWARENESS_IOS_APP_STORE_PNG_1242x2688__04.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/87/b9/69/87b96926-dd7c-5f37-4537-da48135e7831/CS_JPMPI_UK_BRN_INVEST__BRAND-AWARENESS_IOS_APP_STORE_PNG_1242x2688__05.jpg",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/68/33/3c/68333cab-9d0e-3562-77ce-01081f186332/CS_JPMPI_UK_BRN_INVEST__BRAND-AWARENESS_IOS_APP_STORE_PNG_1242x2688__06.jpg"
+    ]
+  },
+  "wealthify": {
+    "appId": 1204332482,
+    "appName": "Wealthify: Managed Investments",
+    "appUrl": "https://apps.apple.com/gb/app/wealthify-managed-investments/id1204332482",
+    "screenshots": [
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/17/05/44/170544c5-93fb-b0cd-668a-3d3b0bdd2d15/iPhone_6.3_inch_-_1.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/55/99/dc/5599dcda-701c-6c86-d020-7b652ed9163a/iPhone_6.3_inch_-_2.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/2e/13/62/2e1362c5-0925-ceea-77f3-52febd5403a0/iPhone_6.3_inch_-_3.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/e6/1f/cd/e61fcd9b-5d05-79e8-221a-d864686a28ec/iPhone_6.3_inch_-_4.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9e/e4/81/9ee481ff-dbf8-7d36-472e-e0d8331ea00a/iPhone_6.3_inch_-_6.png",
+      "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/8e/94/ec/8e94ec78-40e7-2fc8-4a64-046d0439c0d9/iPhone_6.3_inch_-_5.png"
+    ]
+  }
+}
