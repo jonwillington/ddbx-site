@@ -522,6 +522,7 @@ export default function DefaultLayout({
               <button
                 aria-label="Follow on X (Twitter)"
                 className="flex items-center gap-1.5 text-foreground/40 hover:text-foreground/70 transition-colors"
+                data-ga-event="cta_footer_follow_x"
                 type="button"
                 onClick={() => setFollowOpen(true)}
               >
@@ -536,6 +537,8 @@ export default function DefaultLayout({
               <button
                 aria-label="Download the app"
                 className="inline-block opacity-80 hover:opacity-100 transition-opacity"
+                data-ga-event="cta_footer_download"
+                data-ga-label="Footer badge"
                 type="button"
                 onClick={() => setAppsOpen(true)}
               >
@@ -566,6 +569,8 @@ export default function DefaultLayout({
             // "Start your free trial" converts better than "Download the app".
             <a
               className={DOWNLOAD_CTA_CLASS}
+              data-ga-event="cta_floating_trial"
+              data-ga-label="Floating mobile CTA"
               href={directAppUrl}
               rel="noopener noreferrer"
               target="_blank"
@@ -577,6 +582,8 @@ export default function DefaultLayout({
             // App-less market (SE/NL): no trial to offer — opens the chooser.
             <button
               className={DOWNLOAD_CTA_CLASS}
+              data-ga-event="cta_floating_download_chooser"
+              data-ga-label="Floating mobile CTA"
               type="button"
               onClick={() => setAppsOpen(true)}
             >

@@ -1350,12 +1350,12 @@ export function MarketPage<W>({
                     <button
                       className={`w-full flex items-center justify-between px-6 py-5 hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors bg-[#faf7f2] dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-xl"} ${monthOpen ? "" : "rounded-b-xl"}`}
                       data-ga-event={
-                        monthGated ? "cta_month_unlock_open" : undefined
+                        monthGated ? "cta_month_unlock_open" : "toggle_month"
                       }
                       data-ga-label={
                         monthGated
                           ? `${month.label} ${month.year} · ${month.count}`
-                          : undefined
+                          : `${month.label} ${month.year}`
                       }
                       onClick={() =>
                         monthGated

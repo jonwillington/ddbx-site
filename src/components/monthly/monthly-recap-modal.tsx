@@ -187,7 +187,7 @@ export function MonthlyRecapModal({
               A look back at the month, drafted with AI assistance. Not
               investment advice.
             </p>
-            <AppStoreBadge className="shrink-0" size="md" />
+            <AppStoreBadge className="shrink-0" placement="Monthly recap" size="md" />
           </footer>
         </div>
       )}

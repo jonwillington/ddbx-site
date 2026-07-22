@@ -109,6 +109,8 @@ export function MarketChooserModal({
             <a
               key={c.id}
               className="group flex items-center gap-3 rounded-xl border border-black/10 bg-black/[0.02] p-3.5 transition-colors hover:border-[#5a4128]/40 hover:bg-[#5a4128]/[0.05] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-[#ad9479]/40 dark:hover:bg-[#ad9479]/[0.07]"
+              data-ga-event="cta_chooser_open_store"
+              data-ga-label={c.id}
               href={c.href}
               rel="noopener noreferrer"
               target="_blank"

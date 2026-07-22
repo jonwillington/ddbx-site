@@ -41,16 +41,21 @@ export function AppStoreBadgeImg({
 export function AppStoreBadge({
   size = "sm",
   className = "",
+  placement,
 }: {
   size?: keyof typeof SIZES;
   className?: string;
+  /** GA label naming where this badge sits ("Analysis overlay", "Monthly
+   *  recap"). The shared event name stays; the label separates placements
+   *  that would otherwise be indistinguishable on the same page. */
+  placement?: string;
 }) {
   return (
     <a
       aria-label="Download on the App Store"
       className={`inline-block opacity-80 hover:opacity-100 transition-opacity ${className}`}
       data-ga-event="cta_download_app_store_badge"
-      data-ga-label="Download on the App Store"
+      data-ga-label={placement ?? "Download on the App Store"}
       href={APP_STORE_URL}
       rel="noopener noreferrer"
       target="_blank"

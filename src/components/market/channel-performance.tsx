@@ -500,7 +500,7 @@ function ContributorCard({
             : "border-[#d0c8be]/50 hover:bg-[#f1ebe2]/60 dark:border-border/50 dark:hover:bg-surface-secondary/60"
         }`}
         data-ga-event="cta_channel_open_contributor_deal"
-        data-ga-label={`${row.ticker} ${row.id}`}
+        data-ga-label={row.ticker}
         to={`/dealings/${row.id}`}
       >
         <span className="flex items-center gap-3">

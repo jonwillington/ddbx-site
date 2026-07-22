@@ -58,7 +58,7 @@ export function BlurredAnalysisOverlay({
           </li>
         ))}
       </ul>
-      <AppStoreBadge size="md" />
+      <AppStoreBadge placement="Analysis overlay" size="md" />
       <p className="text-[11px] text-muted/60 mt-3">{footnote}</p>
     </div>
   );
