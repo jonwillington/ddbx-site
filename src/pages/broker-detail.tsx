@@ -54,13 +54,15 @@ type Fact = { label: string; value: React.ReactNode };
  * Chrome (rail, sticky buy panel, mobile bar) is untouched by this system.
  */
 const R = {
+  // A half-step off the cream page — present but low-contrast. White is
+  // reserved for the floating buy panel so it reads as the raised object.
   sheet:
-    "rounded-2xl border border-[#e8e0d5] bg-white shadow-[0_1px_2px_rgba(90,65,40,0.04)] dark:border-white/[0.07] dark:bg-surface",
+    "rounded-2xl border border-[#e8e0d5] bg-[#faf7f2] shadow-[0_1px_2px_rgba(90,65,40,0.03)] dark:border-white/[0.07] dark:bg-surface",
   rule: "border-[#e8e0d5] dark:border-separator",
   tile: "rounded-xl bg-black/[0.035] dark:bg-white/[0.05]",
-  label: "text-[12px] leading-none text-foreground/50",
-  body: "text-[15px] leading-[1.7] text-foreground/70",
-  subhead: "text-[13px] font-semibold text-foreground/55",
+  label: "text-[11px] leading-none text-foreground/50",
+  body: "text-[14px] leading-[1.65] text-foreground/70",
+  subhead: "text-[12px] font-semibold text-foreground/55",
 } as const;
 
 export default function BrokerDetailPage() {
@@ -187,7 +189,7 @@ function BrokerReview({
     <DefaultLayout drawerRight hideMobileCta>
       <BrokerNavAside brokers={brokers} current={b} />
 
-      <div className="mx-auto w-full max-w-[1040px] pb-24 lg:pb-14">
+      <div className="w-full pb-24 lg:pb-14">
         {/* Breadcrumb lives on the cream page, outside the document sheet. */}
         <div className="flex items-baseline justify-between gap-4 text-sm">
           <nav
@@ -210,16 +212,14 @@ function BrokerReview({
 
         <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
           {/* The review document: header + article on one white sheet. */}
-          <div
-            className={`min-w-0 max-w-[760px] px-5 py-7 sm:px-9 sm:py-9 ${R.sheet}`}
-          >
+          <div className={`min-w-0 px-5 py-6 sm:px-8 sm:py-8 ${R.sheet}`}>
             <div ref={headerRef}>
               <ReviewHeader broker={b} facts={heroFacts} />
             </div>
 
             <article className="min-w-0">
               {b.summary && (
-                <p className="max-w-[32em] py-9 text-[19px] font-normal leading-[1.65] tracking-[-0.008em] text-foreground/85">
+                <p className="max-w-[44em] py-7 text-[16.5px] font-normal leading-[1.6] tracking-[-0.006em] text-foreground/85">
                   {b.summary}
                 </p>
               )}
@@ -250,11 +250,11 @@ function BrokerReview({
                   >
                     {faqs.map((item) => (
                       <details key={item.question} className="group">
-                        <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-4 text-[15px] font-medium leading-snug text-foreground transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
+                        <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-3 text-[14px] font-medium leading-snug text-foreground transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
                           {item.question}
                           <ChevronDownIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/40 transition-transform group-open:rotate-180" />
                         </summary>
-                        <p className={`max-w-[38em] pb-5 ${R.body}`}>
+                        <p className={`max-w-[42em] pb-4 ${R.body}`}>
                           {item.answer}
                         </p>
                       </details>
@@ -275,11 +275,11 @@ function BrokerReview({
                     {related.map((item) => (
                       <li key={item.slug}>
                         <a
-                          className="group -mx-3 flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+                          className="group -mx-3 flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                           href={`/brokers/${item.slug}`}
                         >
-                          <BrokerLogo broker={item} size={30} />
-                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground/75 group-hover:text-foreground">
+                          <BrokerLogo broker={item} size={28} />
+                          <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-foreground/75 group-hover:text-foreground">
                             {item.name}
                           </span>
                           <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-foreground/30 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground/60" />
@@ -323,14 +323,14 @@ function Section({
 }) {
   return (
     <section
-      className={`grid scroll-mt-24 gap-x-10 gap-y-5 border-t ${R.rule} py-10 sm:grid-cols-[10.5rem_minmax(0,1fr)] sm:py-12`}
+      className={`grid scroll-mt-24 gap-x-10 gap-y-4 border-t ${R.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
       id={id}
     >
       <div>
-        <h2 className="text-[20px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground">
+        <h2 className="text-[17px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground">
           {title}
         </h2>
-        {aside && <div className="mt-4">{aside}</div>}
+        {aside && <div className="mt-3">{aside}</div>}
       </div>
       <div className="min-w-0">{children}</div>
     </section>
@@ -351,7 +351,7 @@ function StickyBuyPanel({
 }) {
   return (
     <aside className="hidden lg:block lg:sticky lg:top-24">
-      <div className="rounded-2xl border border-[#5a4128]/25 bg-background/60 p-4 dark:border-[#d8c4af]/25">
+      <div className="rounded-2xl border border-[#5a4128]/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
         <div
           aria-hidden={!showIdentity}
           className={`grid transition-all duration-300 ease-out ${
@@ -418,24 +418,24 @@ function ReviewHeader({
 }) {
   return (
     <header>
-      <div className="flex items-start gap-5">
-        <BrokerLogo broker={b} className="mt-1 rounded-2xl" size={56} />
+      <div className="flex items-start gap-4">
+        <BrokerLogo broker={b} className="mt-0.5 rounded-xl" size={48} />
         <div className="min-w-0">
-          <h1 className="text-[34px] font-bold leading-[1.05] tracking-[-0.025em] text-foreground sm:text-[42px]">
+          <h1 className="text-[28px] font-bold leading-[1.05] tracking-[-0.022em] text-foreground sm:text-[34px]">
             {b.name}
           </h1>
-          <p className="mt-2.5 max-w-xl text-[17px] leading-snug text-foreground/65 sm:text-lg">
+          <p className="mt-1.5 max-w-xl text-[15px] leading-snug text-foreground/65 sm:text-[16px]">
             {b.tagline}
           </p>
           <RatingsLine broker={b} />
         </div>
       </div>
 
-      <dl className="mt-9 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <dl className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {facts.map((fact) => (
-          <div key={fact.label} className={`${R.tile} px-4 py-3.5`}>
+          <div key={fact.label} className={`${R.tile} px-3.5 py-3`}>
             <dt className={R.label}>{fact.label}</dt>
-            <dd className="mt-2 truncate text-[17px] font-semibold leading-none tracking-[-0.01em] text-foreground">
+            <dd className="mt-1.5 truncate text-[15.5px] font-semibold leading-none tracking-[-0.01em] text-foreground">
               {fact.value}
             </dd>
           </div>
@@ -460,7 +460,7 @@ function RatingsLine({ broker: b }: { broker: BrokerOffer }) {
     ratings.reduce((total, item) => total + item.value, 0) / ratings.length;
 
   return (
-    <div className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
       <StarRating value={average} />
       <span className="text-xs text-foreground/50">
         {ratings
@@ -489,14 +489,14 @@ function VerdictColumn({
   return (
     <div>
       <h3 className={R.subhead}>{title}</h3>
-      <ul className="mt-4 space-y-3.5">
+      <ul className="mt-3 space-y-2.5">
         {items.map((item) => (
           <li
             key={item}
-            className="flex gap-3 text-[14.5px] leading-[1.6] text-foreground/80"
+            className="flex gap-2.5 text-[13.5px] leading-[1.55] text-foreground/80"
           >
             <Icon
-              className={`mt-[5px] h-3.5 w-3.5 shrink-0 ${iconInk}`}
+              className={`mt-[4px] h-3.5 w-3.5 shrink-0 ${iconInk}`}
               strokeWidth={2.5}
             />
             <span>{item}</span>
@@ -530,7 +530,7 @@ function AppShotsSection({ broker: b }: { broker: BrokerOffer }) {
           <img
             key={base}
             alt={`${b.name} app screenshot ${index + 1}`}
-            className={`h-[300px] w-auto shrink-0 snap-start rounded-xl border ${R.rule}`}
+            className={`h-[270px] w-auto shrink-0 snap-start rounded-xl border ${R.rule}`}
             decoding="async"
             loading="lazy"
             src={`${base}/300x650bb.webp`}
@@ -553,8 +553,8 @@ function AppShotsSection({ broker: b }: { broker: BrokerOffer }) {
 function OfferSection({ broker: b }: { broker: BrokerOffer }) {
   return (
     <Section id="offer" title="Current offer">
-      <div className={`${R.tile} px-6 py-5`}>
-        <p className="max-w-xl text-[17px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
+      <div className={`${R.tile} px-5 py-4`}>
+        <p className="max-w-xl text-[15.5px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
           {b.offer_headline}
         </p>
         {b.offer_terms && (
@@ -631,20 +631,20 @@ function CostSection({
       {/* Hero figure + the composition beside it. Proportional figures on
           the big number (tabular looks loose at display sizes); tabular is
           reserved for the aligned columns below. */}
-      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div>
-          <span className="block text-[44px] font-bold leading-none tracking-[-0.03em] text-foreground sm:text-[52px]">
+          <span className="block text-[38px] font-bold leading-none tracking-[-0.028em] text-foreground sm:text-[44px]">
             {fmtMoneyRound(mine.total)}
           </span>
-          <span className="mt-2 block text-[13px] text-foreground/55">
+          <span className="mt-1.5 block text-[12.5px] text-foreground/55">
             estimated each year on £{pot.toLocaleString("en-GB")}
           </span>
         </div>
-        <dl className="flex gap-6 sm:gap-8">
+        <dl className="flex gap-6 sm:gap-7">
           {parts.map((part) => (
-            <div key={part.label} className={`border-l ${R.rule} pl-4`}>
+            <div key={part.label} className={`border-l ${R.rule} pl-3.5`}>
               <dt className={R.label}>{part.label}</dt>
-              <dd className="mt-2 text-[16px] font-semibold leading-none tracking-tight text-foreground/90">
+              <dd className="mt-1.5 text-[15px] font-semibold leading-none tracking-tight text-foreground/90">
                 {fmtMoneyRound(part.value)}
               </dd>
             </div>
@@ -656,7 +656,7 @@ function CostSection({
           this broker's bar carries full ink — identity is in the row labels,
           never colour alone. */}
       <div
-        className={`mt-8 grid grid-cols-[minmax(0,9.5rem)_1fr_auto] items-center gap-x-4 gap-y-3.5 border-t ${R.rule} pt-6 sm:grid-cols-[minmax(0,11rem)_1fr_auto]`}
+        className={`mt-6 grid grid-cols-[minmax(0,9.5rem)_1fr_auto] items-center gap-x-4 gap-y-3 border-t ${R.rule} pt-5 sm:grid-cols-[minmax(0,11rem)_1fr_auto]`}
       >
         {rows.map((row) => (
           <div key={row.label} className="contents">
@@ -694,8 +694,8 @@ function CostSection({
         ))}
       </div>
 
-      <details className={`group mt-8 border-t ${R.rule} pt-4`}>
-        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-foreground/60 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+      <details className={`group mt-6 border-t ${R.rule} pt-4`}>
+        <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-foreground/60 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
           <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
           Full fee schedule and methodology
         </summary>
@@ -719,9 +719,9 @@ function FeeSchedule({ broker: b }: { broker: BrokerOffer }) {
 
   return (
     <div className="mt-3">
-      <dl className="divide-y divide-[#e8e0d5] text-sm dark:divide-separator">
+      <dl className="divide-y divide-[#e8e0d5] text-[13px] dark:divide-separator">
         {rows.map(([label, value]) => (
-          <div key={label} className="flex justify-between gap-6 py-2.5">
+          <div key={label} className="flex justify-between gap-6 py-2">
             <dt className="text-foreground/55">{label}</dt>
             <dd className="text-right font-semibold tabular-nums text-foreground/85">
               {value}
@@ -777,18 +777,18 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
 
   return (
     <Section id="platform" title="The platform">
-      <div className="space-y-8">
+      <div className="space-y-6">
         {groups.map((group) => {
           const items = group.items.filter(([, value]) => value != null);
 
           return (
             <div key={group.label}>
               <h3 className={R.subhead}>{group.label}</h3>
-              <ul className="mt-2 grid gap-x-10 sm:grid-cols-2">
+              <ul className="mt-1.5 grid gap-x-10 sm:grid-cols-2">
                 {items.map(([label, value]) => (
                   <li
                     key={label}
-                    className={`flex items-center justify-between gap-4 border-b ${R.rule} py-2 text-[14px]`}
+                    className={`flex items-center justify-between gap-4 border-b ${R.rule} py-[7px] text-[13.5px]`}
                   >
                     <span
                       className={
@@ -821,14 +821,14 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
         })}
 
         <div className="flex items-start gap-3">
-          <ShieldCheckIcon className="mt-0.5 h-5 w-5 shrink-0 text-foreground/45" />
+          <ShieldCheckIcon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-foreground/45" />
           <div className="min-w-0">
-            <p className="text-[14.5px] font-semibold leading-snug text-foreground">
+            <p className="text-[13.5px] font-semibold leading-snug text-foreground">
               {b.trust.fscs_protected
                 ? "FSCS protected up to £85,000"
                 : "Not listed as FSCS protected"}
             </p>
-            <p className="mt-0.5 text-[13px] text-foreground/55">
+            <p className="mt-0.5 text-[12.5px] text-foreground/55">
               {[
                 b.trust.regulator && `Regulated by the ${b.trust.regulator}`,
                 b.trust.year_founded && `founded ${b.trust.year_founded}`,
