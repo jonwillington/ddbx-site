@@ -1,5 +1,7 @@
-import { ExclamationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
+
+import { CloseButton } from "@/components/close-button";
 
 /** localStorage flag so the intro only nudges first-time visitors — once
  *  dismissed it stays gone across reloads. POC: web-only, generic across
@@ -74,15 +76,14 @@ export function MarketIntroBanner({
           </p>
         </div>
       </div>
-      <button
+      <CloseButton
         aria-label="Dismiss"
-        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
+        className="absolute right-2 top-2"
         data-ga-event="cta_intro_dismiss"
         data-ga-label="Dismiss intro banner"
+        size="sm"
         onClick={onDismiss}
-      >
-        <XMarkIcon className="h-4 w-4" />
-      </button>
+      />
     </div>
   );
 }

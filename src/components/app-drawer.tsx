@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Drawer } from "vaul";
 
 import { useMediaQuery } from "@/lib/use-media-query";
+import { CloseButton } from "@/components/close-button";
 
 /** Shared drawer shell used by every non-dealing panel (legal pages, daily
  *  summary, performance metric/criteria/sector sheets). Same chrome as the
@@ -72,14 +73,7 @@ export function AppDrawer({
                 </Drawer.Description>
               )}
             </div>
-            <button
-              aria-label="Close"
-              className="shrink-0 text-muted hover:text-foreground text-2xl leading-none px-1"
-              type="button"
-              onClick={onClose}
-            >
-              ×
-            </button>
+            <CloseButton onClick={onClose} />
           </div>
 
           {/* sr-only description keeps the dialog labelled when no visible

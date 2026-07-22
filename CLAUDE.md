@@ -62,6 +62,19 @@ Both scripts assume `ddbx-data` is cloned alongside `ddbx-site`. Override with
 **Workflow**: when you change types in `ddbx-data`, run `npm run sync:types`
 here in the same change cycle. CI runs `check:types` to catch drift.
 
+## UI patterns
+
+- **Close/dismiss ("X") buttons**: ALWAYS use `CloseButton` from
+  `src/components/close-button.tsx` — never hand-roll an `×` glyph or a
+  one-off icon button. It's the canonical circular light-contrast fill
+  with hover + focus-visible states. `size="sm"` for banners/toasts,
+  default `md` for drawer/modal headers, `tone="dark"` for surfaces
+  with a fixed dark background (e.g. the explainer walkthrough).
+  Position via `className` (e.g. `absolute right-4 top-4`); GA
+  `data-ga-*` attrs pass straight through.
+- Shared button/chip styling tokens live in `src/components/button.ts`
+  and `src/components/chip.ts` — reuse them before inventing new fills.
+
 ## Discretion mode (web gating)
 
 The public website intentionally shows only a sliver of the data so the iOS

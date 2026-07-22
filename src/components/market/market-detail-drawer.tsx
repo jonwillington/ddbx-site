@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 
+import { CloseButton } from "@/components/close-button";
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { ClusterChip } from "@/components/cluster-chip";
@@ -274,13 +275,7 @@ export function MarketDetailDrawer<W>({
                 >
                   {company}
                 </span>
-                <button
-                  aria-label="Close"
-                  className="shrink-0 text-muted hover:text-foreground text-2xl leading-none px-1"
-                  onClick={onClose}
-                >
-                  ×
-                </button>
+                <CloseButton onClick={onClose} />
               </div>
 
               {gated ? (

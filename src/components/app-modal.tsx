@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Drawer } from "vaul";
 
 import { useMediaQuery } from "@/lib/use-media-query";
+import { CloseButton } from "@/components/close-button";
 
 /** Centered-modal sibling of {@link AppDrawer}. Content-heavy panels (the
  *  monthly recap) need more horizontal room than the right-edge side panel
@@ -77,14 +78,7 @@ export function AppModal({
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {headerRight}
-        <button
-          aria-label="Close"
-          className="shrink-0 text-muted hover:text-foreground text-2xl leading-none px-1"
-          type="button"
-          onClick={onClose}
-        >
-          ×
-        </button>
+        <CloseButton onClick={onClose} />
       </div>
     </div>
   );

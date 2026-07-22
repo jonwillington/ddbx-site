@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { shortDate } from "./market-utils";
 
+import { CloseButton } from "@/components/close-button";
 import { CompanyLogo } from "@/components/company-logo";
 import { marketCopyFor } from "@/lib/markets/market-copy";
 
@@ -415,14 +416,11 @@ export function MarketExplainerExperience({
       />
 
       {/* Close */}
-      <button
-        aria-label="Close"
-        className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full text-2xl leading-none text-[#f3ecdf]/50 transition-colors hover:bg-white/[0.06] hover:text-[#f3ecdf]"
-        type="button"
+      <CloseButton
+        className="absolute right-4 top-4 z-20"
+        tone="dark"
         onClick={onClose}
-      >
-        ×
-      </button>
+      />
 
       {/* Scene */}
       <div className="pointer-events-none relative z-10 flex flex-1 items-center justify-center px-6 [&_button]:pointer-events-auto">
