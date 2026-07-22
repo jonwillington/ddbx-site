@@ -24,7 +24,6 @@ import { LockClosedIcon } from "@heroicons/react/24/outline";
 
 import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { formatSignedPct } from "@/lib/performance/format";
-import { BUTTON_FILLED_GROUP, BUTTON_RADIUS } from "@/components/button";
 import { CompanyLogo } from "@/components/company-logo";
 
 interface Props {
@@ -49,10 +48,6 @@ const UNBLURRED = 2;
 
 /** The losing side of the picks-vs-market pair dims to this. */
 const MUTED_OPACITY = 0.45;
-
-/** Most cells the beat-the-market waffle will draw — past this it switches to a
- *  proportional fill so a busy market doesn't sprawl down the rail. */
-const WAFFLE_MAX_CELLS = 40;
 
 const STYLE_LABEL: Record<
   ChannelPerformanceSummary["styles"][number]["kind"],
@@ -107,7 +102,7 @@ export function ChannelPerformance({
   formatStake,
 }: Props) {
   return (
-    <div className="px-5 lg:px-4 py-4 space-y-5">
+    <div className="px-5 lg:px-4 py-4 space-y-6">
       <HeadlineAlpha benchmarkLabel={benchmarkLabel} summary={summary} />
 
       <Contributors
@@ -175,33 +170,53 @@ function HeadlineAlpha({
   const benchTone = pairTone(benchmarkReturnPct, picksReturnPct);
 
   return (
-    <div>
-      <SectionHeading>Beating the {benchmarkLabel ?? "market"}?</SectionHeading>
+    <section className="relative overflow-hidden rounded-2xl border border-[#d8cec1]/70 bg-white/45 px-4 py-4 shadow-[0_12px_32px_-28px_rgba(61,43,26,0.7)] dark:border-border/70 dark:bg-surface-secondary/35">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-12 -top-16 h-36 w-36 rounded-full bg-[#4f8a48]/10 blur-2xl dark:bg-[#5cd84a]/10"
+      />
+      <div className="relative">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
+            90-day performance
+          </span>
+          <span className="text-[10px] text-muted">
+            {lastUpdated ? `Updated ${formatUpdated(lastUpdated)}` : ""}
+          </span>
+        </div>
 
-      {alphaPct != null && <Verdict alphaPct={alphaPct} />}
+        <p className="mt-3 text-xs font-medium text-foreground/75">
+          Beating the {benchmarkLabel ?? "market"}?
+        </p>
+        {alphaPct != null && <Verdict alphaPct={alphaPct} />}
 
-      <div className="mt-3 flex items-start gap-4">
-        <Stat
-          align="left"
-          label={UNIVERSE_LABEL[headlineUniverse]}
-          muted={picksTone.muted}
-          tone={picksTone.className}
-          value={formatSignedPct(picksReturnPct)}
-        />
-        <Stat
-          align="right"
-          label="The market"
-          muted={benchTone.muted}
-          tone={benchTone.className}
-          value={formatSignedPct(benchmarkReturnPct)}
-        />
+        <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[#ddd4c8]/70 bg-[#ddd4c8]/70 dark:border-border/70 dark:bg-border/70">
+          <div className="bg-[#faf7f2]/90 p-3 dark:bg-surface">
+            <Stat
+              align="left"
+              label={UNIVERSE_LABEL[headlineUniverse]}
+              muted={picksTone.muted}
+              tone={picksTone.className}
+              value={formatSignedPct(picksReturnPct)}
+            />
+          </div>
+          <div className="bg-[#faf7f2]/90 p-3 dark:bg-surface">
+            <Stat
+              align="right"
+              label="The market"
+              muted={benchTone.muted}
+              tone={benchTone.className}
+              value={formatSignedPct(benchmarkReturnPct)}
+            />
+          </div>
+        </div>
+
+        <p className="mt-3 text-[10px] leading-relaxed text-muted">
+          Equal-weight return from picks disclosed in the last{" "}
+          {CHANNEL_WINDOW_DAYS} days.
+        </p>
       </div>
-
-      <p className="mt-2 text-[10px] text-muted">
-        Last {CHANNEL_WINDOW_DAYS} days
-        {lastUpdated ? ` · Updated ${formatUpdated(lastUpdated)}` : ""}
-      </p>
-    </div>
+    </section>
   );
 }
 
@@ -219,13 +234,15 @@ function Verdict({ alphaPct }: { alphaPct: number }) {
       : "text-[#8b2020] dark:text-[#e84d4d]";
 
   return (
-    <p className={`mt-1.5 text-2xl font-semibold tabular-nums ${toneClass}`}>
+    <p
+      className={`mt-0.5 text-[1.7rem] font-semibold leading-tight tracking-[-0.025em] tabular-nums ${toneClass}`}
+    >
       {level ? (
         "Level with it"
       ) : (
         <>
           {ahead ? "Yes" : "No"}
-          <span className="font-normal text-foreground/70 text-base">
+          <span className="font-normal text-foreground/60 text-base">
             {ahead ? ", by " : ", behind by "}
           </span>
           {`${Math.abs(pp).toFixed(1)}pp`}
@@ -263,40 +280,35 @@ function Stat({
   );
 }
 
-/** Beat-the-market waffle — one square per buy (green = beat the market), so
- *  the reader sees how *often* directors won, not just by how much. Above
- *  WAFFLE_MAX_CELLS it shows a proportional fill instead of a cell per buy. */
+/** Compact proportion bar — the rail can contain more than 100 buys, so a
+ * literal waffle would either sprawl or imply that sampled cells are deals. */
 function MarketBeat({ count, total }: { count: number; total: number }) {
   if (total === 0) return null;
 
   const rate = count / total;
-  const cells = Math.min(total, WAFFLE_MAX_CELLS);
-  const greens =
-    total <= WAFFLE_MAX_CELLS ? count : Math.round(rate * WAFFLE_MAX_CELLS);
 
   return (
-    <section className="space-y-2">
-      <div className="flex items-baseline justify-between gap-2">
-        <SectionHeading>Beat the market</SectionHeading>
-        <span className="text-[10px] text-muted tabular-nums">
-          {count} of {total} buys · {Math.round(rate * 100)}%
+    <section className="rounded-2xl bg-[#eee9e1]/65 p-4 dark:bg-surface-secondary/55">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <SectionHeading>Picks that beat the market</SectionHeading>
+          <p className="mt-1 text-[11px] text-muted tabular-nums">
+            {count} of {total} buys
+          </p>
+        </div>
+        <span className="text-2xl font-semibold tracking-tight text-[#1e6b18] tabular-nums dark:text-[#5cd84a]">
+          {Math.round(rate * 100)}%
         </span>
       </div>
       <div
-        aria-hidden
-        className="grid gap-1"
-        style={{ gridTemplateColumns: "repeat(10, minmax(0, 1fr))" }}
+        aria-label={`${count} of ${total} buys beat the market`}
+        className="mt-3 h-2.5 overflow-hidden rounded-full bg-foreground/10"
+        role="img"
       >
-        {Array.from({ length: cells }).map((_, i) => (
-          <span
-            key={i}
-            className={`aspect-square rounded-sm ${
-              i < greens
-                ? "bg-[#1e6b18]/80 dark:bg-[#5cd84a]/80"
-                : "bg-foreground/10"
-            }`}
-          />
-        ))}
+        <div
+          className="h-full rounded-full bg-[#4f8548] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] dark:bg-[#5cd84a]/80"
+          style={{ width: `${rate * 100}%` }}
+        />
       </div>
     </section>
   );
@@ -311,9 +323,14 @@ function SectorLeaderboard({
 
   return (
     <section className="space-y-2">
-      <SectionHeading>Best sectors vs market</SectionHeading>
+      <div>
+        <SectionHeading>Where picks found an edge</SectionHeading>
+        <p className="mt-0.5 text-[10px] text-muted">
+          Average return above the market
+        </p>
+      </div>
       <ul className="space-y-1.5">
-        {sectors.map((s) => (
+        {sectors.slice(0, 4).map((s) => (
           <li key={s.sector} className="text-xs">
             <div className="flex items-baseline justify-between gap-2">
               <span className="truncate text-foreground/80">{s.sector}</span>
@@ -392,7 +409,10 @@ function Contributors({
 
   return (
     <section className="space-y-2">
-      <SectionHeading>Top performers</SectionHeading>
+      <div className="flex items-baseline justify-between gap-3">
+        <SectionHeading>Best recent picks</SectionHeading>
+        <span className="text-[10px] text-muted">since disclosure</span>
+      </div>
       <ul className="space-y-1.5">
         {visible.map((row, i) => (
           <ContributorCard
@@ -406,44 +426,53 @@ function Contributors({
 
       {gated && hiddenCount > 0 && (
         <a
-          className="relative block mt-1.5 group"
+          className="group mt-2 block"
           data-ga-event="cta_channel_see_all_picks_in_app"
           data-ga-label={`See all ${rows.length} picks in app`}
           href={appHref}
           rel="noopener noreferrer"
           target="_blank"
         >
-          {/* Blurred decoy cards — the real tickers never reach the DOM. */}
-          <div
-            aria-hidden
-            className="pointer-events-none select-none space-y-1.5"
-            style={{ filter: "blur(5px)" }}
-          >
-            {DECOY.map((d, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 rounded-xl border border-[#d0c8be]/50 dark:border-border/50 p-3"
-              >
-                <span className="w-9 h-9 rounded-full shrink-0 bg-foreground/10" />
-                <span className="flex-1 min-w-0 space-y-1.5">
-                  <span className="block h-2.5 w-24 rounded bg-foreground/15" />
-                  <span className="block h-2 w-12 rounded bg-foreground/10" />
-                </span>
-                <span className="tabular-nums font-bold text-lg text-[#1e6b18] dark:text-[#5cd84a]">
-                  {formatSignedPct(d.returnPct)}
-                </span>
-              </div>
-            ))}
+          <div className="relative h-12 overflow-hidden">
+            <div
+              aria-hidden
+              className="pointer-events-none select-none space-y-1.5 opacity-50"
+              style={{
+                filter: "blur(5px)",
+                maskImage: "linear-gradient(to bottom, black, transparent)",
+              }}
+            >
+              {DECOY.slice(0, 1).map((d, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-xl border border-[#d0c8be]/50 p-3 dark:border-border/50"
+                >
+                  <span className="h-9 w-9 shrink-0 rounded-full bg-foreground/10" />
+                  <span className="min-w-0 flex-1 space-y-1.5">
+                    <span className="block h-2.5 w-24 rounded bg-foreground/15" />
+                    <span className="block h-2 w-12 rounded bg-foreground/10" />
+                  </span>
+                  <span className="text-lg font-bold text-[#1e6b18] tabular-nums dark:text-[#5cd84a]">
+                    {formatSignedPct(d.returnPct)}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span
-              className={`inline-flex items-center gap-1.5 ${BUTTON_RADIUS} ${BUTTON_FILLED_GROUP} text-[11px] font-medium px-3 py-1.5 shadow-lg transition-colors`}
-            >
-              <LockClosedIcon className="w-3 h-3" />
-              See all {rows.length} picks in the app
+          <span className="flex w-full items-center justify-between gap-3 rounded-xl bg-[#211a14] px-4 py-3 text-[#fffaf4] shadow-[0_10px_24px_-14px_rgba(33,26,20,0.9)] transition-transform group-hover:-translate-y-0.5 dark:bg-[#e8ddd0] dark:text-[#211a14]">
+            <span>
+              <span className="block text-xs font-semibold">
+                Unlock {hiddenCount} more {hiddenCount === 1 ? "pick" : "picks"}
+              </span>
+              <span className="mt-0.5 block text-[10px] opacity-65">
+                See the complete list in the app
+              </span>
             </span>
-          </div>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 dark:bg-black/10">
+              <LockClosedIcon className="h-3.5 w-3.5" />
+            </span>
+          </span>
         </a>
       )}
     </section>
@@ -452,8 +481,8 @@ function Contributors({
 
 /** Ranked pick card — logo, company, and a big bold return, so the winners
  *  read as names to follow rather than lines in a table. Rank 0 is the hero:
- *  larger logo, larger number, a green-tinted plate, and the iOS-style £1,000
- *  payoff line ("£1,000 at disclosure → £1,774 today"). The list is
+ *  larger logo, larger number, a lifted plate, and the iOS-style £1,000 payoff
+ *  line ("£1,000 at disclosure → £1,774 today"). The list is
  *  winners-only, so the payoff never shows a loss — same guarantee the app's
  *  plate makes by rendering only when in profit. */
 function ContributorCard({
@@ -470,9 +499,9 @@ function ContributorCard({
   return (
     <li>
       <Link
-        className={`block rounded-xl border p-3 transition-colors group ${
+        className={`block rounded-xl border px-3 py-3 transition-all group ${
           hero
-            ? "border-[#1e6b18]/25 bg-[#1e6b18]/[0.06] hover:bg-[#1e6b18]/[0.1] dark:border-[#5cd84a]/25 dark:bg-[#5cd84a]/[0.07] dark:hover:bg-[#5cd84a]/[0.11]"
+            ? "border-[#cfc5b8]/80 bg-white/45 shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] hover:border-[#1e6b18]/30 hover:bg-white/70 dark:border-border/70 dark:bg-surface-secondary/35 dark:hover:border-[#5cd84a]/30"
             : "border-[#d0c8be]/50 hover:bg-[#f1ebe2]/60 dark:border-border/50 dark:hover:bg-surface-secondary/60"
         }`}
         data-ga-event="cta_channel_open_contributor_deal"
@@ -517,7 +546,7 @@ function ContributorCard({
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+    <h3 className="text-[11px] font-semibold tracking-[-0.005em] text-foreground/75">
       {children}
     </h3>
   );
