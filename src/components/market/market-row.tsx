@@ -130,12 +130,49 @@ export function MarketRowHeader({
   );
 }
 
+/** Flat tear-off-calendar chip: weekday strip over a big day number. Drawn
+ *  entirely in CSS (no image assets), so repeating it for every day in the
+ *  list costs nothing. Brand-toned rather than the classic red so thirty of
+ *  them read as structure, not decoration. */
+function CalendarDayChip({
+  weekday,
+  dayNum,
+  size = "md",
+}: {
+  weekday: string;
+  dayNum: string;
+  size?: "sm" | "md";
+}) {
+  return (
+    <span
+      className={`flex shrink-0 flex-col overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-surface-secondary ${
+        size === "md" ? "w-11" : "w-9"
+      }`}
+    >
+      <span
+        className={`bg-[#5a4128] text-center font-bold uppercase tracking-[0.08em] text-[#f5f0e8] dark:bg-[#ad9479] dark:text-[#1a140d] ${
+          size === "md" ? "py-[3px] text-[8px]" : "py-[2px] text-[7px]"
+        }`}
+      >
+        {weekday.slice(0, 3)}
+      </span>
+      <span
+        className={`text-center font-semibold leading-none tabular-nums text-foreground/90 ${
+          size === "md" ? "py-1.5 text-lg" : "py-1 text-base"
+        }`}
+      >
+        {dayNum}
+      </span>
+    </span>
+  );
+}
+
 /** Date marker rendered for each day inside an open month. At wide desktop
  *  widths `variant="rail"` sits in a dedicated gutter to the left of the day
  *  card. Below `xl` the default inline variant sits ABOVE the day card on the
- *  well background — same big-ordinal typography as the rail, laid
- *  horizontally with a hairline running to the right edge, so the scroll
- *  still reads as a dated timeline where the table can't spare a gutter. */
+ *  well background — same calendar chip laid horizontally with the month and
+ *  a hairline running to the right edge, so the scroll still reads as a
+ *  dated timeline where the table can't spare a gutter. */
 export function MarketDayHeader({
   weekday,
   day,
@@ -153,35 +190,14 @@ export function MarketDayHeader({
   const monthLabel = !Number.isNaN(dateObj.getTime())
     ? dateObj.toLocaleString(locale, { month: "short" })
     : "";
-  const ordinalMatch = day.match(/^(\d+)(st|nd|rd|th)$/i);
-
-  const bigDay = (
-    <span
-      className={`block font-semibold leading-none tabular-nums text-foreground/90 ${
-        variant === "rail" ? "mt-1 text-xl" : "text-lg"
-      }`}
-    >
-      {ordinalMatch ? (
-        <>
-          {ordinalMatch[1]}
-          <sup className="ml-px align-super text-[10px] font-semibold leading-none">
-            {ordinalMatch[2]}
-          </sup>
-        </>
-      ) : (
-        day
-      )}
-    </span>
-  );
+  // `day` arrives as an ordinal ("17th") — the chip wants the bare number.
+  const dayNum = day.match(/^\d+/)?.[0] ?? day;
 
   if (variant === "rail") {
     return (
       <div className="hidden xl:block pt-2 text-left">
-        <time className="block" dateTime={isoDate}>
-          <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-foreground/55">
-            {weekday}
-          </span>
-          {bigDay}
+        <time className="inline-block" dateTime={isoDate}>
+          <CalendarDayChip dayNum={dayNum} weekday={weekday} />
         </time>
       </div>
     );
@@ -189,10 +205,10 @@ export function MarketDayHeader({
 
   return (
     <div className="mb-2 flex items-center gap-3 px-1 xl:hidden">
-      <time className="flex items-baseline gap-2" dateTime={isoDate}>
-        {bigDay}
+      <time className="flex items-center gap-2" dateTime={isoDate}>
+        <CalendarDayChip dayNum={dayNum} size="sm" weekday={weekday} />
         <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/55">
-          {weekday} · {monthLabel}
+          {monthLabel}
         </span>
       </time>
       <span aria-hidden className="h-px flex-1 bg-foreground/10" />
