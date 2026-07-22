@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   ArrowRightIcon,
@@ -107,6 +107,27 @@ function BrokerReview({
   broker: BrokerOffer;
   brokers: BrokerOffer[];
 }) {
+  // The sticky panel repeats the logo + name from the page header, which
+  // looks duplicated while both are on screen. Watch the header and only
+  // reveal the panel's identity row once it has scrolled out from under the
+  // sticky offset (top-24 = 96px).
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [pastHeader, setPastHeader] = useState(false);
+
+  useEffect(() => {
+    const el = headerRef.current;
+
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPastHeader(!entry.isIntersecting),
+      { rootMargin: "-96px 0px 0px 0px" },
+    );
+
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
+
   const heroFacts: Fact[] = [
     { label: "Platform fee", value: platformFeeSummary(b.fees) },
     { label: "UK trades", value: fmtMoney(b.fees.trade_commission_uk_gbp) },
@@ -136,7 +157,9 @@ function BrokerReview({
       <BrokerNavAside brokers={brokers} current={b} />
 
       <div className="mx-auto w-full max-w-[1040px] pb-24 lg:pb-14">
-        <ReviewHeader broker={b} facts={heroFacts} />
+        <div ref={headerRef}>
+          <ReviewHeader broker={b} facts={heroFacts} />
+        </div>
 
         <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
           <article className="min-w-0 max-w-[760px]">
@@ -234,7 +257,7 @@ function BrokerReview({
             </div>
           </article>
 
-          <StickyBuyPanel broker={b} />
+          <StickyBuyPanel broker={b} showIdentity={pastHeader} />
         </div>
       </div>
 
@@ -245,22 +268,41 @@ function BrokerReview({
 
 /** The active broker's conversion panel, sat beside the article and sticky as
  *  the reader scrolls. Carries the facts the header band doesn't (accounts,
- *  protection, regulator) so the two don't repeat each other. */
-function StickyBuyPanel({ broker: b }: { broker: BrokerOffer }) {
+ *  protection, regulator) so the two don't repeat each other. The logo + name
+ *  row only slides in once the page header has scrolled away — while the
+ *  header is on screen it would be a straight duplicate. */
+function StickyBuyPanel({
+  broker: b,
+  showIdentity,
+}: {
+  broker: BrokerOffer;
+  showIdentity: boolean;
+}) {
   return (
     <aside className="hidden lg:block lg:sticky lg:top-24">
       <div className="rounded-2xl border border-[#5a4128]/25 bg-background/60 p-4 dark:border-[#d8c4af]/25">
-        <div className="flex items-center gap-3">
-          <BrokerLogo broker={b} size={44} />
-          <div className="min-w-0">
-            <p className="truncate font-bold text-foreground">{b.name}</p>
-            {b.trust.trustpilot_rating != null && (
-              <StarRating value={b.trust.trustpilot_rating} />
-            )}
+        <div
+          aria-hidden={!showIdentity}
+          className={`grid transition-all duration-300 ease-out ${
+            showIdentity
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="flex items-center gap-3 pb-3">
+              <BrokerLogo broker={b} size={44} />
+              <div className="min-w-0">
+                <p className="truncate font-bold text-foreground">{b.name}</p>
+                {b.trust.trustpilot_rating != null && (
+                  <StarRating value={b.trust.trustpilot_rating} />
+                )}
+              </div>
+            </div>
           </div>
         </div>
         {b.offer_headline && (
-          <OfferBadge className="mt-3" text={b.offer_headline} />
+          <OfferBadge className="mt-0" text={b.offer_headline} />
         )}
         <BrokerVisitLink
           broker={b}
