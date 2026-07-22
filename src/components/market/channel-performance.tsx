@@ -25,6 +25,7 @@ import { LockClosedIcon } from "@heroicons/react/24/outline";
 import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { formatSignedPct } from "@/lib/performance/format";
 import { BUTTON_FILLED_GROUP, BUTTON_RADIUS } from "@/components/button";
+import { CompanyLogo } from "@/components/company-logo";
 
 interface Props {
   summary: ChannelPerformanceSummary;
@@ -62,13 +63,10 @@ const STYLE_LABEL: Record<
   neutral: "Neutral",
 };
 
-// Faux rows shown blurred under the contributors CTA — never the real
+// Faux cards shown blurred under the contributors CTA — never the real
 // holdings, so the picks aren't sitting in the DOM for a "view source" peek.
-const DECOY = [
-  { ticker: "•••", returnPct: 0.184 },
-  { ticker: "•••", returnPct: 0.092 },
-  { ticker: "•••", returnPct: 0.061 },
-];
+// Two are enough to seat the CTA without stretching the rail.
+const DECOY = [{ returnPct: 0.184 }, { returnPct: 0.092 }];
 
 function toneClass(ratio: number | null): string {
   if (ratio == null) return "text-muted";
@@ -395,13 +393,12 @@ function Contributors({
   return (
     <section className="space-y-2">
       <SectionHeading>Top performers</SectionHeading>
-      <ul className="space-y-1">
+      <ul className="space-y-1.5">
         {visible.map((row, i) => (
-          <ContributorRow
+          <ContributorCard
             key={row.id}
-            payoff={
-              i === 0 && formatStake ? payoffLine(row, formatStake) : null
-            }
+            formatStake={formatStake}
+            rank={i}
             row={row}
           />
         ))}
@@ -409,26 +406,30 @@ function Contributors({
 
       {gated && hiddenCount > 0 && (
         <a
-          className="relative block mt-1 group"
+          className="relative block mt-1.5 group"
           data-ga-event="cta_channel_see_all_picks_in_app"
           data-ga-label={`See all ${rows.length} picks in app`}
           href={appHref}
           rel="noopener noreferrer"
           target="_blank"
         >
-          {/* Blurred decoy rows — the real tickers never reach the DOM. */}
+          {/* Blurred decoy cards — the real tickers never reach the DOM. */}
           <div
             aria-hidden
-            className="pointer-events-none select-none space-y-1"
-            style={{ filter: "blur(4px)" }}
+            className="pointer-events-none select-none space-y-1.5"
+            style={{ filter: "blur(5px)" }}
           >
             {DECOY.map((d, i) => (
               <div
                 key={i}
-                className="flex items-baseline justify-between gap-2 text-xs"
+                className="flex items-center gap-3 rounded-xl border border-[#d0c8be]/50 dark:border-border/50 p-3"
               >
-                <span className="font-mono text-foreground/80">{d.ticker}</span>
-                <span className="tabular-nums text-[#1e6b18] dark:text-[#5cd84a]">
+                <span className="w-9 h-9 rounded-full shrink-0 bg-foreground/10" />
+                <span className="flex-1 min-w-0 space-y-1.5">
+                  <span className="block h-2.5 w-24 rounded bg-foreground/15" />
+                  <span className="block h-2 w-12 rounded bg-foreground/10" />
+                </span>
+                <span className="tabular-nums font-bold text-lg text-[#1e6b18] dark:text-[#5cd84a]">
                   {formatSignedPct(d.returnPct)}
                 </span>
               </div>
@@ -449,51 +450,64 @@ function Contributors({
   );
 }
 
-/** iOS payoff plate, one line: "£1,000 at disclosure → £1,774 today". The
- *  contributors list is winners-only, so this never shows a loss — same
- *  guarantee the app's plate makes by rendering only when in profit. */
-function payoffLine(
-  row: ChannelContributor,
-  formatStake: (n: number) => string,
-): string {
-  return `${formatStake(STAKE)} at disclosure → ${formatStake(
-    STAKE * (1 + row.returnPct),
-  )} today`;
-}
-
-function ContributorRow({
+/** Ranked pick card — logo, company, and a big bold return, so the winners
+ *  read as names to follow rather than lines in a table. Rank 0 is the hero:
+ *  larger logo, larger number, a green-tinted plate, and the iOS-style £1,000
+ *  payoff line ("£1,000 at disclosure → £1,774 today"). The list is
+ *  winners-only, so the payoff never shows a loss — same guarantee the app's
+ *  plate makes by rendering only when in profit. */
+function ContributorCard({
   row,
-  payoff,
+  rank,
+  formatStake,
 }: {
   row: ChannelContributor;
-  payoff?: string | null;
+  rank: number;
+  formatStake?: (n: number) => string;
 }) {
+  const hero = rank === 0;
+
   return (
     <li>
       <Link
-        className="block text-xs group"
+        className={`block rounded-xl border p-3 transition-colors group ${
+          hero
+            ? "border-[#1e6b18]/25 bg-[#1e6b18]/[0.06] hover:bg-[#1e6b18]/[0.1] dark:border-[#5cd84a]/25 dark:bg-[#5cd84a]/[0.07] dark:hover:bg-[#5cd84a]/[0.11]"
+            : "border-[#d0c8be]/50 hover:bg-[#f1ebe2]/60 dark:border-border/50 dark:hover:bg-surface-secondary/60"
+        }`}
         data-ga-event="cta_channel_open_contributor_deal"
         data-ga-label={`${row.ticker} ${row.id}`}
         to={`/dealings/${row.id}`}
       >
-        <span className="flex items-baseline justify-between gap-2">
-          <span className="min-w-0">
-            <span className="font-mono text-foreground/90 group-hover:text-[#5a4128] dark:group-hover:text-[#ad9479]">
-              {row.ticker}
-            </span>
-            <span className="ml-1.5 text-[10px] text-muted truncate">
+        <span className="flex items-center gap-3">
+          <CompanyLogo size={hero ? 44 : 36} ticker={row.ticker} />
+          <span className="flex-1 min-w-0">
+            <span
+              className={`block truncate font-semibold text-foreground group-hover:text-[#5a4128] dark:group-hover:text-[#ad9479] ${
+                hero ? "text-sm" : "text-xs"
+              }`}
+            >
               {row.company}
+            </span>
+            <span className="block font-mono text-[10px] text-muted">
+              {row.ticker}
             </span>
           </span>
           <span
-            className={`tabular-nums font-medium shrink-0 ${toneClass(row.returnPct)}`}
+            className={`shrink-0 tabular-nums font-bold ${
+              hero ? "text-2xl" : "text-lg"
+            } ${toneClass(row.returnPct)}`}
           >
             {formatSignedPct(row.returnPct)}
           </span>
         </span>
-        {payoff && (
-          <span className="mt-0.5 block text-[10px] text-muted tabular-nums">
-            {payoff}
+
+        {hero && formatStake && (
+          <span className="mt-2.5 flex items-baseline gap-1 border-t border-[#1e6b18]/15 dark:border-[#5cd84a]/15 pt-2 text-[11px] tabular-nums text-muted">
+            {formatStake(STAKE)} at disclosure →
+            <span className="font-semibold text-foreground">
+              {formatStake(STAKE * (1 + row.returnPct))} today
+            </span>
           </span>
         )}
       </Link>

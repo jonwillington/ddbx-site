@@ -1596,14 +1596,19 @@ export function MarketPage<W>({
                   </div>
                   {monthOpen && (
                     <div className="bg-[#faf7f2] dark:bg-surface rounded-b-xl">
-                      <MarketRowHeader
-                        hideDate
-                        inset
-                        benchmarkLabel={config.benchmarkLabel}
-                        chartMode={chartMode}
-                        columnHelp={config.columnHelp}
-                        valueColumnClass={config.priceFormat.valueColumnClass}
-                      />
+                      <div className="xl:grid xl:grid-cols-[4rem_minmax(0,1fr)] xl:gap-3 xl:px-3 xl:bg-black/[0.04] dark:xl:bg-white/[0.05]">
+                        <div className="hidden xl:flex items-center border-b border-black/[0.08] py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted/80 dark:border-white/[0.08]">
+                          Date
+                        </div>
+                        <MarketRowHeader
+                          hideDate
+                          inset
+                          benchmarkLabel={config.benchmarkLabel}
+                          chartMode={chartMode}
+                          columnHelp={config.columnHelp}
+                          valueColumnClass={config.priceFormat.valueColumnClass}
+                        />
+                      </div>
                       <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
                         {contentDays.map((day, dayIdx) => {
                           const isIntroDay =
@@ -1615,89 +1620,100 @@ export function MarketPage<W>({
 
                           return (
                             <Fragment key={day.key}>
-                              <div
-                                className={`rounded-xl overflow-hidden bg-white dark:bg-surface-secondary ${
-                                  isIntroDay
-                                    ? ""
-                                    : "divide-y divide-black/[0.06] dark:divide-separator"
-                                }`}
-                              >
+                              <div className="xl:grid xl:grid-cols-[4rem_minmax(0,1fr)] xl:items-start xl:gap-3">
                                 <MarketDayHeader
                                   day={day.day}
                                   isoDate={day.key}
                                   locale={config.locale}
-                                  skippedCount={day.skipped.length}
-                                  suggestedCount={day.suggested.length}
                                   weekday={day.weekday}
+                                  variant="rail"
                                 />
-                                {config.id === "uk" &&
-                                  !collapsed &&
-                                  dailySummaries.get(day.key) && (
-                                    <MarketDaySummaryRow
-                                      headline={
-                                        dailySummaries.get(day.key)!.headline
-                                      }
-                                      isToday={day.key === todayIso}
-                                      valueColumnClass={
-                                        config.priceFormat.valueColumnClass
-                                      }
-                                      onOpen={() => setOpenSummaryDate(day.key)}
-                                    />
-                                  )}
-                                {collapsed ? (
-                                  // Older day under discretion: no real rows —
-                                  // an avatar-group teaser card with one smart
-                                  // headline (best gain → value → signal →
-                                  // quantity) that links to the app.
-                                  <CollapsedDayTeaser
-                                    appHref={channelAppHref}
-                                    deals={collapsedDeals}
-                                    fmt={config.priceFormat}
-                                    isSignal={
-                                      config.isSignal ?? isSignalDealing
-                                    }
-                                    returnPctOf={returnPctOf}
-                                    showLogo={logosEnabled}
-                                    variant={dayIdx % 2}
+                                <div
+                                  className={`rounded-xl overflow-hidden bg-white dark:bg-surface-secondary ${
+                                    isIntroDay
+                                      ? ""
+                                      : "divide-y divide-black/[0.06] dark:divide-separator"
+                                  }`}
+                                >
+                                  <MarketDayHeader
+                                    day={day.day}
+                                    isoDate={day.key}
+                                    locale={config.locale}
+                                    weekday={day.weekday}
                                   />
-                                ) : config.clusterByPerson ? (
-                                  // Person-grouped markets (Congress): fold the
-                                  // WHOLE day — suggested + skipped — into one
-                                  // group per member, so a member never appears
-                                  // as both a cluster and loose rows. No corporate
-                                  // intro banner.
-                                  <>
-                                    {renderSuggestedRows([
-                                      ...day.suggested,
-                                      ...day.skipped,
-                                    ])}
-                                  </>
-                                ) : isIntroDay ? (
-                                  <>
-                                    {/* Grouped "signal" panel — the intro banner
+                                  {config.id === "uk" &&
+                                    !collapsed &&
+                                    dailySummaries.get(day.key) && (
+                                      <MarketDaySummaryRow
+                                        headline={
+                                          dailySummaries.get(day.key)!.headline
+                                        }
+                                        isToday={day.key === todayIso}
+                                        valueColumnClass={
+                                          config.priceFormat.valueColumnClass
+                                        }
+                                        onOpen={() =>
+                                          setOpenSummaryDate(day.key)
+                                        }
+                                      />
+                                    )}
+                                  {collapsed ? (
+                                    // Older day under discretion: no real rows —
+                                    // an avatar-group teaser card with one smart
+                                    // headline (best gain → value → signal →
+                                    // quantity) that links to the app.
+                                    <CollapsedDayTeaser
+                                      appHref={channelAppHref}
+                                      deals={collapsedDeals}
+                                      fmt={config.priceFormat}
+                                      isSignal={
+                                        config.isSignal ?? isSignalDealing
+                                      }
+                                      returnPctOf={returnPctOf}
+                                      showLogo={logosEnabled}
+                                      variant={dayIdx % 2}
+                                    />
+                                  ) : config.clusterByPerson ? (
+                                    // Person-grouped markets (Congress): fold the
+                                    // WHOLE day — suggested + skipped — into one
+                                    // group per member, so a member never appears
+                                    // as both a cluster and loose rows. No corporate
+                                    // intro banner.
+                                    <>
+                                      {renderSuggestedRows([
+                                        ...day.suggested,
+                                        ...day.skipped,
+                                      ])}
+                                    </>
+                                  ) : isIntroDay ? (
+                                    <>
+                                      {/* Grouped "signal" panel — the intro banner
                                       as a curved header wrapping the analysed
                                       rows on a tinted, ringed inset card, so a
                                       newcomer sees exactly which filings cleared
                                       the check. Skipped rows sit outside it. */}
-                                    <div className="m-2 overflow-hidden rounded-xl bg-[#faf7f2] ring-1 ring-black/[0.07] divide-y divide-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10 dark:divide-separator">
-                                      <MarketIntroBanner
-                                        onDismiss={intro.dismiss}
-                                        onExplain={() => setExplainerOpen(true)}
-                                      />
-                                      {renderSuggestedRows(day.suggested)}
-                                    </div>
-                                    {day.skipped.length > 0 && (
-                                      <div className="divide-y divide-black/[0.06] border-t border-black/[0.06] dark:divide-separator dark:border-separator">
-                                        {day.skipped.map(renderDayRow)}
+                                      <div className="m-2 overflow-hidden rounded-xl bg-[#faf7f2] ring-1 ring-black/[0.07] divide-y divide-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10 dark:divide-separator">
+                                        <MarketIntroBanner
+                                          onDismiss={intro.dismiss}
+                                          onExplain={() =>
+                                            setExplainerOpen(true)
+                                          }
+                                        />
+                                        {renderSuggestedRows(day.suggested)}
                                       </div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <>
-                                    {renderSuggestedRows(day.suggested)}
-                                    {day.skipped.map(renderDayRow)}
-                                  </>
-                                )}
+                                      {day.skipped.length > 0 && (
+                                        <div className="divide-y divide-black/[0.06] border-t border-black/[0.06] dark:divide-separator dark:border-separator">
+                                          {day.skipped.map(renderDayRow)}
+                                        </div>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <>
+                                      {renderSuggestedRows(day.suggested)}
+                                      {day.skipped.map(renderDayRow)}
+                                    </>
+                                  )}
+                                </div>
                               </div>
                               {/* Broker teaser slotted into the table after the
                                   first two days (UK only) — a thin one-line bar
@@ -1706,7 +1722,7 @@ export function MarketPage<W>({
                                 config.id === "uk" &&
                                 dayIdx === 1 && (
                                   <BrokerReviewsPromo
-                                    className="hidden md:flex"
+                                    className="hidden md:flex xl:ml-[4.75rem]"
                                     variant="bar"
                                   />
                                 )}

@@ -130,29 +130,28 @@ export function MarketRowHeader({
   );
 }
 
-/** Sticky day separator rendered between each day inside an open month.
- *  Mirrors the month header's overhang treatment — same surface colour,
- *  sticky at the height of the month bar so consecutive day headers
- *  swap places as the user scrolls without ever stacking. */
+/** Date marker rendered for each day inside an open month. At wide desktop
+ *  widths `variant="rail"` sits in a dedicated gutter to the left of the day
+ *  card; the default inline variant remains inside the card below `xl`, where
+ *  the table cannot spare another column. */
 export function MarketDayHeader({
   weekday,
   day,
   isoDate,
   locale = "en-US",
-  suggestedCount,
-  skippedCount,
+  variant = "inline",
 }: {
   weekday: string;
   day: string;
   isoDate: string;
   locale?: string;
-  suggestedCount: number;
-  skippedCount: number;
+  variant?: "inline" | "rail";
 }) {
   const dateObj = new Date(isoDate);
   const monthLabel = !Number.isNaN(dateObj.getTime())
     ? dateObj.toLocaleString(locale, { month: "short" })
     : "";
+  const ordinalMatch = day.match(/^(\d+)(st|nd|rd|th)$/i);
 
   const dateLine = (
     <span className="flex items-center gap-3 min-w-0">
@@ -164,26 +163,38 @@ export function MarketDayHeader({
       </span>
     </span>
   );
-  const counts = (
-    <span className="text-[10px] tabular-nums shrink-0">
-      {suggestedCount > 0 && (
-        <span className="text-muted/80">{suggestedCount}</span>
-      )}
-      {skippedCount > 0 && (
-        <span className="text-muted/50">
-          {suggestedCount > 0 ? " · " : ""}
-          {skippedCount} skipped
-        </span>
-      )}
-    </span>
-  );
+  if (variant === "rail") {
+    return (
+      <div className="hidden xl:block pt-2 text-left">
+        <time className="block" dateTime={isoDate}>
+          <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-foreground/55">
+            {weekday}
+          </span>
+          <span className="mt-1 block text-xl font-semibold leading-none tabular-nums text-foreground/90">
+            {ordinalMatch ? (
+              <>
+                {ordinalMatch[1]}
+                <sup className="ml-px align-super text-[10px] font-semibold leading-none">
+                  {ordinalMatch[2]}
+                </sup>
+              </>
+            ) : (
+              day
+            )}
+          </span>
+          <span className="mt-1 block text-[11px] font-medium uppercase tracking-[0.12em] text-foreground/50">
+            {monthLabel}
+          </span>
+        </time>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-black/[0.04] dark:bg-white/[0.05]">
+    <div className="bg-black/[0.04] dark:bg-white/[0.05] xl:hidden">
       {/* Mobile — flush left */}
       <div className="md:hidden flex items-center gap-3 px-4 py-1.5">
         {dateLine}
-        <span className="ml-auto">{counts}</span>
       </div>
       {/* Desktop — date aligns with the avatar column in the row below */}
       <div className="hidden md:flex items-stretch">
@@ -191,7 +202,6 @@ export function MarketDayHeader({
         <div className="flex-1 min-w-0 px-3 py-1.5 flex items-center">
           {dateLine}
         </div>
-        <div className="shrink-0 px-3 py-1.5 flex items-center">{counts}</div>
       </div>
     </div>
   );

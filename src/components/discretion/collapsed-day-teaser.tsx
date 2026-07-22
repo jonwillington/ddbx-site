@@ -62,10 +62,10 @@ const MAX_AVATARS = 5;
 
 /** Discretion-mode rendering for a day older than the free history window.
  *  Replaces the old "one real row + '+N more deals' link" with a marketing
- *  card: an avatar group of the day's company logos plus one smart headline
- *  (see pickDayTeaser). The whole card links to the App Store. Two visual
- *  variants (avatars-led / headline-led) alternate by day so a long gated
- *  scroll doesn't collapse into its own monotone pattern. */
+ *  card: one smart headline (see pickDayTeaser) plus a trailing avatar group
+ *  of the day's company logos. The whole card links to the App Store. Text
+ *  always leads so headlines and CTAs share one left edge down the scroll;
+ *  the alternating `variant` only varies avatar size for rhythm. */
 export function CollapsedDayTeaser<W>({
   deals,
   appHref,
@@ -184,17 +184,8 @@ export function CollapsedDayTeaser<W>({
       rel="noreferrer"
       target="_blank"
     >
-      {variant === 0 ? (
-        <>
-          {stack}
-          {text}
-        </>
-      ) : (
-        <>
-          {text}
-          {stack}
-        </>
-      )}
+      {text}
+      {stack}
     </a>
   );
 }
