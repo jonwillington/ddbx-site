@@ -165,10 +165,12 @@ export function CollapsedDayTeaser<W>({
 
   const text = (
     <span className="min-w-0 flex-1">
-      <span className="block text-[13px] leading-snug text-foreground/85">
+      <span className="block text-[15px] leading-snug text-foreground/90">
         {headline}
       </span>
-      <span className="mt-0.5 block text-[11px] font-medium text-[#5a4128] transition-colors group-hover:underline dark:text-[#ad9479]">
+      {/* Revealed on hover/keyboard focus only — the headline carries the row,
+          and the whole card is already the App Store link (see aria-label). */}
+      <span className="mt-0.5 block text-[11px] font-medium text-[#5a4128] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 dark:text-[#ad9479]">
         See the full day in the app <span aria-hidden>→</span>
       </span>
     </span>

@@ -102,7 +102,7 @@ export function ChannelPerformance({
   formatStake,
 }: Props) {
   return (
-    <div className="px-5 lg:px-4 py-4 space-y-6">
+    <div className="px-5 lg:px-4 py-4 space-y-5">
       <HeadlineAlpha benchmarkLabel={benchmarkLabel} summary={summary} />
 
       <Contributors
@@ -185,13 +185,13 @@ function HeadlineAlpha({
           </span>
         </div>
 
-        <p className="mt-3 text-xs font-medium text-foreground/75">
+        <p className="mt-2.5 text-xs font-medium text-foreground/75">
           Beating the {benchmarkLabel ?? "market"}?
         </p>
         {alphaPct != null && <Verdict alphaPct={alphaPct} />}
 
-        <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[#ddd4c8]/70 bg-[#ddd4c8]/70 dark:border-border/70 dark:bg-border/70">
-          <div className="bg-[#faf7f2]/90 p-3 dark:bg-surface">
+        <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[#ddd4c8]/70 bg-[#ddd4c8]/70 dark:border-border/70 dark:bg-border/70">
+          <div className="bg-[#faf7f2]/90 p-2.5 dark:bg-surface">
             <Stat
               align="left"
               label={UNIVERSE_LABEL[headlineUniverse]}
@@ -200,7 +200,7 @@ function HeadlineAlpha({
               value={formatSignedPct(picksReturnPct)}
             />
           </div>
-          <div className="bg-[#faf7f2]/90 p-3 dark:bg-surface">
+          <div className="bg-[#faf7f2]/90 p-2.5 dark:bg-surface">
             <Stat
               align="right"
               label="The market"
@@ -211,7 +211,7 @@ function HeadlineAlpha({
           </div>
         </div>
 
-        <p className="mt-3 text-[10px] leading-relaxed text-muted">
+        <p className="mt-2 text-[10px] leading-relaxed text-muted">
           Equal-weight return from picks disclosed in the last{" "}
           {CHANNEL_WINDOW_DAYS} days.
         </p>
@@ -288,11 +288,11 @@ function MarketBeat({ count, total }: { count: number; total: number }) {
   const rate = count / total;
 
   return (
-    <section className="rounded-2xl bg-[#eee9e1]/65 p-4 dark:bg-surface-secondary/55">
+    <section className="rounded-2xl bg-[#eee9e1]/65 p-3.5 dark:bg-surface-secondary/55">
       <div className="flex items-end justify-between gap-4">
         <div>
           <SectionHeading>Picks that beat the market</SectionHeading>
-          <p className="mt-1 text-[11px] text-muted tabular-nums">
+          <p className="mt-0.5 text-[11px] text-muted tabular-nums">
             {count} of {total} buys
           </p>
         </div>
@@ -302,7 +302,7 @@ function MarketBeat({ count, total }: { count: number; total: number }) {
       </div>
       <div
         aria-label={`${count} of ${total} buys beat the market`}
-        className="mt-3 h-2.5 overflow-hidden rounded-full bg-foreground/10"
+        className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-foreground/10"
         role="img"
       >
         <div
@@ -433,7 +433,7 @@ function Contributors({
           rel="noopener noreferrer"
           target="_blank"
         >
-          <div className="relative h-12 overflow-hidden">
+          <div className="relative h-10 overflow-hidden">
             <div
               aria-hidden
               className="pointer-events-none select-none space-y-1.5 opacity-50"
@@ -460,18 +460,10 @@ function Contributors({
             </div>
           </div>
 
-          <span className="flex w-full items-center justify-between gap-3 rounded-xl bg-[#211a14] px-4 py-3 text-[#fffaf4] shadow-[0_10px_24px_-14px_rgba(33,26,20,0.9)] transition-transform group-hover:-translate-y-0.5 dark:bg-[#e8ddd0] dark:text-[#211a14]">
-            <span>
-              <span className="block text-xs font-semibold">
-                Unlock {hiddenCount} more {hiddenCount === 1 ? "pick" : "picks"}
-              </span>
-              <span className="mt-0.5 block text-[10px] opacity-65">
-                See the complete list in the app
-              </span>
-            </span>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 dark:bg-black/10">
-              <LockClosedIcon className="h-3.5 w-3.5" />
-            </span>
+          <span className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#d0c8be]/60 px-4 py-2 text-[11px] font-medium text-[#5a4128] transition-colors group-hover:border-[#5a4128]/35 group-hover:bg-[#f1ebe2]/60 dark:border-border/60 dark:text-[#ad9479] dark:group-hover:border-[#ad9479]/35 dark:group-hover:bg-surface-secondary/60">
+            <LockClosedIcon className="h-3 w-3 opacity-70" />
+            Unlock {hiddenCount} more {hiddenCount === 1 ? "pick" : "picks"} in
+            the app
           </span>
         </a>
       )}
@@ -499,7 +491,7 @@ function ContributorCard({
   return (
     <li>
       <Link
-        className={`block rounded-xl border px-3 py-3 transition-all group ${
+        className={`block rounded-xl border px-3 py-2.5 transition-all group ${
           hero
             ? "border-[#cfc5b8]/80 bg-white/45 shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] hover:border-[#1e6b18]/30 hover:bg-white/70 dark:border-border/70 dark:bg-surface-secondary/35 dark:hover:border-[#5cd84a]/30"
             : "border-[#d0c8be]/50 hover:bg-[#f1ebe2]/60 dark:border-border/50 dark:hover:bg-surface-secondary/60"
