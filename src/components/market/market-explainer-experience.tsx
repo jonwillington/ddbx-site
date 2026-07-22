@@ -114,8 +114,9 @@ const PULSE_POINTS: {
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 const FILLED_CTA = `inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg`;
 
-const GHOST_CTA =
-  "inline-flex items-center rounded-full border border-white/15 px-6 py-3 text-base font-semibold text-[#e9e1d4] transition-colors hover:bg-white/[0.06]";
+// Always-dark surface, so this keeps its own colours — but it shares the
+// standard button radius (capsules belong to chips; see components/button.ts).
+const GHOST_CTA = `inline-flex items-center ${BUTTON_RADIUS} border border-white/15 px-6 py-3 text-base font-semibold text-[#e9e1d4] transition-colors hover:bg-white/[0.06]`;
 
 export function MarketExplainerExperience({
   open,

@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
+import { AppleGlyph } from "@/components/apple-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
@@ -95,6 +96,7 @@ export const Navbar = () => {
             rel="noopener noreferrer"
             target="_blank"
           >
+            <AppleGlyph className="h-3.5 w-3.5 shrink-0" />
             Download app
           </a>
           <ThemeSwitch />

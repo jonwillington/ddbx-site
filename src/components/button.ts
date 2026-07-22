@@ -28,6 +28,13 @@ export const BUTTON_RADIUS = "rounded-lg";
 export const BUTTON_FILLED =
   "bg-[#1a140d] text-white hover:bg-[#2a2118] dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90";
 
+/** Ghost / secondary fill — the quiet counterpart to BUTTON_FILLED. A tint of
+ *  the same near-black rather than the old brown capsule, so a secondary CTA
+ *  reads as "the same button, turned down" instead of a different species.
+ *  Pairs with BUTTON_RADIUS like every other button. */
+export const BUTTON_GHOST =
+  "bg-[#1a140d]/[0.07] text-[#1a140d] hover:bg-[#1a140d]/[0.12] dark:bg-white/10 dark:text-white dark:hover:bg-white/[0.16]";
+
 /** As BUTTON_FILLED, but the hover is driven by a parent `.group` — for the
  *  card layouts where the whole tile is the link and the button is a span. */
 export const BUTTON_FILLED_GROUP =
