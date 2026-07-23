@@ -37,6 +37,7 @@ import { PositionCard, type PriceFormat } from "@/components/position-card";
 import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
+import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { useDiscretion } from "@/lib/discretion";
 
 const SPY_TICKER = "^GSPC";
@@ -789,6 +790,27 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
 
     return { dealings: groups.map(toMarketDealing), stats };
   },
+  // Right-rail Performance tab — same proof-first story as UK ("beating the
+  // S&P? by how much"), fed by a dedicated 90-day window fetch (the page's
+  // own fetch only reaches back ~a month). The default /api/us-dealings view
+  // is already the open-market-buy set; drop 10b5-1 plan buys client-side
+  // (tone "plan") so only conviction buys join the universe, mirroring the
+  // UK's is_open_market_buy exclusion.
+  supportsChannelPerformance: true,
+  fetchChannelDealings: async () => {
+    const since = new Date();
+
+    since.setDate(since.getDate() - CHANNEL_WINDOW_DAYS);
+    const r = await api.usDealings({
+      since: since.toISOString().slice(0, 10),
+      limit: 1000,
+    });
+
+    return groupRows(r.dealings)
+      .map(toMarketDealing)
+      .filter((d) => d.actionTone === "buy");
+  },
+  channelBenchmarkLabel: "S&P 500",
   RowActionCell: UsRowActionCell,
   DetailBody: UsDetailBody,
   DetailPosition: UsDetailPosition,

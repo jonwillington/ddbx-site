@@ -202,6 +202,9 @@ export const api = {
       code?: string;
       ticker?: string;
       view?: "interesting" | "signal" | "all";
+      /** Inclusive ISO YYYY-MM-DD lower bound on disclosed date — used by the
+       *  channel's 90-day performance window. */
+      since?: string;
     } = {},
   ) => {
     const qs = new URLSearchParams();
@@ -210,6 +213,7 @@ export const api = {
     if (opts.code) qs.set("code", opts.code);
     if (opts.ticker) qs.set("ticker", opts.ticker);
     if (opts.view) qs.set("view", opts.view);
+    if (opts.since) qs.set("since", opts.since);
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
 
     return get<{ dealings: UsDealing[]; stats: UsDealingsStats }>(
