@@ -4,6 +4,7 @@
 // Holds the persistent top picks (always-in-view CTAs) + the affiliate
 // disclosure. Hidden on mobile, where the in-column blocks carry the same
 // content.
+import { GiftIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 
 import {
@@ -83,17 +84,25 @@ export function BrokerNavAside({
                     href={`/brokers/${b.slug}`}
                   >
                     <BrokerLogo broker={b} size={28} />
-                    <span
-                      className={
-                        active
-                          ? "min-w-0 flex-1 truncate text-[13px] font-bold text-foreground"
-                          : "min-w-0 flex-1 truncate text-[13px] font-medium text-foreground/75"
-                      }
-                    >
-                      {b.name}
-                    </span>
-                    <span className="shrink-0 text-[11px] tabular-nums text-foreground/45">
-                      {platformFeeSummary(b.fees)}
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={
+                          active
+                            ? "block truncate text-[13px] font-bold text-foreground"
+                            : "block truncate text-[13px] font-medium text-foreground/75"
+                        }
+                      >
+                        {b.name}
+                      </span>
+                      {/* The live sign-up offer is the click-worthy hook here —
+                          fees live on the detail page. Rows without an offer
+                          stay single-line so the promos stand out. */}
+                      {b.offer_headline && (
+                        <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold leading-4 text-[#5a4128] dark:text-[#e7d4bf]">
+                          <GiftIcon className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{b.offer_headline}</span>
+                        </span>
+                      )}
                     </span>
                   </a>
                 </li>
