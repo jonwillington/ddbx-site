@@ -734,6 +734,11 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   formatTickerDisplay: (ticker) => ticker,
   isRowMuted: (d) => !d.rating || !d.isPurchase,
   isSkipped: (d) => !d.rating,
+  // Form 4 legs already fold per-filing (legCount), but a same-day pile-on —
+  // nine Columbia Financial officers each filing their own Form 4 — still
+  // rendered as nine near-identical rows. Fold same-ticker same-day rows into
+  // one expandable cluster like the UK does.
+  clusterByCompany: true,
   // The Signal axis lives on the filter bar's Filter dropdown (client-side,
   // shared across markets). The legacy server-side `view` tabs are gone:
   // fetchDealings always pulls view=all so Today sees every disclosure.

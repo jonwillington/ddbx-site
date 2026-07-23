@@ -1138,7 +1138,15 @@ export function MarketPage<W>({
 
     if (!config.clusterByCompany) return rows.map(renderDayRow);
 
-    return groupByCompany(rows).map((group) =>
+    return renderCompanyGroups(rows);
+  };
+
+  /** Same-day same-ticker rows folded into one expandable cluster; singles
+   *  render inline. Shared by the suggested rows AND (on company-clustered
+   *  markets) the skipped rows — a wall of nine identical skipped Form 4s
+   *  reads no better for being skipped. */
+  const renderCompanyGroups = (rows: MarketDealing<W>[]) =>
+    groupByCompany(rows).map((group) =>
       group.count > 1 ? (
         <MarketClusterRow
           key={`cluster-${group.key}`}
@@ -1160,7 +1168,12 @@ export function MarketPage<W>({
         renderDayRow(group.representative)
       ),
     );
-  };
+
+  /** Skipped rows stay flat unless the market clusters by company. */
+  const renderSkippedRows = (rows: MarketDealing<W>[]) =>
+    config.clusterByCompany
+      ? renderCompanyGroups(rows)
+      : rows.map(renderDayRow);
 
   const emptyState = filteredDealings.length === 0 && !loading && (
     <div className="bg-[#faf7f2] dark:bg-surface rounded-xl px-4 py-10 text-center text-sm text-muted">
@@ -1634,14 +1647,14 @@ export function MarketPage<W>({
                                       </div>
                                       {day.skipped.length > 0 && (
                                         <div className="divide-y divide-black/[0.06] border-t border-black/[0.06] dark:divide-separator dark:border-separator">
-                                          {day.skipped.map(renderDayRow)}
+                                          {renderSkippedRows(day.skipped)}
                                         </div>
                                       )}
                                     </>
                                   ) : (
                                     <>
                                       {renderSuggestedRows(day.suggested)}
-                                      {day.skipped.map(renderDayRow)}
+                                      {renderSkippedRows(day.skipped)}
                                     </>
                                   )}
                                 </div>
