@@ -293,6 +293,16 @@ export function MarketPage<W>({
   ]);
   const channelAppHref = APP_STORE_URLS[config.id] ?? APP_STORE_URLS.uk;
   const channelDiscretion = gating?.enabled ?? false;
+  /** Contributor cards deep-link into the deal drawer. UK has a dedicated
+   *  /dealings/:id route; other markets stay on their own page and open the
+   *  drawer via the `?deal=` param (search-only Link keeps the pathname). */
+  const channelDealHref = useCallback(
+    (id: string) =>
+      config.id === "uk"
+        ? `/dealings/${id}`
+        : `?deal=${encodeURIComponent(id)}`,
+    [config.id],
+  );
 
   /** API market param for monthly endpoints. UK omits it (the worker defaults
    *  to "UK"); other markets pass their uppercased id ("US" | "NL" | "SE"),
@@ -1269,6 +1279,7 @@ export function MarketPage<W>({
         <MarketChannel
           appHref={channelAppHref}
           benchmarkLabel={config.channelBenchmarkLabel}
+          dealHref={channelDealHref}
           discretionEnabled={channelDiscretion}
           formatStake={config.priceFormat.formatValue}
           news={hasNewsSource ? news : undefined}
@@ -1748,6 +1759,7 @@ export function MarketPage<W>({
       <MarketChannel
         appHref={channelAppHref}
         benchmarkLabel={config.channelBenchmarkLabel}
+        dealHref={channelDealHref}
         discretionEnabled={channelDiscretion}
         formatStake={config.priceFormat.formatValue}
         news={hasNewsSource ? news : undefined}

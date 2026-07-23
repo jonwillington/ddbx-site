@@ -37,6 +37,10 @@ interface Props {
   benchmarkLabel?: string;
   /** Market-currency money formatter; enables the top pick's payoff line. */
   formatStake?: (n: number) => string;
+  /** Route for a contributor's deal detail. UK has a dedicated /dealings/:id
+   *  page (the default); other markets deep-link via their own `?deal=` param
+   *  so a US pick doesn't land on the UK page. */
+  dealHref?: (id: string) => string;
 }
 
 /** Notional stake behind the payoff line — mirrors the iOS Highlights £1,000
@@ -100,6 +104,7 @@ export function ChannelPerformance({
   appHref,
   benchmarkLabel,
   formatStake,
+  dealHref,
 }: Props) {
   return (
     <div className="px-5 lg:px-4 py-4 space-y-5">
@@ -107,6 +112,7 @@ export function ChannelPerformance({
 
       <Contributors
         appHref={appHref}
+        dealHref={dealHref}
         formatStake={formatStake}
         gated={discretionEnabled}
         rows={summary.contributors}
@@ -396,11 +402,13 @@ function Contributors({
   gated,
   appHref,
   formatStake,
+  dealHref,
 }: {
   rows: ChannelContributor[];
   gated: boolean;
   appHref: string;
   formatStake?: (n: number) => string;
+  dealHref?: (id: string) => string;
 }) {
   if (rows.length === 0) return null;
 
@@ -417,6 +425,7 @@ function Contributors({
         {visible.map((row, i) => (
           <ContributorCard
             key={row.id}
+            dealHref={dealHref}
             formatStake={formatStake}
             rank={i}
             row={row}
@@ -484,10 +493,12 @@ function ContributorCard({
   row,
   rank,
   formatStake,
+  dealHref,
 }: {
   row: ChannelContributor;
   rank: number;
   formatStake?: (n: number) => string;
+  dealHref?: (id: string) => string;
 }) {
   const hero = rank === 0;
 
@@ -501,7 +512,7 @@ function ContributorCard({
         }`}
         data-ga-event="cta_channel_open_contributor_deal"
         data-ga-label={row.ticker}
-        to={`/dealings/${row.id}`}
+        to={dealHref ? dealHref(row.id) : `/dealings/${row.id}`}
       >
         <span className="flex items-center gap-3">
           <CompanyLogo size={hero ? 44 : 36} ticker={row.ticker} />

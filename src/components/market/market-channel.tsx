@@ -42,6 +42,8 @@ interface MarketChannelProps {
   benchmarkLabel?: string;
   /** Market-currency money formatter for the top pick's payoff line. */
   formatStake?: (n: number) => string;
+  /** Route for a contributor's deal detail — see ChannelPerformance. */
+  dealHref?: (id: string) => string;
   discretionEnabled: boolean;
   appHref: string;
 }
@@ -60,6 +62,7 @@ export function MarketChannel({
   performance,
   benchmarkLabel,
   formatStake,
+  dealHref,
   discretionEnabled,
   appHref,
 }: MarketChannelProps) {
@@ -133,6 +136,7 @@ export function MarketChannel({
         <ChannelPerformance
           appHref={appHref}
           benchmarkLabel={benchmarkLabel}
+          dealHref={dealHref}
           discretionEnabled={discretionEnabled}
           formatStake={formatStake}
           summary={performance!}
