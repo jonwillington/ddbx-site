@@ -16,12 +16,23 @@ export function BetaTag() {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const market = marketForPath(pathname);
   const notice = market.config.topNotice ?? null;
+  /* Markets with a right-hand drawer (news / channel perf) reserve a fixed
+   * w-80 rail from lg up (`lg:mr-80` in DefaultLayout), so the hero panel is
+   * centred on the *content area*, not the viewport. Mirror that: shift the
+   * badge's centreline left by half the rail (10rem) at lg+ so it stays
+   * centred over the hero rather than drifting toward the rail. */
+  const hasDrawer = !!(
+    market.config.fetchNews || market.config.supportsChannelPerformance
+  );
 
   // `displayed` lags `notice` on exit so the badge can finish its slide-out
   // animation while still rendering the old copy. On re-entry / swap we
   // update displayed immediately and bump the textKey so the inner span
   // crossfades.
   const [displayed, setDisplayed] = useState<ReactNode>(notice);
+  // Latched alongside `displayed` so the slide-out keeps the alignment of the
+  // market it's exiting from instead of jumping to the next market's.
+  const [displayedDrawer, setDisplayedDrawer] = useState<boolean>(hasDrawer);
   // Always start false so the entrance transition has a "from" frame to
   // animate out of — the rAF below flips it true after the first paint.
   const [present, setPresent] = useState<boolean>(false);
@@ -38,6 +49,7 @@ export function BetaTag() {
         setDisplayed(notice);
         setTextKey((k) => k + 1);
       }
+      setDisplayedDrawer(hasDrawer);
       // Defer to next frame so the browser commits the off-screen
       // (`present=false`) state before transitioning to on-screen — without
       // this, the badge appears already in place on mount and the slide-down
@@ -57,7 +69,7 @@ export function BetaTag() {
         exitTimer.current = null;
       }
     };
-  }, [notice, displayed]);
+  }, [notice, displayed, hasDrawer]);
 
   if (!displayed) return null;
 
@@ -72,12 +84,13 @@ export function BetaTag() {
       `}</style>
       <div
         aria-live="polite"
-        className={`absolute top-[80px] md:top-[88px] z-30 items-center gap-2 rounded-full border border-amber-300/40 bg-amber-100/85 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800/60 backdrop-blur-sm px-3.5 py-1 text-sm shadow-sm will-change-transform pointer-events-auto ${
+        className={`absolute top-[80px] md:top-28 z-30 items-center gap-2 rounded-full border border-amber-300/40 bg-amber-100/85 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800/60 backdrop-blur-sm px-3.5 py-1 text-sm shadow-sm will-change-transform pointer-events-auto ${
           isDesktop
-            ? // Centred over the hero's framed panel, tucked just inside its
-              // top edge — reads as the panel's own notice rather than a
-              // floating pill stranded over the map.
-              "inline-flex left-1/2"
+            ? // Centred over the hero's framed panel (top edge ~97px from md
+              // up, so top-28 tucks the pill just inside it). On drawer
+              // markets the panel is centred on the content area — shift the
+              // centreline left by half the w-80 rail at lg+ to match.
+              `inline-flex ${displayedDrawer ? "left-1/2 lg:left-[calc(50%-10rem)]" : "left-1/2"}`
             : "flex justify-center left-4 right-4"
         }`}
         style={{
