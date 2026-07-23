@@ -974,7 +974,8 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   explainer: <CongressExplainer />,
   explainerSubtitle: "US Congress · STOCK Act",
   marketLabel: "US Congress",
-  timelineTitle: "Members of Congress traded these companies with their own money",
+  timelineTitle:
+    "Members of Congress traded these companies with their own money",
   locale: "en-US",
   topNotice: "US Congress is an early preview — no manual curation yet.",
   priceFormat: USD_FORMAT,
@@ -1131,6 +1132,10 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   // interest (one member often buys many tickers in a day). Portrait anchors
   // the group, connected to the company rows they bought.
   clusterByPerson: true,
+  // Hard web gate: while discretion is on, day buckets render one flat teaser
+  // row per member (avatar + name → company logos) linking straight to the
+  // app — no amounts, no performance, no analysis drawer on web.
+  gatedSimpleRows: true,
   pollIntervalMs: 0,
   async fetchDealings() {
     const r = await api.govDealings({ view: "all", limit: 500 });

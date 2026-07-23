@@ -49,6 +49,9 @@ export interface MarketRegistryEntry {
   Flag: FlagComponent;
   /** Region the market lives in — drives switcher grouping. */
   region: MarketRegion;
+  /** Hidden markets keep their routes + domain mapping but never show in the
+   *  navbar switcher (e.g. Trump Media — reachable at /djt, not promoted). */
+  hidden?: boolean;
   /** The MarketConfig itself — what MarketPage consumes. */
   config: MarketConfig;
 }
@@ -92,6 +95,7 @@ export const MARKETS: MarketRegistryEntry[] = [
     canonicalRoute: "/djt",
     Flag: US,
     region: "north-america",
+    hidden: true,
     config: DjtMarket as MarketConfig,
   },
   {

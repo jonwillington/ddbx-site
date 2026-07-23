@@ -9,7 +9,6 @@ import type {
 import type { MonthlySummaryListItem } from "@/types/ddbx";
 
 import {
-  ArrowDownIcon,
   CalendarDaysIcon,
   ChevronDownIcon,
   LockClosedIcon,
@@ -41,6 +40,7 @@ import {
   MarketRow,
   MarketRowHeader,
   MarketRowSkeleton,
+  MemberAppTeaserRow,
   MemberClusterRow,
   WeekendBreak,
 } from "./market-row";
@@ -61,6 +61,7 @@ import {
 } from "./market-utils";
 
 import { BrokerReviewsPromo } from "@/components/brokers/broker-reviews-promo";
+import { Skeleton } from "@/components/skeleton";
 import { CollapsedDayTeaser } from "@/components/discretion/collapsed-day-teaser";
 import { Tooltip } from "@/components/tooltip";
 import {
@@ -93,6 +94,28 @@ import {
 const REAL_HISTORY_DAYS = 2;
 const FIRST_UNLOCK_CONFIRM =
   "You can unlock one full analysis drawer per day on the web. Open this filing's full analysis now?";
+
+/** Hand-drawn-style curved arrow after the timeline title — sweeps down
+ *  toward the rows like a margin annotation, instead of the flat straight
+ *  heroicon that read as UI chrome. */
+function TimelineSwoosh({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2.2}
+      viewBox="0 0 24 24"
+    >
+      {/* Curve starts up-left, bellies right, lands pointing straight down. */}
+      <path d="M5.5 4c7 2.5 9.5 7.5 9.5 15" />
+      <path d="M11 15.5l4 3.5 3.5-4" />
+    </svg>
+  );
+}
 
 /** The full shell that every market page mounts. Reads everything from
  *  MarketConfig — adding a new market means writing a new MarketConfig and
@@ -192,6 +215,10 @@ export function MarketPage<W>({
   const unlocksLeftToday = previewMode
     ? Math.max(0, gating.freeQuota - gating.viewedCount)
     : 0;
+  /** Hard-gated teaser list (see MarketConfig.gatedSimpleRows) — active only
+   *  while discretion gating is on; flipping preview off restores the full
+   *  table. */
+  const simpleGatedRows = !!config.gatedSimpleRows && previewMode;
 
   /** Live stock prices keyed by ticker — close_pence column raw values plus
    *  the price date, because US rows need dated FX conversion. */
@@ -927,7 +954,9 @@ export function MarketPage<W>({
         <Tooltip className="inline-flex" content={tooltipText}>
           <button
             aria-label="Explain web preview mode"
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-help ${
+            // px/py match the Filters sheet trigger so the two pills read as
+            // one control row at the same height.
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors cursor-help ${
               previewMode
                 ? "border-[#d8d0c6] bg-[#f4eee6] text-[#7a634b] dark:border-separator dark:bg-white/[0.03] dark:text-[#c9b49f]"
                 : "border-positive/25 bg-positive/10 text-positive dark:border-positive/30 dark:bg-positive/10"
@@ -937,9 +966,9 @@ export function MarketPage<W>({
             type="button"
           >
             {previewMode ? (
-              <LockClosedIcon className="h-3.5 w-3.5 shrink-0" />
+              <LockClosedIcon className="h-4 w-4 shrink-0" />
             ) : (
-              <LockOpenIcon className="h-3.5 w-3.5 shrink-0" />
+              <LockOpenIcon className="h-4 w-4 shrink-0" />
             )}
             <span>
               Web preview {previewMode ? "on" : "off"}
@@ -1022,7 +1051,11 @@ export function MarketPage<W>({
       [...new Set(past)].sort().reverse().slice(0, REAL_HISTORY_DAYS),
     );
   }, [dealings, todayIso]);
+  // Teaser-row markets (Congress) skip the collapse entirely: every day
+  // renders the flat avatar → logos rows, which hide more than the collapsed
+  // "N filings landed" card ever did.
   const isDayCollapsed = (dayKey: string) =>
+    !simpleGatedRows &&
     (gating?.enabled ?? false) &&
     dayKey < todayIso &&
     !recentRealDays.has(dayKey);
@@ -1055,6 +1088,26 @@ export function MarketPage<W>({
     // Person-grouping wins when enabled: fold each member's buys for the day
     // into one MemberClusterRow (portrait → the companies they bought).
     if (config.clusterByPerson) {
+      // Hard-gated teaser mode (Congress): one flat row per member — avatar +
+      // name, then the logos of what they bought — linking straight to the
+      // app. No amounts, no performance, no drawer.
+      if (simpleGatedRows) {
+        return groupByPerson(rows).map((group) => (
+          <MemberAppTeaserRow
+            key={`teaser-${group.key}`}
+            appHref={channelAppHref}
+            chamber={group.chamber}
+            insiderName={group.insiderName}
+            insiderPhotoUrl={group.insiderPhotoUrl}
+            insiderRole={group.insiderRole}
+            party={group.party}
+            tickers={Array.from(
+              new Set(group.dealings.map((d) => d.ticker).filter(Boolean)),
+            )}
+          />
+        ));
+      }
+
       return groupByPerson(rows).map((group) => (
         <MemberClusterRow
           key={`person-${group.key}`}
@@ -1213,20 +1266,46 @@ export function MarketPage<W>({
           variant="inline"
         />
 
+        {/* Loading skeleton mirrors the chronological layout the data lands
+            in — month header bar, then the darker well with date-chip rail +
+            white day cards — so nothing jumps when the rows paint. */}
         {loading && filteredDealings.length === 0 && (
           <div className="bg-[#faf7f2] dark:bg-surface rounded-xl overflow-hidden animate-content-in">
-            <MarketRowHeader
-              benchmarkLabel={config.benchmarkLabel}
-              chartMode={chartMode}
-              columnHelp={config.columnHelp}
-              valueColumnClass={config.priceFormat.valueColumnClass}
-            />
-            <div className="divide-y divide-black/[0.06] dark:divide-separator">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <MarketRowSkeleton
-                  key={i}
-                  valueColumnClass={config.priceFormat.valueColumnClass}
-                />
+            <div className="flex items-center justify-between px-6 py-5">
+              <div className="flex items-center gap-3">
+                <CalendarDaysIcon className="w-5 h-5 shrink-0 text-muted/40" />
+                <Skeleton className="h-6 w-36 rounded" />
+              </div>
+              <Skeleton className="h-3 w-24 rounded" />
+            </div>
+            <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
+              {[3, 2].map((rowCount, dayIdx) => (
+                <div
+                  key={dayIdx}
+                  className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:items-start xl:gap-3"
+                >
+                  {/* Date chip — rail on xl, inline strip below. */}
+                  <div className="hidden xl:block pt-2">
+                    <Skeleton className="h-12 w-10 rounded-lg" />
+                  </div>
+                  <div className="mb-2 flex items-center gap-3 px-1 xl:hidden">
+                    <Skeleton className="h-10 w-9 rounded-lg" />
+                    <Skeleton className="h-3 w-10 rounded" />
+                    <span
+                      aria-hidden
+                      className="h-px flex-1 bg-foreground/10"
+                    />
+                  </div>
+                  <div className="rounded-xl overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-black/[0.06] dark:divide-separator">
+                    {Array.from({ length: rowCount }).map((_, i) => (
+                      <MarketRowSkeleton
+                        key={i}
+                        hideDate
+                        valueColumnClass={config.priceFormat.valueColumnClass}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -1418,19 +1497,25 @@ export function MarketPage<W>({
                   </div>
                   {monthOpen && (
                     <div className="bg-[#faf7f2] dark:bg-surface rounded-b-xl">
-                      <div className="xl:grid xl:grid-cols-[4rem_minmax(0,1fr)] xl:gap-3 xl:px-3 xl:bg-black/[0.04] dark:xl:bg-white/[0.05]">
-                        <div className="hidden xl:flex items-center border-b border-black/[0.08] py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted/80 dark:border-white/[0.08]">
-                          Date
+                      {/* Teaser mode has no table columns to head — the rows
+                          are flat avatar → logos links. */}
+                      {!simpleGatedRows && (
+                        <div className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:gap-3 xl:px-3 xl:bg-black/[0.04] dark:xl:bg-white/[0.05]">
+                          <div className="hidden xl:flex items-center border-b border-black/[0.08] py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted/80 dark:border-white/[0.08]">
+                            Date
+                          </div>
+                          <MarketRowHeader
+                            hideDate
+                            inset
+                            benchmarkLabel={config.benchmarkLabel}
+                            chartMode={chartMode}
+                            columnHelp={config.columnHelp}
+                            valueColumnClass={
+                              config.priceFormat.valueColumnClass
+                            }
+                          />
                         </div>
-                        <MarketRowHeader
-                          hideDate
-                          inset
-                          benchmarkLabel={config.benchmarkLabel}
-                          chartMode={chartMode}
-                          columnHelp={config.columnHelp}
-                          valueColumnClass={config.priceFormat.valueColumnClass}
-                        />
-                      </div>
+                      )}
                       <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
                         {/* Plain-English claim above the first day — names
                             the market's own insider term and the one fact
@@ -1438,9 +1523,9 @@ export function MarketPage<W>({
                         {monthIdx === 0 && config.timelineTitle && (
                           <h2 className="px-1 pt-2 pb-1 text-xl font-semibold leading-snug tracking-[-0.02em] text-foreground/90 md:text-2xl">
                             {config.timelineTitle}
-                            <ArrowDownIcon
+                            <TimelineSwoosh
                               aria-hidden
-                              className="ml-2.5 inline h-5 w-5 -translate-y-0.5 text-foreground/45 md:h-6 md:w-6"
+                              className="ml-2 inline h-6 w-6 translate-y-1 text-[#5a4128]/60 dark:text-[#ad9479]/70 md:h-7 md:w-7"
                             />
                           </h2>
                         )}
@@ -1462,7 +1547,7 @@ export function MarketPage<W>({
                           return (
                             <Fragment key={day.key}>
                               {weekendBreak && <WeekendBreak />}
-                              <div className="xl:grid xl:grid-cols-[4rem_minmax(0,1fr)] xl:items-start xl:gap-3">
+                              <div className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:items-start xl:gap-3">
                                 <MarketDayHeader
                                   day={day.day}
                                   isoDate={day.key}
@@ -1568,7 +1653,7 @@ export function MarketPage<W>({
                                 config.id === "uk" &&
                                 dayIdx === 1 && (
                                   <BrokerReviewsPromo
-                                    className="hidden md:flex xl:ml-[4.75rem]"
+                                    className="hidden md:flex xl:ml-[3.75rem]"
                                     variant="bar"
                                   />
                                 )}

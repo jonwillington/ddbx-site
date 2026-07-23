@@ -147,6 +147,10 @@ export function MarketHero({
     </>
   );
   const displaySubhead = headline ? subhead : undefined;
+  /** When the one-line subhead is promoted into the <h1> (markets without an
+   *  explicit headline — SE/NL), it's a full sentence, not a slogan: render it
+   *  at a much smaller size so it reads as copy, not a shouting wall. */
+  const promotedSubhead = !headline && !!subhead;
 
   /** App markets (UK, US, Congress — which ships inside the US app) get the
    *  two-column desktop hero: text on the left, the notification app-showcase
@@ -189,7 +193,11 @@ export function MarketHero({
         </div>
       )}
       <h1
-        className={`${headlineAlign} max-w-[600px] text-balance text-[40px] font-semibold tracking-tight leading-[1.05] md:text-[64px] md:leading-[1.02]`}
+        className={`${headlineAlign} text-balance font-semibold tracking-tight ${
+          promotedSubhead
+            ? "max-w-[560px] text-[24px] leading-[1.25] md:text-[32px] md:leading-[1.2]"
+            : "max-w-[600px] text-[40px] leading-[1.05] md:text-[64px] md:leading-[1.02]"
+        }`}
       >
         {resolvedHeadline}
       </h1>
@@ -315,7 +323,7 @@ export function MarketHero({
           position: absolute; inset: 0;
           background:
             radial-gradient(ellipse 110% 70% at 50% 60%,
-              rgba(196, 168, 130, 0.10) 0%,
+              rgba(196, 168, 130, 0.05) 0%,
               transparent 65%);
         }
         .hero-vignette {
@@ -330,12 +338,14 @@ export function MarketHero({
            past the headline, so the text stays legible over the panning
            basemap and the map's left edge dissolves into the stage. Themed to
            the framed panel's base tone (a step darker than the page), not the
-           page itself — the scrim only renders md+ where the frame exists. */
+           page itself — the scrim only renders md+ where the frame exists.
+           Kept near-neutral: the old #eee6d8 sepia read as a faded brown
+           wash over the whole stage. */
         .hero-left-scrim {
           background: linear-gradient(to right,
-            #eee6d8 0%,
-            rgba(238, 230, 216, 0.97) 14%,
-            rgba(238, 230, 216, 0.55) 34%,
+            #f1ede6 0%,
+            rgba(241, 237, 230, 0.97) 14%,
+            rgba(241, 237, 230, 0.55) 34%,
             transparent 54%);
         }
         :is(.dark) .hero-left-scrim {
@@ -455,7 +465,7 @@ export function MarketHero({
           overflow-hidden clips the map + disclosure pulses either way. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen overflow-hidden z-0 md:left-0 md:right-0 md:w-auto md:translate-x-0 md:rounded-3xl md:border md:border-black/[0.08] md:bg-[#eee6d8] dark:md:border-white/[0.08] dark:md:bg-[oklch(19%_0.022_55)]"
+        className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen overflow-hidden z-0 md:left-0 md:right-0 md:w-auto md:translate-x-0 md:rounded-3xl md:border md:border-black/[0.08] md:bg-[#f1ede6] dark:md:border-white/[0.08] dark:md:bg-[oklch(19%_0.022_55)]"
       >
         {/* Deal-radar map — the hero's living background on app markets
             (desktop). The atmospheric fades + vignette below blend its edges

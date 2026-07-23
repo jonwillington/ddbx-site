@@ -35,17 +35,19 @@ export const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const navItems = [
-    {
-      label: "Deals",
-      href: dashboardHref,
-      match: (p: string) =>
-        p === dashboardHref || (market.id === "uk" && p === "/"),
-    },
-    // Broker comparison is UK-only content — don't surface it while browsing
-    // other markets (the dashboard promos are likewise config.id === "uk").
-    ...(market.id === "uk"
+  // Broker comparison is UK-only content — don't surface it while browsing
+  // other markets (the dashboard promos are likewise config.id === "uk").
+  // Markets without a Brokers tab would be left with "Deals" as the only
+  // link — pointless (the logo already goes there), so the whole nav list
+  // hides when it would hold a single item.
+  const navItems =
+    market.id === "uk"
       ? [
+          {
+            label: "Deals",
+            href: dashboardHref,
+            match: (p: string) => p === dashboardHref || p === "/",
+          },
           {
             label: "Brokers",
             href: "/brokers",
@@ -53,8 +55,7 @@ export const Navbar = () => {
               p.startsWith("/brokers") || p.startsWith("/compare"),
           },
         ]
-      : []),
-  ];
+      : [];
 
   return (
     <nav className="w-full border-b border-separator bg-[#f5f0e8]/90 dark:bg-background/70 backdrop-blur-lg">
@@ -68,25 +69,28 @@ export const Navbar = () => {
             />
           </a>
           <MarketSwitcher />
-          <ul className="hidden gap-4 md:flex">
-            {navItems.map((item) => {
-              const active = item.match?.(location.pathname) ?? false;
+          {navItems.length > 0 && (
+            <ul className="hidden gap-4 md:flex">
+              {navItems.map((item) => {
+                const active = item.match?.(location.pathname) ?? false;
 
-              return (
-                <li key={item.href}>
-                  <a
-                    className={clsx("text-sm transition-colors", {
-                      "text-[#5a4128] dark:text-[#d8c4af] font-medium": active,
-                      "text-foreground hover:text-[#5a4128]": !active,
-                    })}
-                    href={item.href}
-                  >
-                    {item.label}
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
+                return (
+                  <li key={item.href}>
+                    <a
+                      className={clsx("text-sm transition-colors", {
+                        "text-[#5a4128] dark:text-[#d8c4af] font-medium":
+                          active,
+                        "text-foreground hover:text-[#5a4128]": !active,
+                      })}
+                      href={item.href}
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
         <div className="flex items-center gap-3 md:gap-4">
           <a

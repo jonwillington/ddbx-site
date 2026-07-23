@@ -7,7 +7,7 @@ import type {
 } from "@/lib/markets/types";
 
 import { useState } from "react";
-import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { InformationCircleIcon } from "@heroicons/react/20/solid";
 
 import { MarketRowSpark, type SparkBar } from "./market-row-spark";
@@ -146,19 +146,19 @@ function CalendarDayChip({
   return (
     <span
       className={`flex shrink-0 flex-col overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-surface-secondary ${
-        size === "md" ? "w-11" : "w-9"
+        size === "md" ? "w-10" : "w-9"
       }`}
     >
       <span
         className={`bg-[#5a4128] text-center font-bold uppercase tracking-[0.08em] text-[#f5f0e8] dark:bg-[#ad9479] dark:text-[#1a140d] ${
-          size === "md" ? "py-[3px] text-[8px]" : "py-[2px] text-[7px]"
+          size === "md" ? "py-[2px] text-[8px]" : "py-[2px] text-[7px]"
         }`}
       >
         {weekday.slice(0, 3)}
       </span>
       <span
         className={`text-center font-semibold leading-none tabular-nums text-foreground/90 ${
-          size === "md" ? "py-1.5 text-lg" : "py-1 text-base"
+          size === "md" ? "py-1 text-base" : "py-1 text-base"
         }`}
       >
         {dayNum}
@@ -664,6 +664,77 @@ export function InsiderAvatar({
   );
 }
 
+/** Hard-gated teaser row for person-clustered markets (Congress, while
+ *  discretion gating is on): the member's portrait + name on the left, the
+ *  logos of the companies they bought on the right, and the whole row links
+ *  straight to the App Store. Deliberately shows no amounts, no performance
+ *  and doesn't expand — the web names who bought what, the app has the rest. */
+export function MemberAppTeaserRow({
+  insiderName,
+  insiderRole,
+  insiderPhotoUrl,
+  party,
+  chamber,
+  tickers,
+  appHref,
+}: {
+  insiderName: string;
+  insiderRole?: string;
+  insiderPhotoUrl?: string;
+  party?: string;
+  chamber?: string;
+  /** Unique tickers the member bought this day — rendered as a logo stack. */
+  tickers: string[];
+  appHref: string;
+}) {
+  const MAX_LOGOS = 5;
+  const shown = tickers.slice(0, MAX_LOGOS);
+  const extra = tickers.length - shown.length;
+  const countLabel = `${tickers.length} ${tickers.length === 1 ? "buy" : "buys"}${
+    insiderRole ? ` · ${insiderRole}` : ""
+  }`;
+
+  return (
+    <a
+      className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
+      data-ga-event="cta_gated_row_app"
+      data-ga-label={insiderName}
+      href={appHref}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      <InsiderAvatar name={insiderName} photoUrl={insiderPhotoUrl} size={36} />
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center">
+          <span className="truncate text-[14px] font-semibold leading-tight">
+            {insiderName}
+          </span>
+          <PartyChip className="ml-2" party={party} />
+          <ChamberChip chamber={chamber} className="ml-1.5" />
+        </div>
+        <div className="mt-0.5 text-[11px] text-muted">{countLabel}</div>
+      </div>
+      {/* Who they bought — overlapping logo stack, newest first. */}
+      <div className="flex shrink-0 items-center -space-x-1.5">
+        {shown.map((t) => (
+          <span
+            key={t}
+            className="rounded-full ring-2 ring-white dark:ring-surface-secondary"
+          >
+            <CompanyLogo size={26} ticker={t} />
+          </span>
+        ))}
+        {extra > 0 && (
+          <span className="z-10 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-black/[0.06] text-[10px] font-semibold text-muted ring-2 ring-white dark:bg-white/10 dark:ring-surface-secondary">
+            +{extra}
+          </span>
+        )}
+      </div>
+      <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted/60" />
+    </a>
+  );
+}
+
 /** Person-grouped master row: one INSIDER who traded this day, their portrait
  *  anchored at the top, expanding to the company rows they bought — each
  *  visually tied back to the member by a connector line. The person-view
@@ -713,9 +784,7 @@ export function MemberClusterRow({
   // cluster leaks the very signal we're gating behind the app.
   const SignalChip = ({ className = "" }: { className?: string }) =>
     !DISCRETION_ENABLED && signalCount > 0 ? (
-      <span
-        className={`${chip()} bg-positive/10 text-positive ${className}`}
-      >
+      <span className={`${chip()} bg-positive/10 text-positive ${className}`}>
         {signalCount} signal
       </span>
     ) : null;

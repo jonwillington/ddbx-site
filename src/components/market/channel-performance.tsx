@@ -43,8 +43,10 @@ interface Props {
  *  default ("Bought for £1,000 → now worth …"). */
 const STAKE = 1000;
 
-/** Rows that stay unblurred before the contributors CTA kicks in. */
-const UNBLURRED = 2;
+/** Rows that stay unblurred before the contributors CTA kicks in. Generous on
+ *  purpose — recent good picks are the hook, so let more of them breathe
+ *  before the app gate. */
+const UNBLURRED = 4;
 
 /** The losing side of the picks-vs-market pair dims to this. */
 const MUTED_OPACITY = 0.45;
@@ -66,9 +68,7 @@ const DECOY = [{ returnPct: 0.184 }, { returnPct: 0.092 }];
 function toneClass(ratio: number | null): string {
   if (ratio == null) return "text-muted";
 
-  return ratio >= 0
-    ? "text-positive"
-    : "text-negative";
+  return ratio >= 0 ? "text-positive" : "text-negative";
 }
 
 // Comparison-aware tint for the picks-vs-market pair: the side that's more

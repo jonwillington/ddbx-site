@@ -501,6 +501,14 @@ export interface MarketConfig<W = unknown> {
    *  entity. Mutually exclusive with clusterByCompany (person wins). */
   clusterByPerson?: boolean;
 
+  /** Hard-gated teaser list (person-clustered markets only). While discretion
+   *  gating is on, day buckets render one flat teaser row per member — avatar
+   *  + name on the left, logos of the companies they bought on the right — and
+   *  the row links straight to the App Store instead of opening the detail
+   *  drawer. No amounts, no performance, no expansion: the web list names who
+   *  bought what and the app has everything else. Congress uses this. */
+  gatedSimpleRows?: boolean;
+
   /** Discretion-gating hook. When provided, MarketDetailDrawer calls
    *  `recordView(dealId)` on open and falls back to the dummy body +
    *  overlay when `hasFullAccess(dealId)` returns false. The hook owns

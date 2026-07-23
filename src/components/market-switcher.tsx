@@ -69,7 +69,7 @@ export function MarketSwitcher() {
     () =>
       REGION_ORDER.map((region) => ({
         region,
-        markets: MARKETS.filter((m) => m.region === region),
+        markets: MARKETS.filter((m) => m.region === region && !m.hidden),
       })).filter((s) => s.markets.length > 0),
     [],
   );
