@@ -16,7 +16,8 @@ const STORES = {
   android: {
     src: "/play-store-badge.svg",
     alt: "Get it on Google Play",
-    ratio: 646 / 250,
+    // Official Google badge artwork (Wikimedia), viewBox 180 × 53.333.
+    ratio: 180 / 53.333,
     gaEvent: "cta_download_play_store_badge",
   },
 } as const;

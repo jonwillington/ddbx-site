@@ -539,16 +539,6 @@ export default function DefaultLayout({
                 </svg>
               </button>
               <button
-                aria-label="Download on the App Store"
-                className="inline-block opacity-80 hover:opacity-100 transition-opacity"
-                data-ga-event="cta_footer_download"
-                data-ga-label="Footer App Store"
-                type="button"
-                onClick={() => setAppsOpen(true)}
-              >
-                <StoreBadgeImg size="sm" store="ios" />
-              </button>
-              <button
                 aria-label="Get it on Google Play"
                 className="inline-block opacity-80 hover:opacity-100 transition-opacity"
                 data-ga-event="cta_footer_download"
@@ -557,6 +547,16 @@ export default function DefaultLayout({
                 onClick={() => setAppsOpen(true)}
               >
                 <StoreBadgeImg size="sm" store="android" />
+              </button>
+              <button
+                aria-label="Download on the App Store"
+                className="inline-block opacity-80 hover:opacity-100 transition-opacity"
+                data-ga-event="cta_footer_download"
+                data-ga-label="Footer App Store"
+                type="button"
+                onClick={() => setAppsOpen(true)}
+              >
+                <StoreBadgeImg size="sm" store="ios" />
               </button>
             </div>
           </div>
