@@ -773,6 +773,7 @@ const CongressAnalysisOverlay = ({
       "Insider Form 4 buys alongside Congress, in the same app",
     ]}
     body="You've used today's free web unlock. Open the app to see the full breakdown for every filing."
+    marketId="usg"
     ticker={dealing?.ticker}
     title="Unlock the full Congress brief"
   />

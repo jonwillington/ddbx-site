@@ -16,7 +16,7 @@ import { monthLabel } from "./monthly-utils";
 
 import { api } from "@/lib/api";
 import { AppModal } from "@/components/app-modal";
-import { AppStoreBadge } from "@/components/app-store-badge";
+import { StoreBadges } from "@/components/app-store-badge";
 
 /** The monthly recap report. Opened from the hero's "View {month} Report" CTA
  *  or a month header's "View Report" link. Fetches the full article for the
@@ -187,7 +187,12 @@ export function MonthlyRecapModal({
               A look back at the month, drafted with AI assistance. Not
               investment advice.
             </p>
-            <AppStoreBadge className="shrink-0" placement="Monthly recap" size="md" />
+            <StoreBadges
+              className="shrink-0"
+              marketId={market ?? "uk"}
+              placement="Monthly recap"
+              size="md"
+            />
           </footer>
         </div>
       )}

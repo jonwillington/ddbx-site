@@ -493,6 +493,7 @@ const NetherlandsAnalysisOverlay = () => (
       "The rating checklist behind every signal",
     ]}
     body="You've used today's free web unlock. Open the app for full analysis on every Dutch filing."
+    marketId="nl"
   />
 );
 
@@ -528,7 +529,8 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
     </>
   ),
   marketLabel: "Dutch",
-  timelineTitle: "Dutch directors bought into these companies with their own money",
+  timelineTitle:
+    "Dutch directors bought into these companies with their own money",
   locale: "en-GB",
   topNotice: "Dutch dealings are in BETA.",
   priceFormat: EUR_FORMAT,

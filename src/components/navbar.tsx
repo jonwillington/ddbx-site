@@ -2,12 +2,13 @@ import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-import { AppleGlyph } from "@/components/apple-glyph";
+import { StoreGlyph } from "@/components/store-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { MarketSwitcher } from "@/components/market-switcher";
-import { APP_STORE_URLS, appStoreUrlForMarketId } from "@/lib/app-store";
+import { APP_STORE_URLS, storeUrlForMarketId } from "@/lib/app-store";
+import { useDevicePlatform } from "@/lib/use-device-platform";
 import {
   marketDashboardPath,
   marketForPath,
@@ -17,10 +18,14 @@ import {
 export const Navbar = () => {
   const location = useLocation();
   const market = marketForPath(location.pathname);
+  const platform = useDevicePlatform();
   // Dashboard stays in-app; secondary nav action now points to the market's
-  // app listing (with UK fallback where a market-specific listing isn't live).
+  // store listing for the visitor's device (App Store on iOS/desktop, Play on
+  // Android), with the UK app as the fallback where a market-specific listing
+  // isn't live.
   const dashboardHref = marketHref(market, marketDashboardPath(market));
-  const downloadHref = appStoreUrlForMarketId(market.id) ?? APP_STORE_URLS.uk;
+  const downloadHref =
+    storeUrlForMarketId(market.id, platform) ?? APP_STORE_URLS.uk;
 
   // Scroll-revealed download CTA: fades in once the user scrolls past the hero,
   // fades back out at the top.
@@ -106,7 +111,7 @@ export const Navbar = () => {
             rel="noopener noreferrer"
             target="_blank"
           >
-            <AppleGlyph className="h-3.5 w-3.5 shrink-0" />
+            <StoreGlyph className="h-3.5 w-3.5 shrink-0" />
             Download app
           </a>
           <ThemeSwitch />

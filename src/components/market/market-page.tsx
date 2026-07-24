@@ -72,7 +72,12 @@ import {
 } from "@/components/monthly/monthly-utils";
 import { MonthUnlockModal } from "@/components/discretion/month-unlock-modal";
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
-import { APP_STORE_URLS, appStoreUrlForMarketId } from "@/lib/app-store";
+import {
+  APP_STORE_URLS,
+  appStoreUrlForMarketId,
+  storeUrlForMarketId,
+} from "@/lib/app-store";
+import { useDevicePlatform } from "@/lib/use-device-platform";
 import { buildChannelPerformance } from "@/lib/performance/channel-summary";
 import { isSignalDealing } from "@/lib/markets/types";
 import DefaultLayout from "@/layouts/default";
@@ -291,7 +296,11 @@ export function MarketPage<W>({
     channelFetchFailed,
     dealings,
   ]);
-  const channelAppHref = APP_STORE_URLS[config.id] ?? APP_STORE_URLS.uk;
+  // Store link the in-app unlock CTAs point to, resolved for the visitor's
+  // device (Android → Play, else App Store) with the UK app as the fallback.
+  const platform = useDevicePlatform();
+  const channelAppHref =
+    storeUrlForMarketId(config.id, platform) ?? APP_STORE_URLS.uk;
   const channelDiscretion = gating?.enabled ?? false;
   /** Contributor cards deep-link into the deal drawer. UK has a dedicated
    *  /dealings/:id route; other markets stay on their own page and open the

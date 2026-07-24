@@ -1,66 +1,129 @@
-/** Direct App Store link used by the in-page gating CTAs (drawer overlay,
- *  monthly recap). Points at the UK app — the canonical surface those
- *  surfaces nudge toward. The footer's multi-app chooser uses
- *  `AppStoreBadgeImg` + `APP_CHOICES` instead. */
-const APP_STORE_URL =
-  "https://apps.apple.com/us/app/ddbx-uk/id6762196330?itscg=30200&itsct=apps_box_badge&mttnsubad=6762196330";
+import { storeTargetsForMarket } from "@/lib/app-store";
+import { useDevicePlatform } from "@/lib/use-device-platform";
 
-/** Local static copy of Apple's official "Download on the App Store" badge
- *  (public/app-store-badge.svg) — self-hosted so we don't depend on Apple's
- *  marketing-tools endpoint at runtime. */
-const BADGE_SRC = "/app-store-badge.svg";
-
-const SIZES = {
-  sm: { width: 85, height: 28 },
-  md: { width: 120, height: 40 },
-  lg: { width: 160, height: 53 },
+/** Self-hosted store badges (public/*.svg) — Apple's "Download on the App
+ *  Store" and Google's "Get it on Google Play" — kept local so we don't depend
+ *  on either vendor's marketing-tools endpoint at runtime. Each badge keeps its
+ *  own aspect ratio (Apple ≈ 3.0, Google ≈ 2.58) so neither is squashed; we
+ *  size by height and derive width from the ratio. */
+const STORES = {
+  ios: {
+    src: "/app-store-badge.svg",
+    alt: "Download on the App Store",
+    ratio: 3,
+    gaEvent: "cta_download_app_store_badge",
+  },
+  android: {
+    src: "/play-store-badge.svg",
+    alt: "Get it on Google Play",
+    ratio: 646 / 250,
+    gaEvent: "cta_download_play_store_badge",
+  },
 } as const;
 
-/** Just the badge artwork. Render this inside whatever element should carry
+type Store = keyof typeof STORES;
+
+const HEIGHTS = { sm: 28, md: 40, lg: 53 } as const;
+
+type BadgeSize = keyof typeof HEIGHTS;
+
+/** Just one badge's artwork. Render this inside whatever element should carry
  *  the action — an `<a>` for a direct link, or a `<button>` for a chooser. */
-export function AppStoreBadgeImg({
+export function StoreBadgeImg({
+  store = "ios",
   size = "sm",
   className = "",
 }: {
-  size?: keyof typeof SIZES;
+  store?: Store;
+  size?: BadgeSize;
   className?: string;
 }) {
-  const { width, height } = SIZES[size];
+  const { src, alt, ratio } = STORES[store];
+  const height = HEIGHTS[size];
 
   return (
     <img
-      alt="Download on the App Store"
+      alt={alt}
       className={className}
-      src={BADGE_SRC}
-      style={{ width, height, verticalAlign: "middle", objectFit: "contain" }}
+      src={src}
+      style={{
+        width: Math.round(height * ratio),
+        height,
+        verticalAlign: "middle",
+        objectFit: "contain",
+      }}
     />
   );
 }
 
-/** Badge wired straight to the UK App Store link. */
-export function AppStoreBadge({
-  size = "sm",
-  className = "",
+/** Back-compat alias — the footer's "open the chooser" button still renders the
+ *  bare App Store artwork. New call-sites should prefer `StoreBadges`. */
+export function AppStoreBadgeImg(props: {
+  size?: BadgeSize;
+  className?: string;
+}) {
+  return <StoreBadgeImg store="ios" {...props} />;
+}
+
+function BadgeLink({
+  store,
+  href,
+  size,
   placement,
 }: {
-  size?: keyof typeof SIZES;
-  className?: string;
-  /** GA label naming where this badge sits ("Analysis overlay", "Monthly
-   *  recap"). The shared event name stays; the label separates placements
-   *  that would otherwise be indistinguishable on the same page. */
+  store: Store;
+  href: string;
+  size: BadgeSize;
   placement?: string;
 }) {
   return (
     <a
-      aria-label="Download on the App Store"
-      className={`inline-block opacity-80 hover:opacity-100 transition-opacity ${className}`}
-      data-ga-event="cta_download_app_store_badge"
-      data-ga-label={placement ?? "Download on the App Store"}
-      href={APP_STORE_URL}
+      aria-label={STORES[store].alt}
+      className="inline-block opacity-80 transition-opacity hover:opacity-100"
+      data-ga-event={STORES[store].gaEvent}
+      data-ga-label={placement ?? STORES[store].alt}
+      href={href}
       rel="noopener noreferrer"
       target="_blank"
     >
-      <AppStoreBadgeImg size={size} />
+      <StoreBadgeImg size={size} store={store} />
     </a>
+  );
+}
+
+/** Platform-aware store badge(s) for the in-page install nudges (analysis
+ *  overlay, monthly recap). Shows the badge matching the visitor's device on
+ *  mobile, and BOTH badges on desktop — but only advertises Google Play where
+ *  the market natively has a listing (an Android *device* still gets the UK app
+ *  as a fallback, so it never dead-ends). Defaults to the UK app when no
+ *  `marketId` is given, matching the old hardcoded behaviour. */
+export function StoreBadges({
+  marketId = "uk",
+  size = "md",
+  className = "",
+  placement,
+}: {
+  marketId?: string;
+  size?: BadgeSize;
+  className?: string;
+  /** GA label naming where these badges sit ("Analysis overlay", "Monthly
+   *  recap"). Separates placements that would otherwise be indistinguishable. */
+  placement?: string;
+}) {
+  const platform = useDevicePlatform();
+  const targets = storeTargetsForMarket(marketId, platform);
+
+  return (
+    <div className={`flex flex-wrap items-center gap-2.5 ${className}`}>
+      {targets.map((t) => (
+        <BadgeLink
+          key={t.store}
+          href={t.href}
+          placement={placement}
+          size={size}
+          store={t.store}
+        />
+      ))}
+    </div>
   );
 }

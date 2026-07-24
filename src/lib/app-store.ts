@@ -1,4 +1,5 @@
 import type { MarketChoice } from "@/components/market-chooser-modal";
+import type { DevicePlatform } from "@/lib/use-device-platform";
 
 import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 
@@ -22,14 +23,54 @@ export const APP_STORE_URLS: Record<string, string> = {
   us: "https://apps.apple.com/us/app/ddbx-us/id6772091960",
 };
 
+/** Google Play URLs for the markets that ship a live Android app. Keyed by the
+ *  same market id. Only the UK flavour (`uk.ddbx.app`) is on the Play Store
+ *  today; the US flavour is still in Play internal testing, so it is absent
+ *  here on purpose — an Android visitor on a market without a native listing
+ *  falls back to the UK app (see `storeUrlForMarketId`). Add a market the
+ *  moment its Play listing goes live. */
+export const PLAY_STORE_URLS: Record<string, string> = {
+  uk: "https://play.google.com/store/apps/details?id=uk.ddbx.app",
+};
+
 /** Direct App Store URL for the market that owns a route, or undefined when
- *  that market has no live app. Congress (`usg`) ships inside the US app, so
- *  it resolves to the US listing; SE/NL have no app yet (caller falls back to
- *  the market chooser). */
+ *  that market has no live iOS app. Congress (`usg`) ships inside the US app,
+ *  so it resolves to the US listing; SE/NL have no app yet (caller falls back
+ *  to the market chooser). */
 export function appStoreUrlForMarketId(id: string): string | undefined {
   if (id === "usg") return APP_STORE_URLS.us;
 
   return APP_STORE_URLS[id];
+}
+
+/** Direct Google Play URL for the market that *natively* owns a route, or
+ *  undefined when that market has no live Android app. Deliberately does NOT
+ *  fall back to the UK app — use this for market-branded surfaces (the hero,
+ *  the chooser) that must only advertise a Play listing where one genuinely
+ *  exists. For the visitor-facing "just get me the app" CTAs, use
+ *  `storeUrlForMarketId`, which does apply the UK fallback. */
+export function playStoreUrlForMarketId(id: string): string | undefined {
+  if (id === "usg") return PLAY_STORE_URLS.us;
+
+  return PLAY_STORE_URLS[id];
+}
+
+/** Resolve the single store URL a "download the app" CTA should open, given
+ *  the market that owns the route and the visitor's device.
+ *  - iOS / desktop: the market's App Store listing (undefined for app-less
+ *    SE/NL, so the caller opens the market chooser instead).
+ *  - Android: the market's Play listing, falling back to the UK app when that
+ *    market isn't on Play yet — every Android visitor gets a real install
+ *    target rather than a dead end. */
+export function storeUrlForMarketId(
+  id: string,
+  platform: DevicePlatform | null,
+): string | undefined {
+  if (platform === "android") {
+    return playStoreUrlForMarketId(id) ?? PLAY_STORE_URLS.uk;
+  }
+
+  return appStoreUrlForMarketId(id);
 }
 
 /** Per-market app links for the footer download chooser — same shape and
@@ -78,3 +119,62 @@ export const APP_CHOICES: MarketChoice[] = [
     comingSoon: true,
   },
 ];
+
+/** One resolved store destination — which badge/glyph to render and where it
+ *  points. */
+export interface StoreTarget {
+  store: DevicePlatform;
+  href: string;
+}
+
+/** The store button(s) a market-branded install surface (hero, download page,
+ *  in-page badges) should render for this visitor:
+ *  - Android device → one Play button (native listing, or the UK app as a
+ *    fallback so the tap always lands somewhere real).
+ *  - iOS device → one App Store button.
+ *  - Desktop / unknown → BOTH, but Google Play only where the market genuinely
+ *    ships an Android app (no UK-app fallback on a market-branded desktop page).
+ *  App-less iOS markets (SE/NL) still resolve to the UK App Store here, matching
+ *  the long-standing badge fallback; callers that want the chooser instead use
+ *  `appStoreUrlForMarketId` directly. */
+export function storeTargetsForMarket(
+  id: string,
+  platform: DevicePlatform | null,
+): StoreTarget[] {
+  const iosUrl = appStoreUrlForMarketId(id) ?? APP_STORE_URLS.uk;
+  const nativePlay = playStoreUrlForMarketId(id);
+
+  if (platform === "android") {
+    return [{ store: "android", href: nativePlay ?? PLAY_STORE_URLS.uk }];
+  }
+  if (platform === "ios") {
+    return [{ store: "ios", href: iosUrl }];
+  }
+
+  const targets: StoreTarget[] = [{ store: "ios", href: iosUrl }];
+
+  if (nativePlay) targets.push({ store: "android", href: nativePlay });
+
+  return targets;
+}
+
+/** The download chooser, resolved for the visitor's platform. iOS and desktop
+ *  keep the App Store links above. On Android, a row is only tappable where
+ *  that market has a live Play listing (UK today) — every other market shows
+ *  the "Coming soon" state rather than sending an Android user to an iOS-only
+ *  listing. The chooser is explicit market selection, so it stays honest;
+ *  the UK-app fallback lives only in the single-tap CTAs
+ *  (`storeUrlForMarketId`). */
+export function buildAppChoices(
+  platform: DevicePlatform | null,
+): MarketChoice[] {
+  if (platform !== "android") return APP_CHOICES;
+
+  return APP_CHOICES.map((choice) => {
+    const play = PLAY_STORE_URLS[choice.id];
+
+    return play
+      ? { ...choice, href: play, comingSoon: false }
+      : { ...choice, href: undefined, comingSoon: true };
+  });
+}

@@ -582,6 +582,7 @@ const SwedenAnalysisOverlay = () => (
       "The rating checklist behind every signal",
     ]}
     body="You've used today's free web unlock. Open the app for full analysis on every Swedish filing."
+    marketId="se"
   />
 );
 
@@ -615,7 +616,8 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
     </>
   ),
   marketLabel: "Swedish",
-  timelineTitle: "Swedish directors bought into these companies with their own money",
+  timelineTitle:
+    "Swedish directors bought into these companies with their own money",
   locale: "en-GB",
   topNotice: "Swedish dealings are in BETA.",
   priceFormat: SEK_FORMAT,

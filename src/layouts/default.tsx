@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 
 import { AppDrawer } from "@/components/app-drawer";
-import { AppleGlyph } from "@/components/apple-glyph";
+import { StoreGlyph } from "@/components/store-glyph";
 import { Navbar } from "@/components/navbar";
 import { AppStoreBadgeImg } from "@/components/app-store-badge";
 import {
@@ -11,10 +11,11 @@ import {
   type MarketChoice,
 } from "@/components/market-chooser-modal";
 import {
-  APP_CHOICES,
+  buildAppChoices,
   IOS_APP_LOGO_BY_MARKET,
-  appStoreUrlForMarketId,
+  storeUrlForMarketId,
 } from "@/lib/app-store";
+import { useDevicePlatform } from "@/lib/use-device-platform";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { marketContactEmail, marketForPath } from "@/lib/markets/registry";
 import { setRailPresent } from "@/lib/rail-presence";
@@ -413,15 +414,18 @@ export default function DefaultLayout({
   const [followOpen, setFollowOpen] = useState(false);
   const [appsOpen, setAppsOpen] = useState(false);
   const legalPage = pathToLegalPage(location.pathname);
-  // Direct App Store link for the market that owns this route, so the mobile
-  // floating CTA jumps straight to the right listing (UK site → UK app, US →
-  // US app) instead of opening the chooser. Undefined for app-less markets
-  // (SE/NL) — those fall back to the chooser modal.
-  const directAppUrl = appStoreUrlForMarketId(
+  const platform = useDevicePlatform();
+  // Direct store link for the market that owns this route + the visitor's
+  // device, so the mobile floating CTA jumps straight to the right listing
+  // (iOS → App Store, Android → Play) instead of opening the chooser. On
+  // Android this always resolves (the UK app is the fallback); on iOS/desktop
+  // it's undefined for app-less markets (SE/NL), which fall back to the chooser.
+  const directAppUrl = storeUrlForMarketId(
     marketForPath(
       location.pathname,
       typeof window === "undefined" ? undefined : window.location.hostname,
     ).id,
+    platform,
   );
   const closeLegal = useCallback(() => {
     navigate("/");
@@ -575,7 +579,7 @@ export default function DefaultLayout({
               rel="noopener noreferrer"
               target="_blank"
             >
-              <AppleGlyph className="h-5 w-5 shrink-0" />
+              <StoreGlyph className="h-5 w-5 shrink-0" />
               <span>Start your free trial</span>
             </a>
           ) : (
@@ -587,14 +591,14 @@ export default function DefaultLayout({
               type="button"
               onClick={() => setAppsOpen(true)}
             >
-              <AppleGlyph className="h-5 w-5 shrink-0" />
+              <StoreGlyph className="h-5 w-5 shrink-0" />
               <span>Download the app</span>
             </button>
           )}
           <p className="pointer-events-none mt-2 text-center text-xs text-foreground/55">
             {directAppUrl
-              ? "7 days free, cancel anytime. iOS now — Android July 2026."
-              : "Start your 7-day free trial. On iOS now — Android July 2026."}
+              ? "7 days free, cancel anytime. On iOS and Android."
+              : "Start your 7-day free trial."}
           </p>
         </div>
       </div>
@@ -610,7 +614,7 @@ export default function DefaultLayout({
       />
 
       <MarketChooserModal
-        choices={APP_CHOICES}
+        choices={buildAppChoices(platform)}
         open={appsOpen}
         subtitle="Get the app for your market."
         title="Download the ddbx app"

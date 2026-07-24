@@ -15,15 +15,16 @@ import type { Dealing, UsDealing, UsReporter } from "@/types/ddbx";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-import { AppleGlyph } from "@/components/apple-glyph";
 import { CompanyLogo } from "@/components/company-logo";
 import { useDealRadar } from "@/components/market/hero-deal-radar";
 import { HeroNotificationStack } from "@/components/market/hero-notification-stack";
+import { StoreButtons } from "@/components/store-buttons";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
-import { APP_STORE_URLS } from "@/lib/app-store";
+import { APP_STORE_URLS, storeUrlForMarketId } from "@/lib/app-store";
 import { stripTickerSuffix } from "@/lib/display-name";
 import { marketForPath } from "@/lib/markets/registry";
+import { useDevicePlatform } from "@/lib/use-device-platform";
 
 type MarketId = "uk" | "us";
 
@@ -55,30 +56,27 @@ const usd0 = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-/** Filled App Store button — same anchor styling as the market hero so the
- *  page reads as the same product. */
+/** Filled store button(s) — same anchor styling as the market hero so the page
+ *  reads as the same product. Shows both App Store + Google Play on desktop and
+ *  the visitor's store on mobile (see `StoreButtons`). */
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 const CTA_CLASS = `inline-flex items-center justify-center gap-2.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-7 py-3.5 text-base font-semibold shadow-md transition-all hover:shadow-lg`;
 
 function DownloadButton({
-  appUrl,
+  marketId,
   gaLabel,
 }: {
-  appUrl: string;
+  marketId: string;
   gaLabel: string;
 }) {
   return (
-    <a
-      className={CTA_CLASS}
-      data-ga-event="cta_download_lp"
-      data-ga-label={gaLabel}
-      href={appUrl}
-      rel="noopener noreferrer"
-      target="_blank"
-    >
-      <AppleGlyph className="h-[17px] w-[17px] shrink-0" />
-      Download on the App Store
-    </a>
+    <StoreButtons
+      buttonClassName={CTA_CLASS}
+      gaEvent="cta_download_lp"
+      gaLabel={gaLabel}
+      glyphClassName="h-[17px] w-[17px] shrink-0"
+      marketId={marketId}
+    />
   );
 }
 
@@ -512,6 +510,11 @@ export default function DownloadPage() {
   const { pathname } = useLocation();
   const market: MarketId = marketForPath(pathname).id === "us" ? "us" : "uk";
   const cfg = CONFIG[market];
+  const platform = useDevicePlatform();
+  // The winner cards' "View analysis" links open the store matching the
+  // visitor's device (Android → Play, else App Store), falling back to the
+  // market's iOS listing on desktop/unknown.
+  const cardAppUrl = storeUrlForMarketId(cfg.marketId, platform) ?? cfg.appUrl;
   const radar = useDealRadar(cfg.marketId, true);
   const [winners, setWinners] = useState<Winner[] | null>(null);
 
@@ -601,12 +604,12 @@ export default function DownloadPage() {
                 floating bar, so it shows there. */}
             <div className="mt-7 hidden flex-col items-center gap-2.5 md:flex md:items-start">
               <DownloadButton
-                appUrl={cfg.appUrl}
                 gaLabel={`${cfg.gaPrefix} hero`}
+                marketId={cfg.marketId}
               />
               <p className="text-sm text-foreground/55">
                 Start your <span className="font-medium">7-day free trial</span>
-                . Cancel anytime · iPhone
+                . Cancel anytime
               </p>
             </div>
           </div>
@@ -641,7 +644,7 @@ export default function DownloadPage() {
             : winners.map((w) => (
                 <WinnerCard
                   key={w.id}
-                  appUrl={cfg.appUrl}
+                  appUrl={cardAppUrl}
                   gaPrefix={cfg.gaPrefix}
                   winner={w}
                 />
@@ -651,8 +654,8 @@ export default function DownloadPage() {
         {winners && winners.length > 0 && (
           <div className="mt-10 flex flex-col items-center gap-2.5">
             <DownloadButton
-              appUrl={cfg.appUrl}
               gaLabel={`${cfg.gaPrefix} winners`}
+              marketId={cfg.marketId}
             />
             <p className="text-sm text-foreground/55">{cfg.winnersCtaSub}</p>
           </div>
@@ -696,11 +699,11 @@ export default function DownloadPage() {
         </p>
         <div className="mt-8 flex flex-col items-center gap-2.5">
           <DownloadButton
-            appUrl={cfg.appUrl}
             gaLabel={`${cfg.gaPrefix} footer`}
+            marketId={cfg.marketId}
           />
           <p className="text-sm text-foreground/55">
-            7-day free trial · Cancel anytime · iPhone
+            7-day free trial · Cancel anytime
           </p>
         </div>
 

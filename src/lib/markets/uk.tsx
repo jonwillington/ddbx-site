@@ -400,6 +400,7 @@ const UkAnalysisOverlay = ({ dealing }: { dealing?: { ticker: string } }) => (
       "Daily recap of the filings that matter",
     ]}
     body="You've used today's free web unlock. The app gives you the full breakdown on every UK filing."
+    marketId="uk"
     ticker={dealing?.ticker}
   />
 );
@@ -436,7 +437,8 @@ export const UkMarket: MarketConfig<Dealing> = {
     </>
   ),
   marketLabel: "UK",
-  timelineTitle: "UK directors bought into these companies with their own money",
+  timelineTitle:
+    "UK directors bought into these companies with their own money",
   locale: "en-GB",
   priceFormat: GBP_FORMAT,
   // For LSE tickers /api/prices already stores pence (close_pence is literal

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { LockClosedIcon } from "@heroicons/react/20/solid";
 import { Drawer } from "vaul";
 
-import { AppleGlyph } from "@/components/apple-glyph";
+import { StoreGlyph } from "@/components/store-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { CloseButton } from "@/components/close-button";
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -53,7 +53,7 @@ export function MonthUnlockModal({
         rel="noopener noreferrer"
         target="_blank"
       >
-        <AppleGlyph className="h-4 w-4 shrink-0" />
+        <StoreGlyph className="h-4 w-4 shrink-0" />
         Start your free trial
       </a>
       <p className="mt-2.5 text-[11px] text-muted/70">

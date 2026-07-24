@@ -666,6 +666,7 @@ const UsAnalysisOverlay = ({ dealing }: { dealing?: { ticker: string } }) => (
       "Congress trades with committee context, in the same app",
     ]}
     body="You've used today's free web unlock. Open the app for full analysis on every Form 4 purchase."
+    marketId="us"
     ticker={dealing?.ticker}
   />
 );

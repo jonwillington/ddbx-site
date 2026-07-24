@@ -19,6 +19,8 @@
 // Crawlers ignore the body and just read the meta.
 
 const APP_STORE_URL = "https://apps.apple.com/us/app/ddbx-uk/id6762196330";
+const PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=uk.ddbx.app";
 const API_BASE = "https://api.ddbx.uk/api";
 // Share links unfurl with the clean per-market ddbx wordmark — the same OG art
 // the rest of the site uses (see functions/_middleware.js): light on UK/EU, dark
@@ -235,19 +237,32 @@ function checksHtml(checklist) {
   return `<div class="checks-head"><span class="checks-title">6-point signal check</span><span class="checks-count">${passed} of ${CHECKS.length} met</span></div><ul class="checks">${items}</ul>`;
 }
 
-const CTA = `<div class="cta">
-      <a class="btn primary" href="${esc(APP_STORE_URL)}" onclick="ddbxCta('cta_app_store')">Read the full analysis on iOS<span class="sub">7-day free trial · cancel anytime</span></a>
+// Primary store CTA, resolved for the visitor's device. Android taps land on
+// Google Play; iOS and everything else on the App Store. (Users WITH the app
+// never reach this page — the OS intercepts the link via AASA / assetlinks.)
+function ctaHtml(isAndroid) {
+  const storeUrl = isAndroid ? PLAY_STORE_URL : APP_STORE_URL;
+  const storeLabel = isAndroid
+    ? "Read the full analysis on Android"
+    : "Read the full analysis on iOS";
+  const storeEvent = isAndroid ? "cta_play_store" : "cta_app_store";
+
+  return `<div class="cta">
+      <a class="btn primary" href="${esc(storeUrl)}" onclick="ddbxCta('${storeEvent}')">${storeLabel}<span class="sub">7-day free trial · cancel anytime</span></a>
       <a class="btn ghost" href="https://ddbx.uk" onclick="ddbxCta('cta_web')">Continue on the web</a>
     </div>`;
+}
 
-function bodyHtml(f) {
+function bodyHtml(f, isAndroid) {
+  const cta = ctaHtml(isAndroid);
+
   if (!f || !f.title) {
     // No per-deal data — generic brand hero, still funnels to the trial.
     return `<div class="card">
     ${LOGO}
     <h1>Director &amp; insider dealings, rated and analysed</h1>
     <p class="summary">Every disclosure scored against a 6-point signal check, with the full thesis, evidence and price history in the app.</p>
-    ${CTA}
+    ${cta}
   </div>`;
   }
   const metaBits = [f.role, f.dateStr].filter(Boolean).map(esc).join(" · ");
@@ -260,12 +275,21 @@ function bodyHtml(f) {
     ${f.summary ? `<p class="summary">${esc(f.summary)}</p>` : ""}
     ${f.checklist ? checksHtml(f.checklist) : ""}
     <p class="unlock">Full thesis, supporting evidence &amp; price history — in the app.</p>
-    ${CTA}
+    ${cta}
     ${f.ticker ? ATTRIBUTION : ""}
   </div>`;
 }
 
-function page({ title, description, image, url, funnel, gaId, dealId }) {
+function page({
+  title,
+  description,
+  image,
+  url,
+  funnel,
+  gaId,
+  dealId,
+  isAndroid,
+}) {
   // The unfurl is the clean per-market ddbx wordmark, so we always serve the
   // full-width large-image card — there's no longer a second detail card to
   // avoid (the old `?card=plain` downgrade existed for the per-trade card).
@@ -348,13 +372,13 @@ function page({ title, description, image, url, funnel, gaId, dealId }) {
 </style>
 </head>
 <body>
-  ${bodyHtml(funnel)}
+  ${bodyHtml(funnel, isAndroid)}
 </body>
 </html>`;
 }
 
 // Minimal fallback: keep the site's default OG, still funnel humans to the trial.
-function fallback(url, gaId, dealId, origin, host) {
+function fallback(url, gaId, dealId, origin, host, isAndroid) {
   return page({
     title: "ddbx · Director Dealings",
     description: `Track director and insider share dealings. See the analysis on ddbx.`,
@@ -363,6 +387,7 @@ function fallback(url, gaId, dealId, origin, host) {
     funnel: null,
     gaId,
     dealId,
+    isAndroid,
   });
 }
 
@@ -373,9 +398,14 @@ export async function onRequestGet(context) {
   const url = `https://ddbx.uk/t/${id}`;
   // GA4 measurement ID by the host actually serving the page (uk/us/eu).
   const gaId = gaIdForHost(reqUrl.hostname);
+  // Device sniff — only decides which store the primary CTA points at. App
+  // holders never get here (the OS deep-links them straight into the app).
+  const isAndroid = /android/i.test(request.headers.get("user-agent") || "");
   const headers = {
     "content-type": "text/html; charset=utf-8",
+    // Vary on UA so the CDN doesn't serve an iOS-CTA page to an Android tap.
     "cache-control": "public, s-maxage=3600, max-age=600",
+    vary: "User-Agent",
   };
 
   try {
@@ -383,16 +413,32 @@ export async function onRequestGet(context) {
       headers: { accept: "application/json" },
       cf: { cacheTtl: 3600, cacheEverything: true },
     });
-    if (!res.ok) return new Response(fallback(url, gaId, id, reqUrl.origin, reqUrl.hostname), { headers });
+    if (!res.ok)
+      return new Response(
+        fallback(url, gaId, id, reqUrl.origin, reqUrl.hostname, isAndroid),
+        { headers },
+      );
     const d = await res.json();
     const meta = buildMeta(d, id);
     // Clean per-market ddbx wordmark (light UK/EU, dark US) — not the per-trade card.
     const image = wordmarkImage(reqUrl.origin, reqUrl.hostname);
     return new Response(
-      page({ title: meta.title, description: meta.description, image, url, funnel: meta.funnel, gaId, dealId: id }),
-      { headers }
+      page({
+        title: meta.title,
+        description: meta.description,
+        image,
+        url,
+        funnel: meta.funnel,
+        gaId,
+        dealId: id,
+        isAndroid,
+      }),
+      { headers },
     );
   } catch {
-    return new Response(fallback(url, gaId, id, reqUrl.origin, reqUrl.hostname), { headers });
+    return new Response(
+      fallback(url, gaId, id, reqUrl.origin, reqUrl.hostname, isAndroid),
+      { headers },
+    );
   }
 }
