@@ -8,12 +8,12 @@ const LABEL = {
   android: "Get it on Google Play",
 } as const;
 
-/** Filled "download the app" button(s), platform-aware. On mobile it renders
- *  the single store matching the visitor's device; on desktop it renders BOTH
- *  where the market ships on both (App Store first). Used by the market hero
- *  and the /download landing pages so both surfaces read as the same product.
- *  Callers pass the anchor styling (`buttonClassName`) so the buttons inherit
- *  each page's exact CTA treatment. */
+/** A single filled "download the app" button for the visitor's platform:
+ *  Google Play on Android, the App Store on iOS and desktop (where there's no
+ *  single device to target, so we lead with the App Store). Used by the market
+ *  hero and the /download landing pages. Callers pass the anchor styling
+ *  (`buttonClassName`) so the button inherits each page's exact CTA treatment.
+ *  The footer is where BOTH store badges live — see `StoreBadgeImg`. */
 export function StoreButtons({
   marketId,
   buttonClassName,
@@ -30,28 +30,30 @@ export function StoreButtons({
   className?: string;
 }) {
   const platform = useDevicePlatform();
-  const targets = storeTargetsForMarket(marketId, platform);
+  // `storeTargetsForMarket` returns [App Store] on iOS/desktop and [Play] on
+  // Android (with the UK app as the Android fallback), so the first entry is
+  // always the single store this visitor should see.
+  const target = storeTargetsForMarket(marketId, platform)[0];
+
+  if (!target) return null;
 
   return (
     <div className={`flex flex-col gap-2.5 ${className}`}>
-      {targets.map((t) => (
-        <a
-          key={t.store}
-          className={buttonClassName}
-          data-ga-event={gaEvent}
-          data-ga-label={`${gaLabel} · ${t.store}`}
-          href={t.href}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          {t.store === "android" ? (
-            <AndroidGlyph className={glyphClassName} />
-          ) : (
-            <AppleGlyph className={glyphClassName} />
-          )}
-          {LABEL[t.store]}
-        </a>
-      ))}
+      <a
+        className={buttonClassName}
+        data-ga-event={gaEvent}
+        data-ga-label={`${gaLabel} · ${target.store}`}
+        href={target.href}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        {target.store === "android" ? (
+          <AndroidGlyph className={glyphClassName} />
+        ) : (
+          <AppleGlyph className={glyphClassName} />
+        )}
+        {LABEL[target.store]}
+      </a>
     </div>
   );
 }

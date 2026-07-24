@@ -5,7 +5,7 @@ import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 import { AppDrawer } from "@/components/app-drawer";
 import { StoreGlyph } from "@/components/store-glyph";
 import { Navbar } from "@/components/navbar";
-import { AppStoreBadgeImg } from "@/components/app-store-badge";
+import { StoreBadgeImg } from "@/components/app-store-badge";
 import {
   MarketChooserModal,
   type MarketChoice,
@@ -539,14 +539,24 @@ export default function DefaultLayout({
                 </svg>
               </button>
               <button
-                aria-label="Download the app"
+                aria-label="Download on the App Store"
                 className="inline-block opacity-80 hover:opacity-100 transition-opacity"
                 data-ga-event="cta_footer_download"
-                data-ga-label="Footer badge"
+                data-ga-label="Footer App Store"
                 type="button"
                 onClick={() => setAppsOpen(true)}
               >
-                <AppStoreBadgeImg size="sm" />
+                <StoreBadgeImg size="sm" store="ios" />
+              </button>
+              <button
+                aria-label="Get it on Google Play"
+                className="inline-block opacity-80 hover:opacity-100 transition-opacity"
+                data-ga-event="cta_footer_download"
+                data-ga-label="Footer Google Play"
+                type="button"
+                onClick={() => setAppsOpen(true)}
+              >
+                <StoreBadgeImg size="sm" store="android" />
               </button>
             </div>
           </div>

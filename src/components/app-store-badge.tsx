@@ -56,15 +56,6 @@ export function StoreBadgeImg({
   );
 }
 
-/** Back-compat alias — the footer's "open the chooser" button still renders the
- *  bare App Store artwork. New call-sites should prefer `StoreBadges`. */
-export function AppStoreBadgeImg(props: {
-  size?: BadgeSize;
-  className?: string;
-}) {
-  return <StoreBadgeImg store="ios" {...props} />;
-}
-
 function BadgeLink({
   store,
   href,
