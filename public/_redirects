@@ -7,13 +7,15 @@
 #   - /us/t/{id} → functions/us/t/[id].js  (US store redirect; Android → Play)
 # They take precedence over _redirects, so no static store rule lives here.
 
-# /api -> /developers. /developers is canonical: /api is the same-origin API
-# prefix (the vite dev proxy forwards /api/* to wrangler, and keeping the page
-# there would foreclose ever proxying the worker under this origin). The nav
-# still reads "API" — the label and the path don't have to match.
-# Exact path only: /api/* must NEVER be caught here, or a same-origin API call
-# would be redirected into the SPA.
-/api               /developers                               301!
+# /api -> /developers is NOT here: Pages runs Functions before static asset
+# serving, and functions/_middleware.js matches every route, so a rule for /api
+# never fired (it answered 200 in production). That redirect lives in
+# functions/api.js instead. See the note there.
+#
+# /developers is canonical because /api is the same-origin API prefix — the
+# vite dev proxy forwards /api/* to wrangler, and keeping the page there would
+# foreclose ever proxying the worker under this origin. The nav still reads
+# "API"; the label and the path don't have to match.
 /developers/*      /developers                               301!
 
 # SPA fallback — MUST stay last. The site previously relied on Cloudflare's
