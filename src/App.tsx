@@ -59,9 +59,25 @@ function App() {
         {/* Broker comparison + affiliate directory (UK). Always public. */}
         {/* Conversion-focused app-install landing pages. Public, ungated.
             Market is resolved inside the page (host- + path-aware): /download
-            follows the host (ddbx.us -> US), /us/download forces US anywhere. */}
+            follows the host (ddbx.us -> US), /us/download forces US anywhere.
+            Platform is sniffed on the bare route and FORCED on the /ios and
+            /android variants — ad campaigns and store-specific SEO need a URL
+            that always shows the same store, whatever device opens it. */}
         <Route element={<DownloadPage />} path="/download" />
+        <Route element={<DownloadPage platform="ios" />} path="/download/ios" />
+        <Route
+          element={<DownloadPage platform="android" />}
+          path="/download/android"
+        />
         <Route element={<DownloadPage />} path="/us/download" />
+        <Route
+          element={<DownloadPage platform="ios" />}
+          path="/us/download/ios"
+        />
+        <Route
+          element={<DownloadPage platform="android" />}
+          path="/us/download/android"
+        />
         <Route element={<ComparePage />} path="/compare" />
         <Route element={<ComparePage />} path="/brokers" />
         <Route element={<BrokerDetailPage />} path="/brokers/:slug" />

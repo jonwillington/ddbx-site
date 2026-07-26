@@ -16,6 +16,26 @@ export function DocumentTitle() {
 
   useEffect(() => {
     const market = marketForPath(pathname);
+    // App-install landing pages: /download plus the forced-platform variants
+    // /download/ios and /download/android (and their /us equivalents). The
+    // platform is part of the title and description because these are the URLs
+    // store-specific ad campaigns and "ddbx android app" searches land on — a
+    // shared title across all three would have them competing with each other.
+    const downloadPlatform: "ios" | "android" | null = /\/download\/ios$/.test(
+      pathname,
+    )
+      ? "ios"
+      : /\/download\/android$/.test(pathname)
+        ? "android"
+        : null;
+    const isDownload =
+      pathname.endsWith("/download") || downloadPlatform !== null;
+    const deviceNoun =
+      downloadPlatform === "android"
+        ? "Android"
+        : downloadPlatform === "ios"
+          ? "iPhone"
+          : null;
     const pageTitle = (() => {
       if (pathname === "/portfolio" || pathname.endsWith("/performance")) {
         return `${siteConfig.brand} · Portfolio (${market.label}) — ${siteConfig.name}`;
@@ -27,19 +47,23 @@ export function DocumentTitle() {
         return `${siteConfig.brand} · Director (${market.label}) — ${siteConfig.name}`;
       }
       if (pathname.startsWith("/brokers/")) {
-        const broker = titleCase(pathname.split("/").filter(Boolean).at(-1) ?? "");
+        const broker = titleCase(
+          pathname.split("/").filter(Boolean).at(-1) ?? "",
+        );
 
         return `${broker} review — fees, accounts & verdict — ${siteConfig.name}`;
       }
       if (pathname === "/compare" || pathname === "/brokers") {
         return `Compare UK trading platforms — fees, ISAs & SIPPs — ${siteConfig.name}`;
       }
-      // App-install landing pages (/download, /us/download) — conversion copy,
-      // distinct from the generic market-listing homepage title.
-      if (pathname.endsWith("/download")) {
+      // App-install landing pages — conversion copy, distinct from the generic
+      // market-listing homepage title.
+      if (isDownload) {
+        const on = deviceNoun ? ` for ${deviceNoun}` : "";
+
         return market.id === "us"
-          ? `Get ddbx — follow US insider stock buys · 7-day free trial`
-          : `Get ddbx — follow UK director share buys · 7-day free trial`;
+          ? `Get ddbx${on} — follow US insider stock buys · 7-day free trial`
+          : `Get ddbx${on} — follow UK director share buys · 7-day free trial`;
       }
 
       return market.config.documentTitle;
@@ -65,10 +89,17 @@ export function DocumentTitle() {
         if (pathname === "/compare" || pathname === "/brokers") {
           return "Compare the UK’s main trading and investing platforms side by side — fees, ISAs, SIPPs, fractional shares and FSCS protection.";
         }
-        if (pathname.endsWith("/download")) {
+        if (isDownload) {
+          const app =
+            deviceNoun === "Android"
+              ? "the ddbx Android app"
+              : deviceNoun === "iPhone"
+                ? "the ddbx iPhone app"
+                : "the ddbx app";
+
           return market.id === "us"
-            ? "See which US insiders are buying their own stock — with live performance tracking. Start your 7-day free trial on the ddbx iOS app."
-            : "See which UK directors are buying shares in their own companies — with live performance tracking. Start your 7-day free trial on the ddbx iOS app.";
+            ? `See which US insiders are buying their own stock — with live performance tracking. Start your 7-day free trial on ${app}.`
+            : `See which UK directors are buying shares in their own companies — with live performance tracking. Start your 7-day free trial on ${app}.`;
         }
 
         return `Analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;

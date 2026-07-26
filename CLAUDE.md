@@ -75,6 +75,23 @@ here in the same change cycle. CI runs `check:types` to catch drift.
 - Shared button/chip styling tokens live in `src/components/button.ts`
   and `src/components/chip.ts` — reuse them before inventing new fills.
 
+## Download landing pages
+
+Six routes (`/download`, `/download/ios`, `/download/android` and the same
+under `/us`), one page: `src/pages/download.tsx` + `src/components/download/*`.
+Full write-up in `investigations/2026-07-26-download-landing-pages.md`.
+
+Two things to know before touching them:
+
+- **`src/lib/pricing.ts` is the only place on the public web that states a
+  price.** It's mirrored by hand from `ddbx-ios-app/Subscriptions.storekit`
+  (a local StoreKit test config on the USA storefront) — confirm against App
+  Store Connect / Play Console before trusting or changing a number.
+- **App screenshots don't exist yet.** Every screen slot falls back to a styled
+  placeholder; drop PNGs into `public/app-shots/<market>/<platform>/<slot>.png`
+  (screen only, no device chrome — the bezel is CSS) and they light up with no
+  code change. See `src/lib/app-screenshots.ts`.
+
 ## Discretion mode (web gating)
 
 The public website intentionally shows only a sliver of the data so the iOS

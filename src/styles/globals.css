@@ -210,6 +210,67 @@ body {
   animation: skeleton-fade-out 200ms ease-out both;
 }
 
+/* Scroll-reveal for the download landing pages. The class is applied always;
+   `.is-in` is added by <Reveal> once the element enters the viewport. Kept as
+   a transition (not an animation) so an element that is already in view on
+   first paint — e.g. after a hard reload mid-page — settles instead of
+   replaying. See src/components/download/reveal.tsx. */
+.dl-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.dl-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Printing never scrolls, so the IntersectionObserver that adds `.is-in` would
+   never fire below the first screen and the page would print mostly blank. */
+@media print {
+  .dl-reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Store-badge hover lift. Written here rather than as
+   `hover:scale-[1.03] motion-reduce:hover:scale-100`: stacking the
+   motion-reduce and hover variants makes Tailwind v4 emit an empty `:is()`
+   selector, which the CSS minifier rejects.
+
+   Deliberately sets NO `display` — rules in this file are unlayered and would
+   beat Tailwind's own `hidden`/`inline-block` utilities, so a `dl-lift hidden`
+   element would stay visible. Call sites supply the display utility (transforms
+   need a block-level box to apply at all). */
+.dl-lift {
+  transition: transform 180ms ease;
+}
+
+.dl-lift:hover {
+  transform: scale(1.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-lift,
+  .dl-lift:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
 @keyframes today-live-wash {
   0%, 100% { opacity: 0.55; }
   50%      { opacity: 1; }
