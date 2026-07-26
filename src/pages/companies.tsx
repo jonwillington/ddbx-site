@@ -76,7 +76,7 @@ export default function CompaniesPage() {
 
   return (
     <DefaultLayout>
-      <div className="mx-auto w-full max-w-[980px] pb-10">
+      <div className="w-full pb-10">
         <h1 className="text-[26px] font-semibold leading-[1.15] tracking-tight text-foreground md:text-[32px]">
           Every {market} company with {noun}
         </h1>
@@ -108,7 +108,7 @@ export default function CompaniesPage() {
             >
               {letter}
             </h2>
-            <ul className="mt-1 sm:columns-2 sm:gap-x-10">
+            <ul className="mt-1 sm:columns-2 sm:gap-x-12 lg:columns-3 xl:columns-4">
               {list.map((c) => (
                 <li key={c.key} className="break-inside-avoid py-2.5">
                   <Link
