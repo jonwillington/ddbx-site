@@ -106,6 +106,46 @@ export function isProductionHost(hostname) {
   return normaliseHost(hostname) in HOST_DEFAULT_MARKET;
 }
 
+/** Research surfaces that only exist for UK and US.
+ *
+ *  The sector rollups, the biggest-buys leaderboard, the company index and the
+ *  monthly report archive are all built on the UK and US feeds. SE and NL are
+ *  data-side markets: no company pages, no sector rollups, no reports. Served
+ *  on ddbx.eu these routes fell through to the UK data AND the UK copy, so a
+ *  visitor who had switched to SE was shown "Every UK company with director
+ *  dealings" and "The biggest UK insider buys" under a Swedish flag — wrong
+ *  data, wrong wording, and a third indexable copy of pages that already exist
+ *  on ddbx.uk, which is precisely the duplicate-content split the glossary's
+ *  one-owner rule was written to avoid.
+ *
+ *  Matching is by prefix so year and slug variants (/biggest-buys/2026,
+ *  /sectors/technology, /reports/2026-05) are covered.
+ *
+ *  `/company/:key` is deliberately NOT in the list. An individual issuer page
+ *  is owned by whichever market lists that ticker, so a blanket redirect to
+ *  ddbx.uk would send US issuers to the wrong host; those pages already carry
+ *  their own canonical from functions/company/[key].js.
+ */
+const UK_US_ONLY_PREFIXES = [
+  "/sectors",
+  "/biggest-buys",
+  "/companies",
+  "/reports",
+];
+
+/** True when `pathname` is a UK/US-only research page being served on a host
+ *  that owns neither market. Callers redirect to the same path on ddbx.uk. */
+export function isForeignResearchPath(pathname, hostname) {
+  const market = HOST_DEFAULT_MARKET[normaliseHost(hostname)];
+
+  if (market !== "se" && market !== "nl") return false;
+  const path = String(pathname ?? "/");
+
+  return UK_US_ONLY_PREFIXES.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+  );
+}
+
 function normaliseHost(hostname) {
   return String(hostname ?? "")
     .toLowerCase()

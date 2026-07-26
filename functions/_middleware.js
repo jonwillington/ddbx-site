@@ -19,6 +19,7 @@
 
 import {
   canonicalUrlFor,
+  isForeignResearchPath,
   isIndexable,
   seoForPath,
 } from "../shared/seo.js";
@@ -59,6 +60,20 @@ const setContent = (value) => ({
 export async function onRequest(context) {
   const { request, next } = context;
   const url = new URL(request.url);
+
+  // The UK/US research pages have no SE/NL equivalent, so on ddbx.eu they were
+  // rendering UK data under UK headings with a Swedish flag in the navbar.
+  // Send them to the host that owns the content instead — same path, so a
+  // shared link still lands where it meant to. 301: the EU URL is not a
+  // distinct page and should not accumulate its own index entry.
+  if (isForeignResearchPath(url.pathname, url.hostname)) {
+    const target = new URL(url.toString());
+
+    target.hostname = "ddbx.uk";
+
+    return Response.redirect(target.toString(), 301);
+  }
+
   const res = await next();
 
   // Only the HTML shell needs rewriting; assets pass straight through.

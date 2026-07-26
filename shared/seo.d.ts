@@ -26,6 +26,12 @@ export interface RouteSeo {
 export declare function brandTitle(rest: string): string;
 
 export declare function isProductionHost(hostname?: string): boolean;
+/** True when `pathname` is a UK/US-only research page (sectors, biggest-buys,
+ *  companies, company, reports) served on a host whose market is SE or NL. */
+export declare function isForeignResearchPath(
+  pathname?: string,
+  hostname?: string,
+): boolean;
 export declare function marketIdForPath(
   pathname: string,
   hostname?: string,
