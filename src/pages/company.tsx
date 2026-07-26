@@ -5,11 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
+import { BrokerAside } from "@/components/brokers/broker-aside";
 import {
-  BrokerFloat,
   BrokerInline,
   usePromotedBroker,
-} from "@/components/brokers/broker-float";
+} from "@/components/brokers/broker-inline";
 import { CompanyLogo } from "@/components/company-logo";
 import { MarketFaq } from "@/components/market/market-faq";
 import { RatingBadge } from "@/components/rating-badge";
@@ -319,7 +319,9 @@ export default function CompanyPage() {
   ];
 
   return (
-    <DefaultLayout>
+    // drawerRight reserves lg:mr-80 for the fixed broker rail, the same
+    // pairing the broker reviews use.
+    <DefaultLayout drawerRight>
       <div className="w-full pb-4">
         {/* Masthead — identity left, the one-sentence summary right. */}
         <header className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between md:gap-12">
@@ -411,12 +413,17 @@ export default function CompanyPage() {
                       <td className="whitespace-nowrap px-5 py-3.5 text-foreground/60">
                         {fmtDate(deal.trade_date, market)}
                       </td>
+                      {/* Names and long role titles stay on one line — the
+                          table scrolls horizontally on narrow screens, which
+                          reads far better than a row wrapping to six lines. */}
                       <td className="px-5 py-3.5">
-                        <span className="font-medium text-foreground">
+                        <span className="block whitespace-nowrap font-medium text-foreground">
                           {personName(deal)}
                         </span>
                         {personRole(deal) && (
-                          <span className={`mt-0.5 block ${C.note}`}>
+                          <span
+                            className={`mt-0.5 block whitespace-nowrap ${C.note}`}
+                          >
                             {personRole(deal)}
                           </span>
                         )}
@@ -449,8 +456,13 @@ export default function CompanyPage() {
           </p>
         </Section>
 
-        {/* The high-intent moment: they've just read who bought and how much. */}
-        <BrokerInline broker={broker} className="mt-10" company={name} />
+        {/* Mobile twin of the rail — the rail is hidden below lg, and this is
+            the high-intent moment: they've just read who bought and how much. */}
+        <BrokerInline
+          broker={broker}
+          className="mt-10 lg:hidden"
+          company={name}
+        />
 
         {data.stats && (
           <div className="grid gap-x-12 lg:grid-cols-2">
@@ -562,7 +574,7 @@ export default function CompanyPage() {
         </nav>
       </div>
 
-      <BrokerFloat broker={broker} company={name} />
+      <BrokerAside heading={`Invest in ${ticker}`} placement="company_rail" />
     </DefaultLayout>
   );
 }
@@ -650,7 +662,7 @@ function CongressTable({
                 <td className="whitespace-nowrap px-5 py-3.5 text-foreground/60">
                   {fmtDate(g.trade_date, market)}
                 </td>
-                <td className="px-5 py-3.5 font-medium text-foreground">
+                <td className="whitespace-nowrap px-5 py-3.5 font-medium text-foreground">
                   {g.reporter?.name ?? "—"}
                   {g.reporter?.chamber && (
                     <span className={`mt-0.5 block ${C.note}`}>

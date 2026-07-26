@@ -123,10 +123,15 @@ export function BrokerNavAside({
 export function BrokerAside({
   brokers: provided,
   heading = "Top picks",
+  placement = "rail",
 }: {
   /** Pass the already-loaded list to avoid a second fetch; omit to self-load. */
   brokers?: BrokerOffer[] | null;
   heading?: string;
+  /** GA label for every CTA in the rail. Defaults to the broker section's
+   *  "rail"; the company pages pass "company_rail" so the two surfaces can be
+   *  compared rather than pooled. */
+  placement?: string;
 }) {
   const [fetched, setFetched] = useState<BrokerOffer[] | null>(null);
 
@@ -181,7 +186,7 @@ export function BrokerAside({
                   <BrokerVisitLink
                     broker={b}
                     className="w-full"
-                    placement="rail"
+                    placement={placement}
                     size="lg"
                   />
                 </div>
