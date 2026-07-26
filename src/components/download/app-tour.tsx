@@ -22,7 +22,9 @@
  *  everywhere; `variant="bare"` stays available but is no longer used.
  *
  *  Mobile keeps the snap carousel: it's thumb-native, it was never the generic
- *  part, and a stack of full-width screenshots is worse.
+ *  part, and a stack of full-width screenshots is worse. The one rule it has
+ *  to obey is that a beat fits on one screenful — see `SHOT_W` for why the
+ *  handset there is sized off the viewport height and not the column.
  */
 import { DeviceFrame } from "./device-frame";
 import { Reveal } from "./reveal";
@@ -66,21 +68,36 @@ function BeatVisual({
   marketId,
   platform,
   tick,
+  shotWidth,
+  shotHeight,
 }: {
   beat: TourBeat;
   marketId: string;
   platform: AppPlatform;
   tick: number;
+  /** Caps the handset's width (mobile sizes it off the viewport height —
+   *  see `MobileTour`). Unset means "fill the column", which is what the
+   *  desktop bands want. */
+  shotWidth?: string;
+  /** The height the alert stack should occupy so it lines up with the
+   *  handsets either side of it. Unset falls back to a screen-shaped box. */
+  shotHeight?: string;
 }) {
   if (beat.slot === "alert") {
     // The desktop bands are height-free, but the mobile carousel's slides sit
     // in one row: an alert a third the height of a handset would drag every
     // caption after it out of line. There, the stack floats in the middle of a
-    // box the same shape as the screen it replaces.
+    // box as tall as the phone it replaces — full slide width, though, since
+    // it isn't a device and squeezing it to the handset's width only makes the
+    // one live element on the page harder to read.
     return (
       <div
         className="flex items-center justify-center py-4"
-        style={{ aspectRatio: String(screenAspect(platform)) }}
+        style={
+          shotHeight
+            ? { height: shotHeight }
+            : { aspectRatio: String(screenAspect(platform)) }
+        }
       >
         <HeroNotificationStack deals={dealsForMarket(marketId)} tick={tick} />
       </div>
@@ -88,12 +105,17 @@ function BeatVisual({
   }
 
   return (
-    <DeviceFrame
-      alt={`ddbx ${SLOT_LABEL[beat.slot]} screen on ${platform === "ios" ? "iPhone" : "Android"}`}
-      platform={platform}
-      slot={beat.slot}
-      src={appShotSrc(marketId, platform, beat.slot)}
-    />
+    <div
+      className="mx-auto"
+      style={shotWidth ? { width: shotWidth } : undefined}
+    >
+      <DeviceFrame
+        alt={`ddbx ${SLOT_LABEL[beat.slot]} screen on ${platform === "ios" ? "iPhone" : "Android"}`}
+        platform={platform}
+        slot={beat.slot}
+        src={appShotSrc(marketId, platform, beat.slot)}
+      />
+    </div>
   );
 }
 
@@ -206,6 +228,41 @@ export function AppTour({
   );
 }
 
+/** The handset's width on mobile, sized off the VIEWPORT HEIGHT rather than
+ *  the slide width.
+ *
+ *  This is the whole trick. A phone sized as a share of its column filled the
+ *  column — ~296px wide, which at the screen's ~2.17 aspect is 620px of
+ *  handset before a word of caption. Every slide came out taller than the
+ *  device holding the page, so reading a beat meant scrolling down, swiping
+ *  sideways, and landing at whatever vertical offset the last beat left you
+ *  at. Horizontal and vertical scroll fighting each other is exactly the
+ *  "weird" part; the screenshots were never the problem.
+ *
+ *  Sized off `svh` (the SMALL viewport height — the conservative one, with
+ *  browser chrome expanded), a whole beat fits on one screenful at any handset
+ *  size, so the carousel is a pure sideways gesture again. The clamp keeps it
+ *  sane on a short landscape window and on a tablet-sized phone.
+ *
+ *  The budget is tighter than `svh` suggests, which is why this is 20 and not
+ *  30-something: these pages carry a sticky header AND a fixed mobile install
+ *  bar, so ~165px of any phone's viewport is spoken for before the tour gets a
+ *  pixel. Measured on /download/ios at 390×780 — header 65, and of the install
+ *  bar's 136 the top 40 is a gradient you can still read through, so the hard
+ *  floor is the 96px button-plus-caption block.
+ *
+ *  The lower clamp bound is deliberately small: on a 667px viewport (SE-class,
+ *  where that same fixed chrome is a quarter of the screen) 20svh is the only
+ *  thing that keeps a beat near one screenful, and holding a larger minimum
+ *  there just reintroduces the scroll it was there to prevent. */
+const SHOT_W = "clamp(132px, 20svh, 232px)";
+
+/** A framed handset is ~2.11× as tall as it is wide: the screen's aspect plus
+ *  the bezel and chin `device-frame.tsx` draws around it. Used to give the
+ *  alert stack the same height as the phones on the slides either side, so the
+ *  captions stay on one line across the row. */
+const SHOT_H = `calc(${SHOT_W} * 2.11)`;
+
 function MobileTour({
   beats,
   marketId,
@@ -223,15 +280,22 @@ function MobileTour({
         {beats.map((b, i) => (
           <div
             key={b.slot}
-            className="w-[76%] max-w-[300px] shrink-0 snap-center sm:w-[52%]"
+            /* Wider than the phone inside it. The slide's width is the copy's
+               measure, and at the old 76% the body ran to six lines of ~30
+               characters — which cost more height than the handset saved. The
+               visible sliver of the next slide is what advertises the swipe,
+               so it stays under full-bleed. */
+            className="w-[86%] max-w-[340px] shrink-0 snap-center sm:w-[56%]"
           >
             <BeatVisual
               beat={b}
               marketId={marketId}
               platform={platform}
+              shotHeight={SHOT_H}
+              shotWidth={SHOT_W}
               tick={tick}
             />
-            <p className="mt-6 flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a4128] dark:text-[#ad9479]">
+            <p className="mt-5 flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a4128] dark:text-[#ad9479]">
               {b.timestamp}
               <span
                 aria-hidden
@@ -239,10 +303,10 @@ function MobileTour({
               />
               <span className="text-foreground/40">{b.kicker}</span>
             </p>
-            <h3 className="mt-2.5 text-balance text-[26px] font-semibold leading-[1.12] tracking-[-0.02em]">
+            <h3 className="mt-2 text-balance text-[22px] font-semibold leading-[1.15] tracking-[-0.02em]">
               {b.title}
             </h3>
-            <p className="mt-2 text-sm leading-relaxed text-foreground/65">
+            <p className="mt-1.5 text-[14px] leading-[1.55] text-foreground/65">
               {b.body}
             </p>
             <span className="sr-only">
