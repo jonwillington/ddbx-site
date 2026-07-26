@@ -663,7 +663,14 @@ function DealsTable({
                   {personName(deal)}
                 </span>
                 {personRole(deal) && (
-                  <span className={`mt-0.5 block whitespace-nowrap ${C.note}`}>
+                  // Truncated, not wrapped: some titles run to sixty
+                  // characters ("Chief Executive Director Renewables & Energy
+                  // Transition Platform") and wrapping them pushed the rating
+                  // column off the sheet. Full text on hover.
+                  <span
+                    className={`mt-0.5 block max-w-[24ch] truncate ${C.note}`}
+                    title={personRole(deal)}
+                  >
                     {personRole(deal)}
                   </span>
                 )}
@@ -752,13 +759,13 @@ function CongressTable({
         <table className="w-full text-[13.5px]">
           <thead>
             <tr className={`border-b ${C.rule}`}>
-              <th className={`px-5 py-3 text-left font-normal ${C.note}`}>
+              <th className={`py-2.5 pr-4 text-left font-normal ${C.note}`}>
                 Date
               </th>
-              <th className={`px-5 py-3 text-left font-normal ${C.note}`}>
+              <th className={`py-2.5 pr-4 text-left font-normal ${C.note}`}>
                 Member
               </th>
-              <th className={`px-5 py-3 text-right font-normal ${C.note}`}>
+              <th className={`py-2.5 pr-4 text-right font-normal ${C.note}`}>
                 Amount
               </th>
             </tr>
@@ -769,10 +776,10 @@ function CongressTable({
                 key={g.id ?? i}
                 className={`border-b last:border-b-0 ${C.rule}`}
               >
-                <td className="whitespace-nowrap px-5 py-3.5 text-foreground/60">
+                <td className="whitespace-nowrap py-3 pr-4 text-foreground/60">
                   {fmtDate(g.trade_date, market)}
                 </td>
-                <td className="whitespace-nowrap px-5 py-3.5 font-medium text-foreground">
+                <td className="whitespace-nowrap py-3 pr-4 font-medium text-foreground">
                   {g.reporter?.name ?? "—"}
                   {g.reporter?.chamber && (
                     <span className={`mt-0.5 block ${C.note}`}>
@@ -780,7 +787,7 @@ function CongressTable({
                     </span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-5 py-3.5 text-right tabular-nums text-foreground/60">
+                <td className="whitespace-nowrap py-3 pr-4 text-right tabular-nums text-foreground/60">
                   {govAmount(g)}
                 </td>
               </tr>
