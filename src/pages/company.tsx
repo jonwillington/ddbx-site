@@ -1,4 +1,4 @@
-import type { CompanyPage as CompanyPageData } from "@/lib/api";
+import type { BrokerOffer, CompanyPage as CompanyPageData } from "@/lib/api";
 import type { Dealing, GovDealing, UsDealing } from "@/types/ddbx";
 
 import { useEffect, useMemo, useState } from "react";
@@ -6,6 +6,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 import { BrokerAside } from "@/components/brokers/broker-aside";
+import { BrokerVisitLink } from "@/components/brokers/broker-ui";
 import {
   BrokerInline,
   usePromotedBroker,
@@ -17,27 +18,26 @@ import { StoreButtons } from "@/components/store-buttons";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
+import { isAffiliateLink } from "@/lib/brokers";
 import { cleanCompanyName, displayTicker, slugToKey } from "@/lib/company";
 import { marketForPath } from "@/lib/markets/registry";
 
 /**
- * Company page layout.
+ * Company page layout — the broker-review composition, applied to a company.
  *
- *  Related to the broker reviews — same palette, same hairlines, same quiet
- *  sentence case — but not the same page. A review is an argument, so it runs
- *  as a narrow document with its headings railed off to the left. This is a
- *  record: the data is the point, so it runs the full width of the site with
- *  section labels sitting ON their rules and content using every pixel
- *  beneath them. Numbers get room; prose keeps a measure.
+ *  Same skeleton as /brokers/:slug so the two read as one section of the site:
+ *  breadcrumb on the cream page, the document itself on a single sheet with a
+ *  heading-left / content-right grid inside it, a sticky conversion panel
+ *  beside the sheet, and the fixed broker rail beyond that. What changes is
+ *  the payload — a review argues, this one records — so the sheet carries
+ *  tables and stats where the review carries prose.
  */
 const C = {
-  /** Section label, sitting on its own rule. */
-  eyebrow:
-    "text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/45",
+  sheet:
+    "rounded-2xl border border-[#e8e0d5] bg-[#faf7f2] shadow-[0_1px_2px_rgba(90,65,40,0.03)] dark:border-white/[0.07] dark:bg-surface",
   rule: "border-[#e8e0d5] dark:border-separator",
-  /** The one raised surface — tables and the app CTA, nothing else. */
-  panel:
-    "rounded-2xl border border-[#e8e0d5] bg-[#faf7f2] dark:border-white/[0.07] dark:bg-surface",
+  tile: "rounded-xl bg-black/[0.035] dark:bg-white/[0.05]",
+  label: "text-[11px] leading-none text-foreground/50",
   note: "text-[12px] leading-[1.6] text-foreground/45",
   prose: "text-[14.5px] leading-[1.7] text-foreground/70",
 } as const;
@@ -198,7 +198,7 @@ function companyFaq(name: string, market: string) {
   ];
 }
 
-/** Full-width section: a label sitting on its own rule, content beneath. */
+/** Heading-left / content-right section — the review's one layout unit. */
 function Section({
   id,
   label,
@@ -207,18 +207,22 @@ function Section({
 }: {
   id?: string;
   label: string;
+  /** Sub-line under the heading — provenance, caveats, refresh cadence. */
   aside?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-12 scroll-mt-24" id={id}>
-      <div
-        className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b ${C.rule} pb-2.5`}
-      >
-        <h2 className={C.eyebrow}>{label}</h2>
-        {aside && <p className={C.note}>{aside}</p>}
+    <section
+      className={`grid scroll-mt-24 gap-x-10 gap-y-4 border-t ${C.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
+      id={id}
+    >
+      <div>
+        <h2 className="text-[17px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground">
+          {label}
+        </h2>
+        {aside && <p className={`mt-3 ${C.note}`}>{aside}</p>}
       </div>
-      <div className="pt-5">{children}</div>
+      <div className="min-w-0">{children}</div>
     </section>
   );
 }
@@ -319,233 +323,196 @@ export default function CompanyPage() {
   ];
 
   return (
-    // drawerRight reserves lg:mr-80 for the fixed broker rail, the same
-    // pairing the broker reviews use.
+    // drawerRight reserves lg:mr-80 for the fixed broker rail — the same
+    // pairing /brokers/:slug uses.
     <DefaultLayout drawerRight>
-      <div className="w-full pb-4">
-        {/* Masthead — identity left, the one-sentence summary right. */}
-        <header className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between md:gap-12">
-          <div className="flex items-start gap-4">
-            <CompanyLogo className="mt-1" size={54} ticker={data.key} />
-            <div className="min-w-0">
-              <h1 className="text-[28px] font-semibold leading-[1.1] tracking-tight text-foreground md:text-[38px]">
-                {name}
-              </h1>
-              <p className="mt-1.5 text-[15px] text-foreground/45">
-                <span className="font-mono tracking-tight">{ticker}</span> ·{" "}
-                {noun}
-              </p>
-            </div>
-          </div>
-          <p className={`max-w-[54ch] md:pt-2 ${C.prose}`}>
-            {summary.people} {people} {summary.people === 1 ? "has" : "have"}{" "}
-            bought {moneyShort(summary.total_value, summary.currency)} of {name}{" "}
-            shares across {summary.deals}{" "}
-            {summary.deals === 1 ? "disclosed dealing" : "disclosed dealings"}
-            {summary.first_trade_date
-              ? ` since ${monthYear(summary.first_trade_date, market)}`
-              : ""}
-            .
-            {summary.analysed > 0 && (
-              <>
-                {" "}
-                {summary.analysed} of those{" "}
-                {summary.analysed === 1 ? "has been" : "have been"} scored
-                against our six-point signal check.
-              </>
-            )}
-          </p>
-        </header>
+      <BrokerAside heading={`Invest in ${ticker}`} placement="company_rail" />
 
-        {/* Metric strip — divided rather than boxed, so it reads as one object. */}
-        <dl
-          className={`mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border ${C.rule} bg-[#e8e0d5] dark:bg-separator sm:grid-cols-3 lg:grid-cols-5`}
-        >
-          {metrics.map(([k, v]) => (
-            <div key={k} className="bg-[#f7f3ec] px-4 py-3.5 dark:bg-surface">
-              <dt className={`${C.eyebrow} text-[10px]`}>{k}</dt>
-              <dd className="mt-1.5 text-[20px] font-semibold leading-none tracking-tight text-foreground">
-                {v}
-              </dd>
-            </div>
-          ))}
-        </dl>
-
-        <Section
-          aside={`Every ${market === "UK" ? "PDMR disclosure" : "SEC Form 4"} we've surfaced. Ratings are ours, not the company's.`}
-          id="buys"
-          label={market === "UK" ? "Director buys" : "Insider buys"}
-        >
-          <div className={`${C.panel} overflow-hidden`}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13.5px]">
-                <thead>
-                  <tr className={`border-b ${C.rule}`}>
-                    <th className={`px-5 py-3 text-left font-normal ${C.note}`}>
-                      Date
-                    </th>
-                    <th className={`px-5 py-3 text-left font-normal ${C.note}`}>
-                      {market === "UK" ? "Director" : "Insider"}
-                    </th>
-                    <th
-                      className={`px-5 py-3 text-right font-normal ${C.note}`}
-                    >
-                      Shares
-                    </th>
-                    <th
-                      className={`px-5 py-3 text-right font-normal ${C.note}`}
-                    >
-                      Value
-                    </th>
-                    <th
-                      className={`px-5 py-3 text-right font-normal ${C.note}`}
-                    >
-                      Rating
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.deals.map((deal, i) => (
-                    <tr
-                      key={deal.id ?? i}
-                      className={`border-b last:border-b-0 ${C.rule}`}
-                    >
-                      <td className="whitespace-nowrap px-5 py-3.5 text-foreground/60">
-                        {fmtDate(deal.trade_date, market)}
-                      </td>
-                      {/* Names and long role titles stay on one line — the
-                          table scrolls horizontally on narrow screens, which
-                          reads far better than a row wrapping to six lines. */}
-                      <td className="px-5 py-3.5">
-                        <span className="block whitespace-nowrap font-medium text-foreground">
-                          {personName(deal)}
-                        </span>
-                        {personRole(deal) && (
-                          <span
-                            className={`mt-0.5 block whitespace-nowrap ${C.note}`}
-                          >
-                            {personRole(deal)}
-                          </span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-right tabular-nums text-foreground/60">
-                        {Number(deal.shares).toLocaleString("en-GB")}
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-right tabular-nums font-medium text-foreground">
-                        {money(
-                          dealValue(deal),
-                          market === "UK" ? "GBP" : "USD",
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        {deal.analysis?.rating ? (
-                          <RatingBadge rating={deal.analysis.rating} />
-                        ) : (
-                          <span className={C.note}>—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <p className={`mt-3 ${C.note}`}>
-            The full thesis, supporting evidence and price history for each buy
-            live in the app.
-          </p>
-        </Section>
-
-        {/* Mobile twin of the rail — the rail is hidden below lg, and this is
-            the high-intent moment: they've just read who bought and how much. */}
-        <BrokerInline
-          broker={broker}
-          className="mt-10 lg:hidden"
-          company={name}
-        />
-
-        {data.stats && (
-          <div className="grid gap-x-12 lg:grid-cols-2">
-            {data.stats.description && (
-              <Section id="about" label={`About ${name}`}>
-                <p className={C.prose}>{data.stats.description}</p>
-              </Section>
-            )}
-            <StatsSection stats={data.stats} />
-          </div>
-        )}
-
-        {market === "US" && data.gov.length > 0 && (
-          <Section
-            aside="Disclosed under the STOCK Act — members report a range, not an exact figure."
-            id="congress"
-            label="Congressional trades in this ticker"
+      <div className="w-full pb-24 lg:pb-14">
+        {/* Breadcrumb sits on the cream page, outside the document sheet. */}
+        <div className="flex items-baseline justify-between gap-4 text-sm">
+          <nav
+            aria-label="Breadcrumb"
+            className="min-w-0 truncate text-foreground/50"
           >
-            <CongressTable market={market} rows={data.gov} />
             <Link
-              className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground underline underline-offset-4"
-              to="/congress"
+              className="transition-colors hover:text-foreground"
+              to="/companies"
             >
-              See all congressional trading
-              <ArrowRightIcon className="h-3.5 w-3.5" />
+              Companies
             </Link>
-          </Section>
-        )}
-
-        {data.news.items.length > 0 && (
-          <Section
-            aside="Headlines from the wider web, for context."
-            id="news"
-            label="Recent news"
-          >
-            <ul className="grid gap-x-12 md:grid-cols-2">
-              {data.news.items.slice(0, 6).map((n, i) => (
-                <li key={i} className={`border-b ${C.rule} py-3.5`}>
-                  <a
-                    className="text-[14px] leading-snug text-foreground/80 underline-offset-4 hover:underline"
-                    href={n.url}
-                    rel="nofollow noopener noreferrer"
-                    target="_blank"
-                  >
-                    {n.title}
-                  </a>
-                  {n.source && (
-                    <span className={`mt-1 block ${C.note}`}>{n.source}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </Section>
-        )}
-
-        {/* App CTA — the page's other conversion path, alongside the broker. */}
-        <div
-          className={`${C.panel} mt-12 flex flex-col gap-5 p-7 md:flex-row md:items-center md:justify-between`}
-        >
-          <div>
-            <p className="text-[17px] font-semibold leading-snug tracking-tight text-foreground">
-              Follow {name} in the app
-            </p>
-            <p className={`mt-1.5 max-w-[62ch] ${C.prose}`}>
-              Get a push the moment{" "}
-              {market === "UK" ? "a director" : "an insider"} files, with the
-              full analysis attached — plus alerts when the price moves after a
-              buy you&apos;re following.
-            </p>
-          </div>
-          <div className="shrink-0">
-            <StoreButtons
-              buttonClassName={`inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3 text-sm font-semibold`}
-              gaEvent="cta_company_download"
-              gaLabel="Company page"
-              marketId={market.toLowerCase()}
-            />
-            <p className={`mt-2 ${C.note}`}>
-              Free for 7 days, cancel any time.
-            </p>
-          </div>
+            <span className="mx-2 text-foreground/25">/</span>
+            <span className="text-foreground/75">{name}</span>
+          </nav>
+          <p className="shrink-0 text-xs text-foreground/45">
+            Updated {fmtDate(summary.last_trade_date, market)}
+          </p>
         </div>
 
+        <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+          {/* The record: header + sections on one sheet. */}
+          <div className={`min-w-0 px-5 py-6 sm:px-8 sm:py-8 ${C.sheet}`}>
+            <header>
+              <div className="flex items-start gap-4">
+                <CompanyLogo className="mt-0.5" size={48} ticker={data.key} />
+                <div className="min-w-0">
+                  <h1 className="text-[28px] font-bold leading-[1.05] tracking-[-0.022em] text-foreground sm:text-[34px]">
+                    {name}
+                  </h1>
+                  <p className="mt-1.5 max-w-xl text-[15px] leading-snug text-foreground/65 sm:text-[16px]">
+                    <span className="font-mono tracking-tight">{ticker}</span> ·{" "}
+                    {noun}
+                  </p>
+                </div>
+              </div>
+
+              <dl className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+                {metrics.map(([k, v]) => (
+                  <div key={k} className={`${C.tile} px-3.5 py-3`}>
+                    <dt className={C.label}>{k}</dt>
+                    <dd className="mt-1.5 truncate text-[15.5px] font-semibold leading-none tracking-[-0.01em] text-foreground">
+                      {v}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </header>
+
+            <article className="min-w-0">
+              <p className="max-w-[44em] py-7 text-[16.5px] font-normal leading-[1.6] tracking-[-0.006em] text-foreground/85">
+                {summary.people} {people}{" "}
+                {summary.people === 1 ? "has" : "have"} bought{" "}
+                {moneyShort(summary.total_value, summary.currency)} of {name}{" "}
+                shares across {summary.deals}{" "}
+                {summary.deals === 1
+                  ? "disclosed dealing"
+                  : "disclosed dealings"}
+                {summary.first_trade_date
+                  ? ` since ${monthYear(summary.first_trade_date, market)}`
+                  : ""}
+                .
+                {summary.analysed > 0 && (
+                  <>
+                    {" "}
+                    {summary.analysed} of those{" "}
+                    {summary.analysed === 1 ? "has been" : "have been"} scored
+                    against our six-point signal check.
+                  </>
+                )}
+              </p>
+
+              <Section
+                aside={`Every ${market === "UK" ? "PDMR disclosure" : "SEC Form 4"} we've surfaced for this issuer. Ratings are ours, not the company's.`}
+                id="buys"
+                label={market === "UK" ? "Director buys" : "Insider buys"}
+              >
+                <DealsTable deals={data.deals} market={market} />
+                <p className={`mt-3 ${C.note}`}>
+                  The full thesis, supporting evidence and price history for
+                  each buy live in the app.
+                </p>
+              </Section>
+
+              {/* Mobile twin of the rail — the rail is hidden below lg, and
+                  this is the high-intent moment: they've just read who bought
+                  and how much. */}
+              <BrokerInline
+                broker={broker}
+                className="my-8 lg:hidden"
+                company={name}
+              />
+
+              {data.stats?.description && (
+                <Section id="about" label={`About ${name}`}>
+                  <p className={`max-w-[42em] ${C.prose}`}>
+                    {data.stats.description}
+                  </p>
+                </Section>
+              )}
+
+              {data.stats && <StatsSection stats={data.stats} />}
+
+              {market === "US" && data.gov.length > 0 && (
+                <Section
+                  aside="Disclosed under the STOCK Act — members report a range, not an exact figure."
+                  id="congress"
+                  label="Congress"
+                >
+                  <CongressTable market={market} rows={data.gov} />
+                  <Link
+                    className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground underline underline-offset-4"
+                    to="/congress"
+                  >
+                    See all congressional trading
+                    <ArrowRightIcon className="h-3.5 w-3.5" />
+                  </Link>
+                </Section>
+              )}
+
+              {data.news.items.length > 0 && (
+                <Section
+                  aside="Headlines from the wider web, for context."
+                  id="news"
+                  label="Recent news"
+                >
+                  <ul className="grid gap-x-10 sm:grid-cols-2">
+                    {data.news.items.slice(0, 6).map((n, i) => (
+                      <li key={i} className={`border-b ${C.rule} py-3.5`}>
+                        <a
+                          className="text-[14px] leading-snug text-foreground/80 underline-offset-4 hover:underline"
+                          href={n.url}
+                          rel="nofollow noopener noreferrer"
+                          target="_blank"
+                        >
+                          {n.title}
+                        </a>
+                        {n.source && (
+                          <span className={`mt-1 block ${C.note}`}>
+                            {n.source}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              <Section id="app" label="Get the alerts">
+                <p className="max-w-[42em] text-[15.5px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
+                  Follow {name} and get a push the moment{" "}
+                  {market === "UK" ? "a director" : "an insider"} files.
+                </p>
+                <p className={`mt-2.5 max-w-[42em] ${C.prose}`}>
+                  Every disclosure rated as it lands, with the full thesis,
+                  supporting evidence and price history — plus alerts when the
+                  price moves after a buy you&apos;re following.
+                </p>
+                <StoreButtons
+                  buttonClassName={`inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3 text-sm font-semibold`}
+                  className="mt-4"
+                  gaEvent="cta_company_download"
+                  gaLabel="Company page"
+                  marketId={market.toLowerCase()}
+                />
+                <p className={`mt-2 ${C.note}`}>
+                  Free for 7 days, cancel any time.
+                </p>
+              </Section>
+            </article>
+          </div>
+
+          {/* Conversion panel, sat beside the sheet and sticky as you scroll —
+              the company-page counterpart of the review's buy box. */}
+          <CompanyPanel
+            broker={broker}
+            company={name}
+            market={market}
+            stats={data.stats}
+            ticker={ticker}
+          />
+        </div>
+
+        {/* FAQ and onward links live on the cream page, below the document. */}
         <MarketFaq items={companyFaq(name, market)} />
 
         <nav
@@ -573,9 +540,152 @@ export default function CompanyPage() {
           )}
         </nav>
       </div>
-
-      <BrokerAside heading={`Invest in ${ticker}`} placement="company_rail" />
     </DefaultLayout>
+  );
+}
+
+/** Sticky conversion panel beside the sheet. Mirrors the review's buy box:
+ *  the action first, the compliance line under it, then the facts the header
+ *  tiles don't already carry, so the two never repeat each other. */
+function CompanyPanel({
+  broker,
+  company,
+  market,
+  stats,
+  ticker,
+}: {
+  broker: BrokerOffer | null;
+  company: string;
+  market: string;
+  stats: CompanyPageData["stats"];
+  ticker: string;
+}) {
+  const cur = stats?.currency ?? (market === "UK" ? "GBP" : "USD");
+  const facts: Array<[string, string]> = [
+    ["Ticker", ticker],
+    ["Market cap", stats?.marketCap ? moneyShort(stats.marketCap, cur) : "—"],
+    [
+      "Previous close",
+      stats?.previousClose != null
+        ? `${SYMBOL[cur] ?? ""}${stats.previousClose}`
+        : "—",
+    ],
+    ["P/E ratio", stats?.peRatio != null ? stats.peRatio.toFixed(2) : "—"],
+  ];
+
+  return (
+    <aside className="hidden lg:block lg:sticky lg:top-24">
+      <div className="rounded-2xl border border-[#5a4128]/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
+        {broker ? (
+          <>
+            <BrokerVisitLink
+              broker={broker}
+              className="w-full"
+              placement="company_panel"
+              size="lg"
+            >
+              Buy {ticker} with {broker.name}
+            </BrokerVisitLink>
+            <p className="mt-2 text-center text-[10px] leading-snug text-foreground/45">
+              Capital at risk.
+              {isAffiliateLink(broker) ? " We may earn a commission." : ""}
+            </p>
+          </>
+        ) : (
+          <p className="text-center text-[13px] font-semibold text-foreground">
+            {company}
+          </p>
+        )}
+
+        <dl className="mt-4 text-[13px]">
+          {facts.map(([k, v]) => (
+            <div
+              key={k}
+              className="flex justify-between gap-4 border-b border-separator/70 py-2 last:border-b-0"
+            >
+              <dt className="text-foreground/50">{k}</dt>
+              <dd className="text-right font-semibold text-foreground/85">
+                {v}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </aside>
+  );
+}
+
+/** The disclosure table. Lives on the sheet with plain rules rather than in a
+ *  nested card — a box inside the document sheet reads as two surfaces. */
+function DealsTable({
+  deals,
+  market,
+}: {
+  deals: Array<Dealing | UsDealing>;
+  market: string;
+}) {
+  return (
+    <div className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
+      <table className="w-full text-[13.5px]">
+        <thead>
+          <tr className={`border-b ${C.rule}`}>
+            <th className={`py-2.5 pr-4 text-left font-normal ${C.note}`}>
+              Date
+            </th>
+            <th className={`py-2.5 pr-4 text-left font-normal ${C.note}`}>
+              {market === "UK" ? "Director" : "Insider"}
+            </th>
+            <th className={`py-2.5 pr-4 text-right font-normal ${C.note}`}>
+              Shares
+            </th>
+            <th className={`py-2.5 pr-4 text-right font-normal ${C.note}`}>
+              Value
+            </th>
+            <th className={`py-2.5 text-right font-normal ${C.note}`}>
+              Rating
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {deals.map((deal, i) => (
+            <tr
+              key={deal.id ?? i}
+              className={`border-b last:border-b-0 ${C.rule}`}
+            >
+              <td className="whitespace-nowrap py-3 pr-4 text-foreground/60">
+                {fmtDate(deal.trade_date, market)}
+              </td>
+              {/* Names and long role titles stay on one line — the table
+                  scrolls on narrow screens, which reads far better than a row
+                  wrapping to six. */}
+              <td className="py-3 pr-4">
+                <span className="block whitespace-nowrap font-medium text-foreground">
+                  {personName(deal)}
+                </span>
+                {personRole(deal) && (
+                  <span className={`mt-0.5 block whitespace-nowrap ${C.note}`}>
+                    {personRole(deal)}
+                  </span>
+                )}
+              </td>
+              <td className="whitespace-nowrap py-3 pr-4 text-right tabular-nums text-foreground/60">
+                {Number(deal.shares).toLocaleString("en-GB")}
+              </td>
+              <td className="whitespace-nowrap py-3 pr-4 text-right tabular-nums font-medium text-foreground">
+                {money(dealValue(deal), market === "UK" ? "GBP" : "USD")}
+              </td>
+              <td className="py-3 text-right">
+                {deal.analysis?.rating ? (
+                  <RatingBadge rating={deal.analysis.rating} />
+                ) : (
+                  <span className={C.note}>—</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -637,8 +747,8 @@ function CongressTable({
   market: string;
 }) {
   return (
-    <div className={`${C.panel} overflow-hidden`}>
-      <div className="overflow-x-auto">
+    <div className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
+      <div>
         <table className="w-full text-[13.5px]">
           <thead>
             <tr className={`border-b ${C.rule}`}>
