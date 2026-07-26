@@ -114,16 +114,47 @@ adb exec-out screencap -p > out.png           # 1080×2400
 the system light/dark setting does NOT drive it. Set both to **Light** so the
 phone sits in the site's cream page instead of reading as a black slab.
 
-**Two known limits:**
+**Open a tab directly.** `ddbx-ios-app` now carries a `-ddbx-tab` hook
+(`ContentView.swift`, DEBUG-only) alongside `-ddbx-deeplink`, because `simctl`
+has no tap command:
 
-- **Tabs need taps on iOS.** `simctl` has no tap command and driving the
-  Simulator via AppleScript needs Accessibility permission. The deep link only
-  reaches a deal detail, so `performance` / `alert` on iOS need either that
-  permission granted or a small extension of the existing `-ddbx-deeplink` hook
-  in `ddbx-ios-app` to accept a tab name. Android taps freely via
-  `adb shell input tap`.
+```bash
+xcrun simctl launch booted uk.ddbx.app -ddbx-tab performance
+# dashboard | performance | news | congress | search
+```
+
+Android needs no equivalent — `adb shell input tap <x> <y>` works freely.
+
+**Notifications.** `simctl push` delivers a real push to the simulator, which is
+how the `alert` shots were made. Fire it while the app is FOREGROUNDED: the
+banner then lands over the app's own cream UI instead of over the stock iOS
+wallpaper, which is aggressively blue and fights the palette.
+
+```bash
+cat > push.json <<'JSON'
+{ "Simulator Target Bundle": "uk.ddbx.app",
+  "aps": { "alert": { "title": "…", "body": "…" }, "sound": "default" } }
+JSON
+xcrun simctl launch booted uk.ddbx.app && sleep 18
+xcrun simctl push booted uk.ddbx.app push.json
+```
+
+**Three known limits:**
+
 - **`today` needs a weekday.** At a weekend both apps show "Markets closed for
-  the weekend", which is a poor hero shot. Capture during UK market hours.
+  the weekend", which is a weak hero. The UK `today` shots currently in the repo
+  are that state — re-shoot during UK market hours.
+- **Don't launch one market's app straight after the other's.** iOS leaves a
+  "◀ ddbx.uk" back-to-app crumb in the status bar. `simctl terminate` both, wait,
+  then launch.
+- **`us/android/performance` is deliberately absent.** That screen leads with a
+  Top Performers card for SaverOne (SVRE) reading "Director bought
+  $1,135,938,816" — and the API agrees (`shares: 326,419,200`, `value:
+  1135938816` on `f4-0001731122-26-000909-1-0`), so it's an upstream Form 4
+  parse problem in ddbx-data, not a render bug. A nano-cap with a $1.1bn
+  "director buy" on a marketing page would be fatal to credibility. The same row
+  is live on the site and in both apps, and is eligible for this page's winners
+  wall.
 
 ## Pricing
 

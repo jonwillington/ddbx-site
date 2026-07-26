@@ -209,13 +209,18 @@ export function DownloadHero({
             that's how a banner notification sits over a running app. */}
         <div className="mx-auto w-full max-w-[240px] sm:max-w-[280px] lg:max-w-none">
           <div className="dlh-float relative">
+            {/* No handset in the hero. A bezel here is a frame the visitor has
+                to look past to reach the product, and at hero scale the screen
+                reads more clearly on its own. The device mockups stay in the
+                scroll tour, where "four screens" genuinely wants a phone. */}
             <DeviceFrame
               eager
               glow
-              alt={`ddbx running on ${platform === "ios" ? "iPhone" : "Android"}`}
+              alt={`The ddbx app on ${platform === "ios" ? "iPhone" : "Android"}`}
               platform={platform}
               slot="today"
               src={appShotSrc(marketId, platform, "today")}
+              variant="bare"
             />
             {/* Pushed below the camera cutout: the stack reserves 30px above
                 its front card for the avatar badge, and at a smaller offset

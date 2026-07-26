@@ -1,22 +1,35 @@
-/** A phone, drawn in markup, with an app screenshot inside it.
+/** An app screenshot, either in a phone or on its own.
  *
- *  Why drawn rather than a bitmap frame: the download pages need the *same*
- *  screen shown on an iPhone and on an Android handset, in light and dark mode,
- *  at four sizes. Baking the chrome into the exports would mean 2 platforms ×
- *  2 themes × N screens of artwork to keep in sync. Here the export is the
- *  screen only (see `@/lib/app-screenshots`) and the bezel is CSS — restyling
- *  the frame is a change to this file and nothing else.
+ *  Why the phone is drawn rather than a bitmap frame: the download pages need
+ *  the *same* screen shown on an iPhone and on an Android handset, in light and
+ *  dark mode, at four sizes. Baking the chrome into the exports would mean
+ *  2 platforms × 2 themes × N screens of artwork to keep in sync. Here the
+ *  export is the screen only (see `@/lib/app-screenshots`) and the hardware is
+ *  CSS — restyling every frame on the site is a change to this file alone.
  *
  *  The two platforms are deliberately distinguishable at a glance, because
- *  that's the whole point of having a per-platform landing page: an Android
- *  visitor should see an Android phone. iOS gets the tighter corner radius and
- *  a Dynamic Island pill; Android gets a squarer body, a thinner uniform bezel
- *  and a centred punch-hole camera.
+ *  that's the whole point of a per-platform landing page: an Android visitor
+ *  should see an Android phone. iOS gets the rounder corners, thinner bezel and
+ *  a Dynamic Island; Android gets a squarer body, a marginally thicker uniform
+ *  bezel and a centred punch-hole camera.
  *
- *  Missing artwork is the expected state, not an error — the mockups land
- *  after the page ships. `onError` swaps in a branded placeholder that keeps
- *  the exact same box, so the layout never moves and a half-populated tour
- *  still reads as deliberate.
+ *  `variant="bare"` drops the hardware entirely and presents the screen as its
+ *  own object — used in the hero, where a mockup adds a frame the visitor has
+ *  to look past to see the product.
+ *
+ *  Missing artwork is an expected state, not an error — screens are captured
+ *  from the simulators over time (recipe in
+ *  `investigations/2026-07-26-download-landing-pages.md`). `onError` swaps in a
+ *  branded placeholder occupying the exact same box, so the layout never moves
+ *  and a half-populated tour still reads as deliberate.
+ *
+ *  Geometry note: corner radii are in `cqw` (container-query width units), not
+ *  percentages. A percentage `border-radius` resolves per-axis — 13.5% of the
+ *  width horizontally but 13.5% of the *height* vertically — which on a phone's
+ *  ~2.17 aspect ratio draws stretched elliptical corners instead of round ones.
+ *  `cqw` is width-relative on both axes, so the corners are true circles. The
+ *  percentage is kept as a preceding declaration for browsers without container
+ *  units.
  */
 import { useEffect, useState } from "react";
 
@@ -36,6 +49,9 @@ export function DeviceFrame({
   slot,
   alt,
   className = "",
+  /** "device" draws the handset; "bare" shows the screen alone with a soft
+   *  shadow. */
+  variant = "device",
   /** Warm halo behind the phone — on for the hero, off inside the scroll tour
    *  where four stacked frames would compound into a glow. */
   glow = false,
@@ -47,6 +63,7 @@ export function DeviceFrame({
   slot: ShotSlot;
   alt: string;
   className?: string;
+  variant?: "device" | "bare";
   glow?: boolean;
   eager?: boolean;
 }) {
@@ -57,44 +74,116 @@ export function DeviceFrame({
   useEffect(() => setState("loading"), [src]);
 
   const isIos = platform === "ios";
+  const bare = variant === "bare";
+
+  const screen = (
+    <div
+      className="dvf-screen"
+      style={{ aspectRatio: String(screenAspect(platform)) }}
+    >
+      {state !== "missing" ? (
+        <img
+          alt={alt}
+          decoding="async"
+          fetchPriority={eager ? "high" : "auto"}
+          loading={eager ? "eager" : "lazy"}
+          src={src}
+          style={{ opacity: state === "ready" ? 1 : 0 }}
+          onError={() => setState("missing")}
+          onLoad={() => setState("ready")}
+        />
+      ) : null}
+
+      {state !== "ready" ? (
+        <div aria-hidden className="dvf-ph">
+          <img alt="" className="dvf-ph-mark" src="/ios-app-logo.svg" />
+          <span className="dvf-ph-slot">{SLOT_LABEL[slot]}</span>
+          <span className="dvf-ph-sub">
+            {PLATFORM_LABEL[platform]} screenshot
+          </span>
+        </div>
+      ) : null}
+
+      {/* The camera cutout is hardware — a screenshot never contains it, so it
+          is drawn over every state, but only when we're drawing a device at
+          all. The home indicator is SOFTWARE and a real screen grab already
+          has one, so ours only stands in for the placeholder. */}
+      {!bare &&
+        (isIos ? (
+          <span aria-hidden className="dvf-island" />
+        ) : (
+          <span aria-hidden className="dvf-punch" />
+        ))}
+      {state !== "ready" ? <span aria-hidden className="dvf-home" /> : null}
+    </div>
+  );
 
   return (
-    <div className={`dvf ${isIos ? "dvf-ios" : "dvf-android"} ${className}`}>
+    <div
+      className={`dvf ${isIos ? "dvf-ios" : "dvf-android"} ${bare ? "dvf-bare" : ""} ${className}`}
+    >
       <style>{`
         .dvf {
           position: relative;
           width: 100%;
-          /* The bezel's own aspect ratio: the screen ratio, opened up by the
-             bezel thickness on all four sides. Computed rather than hardcoded
-             so the two platforms' different bezels can't drift out of sync
-             with their screens. */
-          --dvf-bezel: 3.1%;
-          --dvf-radius: 13.5%;
+          container-type: inline-size;
+          /* Bezel thickness, bottom chin and screen corner radius, all as a
+             share of the device width — measured off the real handsets.
+             iPhone: near-symmetrical bezel, very round corners. */
+          --dvf-bezel: 2.9cqw;
+          --dvf-chin: 2.9cqw;
+          --dvf-radius: 13.2cqw;
         }
-        .dvf-android { --dvf-bezel: 2.6%; --dvf-radius: 11%; }
+        /* Pixel-class Android: thicker bezel, a visibly larger chin, and
+           noticeably squarer corners. Getting these wrong is what makes a
+           "generic phone" read as an iPhone with the wrong cutout. */
+        .dvf-android {
+          --dvf-bezel: 3.5cqw;
+          --dvf-chin: 4.4cqw;
+          --dvf-radius: 9cqw;
+        }
 
         .dvf-body {
           position: relative;
-          border-radius: calc(var(--dvf-radius) * 1.06 / 1);
-          padding: var(--dvf-bezel);
-          background: linear-gradient(158deg, #2b2622 0%, #14110e 42%, #241f1a 100%);
+          /* Concentric corners: the outer radius must be the inner radius plus
+             the bezel, or the frame's curve fights the screen's. */
+          border-radius: calc(var(--dvf-radius) + var(--dvf-bezel));
+          padding: var(--dvf-bezel) var(--dvf-bezel) var(--dvf-chin);
+          /* Brushed-titanium rail: a dark body with lighter edges where the
+             chamfer would catch the light, warm-shifted so it belongs in the
+             cream palette rather than reading as cold graphite. */
+          background:
+            linear-gradient(148deg,
+              #6b625a 0%,
+              #2a2521 7%,
+              #17130f 34%,
+              #12100d 62%,
+              #262019 90%,
+              #6b625a 100%);
           box-shadow:
-            0 0 0 1px rgba(255, 255, 255, 0.09) inset,
-            0 2px 3px rgba(255, 255, 255, 0.12) inset,
-            0 34px 60px -28px rgba(28, 20, 12, 0.55),
-            0 12px 24px -14px rgba(28, 20, 12, 0.4);
+            /* inner hairline where the glass meets the rail */
+            0 0 0 1px rgba(0, 0, 0, 0.55) inset,
+            /* top chamfer highlight */
+            0 1px 2px rgba(255, 255, 255, 0.34) inset,
+            /* contact shadow — tight and dark, sells the weight */
+            0 6px 12px -6px rgba(28, 20, 12, 0.5),
+            /* ambient shadow — broad and soft */
+            0 40px 70px -32px rgba(28, 20, 12, 0.5),
+            0 16px 32px -18px rgba(28, 20, 12, 0.34);
         }
         :is(.dark) .dvf-body {
           box-shadow:
-            0 0 0 1px rgba(255, 255, 255, 0.12) inset,
-            0 2px 3px rgba(255, 255, 255, 0.1) inset,
-            0 34px 60px -28px rgba(0, 0, 0, 0.7),
-            0 12px 24px -14px rgba(0, 0, 0, 0.5);
+            0 0 0 1px rgba(0, 0, 0, 0.7) inset,
+            0 1px 2px rgba(255, 255, 255, 0.28) inset,
+            0 6px 12px -6px rgba(0, 0, 0, 0.7),
+            0 40px 70px -32px rgba(0, 0, 0, 0.75),
+            0 16px 32px -18px rgba(0, 0, 0, 0.55);
         }
 
         .dvf-screen {
           position: relative;
           overflow: hidden;
+          border-radius: 13%;
           border-radius: var(--dvf-radius);
           background: #f5f0e8;
         }
@@ -106,34 +195,63 @@ export function DeviceFrame({
           object-fit: cover;
         }
 
+        /* Bare variant — the screen as its own object. Slightly softer corners
+           than a real handset (nothing is clipping them here) and a shadow that
+           reads as "floating card", not "phone on a table". */
+        .dvf-bare .dvf-screen {
+          border-radius: 8%;
+          border-radius: 7.5cqw;
+          box-shadow:
+            0 0 0 1px rgba(28, 20, 12, 0.08),
+            0 2px 6px -2px rgba(28, 20, 12, 0.12),
+            0 30px 60px -28px rgba(28, 20, 12, 0.42),
+            0 12px 26px -16px rgba(28, 20, 12, 0.26);
+        }
+        :is(.dark) .dvf-bare .dvf-screen {
+          box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.08),
+            0 2px 6px -2px rgba(0, 0, 0, 0.5),
+            0 30px 60px -28px rgba(0, 0, 0, 0.7),
+            0 12px 26px -16px rgba(0, 0, 0, 0.5);
+        }
+
         /* Dynamic Island — a floating pill, not a notch cut into the bezel. */
         .dvf-island {
           position: absolute;
-          top: 1.9%;
+          top: 1.7%;
           left: 50%;
           transform: translateX(-50%);
-          width: 30%;
-          height: 2.6%;
-          min-height: 12px;
+          width: 29%;
+          height: 2.5%;
+          min-height: 11px;
           border-radius: 999px;
-          background: #0b0908;
+          background: #0a0908;
           z-index: 2;
         }
-        /* Android punch-hole — a small centred dot near the top edge. */
+        /* Android punch-hole. Emulator captures have no cutout, so this is
+           drawn over the screenshot's status bar — which means a flat black
+           disc reads as a smudge on the UI rather than a hole in the glass.
+           The lens gradient plus a bright rim is what sells it as hardware. */
         .dvf-punch {
           position: absolute;
-          top: 1.5%;
+          top: 1.15%;
           left: 50%;
           transform: translateX(-50%);
           width: 3.4%;
           aspect-ratio: 1;
           border-radius: 999px;
-          background: #0b0908;
-          box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+          background:
+            radial-gradient(circle at 34% 30%,
+              #3d4048 0%,
+              #16181c 42%,
+              #050506 100%);
+          box-shadow:
+            0 0 0 0.5px rgba(190, 200, 215, 0.5),
+            0 0 3px 1px rgba(0, 0, 0, 0.4);
           z-index: 2;
         }
-        /* Home indicator (iOS) / gesture pill (Android) — same object, and it
-           sells "this is a running app" more than anything else in the frame. */
+        /* Stand-in home indicator for the placeholder — a real screenshot
+           brings its own. */
         .dvf-home {
           position: absolute;
           bottom: 1.1%;
@@ -147,12 +265,19 @@ export function DeviceFrame({
         }
         :is(.dark) .dvf-home { background: rgba(255, 255, 255, 0.34); }
 
-        /* Side hardware. Purely decorative, but a slab with no buttons reads as
-           a mockup of a phone rather than a phone. */
+        /* Side hardware. Decorative, but it's most of what tells the two
+           platforms apart in silhouette, so the layouts are the real ones:
+             iPhone — Action button + volume up/down on the LEFT, power right.
+             Pixel  — power AND volume both on the RIGHT, power above.
+           An Android frame with buttons on the left is the single clearest
+           tell that it's an iPhone wearing a different cutout. */
         .dvf-btn {
           position: absolute;
-          background: linear-gradient(90deg, #26211c, #3a332c);
-          border-radius: 2px;
+          background: linear-gradient(90deg, #1b1713 0%, #4a423a 45%, #241f1a 100%);
+          border-radius: 1.5px;
+        }
+        .dvf-android .dvf-btn {
+          background: linear-gradient(90deg, #17181b 0%, #454952 45%, #1e2024 100%);
         }
         .dvf-btn-l { left: -2px; width: 3px; }
         .dvf-btn-r { right: -2px; width: 3px; }
@@ -174,9 +299,9 @@ export function DeviceFrame({
             transparent 72%);
         }
 
-        /* Placeholder for a screenshot that hasn't been exported yet. A warm
-           panel with the slot's name and a slow sheen — clearly a "coming"
-           state, never a broken-image icon. */
+        /* Placeholder for a screen not yet captured. A warm panel with the
+           slot's name and a slow sheen — clearly a "coming" state, never a
+           broken-image icon. */
         .dvf-ph {
           position: absolute;
           inset: 0;
@@ -233,63 +358,54 @@ export function DeviceFrame({
 
       {glow ? <div aria-hidden className="dvf-glow" /> : null}
 
-      <div className="dvf-body">
-        {/* Volume rocker + power button. */}
-        <span
-          aria-hidden
-          className="dvf-btn dvf-btn-l"
-          style={{ top: "17%", height: "6%" }}
-        />
-        <span
-          aria-hidden
-          className="dvf-btn dvf-btn-l"
-          style={{ top: "25%", height: "9%" }}
-        />
-        <span
-          aria-hidden
-          className="dvf-btn dvf-btn-r"
-          style={{ top: "22%", height: "11%" }}
-        />
-
-        <div
-          className="dvf-screen"
-          style={{ aspectRatio: String(screenAspect(platform)) }}
-        >
-          {state !== "missing" ? (
-            <img
-              alt={alt}
-              decoding="async"
-              fetchPriority={eager ? "high" : "auto"}
-              loading={eager ? "eager" : "lazy"}
-              src={src}
-              style={{ opacity: state === "ready" ? 1 : 0 }}
-              onError={() => setState("missing")}
-              onLoad={() => setState("ready")}
-            />
-          ) : null}
-
-          {state !== "ready" ? (
-            <div aria-hidden className="dvf-ph">
-              <img alt="" className="dvf-ph-mark" src="/ios-app-logo.svg" />
-              <span className="dvf-ph-slot">{SLOT_LABEL[slot]}</span>
-              <span className="dvf-ph-sub">
-                {PLATFORM_LABEL[platform]} screenshot
-              </span>
-            </div>
-          ) : null}
-
-          {/* The camera cutout is hardware — a screenshot never contains it, so
-              it's drawn over every state. The home indicator is SOFTWARE and a
-              real screen grab already has one, so drawing ours on top would
-              double it up; it only stands in for the placeholder. */}
+      {bare ? (
+        screen
+      ) : (
+        <div className="dvf-body">
           {isIos ? (
-            <span aria-hidden className="dvf-island" />
+            <>
+              {/* Action button, volume up, volume down — left rail. */}
+              <span
+                aria-hidden
+                className="dvf-btn dvf-btn-l"
+                style={{ top: "16%", height: "4%" }}
+              />
+              <span
+                aria-hidden
+                className="dvf-btn dvf-btn-l"
+                style={{ top: "23%", height: "7%" }}
+              />
+              <span
+                aria-hidden
+                className="dvf-btn dvf-btn-l"
+                style={{ top: "32%", height: "7%" }}
+              />
+              {/* Power — right rail, lower than the volume pair. */}
+              <span
+                aria-hidden
+                className="dvf-btn dvf-btn-r"
+                style={{ top: "26%", height: "11%" }}
+              />
+            </>
           ) : (
-            <span aria-hidden className="dvf-punch" />
+            <>
+              {/* Pixel layout: power on top, volume rocker below it, both on
+                  the right rail. Nothing on the left. */}
+              <span
+                aria-hidden
+                className="dvf-btn dvf-btn-r"
+                style={{ top: "19%", height: "6%" }}
+              />
+              <span
+                aria-hidden
+                className="dvf-btn dvf-btn-r"
+                style={{ top: "28%", height: "10%" }}
+              />
+            </>
           )}
-          {state !== "ready" ? <span aria-hidden className="dvf-home" /> : null}
+          {screen}
         </div>
-      </div>
+      )}
     </div>
   );
 }
