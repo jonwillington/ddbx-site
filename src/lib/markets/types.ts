@@ -271,10 +271,10 @@ export interface MarketConfig<W = unknown> {
 
   /** Page title — e.g. "US Form 4 (preview)". */
   title: string;
-  /** Full HTML `<title>` for the dealings page. The shared DocumentTitle
-   *  reads this from the active market — e.g. "ddbx · Director Dealings —
-   *  UK Insider Transactions". */
-  documentTitle: string;
+  // NB: the full HTML `<title>` no longer lives here — it moved to MARKET_SEO
+  // in shared/seo.js so functions/_middleware.js can render it at the edge.
+  // Crawlers never run this code, so a title only the SPA knows about is a
+  // title Google never sees.
   /** Optional full hero-headline override, replacing the templated
    *  "Which directors have been buying shares in {marketLabel} companies?".
    *  Congress sets this since members buy other companies, not themselves. */

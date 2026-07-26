@@ -502,7 +502,6 @@ const NetherlandsAnalysisOverlay = () => (
 export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   id: "nl",
   title: "Netherlands director dealings (preview)",
-  documentTitle: "ddbx · Director Dealings — Dutch PDMR Disclosures",
   heroSubhead:
     "Follow the money. Every Dutch insider purchase, rated as it lands — so you see it as it's filed, not when it's news.",
   faq: buildMarketFaq({

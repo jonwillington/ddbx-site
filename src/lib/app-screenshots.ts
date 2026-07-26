@@ -41,10 +41,17 @@ export const SLOT_LABEL: Record<ShotSlot, string> = {
   lockscreen: "Lock screen",
 };
 
-/** Native export dimensions per platform. Only the ratio matters at render
- *  time — `DeviceFrame` sizes the screen with `aspect-ratio`. */
+/** Reference dimensions per platform, matching what the simulators actually
+ *  produce: `xcrun simctl io booted screenshot` on an iPhone 17 Pro, and
+ *  `adb exec-out screencap` on a Medium Phone / Pixel-class AVD.
+ *
+ *  Only the RATIO is used at render time — `DeviceFrame` sizes the screen with
+ *  `aspect-ratio` and the image is `object-fit: cover`. So a shot from a
+ *  different handset still works; anything within ~1% of these ratios crops
+ *  invisibly. (iPhone 15/16 Pro at 1290×2796 is 2.168 vs the 17 Pro's 2.174 —
+ *  interchangeable in practice.) */
 export const SCREEN_PX: Record<AppPlatform, { w: number; h: number }> = {
-  ios: { w: 1290, h: 2796 },
+  ios: { w: 1206, h: 2622 },
   android: { w: 1080, h: 2400 },
 };
 

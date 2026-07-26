@@ -278,12 +278,16 @@ export function DeviceFrame({
             </div>
           ) : null}
 
+          {/* The camera cutout is hardware — a screenshot never contains it, so
+              it's drawn over every state. The home indicator is SOFTWARE and a
+              real screen grab already has one, so drawing ours on top would
+              double it up; it only stands in for the placeholder. */}
           {isIos ? (
             <span aria-hidden className="dvf-island" />
           ) : (
             <span aria-hidden className="dvf-punch" />
           )}
-          <span aria-hidden className="dvf-home" />
+          {state !== "ready" ? <span aria-hidden className="dvf-home" /> : null}
         </div>
       </div>
     </div>

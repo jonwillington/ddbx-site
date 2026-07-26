@@ -591,7 +591,6 @@ const SwedenAnalysisOverlay = () => (
 export const SwedenMarket: MarketConfig<EuRowGroup> = {
   id: "se",
   title: "Sweden director dealings (preview)",
-  documentTitle: "ddbx · Director Dealings — Swedish PDMR Disclosures",
   heroSubhead:
     "Follow the money. Every Swedish insider purchase, rated as it lands — so you see it as it's filed, not when it's news.",
   faq: buildMarketFaq({

@@ -59,7 +59,6 @@ function DjtRowActionCell({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
 export const DjtMarket: MarketConfig<UsRowGroup> = {
   id: "djt",
   title: "Trump Media insiders",
-  documentTitle: "ddbx · Trump Media (DJT) — insider trades",
   heroHeadline: "Every Trump Media insider trade.",
   heroSubhead:
     "Every Form 4 a Trump Media & Technology Group (DJT) insider files with the SEC — the board, the officers, and the Trump family — the moment it lands. Grants, sales, and open-market buys, unscreened.",

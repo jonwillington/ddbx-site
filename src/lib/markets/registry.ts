@@ -1,6 +1,8 @@
-// Central registry of every market the site knows about. Both the
-// MarketSwitcher (route → flag/label) and DocumentTitle (route → page title)
-// read from here so we have one place to declare a market exists.
+// Central registry of every market the site knows about — the MarketSwitcher
+// (route → flag/label) and MarketPage (route → config) read from here, so it
+// stays the one place a market is declared to exist. Page titles and
+// descriptions are NOT here: they live in shared/seo.js, which the edge renders
+// into the HTML for crawlers before this code ever runs.
 //
 // Adding a new market:
 //   1. Write its MarketConfig at src/lib/markets/<id>.tsx
@@ -16,6 +18,16 @@ import {
   US,
   type FlagComponent,
 } from "country-flag-icons/react/3x2";
+
+// Host maps and the route → market rules live in shared/seo.js. The edge
+// (functions/_middleware.js) has to answer "which market owns this URL?"
+// before any of this React code exists, and two copies of that answer would
+// drift — so this module is a consumer of them, not a second source.
+import {
+  HOST_DEFAULT_MARKET,
+  MARKET_HOST_BY_ID,
+  marketIdForPath,
+} from "../../../shared/seo.js";
 
 import { CongressMarket } from "./congress";
 import { DjtMarket } from "./djt";
@@ -120,27 +132,6 @@ export const MARKETS: MarketRegistryEntry[] = [
   },
 ];
 
-const MARKET_HOST_BY_ID: Record<string, string> = {
-  uk: "ddbx.uk",
-  us: "ddbx.us",
-  // Congress lives on the US domain at /congress (the US Form 4 market owns
-  // the ddbx.us root). Clicking it from any other domain crosses over.
-  usg: "ddbx.us",
-  // Trump Media insiders ride the US domain at /djt (like Congress).
-  djt: "ddbx.us",
-  se: "ddbx.eu",
-  nl: "ddbx.eu",
-};
-
-const HOST_DEFAULT_MARKET: Record<string, string> = {
-  "ddbx.uk": "uk",
-  "www.ddbx.uk": "uk",
-  "ddbx.us": "us",
-  "www.ddbx.us": "us",
-  "ddbx.eu": "se",
-  "www.ddbx.eu": "se",
-};
-
 function safeHostname(hostname?: string): string | null {
   if (hostname && hostname.trim().length > 0) return hostname.toLowerCase();
   if (typeof window !== "undefined" && window.location?.hostname) {
@@ -219,45 +210,13 @@ export function marketForPath(
   hostname?: string,
 ): MarketRegistryEntry {
   const uk = MARKETS.find((m) => m.id === "uk");
-  const host = safeHostname(hostname);
 
   if (!uk) throw new Error("UK market must be registered");
-  if (pathname.startsWith("/us-preview"))
-    return MARKETS.find((m) => m.id === "us") ?? uk;
-  if (pathname.startsWith("/se-preview") || pathname.startsWith("/eu"))
-    return MARKETS.find((m) => m.id === "se") ?? uk;
-  if (pathname.startsWith("/nl-preview"))
-    return MARKETS.find((m) => m.id === "nl") ?? uk;
-  if (pathname === "/us" || pathname.startsWith("/us/"))
-    return MARKETS.find((m) => m.id === "us") ?? uk;
-  if (pathname === "/se" || pathname.startsWith("/se/"))
-    return MARKETS.find((m) => m.id === "se") ?? uk;
-  if (pathname === "/nl" || pathname.startsWith("/nl/"))
-    return MARKETS.find((m) => m.id === "nl") ?? uk;
-  // Congress: the canonical /congress (and the legacy /directors exact path).
-  // `/directors/:id` is a UK director profile, so only the exact /directors
-  // path maps to Congress here. Checked before the host default so it wins on
-  // ddbx.us (whose root is the US Form 4 market).
-  if (
-    pathname === "/congress" ||
-    pathname.startsWith("/congress/") ||
-    pathname === "/directors"
-  )
-    return MARKETS.find((m) => m.id === "usg") ?? uk;
-  // Trump Media insiders — explicit before the host default so /djt wins on
-  // ddbx.us (whose root is the US Form 4 market).
-  if (pathname === "/djt" || pathname.startsWith("/djt/"))
-    return MARKETS.find((m) => m.id === "djt") ?? uk;
 
-  if (host && HOST_DEFAULT_MARKET[host]) {
-    return byId(HOST_DEFAULT_MARKET[host]) ?? uk;
-  }
-
-  const match = MARKETS.filter((m) => m.route !== "/")
-    .sort((a, b) => b.route.length - a.route.length)
-    .find((m) => pathname === m.route || pathname.startsWith(`${m.route}/`));
-
-  if (match) return match;
-
-  return uk;
+  // The rules themselves (preview aliases, /congress vs /directors/:id, the
+  // host default, longest-prefix fallback) live in shared/seo.js so the edge
+  // resolves routes identically. This just maps the id back to its entry.
+  return (
+    byId(marketIdForPath(pathname, safeHostname(hostname) ?? undefined)) ?? uk
+  );
 }

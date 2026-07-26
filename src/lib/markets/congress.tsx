@@ -944,7 +944,6 @@ function CongressExplainer() {
 export const CongressMarket: MarketConfig<GovDealing> = {
   id: "usg",
   title: "US Congress (preview)",
-  documentTitle: "ddbx · Congressional Trading — US Congress STOCK Act Filings",
   heroHeadline: (
     <>
       Which members of{" "}

@@ -66,6 +66,65 @@ aspect ratio actually matters — the frame sizes the screen with `aspect-ratio`
 `lockscreen` is declared but not yet placed on the page; it's there for a
 notification-theatre section if we want one.
 
+### Capturing them from the simulators
+
+Both apps are installed and signed in on the local simulators. **Neither
+platform needs `idb`** — it's no longer in homebrew-core, and it turned out to
+be unnecessary.
+
+**Deep-link straight to a screen — no tapping, no permissions.** The iOS app
+already carries a simulator-driving hook (`DdbxApp.swift`, `#if DEBUG`), and
+both apps handle the `ddbx.uk/t/{id}` shared-trade link:
+
+```bash
+# iOS — deal detail (the `analysis` slot)
+xcrun simctl launch booted uk.ddbx.app -ddbx-deeplink d-3c9b8491b70e0873
+
+# Android — same deal, via App Links
+adb shell am start -a android.intent.action.VIEW \
+  -d "https://ddbx.uk/t/d-3c9b8491b70e0873" uk.ddbx.app
+```
+
+Pick an id with a rating from `https://api.ddbx.uk/api/dealings`.
+
+**Clean the chrome before capturing.**
+
+```bash
+# iOS — fixed 9:41 clock, full bars, charged battery
+xcrun simctl status_bar booted override --time "9:41" \
+  --batteryState charged --batteryLevel 100 \
+  --cellularMode active --cellularBars 4 --wifiMode active --wifiBars 3
+
+# Android — demo-mode status bar + gesture pill instead of the 3-button bar
+adb shell settings put global sysui_demo_allowed 1
+adb shell am broadcast -a com.android.systemui.demo -e command enter
+adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 0941
+adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false
+adb shell cmd overlay enable com.android.internal.systemui.navbar.gestural
+```
+
+**Capture** — these land at exactly the manifest sizes:
+
+```bash
+xcrun simctl io booted screenshot out.png     # 1206×2622
+adb exec-out screencap -p > out.png           # 1080×2400
+```
+
+**Theme.** Each app has its own Appearance preference (Settings → Appearance);
+the system light/dark setting does NOT drive it. Set both to **Light** so the
+phone sits in the site's cream page instead of reading as a black slab.
+
+**Two known limits:**
+
+- **Tabs need taps on iOS.** `simctl` has no tap command and driving the
+  Simulator via AppleScript needs Accessibility permission. The deep link only
+  reaches a deal detail, so `performance` / `alert` on iOS need either that
+  permission granted or a small extension of the existing `-ddbx-deeplink` hook
+  in `ddbx-ios-app` to accept a tab name. Android taps freely via
+  `adb shell input tap`.
+- **`today` needs a weekday.** At a weekend both apps show "Markets closed for
+  the weekend", which is a poor hero shot. Capture during UK market hours.
+
 ## Pricing
 
 `src/lib/pricing.ts` is the only place on the public web that states a price.

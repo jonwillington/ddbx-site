@@ -676,7 +676,6 @@ const UsAnalysisOverlay = ({ dealing }: { dealing?: { ticker: string } }) => (
 export const UsMarket: MarketConfig<UsRowGroup> = {
   id: "us",
   title: "US Form 4 (preview)",
-  documentTitle: "ddbx · Director Dealings — US Form 4 Filings",
   // US-market copy uses US English (analyzed, not analysed).
   heroHeadline: (
     <>

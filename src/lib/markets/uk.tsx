@@ -410,7 +410,6 @@ const UkAnalysisOverlay = ({ dealing }: { dealing?: { ticker: string } }) => (
 export const UkMarket: MarketConfig<Dealing> = {
   id: "uk",
   title: "UK director dealings (preview)",
-  documentTitle: "ddbx · Director Dealings — UK Insider Transactions",
   heroHeadline: (
     <>
       Start following the{" "}
