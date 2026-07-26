@@ -64,8 +64,17 @@ export async function onRequest(context) {
   // Only the HTML shell needs rewriting; assets pass straight through.
   const contentType = res.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return res;
-  // /t/{id} owns its own <head> — don't double-handle.
-  if (url.pathname.startsWith("/t/")) return res;
+  // /t/{id}, /company/{market}/{key} and the /companies hub are server-rendered
+  // by their own Functions and own their entire <head>. Rewriting them here
+  // would replace a per-trade or per-company title with the generic
+  // route-table one.
+  if (
+    url.pathname.startsWith("/t/") ||
+    url.pathname.startsWith("/company/") ||
+    url.pathname === "/companies"
+  ) {
+    return res;
+  }
 
   const host = url.hostname.toLowerCase();
   const { title, description } = seoForPath(url.pathname, host);
