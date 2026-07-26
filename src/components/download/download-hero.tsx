@@ -222,10 +222,17 @@ export function DownloadHero({
               src={appShotSrc(marketId, platform, "today")}
               variant="bare"
             />
-            {/* Pushed below the camera cutout: the stack reserves 30px above
-                its front card for the avatar badge, and at a smaller offset
-                that badge collided with the Dynamic Island / punch-hole. */}
-            <div className="pointer-events-none absolute inset-x-0 top-[11%] z-20 mx-auto w-[92%]">
+            {/* The banner has to land where iOS and Android actually put one:
+                against the top edge, over the status bar and app header. The
+                11% offset this replaces was measured against the old bezel
+                padding — with the bezel gone it dropped into the middle of the
+                screen and buried the Today section, which is the one part of
+                the shot the hero is selling.
+
+                `top-0` is the stack's own box; it reserves ~30px above the
+                front card for the avatar badge, so the card itself still lands
+                just below the top edge rather than flush against it. */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-20 mx-auto w-[86%]">
               <HeroNotificationStack deals={radar.deals} tick={radar.tick} />
             </div>
           </div>

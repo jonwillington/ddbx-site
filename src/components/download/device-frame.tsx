@@ -131,15 +131,21 @@ export function DeviceFrame({
              share of the device width — measured off the real handsets.
              iPhone: near-symmetrical bezel, very round corners. */
           --dvf-bezel: 2.9cqw;
-          --dvf-chin: 2.9cqw;
+          --dvf-bezel-top: 3.1cqw;
+          --dvf-chin: 3.1cqw;
           --dvf-radius: 13.2cqw;
         }
         /* Pixel-class Android: thicker bezel, a visibly larger chin, and
            noticeably squarer corners. Getting these wrong is what makes a
-           "generic phone" read as an iPhone with the wrong cutout. */
+           "generic phone" read as an iPhone with the wrong cutout.
+           The top bezel is thicker again than the sides — a screenshot brings
+           its own status bar hard against the top edge, so a thin top rail
+           leaves the clock and the punch-hole looking cramped against the
+           frame. */
         .dvf-android {
           --dvf-bezel: 3.5cqw;
-          --dvf-chin: 4.4cqw;
+          --dvf-bezel-top: 4.6cqw;
+          --dvf-chin: 4.8cqw;
           --dvf-radius: 9cqw;
         }
 
@@ -148,7 +154,7 @@ export function DeviceFrame({
           /* Concentric corners: the outer radius must be the inner radius plus
              the bezel, or the frame's curve fights the screen's. */
           border-radius: calc(var(--dvf-radius) + var(--dvf-bezel));
-          padding: var(--dvf-bezel) var(--dvf-bezel) var(--dvf-chin);
+          padding: var(--dvf-bezel-top) var(--dvf-bezel) var(--dvf-chin);
           /* Brushed-titanium rail: a dark body with lighter edges where the
              chamfer would catch the light, warm-shifted so it belongs in the
              cream palette rather than reading as cold graphite. */
@@ -234,20 +240,22 @@ export function DeviceFrame({
            The lens gradient plus a bright rim is what sells it as hardware. */
         .dvf-punch {
           position: absolute;
-          top: 1.15%;
+          top: 1.35%;
           left: 50%;
           transform: translateX(-50%);
-          width: 3.4%;
+          width: 3.1%;
           aspect-ratio: 1;
           border-radius: 999px;
+          /* Neutral graphite, not blue — the earlier cool highlight read as a
+             tinted dot sitting on the UI rather than a lens under the glass. */
           background:
             radial-gradient(circle at 34% 30%,
-              #3d4048 0%,
-              #16181c 42%,
-              #050506 100%);
+              #3a3a3c 0%,
+              #17171a 45%,
+              #050505 100%);
           box-shadow:
-            0 0 0 0.5px rgba(190, 200, 215, 0.5),
-            0 0 3px 1px rgba(0, 0, 0, 0.4);
+            0 0 0 0.5px rgba(210, 210, 212, 0.34),
+            0 0 3px 1px rgba(0, 0, 0, 0.35);
           z-index: 2;
         }
         /* Stand-in home indicator for the placeholder — a real screenshot
