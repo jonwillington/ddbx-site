@@ -20,7 +20,11 @@ import {
 
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
-import { SectorFigures, useSectorMarket, R } from "@/components/sector-ui";
+import {
+  SectorComparisonRow,
+  useSectorMarket,
+  R,
+} from "@/components/sector-ui";
 import { AppCtaBand } from "@/components/seo/app-cta-band";
 import { sectorCta } from "@/components/seo/cta-copy";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
@@ -84,17 +88,15 @@ export default function SectorsPage() {
             {publishable.map((row) => (
               <li key={row.sector.slug} className={`border-b ${R.rule} py-4`}>
                 <Link
-                  className="text-[16px] font-semibold tracking-[-0.01em] text-foreground underline-offset-4 hover:underline"
+                  className="block rounded-lg outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-[#5a4128]/40 dark:hover:bg-white/[0.03]"
                   to={sectorPath(row.sector.slug)}
                 >
-                  {row.sector.label}
+                  <SectorComparisonRow
+                    market={market}
+                    maxValue={maxValue}
+                    row={row}
+                  />
                 </Link>
-                <SectorFigures
-                  className="mt-3"
-                  market={market}
-                  maxValue={maxValue}
-                  row={row}
-                />
               </li>
             ))}
           </ul>

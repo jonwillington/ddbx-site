@@ -136,6 +136,8 @@ The brief is "give the impression we will [offer an API]". The line I'd draw:
 - Tier names with contents but no numbers (see §4.7).
 
 **Don't:**
+- **No mention of a free tier, public sandbox, or open endpoint.** See §9's
+  copy rule — this is a hard constraint, not a preference.
 - No self-serve key issuance or console mockup.
 - No fake "trusted by" logos, no invented uptime SLA, no status-page link.
 - No dashboard screenshot of a product that doesn't exist.
@@ -631,21 +633,75 @@ and already gates writes. This is the only option that genuinely stops
 anonymous harvesting — and it breaks the public website entirely, plus all 9
 edge prerender functions. **Not viable** while ddbx.uk is a public site.
 
-### Recommendation: Tier 0 + Tier 1 now, and reframe what you're selling
+### What's actually exposed right now
 
-Do the edge controls and the origin allowlist. Don't build key auth yet.
+Worth being precise, because it's worse than "the endpoint is open".
 
-Then close the credibility hole with product, not with a lock: **what a
-customer buys is not access to the JSON, it's the contract.** Bulk historical
-export, schema-stability guarantees, a support address, redistribution rights,
-and depth beyond the rolling public window. The free endpoint gives you today's
-slice with no promises and no recourse; the paid one gives history, stability
-and someone to email when it breaks.
+- **`DEALINGS_MAX_LIMIT = 1000`** (`worker/db/queries.ts:307`). UK total is 826
+  rows. **One unauthenticated request returns the entire UK corpus** — every
+  `analysis` block, every `thesis_points` array, every `evidence_for` /
+  `evidence_against` / `key_risks`, every `triage.reason`. That is the most
+  expensive output the pipeline produces, and it leaves in a single curl.
+- `/api/eu-dealings` caps at 500 per page but has a `before` cursor, so the
+  full 15,394-row EU corpus is a short loop.
+- **`verifyFirebaseIdToken` gates six endpoints and all six are writes**
+  (`/api/devices`, `/api/analysis-feedback`, `/api/follows`). **Zero read
+  endpoints are authenticated.**
+- **Discretion mode is bypassed entirely.** The website's whole gating premise
+  is that non-app users see one full analysis per day and dummy text
+  thereafter. `api.ddbx.uk` serves the real analysis for every row to anyone
+  who asks. The gate is enforced in the client and nowhere else.
 
-That is how this market actually works — Quiver's data is scrapeable too, and
-people pay anyway. It also means the hole closes without touching a single
-client, without a 6-month migration, and without risking App Store installs.
+That last point is the one that matters. The product's core gating is
+cosmetic at the API layer.
 
-If a prospect asks *"what stops someone else just taking this free?"*, the
-honest answer is: nothing stops them taking today's window, and nothing gives
-them the history, the schema guarantee, or anyone to call. Sell that.
+### The fix: split the payload, don't lock the endpoint
+
+Locking the whole API breaks the site, the 9 edge prerender functions, and
+every app install in the field. But **the entire list payload doesn't need
+protecting — only the generated prose does.**
+
+Split it:
+
+| Tier | Fields | Who gets it |
+|---|---|---|
+| **Thin** (unauthenticated) | ticker, company, director, role, dates, shares, price, value, `rating` **label only**, `sector_normalized`, `cluster.tier` | Public web, edge prerender, crawlers |
+| **Full** (authenticated) | `analysis.*` (summary, thesis_points, evidence_for/against, key_risks, checklist), `triage.reason`, `rating_explain.factors`, `buy_style.*`, `live_performance.*` | Apps, API customers |
+
+The thin tier is **exactly what the public website is supposed to show
+anyway** under discretion mode, and it's everything the SEO functions need.
+So stripping prose for unauthenticated callers doesn't break the site — it
+makes the server enforce the policy the client is currently enforcing alone.
+
+### Sequencing (back-compatible, per `~/CLAUDE.md`)
+
+**Phase 1 — today, zero client changes, zero breakage:**
+1. Cloudflare rate limiting on `api.ddbx.uk/api/*`, per IP.
+2. Bot Fight Mode; challenge datacenter ASNs on the list endpoints.
+3. Tighten `app.use("/api/*", cors())` (`worker/index.ts:275`) from allow-all
+   to the ddbx origins.
+4. **Drop `DEALINGS_MAX_LIMIT` from 1000 to ~200** and cap EU at 200. No real
+   client asks for more; it turns whole-corpus extraction into a long, visible,
+   rate-limited crawl. Highest value per unit of effort on this list.
+
+**Phase 2 — clients start identifying themselves.** iOS and Android already
+hold a Firebase token and already send it on writes; extend `APIClient` to send
+it on reads too. Server-side, accept and ignore. No behaviour change, no
+breakage. Ship and wait for adoption.
+
+**Phase 3 — enforce the split.** Once app adoption is high, the worker strips
+the prose fields when there's no valid token. Web gets thin (which is what
+discretion mode wants), apps get full, API customers get full via their own
+key. Old app installs degrade to thin rather than breaking — they render the
+same fields the web does.
+
+Phase 1 is a deploy. Phases 2 and 3 are a cycle each and shouldn't block the
+`/api` page shipping.
+
+### Copy rule for the page
+
+**Never reference the open endpoint, and never imply a free tier.** No "free
+plan", no "public sandbox", no FAQ answer explaining what unauthenticated
+callers can get. The page presents one thing: a licensed, authenticated,
+supported data product, access by request. The current openness is an
+operational gap to close (above), not a product tier to describe.
