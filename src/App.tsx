@@ -4,12 +4,20 @@ import { BetaTag } from "@/components/market/beta-tag";
 import { CookieBanner } from "@/components/cookie-banner";
 import { DocumentTitle } from "@/components/document-title";
 import AccountDeletionPage from "@/pages/account-deletion";
+import BiggestBuysPage from "@/pages/biggest-buys";
+import BrokerCategoryPage from "@/pages/broker-category";
+import BrokerComparisonPage from "@/pages/broker-comparison";
 import BrokerDetailPage from "@/pages/broker-detail";
 import CompaniesPage from "@/pages/companies";
 import CompanyPage from "@/pages/company";
 import ComparePage from "@/pages/compare";
 import DownloadPage from "@/pages/download";
+import LearnEntryPage, { LearnIndexPage } from "@/pages/learn";
 import PerformancePage from "@/pages/performance";
+import ReportPage from "@/pages/report";
+import SectorPage from "@/pages/sector";
+import SectorsPage from "@/pages/sectors";
+import ReportsPage from "@/pages/reports";
 import DirectorPage from "@/pages/director";
 import CongressPreviewPage from "@/pages/congress-preview";
 import DjtPreviewPage from "@/pages/djt-preview";
@@ -27,8 +35,14 @@ function App() {
       <Routes>
         <Route element={<MarketHomePage />} path="/" />
         {/* Deep-link to a monthly recap, e.g. /report/may-2026. Resolves to the
-            UK home (reports are UK-only today) which auto-opens the modal. */}
+            UK home (reports are UK-only today) which auto-opens the modal.
+            Kept working because shared links point at it; it canonicalises to
+            the standalone /reports/:month page rather than competing with it. */}
         <Route element={<MarketHomePage />} path="/report/:month" />
+        {/* The archive. The same reports as real, permanently-addressed pages —
+            the modal above had no URL of its own to link to or index. */}
+        <Route element={<ReportsPage />} path="/reports" />
+        <Route element={<ReportPage />} path="/reports/:month" />
         <Route element={<UkPreviewPage />} path="/dealings/:id" />
         <Route element={<MarketHomePage />} path="/contact" />
         <Route element={<MarketHomePage />} path="/privacy" />
@@ -82,6 +96,19 @@ function App() {
         />
         <Route element={<ComparePage />} path="/compare" />
         <Route element={<ComparePage />} path="/brokers" />
+        {/* Category and head-to-head landing pages sit one level below
+            /brokers/:slug so they can't be mistaken for a platform review —
+            both by the router (a static segment outranks a dynamic one) and by
+            the Pages Functions, which route on directory structure and would
+            otherwise need a single Function handling all three page types. */}
+        <Route
+          element={<BrokerCategoryPage />}
+          path="/brokers/best-for/:category"
+        />
+        <Route
+          element={<BrokerComparisonPage />}
+          path="/brokers/compare/:pair"
+        />
         <Route element={<BrokerDetailPage />} path="/brokers/:slug" />
         {/* Company pages. The market comes from the domain (ddbx.uk serves UK
             issuers, ddbx.us US ones) and the LSE ".L" suffix is dropped, so
@@ -89,6 +116,19 @@ function App() {
             pre-renders the same content for crawlers before this mounts. */}
         <Route element={<CompaniesPage />} path="/companies" />
         <Route element={<CompanyPage />} path="/company/:key" />
+        {/* Sector hubs — the layer between /companies (one flat index of
+            several hundred issuers) and the company pages themselves. */}
+        {/* Biggest-buys boards. The rolling board is canonical and the year
+            boards are the archive — the other way round would move the
+            canonical target every January. */}
+        {/* Glossary. Each entry has one owning domain (see shared/glossary.js)
+            so the same text never exists at three URLs across three hosts. */}
+        <Route element={<LearnIndexPage />} path="/learn" />
+        <Route element={<LearnEntryPage />} path="/learn/:slug" />
+        <Route element={<BiggestBuysPage />} path="/biggest-buys" />
+        <Route element={<BiggestBuysPage />} path="/biggest-buys/:year" />
+        <Route element={<SectorsPage />} path="/sectors" />
+        <Route element={<SectorPage />} path="/sectors/:slug" />
       </Routes>
       <CookieBanner />
     </div>

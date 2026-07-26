@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 
@@ -18,6 +18,7 @@ import {
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { marketContactEmail, marketForPath } from "@/lib/markets/registry";
+import { footerGroups } from "@/lib/site-nav";
 import { setRailPresent } from "@/lib/rail-presence";
 
 /** Shared styling for the floating mobile download CTA — solid pill, rendered
@@ -467,6 +468,9 @@ export default function DefaultLayout({
               src="/logo.svg"
             />
           </div>
+
+          <FooterNav />
+
           <p>
             Disclaimer: The information, ratings, signals, commentary, and any
             related content provided on this website are for general
@@ -513,35 +517,59 @@ export default function DefaultLayout({
             </a>
             .
           </p>
-          {/* Legal links + social/app links */}
+          {/* Legal links + social/app links.
+              The X mark used to sit with the store badges on the right, where
+              it was a 14px glyph pinned between two large full-colour vendor
+              lockups and read as an artefact of them rather than a link of its
+              own. It belongs with the other things you can click through to —
+              the end of the link row, interpunct-separated like the rest of
+              it — leaving the right side to the two store badges alone. */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-3 border-t border-separator/50">
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
               {LEGAL_LINKS.map(({ label, page, path }) => (
-                <button
-                  key={page}
-                  className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2 text-left"
-                  onClick={() => openLegal(path)}
-                >
-                  {label}
-                </button>
+                <Fragment key={page}>
+                  <button
+                    className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2 text-left"
+                    onClick={() => openLegal(path)}
+                  >
+                    {label}
+                  </button>
+                  <span aria-hidden className="text-foreground/20">
+                    ·
+                  </span>
+                </Fragment>
               ))}
-            </div>
-            <div className="flex items-center gap-4">
+
+              {/* A real <a>, not a router link: /sitemap.xml is served by a
+                  Pages Function, so the SPA has no route for it. */}
+              <a
+                className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2"
+                data-ga-event="nav_footer_sitemap"
+                href="/sitemap.xml"
+              >
+                Sitemap
+              </a>
+              <span aria-hidden className="text-foreground/20">
+                ·
+              </span>
+
               <button
                 aria-label="Follow on X (Twitter)"
-                className="flex items-center gap-1.5 text-foreground/40 hover:text-foreground/70 transition-colors"
+                className="flex items-center text-foreground/40 hover:text-foreground/70 transition-colors"
                 data-ga-event="cta_footer_follow_x"
                 type="button"
                 onClick={() => setFollowOpen(true)}
               >
                 <svg
                   aria-hidden="true"
-                  className="w-3.5 h-3.5 fill-current shrink-0"
+                  className="w-3 h-3 fill-current shrink-0"
                   viewBox="0 0 24 24"
                 >
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.736-8.861L1.254 2.25H8.08l4.257 5.625zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
               </button>
+            </div>
+            <div className="flex items-center gap-4">
               <button
                 aria-label="Get it on Google Play"
                 className="inline-block opacity-80 hover:opacity-100 transition-opacity"
@@ -635,5 +663,54 @@ export default function DefaultLayout({
         onClose={() => setAppsOpen(false)}
       />
     </div>
+  );
+}
+
+/** The footer's internal link columns.
+ *
+ *  Before this the footer had no content links at all, so every page on the
+ *  site linked onward only through the navbar — which meant several hundred
+ *  company pages were reachable from exactly one index page, and the sitemap
+ *  was carrying discovery on its own. Links in a site-wide footer are the
+ *  cheapest fix for that: they cost no new URLs and they reach every page.
+ *
+ *  The link set is market-aware and comes from lib/site-nav.ts rather than
+ *  being written here, because the related-links blocks on the new landing
+ *  pages need the same graph. Rendered as real anchors — the legal links below
+ *  are <button> drawer triggers, which is right for a drawer but means a
+ *  crawler sees no href for them at all.
+ */
+function FooterNav() {
+  const { pathname } = useLocation();
+  const groups = footerGroups(
+    pathname,
+    typeof window === "undefined" ? undefined : window.location.hostname,
+  );
+
+  return (
+    <nav
+      aria-label="Footer"
+      className="mb-6 grid grid-cols-2 gap-x-6 gap-y-6 border-b border-separator/50 pb-6 sm:grid-cols-4"
+    >
+      {groups.map((group) => (
+        <div key={group.title}>
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/55">
+            {group.title}
+          </h2>
+          <ul className="mt-2.5 space-y-1.5">
+            {group.links.map((link) => (
+              <li key={link.href + link.label}>
+                <a
+                  className="text-[11.5px] leading-4 text-foreground/45 transition-colors hover:text-foreground/75"
+                  href={link.href}
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
   );
 }

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { BrokerLogo, BrokerVisitLink, OfferBadge } from "./broker-ui";
 
 import { api } from "@/lib/api";
-import { isAffiliateLink } from "@/lib/brokers";
+import { isAffiliateLink, isOfferLive } from "@/lib/brokers";
 
 /** In-flow broker prompt for the company pages.
  *
@@ -91,8 +91,8 @@ export function BrokerInline({
           Start investing with {broker.name}
         </BrokerVisitLink>
       </div>
-      {broker.offer_headline && (
-        <OfferBadge className="mt-3" text={broker.offer_headline} />
+      {isOfferLive(broker) && (
+        <OfferBadge className="mt-3" text={broker.offer_headline!} />
       )}
       {/* The disclosure sits at the point of engagement, not only the footer. */}
       <p className="mt-2.5 text-[10px] leading-snug text-foreground/45">

@@ -18,6 +18,8 @@
 // The market comes from the domain and the LSE ".L" suffix is added back here
 // — mirrors tickerToSlug/slugToKey in src/lib/company.ts.
 
+import { brandTitle } from "../../shared/seo.js";
+
 const API_BASE = "https://api.ddbx.uk/api";
 
 const MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
@@ -271,7 +273,9 @@ export async function onRequestGet(context) {
   const name = cleanCompany(data.company);
   const ticker = displayTicker(data.key);
   const canonical = `https://${host}/company/${encodeURIComponent(String(params.key ?? "").toLowerCase())}`;
-  const title = `${name} (${ticker}) ${FILING_NOUN[market]} — ${data.summary.deals} insider ${data.summary.deals === 1 ? "buy" : "buys"} · ddbx`;
+  const title = brandTitle(
+    `${name} (${ticker}) ${FILING_NOUN[market]} — ${data.summary.deals} insider ${data.summary.deals === 1 ? "buy" : "buys"}`,
+  );
   const description = leadSentence(data);
 
   return new HTMLRewriter()

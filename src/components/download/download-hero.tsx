@@ -39,9 +39,6 @@ export function DownloadHero({
   storeHref,
   gaLabel,
   trialDays,
-  /** Live filings count for the proof line; 0 falls back to a "watching" state
-   *  so the line never blinks out and leaves a hole under the CTA. */
-  todayCount = 0,
   /** Rendered instead of the store badge when the app isn't installable on this
    *  platform yet (US on Google Play). */
   unavailableSlot,
@@ -53,7 +50,6 @@ export function DownloadHero({
   storeHref?: string;
   gaLabel: string;
   trialDays: number;
-  todayCount?: number;
   unavailableSlot?: ReactNode;
 }) {
   const radar = useDealRadar(marketId, true);
@@ -146,12 +142,14 @@ export function DownloadHero({
         />
       </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 items-center gap-10 px-4 py-8 md:px-10 md:py-14 lg:grid-cols-[1fr_330px] lg:gap-14">
-        {/* Copy leads at every width. A full phone is ~640px tall on a 390px
-            screen, so leading with the device on mobile pushed the headline
-            entirely below the fold — the first thing a visitor saw was a
-            handset with no claim attached to it. */}
-        <div className="text-center lg:text-left">
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 items-center gap-10 px-4 py-8 md:px-10 md:py-14 lg:grid-cols-[1fr_420px] lg:gap-14">
+        {/* Copy is first in the DOM at every width — a screen reader and the tab
+            order should meet the claim before the evidence for it — but on
+            mobile the alert is painted above it (`order`). The stack is only
+            ~200px tall, so unlike the full handset this column used to hold it
+            doesn't push the headline below the fold; it lands as the first
+            thing on screen, which is the one element that's actually live. */}
+        <div className="order-2 text-center lg:order-1 lg:text-left">
           <div className="flex justify-center lg:justify-start">
             <span
               className={`${chip("lg")} bg-[#5a4128]/10 text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]`}
@@ -187,18 +185,6 @@ export function DownloadHero({
             ) : (
               unavailableSlot
             )}
-
-            {/* Live proof, straight under the CTA: the headline makes a claim,
-                this shows we're delivering on it right now. */}
-            <p className="flex items-center gap-2 text-sm text-foreground/55">
-              <span aria-hidden className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22a06b] opacity-50 motion-reduce:hidden" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22a06b]" />
-              </span>
-              {todayCount > 0
-                ? `${todayCount} filing${todayCount === 1 ? "" : "s"} so far today`
-                : "Live · watching today’s filings as they land"}
-            </p>
           </div>
         </div>
 
@@ -209,8 +195,12 @@ export function DownloadHero({
             the stack ended up reading as decoration layered on a picture.
             Standing alone at full column width it reads as what it is: real
             filings landing while you watch. Screens belong in the scroll tour
-            below, where "four screens" genuinely wants a device. */}
-        <div className="mx-auto w-full max-w-[330px] sm:max-w-[360px] lg:max-w-none">
+            below, where "four screens" genuinely wants a device.
+
+            It leads on mobile (`order-1`) and takes the wider of the two
+            columns on desktop: it is the only thing on the page that moves,
+            and at 330px it was the smallest thing in the frame. */}
+        <div className="order-1 mx-auto w-full max-w-[360px] sm:max-w-[420px] lg:order-2 lg:max-w-none">
           <div className="dlh-float relative">
             <HeroNotificationStack deals={radar.deals} tick={radar.tick} />
           </div>

@@ -40,17 +40,10 @@ function CheckMark() {
 export function PricingCard({
   pricing,
   storeLabel,
-  benefits = [],
 }: {
   pricing: MarketPricing;
   /** "App Store" / "Google Play" — whose billing actually takes the money. */
   storeLabel: string;
-  /** Everything the one subscription covers, in full. A price with nothing
-   *  next to it is read as a cost; the same price under the list of what it
-   *  buys is read as a trade. The list is exhaustive on purpose — a visitor
-   *  scanning for the one feature they came for should find it here rather
-   *  than guess whether it's included. */
-  benefits?: string[];
 }) {
   const saving = annualSavingPct(pricing);
 
@@ -97,28 +90,42 @@ export function PricingCard({
             </p>
           </div>
         </div>
-
-        {benefits.length > 0 ? (
-          <div className="border-t border-[#e7e0d4] px-6 py-6 dark:border-border/50">
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-foreground/45">
-              Everything included
-            </p>
-            <ul className="mt-4 space-y-3">
-              {benefits.map((b) => (
-                <li key={b} className="flex gap-3 text-[14.5px] leading-snug">
-                  <CheckMark />
-                  <span className="text-foreground/75">{b}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
       </div>
 
       <p className="mt-4 text-center text-xs leading-relaxed text-foreground/40">
         Billed through {storeLabel}. Prices shown in {pricing.code} and may vary
         by territory — your store shows the exact amount before you confirm.
       </p>
+    </Reveal>
+  );
+}
+
+/** Everything the one subscription covers, in full.
+ *
+ *  This used to hang off the bottom of the price card, which made the section
+ *  a single narrow column with nine list items running down it and the whole
+ *  right half of the page empty. It sits beside the price now: a price with
+ *  nothing next to it is read as a cost, and the same price *alongside* the
+ *  list of what it buys is read as a trade.
+ *
+ *  The list is exhaustive on purpose — a visitor scanning for the one feature
+ *  they came for should find it here rather than guess whether it's included. */
+export function IncludedList({ benefits }: { benefits: string[] }) {
+  if (benefits.length === 0) return null;
+
+  return (
+    <Reveal delay={90}>
+      <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-foreground/45">
+        Everything included
+      </p>
+      <ul className="mt-5 space-y-3.5">
+        {benefits.map((b) => (
+          <li key={b} className="flex gap-3 text-[15px] leading-snug">
+            <CheckMark />
+            <span className="text-foreground/75">{b}</span>
+          </li>
+        ))}
+      </ul>
     </Reveal>
   );
 }

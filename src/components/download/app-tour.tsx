@@ -25,8 +25,14 @@ import { DeviceFrame } from "./device-frame";
 import { Reveal } from "./reveal";
 import { SectionHeader } from "./section-header";
 
+import { dealsForMarket } from "@/components/market/hero-deal-data";
+import {
+  HeroNotificationStack,
+  useNotificationTick,
+} from "@/components/market/hero-notification-stack";
 import {
   appShotSrc,
+  screenAspect,
   SLOT_LABEL,
   type AppPlatform,
   type ShotSlot,
@@ -42,6 +48,57 @@ export interface TourBeat {
   /** The benefit, in the visitor's words. */
   title: string;
   body: string;
+}
+
+/** What a beat SHOWS.
+ *
+ *  Every beat but one is a screen. The "alert" beat is the live notification
+ *  stack instead — a screenshot is a capture of a moment, so it lands whatever
+ *  state the simulator happened to be in, which is how a "markets closed for
+ *  the weekend" empty state ended up sitting under a heading promising the
+ *  alert arrives the moment the filing does. The stack is the same instrument
+ *  the hero runs, and it is always mid-arrival, whatever day you read the page. */
+function BeatVisual({
+  beat,
+  marketId,
+  platform,
+  tick,
+  variant,
+}: {
+  beat: TourBeat;
+  marketId: string;
+  platform: AppPlatform;
+  tick: number;
+  variant?: "bare";
+}) {
+  if (beat.slot === "alert") {
+    // The desktop bands are height-free, but the mobile carousel's slides sit
+    // in one row: an alert a third the height of a handset would drag every
+    // caption after it out of line. There, the stack floats in the middle of a
+    // box the same shape as the screen it replaces.
+    return (
+      <div
+        className="flex items-center justify-center py-4"
+        style={
+          variant === "bare"
+            ? undefined
+            : { aspectRatio: String(screenAspect(platform)) }
+        }
+      >
+        <HeroNotificationStack deals={dealsForMarket(marketId)} tick={tick} />
+      </div>
+    );
+  }
+
+  return (
+    <DeviceFrame
+      alt={`ddbx ${SLOT_LABEL[beat.slot]} screen on ${platform === "ios" ? "iPhone" : "Android"}`}
+      platform={platform}
+      slot={beat.slot}
+      src={appShotSrc(marketId, platform, beat.slot)}
+      variant={variant}
+    />
+  );
 }
 
 export function AppTour({
@@ -63,6 +120,10 @@ export function AppTour({
   index?: number;
   total?: number;
 }) {
+  // One clock for the section: the desktop band and the mobile carousel each
+  // render an alert stack, and they should advance together.
+  const tick = useNotificationTick(true);
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-14 md:py-24">
       <SectionHeader
@@ -112,21 +173,24 @@ export function AppTour({
                       </span>
                     </div>
 
-                    <h3 className="mt-5 max-w-[20ch] text-balance text-[32px] font-semibold leading-[1.1] tracking-[-0.022em]">
+                    {/* The beat's claim is the thing worth reading on this
+                        band — sized to lead it rather than to sit level with
+                        the body copy under it. */}
+                    <h3 className="mt-6 max-w-[18ch] text-balance text-[42px] font-semibold leading-[1.04] tracking-[-0.028em] xl:text-[46px]">
                       {b.title}
                     </h3>
-                    <p className="mt-4 max-w-[46ch] text-[17px] leading-[1.6] text-foreground/65">
+                    <p className="mt-5 max-w-[46ch] text-[17px] leading-[1.6] text-foreground/65">
                       {b.body}
                     </p>
                   </div>
                 </div>
 
                 <div className={flip ? "lg:order-1" : "lg:order-2"}>
-                  <DeviceFrame
-                    alt={`ddbx ${SLOT_LABEL[b.slot]} screen on ${platform === "ios" ? "iPhone" : "Android"}`}
+                  <BeatVisual
+                    beat={b}
+                    marketId={marketId}
                     platform={platform}
-                    slot={b.slot}
-                    src={appShotSrc(marketId, platform, b.slot)}
+                    tick={tick}
                     variant="bare"
                   />
                 </div>
@@ -137,7 +201,12 @@ export function AppTour({
       </div>
 
       {/* ---- Mobile: snap carousel ---- */}
-      <MobileTour beats={beats} marketId={marketId} platform={platform} />
+      <MobileTour
+        beats={beats}
+        marketId={marketId}
+        platform={platform}
+        tick={tick}
+      />
     </section>
   );
 }
@@ -146,10 +215,12 @@ function MobileTour({
   beats,
   marketId,
   platform,
+  tick,
 }: {
   beats: TourBeat[];
   marketId: string;
   platform: AppPlatform;
+  tick: number;
 }) {
   return (
     <div className="mt-10 lg:hidden">
@@ -159,11 +230,11 @@ function MobileTour({
             key={b.slot}
             className="w-[76%] max-w-[300px] shrink-0 snap-center sm:w-[52%]"
           >
-            <DeviceFrame
-              alt={`ddbx ${SLOT_LABEL[b.slot]} screen on ${platform === "ios" ? "iPhone" : "Android"}`}
+            <BeatVisual
+              beat={b}
+              marketId={marketId}
               platform={platform}
-              slot={b.slot}
-              src={appShotSrc(marketId, platform, b.slot)}
+              tick={tick}
             />
             <p className="mt-6 flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a4128] dark:text-[#ad9479]">
               {b.timestamp}
@@ -173,7 +244,7 @@ function MobileTour({
               />
               <span className="text-foreground/40">{b.kicker}</span>
             </p>
-            <h3 className="mt-2.5 text-balance text-xl font-semibold leading-snug tracking-tight">
+            <h3 className="mt-2.5 text-balance text-[26px] font-semibold leading-[1.12] tracking-[-0.02em]">
               {b.title}
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-foreground/65">

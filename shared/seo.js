@@ -12,6 +12,19 @@
 // Vite app and can't resolve the "@/" alias or .tsx; the app can't import from
 // functions/. A dependency-free ESM module is the one shape both pipelines
 // accept. Types live alongside in seo.d.ts so the TS side stays checked.
+//
+// The two broker-page modules are imported rather than duplicated: their titles
+// and descriptions are editorial copy that belongs next to the rest of each
+// page's content, and re-stating it here is how a SERP snippet ends up
+// disagreeing with the H1 it points at. Neither imports this module, so there's
+// no cycle.
+
+import { categoryBySlug } from "./broker-categories.js";
+import { comparisonBySlug } from "./broker-comparisons.js";
+import { monthLabel, reportPath, slugToMonth } from "./months.js";
+import { canonicalUrlForEntry, entryBySlug } from "./glossary.js";
+import { yearBounds } from "./leaderboard.js";
+import { sectorBySlug } from "./sectors.js";
 
 export const BRAND = "ddbx";
 export const SITE_NAME = "Director Dealings";
@@ -141,8 +154,27 @@ const isDirectorProfilePath = (path) => /\/directors\//.test(path);
 
 const isBrokerIndexPath = (path) => path === "/brokers" || path === "/compare";
 
+/** "/brokers/best-for/isa" -> the category, or null. */
+const brokerCategoryFromPath = (path) =>
+  path.startsWith("/brokers/best-for/")
+    ? categoryBySlug(path.slice("/brokers/best-for/".length))
+    : null;
+
+/** "/brokers/compare/freetrade-vs-trading-212" -> the comparison, or null. */
+const brokerComparisonFromPath = (path) =>
+  path.startsWith("/brokers/compare/")
+    ? comparisonBySlug(path.slice("/brokers/compare/".length))
+    : null;
+
+/** A review of one platform — NOT the best-for/* or compare/* landing pages,
+ *  which live one level deeper under the same prefix. Without excluding them
+ *  every category page would be titled "Best For review — fees, accounts &
+ *  verdict", since brokerFromPath() just title-cases the last segment. */
 const isBrokerDetailPath = (path) =>
-  path.startsWith("/brokers/") && path.length > "/brokers/".length;
+  path.startsWith("/brokers/") &&
+  path.length > "/brokers/".length &&
+  !path.startsWith("/brokers/best-for/") &&
+  !path.startsWith("/brokers/compare/");
 
 function downloadPlatform(path) {
   if (/\/download\/ios$/.test(path)) return "ios";
@@ -153,6 +185,74 @@ function downloadPlatform(path) {
 
 const isDownloadPath = (path) =>
   path.endsWith("/download") || downloadPlatform(path) !== null;
+
+const isReportsIndexPath = (path) => path === "/reports";
+
+/** Both report URL shapes. `/reports/<slug>` is the canonical archive page;
+ *  `/report/<slug>` (singular) is the older deep-link that opens the recap as
+ *  a modal over the market home — still live because shared links point at it,
+ *  and folded onto the archive page by canonicalUrlFor so the two don't
+ *  compete for the same content. */
+const reportSlugFromPath = (path) => {
+  const match = String(path).match(/^\/reports?\/([^/]+)$/);
+
+  return match ? slugToMonth(decodeURIComponent(match[1])) : null;
+};
+
+/** "/biggest-buys" -> {year:null}; "/biggest-buys/2026" -> {year:"2026"}.
+ *  Returns null for anything else, including a year segment that isn't one. */
+const leaderboardFromPath = (path) => {
+  if (path === "/biggest-buys") return { year: null };
+  const match = String(path).match(/^\/biggest-buys\/([^/]+)$/);
+
+  if (!match) return null;
+
+  return yearBounds(match[1]) ? { year: match[1] } : null;
+};
+
+const isLearnIndexPath = (path) => path === "/learn";
+
+const learnEntryFromPath = (path) =>
+  path.startsWith("/learn/")
+    ? entryBySlug(decodeURIComponent(path.slice("/learn/".length)))
+    : null;
+
+const isSectorsIndexPath = (path) => path === "/sectors";
+
+const sectorFromPath = (path) =>
+  path.startsWith("/sectors/")
+    ? sectorBySlug(decodeURIComponent(path.slice("/sectors/".length)))
+    : null;
+
+const isCompaniesIndexPath = (path) => path === "/companies";
+
+const isCompanyDetailPath = (path) =>
+  path.startsWith("/company/") && path.length > "/company/".length;
+
+/** Legal + account pages, which are routes on the SPA but render as drawers
+ *  over the market home. Without an entry each of these served the market's
+ *  generic dashboard title, so /privacy and /terms were indistinguishable from
+ *  the homepage in a tab strip, a bookmark list or a SERP. */
+const STATIC_PAGE_TITLES = {
+  "/contact": "Contact",
+  "/privacy": "Privacy Policy",
+  "/cookies": "Cookie Policy",
+  "/terms": "Terms & Conditions",
+  "/account-deletion": "Delete your account",
+};
+
+/** Every title on the site is `ddbx · <what this page is>`.
+ *
+ *  It wasn't: market pages led with the brand, broker and download pages led
+ *  with their subject and trailed the site name, and the two edge-rendered
+ *  routes (functions/companies.js, functions/company/[key].js) suffixed
+ *  `· ddbx` instead. Four conventions across one site, which shows up wherever
+ *  titles are listed side by side — tab strips, history, bookmarks, SERPs.
+ *  Those two Functions build their titles from data this module never sees, so
+ *  they format their own; they call the same shape. */
+export function brandTitle(rest) {
+  return `${BRAND} · ${rest}`;
+}
 
 /** "trading-212" -> "Trading 212" */
 function titleCase(slug) {
@@ -165,6 +265,12 @@ function titleCase(slug) {
 
 const brokerFromPath = (path) =>
   titleCase(path.split("/").filter(Boolean).at(-1) ?? "");
+
+/** "/company/mtln" -> "MTLN". Mirrors tickerToSlug() in src/lib/company.ts,
+ *  which strips the LSE `.L` suffix on the way out; the suffix isn't in the
+ *  URL, so it isn't in the title either. */
+const tickerFromCompanyPath = (path) =>
+  String(path.split("/").filter(Boolean).at(-1) ?? "").toUpperCase();
 
 // ---- Title + description --------------------------------------------------
 
@@ -182,21 +288,73 @@ export function seoForPath(pathname, hostname) {
   const deviceNoun =
     platform === "android" ? "Android" : platform === "ios" ? "iPhone" : null;
 
+  const brokerCategory = brokerCategoryFromPath(path);
+  const brokerComparison = brokerComparisonFromPath(path);
+  const reportMonth = reportSlugFromPath(path);
+  const sector = sectorFromPath(path);
+  const leaderboard = leaderboardFromPath(path);
+  const learnEntry = learnEntryFromPath(path);
+  const period = leaderboard?.year
+    ? `in ${leaderboard.year}`
+    : "of the last twelve months";
+  const insiderNoun = id === "us" ? "insider buying" : "director buying";
+
   const title = (() => {
+    if (STATIC_PAGE_TITLES[path]) return brandTitle(STATIC_PAGE_TITLES[path]);
     if (isPerformancePath(path))
-      return `${BRAND} · Portfolio (${market.label}) — ${SITE_NAME}`;
+      return brandTitle(`Portfolio (${market.label}) — ${SITE_NAME}`);
     if (isDirectorProfilePath(path))
-      return `${BRAND} · Director (${market.label}) — ${SITE_NAME}`;
+      return brandTitle(`Director (${market.label}) — ${SITE_NAME}`);
+    // Both of these sit under /brokers/ and so must be tested before the
+    // detail-page branch, which would otherwise claim them.
+    if (brokerCategory) return brandTitle(brokerCategory.title);
+    if (brokerComparison)
+      return brandTitle(`${brokerComparison.title} — which should you pick?`);
+    if (reportMonth)
+      return brandTitle(
+        `${monthLabel(reportMonth)} ${insiderNoun} report (${market.label})`,
+      );
+    if (isReportsIndexPath(path))
+      return brandTitle(`${market.label} ${insiderNoun} reports`);
+    if (sector)
+      return brandTitle(
+        `${sector.label} — ${market.label} insider buying (last 12 months)`,
+      );
+    if (isSectorsIndexPath(path))
+      return brandTitle(`${market.label} insider buying by sector`);
+    if (leaderboard)
+      return brandTitle(
+        `The biggest ${market.label} insider buys ${period}`,
+      );
+    if (learnEntry) return brandTitle(learnEntry.title);
+    if (isLearnIndexPath(path))
+      return brandTitle("Understanding insider dealing");
     if (isBrokerDetailPath(path))
-      return `${brokerFromPath(path)} review — fees, accounts & verdict — ${SITE_NAME}`;
+      return brandTitle(
+        `${brokerFromPath(path)} review — fees, accounts & verdict`,
+      );
     if (isBrokerIndexPath(path))
-      return `Compare UK trading platforms — fees, ISAs & SIPPs — ${SITE_NAME}`;
+      return brandTitle("Compare UK trading platforms — fees, ISAs & SIPPs");
+    if (isCompaniesIndexPath(path))
+      return brandTitle(
+        `Every ${market.label} company with ${id === "us" ? "insider trading" : "director dealings"}`,
+      );
+    // The SPA's fallback only. functions/company/[key].js replaces this at the
+    // edge with the company's real name and buy count — but that Function
+    // can't run on a client-side navigation, so this has to say something more
+    // useful than the market dashboard's title. The ticker is in the URL.
+    if (isCompanyDetailPath(path))
+      return brandTitle(
+        `${tickerFromCompanyPath(path)} — ${id === "us" ? "insider trading" : "director dealings"}`,
+      );
     if (isDownloadPath(path)) {
       const on = deviceNoun ? ` for ${deviceNoun}` : "";
 
-      return id === "us"
-        ? `Get ddbx${on} — follow US insider stock buys · 7-day free trial`
-        : `Get ddbx${on} — follow UK director share buys · 7-day free trial`;
+      return brandTitle(
+        id === "us"
+          ? `Get the app${on} — follow US insider stock buys · 7-day free trial`
+          : `Get the app${on} — follow UK director share buys · 7-day free trial`,
+      );
     }
 
     return market.documentTitle;
@@ -207,6 +365,21 @@ export function seoForPath(pathname, hostname) {
       return `Track ${market.label} insider performance versus benchmark indices on ddbx.`;
     if (isDirectorProfilePath(path))
       return `${market.label} director profile with dealing history and signal context on ddbx.`;
+    if (brokerCategory) return brokerCategory.description;
+    if (brokerComparison) return brokerComparison.description;
+    if (reportMonth)
+      return `What ${market.label} insiders bought in ${monthLabel(reportMonth)} — total value, the sectors they concentrated in, the month's clusters, and how the previous month's featured buys have performed since.`;
+    if (sector)
+      return `Which ${market.label} ${sector.label.toLowerCase()} companies insiders have been buying over the last twelve months — volume, value, breadth and how those buys have performed against the market since disclosure.`;
+    if (leaderboard)
+      return `The largest open-market share purchases ${market.label} insiders made in their own companies ${period}, ranked by value, with how each has performed against the market since it was disclosed.`;
+    if (learnEntry) return learnEntry.description;
+    if (isLearnIndexPath(path))
+      return "What insider filings mean, which disclosures are actually purchases, and how much a director buying their own shares really tells you.";
+    if (isSectorsIndexPath(path))
+      return `Where ${market.label} insiders are buying, broken down by sector — disclosed volume and value, and the median performance of each sector's buys against the market.`;
+    if (isReportsIndexPath(path))
+      return `Monthly ${market.label} ${insiderNoun} reports — what insiders bought, which sectors they favoured, and how earlier picks actually performed.`;
     if (isBrokerDetailPath(path))
       return `${brokerFromPath(path)} review: our verdict on its fees, ISA and SIPP accounts, investment range, features and FSCS protection.`;
     if (isBrokerIndexPath(path))
@@ -294,9 +467,24 @@ export function canonicalUrlFor(pathname, hostname) {
     if (isPerformancePath(path)) return canonicalPerformancePath(id);
     // /compare is the legacy mount of the broker comparison page.
     if (path === "/compare") return "/brokers";
+    // /report/<slug> (singular) opens the recap as a modal over the market
+    // home; /reports/<slug> is the same report as a standalone page. Same
+    // content under two URLs, so the deep-link folds onto the archive page —
+    // which is also the one in the sitemap.
+    const reportMonth = reportSlugFromPath(path);
+
+    if (reportMonth) return reportPath(reportMonth);
 
     return path;
   })();
+
+  // A glossary entry belongs to exactly one domain, so its canonical is
+  // absolute and ignores the host that served it. Without this the same
+  // explainer would compete with itself across ddbx.uk, ddbx.us and ddbx.eu —
+  // the duplicate-content trap this page family is most exposed to.
+  const learnEntry = learnEntryFromPath(path);
+
+  if (learnEntry) return canonicalUrlForEntry(learnEntry);
 
   return `https://${marketHost}${canonicalPath}`;
 }

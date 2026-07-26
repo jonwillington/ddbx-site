@@ -16,6 +16,7 @@ import { CompanyAppPitch } from "@/components/company/company-app-pitch";
 import { MoreCompanies } from "@/components/company/more-companies";
 import { CompanyPriceChart } from "@/components/company/price-chart";
 import { MarketFaq } from "@/components/market/market-faq";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { StoreButtons } from "@/components/store-buttons";
 import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
@@ -86,6 +87,32 @@ function fmtDate(iso: string | null | undefined, market: string): string {
   } catch {
     return iso;
   }
+}
+
+/** When anything on this page last changed.
+ *
+ *  This line used to print `summary.last_trade_date`, which is not when the
+ *  page was updated — it's when a director last bought. On a company nobody has
+ *  filed against in six weeks that rendered as "Updated 16 Jun 2026" under a
+ *  page carrying today's price, today's stats and this morning's headlines: an
+ *  SEO landing surface telling every visitor, and every crawler, that it had
+ *  been abandoned since June.
+ *
+ *  The three feeds all carry their own timestamp, so the honest answer is the
+ *  freshest of them. ISO strings compare lexicographically whether they're a
+ *  bare date or a full timestamp, so no parsing is needed to pick the max.
+ *
+ *  NOTE: the sitemap's <lastmod> for these URLs is computed separately, in
+ *  functions/sitemap.xml.js, and still uses the last dealing date. That's a
+ *  deliberate different question ("when did this page's *content* change in a
+ *  way worth recrawling") and is left alone. */
+function lastUpdated(data: CompanyPageData): string | null {
+  return (
+    [data.summary.last_trade_date, data.stats?.fetchedAt, data.news.fetched_at]
+      .filter((d): d is string => !!d)
+      .sort()
+      .at(-1) ?? null
+  );
 }
 
 function monthYear(iso: string | null | undefined, market: string): string {
@@ -285,7 +312,14 @@ export default function CompanyPage() {
     );
   }
 
-  if (!data) return <CompanySkeleton />;
+  // The ticker is derivable from the URL, so the rail can carry its real
+  // heading while the company itself is still in flight — no relabel on load.
+  if (!data)
+    return (
+      <CompanySkeleton
+        ticker={slug ? displayTicker(slugToKey(slug, market)) : undefined}
+      />
+    );
 
   const name = cleanCompanyName(data.company);
   const ticker = displayTicker(data.key);
@@ -344,7 +378,7 @@ export default function CompanyPage() {
             <span className="text-foreground/75">{name}</span>
           </nav>
           <p className="shrink-0 text-xs text-foreground/45">
-            Updated {fmtDate(summary.last_trade_date, market)}
+            Updated {fmtDate(lastUpdated(data), market)}
           </p>
         </div>
 
@@ -473,6 +507,11 @@ export default function CompanyPage() {
                   id="news"
                   label="Recent news"
                 >
+                  {/* The publisher's mark sits on the byline, the same
+                      treatment the market channel's news strip uses — six
+                      headlines in two columns is a lot of undifferentiated
+                      grey text, and the logo is what makes a source scannable
+                      before the name is read. */}
                   <ul className="grid gap-x-10 sm:grid-cols-2">
                     {data.news.items.slice(0, 6).map((n, i) => (
                       <li key={i} className={`border-b ${C.rule} py-3.5`}>
@@ -485,7 +524,10 @@ export default function CompanyPage() {
                           {n.title}
                         </a>
                         {n.source && (
-                          <span className={`mt-1 block ${C.note}`}>
+                          <span
+                            className={`mt-1.5 flex items-center gap-1.5 ${C.note}`}
+                          >
+                            <NewsSourceLogo size={13} url={n.url} />
                             {n.source}
                           </span>
                         )}
@@ -599,9 +641,21 @@ function Bar({ className = "" }: { className?: string }) {
   return <div className={`rounded bg-foreground/[0.07] ${className}`} />;
 }
 
-function CompanySkeleton() {
+function CompanySkeleton({ ticker }: { ticker?: string }) {
   return (
     <DefaultLayout drawerRight>
+      {/* The rail is mounted during the load too. `drawerRight` reserves its
+          320px whether or not anything is in it, so leaving it out left a bare
+          cream column beside a fully-drawn skeleton — the one part of the page
+          that looked broken rather than loading. It self-loads its brokers and
+          carries its own skeleton, so it fills independently of the company. */}
+      <BrokerAside
+        showAll
+        ctaVariant="grey"
+        heading={ticker ? `Invest in ${ticker}` : "Invest in this company"}
+        placement="company_rail"
+      />
+
       <div aria-busy="true" className="w-full animate-pulse pb-24 lg:pb-14">
         <span className="sr-only">Loading company</span>
 

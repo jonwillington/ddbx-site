@@ -85,6 +85,34 @@ export function fmtMoneyRound(v: number): string {
   return `£${Math.round(v).toLocaleString("en-GB")}`;
 }
 
+/** Today as YYYY-MM-DD in UK time. Same idiom as lib/discretion.ts, rolled
+ *  here rather than imported: broker surfaces are always public and must never
+ *  pull in the discretion module (see broker-reviews-promo.tsx). en-CA gives
+ *  ISO order without locale-specific punctuation. */
+function ukToday(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+}
+
+/** Whether a broker's new-customer incentive should still be shown.
+ *
+ *  `offer_expires` was populated in ddbx-data and declared on the wire type but
+ *  read by nothing — so expired incentives kept rendering. On 2026-07-26 that
+ *  was interactive investor (expired 30 Jun) and Wealthify (expired 28 Jun),
+ *  live on /compare and both detail pages. Advertising a dead offer on a page
+ *  built to rank for commercial queries is an ASA problem, and it gets worse
+ *  the more surfaces quote the same broker — hence one predicate every offer
+ *  render goes through.
+ *
+ *  A null `offer_expires` means open-ended, not expired. Expiry is inclusive:
+ *  an offer expiring on the 30th is still live on the 30th. ISO dates compare
+ *  correctly as strings, so no Date parsing is involved. */
+export function isOfferLive(b: BrokerOffer, today = ukToday()): boolean {
+  if (!b.offer_headline) return false;
+  if (!b.offer_expires) return true;
+
+  return b.offer_expires >= today;
+}
+
 /** "28 Jun 2026" from an ISO date; falls back to the raw string. */
 export function fmtVerifiedDate(iso: string): string {
   const d = new Date(iso);

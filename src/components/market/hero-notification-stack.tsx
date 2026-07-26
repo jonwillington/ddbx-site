@@ -17,9 +17,37 @@
  *  static). Rebuilt from the original screenshot in markup — no bitmap. */
 import type { HeroDeal } from "./hero-deal-data";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { CompanyLogo } from "@/components/company-logo";
+
+/** Default cadence for surfaces that drive the stack on their own clock.
+ *  Matches the hero radar's, so every stack on the site advances at the same
+ *  rate whether or not there's a map wired to it. */
+const TICK_MS = 4200;
+
+/** Standalone clock for a stack that ISN'T paired with the hero deal radar.
+ *  `useDealRadar` also owns a map camera, which most callers have no use for —
+ *  this is just the monotonic counter the stack needs. Frozen under
+ *  prefers-reduced-motion, where the stack rests on a single card. */
+export function useNotificationTick(enabled: boolean): number {
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+    const id = setInterval(() => setTick((t) => t + 1), TICK_MS);
+
+    return () => clearInterval(id);
+  }, [enabled]);
+
+  return tick;
+}
 
 /** Slot styling by depth from the front (0 = newest/front … 3 = exiting). Same
  *  width logic for all; depth is pure centre-scale, so lower cards sit

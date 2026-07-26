@@ -77,8 +77,10 @@ export function QrInstall({
           style={{ width: QR_CSS_PX, height: QR_CSS_PX }}
         />
       </div>
+      {/* `text-balance` so a two-line caption splits between phrases rather
+          than orphaning the second half of the store's name on its own line. */}
       <p
-        className={`max-w-[190px] text-center text-xs leading-relaxed ${captionClassName}`}
+        className={`max-w-[220px] text-balance text-center text-xs leading-relaxed ${captionClassName}`}
       >
         {caption}
       </p>

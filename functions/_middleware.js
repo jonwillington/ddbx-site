@@ -64,14 +64,26 @@ export async function onRequest(context) {
   // Only the HTML shell needs rewriting; assets pass straight through.
   const contentType = res.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return res;
-  // /t/{id}, /company/{market}/{key} and the /companies hub are server-rendered
-  // by their own Functions and own their entire <head>. Rewriting them here
-  // would replace a per-trade or per-company title with the generic
-  // route-table one.
+  // Routes served by their own pre-render Function own their entire <head> —
+  // they set the title, description, canonical and OG tags themselves, from
+  // data this module never sees.
+  //
+  // Skipping them isn't only about titles. Every tag below is APPENDED to
+  // <head> rather than rewritten in place (index.html carries no canonical or
+  // twitter:* to overwrite), so running both passes emits two rel=canonical
+  // tags for the same page — and a page with conflicting canonicals has both
+  // ignored, which is worse than having none.
   if (
     url.pathname.startsWith("/t/") ||
     url.pathname.startsWith("/company/") ||
-    url.pathname === "/companies"
+    url.pathname === "/companies" ||
+    url.pathname.startsWith("/brokers/best-for/") ||
+    url.pathname.startsWith("/brokers/compare/") ||
+    /^\/reports\/[^/]+$/.test(url.pathname) ||
+    /^\/sectors\/[^/]+$/.test(url.pathname) ||
+    url.pathname === "/biggest-buys" ||
+    url.pathname.startsWith("/biggest-buys/") ||
+    /^\/learn\/[^/]+$/.test(url.pathname)
   ) {
     return res;
   }

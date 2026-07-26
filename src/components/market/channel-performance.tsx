@@ -11,19 +11,25 @@
 //     is teased two-deep, then blurred behind an "open the app" CTA. That's
 //     the thing worth installing for.
 //
-// When discretion mode is off the contributors link straight through to the
-// deal detail like the full page does.
+// A contributor card opens an explainer modal rather than navigating: the
+// number is the hook, but a bare "+89.4%" in a 320px rail is read long before
+// it's understood, and what it actually measures (a share price, from a
+// disclosed buy, with no position held by anyone here) has to be said before
+// it can be trusted. The modal says it, then offers the app. The filing itself
+// is still one click away from inside it.
 
 import type {
   ChannelContributor,
   ChannelPerformanceSummary,
 } from "@/lib/performance/channel-summary";
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { LockClosedIcon } from "@heroicons/react/24/outline";
 
 import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { formatSignedPct } from "@/lib/performance/format";
+import { AppModal } from "@/components/app-modal";
 import { CompanyLogo } from "@/components/company-logo";
 
 interface Props {
@@ -410,6 +416,13 @@ function Contributors({
   formatStake?: (n: number) => string;
   dealHref?: (id: string) => string;
 }) {
+  // Which row's explainer is open. A card used to navigate straight to the
+  // deal detail, which answered a question nobody had yet: a big green number
+  // in a rail is read before it's understood, and "+89.4%" with "since
+  // disclosure" over it doesn't say whose money, measured how, or over what.
+  // The modal answers that first, and puts the install where the interest is.
+  const [explained, setExplained] = useState<ChannelContributor | null>(null);
+
   if (rows.length === 0) return null;
 
   const visible = gated ? rows.slice(0, UNBLURRED) : rows;
@@ -425,13 +438,21 @@ function Contributors({
         {visible.map((row, i) => (
           <ContributorCard
             key={row.id}
-            dealHref={dealHref}
             formatStake={formatStake}
             rank={i}
             row={row}
+            onOpen={setExplained}
           />
         ))}
       </ul>
+
+      <ContributorExplainer
+        appHref={appHref}
+        dealHref={dealHref}
+        formatStake={formatStake}
+        row={explained}
+        onClose={() => setExplained(null)}
+      />
 
       {gated && hiddenCount > 0 && (
         <a
@@ -493,26 +514,27 @@ function ContributorCard({
   row,
   rank,
   formatStake,
-  dealHref,
+  onOpen,
 }: {
   row: ChannelContributor;
   rank: number;
   formatStake?: (n: number) => string;
-  dealHref?: (id: string) => string;
+  onOpen: (row: ChannelContributor) => void;
 }) {
   const hero = rank === 0;
 
   return (
     <li>
-      <Link
-        className={`block rounded-xl border px-3 py-2.5 transition-all group ${
+      <button
+        className={`block w-full rounded-xl border px-3 py-2.5 text-left transition-all group ${
           hero
             ? "border-[#cfc5b8]/80 bg-white/45 shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] hover:border-positive/30 hover:bg-white/70 dark:border-border/70 dark:bg-surface-secondary/35"
             : "border-[#d0c8be]/50 hover:bg-[#f1ebe2]/60 dark:border-border/50 dark:hover:bg-surface-secondary/60"
         }`}
-        data-ga-event="cta_channel_open_contributor_deal"
+        data-ga-event="cta_channel_open_contributor_explainer"
         data-ga-label={row.ticker}
-        to={dealHref ? dealHref(row.id) : `/dealings/${row.id}`}
+        type="button"
+        onClick={() => onOpen(row)}
       >
         <span className="flex items-center gap-3">
           <CompanyLogo size={hero ? 44 : 36} ticker={row.ticker} />
@@ -545,8 +567,120 @@ function ContributorCard({
             </span>
           </span>
         )}
-      </Link>
+      </button>
     </li>
+  );
+}
+
+/** What that green number actually is, and how to get the rest of them.
+ *
+ *  Three things it has to do, in order: say what's being measured (a
+ *  share-price change from a disclosed buy, not a ddbx trade and not a
+ *  recommendation), say what it isn't (advice, a guarantee, a live price), and
+ *  then offer the app — because the honest version of this rail's pitch is
+ *  "these are the four we're showing you; the app is where the rest live". */
+function ContributorExplainer({
+  row,
+  onClose,
+  appHref,
+  formatStake,
+  dealHref,
+}: {
+  row: ChannelContributor | null;
+  onClose: () => void;
+  appHref: string;
+  formatStake?: (n: number) => string;
+  dealHref?: (id: string) => string;
+}) {
+  return (
+    <AppModal
+      maxWidthClass="max-w-md"
+      open={row !== null}
+      subtitle={row ? row.ticker : undefined}
+      title={row ? row.company : ""}
+      onClose={onClose}
+    >
+      {row && (
+        <>
+          <div className="flex items-center gap-3">
+            <CompanyLogo size={48} ticker={row.ticker} />
+            <div>
+              <p
+                className={`text-3xl font-bold tabular-nums ${toneClass(row.returnPct)}`}
+              >
+                {formatSignedPct(row.returnPct)}
+              </p>
+              <p className="text-[11px] text-muted">
+                share price, since the buy was disclosed
+              </p>
+            </div>
+          </div>
+
+          {formatStake && (
+            <p className="mt-4 rounded-xl bg-foreground/[0.04] px-3.5 py-3 text-[13px] tabular-nums text-muted">
+              {formatStake(STAKE)} at disclosure would be{" "}
+              <span className="font-semibold text-foreground">
+                {formatStake(STAKE * (1 + row.returnPct))}
+              </span>{" "}
+              today.
+            </p>
+          )}
+
+          <div className="mt-5 space-y-3 text-[13px] leading-relaxed text-foreground/70">
+            <p>
+              <span className="font-semibold text-foreground">
+                What you&rsquo;re looking at.
+              </span>{" "}
+              A director or insider at {row.company} disclosed buying shares
+              with their own money. This is what the share price has done from
+              the day that purchase was disclosed to the latest close we hold —
+              nothing has been bought or sold by ddbx, and nobody is holding a
+              position.
+            </p>
+            <p>
+              <span className="font-semibold text-foreground">
+                Why this one is here.
+              </span>{" "}
+              It&rsquo;s among the strongest performers of every disclosed buy
+              in the last {CHANNEL_WINDOW_DAYS} days. It&rsquo;s a winner chosen
+              after the fact, so read it as evidence that insider buying is
+              worth watching — not as a prediction about this company.
+            </p>
+            <p>
+              Past performance is not a reliable indicator of future results.
+              ddbx is information, not financial advice, and capital is at risk.
+            </p>
+          </div>
+
+          <a
+            className="mt-6 flex w-full items-center justify-center rounded-lg bg-[#1a140d] px-5 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118] dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90"
+            data-ga-event="cta_channel_picks_explainer_download"
+            data-ga-label={row.ticker}
+            href={appHref}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Get the app — every buy as it files
+          </a>
+          <p className="mt-2 text-center text-[11px] text-muted">
+            Free for 7 days, cancel any time.
+          </p>
+
+          {/* The old destination, kept as the quiet second option — someone
+              who wanted the filing rather than the explanation still gets
+              there in one more click. */}
+          <Link
+            className="mt-4 block text-center text-[12.5px] text-foreground/55 underline underline-offset-4 hover:text-foreground"
+            data-ga-event="cta_channel_picks_explainer_see_filing"
+            data-ga-label={row.ticker}
+            to={dealHref ? dealHref(row.id) : `/dealings/${row.id}`}
+            onClick={onClose}
+          >
+            See the filing on the site
+          </Link>
+        </>
+      )}
+    </AppModal>
   );
 }
 

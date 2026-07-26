@@ -23,6 +23,7 @@ import {
   fmtMoney,
   fmtPct,
   isAffiliateLink,
+  isOfferLive,
   platformFeeSummary,
 } from "@/lib/brokers";
 
@@ -336,8 +337,8 @@ export function BrokerBuyBox({ broker: b }: { broker: BrokerOffer }) {
           )}
         </div>
       </div>
-      {b.offer_headline && (
-        <OfferBadge className="mt-3" text={b.offer_headline} />
+      {isOfferLive(b) && (
+        <OfferBadge className="mt-3" text={b.offer_headline!} />
       )}
       <dl className="mt-3 space-y-1.5 text-xs">
         <BuyFact label="Platform fee" value={platformFeeSummary(b.fees)} />

@@ -16,7 +16,7 @@ import {
 } from "./broker-ui";
 
 import { api, type BrokerOffer } from "@/lib/api";
-import { platformFeeSummary } from "@/lib/brokers";
+import { isOfferLive, platformFeeSummary } from "@/lib/brokers";
 
 /** Detail-page ordering for the rail nav — mirrors the compare page's
  *  "recommended" sort: top picks first, then editorial rank, then name. */
@@ -97,7 +97,7 @@ export function BrokerNavAside({
                       {/* The live sign-up offer is the click-worthy hook here —
                           fees live on the detail page. Rows without an offer
                           stay single-line so the promos stand out. */}
-                      {b.offer_headline && (
+                      {isOfferLive(b) && (
                         <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold leading-4 text-[#5a4128] dark:text-[#e7d4bf]">
                           <GiftIcon className="h-3 w-3 shrink-0" />
                           <span className="truncate">{b.offer_headline}</span>
@@ -156,6 +156,11 @@ export function BrokerAside({
   }, [provided]);
 
   const brokers = provided ?? fetched;
+  // `null` is "still loading", `[]` is "loaded and empty" — only the first gets
+  // a skeleton. Without one the rail is a blank 320px column on first paint
+  // while the page beside it is already drawn, which reads as a broken layout
+  // rather than a loading one.
+  const loading = brokers === null;
   const picks = (brokers ?? []).filter((b) => b.recommended);
   // Everything the picks don't already cover — "all OTHER brokers", so the
   // same two platforms don't appear twice in one rail.
@@ -170,90 +175,135 @@ export function BrokerAside({
         <div className="absolute inset-x-0 top-0 h-4 pointer-events-none z-[1] bg-gradient-to-b from-[#faf7f2] dark:from-surface to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-4 pointer-events-none z-[1] bg-gradient-to-t from-[#faf7f2] dark:from-surface to-transparent" />
         <div className="h-full overflow-y-auto overscroll-contain">
-          <div className="px-4 py-4 space-y-4">
-            {picks.map((b) => (
-              <div
-                key={b.slug}
-                className="rounded-xl border border-[#e8e0d5] dark:border-separator bg-background/40 p-3"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <BrokerLogo broker={b} size={42} />
-                    <a
-                      className="truncate font-semibold text-foreground hover:underline"
-                      href={`/brokers/${b.slug}`}
-                    >
-                      {b.name}
-                    </a>
-                  </span>
-                  {b.badges.includes("top_pick") && (
-                    <BadgeChip badge="top_pick" />
-                  )}
-                </div>
-                <p className="mt-2 text-xs text-foreground/55">{b.tagline}</p>
-                {b.offer_headline && (
-                  <OfferBadge className="mt-2.5" text={b.offer_headline} />
-                )}
-                <p className="mt-2.5 text-[11px] text-foreground/50">
-                  Platform fee: {platformFeeSummary(b.fees)}
-                </p>
-                <div className="mt-3">
-                  <BrokerVisitLink
-                    broker={b}
-                    className="w-full"
-                    placement={placement}
-                    size="lg"
-                    variant={ctaVariant}
-                  />
-                </div>
-              </div>
-            ))}
-
-            {showAll && rest.length > 0 && (
-              <nav aria-label="All trading platforms">
-                <p className="px-1 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/45">
-                  All platforms
-                </p>
-                <ul className="space-y-0.5">
-                  {rest.map((b) => (
-                    <li key={b.slug}>
+          {loading ? (
+            <RailSkeleton showAll={showAll} />
+          ) : (
+            <div className="px-4 py-4 space-y-4">
+              {picks.map((b) => (
+                <div
+                  key={b.slug}
+                  className="rounded-xl border border-[#e8e0d5] dark:border-separator bg-background/40 p-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <BrokerLogo broker={b} size={42} />
                       <a
-                        className="flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+                        className="truncate font-semibold text-foreground hover:underline"
                         href={`/brokers/${b.slug}`}
                       >
-                        <BrokerLogo broker={b} size={28} />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-medium text-foreground/75">
-                            {b.name}
-                          </span>
-                          {/* The live sign-up offer is the click-worthy hook —
+                        {b.name}
+                      </a>
+                    </span>
+                    {b.badges.includes("top_pick") && (
+                      <BadgeChip badge="top_pick" />
+                    )}
+                  </div>
+                  <p className="mt-2 text-xs text-foreground/55">{b.tagline}</p>
+                  {isOfferLive(b) && (
+                    <OfferBadge className="mt-2.5" text={b.offer_headline!} />
+                  )}
+                  <p className="mt-2.5 text-[11px] text-foreground/50">
+                    Platform fee: {platformFeeSummary(b.fees)}
+                  </p>
+                  <div className="mt-3">
+                    <BrokerVisitLink
+                      broker={b}
+                      className="w-full"
+                      placement={placement}
+                      size="lg"
+                      variant={ctaVariant}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {showAll && rest.length > 0 && (
+                <nav aria-label="All trading platforms">
+                  <p className="px-1 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/45">
+                    All platforms
+                  </p>
+                  <ul className="space-y-0.5">
+                    {rest.map((b) => (
+                      <li key={b.slug}>
+                        <a
+                          className="flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+                          href={`/brokers/${b.slug}`}
+                        >
+                          <BrokerLogo broker={b} size={28} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13px] font-medium text-foreground/75">
+                              {b.name}
+                            </span>
+                            {/* The live sign-up offer is the click-worthy hook —
                               fees live on the review. Rows without one stay
                               single-line so the promos stand out. */}
-                          {b.offer_headline && (
-                            <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold leading-4 text-[#5a4128] dark:text-[#e7d4bf]">
-                              <GiftIcon className="h-3 w-3 shrink-0" />
-                              <span className="truncate">
-                                {b.offer_headline}
+                            {b.offer_headline && (
+                              <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold leading-4 text-[#5a4128] dark:text-[#e7d4bf]">
+                                <GiftIcon className="h-3 w-3 shrink-0" />
+                                <span className="truncate">
+                                  {b.offer_headline}
+                                </span>
                               </span>
-                            </span>
-                          )}
-                        </span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            )}
+                            )}
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              )}
 
-            <BrokerDisclosure />
-            <p className="text-[11px] leading-4 text-foreground/45">
-              Ranked editorially on fees, features and FSCS protection — not
-              commission. Capital at risk; always confirm current terms on the
-              provider’s site.
-            </p>
-          </div>
+              <BrokerDisclosure />
+              <p className="text-[11px] leading-4 text-foreground/45">
+                Ranked editorially on fees, features and FSCS protection — not
+                commission. Capital at risk; always confirm current terms on the
+                provider’s site.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </aside>
+  );
+}
+
+/** The rail's loading state, at the real geometry: two pick cards and — when
+ *  the rail is showing the full directory — a run of platform rows. One
+ *  animation on the wrapper rather than per-bar, so it reads as one surface
+ *  filling in instead of a dozen independently-blinking blocks. */
+function RailSkeleton({ showAll }: { showAll: boolean }) {
+  return (
+    <div aria-busy="true" className="animate-pulse px-4 py-4 space-y-4">
+      <span className="sr-only">Loading trading platforms</span>
+      {Array.from({ length: 2 }, (_, i) => (
+        <div
+          key={i}
+          className="rounded-xl border border-[#e8e0d5] bg-background/40 p-3 dark:border-separator"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="h-[42px] w-[42px] shrink-0 rounded-lg bg-foreground/[0.07]" />
+            <div className="h-3.5 w-28 rounded bg-foreground/[0.07]" />
+          </div>
+          <div className="mt-3 h-2.5 w-4/5 rounded bg-foreground/[0.07]" />
+          <div className="mt-3 h-6 w-3/5 rounded-full bg-foreground/[0.07]" />
+          <div className="mt-3 h-2.5 w-2/3 rounded bg-foreground/[0.07]" />
+          <div className="mt-3 h-10 w-full rounded-lg bg-foreground/[0.07]" />
+        </div>
+      ))}
+
+      {showAll && (
+        <div>
+          <div className="mx-1 mb-2 mt-1 h-2 w-24 rounded bg-foreground/[0.07]" />
+          <div className="space-y-0.5">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="flex items-center gap-2.5 px-2 py-2">
+                <div className="h-7 w-7 shrink-0 rounded-lg bg-foreground/[0.07]" />
+                <div className="h-3 w-2/3 rounded bg-foreground/[0.07]" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -3,6 +3,7 @@ import type { CompanyIndexEntry } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { BrokerAside } from "@/components/brokers/broker-aside";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
@@ -75,7 +76,20 @@ export default function CompaniesPage() {
   const noun = market === "UK" ? "director dealings" : "insider trading";
 
   return (
-    <DefaultLayout>
+    // The rail, and the `drawerRight` gutter that reserves room for it, are
+    // what /company/:slug and /brokers/:slug use. Without them this index sat
+    // at the full 1280px column while every page it links to sat 320px
+    // narrower, so clicking a company shunted the whole page sideways. Same
+    // furniture, same measure, no jump — and the index stops being the one
+    // page in the section with no broker surface on it at all.
+    <DefaultLayout drawerRight>
+      <BrokerAside
+        showAll
+        ctaVariant="grey"
+        heading="Start investing"
+        placement="companies_rail"
+      />
+
       <div className="w-full pb-10">
         <h1 className="text-[26px] font-semibold leading-[1.15] tracking-tight text-foreground md:text-[32px]">
           Every {market} company with {noun}
@@ -108,7 +122,11 @@ export default function CompaniesPage() {
             >
               {letter}
             </h2>
-            <ul className="mt-1 sm:columns-2 sm:gap-x-12 lg:columns-3 xl:columns-4">
+            {/* One breakpoint later than it looks like it should be at every
+                step: the rail takes 320px off the content column, so the old
+                lg:3 / xl:4 put four ~220px columns opposite it and wrapped
+                half the company names. */}
+            <ul className="mt-1 sm:columns-2 sm:gap-x-12 xl:columns-3 2xl:columns-4">
               {list.map((c) => (
                 <li key={c.key} className="break-inside-avoid py-2.5">
                   <Link

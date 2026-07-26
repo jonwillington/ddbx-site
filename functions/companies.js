@@ -10,6 +10,8 @@
 // sitemap-only orphans — discoverable in principle, weakly signalled in
 // practice. This is the hub in the hub-and-spoke.
 
+import { brandTitle } from "../shared/seo.js";
+
 const API_BASE = "https://api.ddbx.uk/api";
 
 const MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
@@ -118,7 +120,9 @@ export async function onRequestGet(context) {
   if (!companies) return shell;
 
   const canonical = `https://${host}/companies`;
-  const title = `Every ${market} company with ${FILING_NOUN[market]} — ${companies.length} issuers · ddbx`;
+  const title = brandTitle(
+    `Every ${market} company with ${FILING_NOUN[market]} — ${companies.length} issuers`,
+  );
   const description = `Browse ${companies.length} ${market} companies whose ${market === "UK" ? "directors" : "insiders"} have bought shares, with the filings, ratings and company stats for each.`;
 
   return new HTMLRewriter()

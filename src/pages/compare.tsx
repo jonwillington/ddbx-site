@@ -19,7 +19,12 @@ import {
 } from "@/components/brokers/broker-ui";
 import DefaultLayout from "@/layouts/default";
 import { api, type BrokerOffer } from "@/lib/api";
-import { fmtMoney, fmtPct, platformFeeSummary } from "@/lib/brokers";
+import {
+  fmtMoney,
+  fmtPct,
+  isOfferLive,
+  platformFeeSummary,
+} from "@/lib/brokers";
 
 type SortKey = "recommended" | "name" | "cost";
 
@@ -70,7 +75,7 @@ function matchesFilters(b: BrokerOffer, f: Filters): boolean {
   if (f.lisa && b.accounts.lisa !== true) return false;
   if (f.commissionFree && b.fees.trade_commission_uk_gbp !== 0) return false;
   if (f.fractional && b.assets.fractional_shares !== true) return false;
-  if (f.hasOffer && !b.offer_headline) return false;
+  if (f.hasOffer && !isOfferLive(b)) return false;
 
   return true;
 }
@@ -505,8 +510,8 @@ function TopPickCard({ broker: b }: { broker: BrokerOffer }) {
         </div>
         {b.badges.includes("top_pick") && <BadgeChip badge="top_pick" />}
       </div>
-      {b.offer_headline && (
-        <OfferBadge className="mt-3" text={b.offer_headline} />
+      {isOfferLive(b) && (
+        <OfferBadge className="mt-3" text={b.offer_headline!} />
       )}
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-foreground/60">
         <span>Platform fee: {platformFeeSummary(b.fees)}</span>

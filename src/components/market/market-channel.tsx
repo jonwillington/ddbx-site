@@ -11,15 +11,8 @@ import {
 
 import { ChannelPerformance } from "./channel-performance";
 
+import { NewsSourceLogo } from "@/components/news-source-logo";
 import { Skeleton } from "@/components/skeleton";
-
-function hostnameFromUrl(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return "";
-  }
-}
 
 type TabId = "performance" | "news";
 
@@ -316,12 +309,7 @@ function NewsRow({
         rel="noopener noreferrer"
         target="_blank"
       >
-        <img
-          alt=""
-          className="w-3.5 h-3.5 mt-0.5 rounded-sm shrink-0"
-          loading="lazy"
-          src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostnameFromUrl(item.url))}&sz=32`}
-        />
+        <NewsSourceLogo className="mt-0.5" url={item.url} />
         <span className="min-w-0">
           <span className="flex items-center gap-1.5 text-[10px] font-mono leading-none text-[#5a4128]/90 dark:text-[#ad9479] mb-1">
             {fresh && (

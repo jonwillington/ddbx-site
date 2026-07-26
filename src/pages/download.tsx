@@ -35,7 +35,7 @@ import {
   DownloadHero,
   StoreUnavailable,
 } from "@/components/download/download-hero";
-import { PricingCard } from "@/components/download/pricing-card";
+import { IncludedList, PricingCard } from "@/components/download/pricing-card";
 import { QrInstall } from "@/components/download/qr-install";
 import { CountUp, Reveal } from "@/components/download/reveal";
 import { SectionHeader } from "@/components/download/section-header";
@@ -221,18 +221,13 @@ function feedStats<T>(
 interface MarketData {
   winners: Winner[];
   stats: Stat[];
-  /** Filings disclosed today — feeds the hero's live proof line. */
-  todayCount: number;
 }
-
-const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
 
 async function loadUk(want: number): Promise<MarketData> {
   const dealings = await api.dealingsWindow(
     isoDaysAgo(STATS_WINDOW_DAYS),
     1000,
   );
-  const today = TODAY_ISO();
 
   return {
     winners: pickWinners<Dealing>(
@@ -273,7 +268,6 @@ async function loadUk(want: number): Promise<MarketData> {
         signal: "flagged as worth a second look",
       },
     ),
-    todayCount: dealings.filter((d) => d.disclosed_date === today).length,
   };
 }
 
@@ -300,7 +294,6 @@ async function loadUs(want: number): Promise<MarketData> {
     view: "all",
     since: isoDaysAgo(STATS_WINDOW_DAYS),
   });
-  const today = TODAY_ISO();
 
   return {
     winners: pickWinners<UsDealing>(
@@ -340,7 +333,6 @@ async function loadUs(want: number): Promise<MarketData> {
         signal: "flagged as worth a second look",
       },
     ),
-    todayCount: dealings.filter((d) => d.disclosed_date === today).length,
   };
 }
 
@@ -359,9 +351,12 @@ async function loadUs(want: number): Promise<MarketData> {
  *  the claim the card is making, drawn rather than asserted.
  *
  *  Pure SVG, no axes — it's a feeling, not a dashboard. `preserveAspectRatio`
- *  is off, so the viewBox stretches; anything that must not distort (the marker
- *  dot, the strokes) uses `vectorEffect` or is drawn in the stretched space
- *  deliberately (see the ellipse rx/ry ratio). */
+ *  is off, so the viewBox stretches horizontally by however much the card is
+ *  wider than 320px. Strokes escape that with `vectorEffect`; the buy marker
+ *  can't (SVG has no non-scaling radius), so it's an HTML dot positioned in
+ *  percentages over the chart instead — round at every card width, where the
+ *  ellipse it replaced was only round if the card happened to be exactly as
+ *  many times wider than the viewBox as the viewBox is wide relative to tall. */
 function TrendChart({
   bars,
   buyIndex = 0,
@@ -416,80 +411,81 @@ function TrendChart({
   const color = up ? "#22a06b" : "#d1495b";
 
   return (
-    <svg
-      aria-hidden="true"
-      className="block w-full"
-      height={h}
-      preserveAspectRatio="none"
-      viewBox={`0 0 ${w} ${h}`}
-      width="100%"
-    >
-      <defs>
-        <linearGradient id={`tg-${id}`} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.22} />
-          <stop offset="100%" stopColor={color} stopOpacity={0} />
-        </linearGradient>
-      </defs>
+    <div className="relative">
+      <svg
+        aria-hidden="true"
+        className="block w-full"
+        height={h}
+        preserveAspectRatio="none"
+        viewBox={`0 0 ${w} ${h}`}
+        width="100%"
+      >
+        <defs>
+          <linearGradient id={`tg-${id}`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.22} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
 
-      <path d={postArea} fill={`url(#tg-${id})`} />
+        <path d={postArea} fill={`url(#tg-${id})`} />
 
-      {/* Before the buy — grey, unfilled, quiet. */}
-      {pre ? (
+        {/* Before the buy — grey, unfilled, quiet. */}
+        {pre ? (
+          <path
+            className="text-[#1a140d]/25 dark:text-white/25"
+            d={pre}
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.75}
+            vectorEffect="non-scaling-stroke"
+          />
+        ) : null}
+
+        {/* The buy itself, part one: a hairline dropped to the baseline. */}
+        {pre ? (
+          <line
+            className="text-[#1a140d]/20 dark:text-white/20"
+            stroke="currentColor"
+            strokeDasharray="3 3"
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+            x1={buy[0]}
+            x2={buy[0]}
+            y1={buy[1]}
+            y2={h}
+          />
+        ) : null}
+
+        {/* After the buy — the pitch. */}
         <path
-          className="text-[#1a140d]/25 dark:text-white/25"
-          d={pre}
+          d={post}
           fill="none"
-          stroke="currentColor"
+          stroke={color}
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth={1.75}
-          vectorEffect="non-scaling-stroke"
-        />
-      ) : null}
-
-      {/* The buy itself: a hairline dropped to the baseline plus a ringed dot.
-          The viewBox is stretched horizontally at render, so a circle would
-          render as a wide ellipse — rx is pre-divided by the ~3.3 aspect
-          distortion (320/96) to come back out round on screen. */}
-      {pre ? (
-        <line
-          className="text-[#1a140d]/20 dark:text-white/20"
-          stroke="currentColor"
-          strokeDasharray="3 3"
-          strokeWidth={1}
-          vectorEffect="non-scaling-stroke"
-          x1={buy[0]}
-          x2={buy[0]}
-          y1={buy[1]}
-          y2={h}
-        />
-      ) : null}
-
-      {/* After the buy — the pitch. */}
-      <path
-        d={post}
-        fill="none"
-        stroke={color}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        vectorEffect="non-scaling-stroke"
-      />
-
-      {pre ? (
-        <ellipse
-          className="text-white dark:text-[#1a140d]"
-          cx={buy[0]}
-          cy={buy[1]}
-          fill="currentColor"
-          rx={3.4 * (w / h)}
-          ry={3.4}
-          stroke={color}
           strokeWidth={2}
           vectorEffect="non-scaling-stroke"
         />
+      </svg>
+
+      {/* Part two: the ringed dot on the buy point. HTML rather than an SVG
+          circle, positioned in percentages of the same viewBox coordinates the
+          path uses — the horizontal stretch moves it to the right place and
+          leaves its size alone, so it's round on a 260px card and a 420px one. */}
+      {pre ? (
+        <span
+          aria-hidden
+          className="absolute h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white dark:bg-[#1a140d]"
+          style={{
+            left: `${(buy[0] / w) * 100}%`,
+            top: `${(buy[1] / h) * 100}%`,
+            borderColor: color,
+          }}
+        />
       ) : null}
-    </svg>
+    </div>
   );
 }
 
@@ -652,7 +648,7 @@ const CONFIG: Record<MarketId, LandingConfig> = {
         timestamp: "07:01",
         kicker: "The alert",
         title: "It lands the moment the filing does.",
-        body: "A director discloses a purchase and your phone buzzes â usually within minutes of the RNS, not the next morning. No inbox to check, no feed to trawl.",
+        body: "A director discloses a purchase and your phone buzzes — usually within minutes of the RNS, not the next morning. No inbox to check, no feed to trawl.",
       },
       {
         slot: "analysis",
@@ -666,7 +662,7 @@ const CONFIG: Record<MarketId, LandingConfig> = {
         timestamp: "07:03",
         kicker: "Both sides",
         title: "The case against, next to the case for.",
-        body: "Every rated buy is argued both ways â what makes it interesting, and what should give you pause â each point expandable down to the filing it came from. Nothing here is trying to talk you into a trade.",
+        body: "Every rated buy is argued both ways — what makes it interesting, and what should give you pause — each point expandable down to the filing it came from. Nothing here is trying to talk you into a trade.",
       },
       {
         slot: "cluster",
@@ -981,7 +977,7 @@ export default function DownloadPage({
 
         if (live) setData({ ...loaded, winners });
       } catch {
-        if (live) setData({ winners: [], stats: [], todayCount: 0 });
+        if (live) setData({ winners: [], stats: [] });
       }
     })();
 
@@ -999,7 +995,6 @@ export default function DownloadPage({
         platform={platform}
         storeHref={storeHref}
         sub={cfg.heroSub}
-        todayCount={data?.todayCount ?? 0}
         trialDays={pricing.trialDays}
         unavailableSlot={
           <StoreUnavailable
@@ -1084,8 +1079,11 @@ export default function DownloadPage({
         </div>
       </section>
 
-      {/* ---- Price + objections ---- */}
-      <section className="mx-auto max-w-5xl px-4 py-14 md:py-20">
+      {/* ---- Price + objections ----
+           Two columns from lg: the card on the left, what it buys on the
+           right. Stacked, the card was a narrow ribbon down the left of an
+           otherwise empty screen with a nine-item list trailing off it. */}
+      <section className="mx-auto max-w-6xl px-4 py-14 md:py-20">
         <SectionHeader
           index={3}
           kicker="The price"
@@ -1094,15 +1092,14 @@ export default function DownloadPage({
           total={3}
         />
 
-        <div className="mt-10">
-          <PricingCard
-            benefits={cfg.benefits}
-            pricing={pricing}
-            storeLabel={STORE_LABEL[platform]}
-          />
+        <div className="mt-10 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+          <PricingCard pricing={pricing} storeLabel={STORE_LABEL[platform]} />
+          <IncludedList benefits={cfg.benefits} />
         </div>
 
-        <div className="mt-16">
+        {/* Answers, not a wall — kept to a readable measure rather than run out
+            to the full two-column width above it. */}
+        <div className="mt-16 max-w-3xl">
           <DownloadFaq items={faqItems(cfg, platform, otherPath)} />
         </div>
       </section>
@@ -1122,7 +1119,10 @@ export default function DownloadPage({
           </Reveal>
 
           <Reveal delay={120}>
-            <div className="mt-10 flex flex-col items-center justify-center gap-8 sm:flex-row sm:items-start">
+            {/* One centred column, not a row. Side by side the badge and the
+                QR had no shared baseline and no matching height, so the pair
+                sat visibly off-centre under a centred headline. */}
+            <div className="mt-10 flex flex-col items-center justify-center gap-8">
               {available ? (
                 <div className="flex flex-col items-center gap-3">
                   <a

@@ -126,17 +126,63 @@ function bootstrapClickTracking(): void {
       const eventLabel = inferEventLabel(target);
       const destination =
         target instanceof HTMLAnchorElement ? target.href : undefined;
+      const pagePath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
       window.gtag?.("event", eventName, {
         event_category: "engagement",
         event_label: eventLabel,
-        page_path: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+        page_path: pagePath,
         click_type: target.tagName.toLowerCase(),
         destination,
       });
+
+      // …plus one shared event for the thing the whole site is for.
+      //
+      // Store click-throughs are spread across ~15 named events —
+      // cta_download_lp, cta_nav_download_app, cta_floating_trial,
+      // cta_footer_download, cta_company_download, cta_unlock_download, the
+      // per-surface unlock CTAs, and so on. Each is genuinely useful for
+      // attribution, and together they make the one number that matters
+      // ("how many people did we send to a store listing?") impossible to
+      // read without enumerating the list by hand — and any CTA added later
+      // is silently missing from every report built that way.
+      //
+      // So the aggregate is derived from where the click actually WENT rather
+      // than from what it was called. Nothing to remember to tag, and it
+      // stays correct for CTAs that don't exist yet. The specific event still
+      // fires alongside it; this is in addition, never instead.
+      if (destination && isStoreUrl(destination)) {
+        window.gtag?.("event", "store_click", {
+          event_category: "conversion",
+          event_label: eventLabel,
+          page_path: pagePath,
+          // Which CTA it came from, so the aggregate can still be split.
+          source_event: eventName,
+          store: destination.includes("play.google.com")
+            ? "google_play"
+            : "app_store",
+          destination,
+        });
+      }
     },
     true,
   );
+}
+
+/** An App Store or Google Play listing — the two destinations that count as
+ *  "we sent someone to install the app". */
+function isStoreUrl(href: string): boolean {
+  try {
+    const host = new URL(href).hostname.toLowerCase();
+
+    return (
+      host === "apps.apple.com" ||
+      host === "itunes.apple.com" ||
+      host === "play.google.com"
+    );
+  } catch {
+    return false;
+  }
 }
 
 function inferEventName(el: HTMLElement): string {

@@ -22,6 +22,9 @@ export interface RouteSeo {
   marketId: string;
 }
 
+/** `ddbx · <rest>` — the one title shape the whole site uses. */
+export declare function brandTitle(rest: string): string;
+
 export declare function isProductionHost(hostname?: string): boolean;
 export declare function marketIdForPath(
   pathname: string,

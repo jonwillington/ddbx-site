@@ -15,6 +15,24 @@
 // the canonical form for its page, or the sitemap and the rel=canonical tag
 // will disagree and Google will trust neither.
 
+import {
+  CATEGORIES,
+  categoryMeetsBar,
+  categoryPath,
+} from "../shared/broker-categories.js";
+import {
+  brokersForComparison,
+  comparisonPath,
+  COMPARISONS,
+} from "../shared/broker-comparisons.js";
+import { entriesForHost, learnPath } from "../shared/glossary.js";
+import { reportPath } from "../shared/months.js";
+import {
+  sectorMeetsBar,
+  sectorPath,
+  sectorRollup,
+  windowStart,
+} from "../shared/sectors.js";
 import { HOST_DEFAULT_MARKET } from "../shared/seo.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
@@ -25,8 +43,26 @@ const COMMON_ROUTES = ["/download", "/download/ios", "/download/android"];
 // Market dashboards + performance pages, by the host that owns them. Hidden
 // markets (/djt) and utility routes (/account-deletion) are intentionally out.
 const ROUTES_BY_HOST = {
-  "ddbx.uk": ["/", "/portfolio", "/brokers", "/companies"],
-  "ddbx.us": ["/", "/congress", "/performance", "/companies"],
+  "ddbx.uk": [
+    "/",
+    "/portfolio",
+    "/brokers",
+    "/companies",
+    "/reports",
+    "/sectors",
+    "/biggest-buys",
+    "/learn",
+  ],
+  "ddbx.us": [
+    "/",
+    "/congress",
+    "/performance",
+    "/companies",
+    "/reports",
+    "/sectors",
+    "/biggest-buys",
+    "/learn",
+  ],
   "ddbx.eu": ["/", "/nl", "/performance", "/nl/performance"],
 };
 
@@ -55,11 +91,29 @@ async function brokerPaths() {
 
     if (!res.ok) return [];
     const body = await res.json();
+    const brokers = body.brokers ?? [];
 
-    return (body.brokers ?? [])
+    const reviews = brokers
       .map((b) => b.slug)
       .filter((slug) => typeof slug === "string" && slug.length > 0)
       .map((slug) => `/brokers/${slug}`);
+
+    // A category is listed only if it can field MIN_BROKERS — the same bar the
+    // page and its pre-render apply. Badges are edited in ddbx-data, so a
+    // category can fall below the bar without a site deploy; deriving the list
+    // from live data rather than hardcoding it means the sitemap stops
+    // advertising it on the next request instead of the next release.
+    const categories = CATEGORIES.filter((c) =>
+      categoryMeetsBar(c, brokers),
+    ).map((c) => categoryPath(c.slug));
+
+    // Likewise a head-to-head needs both platforms present — half a comparison
+    // is a verdict about a platform whose figures aren't on the page.
+    const comparisons = COMPARISONS.filter((c) =>
+      brokersForComparison(c, brokers),
+    ).map((c) => comparisonPath(c.slug));
+
+    return [...reviews, ...categories, ...comparisons];
   } catch {
     return [];
   }
@@ -67,6 +121,79 @@ async function brokerPaths() {
 
 /** Market whose company pages belong on each host. */
 const COMPANY_MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
+
+/** The monthly report archive for a host.
+ *
+ *  `created_at` is a genuine lastmod: a report is generated once and then
+ *  doesn't change, so the date it was written is exactly when the page last
+ *  changed. Same failure posture as the other API-backed sections — losing
+ *  these costs URLs, not the document.
+ *
+ *  Only the `/reports/<slug>` form is listed. The older `/report/<slug>`
+ *  deep-link still resolves but canonicalises here (see canonicalUrlFor), and
+ *  a sitemap that advertises a non-canonical URL argues with its own
+ *  rel=canonical. */
+async function reportEntries(host) {
+  const market = COMPANY_MARKET_BY_HOST[host];
+
+  if (!market) return [];
+  try {
+    const res = await fetch(
+      `${API_BASE}/monthly-summaries${market === "US" ? "?market=US" : ""}`,
+      {
+        headers: { accept: "application/json" },
+        cf: {
+          cacheEverything: true,
+          cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+        },
+      },
+    );
+
+    if (!res.ok) return [];
+    const body = await res.json();
+
+    return (body.summaries ?? [])
+      .filter((s) => s.month)
+      .map((s) => ({
+        path: reportPath(s.month),
+        lastmod: (s.created_at ?? "").slice(0, 10) || null,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+/** Sector hubs that clear the activity bar for a host.
+ *
+ *  Derived from live data rather than hardcoded to the 11 ICB values: a sector
+ *  with almost no disclosed activity is a stub, and which sectors are quiet
+ *  changes month to month without a deploy. Same threshold the page and its
+ *  pre-render apply, so a sector is never advertised here and withheld there. */
+async function sectorEntries(host) {
+  const market = COMPANY_MARKET_BY_HOST[host];
+
+  if (!market) return [];
+  try {
+    const feed = market === "US" ? "us-dealings" : "dealings";
+    const since = windowStart(new Date());
+    const res = await fetch(`${API_BASE}/${feed}?since=${since}&limit=1000`, {
+      headers: { accept: "application/json" },
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
+    });
+
+    if (!res.ok) return [];
+    const body = await res.json();
+
+    return sectorRollup(body.dealings ?? [])
+      .filter(sectorMeetsBar)
+      .map((row) => sectorPath(row.sector.slug));
+  } catch {
+    return [];
+  }
+}
 
 /** The content bar for company pages.
  *
@@ -154,6 +281,11 @@ export async function onRequestGet(context) {
 
   if (host === "ddbx.uk") paths.push(...(await brokerPaths()));
   paths.push(...(await companyEntries(host)));
+  paths.push(...(await reportEntries(host)));
+  paths.push(...(await sectorEntries(host)));
+  // Glossary entries appear only in their owning host's sitemap — the whole
+  // point of the ownership rule is that no entry exists at two URLs.
+  paths.push(...entriesForHost(host).map((e) => learnPath(e.slug)));
 
   // Canonical URLs are always apex + https, never the www form the request may
   // have arrived on.

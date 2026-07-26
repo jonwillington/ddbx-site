@@ -27,6 +27,7 @@ import {
   fmtMoneyRound,
   fmtPct,
   fmtVerifiedDate,
+  isOfferLive,
   platformFeeSummary,
   sourceLabel,
 } from "@/lib/brokers";
@@ -241,7 +242,7 @@ function BrokerReview({
 
               <PlatformSection broker={b} />
 
-              {b.offer_headline && <OfferSection broker={b} />}
+              {isOfferLive(b) && <OfferSection broker={b} />}
 
               {faqs.length > 0 && (
                 <Section id="faq" title="Questions & answers">
@@ -372,8 +373,8 @@ function StickyBuyPanel({
             </div>
           </div>
         </div>
-        {b.offer_headline && (
-          <OfferBadge className="mt-0" text={b.offer_headline} />
+        {isOfferLive(b) && (
+          <OfferBadge className="mt-0" text={b.offer_headline!} />
         )}
         <BrokerVisitLink
           broker={b}
