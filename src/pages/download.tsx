@@ -38,8 +38,10 @@ import {
 import { PricingCard } from "@/components/download/pricing-card";
 import { QrInstall } from "@/components/download/qr-install";
 import { CountUp, Reveal } from "@/components/download/reveal";
+import { SectionHeader } from "@/components/download/section-header";
 import { StatBand } from "@/components/download/stat-band";
 import { StoreButtons } from "@/components/store-buttons";
+import { FULL_BLEED } from "@/components/full-bleed";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import { STORE_LABEL } from "@/lib/app-screenshots";
@@ -115,6 +117,10 @@ interface Winner {
   /** Trade date — the bars fetch anchors the trend line here. */
   tradeDate: string;
   bars?: { date: string; close: number }[];
+  /** Index into `bars` of the first close on/after the trade date — the moment
+   *  the director bought. Everything left of it is the run-up they bought into
+   *  (drawn grey); everything right is the part that's actually the pitch. */
+  buyIndex?: number;
 }
 
 /** ISO date `n` days before today (UTC date part). */
@@ -342,14 +348,27 @@ async function loadUs(want: number): Promise<MarketData> {
 // Trend chart — the "going up" line
 // ---------------------------------------------------------------------------
 
-/** Area-filled trend line, rebased to 0% at the first bar so it reads as the
- *  share-price journey since the buy. Green when it ends up. Pure SVG, no axes
- *  — it's a feeling, not a dashboard. */
+/** Area-filled trend line, rebased to 0% at the CLOSE ON THE DAY OF THE BUY, so
+ *  the zero line is literally the price the director paid.
+ *
+ *  The chart is deliberately two-toned. A line that simply starts at the buy
+ *  can't show that the buy was a decision — it looks like the stock was born
+ *  the day we started drawing it. So the run-up *into* the purchase is drawn as
+ *  a flat grey lead-in, the buy is marked, and only the part that happened
+ *  after the director committed their own money carries colour and fill. That's
+ *  the claim the card is making, drawn rather than asserted.
+ *
+ *  Pure SVG, no axes — it's a feeling, not a dashboard. `preserveAspectRatio`
+ *  is off, so the viewBox stretches; anything that must not distort (the marker
+ *  dot, the strokes) uses `vectorEffect` or is drawn in the stretched space
+ *  deliberately (see the ellipse rx/ry ratio). */
 function TrendChart({
   bars,
+  buyIndex = 0,
   id,
 }: {
   bars: { date: string; close: number }[];
+  buyIndex?: number;
   id: string;
 }) {
   const layout = useMemo(() => {
@@ -357,7 +376,9 @@ function TrendChart({
     const w = 320;
     const h = 96;
     const pad = 5;
-    const base = bars[0].close;
+    // Clamp: a corrupt index must never produce a NaN path.
+    const bi = Math.min(Math.max(buyIndex, 0), bars.length - 1);
+    const base = bars[bi].close;
 
     if (!base) return null;
     const pct = bars.map((b) => ((b.close - base) / base) * 100);
@@ -370,20 +391,28 @@ function TrendChart({
 
       return [x, y] as const;
     });
-    const line = pts
-      .map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`)
-      .join(" ");
-    const area = `${line} L${pts[pts.length - 1][0].toFixed(1)},${h} L${pts[0][0].toFixed(1)},${h} Z`;
+    const path = (from: number, to: number) =>
+      pts
+        .slice(from, to + 1)
+        .map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`)
+        .join(" ");
+
+    // The lead-in stops ON the buy point so the two strokes meet with no gap.
+    const pre = bi > 0 ? path(0, bi) : null;
+    const post = path(bi, pts.length - 1);
+    // Fill only under the post-buy leg — the grey lead-in is context, and
+    // filling it would give the run-up the same visual weight as the result.
+    const postArea = `${post} L${pts[pts.length - 1][0].toFixed(1)},${h} L${pts[bi][0].toFixed(1)},${h} Z`;
     const up = pct[pct.length - 1] >= 0;
 
-    return { w, h, line, area, up };
-  }, [bars]);
+    return { w, h, pre, post, postArea, up, buy: pts[bi] };
+  }, [bars, buyIndex]);
 
   if (!layout) {
     return <div aria-hidden className="h-[96px] w-full" />;
   }
 
-  const { w, h, line, area, up } = layout;
+  const { w, h, pre, post, postArea, up, buy } = layout;
   const color = up ? "#22a06b" : "#d1495b";
 
   return (
@@ -401,9 +430,44 @@ function TrendChart({
           <stop offset="100%" stopColor={color} stopOpacity={0} />
         </linearGradient>
       </defs>
-      <path d={area} fill={`url(#tg-${id})`} />
+
+      <path d={postArea} fill={`url(#tg-${id})`} />
+
+      {/* Before the buy — grey, unfilled, quiet. */}
+      {pre ? (
+        <path
+          className="text-[#1a140d]/25 dark:text-white/25"
+          d={pre}
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.75}
+          vectorEffect="non-scaling-stroke"
+        />
+      ) : null}
+
+      {/* The buy itself: a hairline dropped to the baseline plus a ringed dot.
+          The viewBox is stretched horizontally at render, so a circle would
+          render as a wide ellipse — rx is pre-divided by the ~3.3 aspect
+          distortion (320/96) to come back out round on screen. */}
+      {pre ? (
+        <line
+          className="text-[#1a140d]/20 dark:text-white/20"
+          stroke="currentColor"
+          strokeDasharray="3 3"
+          strokeWidth={1}
+          vectorEffect="non-scaling-stroke"
+          x1={buy[0]}
+          x2={buy[0]}
+          y1={buy[1]}
+          y2={h}
+        />
+      ) : null}
+
+      {/* After the buy — the pitch. */}
       <path
-        d={line}
+        d={post}
         fill="none"
         stroke={color}
         strokeLinecap="round"
@@ -411,6 +475,20 @@ function TrendChart({
         strokeWidth={2}
         vectorEffect="non-scaling-stroke"
       />
+
+      {pre ? (
+        <ellipse
+          className="text-white dark:text-[#1a140d]"
+          cx={buy[0]}
+          cy={buy[1]}
+          fill="currentColor"
+          rx={3.4 * (w / h)}
+          ry={3.4}
+          stroke={color}
+          strokeWidth={2}
+          vectorEffect="non-scaling-stroke"
+        />
+      ) : null}
     </svg>
   );
 }
@@ -459,10 +537,31 @@ function WinnerCard({
 
         <div className="my-4">
           {winner.bars ? (
-            <TrendChart bars={winner.bars} id={winner.id} />
+            <TrendChart
+              bars={winner.bars}
+              buyIndex={winner.buyIndex}
+              id={winner.id}
+            />
           ) : (
             <div aria-hidden className="h-[96px] w-full" />
           )}
+          {/* Reads the two-tone line for anyone who doesn't infer it. Only
+              shown when there IS a grey leg to explain. */}
+          {winner.bars && (winner.buyIndex ?? 0) > 0 ? (
+            <p className="mt-2 flex items-center gap-3 text-[10px] uppercase tracking-wide text-foreground/40">
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden className="h-px w-3.5 bg-foreground/30" />
+                Before
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="h-[2px] w-3.5 rounded-full bg-[#22a06b] dark:bg-[#3ad48c]"
+                />
+                After the buy
+              </span>
+            </p>
+          ) : null}
         </div>
 
         <p className="text-sm text-foreground/70">
@@ -516,6 +615,8 @@ interface LandingConfig {
   tourHeading: string;
   tourSub: string;
   beats: TourBeat[];
+  /** The full contents of the subscription, listed under the price. */
+  benefits: string[];
   sourceLine: string;
   finalSub: string;
   /** "director" / "insider" — used in the returns disclaimer. */
@@ -542,40 +643,70 @@ const CONFIG: Record<MarketId, LandingConfig> = {
     winnersSub:
       "Real, recent open-market purchases by UK directors — and the share-price move since they bought. Every one of them was in the app the day it filed.",
     winnersCtaSub: "See every director buy as it happens — free for 7 days.",
-    tourHeading: "What you get when you open it",
+    tourHeading: "One filing, followed.",
     tourSub:
-      "Four screens. One question: who’s putting their own money in, and did it work?",
+      "A director buys. Here is everything that happens next — from the second it hits the wire to what the shares had done months later.",
     beats: [
       {
         slot: "alert",
-        kicker: "Alerts",
+        timestamp: "07:01",
+        kicker: "The alert",
         title: "It lands the moment the filing does.",
-        body: "A director discloses a purchase and your phone buzzes — usually within minutes of the RNS, not the next morning. No inbox to check, no feed to trawl.",
+        body: "A director discloses a purchase and your phone buzzes â usually within minutes of the RNS, not the next morning. No inbox to check, no feed to trawl.",
       },
       {
         slot: "analysis",
-        kicker: "Analysis",
+        timestamp: "07:02",
+        kicker: "The read",
         title: "Somebody has already read it for you.",
         body: "Every purchase is decoded: who bought, how senior they are, how much of their own money went in, and whether the price they paid looks like conviction or paperwork.",
       },
       {
+        slot: "balance",
+        timestamp: "07:03",
+        kicker: "Both sides",
+        title: "The case against, next to the case for.",
+        body: "Every rated buy is argued both ways â what makes it interesting, and what should give you pause â each point expandable down to the filing it came from. Nothing here is trying to talk you into a trade.",
+      },
+      {
         slot: "cluster",
-        kicker: "Clusters",
+        timestamp: "Days 3–9",
+        kicker: "The pattern",
         title: "One buy is a data point. Six is a pattern.",
         body: "When several directors buy the same company inside a few weeks, ddbx groups them — every purchase plotted on the price chart, the average they paid, and what the shares have done since.",
       },
       {
         slot: "performance",
-        kicker: "Performance",
+        timestamp: "Today",
+        kicker: "The score",
         title: "See whether it actually worked.",
         body: "Live price tracking from the trade date onward, so you can tell whose buying has been worth following — and whose hasn’t.",
       },
       {
+        slot: "recap",
+        timestamp: "Every morning",
+        kicker: "The recap",
+        title: "The whole day, written up by the time you wake.",
+        body: "One piece each morning on what actually mattered: the clusters, the standout names, the totals, and why the biggest buy of the day was or wasn’t the interesting one.",
+      },
+      {
         slot: "today",
-        kicker: "Today",
+        timestamp: "Every day",
+        kicker: "The desk",
         title: "The whole market on one screen.",
         body: "Every UK director purchase of the day, ranked and stripped of the noise. Placings, vestings and option exercises are pulled out, so what’s left is people choosing to buy.",
       },
+    ],
+    benefits: [
+      "Push alerts within minutes of every director disclosure, not the next morning",
+      "Written analysis on every rated buy — the case for it and the case against",
+      "Cluster detection: several directors in the same company, grouped and plotted on the price chart",
+      "Live performance tracking from the trade date, so you can see whose buying is worth following",
+      "A daily recap of the whole UK market, written for you before the open",
+      "Follow any company or director, and get told when the price moves after a buy you're watching",
+      "Placings, vestings and option exercises stripped out, so what's left is people choosing to buy",
+      "Every London-listed director dealing, back to the day we started — searchable",
+      "No ads, no upsells, and your data is never resold",
     ],
     sourceLine:
       "Sourced from primary UK regulatory disclosures (RNS) as they publish — never scraped from a third-party summary.",
@@ -600,40 +731,70 @@ const CONFIG: Record<MarketId, LandingConfig> = {
     winnersSub:
       "Real, recent open-market purchases by US insiders — and the share-price move since they bought. Every one of them was in the app the day it filed.",
     winnersCtaSub: "See every insider buy as it happens — free for 7 days.",
-    tourHeading: "What you get when you open it",
+    tourHeading: "One filing, followed.",
     tourSub:
-      "Four screens. One question: who’s putting their own money in, and did it work?",
+      "A director buys. Here is everything that happens next — from the second it hits the wire to what the shares had done months later.",
     beats: [
       {
         slot: "alert",
-        kicker: "Alerts",
+        timestamp: "07:01",
+        kicker: "The alert",
         title: "It lands the moment the Form 4 does.",
         body: "An insider files with the SEC and your phone buzzes — usually within minutes of it hitting EDGAR. No filters to build, no filing feed to babysit.",
       },
       {
         slot: "analysis",
-        kicker: "Analysis",
+        timestamp: "07:02",
+        kicker: "The read",
         title: "Somebody has already read it for you.",
         body: "Every purchase is decoded: CEO or 10% holder, how much of their own money went in, and whether it was a real open-market buy or a 10b5-1 plan running on autopilot.",
       },
       {
+        slot: "balance",
+        timestamp: "07:03",
+        kicker: "Both sides",
+        title: "The case against, next to the case for.",
+        body: "Every rated buy is argued both ways — what makes it interesting, and what should give you pause — each point expandable down to the filing it came from. Nothing here is trying to talk you into a trade.",
+      },
+      {
         slot: "cluster",
-        kicker: "Clusters",
+        timestamp: "Days 3–9",
+        kicker: "The pattern",
         title: "One buy is a data point. Six is a pattern.",
         body: "When several insiders buy the same company inside a few weeks, ddbx groups them — every purchase plotted on the price chart, the average they paid, and what the stock has done since.",
       },
       {
         slot: "performance",
-        kicker: "Performance",
+        timestamp: "Today",
+        kicker: "The score",
         title: "See whether it actually worked.",
         body: "Live price tracking from the trade date onward, so you can tell whose buying has been worth following — and whose hasn’t.",
       },
       {
+        slot: "recap",
+        timestamp: "Every morning",
+        kicker: "The recap",
+        title: "The whole day, written up before the open.",
+        body: "One piece each morning on what actually mattered: the clusters, the standout names, the totals, and why the biggest buy of the day was or wasn’t the interesting one.",
+      },
+      {
         slot: "today",
-        kicker: "Today",
+        timestamp: "Every day",
+        kicker: "The desk",
         title: "The whole market on one screen.",
         body: "Every US insider purchase of the day, ranked and stripped of the noise. Grants, vestings and option exercises are pulled out, so what’s left is people choosing to buy.",
       },
+    ],
+    benefits: [
+      "Push alerts within minutes of the Form 4 hitting EDGAR, not the next morning",
+      "Written analysis on every rated buy — the case for it and the case against",
+      "Cluster detection: several insiders in the same company, grouped and plotted on the price chart",
+      "Live performance tracking from the trade date, so you can see whose buying is worth following",
+      "A daily recap of the whole US market, written for you before the open",
+      "Follow any company or insider, and get told when the price moves after a buy you're watching",
+      "Grants, vestings and 10b5-1 autopilot stripped out, so what's left is people choosing to buy",
+      "Congressional trading disclosed under the STOCK Act, alongside the corporate insiders",
+      "No ads, no upsells, and your data is never resold",
     ],
     sourceLine:
       "Sourced from SEC EDGAR Form 4 filings as they publish — never scraped from a third-party summary.",
@@ -770,21 +931,38 @@ export default function DownloadPage({
             try {
               // 120d covers trades up to the 90d fallback window plus a buffer.
               const raw = await api.priceHistory(wn.ticker, 120);
-              const bars = raw
-                .filter((b) => b.date >= wn.tradeDate)
-                .map((b) => ({ date: b.date, close: b.close_pence }));
+              const all = raw.map((b) => ({
+                date: b.date,
+                close: b.close_pence,
+              }));
+              const firstAfter = all.findIndex((b) => b.date >= wn.tradeDate);
 
-              if (bars.length < 2) return null;
-              const first = bars[0].close;
+              if (firstAfter < 0) return null;
+              const post = all.slice(firstAfter);
+
+              if (post.length < 2) return null;
+
+              // Show a lead-in *into* the buy, but never let it dominate: the
+              // card is selling what happened after, so the grey run-up is
+              // capped at roughly half the post-buy span (and at least a
+              // fortnight of trading, so the marker isn't jammed against the
+              // left edge on a very recent buy).
+              const leadIn = Math.min(
+                firstAfter,
+                Math.max(10, Math.round(post.length * 0.5)),
+              );
+              const bars = all.slice(firstAfter - leadIn);
+              const buyIndex = leadIn;
+              const base = bars[buyIndex].close;
               const last = bars[bars.length - 1].close;
 
-              if (!first) return null;
+              if (!base) return null;
               // Recompute the headline return from the SAME bars the chart
               // draws (trade-day close -> latest close) so the number and the
               // line are one measurement and can never contradict.
-              const returnPct = ((last - first) / first) * 100;
+              const returnPct = ((last - base) / base) * 100;
 
-              return { ...wn, bars, returnPct };
+              return { ...wn, bars, buyIndex, returnPct };
             } catch {
               return null;
             }
@@ -849,25 +1027,28 @@ export default function DownloadPage({
       <AppTour
         beats={cfg.beats}
         heading={cfg.tourHeading}
+        index={1}
+        kicker="The app"
         marketId={cfg.marketId}
         platform={platform}
         sub={cfg.tourSub}
+        total={3}
       />
 
-      {/* ---- Winners wall ---- */}
-      <section className="border-t border-[#e7e0d4] bg-[#faf6ef] dark:border-border/50 dark:bg-surface-secondary/20">
-        <div className="mx-auto max-w-6xl px-4 py-14 md:py-20">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#5a4128] dark:text-[#ad9479]">
-              {cfg.proofKicker}
-            </p>
-            <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight md:text-[42px] md:leading-[1.08]">
-              {cfg.winnersHeading}
-            </h2>
-            <p className="mt-3 text-balance text-foreground/60">
-              {cfg.winnersSub}
-            </p>
-          </Reveal>
+      {/* ---- Winners wall ----
+           Full-bleed: the cream band is the page changing surface under you,
+           not a card sitting on it. */}
+      <section
+        className={`${FULL_BLEED} border-y border-[#e7e0d4] bg-[#faf6ef] dark:border-border/50 dark:bg-surface-secondary/20`}
+      >
+        <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
+          <SectionHeader
+            index={2}
+            kicker={cfg.proofKicker}
+            sub={cfg.winnersSub}
+            title={cfg.winnersHeading}
+            total={3}
+          />
 
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data === null
@@ -905,18 +1086,20 @@ export default function DownloadPage({
 
       {/* ---- Price + objections ---- */}
       <section className="mx-auto max-w-5xl px-4 py-14 md:py-20">
-        <Reveal className="mx-auto max-w-2xl text-center">
-          <h2 className="text-balance text-3xl font-semibold tracking-tight md:text-[42px] md:leading-[1.08]">
-            What it costs
-          </h2>
-          <p className="mt-3 text-balance text-foreground/60">
-            One subscription, both the alerts and the analysis. No ads, no
-            upsells, no data resold.
-          </p>
-        </Reveal>
+        <SectionHeader
+          index={3}
+          kicker="The price"
+          sub="One subscription, both the alerts and the analysis. No ads, no upsells, no data resold."
+          title="What it costs"
+          total={3}
+        />
 
         <div className="mt-10">
-          <PricingCard pricing={pricing} storeLabel={STORE_LABEL[platform]} />
+          <PricingCard
+            benefits={cfg.benefits}
+            pricing={pricing}
+            storeLabel={STORE_LABEL[platform]}
+          />
         </div>
 
         <div className="mt-16">
@@ -925,8 +1108,10 @@ export default function DownloadPage({
       </section>
 
       {/* ---- Final CTA ---- */}
-      <section className="bg-[#1a140d] text-white dark:bg-[oklch(17%_0.02_55)]">
-        <div className="mx-auto max-w-4xl px-4 py-16 text-center md:py-24">
+      <section
+        className={`${FULL_BLEED} bg-[#1a140d] text-white dark:bg-[oklch(17%_0.02_55)]`}
+      >
+        <div className="mx-auto max-w-4xl px-4 py-16 text-center md:px-6 md:py-24">
           <Reveal>
             <h2 className="text-balance text-3xl font-semibold tracking-tight md:text-[42px] md:leading-[1.08]">
               Start following the smart money today.

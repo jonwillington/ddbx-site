@@ -1,25 +1,29 @@
-/** The scroll tour — the section that answers "what am I actually installing?"
+/** "One filing, followed" — the section that answers "what am I installing?"
  *
- *  Desktop: one phone, pinned. The copy beats scroll past it and the screen
- *  inside cross-fades to match whichever beat is centred. It's the closest a
- *  web page gets to handing someone the app: the device never leaves the
- *  viewport, so the visitor watches it *change* rather than watching four
- *  static marketing images go by.
+ *  This used to be a pinned phone on the right with copy scrolling past it on
+ *  the left, cross-fading the screen to match whichever beat was centred. It
+ *  worked mechanically and it was the most generic thing on the site: pinned-
+ *  device scrolljack is the house style of every generated landing page
+ *  shipped this year, and a visitor who has seen four of them reads it as
+ *  template before they read a word of the copy.
  *
- *  Mobile: a pinned phone would eat the whole viewport and leave no room for
- *  the copy, so the same beats become a snap-scrolling carousel — a thumb
- *  gesture over a row of phones, which reads as more app-like than a stack of
- *  full-width screenshots anyway.
+ *  What replaced it is a narrative rather than a feature list. The beats are
+ *  now one disclosure followed from the moment it hits the wire to what it did
+ *  months later, each stamped with when it happens. A vertical hairline rail
+ *  runs down the copy with the timestamp sitting on it, and the screen
+ *  alternates side per beat — a rhythm a pinned column structurally cannot
+ *  have, since its device never moves.
  *
- *  The active beat is driven by a single IntersectionObserver keyed on the
- *  middle band of the viewport (`-46%` top and bottom), so exactly one beat is
- *  ever active and the swap happens as a beat reaches the centre line, not as
- *  it clips the edge.
+ *  The screens are `variant="bare"` — no bezels. Seven handsets down a page is
+ *  seven frames the visitor has to look past; the alert screenshot already
+ *  answers "is this a phone app?", and the store badges answer it twice.
+ *
+ *  Mobile keeps the snap carousel: it's thumb-native, it was never the generic
+ *  part, and a stack of full-width screenshots is worse.
  */
-import { useEffect, useRef, useState } from "react";
-
 import { DeviceFrame } from "./device-frame";
 import { Reveal } from "./reveal";
+import { SectionHeader } from "./section-header";
 
 import {
   appShotSrc,
@@ -30,7 +34,10 @@ import {
 
 export interface TourBeat {
   slot: ShotSlot;
-  /** Small uppercase label — the feature's name. */
+  /** When this happens, in the story's own clock — "07:01", "DAYS 3–9",
+   *  "EVERY MORNING". Sits on the rail as the beat's marker. */
+  timestamp: string;
+  /** Small uppercase label — the beat's name. */
   kicker: string;
   /** The benefit, in the visitor's words. */
   title: string;
@@ -43,127 +50,90 @@ export function AppTour({
   beats,
   heading,
   sub,
+  kicker = "The app",
+  index,
+  total,
 }: {
   marketId: string;
   platform: AppPlatform;
   beats: TourBeat[];
   heading: string;
   sub: string;
+  kicker?: string;
+  index?: number;
+  total?: number;
 }) {
-  const [active, setActive] = useState(0);
-  const beatRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") return;
-    const els = beatRefs.current.filter(Boolean) as HTMLDivElement[];
-
-    if (!els.length) return;
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (!e.isIntersecting) continue;
-          const idx = Number((e.target as HTMLElement).dataset.beat);
-
-          if (!Number.isNaN(idx)) setActive(idx);
-        }
-      },
-      // A thin band across the middle of the viewport: a beat becomes active
-      // when it crosses the centre line.
-      { rootMargin: "-46% 0px -46% 0px", threshold: 0 },
-    );
-
-    els.forEach((el) => io.observe(el));
-
-    return () => io.disconnect();
-  }, [beats.length]);
-
   return (
     <section className="mx-auto max-w-6xl px-4 py-14 md:py-24">
-      <Reveal className="mx-auto max-w-2xl text-center">
-        <h2 className="text-balance text-3xl font-semibold tracking-tight md:text-[42px] md:leading-[1.08]">
-          {heading}
-        </h2>
-        <p className="mt-3 text-balance text-foreground/60">{sub}</p>
-      </Reveal>
+      <SectionHeader
+        index={index}
+        kicker={kicker}
+        sub={sub}
+        title={heading}
+        total={total}
+      />
 
-      {/* ---- Desktop: pinned phone + scrolling beats ----
-           Beat height is the one number that tunes this section. Too short and
-           two beats are active-looking at once; too tall (64vh was) and each
-           beat floats alone in a field of cream with nothing else on screen.
-           At 52vh the neighbouring beat peeks in dimmed, which is what makes
-           the active-beat highlight legible as a highlight at all. */}
-      <div className="mt-12 hidden gap-16 lg:grid lg:grid-cols-[1fr_320px]">
-        <div>
-          {beats.map((b, i) => (
-            <div
-              key={b.slot}
-              ref={(el) => {
-                beatRefs.current[i] = el;
-              }}
-              className="flex min-h-[52vh] flex-col justify-center py-6"
-              data-beat={i}
-            >
+      {/* ---- Desktop: alternating bands on a timeline rail ---- */}
+      <div className="mt-16 hidden lg:block">
+        {beats.map((b, i) => {
+          const flip = i % 2 === 1;
+
+          return (
+            <Reveal key={b.slot}>
               <div
-                className={`max-w-[460px] transition-all duration-500 ${
-                  i === active
-                    ? "opacity-100"
-                    : "opacity-40 motion-reduce:opacity-100"
+                className={`grid items-center gap-16 border-t border-[#e7e0d4] py-14 dark:border-border/50 ${
+                  flip
+                    ? "lg:grid-cols-[380px_minmax(0,1fr)]"
+                    : "lg:grid-cols-[minmax(0,1fr)_380px]"
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  {/* Numbered rail marker — doubles as a progress indicator, so
-                      the visitor knows how much tour is left. */}
-                  <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold transition-colors duration-500 ${
-                      i === active
-                        ? "bg-[#5a4128] text-white dark:bg-[#ad9479] dark:text-[#1a140d]"
-                        : "bg-[#1a140d]/[0.07] text-foreground/50 dark:bg-white/10"
-                    }`}
-                  >
-                    {i + 1}
-                  </span>
-                  <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#5a4128] dark:text-[#ad9479]">
-                    {b.kicker}
-                  </span>
-                </div>
-                <h3 className="mt-5 text-balance text-3xl font-semibold leading-[1.14] tracking-tight">
-                  {b.title}
-                </h3>
-                <p className="mt-4 text-lg leading-relaxed text-foreground/65">
-                  {b.body}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+                {/* Copy. `order` rather than two branches of markup: the DOM
+                    order stays narrative, so a screen reader and the tab order
+                    still run beat-by-beat regardless of which side the screen
+                    is painted on. */}
+                <div className={flip ? "lg:order-2" : "lg:order-1"}>
+                  {/* The rail: a hairline down the copy with the timestamp
+                      sitting on it, dot and all. */}
+                  <div className="border-l border-[#e0d8cc] pl-8 dark:border-border/60">
+                    <div className="relative flex items-center gap-3">
+                      <span
+                        aria-hidden
+                        className="absolute -left-[calc(2rem+4.5px)] h-[9px] w-[9px] rounded-full bg-[#5a4128] dark:bg-[#ad9479]"
+                      />
+                      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] tabular-nums text-[#5a4128] dark:text-[#ad9479]">
+                        {b.timestamp}
+                      </span>
+                      <span
+                        aria-hidden
+                        className="h-px w-6 bg-[#e0d8cc] dark:bg-border/60"
+                      />
+                      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/40">
+                        {b.kicker}
+                      </span>
+                    </div>
 
-        <div className="relative">
-          <div className="sticky top-24 flex h-[calc(100vh-8rem)] items-center">
-            <div className="relative w-full">
-              {beats.map((b, i) => (
-                <div
-                  key={b.slot}
-                  aria-hidden={i !== active}
-                  className={`transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                    i === 0 ? "" : "absolute inset-0"
-                  } ${
-                    i === active
-                      ? "opacity-100 translate-y-0 scale-100"
-                      : "pointer-events-none opacity-0 translate-y-3 scale-[0.97]"
-                  }`}
-                >
+                    <h3 className="mt-5 max-w-[20ch] text-balance text-[32px] font-semibold leading-[1.1] tracking-[-0.022em]">
+                      {b.title}
+                    </h3>
+                    <p className="mt-4 max-w-[46ch] text-[17px] leading-[1.6] text-foreground/65">
+                      {b.body}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={flip ? "lg:order-1" : "lg:order-2"}>
                   <DeviceFrame
                     alt={`ddbx ${SLOT_LABEL[b.slot]} screen on ${platform === "ios" ? "iPhone" : "Android"}`}
                     platform={platform}
                     slot={b.slot}
                     src={appShotSrc(marketId, platform, b.slot)}
+                    variant="bare"
                   />
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
+              </div>
+            </Reveal>
+          );
+        })}
       </div>
 
       {/* ---- Mobile: snap carousel ---- */}
@@ -181,44 +151,9 @@ function MobileTour({
   marketId: string;
   platform: AppPlatform;
 }) {
-  const trackRef = useRef<HTMLDivElement | null>(null);
-  const [idx, setIdx] = useState(0);
-
-  // Derive the dot from real scroll position rather than tracking taps, so a
-  // free swipe (which can land anywhere) still reports the right slide.
-  useEffect(() => {
-    const el = trackRef.current;
-
-    if (!el) return;
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const slide = el.scrollWidth / beats.length;
-
-        setIdx(
-          Math.max(
-            0,
-            Math.min(beats.length - 1, Math.round(el.scrollLeft / slide)),
-          ),
-        );
-      });
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, [beats.length]);
-
   return (
     <div className="mt-10 lg:hidden">
-      <div
-        ref={trackRef}
-        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
+      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {beats.map((b, i) => (
           <div
             key={b.slot}
@@ -230,32 +165,24 @@ function MobileTour({
               slot={b.slot}
               src={appShotSrc(marketId, platform, b.slot)}
             />
-            <p className="mt-6 font-mono text-[11px] font-semibold uppercase tracking-wider text-[#5a4128] dark:text-[#ad9479]">
-              {b.kicker}
+            <p className="mt-6 flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a4128] dark:text-[#ad9479]">
+              {b.timestamp}
+              <span
+                aria-hidden
+                className="h-px w-5 bg-[#e0d8cc] dark:bg-border/60"
+              />
+              <span className="text-foreground/40">{b.kicker}</span>
             </p>
-            <h3 className="mt-2 text-balance text-xl font-semibold leading-snug tracking-tight">
+            <h3 className="mt-2.5 text-balance text-xl font-semibold leading-snug tracking-tight">
               {b.title}
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-foreground/65">
               {b.body}
             </p>
             <span className="sr-only">
-              Slide {i + 1} of {beats.length}
+              Beat {i + 1} of {beats.length}
             </span>
           </div>
-        ))}
-      </div>
-
-      <div className="mt-6 flex justify-center gap-2">
-        {beats.map((b, i) => (
-          <span
-            key={b.slot}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === idx
-                ? "w-5 bg-[#5a4128] dark:bg-[#ad9479]"
-                : "w-1.5 bg-[#1a140d]/20 dark:bg-white/25"
-            }`}
-          />
         ))}
       </div>
     </div>

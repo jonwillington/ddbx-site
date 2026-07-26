@@ -124,6 +124,8 @@ export function BrokerAside({
   brokers: provided,
   heading = "Top picks",
   placement = "rail",
+  ctaVariant = "primary",
+  showAll = false,
 }: {
   /** Pass the already-loaded list to avoid a second fetch; omit to self-load. */
   brokers?: BrokerOffer[] | null;
@@ -132,6 +134,16 @@ export function BrokerAside({
    *  "rail"; the company pages pass "company_rail" so the two surfaces can be
    *  compared rather than pooled. */
   placement?: string;
+  /** Fill for the rail's visit buttons. The company pages pass "grey": that
+   *  page already spends its one filled button on the sticky "Buy <TICKER>
+   *  with <broker>" panel, and three near-black buttons competing in the same
+   *  viewport means the page has no primary action at all. */
+  ctaVariant?: "primary" | "secondary" | "grey";
+  /** Append the full platform list under the picks — every broker with its
+   *  live sign-up offer, linking to its review. On a company page the rail is
+   *  the only broker surface the visitor gets, so stopping at two picks hides
+   *  the directory; on /compare the grid below already is the directory. */
+  showAll?: boolean;
 }) {
   const [fetched, setFetched] = useState<BrokerOffer[] | null>(null);
 
@@ -145,6 +157,9 @@ export function BrokerAside({
 
   const brokers = provided ?? fetched;
   const picks = (brokers ?? []).filter((b) => b.recommended);
+  // Everything the picks don't already cover — "all OTHER brokers", so the
+  // same two platforms don't appear twice in one rail.
+  const rest = recommendedOrder(brokers ?? []).filter((b) => !b.recommended);
 
   return (
     <aside className="hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-[#e8e0d5] dark:border-separator bg-[#faf7f2] dark:bg-surface z-20">
@@ -188,10 +203,47 @@ export function BrokerAside({
                     className="w-full"
                     placement={placement}
                     size="lg"
+                    variant={ctaVariant}
                   />
                 </div>
               </div>
             ))}
+
+            {showAll && rest.length > 0 && (
+              <nav aria-label="All trading platforms">
+                <p className="px-1 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/45">
+                  All platforms
+                </p>
+                <ul className="space-y-0.5">
+                  {rest.map((b) => (
+                    <li key={b.slug}>
+                      <a
+                        className="flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+                        href={`/brokers/${b.slug}`}
+                      >
+                        <BrokerLogo broker={b} size={28} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[13px] font-medium text-foreground/75">
+                            {b.name}
+                          </span>
+                          {/* The live sign-up offer is the click-worthy hook —
+                              fees live on the review. Rows without one stay
+                              single-line so the promos stand out. */}
+                          {b.offer_headline && (
+                            <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold leading-4 text-[#5a4128] dark:text-[#e7d4bf]">
+                              <GiftIcon className="h-3 w-3 shrink-0" />
+                              <span className="truncate">
+                                {b.offer_headline}
+                              </span>
+                            </span>
+                          )}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
 
             <BrokerDisclosure />
             <p className="text-[11px] leading-4 text-foreground/45">

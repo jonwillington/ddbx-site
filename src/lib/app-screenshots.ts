@@ -18,6 +18,20 @@
 //
 // Sizes: iOS 1290×2796 (iPhone 15/16 Pro), Android 1080×2400 (Pixel 8). Any
 // image at the right aspect ratio works — these are just the native densities.
+//
+// CAPTURE RULES — the page cannot fix a bad capture, so get these right in the
+// simulator before exporting:
+//
+//   1. NEVER let a label be clipped. Section headings and the day/date group
+//      headers ("THU 16 JUL") are the thing that makes a list legible as a
+//      dated feed rather than a wall of rows. Scroll so the header sits fully
+//      below the app bar — a shot taken mid-scroll with a date half-hidden
+//      behind a sticky header is unusable, however good the rest of it is.
+//   2. Capture STATE, not emptiness. A screen showing "Markets closed for the
+//      weekend" tells a visitor the app is quiet. Every slot should show the
+//      app with real content in it.
+//   3. Prefer density. Where a screen can show four rows or eight, show eight —
+//      these render ~170–330px wide, and sparse screens read as an empty app.
 
 export type AppPlatform = "ios" | "android";
 
@@ -25,6 +39,8 @@ export const SHOT_SLOTS = [
   "today",
   "alert",
   "analysis",
+  "balance",
+  "recap",
   "cluster",
   "performance",
   "lockscreen",
@@ -38,6 +54,8 @@ export const SLOT_LABEL: Record<ShotSlot, string> = {
   today: "Today",
   alert: "Alerts",
   analysis: "Analysis",
+  balance: "Both sides",
+  recap: "Daily recap",
   cluster: "Cluster",
   performance: "Performance",
   lockscreen: "Lock screen",

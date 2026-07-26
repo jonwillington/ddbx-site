@@ -8,17 +8,18 @@
  *  `useDealRadar` are imported directly rather than re-implemented, so the map
  *  is literally the same instrument, driven by the same clock.
  *
- *  What's new here is the right column: a real phone. The market hero shows the
- *  notification stack alone, which sells the alert but not the app. Here the
- *  stack sits *on* the device like a banner landing over an open app — live
- *  deals, real data, on the thing you're being asked to install.
+ *  The right column is the live notification stack and nothing else — no
+ *  handset, no app screenshot behind it. It briefly had both; the device was a
+ *  frame the visitor had to look past, and the static screen behind the stack
+ *  competed with it for the same glance, so the one genuinely live element on
+ *  the page read as decoration on a picture. Alone and at full column width it
+ *  reads as the product working. The screenshots keep their job in the scroll
+ *  tour below.
  *
- *  Motion: the stage breathes (shared with the market hero), the device floats
+ *  Motion: the stage breathes (shared with the market hero), the stack floats
  *  on a slow 7s cycle, and both stop under prefers-reduced-motion.
  */
 import type { ReactNode } from "react";
-
-import { DeviceFrame } from "./device-frame";
 
 import { StoreBadgeImg } from "@/components/app-store-badge";
 import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
@@ -28,11 +29,7 @@ import {
   useDealRadar,
 } from "@/components/market/hero-deal-radar";
 import { HeroNotificationStack } from "@/components/market/hero-notification-stack";
-import {
-  appShotSrc,
-  STORE_LABEL,
-  type AppPlatform,
-} from "@/lib/app-screenshots";
+import { STORE_LABEL, type AppPlatform } from "@/lib/app-screenshots";
 
 export function DownloadHero({
   marketId,
@@ -205,36 +202,17 @@ export function DownloadHero({
           </div>
         </div>
 
-        {/* Device + live banner. The stack overhangs the bezel on purpose —
-            that's how a banner notification sits over a running app. */}
-        <div className="mx-auto w-full max-w-[240px] sm:max-w-[280px] lg:max-w-none">
+        {/* The live alert stack, on its own.
+            There is no handset and no app screenshot here any more. A phone
+            put a frame around the one element that's actually alive, and a
+            static screenshot behind it competed with it for the same glance —
+            the stack ended up reading as decoration layered on a picture.
+            Standing alone at full column width it reads as what it is: real
+            filings landing while you watch. Screens belong in the scroll tour
+            below, where "four screens" genuinely wants a device. */}
+        <div className="mx-auto w-full max-w-[330px] sm:max-w-[360px] lg:max-w-none">
           <div className="dlh-float relative">
-            {/* No handset in the hero. A bezel here is a frame the visitor has
-                to look past to reach the product, and at hero scale the screen
-                reads more clearly on its own. The device mockups stay in the
-                scroll tour, where "four screens" genuinely wants a phone. */}
-            <DeviceFrame
-              eager
-              glow
-              alt={`The ddbx app on ${platform === "ios" ? "iPhone" : "Android"}`}
-              platform={platform}
-              slot="today"
-              src={appShotSrc(marketId, platform, "today")}
-              variant="bare"
-            />
-            {/* The banner has to land where iOS and Android actually put one:
-                against the top edge, over the status bar and app header. The
-                11% offset this replaces was measured against the old bezel
-                padding — with the bezel gone it dropped into the middle of the
-                screen and buried the Today section, which is the one part of
-                the shot the hero is selling.
-
-                `top-0` is the stack's own box; it reserves ~30px above the
-                front card for the avatar badge, so the card itself still lands
-                just below the top edge rather than flush against it. */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-20 mx-auto w-[86%]">
-              <HeroNotificationStack deals={radar.deals} tick={radar.tick} />
-            </div>
+            <HeroNotificationStack deals={radar.deals} tick={radar.tick} />
           </div>
         </div>
       </div>

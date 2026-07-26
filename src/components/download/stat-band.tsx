@@ -8,6 +8,8 @@
  */
 import { CountUp, Reveal } from "./reveal";
 
+import { FULL_BLEED } from "@/components/full-bleed";
+
 export interface Stat {
   value: number;
   label: string;
@@ -25,8 +27,10 @@ export function StatBand({
   if (!stats.length) return null;
 
   return (
-    <section className="border-y border-[#e7e0d4] bg-[#faf6ef] dark:border-border/50 dark:bg-surface-secondary/20">
-      <div className="mx-auto max-w-5xl px-4 py-10 md:py-14">
+    <section
+      className={`${FULL_BLEED} border-y border-[#e7e0d4] bg-[#faf6ef] dark:border-border/50 dark:bg-surface-secondary/20`}
+    >
+      <div className="mx-auto max-w-5xl px-4 py-10 md:px-6 md:py-14">
         <div className="grid gap-8 sm:grid-cols-3">
           {stats.map((s, i) => (
             <Reveal

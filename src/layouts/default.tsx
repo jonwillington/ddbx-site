@@ -439,7 +439,11 @@ export default function DefaultLayout({
 
   return (
     <div
-      className={`relative flex flex-col min-h-screen bg-[#f5f0e8] dark:bg-background pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
+      // overflow-x-clip absorbs the ~scrollbar-width overspill from sections
+      // that break out of the centred column with `FULL_BLEED` (100vw). `clip`
+      // and not `hidden`: hidden would make this a scroll container and kill
+      // every position:sticky on the site. See @/components/full-bleed.
+      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
     >
       <div className="sticky top-0 z-40">
         <Navbar />

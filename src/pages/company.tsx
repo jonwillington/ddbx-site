@@ -12,10 +12,13 @@ import {
   usePromotedBroker,
 } from "@/components/brokers/broker-inline";
 import { CompanyLogo } from "@/components/company-logo";
+import { CompanyAppPitch } from "@/components/company/company-app-pitch";
+import { MoreCompanies } from "@/components/company/more-companies";
+import { CompanyPriceChart } from "@/components/company/price-chart";
 import { MarketFaq } from "@/components/market/market-faq";
 import { RatingBadge } from "@/components/rating-badge";
 import { StoreButtons } from "@/components/store-buttons";
-import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import { isAffiliateLink } from "@/lib/brokers";
@@ -282,18 +285,7 @@ export default function CompanyPage() {
     );
   }
 
-  if (!data) {
-    return (
-      <DefaultLayout>
-        <div className="w-full animate-pulse py-10">
-          <div className="h-9 w-1/2 rounded bg-foreground/10" />
-          <div className="mt-3 h-4 w-3/4 rounded bg-foreground/[0.07]" />
-          <div className="mt-10 h-20 w-full rounded-xl bg-foreground/[0.05]" />
-          <div className="mt-6 h-72 w-full rounded-2xl bg-foreground/[0.05]" />
-        </div>
-      </DefaultLayout>
-    );
-  }
+  if (!data) return <CompanySkeleton />;
 
   const name = cleanCompanyName(data.company);
   const ticker = displayTicker(data.key);
@@ -326,7 +318,14 @@ export default function CompanyPage() {
     // drawerRight reserves lg:mr-80 for the fixed broker rail — the same
     // pairing /brokers/:slug uses.
     <DefaultLayout drawerRight>
-      <BrokerAside heading={`Invest in ${ticker}`} placement="company_rail" />
+      {/* Grey CTAs, and the full directory below the picks: this page's one
+          filled button is "Buy {ticker} with …" in the sticky panel. */}
+      <BrokerAside
+        showAll
+        ctaVariant="grey"
+        heading={`Invest in ${ticker}`}
+        placement="company_rail"
+      />
 
       <div className="w-full pb-24 lg:pb-14">
         {/* Breadcrumb sits on the cream page, outside the document sheet. */}
@@ -400,6 +399,25 @@ export default function CompanyPage() {
                   </>
                 )}
               </p>
+
+              {/* The price, with the buys on it — deliberately ABOVE the
+                  table. The table is the evidence; this is the claim, and a
+                  visitor who reads nothing else should still leave knowing
+                  where the insiders bought relative to where it trades now. */}
+              <Section
+                aside="Daily closes for the last 12 months. Each marker is a disclosed buy, plotted at the close on the day it was made."
+                id="price"
+                label="Price"
+              >
+                <CompanyPriceChart
+                  currency={
+                    summary.currency ?? (market === "UK" ? "GBP" : "USD")
+                  }
+                  deals={data.deals}
+                  market={market}
+                  tickerKey={data.key}
+                />
+              </Section>
 
               <Section
                 aside={`Every ${market === "UK" ? "PDMR disclosure" : "SEC Form 4"} we've surfaced for this issuer. Ratings are ours, not the company's.`}
@@ -487,9 +505,14 @@ export default function CompanyPage() {
                   supporting evidence and price history — plus alerts when the
                   price moves after a buy you&apos;re following.
                 </p>
+                {/* Ghost, not filled: the page's single primary action is the
+                    broker CTA in the sticky panel. `items-start` because
+                    StoreButtons' wrapper is a flex column — without it the
+                    anchor stretches to the full content width and a compact
+                    CTA becomes a slab. */}
                 <StoreButtons
-                  buttonClassName={`inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3 text-sm font-semibold`}
-                  className="mt-4"
+                  buttonClassName={`inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_GHOST} px-5 py-3 text-sm font-semibold transition-colors`}
+                  className="mt-4 items-start"
                   gaEvent="cta_company_download"
                   gaLabel="Company page"
                   marketId={market.toLowerCase()}
@@ -512,7 +535,23 @@ export default function CompanyPage() {
           />
         </div>
 
-        {/* FAQ and onward links live on the cream page, below the document. */}
+        {/* Conversion, then onward links, then the FAQ — in that order.
+            The pitch sat below the FAQ at first, which put five collapsed
+            accordion rows between the end of the record and the only part of
+            the page that sells the app: a reader has to climb an accordion to
+            reach the sell, and most won't. The FAQ is reference material and
+            reads fine as the last thing on the page. */}
+        <CompanyAppPitch
+          company={name}
+          currency={summary.currency ?? (market === "UK" ? "GBP" : "USD")}
+          deals={data.deals}
+          market={market}
+          ticker={ticker}
+          tickerKey={data.key}
+        />
+
+        <MoreCompanies currentKey={data.key} market={market} />
+
         <MarketFaq items={companyFaq(name, market)} />
 
         <nav
@@ -539,6 +578,121 @@ export default function CompanyPage() {
             </Link>
           )}
         </nav>
+      </div>
+    </DefaultLayout>
+  );
+}
+
+/** Loading state.
+ *
+ *  The old one was four stacked grey bars on the bare cream page — it shared
+ *  no geometry with what actually arrives, so the page visibly re-assembled
+ *  itself on load: the sheet appeared, the column narrowed to make room for
+ *  the panel, and everything jumped. This is the real skeleton — the sheet,
+ *  the logo, the five metric tiles, the section rules and the side panel, all
+ *  at their true sizes — so the load is a fill rather than a rebuild.
+ *
+ *  One animation on the wrapper, not per-bar: independently-pulsing blocks
+ *  read as a broken interface rather than a loading one.
+ */
+function Bar({ className = "" }: { className?: string }) {
+  return <div className={`rounded bg-foreground/[0.07] ${className}`} />;
+}
+
+function CompanySkeleton() {
+  return (
+    <DefaultLayout drawerRight>
+      <div aria-busy="true" className="w-full animate-pulse pb-24 lg:pb-14">
+        <span className="sr-only">Loading company</span>
+
+        {/* Breadcrumb row. */}
+        <div className="flex items-baseline justify-between gap-4">
+          <Bar className="h-3.5 w-48" />
+          <Bar className="h-3 w-32" />
+        </div>
+
+        <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+          <div className={`min-w-0 px-5 py-6 sm:px-8 sm:py-8 ${C.sheet}`}>
+            {/* Header: logo + name + ticker line. */}
+            <div className="flex items-start gap-4">
+              <div className="mt-0.5 h-12 w-12 shrink-0 rounded-full bg-foreground/[0.07]" />
+              <div className="min-w-0 flex-1">
+                <Bar className="h-8 w-2/3 max-w-[22rem]" />
+                <Bar className="mt-3 h-4 w-40" />
+              </div>
+            </div>
+
+            {/* The five metric tiles, at their real height. */}
+            <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+              {Array.from({ length: 5 }, (_, i) => (
+                <div key={i} className={`${C.tile} px-3.5 py-3`}>
+                  <Bar className="h-2.5 w-3/4" />
+                  <Bar className="mt-2 h-4 w-1/2" />
+                </div>
+              ))}
+            </div>
+
+            {/* Standfirst. */}
+            <div className="max-w-[44em] py-7">
+              <Bar className="h-4 w-full" />
+              <Bar className="mt-2.5 h-4 w-5/6" />
+            </div>
+
+            {/* Price section — heading left, chart right. */}
+            <div
+              className={`grid gap-x-10 gap-y-4 border-t ${C.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
+            >
+              <div>
+                <Bar className="h-4 w-16" />
+                <Bar className="mt-3 h-2.5 w-28" />
+              </div>
+              <div className="h-[220px] rounded-xl bg-foreground/[0.05]" />
+            </div>
+
+            {/* Buys table — heading left, rows right. */}
+            <div
+              className={`grid gap-x-10 gap-y-4 border-t ${C.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
+            >
+              <div>
+                <Bar className="h-4 w-24" />
+                <Bar className="mt-3 h-2.5 w-32" />
+              </div>
+              <div>
+                {Array.from({ length: 4 }, (_, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-4 border-b ${C.rule} py-3.5`}
+                  >
+                    <Bar className="h-3 w-20 shrink-0" />
+                    <Bar className="h-3 flex-1" />
+                    <Bar className="h-3 w-16 shrink-0" />
+                    <Bar className="h-3 w-14 shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Side panel — reserving its width is the point: without it the
+              content column loads narrow and then snaps. */}
+          <aside className="hidden lg:block">
+            <div className="rounded-2xl border border-[#5a4128]/20 bg-white p-4 dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
+              <Bar className="h-11 w-full" />
+              <Bar className="mx-auto mt-2.5 h-2.5 w-2/3" />
+              <div className="mt-4">
+                {Array.from({ length: 4 }, (_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-4 border-b border-separator/70 py-2.5 last:border-b-0"
+                  >
+                    <Bar className="h-3 w-20" />
+                    <Bar className="h-3 w-12" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
     </DefaultLayout>
   );

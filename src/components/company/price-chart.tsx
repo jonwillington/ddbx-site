@@ -1,0 +1,312 @@
+/** Twelve months of closes for one company, with every disclosed insider buy
+ *  plotted on the line.
+ *
+ *  The company page is a record, and until now the record had no picture: a
+ *  table said four directors bought at £4.73 and nothing on the page said what
+ *  the price did before or after. This is that missing sentence, drawn — and it
+ *  is the only place on the page where the buys and the price appear in the
+ *  same frame, which is the whole argument the product makes.
+ *
+ *  Sized from a measured container width rather than a stretched viewBox. The
+ *  download page's sparkline can get away with `preserveAspectRatio="none"`
+ *  because it draws nothing but a stroke; this one draws round markers, and a
+ *  non-uniform scale turns every one of them into an ellipse.
+ */
+import type { Dealing, UsDealing } from "@/types/ddbx";
+
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
+import { api } from "@/lib/api";
+
+const UP = "#22a06b";
+const DOWN = "#d1495b";
+const SYMBOL: Record<string, string> = { GBP: "£", USD: "$", EUR: "€" };
+
+const H = 220;
+const PAD_T = 14;
+const PAD_B = 26;
+const PAD_R = 6;
+const PAD_L = 6;
+
+interface Bar {
+  date: string;
+  close: number;
+}
+
+/** A buy to mark, resolved onto the series. */
+interface Mark {
+  x: number;
+  y: number;
+  date: string;
+  label: string;
+  /** Ring colour + weight, by how the buy was rated. */
+  ink: string;
+  ring: number;
+}
+
+/** Marker ink by rating. The chart could draw every buy identically, but the
+ *  rating IS the product — inking by it means the graphic teaches the scale in
+ *  passing (a solid, heavy ring is a conviction buy; a hollow one is a
+ *  disclosure we didn't think worth writing up) instead of being a finance
+ *  widget any site could ship. Kept to one hue at three strengths: this page
+ *  spends its colour on price direction, and a second palette here would
+ *  compete with it. */
+const RATING_INK: Record<string, { ink: string; ring: number }> = {
+  significant: { ink: "#5a4128", ring: 2.4 },
+  noteworthy: { ink: "rgba(90,65,40,0.62)", ring: 2 },
+  minor: { ink: "rgba(90,65,40,0.62)", ring: 2 },
+};
+const UNRATED_INK = { ink: "rgba(90,65,40,0.3)", ring: 1.5 };
+
+/** Closes arrive in native MINOR units — pence for LSE issuers, cents for US
+ *  ones (see the note on `price_pence` in the API). Always /100, never an FX
+ *  conversion. */
+const toMajor = (minor: number) => minor / 100;
+
+function fmtPrice(major: number, currency: string): string {
+  const sym = SYMBOL[currency] ?? "";
+  // Sub-penny stocks are real on AIM (ARK trades at £0.0075) — a 2dp format
+  // would render the entire axis as "£0.01".
+  const dp = major < 0.1 ? 4 : major < 10 ? 2 : 0;
+
+  return `${sym}${major.toFixed(dp)}`;
+}
+
+function useMeasuredWidth() {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [w, setW] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+
+    if (!el) return;
+    const measure = () => setW(el.clientWidth);
+
+    measure();
+    const ro = new ResizeObserver(measure);
+
+    ro.observe(el);
+
+    return () => ro.disconnect();
+  }, []);
+
+  return [ref, w] as const;
+}
+
+export function CompanyPriceChart({
+  tickerKey,
+  currency,
+  deals,
+  market,
+}: {
+  /** Storage key ("ARK.L" / "FCNCA") — what the prices endpoint speaks. */
+  tickerKey: string;
+  currency: string;
+  /** Disclosed buys, plotted as markers. */
+  deals: Array<Dealing | UsDealing>;
+  market: string;
+}) {
+  const [bars, setBars] = useState<Bar[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [box, width] = useMeasuredWidth();
+
+  useEffect(() => {
+    let live = true;
+
+    setBars(null);
+    setFailed(false);
+    api
+      .priceHistory(tickerKey, 365)
+      .then((raw) => {
+        if (!live) return;
+        setBars(raw.map((b) => ({ date: b.date, close: b.close_pence })));
+      })
+      .catch(() => live && setFailed(true));
+
+    return () => {
+      live = false;
+    };
+  }, [tickerKey]);
+
+  // A company with no cached price history is common enough (recent listings,
+  // suspended lines) that this must fail silently rather than show an error.
+  if (failed || (bars && bars.length < 2)) return null;
+
+  if (!bars) {
+    return (
+      <div
+        aria-hidden
+        className="h-[220px] w-full animate-pulse rounded-xl bg-foreground/[0.04]"
+      />
+    );
+  }
+
+  const w = width || 640;
+  const closes = bars.map((b) => toMajor(b.close));
+  const lo = Math.min(...closes);
+  const hi = Math.max(...closes);
+  const range = Math.max(hi - lo, Number.EPSILON);
+  const first = closes[0];
+  const last = closes[closes.length - 1];
+  const changePct = first ? ((last - first) / first) * 100 : 0;
+  const color = changePct >= 0 ? UP : DOWN;
+
+  const xAt = (i: number) =>
+    PAD_L + (i / (bars.length - 1)) * (w - PAD_L - PAD_R);
+  const yAt = (major: number) =>
+    PAD_T + (1 - (major - lo) / range) * (H - PAD_T - PAD_B);
+
+  const pts = closes.map((c, i) => [xAt(i), yAt(c)] as const);
+  const line = pts
+    .map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`)
+    .join(" ");
+  const area = `${line} L${pts[pts.length - 1][0].toFixed(1)},${H - PAD_B} L${pts[0][0].toFixed(1)},${H - PAD_B} Z`;
+
+  // Snap each buy onto the nearest bar at or after its trade date. Buys older
+  // than the window simply don't appear — the chart is the last 12 months, and
+  // clamping them to the left edge would put a marker at a price that isn't
+  // the one the director paid.
+  const marks: Mark[] = [];
+
+  for (const d of deals) {
+    const i = bars.findIndex((b) => b.date >= d.trade_date);
+
+    if (i < 0) continue;
+    const rating = d.analysis?.rating;
+    const { ink, ring } = (rating && RATING_INK[rating]) || UNRATED_INK;
+
+    marks.push({
+      x: xAt(i),
+      y: yAt(closes[i]),
+      date: d.trade_date,
+      label: `${market === "UK" ? "Director" : "Insider"} buy, ${d.trade_date}${
+        rating ? ` — rated ${rating}` : ""
+      }`,
+      ink,
+      ring,
+    });
+  }
+
+  return (
+    <div ref={box}>
+      <div className="flex items-baseline gap-3">
+        <p className="text-[22px] font-semibold leading-none tracking-[-0.015em] text-foreground">
+          {fmtPrice(last, currency)}
+        </p>
+        <p
+          className="text-[13.5px] font-semibold tabular-nums"
+          style={{ color }}
+        >
+          {changePct >= 0 ? "+" : ""}
+          {changePct.toFixed(1)}%
+        </p>
+        <p className="text-[12px] text-foreground/45">past 12 months</p>
+      </div>
+
+      <svg
+        aria-label={`${tickerKey} share price over the past 12 months, with ${marks.length} disclosed ${market === "UK" ? "director" : "insider"} ${marks.length === 1 ? "buy" : "buys"} marked`}
+        className="mt-3 block w-full"
+        height={H}
+        role="img"
+        viewBox={`0 0 ${w} ${H}`}
+        width={w}
+      >
+        <defs>
+          <linearGradient id={`cpc-${tickerKey}`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.18} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+
+        <path d={area} fill={`url(#cpc-${tickerKey})`} />
+        <path
+          d={line}
+          fill="none"
+          stroke={color}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.75}
+        />
+
+        {/* Buy markers. Drawn after the line so they sit on top of it, and
+            with a page-coloured core so overlapping buys in a cluster still
+            read as separate events rather than one blob. */}
+        {marks.map((m) => (
+          <g key={`${m.date}-${m.x.toFixed(1)}`}>
+            <title>{m.label}</title>
+            <line
+              className="text-foreground/15"
+              stroke="currentColor"
+              strokeDasharray="2 3"
+              strokeWidth={1}
+              x1={m.x}
+              x2={m.x}
+              y1={m.y}
+              y2={H - PAD_B}
+            />
+            <circle
+              className="text-[#faf7f2] dark:text-surface"
+              cx={m.x}
+              cy={m.y}
+              fill="currentColor"
+              r={4.5}
+              stroke={m.ink}
+              strokeWidth={m.ring}
+            />
+          </g>
+        ))}
+
+        {/* Endpoint labels instead of a y-axis: two numbers carry the range,
+            and gridlines would make a document page look like a terminal. */}
+        <text
+          className="fill-foreground/40"
+          fontSize={11}
+          x={PAD_L}
+          y={H - PAD_B + 16}
+        >
+          {bars[0].date.slice(0, 7)}
+        </text>
+        <text
+          className="fill-foreground/40"
+          fontSize={11}
+          textAnchor="end"
+          x={w - PAD_R}
+          y={H - PAD_B + 16}
+        >
+          {bars[bars.length - 1].date.slice(0, 7)}
+        </text>
+      </svg>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[11.5px] text-foreground/45">
+        {marks.length > 0 && (
+          <>
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="h-2.5 w-2.5 rounded-full border-[2.4px] border-[#5a4128] bg-[#faf7f2] dark:bg-surface"
+              />
+              Rated buy
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="h-2.5 w-2.5 rounded-full border-[1.5px] border-[#5a4128]/30 bg-[#faf7f2] dark:bg-surface"
+              />
+              Unrated
+            </span>
+          </>
+        )}
+        <span>
+          Range {fmtPrice(lo, currency)} – {fmtPrice(hi, currency)}
+        </span>
+      </div>
+
+      {marks.length > 0 && (
+        <p className="mt-2 text-[12px] leading-[1.6] text-foreground/45">
+          Every disclosed buy, plotted at the close on the day it was made.
+          Ratings are ours, not the company&rsquo;s.
+        </p>
+      )}
+    </div>
+  );
+}

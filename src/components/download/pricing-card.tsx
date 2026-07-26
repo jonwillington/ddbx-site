@@ -18,18 +18,46 @@ import {
   type MarketPricing,
 } from "@/lib/pricing";
 
+/** Inline tick. Sized and baseline-nudged to sit with a 14.5px line rather
+ *  than floating above it, which a raw heroicon at this size does. */
+function CheckMark() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="mt-[3px] h-4 w-4 shrink-0 text-[#1f9d63] dark:text-[#3ad48c]"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2.4}
+      viewBox="0 0 24 24"
+    >
+      <path d="m5 13 4.5 4.5L19 7" />
+    </svg>
+  );
+}
+
 export function PricingCard({
   pricing,
   storeLabel,
+  benefits = [],
 }: {
   pricing: MarketPricing;
   /** "App Store" / "Google Play" — whose billing actually takes the money. */
   storeLabel: string;
+  /** Everything the one subscription covers, in full. A price with nothing
+   *  next to it is read as a cost; the same price under the list of what it
+   *  buys is read as a trade. The list is exhaustive on purpose — a visitor
+   *  scanning for the one feature they came for should find it here rather
+   *  than guess whether it's included. */
+  benefits?: string[];
 }) {
   const saving = annualSavingPct(pricing);
 
   return (
-    <Reveal className="mx-auto max-w-lg">
+    // Left-set, not centred: the section header above it is left-set now, and
+    // a centred card under a left-set headline reads as two unrelated layouts.
+    <Reveal className="max-w-lg">
       <div className="overflow-hidden rounded-3xl border border-[#e0d8cc] bg-white/70 shadow-sm dark:border-border/60 dark:bg-surface-secondary/40">
         <div className="border-b border-[#e7e0d4] bg-[#faf6ef] px-6 py-5 text-center dark:border-border/50 dark:bg-surface-secondary/30">
           <p className="text-lg font-semibold">
@@ -69,6 +97,22 @@ export function PricingCard({
             </p>
           </div>
         </div>
+
+        {benefits.length > 0 ? (
+          <div className="border-t border-[#e7e0d4] px-6 py-6 dark:border-border/50">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-foreground/45">
+              Everything included
+            </p>
+            <ul className="mt-4 space-y-3">
+              {benefits.map((b) => (
+                <li key={b} className="flex gap-3 text-[14.5px] leading-snug">
+                  <CheckMark />
+                  <span className="text-foreground/75">{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
 
       <p className="mt-4 text-center text-xs leading-relaxed text-foreground/40">
