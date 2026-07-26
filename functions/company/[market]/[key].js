@@ -527,7 +527,15 @@ export async function onRequestGet(context) {
   try {
     const res = await fetch(
       `${API_BASE}/company/${market}/${encodeURIComponent(key)}/page`,
-      { headers: { accept: "application/json" }, cf: { cacheTtl: 1800, cacheEverything: true } },
+      {
+        headers: { accept: "application/json" },
+        // See the note in functions/companies.js — a 404 cached during a
+        // Worker deploy must not outlive the deploy.
+        cf: {
+          cacheEverything: true,
+          cacheTtlByStatus: { "200-299": 1800, "400-499": 60, "500-599": 0 },
+        },
+      },
     );
 
     if (!res.ok) {

@@ -43,7 +43,14 @@ async function brokerPaths() {
   try {
     const res = await fetch(`${API_BASE}/brokers?market=UK`, {
       headers: { accept: "application/json" },
-      cf: { cacheTtl: 3600, cacheEverything: true },
+      // cacheTtlByStatus, not a blanket cacheTtl: `cacheEverything` with a flat
+      // TTL pins whatever came back — including a 404 served during a Worker
+      // deploy — for the full hour. Errors get a minute so a blip can't hide
+      // the data for an hour.
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
     });
 
     if (!res.ok) return [];
@@ -82,7 +89,14 @@ async function companyEntries(host) {
   try {
     const res = await fetch(`${API_BASE}/companies?market=${market}`, {
       headers: { accept: "application/json" },
-      cf: { cacheTtl: 3600, cacheEverything: true },
+      // cacheTtlByStatus, not a blanket cacheTtl: `cacheEverything` with a flat
+      // TTL pins whatever came back — including a 404 served during a Worker
+      // deploy — for the full hour. Errors get a minute so a blip can't hide
+      // the data for an hour.
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
     });
 
     if (!res.ok) return [];

@@ -6,8 +6,8 @@
 // by following links like they do everything else, and readers get a browsable
 // A-Z.
 //
-// Same content bar as the sitemap (see BAR below) so the two agree: a company
-// that isn't worth submitting isn't worth linking from the hub either.
+// Same content bar as functions/sitemap.xml.js so the two agree: a company that
+// isn't worth submitting isn't worth linking from the hub either.
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -144,6 +144,23 @@ ${STYLE}
 </html>`;
 }
 
+/** A failed API call must NOT fall through to the SPA: Pages would answer with
+ *  index.html and a 200, so a crawler would index the market homepage's content
+ *  at /companies. A 503 tells it to come back instead. */
+function unavailable() {
+  return new Response(
+    '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Temporarily unavailable · ddbx</title><meta name="robots" content="noindex"></head><body><p>The company index is briefly unavailable. Please try again shortly.</p></body></html>',
+    {
+      status: 503,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "retry-after": "300",
+      },
+    },
+  );
+}
+
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const host = apexHost(url.hostname);
@@ -160,15 +177,22 @@ export async function onRequestGet(context) {
   try {
     const res = await fetch(`${API_BASE}/companies?market=${market}`, {
       headers: { accept: "application/json" },
-      cf: { cacheTtl: 3600, cacheEverything: true },
+      // cacheTtlByStatus, not a blanket cacheTtl: `cacheEverything` with a flat
+      // TTL pins whatever came back — including a 404 served during a Worker
+      // deploy — for the full hour. Errors get a minute so a blip can't hide
+      // the data for an hour.
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
     });
 
-    if (!res.ok) return context.next();
+    if (!res.ok) return unavailable();
     const body = await res.json();
     const companies = (body.companies ?? []).filter((c) => c.key && meetsContentBar(c));
 
     return new Response(page(market, host, companies), { headers });
   } catch {
-    return context.next();
+    return unavailable();
   }
 }
