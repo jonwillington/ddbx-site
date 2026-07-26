@@ -40,6 +40,11 @@ const API_BASE = "https://api.ddbx.uk/api";
 // Routes that exist on every domain.
 const COMMON_ROUTES = ["/download", "/download/ios", "/download/android"];
 
+// /developers is deliberately NOT in COMMON_ROUTES. The page is served on every
+// host but canonicalises to ddbx.uk/api (see shared/seo.js), and a sitemap
+// should list canonical URLs only — listing ddbx.us/developers would contradict
+// the rel=canonical the same page emits. So it rides ddbx.uk alone.
+
 // Market dashboards + performance pages, by the host that owns them. Hidden
 // markets (/djt) and utility routes (/account-deletion) are intentionally out.
 const ROUTES_BY_HOST = {
@@ -47,6 +52,7 @@ const ROUTES_BY_HOST = {
     "/",
     "/portfolio",
     "/brokers",
+    "/developers",
     "/companies",
     "/reports",
     "/sectors",

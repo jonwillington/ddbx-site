@@ -31,6 +31,10 @@ export const Navbar = () => {
   // fades back out at the top.
   const [scrolled, setScrolled] = useState(false);
 
+  // Routes that pin their own theme — the switch is hidden on these.
+  const isPinnedTheme =
+    location.pathname === "/developers" || location.pathname === "/api";
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 160);
 
@@ -76,6 +80,15 @@ export const Navbar = () => {
           },
         ]
       : []),
+    // The developer API is one cross-market product, so this is the only nav
+    // item with no market gate. Note it also gives SE/NL a nav bar for the
+    // first time: `showNav` needs more than one item, and those markets
+    // previously had only "Deals".
+    {
+      label: "API",
+      href: "/developers",
+      match: (p: string) => p === "/developers" || p === "/api",
+    },
   ];
 
   // A market left with just "Deals" gets no nav at all — the logo already goes
@@ -135,7 +148,9 @@ export const Navbar = () => {
             <StoreGlyph className="h-3.5 w-3.5 shrink-0" />
             Download app
           </a>
-          <ThemeSwitch />
+          {/* /api pins itself dark (see lib/use-pinned-theme.ts), so the
+              toggle would be a control that visibly does nothing. */}
+          {!isPinnedTheme && <ThemeSwitch />}
         </div>
       </header>
     </nav>

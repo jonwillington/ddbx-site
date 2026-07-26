@@ -9,7 +9,13 @@ export default defineConfig({
   server: {
     proxy: {
       // Wrangler dev listens on 8787 by default.
-      "/api": "http://localhost:8787",
+      //
+      // Regex (a leading ^ makes vite treat the key as a RegExp) so this
+      // matches /api/dealings but NOT the bare /api route, which is a PAGE in
+      // this app (the developer-API product page, canonical at /developers).
+      // With the old "/api" prefix key the page 500'd in dev, proxied to a
+      // wrangler that usually isn't running.
+      "^/api/": "http://localhost:8787",
       // US scrape preview during the multi-market spike — see
       // investigations/multi-market/form4-mapping.md.
       "/__us-": "http://localhost:8787",

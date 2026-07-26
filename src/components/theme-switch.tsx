@@ -1,35 +1,16 @@
 import { FC, useState, useEffect, useCallback } from "react";
 import { SunIcon, MoonIcon } from "@heroicons/react/24/solid";
 
+import { syncThemeColorMeta } from "@/lib/theme";
+
 export interface ThemeSwitchProps {
   className?: string;
 }
 
-/** The real page background per theme, as plain hex. These mirror what the page
- *  actually paints: dark is `--background` (oklch(17% .022 55) → #170d06); light
- *  is the cream the layout paints (#f5f0e8), NOT HeroUI's white `--background`.
- *  Kept in sync with the first-paint seed in index.html. */
-const THEME_COLOR = { light: "#f5f0e8", dark: "#170d06" } as const;
-
-/** Repaint Safari's status bar + bottom toolbar to match the active theme.
- *
- *  Two gotchas this works around:
- *  1. Hand Safari a hardcoded hex, never a computed value. The palette is oklch
- *     and `getComputedStyle` can return an `oklch()`/`color()` string that
- *     Safari's theme-color parser rejects outright — when that happens Safari
- *     keeps the previous bar colour, so the bars appear "stuck" on theme flip.
- *     A literal hex is always valid and always applied.
- *  2. Safari only repaints when the theme-color meta node is (re)inserted, not
- *     when an existing node's `content` mutates — so replace the node wholesale
- *     on every theme flip. */
-function syncThemeColorMeta(theme: "light" | "dark") {
-  document.querySelector('meta[name="theme-color"]')?.remove();
-  const meta = document.createElement("meta");
-
-  meta.name = "theme-color";
-  meta.content = THEME_COLOR[theme];
-  document.head.appendChild(meta);
-}
+/** THEME_COLOR and syncThemeColorMeta now live in `@/lib/theme` — `/api` pins
+ *  itself dark and has to repaint Safari's chrome the same way, and a second
+ *  copy of those hex values would drift. See that module for the Safari
+ *  gotchas the sync works around. */
 
 export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
   const [isMounted, setIsMounted] = useState(false);

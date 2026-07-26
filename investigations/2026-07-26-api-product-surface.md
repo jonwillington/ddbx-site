@@ -675,14 +675,89 @@ makes the server enforce the policy the client is currently enforcing alone.
 
 ### Sequencing (back-compatible, per `~/CLAUDE.md`)
 
-**Phase 1 — today, zero client changes, zero breakage:**
-1. Cloudflare rate limiting on `api.ddbx.uk/api/*`, per IP.
-2. Bot Fight Mode; challenge datacenter ASNs on the list endpoints.
-3. Tighten `app.use("/api/*", cors())` (`worker/index.ts:275`) from allow-all
-   to the ddbx origins.
-4. **Drop `DEALINGS_MAX_LIMIT` from 1000 to ~200** and cap EU at 200. No real
-   client asks for more; it turns whole-corpus extraction into a long, visible,
-   rate-limited crawl. Highest value per unit of effort on this list.
+**Phase 1 — status as of 2026-07-26**
+
+✅ **SHIPPED — CORS allowlist.** `worker/index.ts` `app.use("/api/*", cors())`
+was allow-all (`ACAO: *`), so any website could embed the feed — including the
+LLM analysis — straight from a visitor's browser. Now allowlisted to
+`ddbx.uk` / `ddbx.us` / `ddbx.eu` (± `www`), `localhost` and `*.pages.dev`.
+Deployed, version `5b1bc9ee-c453-4ade-825b-162d1f9eba36`.
+
+Safe with no client changes because Hono's `cors()` only *sets response
+headers* — `await next()` runs unconditionally (verified in
+`node_modules/hono/dist/middleware/cors/index.js:79`). Native app requests and
+the 9 edge prerender functions send no `Origin` and are unaffected.
+
+Verified in production: `ddbx.uk`/`ddbx.us`/`ddbx.eu`/`localhost` echo back;
+`evil.example` and `ddbx.uk.attacker.com` get no header; all six read endpoints
+return 200 with a full body when called with no `Origin`.
+
+*Side effect:* responses now carry `Vary: Origin`, so edge-cache entries
+fragment by origin (~7 variants instead of 1). Correct HTTP semantics — a
+cached `ACAO` for the wrong origin would be a bug — and negligible at these
+TTLs, but it's a real change in cache behaviour. Note also that stale
+pre-deploy entries served `ACAO: *` until each endpoint's `max-age` elapsed.
+
+⛔ **PULLED — `DEALINGS_MAX_LIMIT` 1000 → 200. This would have broken
+production.** Checked before changing it:
+
+- `ddbx-ios-app/Sources/DdbxApp/Core/APIClient.swift:61` —
+  `func dealings(limit: Int = 1000)`, and the docstring says *"Default `limit`
+  (1000) is the server's current hard cap"*. **The iOS default IS 1000.**
+  Capping at 200 would silently truncate the feed for every App Store install
+  in the field, with no rollback.
+- `ddbx-site/functions/sectors/[slug].js:152` and `functions/sitemap.xml.js:179`
+  both request `limit=1000` at the edge. Capping would silently shrink the
+  sitemap and the sector pages.
+
+This was the highest-value item on the list and it is **not a Phase 1 change**.
+It can only land once clients identify themselves (Phase 2), so anonymous
+callers can be capped while known clients keep 1000. Moved to Phase 3.
+
+✅ **SHIPPED — per-IP rate limiting, in log mode.** Turns out this *doesn't*
+need the dashboard: Workers has a native limiter declared as `[[ratelimits]]`
+in `wrangler.toml`, so it deploys with `wrangler deploy` and needs no zone
+scope. 60 requests / 60s, on the five bulk list endpoints only
+(`/api/{dealings,us-dealings,eu-dealings,gov-dealings,djt-dealings}`).
+
+Not applied across `/api/*` on purpose: one ddbx.uk page view fans out into
+many small calls (prices, logos, company stats), so an API-wide per-IP budget
+would throttle ordinary browsing long before it touched a scraper.
+
+Keys on the **IPv6 /64 prefix**, not the full address — a residential IPv6
+allocation is a /64 or wider, so full-address keying is bypassable by free
+rotation. Caught because the verification run came back on IPv6. Unit-tested
+against `::` shorthand, zone ids, and same-/64 collision.
+
+**Fails open** on any limiter error. Verified in production: a 100-request
+serial burst logged **81 allowed / 19 would-block**, with every request still
+served `200`.
+
+⚠️ **`RATE_LIMIT_MODE = "log"` — it is not enforcing yet, and shouldn't be
+until observed.** The open question is what `CF-Connecting-IP` looks like for
+the 9 ddbx-site Pages Functions that prerender crawler HTML with a server-side
+fetch. If they present a shared Cloudflare address rather than the visitor's,
+enforcing would throttle SEO prerendering site-wide. Watch it:
+
+```
+npx wrangler tail --format pretty | grep rate-limit
+```
+
+Then flip with no redeploy (secrets override vars, same pattern as
+`NSM_PROBE_OFF`):
+
+```
+npx wrangler secret put RATE_LIMIT_MODE     # -> enforce
+```
+
+🔑 **JON — still dashboard-only:** Bot Fight Mode, and a managed challenge for
+datacenter ASNs on the list endpoints. Wrangler's OAuth token has `workers` +
+`d1` write but no zone scope, so WAF/bot rules can't be scripted.
+
+⚠️ **Rate limiting alone does not stop bulk extraction.** One request still
+returns up to 1000 rows, so 60/min is ~60k rows/min. It bounds *sustained*
+abuse and makes it visible; the cap is what actually closes it, and that needs
+Phase 2 first.
 
 **Phase 2 — clients start identifying themselves.** iOS and Android already
 hold a Firebase token and already send it on writes; extend `APIClient` to send

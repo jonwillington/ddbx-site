@@ -4,6 +4,7 @@ import { BetaTag } from "@/components/market/beta-tag";
 import { CookieBanner } from "@/components/cookie-banner";
 import { DocumentTitle } from "@/components/document-title";
 import AccountDeletionPage from "@/pages/account-deletion";
+import ApiPage from "@/pages/api";
 import BiggestBuysPage from "@/pages/biggest-buys";
 import BrokerCategoryPage from "@/pages/broker-category";
 import BrokerComparisonPage from "@/pages/broker-comparison";
@@ -94,6 +95,16 @@ function App() {
           element={<DownloadPage platform="android" />}
           path="/us/download/android"
         />
+        {/* Developer API product page. Cross-market by construction — one
+            page, no market prop, no discretion gating.
+            /developers is canonical; /api is an alias that 301s to it at the
+            edge (public/_redirects). Both are routed here so a client-side
+            navigation to either resolves without a round trip. /api can't be
+            canonical: it collides with the same-origin API prefix (the vite
+            dev proxy forwards /api/* to wrangler) and would foreclose ever
+            proxying the worker under this origin. */}
+        <Route element={<ApiPage />} path="/developers" />
+        <Route element={<ApiPage />} path="/api" />
         <Route element={<ComparePage />} path="/compare" />
         <Route element={<ComparePage />} path="/brokers" />
         {/* Category and head-to-head landing pages sit one level below

@@ -192,6 +192,17 @@ const isPerformancePath = (path) =>
 
 const isDirectorProfilePath = (path) => /\/directors\//.test(path);
 
+/** The developer API product page. Market-blind: it is one cross-market
+ *  product served identically on every host, so it also folds onto a single
+ *  canonical host (see canonicalUrlFor) rather than competing with itself.
+ *
+ *  Canonical path is /developers. /api is an alias that 301s to it at the edge
+ *  (public/_redirects) but is matched here too, so a client-side navigation to
+ *  the alias still gets the right title and description. */
+const isApiPath = (path) => path === "/developers" || path === "/api";
+
+const API_CANONICAL_PATH = "/developers";
+
 const isBrokerIndexPath = (path) => path === "/brokers" || path === "/compare";
 
 /** "/brokers/best-for/isa" -> the category, or null. */
@@ -341,6 +352,12 @@ export function seoForPath(pathname, hostname) {
 
   const title = (() => {
     if (STATIC_PAGE_TITLES[path]) return brandTitle(STATIC_PAGE_TITLES[path]);
+    // Cross-market product page — deliberately market-blind, unlike every
+    // other branch here. Same title on ddbx.uk, ddbx.us and ddbx.eu.
+    if (isApiPath(path))
+      return brandTitle(
+        "Insider dealing data API — UK, US & EU filings, scored",
+      );
     if (isPerformancePath(path))
       return brandTitle(`Portfolio (${market.label}) — ${SITE_NAME}`);
     if (isDirectorProfilePath(path))
@@ -401,6 +418,8 @@ export function seoForPath(pathname, hostname) {
   })();
 
   const description = (() => {
+    if (isApiPath(path))
+      return "One REST API for director and insider share purchases across the UK, US, Sweden and the Netherlands \u2014 screened, rated with a written rationale, and benchmarked against the index. Access and pricing on request.";
     if (isPerformancePath(path))
       return `Track ${market.label} insider performance versus benchmark indices on ddbx.`;
     if (isDirectorProfilePath(path))
@@ -498,11 +517,19 @@ export function canonicalUrlFor(pathname, hostname) {
   // they belong to ddbx.uk whichever domain served them.
   const isBrokerPath =
     path === "/compare" || path === "/brokers" || path.startsWith("/brokers/");
-  const marketHost = isBrokerPath
-    ? "ddbx.uk"
-    : (MARKET_HOST_BY_ID[id] ?? "ddbx.uk");
+  // The API page is one cross-market product rendered identically on every
+  // host, so without this ddbx.uk/api, ddbx.us/api and ddbx.eu/api would be
+  // three duplicates competing with each other — the same trap the glossary
+  // entries below already avoid. It folds onto ddbx.uk, and only that URL is
+  // in the sitemap (see functions/sitemap.xml.js).
+  const marketHost =
+    isBrokerPath || isApiPath(path)
+      ? "ddbx.uk"
+      : (MARKET_HOST_BY_ID[id] ?? "ddbx.uk");
 
   const canonicalPath = (() => {
+    // /api and /developers are the same page; fold the alias onto the canonical.
+    if (isApiPath(path)) return API_CANONICAL_PATH;
     if (DASHBOARD_ALIASES.has(path)) return canonicalDashboardPath(id);
     if (isPerformancePath(path)) return canonicalPerformancePath(id);
     // /compare is the legacy mount of the broker comparison page.
