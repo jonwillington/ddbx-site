@@ -13,6 +13,7 @@ import { ClusterChip } from "@/components/cluster-chip";
 import { BuyStyleChip } from "@/components/buy-style-chip";
 import { CommentCountChip } from "@/components/comment-count-chip";
 import { commentCountFor } from "@/lib/comment-counts";
+import { capitalisedRole } from "@/lib/display-name";
 import { PartyChip } from "@/components/party-chip";
 import { ChamberChip } from "@/components/chamber-chip";
 import { RecentBuysSection } from "@/components/market/recent-buys-section";
@@ -269,7 +270,7 @@ export function MarketDetailDrawer<W>({
               <Drawer.Title className="sr-only">{company}</Drawer.Title>
               <Drawer.Description className="sr-only">
                 {active.insiderRole
-                  ? `${active.insiderRole} · ${active.insiderName}`
+                  ? `${capitalisedRole(active.insiderRole)} · ${active.insiderName}`
                   : active.insiderName}
               </Drawer.Description>
 
@@ -422,7 +423,7 @@ export function MarketDetailDrawer<W>({
                               </div>
                               {active.insiderRole && (
                                 <div className="text-xs text-muted truncate">
-                                  {active.insiderRole}
+                                  {capitalisedRole(active.insiderRole)}
                                 </div>
                               )}
                             </div>

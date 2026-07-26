@@ -1049,6 +1049,7 @@ export function MarketPage<W>({
       locale={config.locale}
       noPosteriorData={stockNoPosteriorData(d)}
       selected={selectedKey === d.key}
+      showLegCount={config.showLegCount}
       showLogo={logosEnabled}
       stockBars={stockBars[d.ticker]}
       stockCurrentMajor={stockCurrent(d.ticker)}
@@ -1173,6 +1174,7 @@ export function MarketPage<W>({
           count={group.count}
           formatTickerDisplay={config.formatTickerDisplay}
           representative={group.representative}
+          showLegCount={config.showLegCount}
           showLogo={logosEnabled}
           totalValueLabel={
             group.totalValue != null
@@ -1400,6 +1402,7 @@ export function MarketPage<W>({
               benchmarkLabel={config.benchmarkLabel}
               chartMode={chartMode}
               columnHelp={config.columnHelp}
+              showLegCount={config.showLegCount}
               valueColumnClass={config.priceFormat.valueColumnClass}
             />
             <div className="divide-y divide-black/[0.06] dark:divide-separator overflow-hidden rounded-b-xl">
@@ -1420,6 +1423,7 @@ export function MarketPage<W>({
                   locale={config.locale}
                   noPosteriorData={stockNoPosteriorData(d)}
                   selected={selectedKey === d.key}
+                  showLegCount={config.showLegCount}
                   showLogo={logosEnabled}
                   stockBars={stockBars[d.ticker]}
                   stockCurrentMajor={stockCurrent(d.ticker)}
@@ -1543,6 +1547,7 @@ export function MarketPage<W>({
                             benchmarkLabel={config.benchmarkLabel}
                             chartMode={chartMode}
                             columnHelp={config.columnHelp}
+                            showLegCount={config.showLegCount}
                             valueColumnClass={
                               config.priceFormat.valueColumnClass
                             }

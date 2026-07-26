@@ -20,6 +20,8 @@ import { monthLabel, reportPath } from "../../shared/months.js";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
+import { AppCtaBand } from "@/components/seo/app-cta-band";
+import { reportsCta } from "@/components/seo/cta-copy";
 
 const R = {
   rule: "border-[#e8e0d5] dark:border-separator",
@@ -98,6 +100,14 @@ export default function ReportsPage() {
             ))}
           </ul>
         )}
+
+        <AppCtaBand
+          body={reportsCta.body}
+          gaLabel="Reports archive"
+          headline={reportsCta.headline}
+          marketId={marketParam === "US" ? "us" : "uk"}
+          screenshotSlot="recap"
+        />
 
         <p className={`mt-10 ${R.label} leading-[1.6]`}>
           Reports are generated from disclosed filings and marked against

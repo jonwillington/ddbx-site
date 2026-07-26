@@ -36,6 +36,8 @@ import {
 import { windowStart } from "../../shared/sectors.js";
 
 import { money, R, useSectorMarket } from "@/components/sector-ui";
+import { AppCtaBand } from "@/components/seo/app-cta-band";
+import { learnCta } from "@/components/seo/cta-copy";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
@@ -105,6 +107,10 @@ export default function LearnEntryPage() {
   // canonicalises and noindexes it, so all the page owes the reader is a way
   // across to the copy that does belong here.
   const foreign = owner !== null && owner !== entry.owner;
+  // Entry-specific line where the glossary supplies one — "know the moment the
+  // window reopens" sells harder on /learn/closed-period than the generic
+  // fallback — otherwise the family default built from the entry's own term.
+  const cta = entry.cta ?? learnCta(entry.ctaTerm ?? entry.term.toLowerCase());
 
   return (
     <DefaultLayout>
@@ -165,6 +171,17 @@ export default function LearnEntryPage() {
           </ul>
         </section>
       </article>
+
+      {/* The ask. These pages exist to be found; without this they end on a
+          link list and the traffic they earn is spent. Outside <article> so
+          the band runs full-bleed rather than sitting in the prose measure. */}
+      <AppCtaBand
+        body={cta.body}
+        gaLabel={`Learn · ${entry.slug}`}
+        headline={cta.headline}
+        marketId={entry.owner === "us" ? "us" : "uk"}
+        screenshotSlot={entry.ctaSlot ?? "analysis"}
+      />
     </DefaultLayout>
   );
 }

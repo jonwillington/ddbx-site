@@ -11,6 +11,8 @@ import { useMemo } from "react";
 import { CONCENTRATION_THRESHOLD } from "../../shared/sectors.js";
 
 import { marketForPath } from "@/lib/markets/registry";
+import { MeterBar } from "@/components/seo/meter-bar";
+import { StatTiles } from "@/components/seo/stat-tiles";
 
 export const R = {
   rule: "border-[#e8e0d5] dark:border-separator",
@@ -70,23 +72,36 @@ export function signedPct(ratio: number | null): string {
 export function alphaClass(ratio: number | null): string {
   if (ratio == null) return "text-foreground/40";
 
+  // The site's own return colours (globals.css `--positive` / `--negative`),
+  // not Tailwind's emerald/rose. These pages were the only surface picking
+  // their own greens and reds, which is why a +0.9% here didn't match a +0.9%
+  // in the deals table — and the tokens already carry their dark-mode values,
+  // so the explicit `dark:` variants go too.
   return ratio > 0
-    ? "text-emerald-700 dark:text-emerald-400"
+    ? "text-positive"
     : ratio < 0
-      ? "text-rose-700 dark:text-rose-400"
+      ? "text-negative"
       : "text-foreground/60";
 }
 
-/** The one-line figures row: volume, value, breadth, median alpha — plus the
- *  concentration note when a single issuer dominates the value. */
+/** The figures block: volume, value, breadth, median alpha as labelled tiles,
+ *  plus the concentration note when a single issuer dominates the value, and —
+ *  on the index, where there's a page maximum to scale against — a proportion
+ *  bar so the eleven sectors read as a chart rather than as eleven paragraphs
+ *  of statistics. */
 export function SectorFigures({
   row,
   market,
   className,
+  maxValue,
 }: {
   row: SectorRollupRow;
   market: SectorMarket;
   className?: string;
+  /** Largest sector value on the page. Supply it and the row draws a bar
+   *  scaled to it, turning the list into a labelled bar chart; omit it (single
+   *  sector pages) and the row is tiles alone. */
+  maxValue?: number;
 }) {
   const concentrated =
     row.topCompanyShare != null &&
@@ -94,26 +109,40 @@ export function SectorFigures({
 
   return (
     <div className={className}>
-      <p className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[13px] text-foreground/60">
-        <span className="tabular-nums">{row.buys} buys</span>
-        <span className="tabular-nums">{money(row.value, market.symbol)}</span>
-        <span className="tabular-nums">{row.companies} companies</span>
-        <span className="tabular-nums">
-          median alpha{" "}
-          <span className={`font-medium ${alphaClass(row.medianAlpha)}`}>
-            {signedPct(row.medianAlpha)}
-          </span>
-        </span>
-      </p>
-      {concentrated && row.topCompany && (
-        // A sector total can be one company wearing a sector's name — US
-        // technology over the year to 2026-07-26 was 99% a single issuer.
-        // Saying so is the difference between a figure that informs and one
-        // that's accurate and misleading at the same time.
-        <p className={`mt-1 ${R.label} leading-[1.5]`}>
-          {Math.round(row.topCompanyShare! * 100)}% of that value is{" "}
-          {row.topCompany.replace(/\.L$/i, "")} alone.
-        </p>
+      <StatTiles
+        note={
+          concentrated && row.topCompany
+            ? // A sector total can be one company wearing a sector's name — US
+              // technology over the year to 2026-07-26 was 99% a single issuer.
+              // Saying so is the difference between a figure that informs and
+              // one that's accurate and misleading at the same time.
+              `${Math.round(row.topCompanyShare! * 100)}% of that value is ${row.topCompany.replace(/\.L$/i, "")} alone.`
+            : undefined
+        }
+        stats={[
+          { label: "Buys", value: row.buys },
+          {
+            label: "Value",
+            value: money(row.value, market.symbol),
+            primary: true,
+          },
+          { label: "Companies", value: row.companies },
+          {
+            label: "Median alpha",
+            value: signedPct(row.medianAlpha),
+            tone:
+              row.medianAlpha == null
+                ? undefined
+                : row.medianAlpha > 0
+                  ? "positive"
+                  : row.medianAlpha < 0
+                    ? "negative"
+                    : undefined,
+          },
+        ]}
+      />
+      {maxValue != null && (
+        <MeterBar className="mt-3" max={maxValue} value={row.value} />
       )}
     </div>
   );

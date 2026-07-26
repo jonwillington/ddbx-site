@@ -42,7 +42,17 @@ import {
 } from "@/components/sector-ui";
 import DefaultLayout from "@/layouts/default";
 import { API_BASE } from "@/lib/api";
-import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
+import {
+  cleanCompanyName,
+  cleanInsiderName,
+  companyPath,
+  displayTicker,
+} from "@/lib/company";
+import { CompanyLogo } from "@/components/company-logo";
+import { TickerPill } from "@/components/ticker-pill";
+import { AppCtaBand } from "@/components/seo/app-cta-band";
+import { MeterBar } from "@/components/seo/meter-bar";
+import { leaderboardCta } from "@/components/seo/cta-copy";
 
 export default function BiggestBuysPage() {
   const { year } = useParams<{ year?: string }>();
@@ -83,6 +93,13 @@ export default function BiggestBuysPage() {
 
     return { ranked: r.rows, suppressed: r.suppressed };
   }, [rows, market.id]);
+
+  // Bars scale to rank 1, so the board reads as "how much bigger was the top
+  // buy" rather than as a row of near-full bars.
+  const topValue = useMemo(
+    () => (ranked.length > 0 ? buyValue(ranked[0]) : 0),
+    [ranked],
+  );
 
   if (invalidYear) {
     return (
@@ -152,7 +169,9 @@ export default function BiggestBuysPage() {
                   key={d.id ?? i}
                   deal={d}
                   position={i + 1}
+                  repeat={ranked.findIndex((x) => x.ticker === d.ticker) !== i}
                   symbol={market.symbol}
+                  topValue={topValue}
                 />
               ))}
             </ol>
@@ -170,6 +189,14 @@ export default function BiggestBuysPage() {
             )}
           </>
         )}
+
+        <AppCtaBand
+          body={leaderboardCta.body}
+          gaLabel={year ? `Biggest buys · ${year}` : "Biggest buys"}
+          headline={leaderboardCta.headline}
+          marketId={market.id === "US" ? "us" : "uk"}
+          screenshotSlot="today"
+        />
 
         <section className={`mt-12 border-t ${R.rule} pt-7`}>
           <h2 className="text-[17px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground">
@@ -226,42 +253,68 @@ function BuyRow({
   deal: d,
   position,
   symbol,
+  topValue,
+  repeat,
 }: {
   deal: Dealing | UsDealing;
   position: number;
   symbol: string;
+  /** Rank 1's consideration — every bar is drawn relative to it. */
+  topValue: number;
+  /** This ticker already appeared higher up the board. */
+  repeat: boolean;
 }) {
   const alpha = buyAlpha(d);
   const cluster = d.cluster?.tier;
+  const ticker = displayTicker(d.ticker ?? "");
+  const value = buyValue(d);
 
   return (
-    <li className={`flex items-baseline gap-4 border-b ${R.rule} py-3`}>
+    <li className={`flex items-baseline gap-4 border-b ${R.rule} py-3.5`}>
+      {/* Zero-padded mono rank. The podium carries full ink and everything
+          below it drops back — a ranked list where 1 and 17 are set in the
+          same grey isn't ranked, it's numbered. */}
       <span
         aria-hidden
-        className="w-6 shrink-0 font-mono text-[12px] tabular-nums text-foreground/35"
+        className={`w-7 shrink-0 font-mono text-[12px] tabular-nums ${
+          position <= 3 ? "text-foreground" : "text-foreground/35"
+        }`}
       >
-        {position}
+        {String(position).padStart(2, "0")}
       </span>
 
       <span className="min-w-0 flex-1">
-        <Link
-          className="text-[14.5px] font-medium text-foreground underline-offset-4 hover:underline"
-          to={companyPath(d.ticker ?? "")}
-        >
-          {cleanCompanyName(d.company ?? "") || displayTicker(d.ticker ?? "")}
-        </Link>
-        <span className={`ml-2 ${R.label} tabular-nums`}>
-          {displayTicker(d.ticker ?? "")}
+        <span className="flex min-w-0 items-center gap-2">
+          {repeat && (
+            // Same company, further down the board. Saying so turns what looked
+            // like a duplicate row into the point: this issuer had several.
+            <span
+              aria-hidden
+              className="shrink-0 text-[12px] leading-none text-foreground/30"
+              title="Another purchase in the same company"
+            >
+              &#8627;
+            </span>
+          )}
+          <CompanyLogo size={22} ticker={d.ticker ?? ""} />
+          <Link
+            className="truncate text-[14.5px] font-medium text-foreground underline-offset-4 hover:underline"
+            to={companyPath(d.ticker ?? "")}
+          >
+            {cleanCompanyName(d.company ?? "") || ticker}
+          </Link>
+          <TickerPill ticker={ticker} />
         </span>
-        <span className={`mt-0.5 block ${R.label}`}>
-          {buyPerson(d) ?? "—"} · {d.trade_date}
+        <span className={`mt-1 block truncate ${R.label}`}>
+          {cleanInsiderName(buyPerson(d) ?? "") || "—"} &middot; {d.trade_date}
           {cluster && ` · ${cluster} cluster`}
         </span>
+        <MeterBar className="mt-2 max-w-[22rem]" max={topValue} value={value} />
       </span>
 
       <span className="shrink-0 text-right">
-        <span className="block text-[14px] font-semibold tabular-nums text-foreground">
-          {money(buyValue(d), symbol)}
+        <span className="block text-[15px] font-semibold tabular-nums tracking-[-0.01em] text-foreground">
+          {money(value, symbol)}
         </span>
         <span
           className={`mt-0.5 block text-[12px] tabular-nums ${alphaClass(alpha)}`}

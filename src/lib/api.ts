@@ -27,6 +27,10 @@ export interface CompanyIndexEntry {
   last_trade_date: string;
   /** How many of this issuer's dealings have a written analysis. */
   analysed: number;
+  /** Summed consideration across the same rows `deals` counts, in the market's
+   *  own major unit — GBP on UK, USD on US. Optional: it post-dates the
+   *  endpoint, so a cached response can still arrive without it. */
+  total_value?: number;
 }
 
 /** The company-page bundle. Deals arrive as the market's own wire type, so a

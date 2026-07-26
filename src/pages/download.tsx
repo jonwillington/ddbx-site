@@ -293,6 +293,13 @@ async function loadUs(want: number): Promise<MarketData> {
   const { dealings } = await api.usDealings({
     view: "all",
     since: isoDaysAgo(STATS_WINDOW_DAYS),
+    // Without an explicit limit the endpoint caps at its 200-row default, so
+    // the `since` window silently truncated to whatever the newest 200 Form 4
+    // rows covered — a few days, not 90. That left six candidate tickers, of
+    // which only two survived the price-history recompute, and the wall
+    // rendered two cards. 1000 is the endpoint's ceiling; UK already asks for
+    // the same via dealingsWindow.
+    limit: 1000,
   });
 
   return {

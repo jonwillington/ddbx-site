@@ -79,6 +79,22 @@ export function normalisedDisplayName(raw: string): string {
   return raw.split(" ").map(recaseWord).join(" ");
 }
 
+/// Capitalise the first letter of an insider's role for display. Role strings
+/// arrive inconsistently cased across markets — US Form 4 derives bare
+/// "director" / "officer" / "10% holder" from the reporter flags but passes
+/// `officer_title` ("Chief Banking Officer") through verbatim, so a list mixes
+/// the two and the lowercase ones read as a bug. Only the first character is
+/// touched: the rest of the string keeps whatever casing it arrived with, so
+/// "10% holder" and any already-correct title survive intact.
+export function capitalisedRole(raw: string): string;
+export function capitalisedRole(raw: undefined): undefined;
+export function capitalisedRole(raw?: string): string | undefined;
+export function capitalisedRole(raw?: string): string | undefined {
+  if (!raw) return raw;
+
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
 /// Strip a trailing "(ticker)" parenthetical from a company name when it
 /// duplicates the row's ticker (case-insensitive, ".L" suffix tolerated).
 /// Upstream RNS / EDGAR feeds occasionally append the ticker to the

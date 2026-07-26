@@ -9,7 +9,8 @@
     "lint": "eslint --fix",
     "preview": "vite preview",
     "sync:types": "scripts/sync-ddbx-types.sh",
-    "check:types": "scripts/check-ddbx-types.sh"
+    "check:types": "scripts/check-ddbx-types.sh",
+    "shots": "scripts/app-shots.sh"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

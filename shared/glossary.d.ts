@@ -17,6 +17,16 @@ export interface GlossaryEntry {
   /** One string per paragraph. */
   body: string[];
   related: string[];
+  /** Overrides the generated install CTA at the foot of the entry. Set where a
+   *  term-specific line sells harder than the default built from `term` — a
+   *  closed-period entry saying "know the moment the window reopens" beats
+   *  "stop reading about a closed period". */
+  cta?: { headline: string; body: string };
+  /** Noun substituted into the default CTA headline when `term` doesn't read
+   *  naturally in "Stop reading about {x}." */
+  ctaTerm?: string;
+  /** App screenshot shown beside the CTA. Defaults to the analysis screen. */
+  ctaSlot?: "today" | "alert" | "analysis" | "balance" | "recap" | "cluster";
 }
 
 export declare const OWNER_HOST: Record<GlossaryOwner, string>;

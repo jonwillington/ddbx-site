@@ -21,6 +21,8 @@ import {
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import { SectorFigures, useSectorMarket, R } from "@/components/sector-ui";
+import { AppCtaBand } from "@/components/seo/app-cta-band";
+import { sectorCta } from "@/components/seo/cta-copy";
 
 export default function SectorsPage() {
   const market = useSectorMarket();
@@ -48,6 +50,9 @@ export default function SectorsPage() {
 
   const rollup = useMemo(() => sectorRollup(rows ?? []), [rows]);
   const publishable = rollup.filter(sectorMeetsBar);
+  // Bars scale to the biggest sector on the page — the list is a comparison
+  // between these eleven, not against any absolute figure.
+  const maxValue = publishable.reduce((m, r) => Math.max(m, r.value), 0);
 
   return (
     <DefaultLayout>
@@ -81,11 +86,24 @@ export default function SectorsPage() {
                 >
                   {row.sector.label}
                 </Link>
-                <SectorFigures className="mt-1.5" market={market} row={row} />
+                <SectorFigures
+                  className="mt-3"
+                  market={market}
+                  maxValue={maxValue}
+                  row={row}
+                />
               </li>
             ))}
           </ul>
         )}
+
+        <AppCtaBand
+          body={sectorCta().body}
+          gaLabel="Sectors index"
+          headline={sectorCta().headline}
+          marketId={market.id === "US" ? "us" : "uk"}
+          screenshotSlot="today"
+        />
 
         <p className={`mt-10 ${R.label} leading-[1.6]`}>
           Rolling twelve months of disclosed purchases. Sectors with fewer than{" "}

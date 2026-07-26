@@ -92,6 +92,11 @@ export const ENTRIES = [
       "That matters when you're reading timing. A purchase made the day after results is not necessarily more urgent than one made a month later; it may simply be the earliest legal moment. Purchases made deep into an open window, when the buyer could have acted weeks earlier and chose now, arguably say more.",
     ],
     related: ["mar-article-19", "pdmr", "cluster-buying"],
+    cta: {
+      headline: "Know the moment the window reopens.",
+      body: "Closed periods end and the buying starts the same week. The app pushes every disclosure the day it files, so you see the cluster forming rather than reading about it a month later.",
+    },
+    ctaSlot: "cluster",
   },
   {
     slug: "rns-announcements",

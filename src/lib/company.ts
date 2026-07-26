@@ -39,10 +39,40 @@ export function companyPath(key: string): string {
  *  Casing is left alone on purpose: US filings arrive in caps, and
  *  title-casing them would mangle AT&T, NVIDIA and every other acronym. */
 export function cleanCompanyName(name: string): string {
-  return String(name ?? "")
+  // Loop rather than strip once: names routinely carry TWO trailing
+  // parentheticals — "Jardine Matheson Holdings Ltd (Singapore Reg) (JAR)" —
+  // and a single pass removed only the ticker, leaving a name long enough to
+  // blow out a leaderboard row. Bounded by the fact that each pass must shorten
+  // the string.
+  let out = String(name ?? "").trim();
+
+  for (;;) {
+    const next = out
+      .replace(/\s*\([^)]*\)\s*$/, "")
+      .replace(/\s*\/[A-Z]{2}\/\s*$/, "")
+      .trim();
+
+    // Never strip the whole name away: a company literally called "(BLANK)"
+    // should render as it arrived rather than as an empty cell.
+    if (next === out || next === "") return out;
+    out = next;
+  }
+}
+
+/** Insider names as filed, cut back to something that fits a row.
+ *
+ *  UK RNS gives the beneficial-ownership chain in full — "1947 Trustee Limited
+ *  (trustee for 1947 Trust benefiting Executive Directors)" — which is correct,
+ *  legally meaningful, and three times the width of the row it has to sit in.
+ *  The parenthetical is the part that explains the relationship rather than
+ *  names the actor, so it goes; the drawer and the company page still show the
+ *  filed string in full. */
+export function cleanInsiderName(name: string): string {
+  const out = String(name ?? "")
     .replace(/\s*\([^)]*\)\s*$/, "")
-    .replace(/\s*\/[A-Z]{2}\/\s*$/, "")
     .trim();
+
+  return out || String(name ?? "").trim();
 }
 
 /** Ticker as displayed — no exchange suffix. */

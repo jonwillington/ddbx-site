@@ -24,6 +24,7 @@ import { chip } from "@/components/chip";
 import { BuyStyleChip } from "@/components/buy-style-chip";
 import { CommentCountChip } from "@/components/comment-count-chip";
 import { commentCountFor } from "@/lib/comment-counts";
+import { capitalisedRole } from "@/lib/display-name";
 import { PartyChip } from "@/components/party-chip";
 import { ChamberChip } from "@/components/chamber-chip";
 import { Tooltip } from "@/components/tooltip";
@@ -76,6 +77,7 @@ export function MarketRowHeader({
   inset = false,
   valueColumnClass = "w-24",
   columnHelp,
+  showLegCount = true,
 }: {
   hideDate?: boolean;
   benchmarkLabel: string;
@@ -87,6 +89,9 @@ export function MarketRowHeader({
   valueColumnClass?: string;
   /** Per-market header tooltip copy; unset columns fall back to defaults. */
   columnHelp?: Partial<Record<MarketColumnKey, string>>;
+  /** Mirrors MarketConfig.showLegCount — drops "Qty /" from the label when the
+   *  rows aren't rendering a count. */
+  showLegCount?: boolean;
 }) {
   const perfLabel =
     chartMode.axis === "market" ? `vs ${benchmarkLabel}` : "Return";
@@ -113,7 +118,9 @@ export function MarketRowHeader({
         <HeaderLabel help={help.value}>Value</HeaderLabel>
       </div>
       <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
-        <HeaderLabel help={help.trend}>Qty / Trend</HeaderLabel>
+        <HeaderLabel help={help.trend}>
+          {showLegCount ? "Qty / Trend" : "Trend"}
+        </HeaderLabel>
       </div>
       <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
         <HeaderLabel help={help.performance}>{perfLabel}</HeaderLabel>
@@ -492,6 +499,9 @@ interface MarketRowProps<W> {
    *  Set from MarketConfig.enableLogos by the shell — used by Sweden where
    *  logo.dev coverage is too thin to bother. */
   showLogo?: boolean;
+  /** When false, the trend cell renders the sparkline alone — no leg-count
+   *  prefix. Set from MarketConfig.showLegCount. Default true. */
+  showLegCount?: boolean;
   /** Drives the right-most Performance cell — raw stock return when
    *  `axis === "raw"`, alpha vs benchmark when `axis === "market"`. */
   chartMode: ChartMode;
@@ -522,6 +532,7 @@ export function MarketClusterRow<W>({
   count,
   totalValueLabel,
   showLogo = true,
+  showLegCount = true,
   formatTickerDisplay,
   valueColumnClass = "w-24",
   children,
@@ -531,6 +542,10 @@ export function MarketClusterRow<W>({
   count: number;
   totalValueLabel: string;
   showLogo?: boolean;
+  /** When false the trend cell stays empty rather than repeating the cluster
+   *  count that the name column already spells out. See
+   *  MarketConfig.showLegCount. */
+  showLegCount?: boolean;
   formatTickerDisplay?: (ticker: string) => string;
   valueColumnClass?: string;
   children: ReactNode;
@@ -600,9 +615,11 @@ export function MarketClusterRow<W>({
             </span>
           </div>
           <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-            <span className="text-[11px] font-semibold tabular-nums text-muted/70">
-              {count}
-            </span>
+            {showLegCount && (
+              <span className="text-[11px] font-semibold tabular-nums text-muted/70">
+                {count}
+              </span>
+            )}
           </div>
           <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
           <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
@@ -691,7 +708,7 @@ export function MemberAppTeaserRow({
   const shown = tickers.slice(0, MAX_LOGOS);
   const extra = tickers.length - shown.length;
   const countLabel = `${tickers.length} ${tickers.length === 1 ? "buy" : "buys"}${
-    insiderRole ? ` · ${insiderRole}` : ""
+    insiderRole ? ` · ${capitalisedRole(insiderRole)}` : ""
   }`;
 
   return (
@@ -775,7 +792,7 @@ export function MemberClusterRow({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false); // collapsed → one tidy row per member; expand for the buys + connector
-  const countLabel = `${count} ${count === 1 ? "buy" : "buys"}${insiderRole ? ` · ${insiderRole}` : ""}`;
+  const countLabel = `${count} ${count === 1 ? "buy" : "buys"}${insiderRole ? ` · ${capitalisedRole(insiderRole)}` : ""}`;
   // Same chip() family as PartyChip / BuyStyleChip.
   // Lives in the Action column (desktop) / right stack (mobile), not by the name.
   // Discretion mode hides the rating-derived signal everywhere in the list (the
@@ -919,6 +936,7 @@ export function MarketRow<W>({
   formatTickerDisplay,
   locale,
   showLogo = true,
+  showLegCount = true,
   chartMode,
   noPosteriorData = false,
   indent = false,
@@ -964,7 +982,7 @@ export function MarketRow<W>({
     : rawTicker;
   const company = dealing.company || "—";
   const insiderLine = dealing.insiderRole
-    ? `${dealing.insiderRole} · ${dealing.insiderName}`
+    ? `${capitalisedRole(dealing.insiderRole)} · ${dealing.insiderName}`
     : dealing.insiderName;
   const valueLabel =
     dealing.value != null ? fmt.formatValue(dealing.value) : "—";
@@ -1049,7 +1067,7 @@ export function MarketRow<W>({
           <div className="text-sm font-semibold tabular-nums">{valueLabel}</div>
         </div>
         <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center gap-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
-          {dealing.legCount > 1 && (
+          {showLegCount && dealing.legCount > 1 && (
             <span className="text-[11px] font-semibold tabular-nums text-muted/70">
               {dealing.legCount}
             </span>

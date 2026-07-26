@@ -460,8 +460,12 @@ export default function DefaultLayout({
         {children}
       </main>
       <footer className="w-full border-t border-separator bg-surface/60">
-        <div className="mx-auto w-full max-w-[1280px] px-4 md:px-6 py-5 text-[10px] leading-4 text-foreground/40">
-          <div className="flex items-center mb-4">
+        {/* Generous top padding and a wide gap under the wordmark: the footer
+            follows straight on from page content, so without breathing room
+            above it the mark reads as part of the last section rather than as
+            the start of the footer. */}
+        <div className="mx-auto w-full max-w-[1280px] px-4 md:px-6 pt-12 pb-5 md:pt-16 text-[10px] leading-4 text-foreground/40">
+          <div className="flex items-center mb-8 md:mb-10">
             <img
               alt="ddbx"
               className="h-5 max-w-[56px] opacity-30 dark:invert"

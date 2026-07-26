@@ -352,6 +352,14 @@ export interface MarketConfig<W = unknown> {
    *  back to a generic description (see DEFAULT_COLUMN_HELP in market-row). */
   columnHelp?: Partial<Record<MarketColumnKey, string>>;
 
+  /** Whether the trend column prefixes its sparkline with the row's leg count.
+   *  Useful where a multi-leg filing genuinely reads as "N buys"; noise where
+   *  the count and the spark disagree about what the column is for. US sets
+   *  this false — a bare "2" next to rows whose neighbours show only a line
+   *  reads as a broken cell. Default true, and the header label follows:
+   *  "Qty / Trend" when counting, plain "Trend" when not. */
+  showLegCount?: boolean;
+
   /** View tabs to show (signal / interesting / all for US;
    *  significant / noteworthy / … for UK). */
   views: MarketView[];

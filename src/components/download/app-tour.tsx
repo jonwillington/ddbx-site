@@ -14,9 +14,12 @@
  *  alternates side per beat — a rhythm a pinned column structurally cannot
  *  have, since its device never moves.
  *
- *  The screens are `variant="bare"` — no bezels. Seven handsets down a page is
- *  seven frames the visitor has to look past; the alert screenshot already
- *  answers "is this a phone app?", and the store badges answer it twice.
+ *  The screens sit in real device frames. An earlier pass ran them `bare` on
+ *  the theory that seven handsets down a page is seven frames the visitor has
+ *  to look past — but a bare screen with a home indicator and no hardware reads
+ *  as an unfinished image rather than as a phone, and the site was rendering
+ *  bezels on the company page while omitting them here. One treatment
+ *  everywhere; `variant="bare"` stays available but is no longer used.
  *
  *  Mobile keeps the snap carousel: it's thumb-native, it was never the generic
  *  part, and a stack of full-width screenshots is worse.
@@ -63,13 +66,11 @@ function BeatVisual({
   marketId,
   platform,
   tick,
-  variant,
 }: {
   beat: TourBeat;
   marketId: string;
   platform: AppPlatform;
   tick: number;
-  variant?: "bare";
 }) {
   if (beat.slot === "alert") {
     // The desktop bands are height-free, but the mobile carousel's slides sit
@@ -79,11 +80,7 @@ function BeatVisual({
     return (
       <div
         className="flex items-center justify-center py-4"
-        style={
-          variant === "bare"
-            ? undefined
-            : { aspectRatio: String(screenAspect(platform)) }
-        }
+        style={{ aspectRatio: String(screenAspect(platform)) }}
       >
         <HeroNotificationStack deals={dealsForMarket(marketId)} tick={tick} />
       </div>
@@ -96,7 +93,6 @@ function BeatVisual({
       platform={platform}
       slot={beat.slot}
       src={appShotSrc(marketId, platform, beat.slot)}
-      variant={variant}
     />
   );
 }
@@ -191,7 +187,6 @@ export function AppTour({
                     marketId={marketId}
                     platform={platform}
                     tick={tick}
-                    variant="bare"
                   />
                 </div>
               </div>

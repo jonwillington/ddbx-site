@@ -38,6 +38,8 @@ import {
   useSectorMarket,
 } from "@/components/sector-ui";
 import DefaultLayout from "@/layouts/default";
+import { AppCtaBand } from "@/components/seo/app-cta-band";
+import { sectorCta } from "@/components/seo/cta-copy";
 import { api } from "@/lib/api";
 import { companyPath, cleanCompanyName, displayTicker } from "@/lib/company";
 
@@ -248,6 +250,14 @@ export default function SectorPage() {
             ))}
           </ul>
         </Section>
+
+        <AppCtaBand
+          body={sectorCta(sector.label).body}
+          gaLabel={`Sector · ${sector.slug}`}
+          headline={sectorCta(sector.label).headline}
+          marketId={market.id === "US" ? "us" : "uk"}
+          screenshotSlot="today"
+        />
 
         <p className={`mt-10 border-t ${R.rule} pt-6 ${R.label} leading-[1.6]`}>
           Figures cover disclosed purchases over the last twelve months and are
