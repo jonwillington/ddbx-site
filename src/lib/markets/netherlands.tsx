@@ -593,10 +593,6 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
       latestDisclosedLabel: r.stats.latest_disclosed_date
         ? `Latest disclosure ${r.stats.latest_disclosed_date.slice(0, 10)}`
         : undefined,
-      debugBreakdown:
-        r.dealings.length !== groups.length
-          ? `${r.dealings.length} raw legs collapsed into ${groups.length} filings`
-          : undefined,
     };
 
     return { dealings: groups.map(toMarketDealing), stats };

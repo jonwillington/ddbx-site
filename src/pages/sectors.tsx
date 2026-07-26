@@ -23,6 +23,7 @@ import { api } from "@/lib/api";
 import { SectorFigures, useSectorMarket, R } from "@/components/sector-ui";
 import { AppCtaBand } from "@/components/seo/app-cta-band";
 import { sectorCta } from "@/components/seo/cta-copy";
+import { TrackingNotice } from "@/components/seo/tracking-notice";
 
 export default function SectorsPage() {
   const market = useSectorMarket();
@@ -66,6 +67,8 @@ export default function SectorsPage() {
           since they were disclosed.
         </p>
 
+        <TrackingNotice className="mt-3 max-w-[62ch]" />
+
         {rows === null ? (
           <div className="mt-10 animate-pulse space-y-3">
             {[0, 1, 2, 3].map((i) => (
@@ -102,7 +105,7 @@ export default function SectorsPage() {
           gaLabel="Sectors index"
           headline={sectorCta().headline}
           marketId={market.id === "US" ? "us" : "uk"}
-          screenshotSlot="today"
+          screenshotSlot="cluster"
         />
 
         <p className={`mt-10 ${R.label} leading-[1.6]`}>

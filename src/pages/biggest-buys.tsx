@@ -53,6 +53,10 @@ import { TickerPill } from "@/components/ticker-pill";
 import { AppCtaBand } from "@/components/seo/app-cta-band";
 import { MeterBar } from "@/components/seo/meter-bar";
 import { leaderboardCta } from "@/components/seo/cta-copy";
+import {
+  TrackingNotice,
+  TRACKING_SINCE_YEAR,
+} from "@/components/seo/tracking-notice";
 
 export default function BiggestBuysPage() {
   const { year } = useParams<{ year?: string }>();
@@ -117,7 +121,12 @@ export default function BiggestBuysPage() {
 
   const periodLabel = year ? `in ${year}` : "of the last twelve months";
   const thisYear = new Date().getFullYear();
-  const archive = [thisYear, thisYear - 1].filter((y) => String(y) !== year);
+  // Only offer years we actually hold filings for. The pipeline's first
+  // disclosures land in March 2026, so a "Biggest buys of 2025" link is a
+  // promise of an empty board — worse than no link at all.
+  const archive = [thisYear, thisYear - 1]
+    .filter((y) => y >= TRACKING_SINCE_YEAR)
+    .filter((y) => String(y) !== year);
 
   return (
     <DefaultLayout>
@@ -140,6 +149,8 @@ export default function BiggestBuysPage() {
           companies, with how each has performed against the market since it was
           disclosed.
         </p>
+
+        <TrackingNotice className="mt-3 max-w-[62ch]" />
 
         {!complete && (
           // Truncation is invisible unless you say so: the board still renders
@@ -195,7 +206,7 @@ export default function BiggestBuysPage() {
           gaLabel={year ? `Biggest buys · ${year}` : "Biggest buys"}
           headline={leaderboardCta.headline}
           marketId={market.id === "US" ? "us" : "uk"}
-          screenshotSlot="today"
+          screenshotSlot="cluster"
         />
 
         <section className={`mt-12 border-t ${R.rule} pt-7`}>
@@ -268,6 +279,14 @@ function BuyRow({
   const cluster = d.cluster?.tier;
   const ticker = displayTicker(d.ticker ?? "");
   const value = buyValue(d);
+  // Mark the original consideration to the stock's own move since the trade —
+  // NOT to `alpha`, which is measured against the benchmark and would misstate
+  // the holding's value. Null when we have no post-trade mark.
+  const stockPct = d.live_performance?.return_pct_trade;
+  const worthNow =
+    typeof stockPct === "number" && value > 0
+      ? value * (1 + stockPct / 100)
+      : null;
 
   return (
     <li className={`flex items-baseline gap-4 border-b ${R.rule} py-3.5`}>
@@ -313,14 +332,24 @@ function BuyRow({
       </span>
 
       <span className="shrink-0 text-right">
-        <span className="block text-[15px] font-semibold tabular-nums tracking-[-0.01em] text-foreground">
+        {/* The two numbers the page exists to show. They were set at 15px and
+            12px — smaller than the company name beside them — so the board read
+            as a list of names with footnotes. */}
+        <span className="block text-[22px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground sm:text-[26px]">
           {money(value, symbol)}
         </span>
         <span
-          className={`mt-0.5 block text-[12px] tabular-nums ${alphaClass(alpha)}`}
+          className={`mt-1.5 block text-[15px] font-medium tabular-nums ${alphaClass(alpha)}`}
         >
           {signedPct(alpha)}
         </span>
+        {/* What the stake is worth now. The percentage says how it moved; this
+            says what it became, which is the thing a reader actually pictures. */}
+        {worthNow != null && (
+          <span className="mt-1 block text-[12px] tabular-nums text-foreground/45">
+            now {money(worthNow, symbol)}
+          </span>
+        )}
       </span>
     </li>
   );

@@ -787,10 +787,6 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
       latestDisclosedLabel: r.stats.latest_disclosed_date
         ? `Latest disclosure ${r.stats.latest_disclosed_date}`
         : undefined,
-      debugBreakdown:
-        r.stats.by_code.length > 0
-          ? `By code: ${r.stats.by_code.map((c) => `${c.code}=${c.n}`).join(" · ")}`
-          : undefined,
     };
 
     return { dealings: groups.map(toMarketDealing), stats };

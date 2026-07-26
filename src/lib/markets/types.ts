@@ -154,8 +154,6 @@ export interface MarketStats {
   viewCounts: Record<string, number>;
   /** Optional caption — e.g. "Latest disclosure 2026-05-19". */
   latestDisclosedLabel?: string;
-  /** Optional debug/transparency line — e.g. "By code: P=3 · S=12 · A=4". */
-  debugBreakdown?: string;
 }
 
 /** One view tab definition — id matches what the adapter expects in

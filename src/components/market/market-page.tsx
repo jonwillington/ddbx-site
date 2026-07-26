@@ -1761,12 +1761,6 @@ export function MarketPage<W>({
           </div>
         )}
 
-        {stats?.debugBreakdown && (
-          <div className="text-xs text-muted text-center">
-            <div className="text-[10px] opacity-70">{stats.debugBreakdown}</div>
-          </div>
-        )}
-
         <MarketFaq items={config.faq} />
       </section>
 

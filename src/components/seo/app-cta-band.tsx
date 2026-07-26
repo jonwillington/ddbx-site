@@ -48,7 +48,7 @@ export function AppCtaBand({
   gaLabel,
   marketId,
   media = "screenshot",
-  screenshotSlot = "today",
+  screenshotSlot = "analysis",
   className = "",
 }: {
   kicker?: string;
@@ -61,6 +61,11 @@ export function AppCtaBand({
    *  broker guides, where an affiliate CTA is already competing for the click
    *  and a phone next to it is two asks in one band. */
   media?: CtaMedia;
+  /** Defaults to `analysis`, deliberately NOT `today`: the today captures are
+   *  whatever state the simulator was in, and the current ones were taken at a
+   *  weekend — so "Follow these insiders in real time" rendered next to a
+   *  "Markets closed for the weekend" empty state. Pick a slot whose screen
+   *  always has content in it. */
   screenshotSlot?: ShotSlot;
   className?: string;
 }) {

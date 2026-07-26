@@ -7,6 +7,17 @@ import { chip } from "@/components/chip";
 import { marketForPath } from "@/lib/markets/registry";
 import { useMediaQuery } from "@/lib/use-media-query";
 
+/** Routes that render `MarketPage` and therefore reserve space for this badge.
+ *  Everything else — the SEO pages, company pages, broker pages — lays out its
+ *  own heading at the top of the content column with nothing set aside. */
+const MARKET_HOME_PATHS = new Set([
+  "/",
+  "/contact",
+  "/privacy",
+  "/cookies",
+  "/terms",
+]);
+
 /** Persistent beta/advisory badge that floats below the navbar. Lives above
  *  the route boundary so it doesn't remount when navigating between markets —
  *  switching between two beta markets crossfades the copy in place, and
@@ -15,7 +26,18 @@ export function BetaTag() {
   const { pathname } = useLocation();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const market = marketForPath(pathname);
-  const notice = market.config.topNotice ?? null;
+  // The badge is positioned to tuck inside the market hero's framed panel
+  // (`top-28`, centred) and the hero reserves top space for it via
+  // `hasTopNotice`. No other route has that panel — so on the SEO pages
+  // (/companies, /biggest-buys, /sectors, /learn/*) the pill was landing on top
+  // of the h1, which is where "Every UK company with director dealings" ended
+  // up wearing a BETA badge across its middle. Restrict it to the dashboard.
+  const path = pathname.replace(/\/+$/, "") || "/";
+  // `/report/:month` also renders MarketHomePage (it opens the recap modal
+  // over the dashboard).
+  const onMarketHome =
+    MARKET_HOME_PATHS.has(path) || path.startsWith("/report/");
+  const notice = onMarketHome ? (market.config.topNotice ?? null) : null;
   /* Markets with a right-hand drawer (news / channel perf) reserve a fixed
    * w-80 rail from lg up (`lg:mr-80` in DefaultLayout), so the hero panel is
    * centred on the *content area*, not the viewport. Mirror that: shift the

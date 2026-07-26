@@ -31,7 +31,7 @@
  *  percentage is kept as a preceding declaration for browsers without container
  *  units.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   PLATFORM_LABEL,
@@ -68,10 +68,30 @@ export function DeviceFrame({
   eager?: boolean;
 }) {
   const [state, setState] = useState<LoadState>("loading");
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   // Re-arm on src change: the tour swaps `src` between beats, and a frame that
   // stayed "missing" from a previous slot would never show the new screenshot.
-  useEffect(() => setState("loading"), [src]);
+  //
+  // Then immediately re-check whether the image is ALREADY decoded. A cached
+  // image can finish loading before React attaches `onLoad`, in which case the
+  // event never fires and the frame sits on its placeholder forever with the
+  // real screenshot sitting in cache. That is not a rare race here: the company
+  // page's screen roller calls `useAvailableShots`, which probes every src with
+  // `new Image()` before rendering — so by the time these <img>s mount, every
+  // one of them is guaranteed to be cached and guaranteed to lose the race.
+  // That is why the roller rendered seven "iPhone screenshot" placeholders on
+  // ddbx.uk/company/* while the PNGs were committed, deployed, and serving 200.
+  useEffect(() => {
+    const img = imgRef.current;
+
+    if (img?.complete && img.naturalWidth > 0) {
+      setState("ready");
+
+      return;
+    }
+    setState("loading");
+  }, [src]);
 
   const isIos = platform === "ios";
   const bare = variant === "bare";
@@ -83,6 +103,7 @@ export function DeviceFrame({
     >
       {state !== "missing" ? (
         <img
+          ref={imgRef}
           alt={alt}
           decoding="async"
           fetchPriority={eager ? "high" : "auto"}

@@ -256,7 +256,7 @@ export default function SectorPage() {
           gaLabel={`Sector · ${sector.slug}`}
           headline={sectorCta(sector.label).headline}
           marketId={market.id === "US" ? "us" : "uk"}
-          screenshotSlot="today"
+          screenshotSlot="cluster"
         />
 
         <p className={`mt-10 border-t ${R.rule} pt-6 ${R.label} leading-[1.6]`}>
