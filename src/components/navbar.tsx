@@ -42,17 +42,32 @@ export const Navbar = () => {
 
   // Broker comparison is UK-only content — don't surface it while browsing
   // other markets (the dashboard promos are likewise config.id === "uk").
-  // Markets without a Brokers tab would be left with "Deals" as the only
-  // link — pointless (the logo already goes there), so the whole nav list
-  // hides when it would hold a single item.
-  const navItems =
-    market.id === "uk"
+  //
+  // The companies index is NOT UK-only: `/companies` picks its market from the
+  // hostname (see CompaniesPage), so it serves UK names on ddbx.uk and US ones
+  // on ddbx.us. Congress and Trump Media ride the US domain, so they get it
+  // too. SE/NL have no companies index yet.
+  const showBrokers = market.id === "uk";
+  const showCompanies = ["uk", "us", "usg", "djt"].includes(market.id);
+
+  const navItems = [
+    {
+      label: "Deals",
+      href: dashboardHref,
+      match: (p: string) => p === dashboardHref || p === "/",
+    },
+    ...(showCompanies
       ? [
           {
-            label: "Deals",
-            href: dashboardHref,
-            match: (p: string) => p === dashboardHref || p === "/",
+            label: "Companies",
+            href: "/companies",
+            match: (p: string) =>
+              p === "/companies" || p.startsWith("/company/"),
           },
+        ]
+      : []),
+    ...(showBrokers
+      ? [
           {
             label: "Brokers",
             href: "/brokers",
@@ -60,7 +75,13 @@ export const Navbar = () => {
               p.startsWith("/brokers") || p.startsWith("/compare"),
           },
         ]
-      : [];
+      : []),
+  ];
+
+  // A market left with just "Deals" gets no nav at all — the logo already goes
+  // there, so a lone link is pure chrome. (Preserves the previous behaviour for
+  // SE/NL, which used to render an empty list.)
+  const showNav = navItems.length > 1;
 
   return (
     <nav className="w-full border-b border-separator bg-[#f5f0e8]/90 dark:bg-background/70 backdrop-blur-lg">
@@ -74,7 +95,7 @@ export const Navbar = () => {
             />
           </a>
           <MarketSwitcher />
-          {navItems.length > 0 && (
+          {showNav && (
             <ul className="hidden gap-4 md:flex">
               {navItems.map((item) => {
                 const active = item.match?.(location.pathname) ?? false;
