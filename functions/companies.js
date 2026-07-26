@@ -1,21 +1,21 @@
-// The company index: ddbx.uk/companies, ddbx.us/companies.
+// Crawler pre-render for the company index: ddbx.uk/companies, ddbx.us/companies.
 //
-// Without this the ~575 company pages would be orphans — listed in the sitemap
-// but linked from nowhere, which is a weak signal and a slow crawl. This is the
-// hub: one page linking every company page on the host, so crawlers reach them
-// by following links like they do everything else, and readers get a browsable
-// A-Z.
+// The page is a React route (src/pages/companies.tsx) so it inherits the
+// site's chrome and design language. This Function does for it what
+// functions/company/[key].js does for a company page: per-page <head> copy,
+// and the actual links injected into #root so a crawler that doesn't run JS
+// still finds every company page.
 //
-// Same content bar as functions/sitemap.xml.js so the two agree: a company that
-// isn't worth submitting isn't worth linking from the hub either.
+// The links are the point. Without them the ~575 company pages would be
+// sitemap-only orphans — discoverable in principle, weakly signalled in
+// practice. This is the hub in the hub-and-spoke.
 
 const API_BASE = "https://api.ddbx.uk/api";
 
 const MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
 const FILING_NOUN = { UK: "director dealings", US: "insider trading" };
-const MARKET_LABEL = { UK: "UK", US: "US" };
 
-/** Mirrors meetsContentBar in functions/sitemap.xml.js. */
+/** Mirrors meetsContentBar in functions/sitemap.xml.js and companies.tsx. */
 const meetsContentBar = (c) => c.deals >= 2 || c.analysed > 0;
 
 function apexHost(hostname) {
@@ -32,167 +32,121 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 
-// Mirrors cleanCompany in functions/company/[market]/[key].js.
 const cleanCompany = (c) =>
   String(c ?? "")
     .replace(/\s*\([^)]*\)\s*$/, "")
     .replace(/\s*\/[A-Z]{2}\/\s*$/, "")
     .trim();
 
-const bareTicker = (t) => String(t ?? "").split(".")[0];
+const tickerToSlug = (key) =>
+  String(key ?? "")
+    .replace(/\.L$/i, "")
+    .toLowerCase();
 
-/** First character to group under: A–Z, everything else under #. */
-function initial(name) {
-  const ch = String(name).trim().charAt(0).toUpperCase();
+const setContent = (value) => ({
+  element(el) {
+    el.setAttribute("content", value);
+  },
+});
 
-  return ch >= "A" && ch <= "Z" ? ch : "#";
-}
-
-const STYLE = `<style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-         background:#f5f0e8; color:#1E1506; -webkit-font-smoothing:antialiased; line-height:1.5; }
-  a { color:#6b2f0a; }
-  header.top { padding:20px 24px; }
-  .brand img { height:26px; width:auto; display:block; }
-  main { max-width:860px; margin:0 auto; padding:8px 24px 56px; }
-  h1 { font-size:27px; line-height:1.2; letter-spacing:-0.4px; margin:0 0 8px; }
-  .lead { margin:0 0 20px; color:#5a4d3a; font-size:15.5px; }
-  .jump { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 26px; padding:0; list-style:none; }
-  .jump a { display:inline-block; min-width:30px; text-align:center; padding:5px 8px; font-size:13px;
-            font-weight:600; text-decoration:none; background:#fffaf2; border:1px solid #e4d8c4; border-radius:9px; }
-  h2 { font-size:15px; text-transform:uppercase; letter-spacing:0.7px; color:#6b5d49;
-       margin:26px 0 10px; scroll-margin-top:16px; }
-  ul.cos { list-style:none; padding:0; margin:0; columns:2; column-gap:28px; }
-  ul.cos li { break-inside:avoid; padding:6px 0; font-size:14.5px; }
-  ul.cos .tk { color:#8a7a62; font-size:12.5px; font-variant-numeric:tabular-nums; }
-  ul.cos .n { color:#a8997f; font-size:12px; }
-  footer { border-top:1px solid #e4d8c4; margin-top:26px; padding:20px 24px 40px; }
-  footer p { max-width:860px; margin:0 auto; font-size:12.5px; color:#8a7a62; }
-  @media (max-width:640px) { ul.cos { columns:1; } h1 { font-size:23px; } }
-</style>`;
-
-function page(market, host, companies) {
-  const noun = FILING_NOUN[market];
-  const label = MARKET_LABEL[market];
-  const title = `Every ${label} company with ${noun} — ${companies.length} issuers · ddbx`;
-  const description = `Browse ${companies.length} ${label} companies whose ${market === "UK" ? "directors" : "insiders"} have bought shares, with the filings, ratings and company stats for each.`;
-  const url = `https://${host}/companies`;
-
-  const groups = new Map();
-
-  for (const c of companies) {
-    const g = initial(cleanCompany(c.company) || c.key);
-
-    if (!groups.has(g)) groups.set(g, []);
-    groups.get(g).push(c);
-  }
-  const letters = [...groups.keys()].sort();
-
-  const sections = letters
-    .map((letter) => {
-      const items = groups
-        .get(letter)
-        .sort((a, b) => cleanCompany(a.company).localeCompare(cleanCompany(b.company)))
-        .map(
-          (c) =>
-            `<li><a href="/company/${esc(market)}/${encodeURIComponent(c.key)}">${esc(cleanCompany(c.company) || c.key)}</a> <span class="tk">${esc(bareTicker(c.key))}</span> <span class="n">· ${c.deals} ${c.deals === 1 ? "buy" : "buys"}</span></li>`,
-        )
-        .join("");
-
-      return `<h2 id="${esc(letter === "#" ? "num" : letter)}">${esc(letter)}</h2><ul class="cos">${items}</ul>`;
-    })
+function prerender(market, companies) {
+  const items = companies
+    .slice()
+    .sort((a, b) =>
+      cleanCompany(a.company).localeCompare(cleanCompany(b.company)),
+    )
+    .map(
+      (c) =>
+        `<li><a href="/company/${esc(tickerToSlug(c.key))}">${esc(cleanCompany(c.company) || c.key)}</a> — ${c.deals} ${c.deals === 1 ? "buy" : "buys"}</li>`,
+    )
     .join("");
 
-  const jump = letters
-    .map((l) => `<li><a href="#${esc(l === "#" ? "num" : l)}">${esc(l)}</a></li>`)
-    .join("");
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)}</title>
-<meta name="description" content="${esc(description)}">
-<link rel="canonical" href="${esc(url)}">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="ddbx">
-<meta property="og:title" content="${esc(title)}">
-<meta property="og:description" content="${esc(description)}">
-<meta property="og:url" content="${esc(url)}">
-<meta property="og:image" content="https://${esc(host)}/${market === "US" ? "og-us.png" : "og-uk.png"}">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-${STYLE}
-</head>
-<body>
-<header class="top">
-  <a class="brand" href="/" aria-label="ddbx"><img src="/logo.svg" alt="ddbx" width="73" height="26"></a>
-</header>
-<main>
-  <h1>Every ${esc(label)} company with ${esc(noun)}</h1>
-  <p class="lead">${esc(description)}</p>
-  <ul class="jump">${jump}</ul>
-  ${sections}
-</main>
-<footer>
-  <p>Companies appear here once they have repeat insider activity or a written analysis on file. Not investment advice.</p>
-</footer>
-</body>
-</html>`;
-}
-
-/** A failed API call must NOT fall through to the SPA: Pages would answer with
- *  index.html and a 200, so a crawler would index the market homepage's content
- *  at /companies. A 503 tells it to come back instead. */
-function unavailable() {
-  return new Response(
-    '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Temporarily unavailable · ddbx</title><meta name="robots" content="noindex"></head><body><p>The company index is briefly unavailable. Please try again shortly.</p></body></html>',
-    {
-      status: 503,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-        "retry-after": "300",
-      },
-    },
-  );
+  return `<div style="max-width:900px;margin:0 auto;padding:32px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1E1506">
+  <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">Every ${esc(market)} company with ${esc(FILING_NOUN[market])}</h1>
+  <ul style="font-size:14px;line-height:1.9;columns:2">${items}</ul>
+</div>`;
 }
 
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const host = apexHost(url.hostname);
   const market = MARKET_BY_HOST[host];
-  const headers = {
-    "content-type": "text/html; charset=utf-8",
-    "cache-control": "public, s-maxage=3600, max-age=600",
-  };
+  const shell = await context.next();
 
-  // ddbx.eu has no company pages yet — send the SPA's 404 rather than an empty
-  // index. (Pages will fall through to index.html for unknown routes.)
-  if (!market) return context.next();
+  // ddbx.eu has no company pages — the SPA renders what it renders for an
+  // unknown route, and we keep it out of the index.
+  if (!market) {
+    return new HTMLRewriter()
+      .on("head", {
+        element(el) {
+          el.append('<meta name="robots" content="noindex, follow">', {
+            html: true,
+          });
+        },
+      })
+      .transform(shell);
+  }
+
+  let companies = null;
 
   try {
     const res = await fetch(`${API_BASE}/companies?market=${market}`, {
       headers: { accept: "application/json" },
       // cacheTtlByStatus, not a blanket cacheTtl: `cacheEverything` with a flat
-      // TTL pins whatever came back — including a 404 served during a Worker
-      // deploy — for the full hour. Errors get a minute so a blip can't hide
-      // the data for an hour.
+      // TTL pins whatever came back — including a 404 served while a Worker
+      // deploy rolls out — for the full hour.
       cf: {
         cacheEverything: true,
         cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
       },
     });
 
-    if (!res.ok) return unavailable();
-    const body = await res.json();
-    const companies = (body.companies ?? []).filter((c) => c.key && meetsContentBar(c));
+    if (res.ok) {
+      const body = await res.json();
 
-    return new Response(page(market, host, companies), { headers });
+      companies = (body.companies ?? []).filter(
+        (c) => c.key && meetsContentBar(c),
+      );
+    }
   } catch {
-    return unavailable();
+    /* fall through — the SPA fetches the list for itself */
   }
+
+  // No pre-render without data, but the page still works: React fetches the
+  // same endpoint on mount. Nothing to noindex — the URL is legitimate either
+  // way.
+  if (!companies) return shell;
+
+  const canonical = `https://${host}/companies`;
+  const title = `Every ${market} company with ${FILING_NOUN[market]} — ${companies.length} issuers · ddbx`;
+  const description = `Browse ${companies.length} ${market} companies whose ${market === "UK" ? "directors" : "insiders"} have bought shares, with the filings, ratings and company stats for each.`;
+
+  return new HTMLRewriter()
+    .on("title", {
+      element(el) {
+        el.setInnerContent(title);
+      },
+    })
+    .on('meta[name="description"]', setContent(description))
+    .on('meta[property="og:title"]', setContent(title))
+    .on('meta[property="og:description"]', setContent(description))
+    .on("head", {
+      element(el) {
+        el.append(
+          [
+            `<link rel="canonical" href="${esc(canonical)}">`,
+            `<meta property="og:url" content="${esc(canonical)}">`,
+            `<meta name="twitter:title" content="${esc(title)}">`,
+            `<meta name="twitter:description" content="${esc(description)}">`,
+          ].join("\n"),
+          { html: true },
+        );
+      },
+    })
+    .on("#root", {
+      element(el) {
+        el.setInnerContent(prerender(market, companies), { html: true });
+      },
+    })
+    .transform(shell);
 }

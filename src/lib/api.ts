@@ -17,6 +17,56 @@ import type {
   UsDirectorDetail,
 } from "@/types/ddbx";
 
+/** One issuer in the /companies index. */
+export interface CompanyIndexEntry {
+  /** Storage key — the LSE ticker with its `.L` suffix on UK, the bare symbol
+   *  on US. Public URLs drop the suffix; see tickerToSlug in lib/company.ts. */
+  key: string;
+  company: string;
+  deals: number;
+  last_trade_date: string;
+  /** How many of this issuer's dealings have a written analysis. */
+  analysed: number;
+}
+
+/** The company-page bundle. Deals arrive as the market's own wire type, so a
+ *  UK row is a `Dealing` and a US row a `UsDealing`. */
+export interface CompanyPage {
+  market: "UK" | "US";
+  key: string;
+  company: string;
+  summary: {
+    deals: number;
+    /** Distinct directors (UK) or reporting insiders (US). */
+    people: number;
+    total_value: number;
+    currency: "GBP" | "USD";
+    first_trade_date: string | null;
+    last_trade_date: string | null;
+    analysed: number;
+    congress_trades: number;
+  };
+  deals: Array<Dealing | UsDealing>;
+  stats: CompanyStatsPanel | null;
+  news: { items: UkNewsItem[]; fetched_at: string | null };
+  gov: GovDealing[];
+}
+
+/** The Freetrade-style stats panel (worker: db/company-stats.ts). */
+export interface CompanyStatsPanel {
+  beta: number | null;
+  peRatio: number | null;
+  marketCap: number | null;
+  dividendYield: number | null;
+  pbRatio: number | null;
+  pegRatio: number | null;
+  previousClose: number | null;
+  open: number | null;
+  currency: string | null;
+  fetchedAt: string | null;
+  description: string | null;
+}
+
 export interface EuScrapeResult {
   source: "FI";
   from: string;
@@ -167,6 +217,21 @@ export const api = {
     get<{ brokers: BrokerOffer[] }>(`/brokers?market=${market}`).then(
       (r) => r.brokers.find((b) => b.slug === slug) ?? null,
     ),
+  /** Everything one company page renders, in a single edge-cached response:
+   *  the issuer's dealings with analysis attached, the Yahoo stats panel,
+   *  recent news, and — on US issuers — congressional trades in the same
+   *  ticker. Bundled rather than fanned out because these pages get crawled;
+   *  see functions/company/[key].js. */
+  companyPage: (market: string, key: string) =>
+    get<CompanyPage>(
+      `/company/${market.toUpperCase()}/${encodeURIComponent(key)}/page`,
+    ),
+  /** Indexable issuers for a market, with the counts the /companies hub and
+   *  the sitemap use to apply their content bar. */
+  companies: (market = "UK") =>
+    get<{ market: string; companies: CompanyIndexEntry[] }>(
+      `/companies?market=${market.toUpperCase()}`,
+    ).then((r) => r.companies),
   version: () => get<{ latest: string | null; total: number }>("/version"),
   /** UK daily summary for a given YYYY-MM-DD. Returns null on 404 — the
    *  endpoint 404s for days the team hasn't written one for yet, which

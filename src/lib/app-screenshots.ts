@@ -25,6 +25,7 @@ export const SHOT_SLOTS = [
   "today",
   "alert",
   "analysis",
+  "cluster",
   "performance",
   "lockscreen",
 ] as const;
@@ -37,6 +38,7 @@ export const SLOT_LABEL: Record<ShotSlot, string> = {
   today: "Today",
   alert: "Alerts",
   analysis: "Analysis",
+  cluster: "Cluster",
   performance: "Performance",
   lockscreen: "Lock screen",
 };

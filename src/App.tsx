@@ -5,6 +5,8 @@ import { CookieBanner } from "@/components/cookie-banner";
 import { DocumentTitle } from "@/components/document-title";
 import AccountDeletionPage from "@/pages/account-deletion";
 import BrokerDetailPage from "@/pages/broker-detail";
+import CompaniesPage from "@/pages/companies";
+import CompanyPage from "@/pages/company";
 import ComparePage from "@/pages/compare";
 import DownloadPage from "@/pages/download";
 import PerformancePage from "@/pages/performance";
@@ -81,6 +83,12 @@ function App() {
         <Route element={<ComparePage />} path="/compare" />
         <Route element={<ComparePage />} path="/brokers" />
         <Route element={<BrokerDetailPage />} path="/brokers/:slug" />
+        {/* Company pages. The market comes from the domain (ddbx.uk serves UK
+            issuers, ddbx.us US ones) and the LSE ".L" suffix is dropped, so
+            MTLN.L is ddbx.uk/company/mtln. functions/company/[key].js
+            pre-renders the same content for crawlers before this mounts. */}
+        <Route element={<CompaniesPage />} path="/companies" />
+        <Route element={<CompanyPage />} path="/company/:key" />
       </Routes>
       <CookieBanner />
     </div>

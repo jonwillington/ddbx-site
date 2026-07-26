@@ -106,7 +106,9 @@ async function companyEntries(host) {
       .filter((c) => c.key && meetsContentBar(c))
       .sort((a, b) => String(b.last_trade_date).localeCompare(String(a.last_trade_date)))
       .map((c) => ({
-        path: `/company/${market}/${encodeURIComponent(c.key)}`,
+        // Public URL shape: market comes from the domain, the LSE ".L"
+        // suffix is dropped. Mirrors tickerToSlug in src/lib/company.ts.
+        path: `/company/${encodeURIComponent(String(c.key).replace(/\.L$/i, "").toLowerCase())}`,
         // A real lastmod, unlike the static routes: the date of the most recent
         // dealing is exactly when the page's content last changed.
         lastmod: c.last_trade_date || null,

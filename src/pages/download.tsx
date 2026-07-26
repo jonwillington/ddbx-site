@@ -559,6 +559,12 @@ const CONFIG: Record<MarketId, LandingConfig> = {
         body: "Every purchase is decoded: who bought, how senior they are, how much of their own money went in, and whether the price they paid looks like conviction or paperwork.",
       },
       {
+        slot: "cluster",
+        kicker: "Clusters",
+        title: "One buy is a data point. Six is a pattern.",
+        body: "When several directors buy the same company inside a few weeks, ddbx groups them — every purchase plotted on the price chart, the average they paid, and what the shares have done since.",
+      },
+      {
         slot: "performance",
         kicker: "Performance",
         title: "See whether it actually worked.",
@@ -609,6 +615,12 @@ const CONFIG: Record<MarketId, LandingConfig> = {
         kicker: "Analysis",
         title: "Somebody has already read it for you.",
         body: "Every purchase is decoded: CEO or 10% holder, how much of their own money went in, and whether it was a real open-market buy or a 10b5-1 plan running on autopilot.",
+      },
+      {
+        slot: "cluster",
+        kicker: "Clusters",
+        title: "One buy is a data point. Six is a pattern.",
+        body: "When several insiders buy the same company inside a few weeks, ddbx groups them — every purchase plotted on the price chart, the average they paid, and what the stock has done since.",
       },
       {
         slot: "performance",
