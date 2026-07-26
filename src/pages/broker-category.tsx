@@ -51,6 +51,7 @@ import {
   VerifiedNote,
 } from "@/components/brokers/broker-page-ui";
 import DefaultLayout from "@/layouts/default";
+import { SeoRail } from "@/components/seo/seo-rail";
 import { api } from "@/lib/api";
 import { isOfferLive } from "@/lib/brokers";
 
@@ -98,7 +99,12 @@ export default function BrokerCategoryPage() {
   ).slice(0, 3);
 
   return (
-    <DefaultLayout>
+    <DefaultLayout drawerRight>
+      <SeoRail
+        marketId="uk"
+        placement="broker_category_rail"
+        ukHeading="Top picks"
+      />
       <article className="mx-auto w-full max-w-[860px] pb-16">
         <nav className={`${R.label} pt-2`}>
           <Link className="hover:text-foreground/70" to="/brokers">

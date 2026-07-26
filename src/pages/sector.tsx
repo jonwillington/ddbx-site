@@ -38,6 +38,7 @@ import {
   useSectorMarket,
 } from "@/components/sector-ui";
 import DefaultLayout from "@/layouts/default";
+import { SeoRail } from "@/components/seo/seo-rail";
 import { AppCtaBand } from "@/components/seo/app-cta-band";
 import { sectorCta } from "@/components/seo/cta-copy";
 import { api } from "@/lib/api";
@@ -131,7 +132,12 @@ export default function SectorPage() {
     .slice(0, 12);
 
   return (
-    <DefaultLayout>
+    <DefaultLayout drawerRight>
+      <SeoRail
+        marketId={market.id === "US" ? "us" : "uk"}
+        placement="sector_rail"
+        ukHeading="Start investing"
+      />
       <article className="mx-auto w-full max-w-[860px] pb-16">
         <nav className={`${R.label} pt-2`}>
           <Link className="hover:text-foreground/70" to="/sectors">

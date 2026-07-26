@@ -1,4 +1,6 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+
+import { Turnstile } from "./turnstile";
 
 import { BUTTON_RADIUS } from "@/components/button";
 import { API_BASE } from "@/lib/api";
@@ -21,10 +23,12 @@ import { API_BASE } from "@/lib/api";
  *   - a honeypot (`company_url`) that only a bot fills,
  *   - a time-to-submit floor — a human cannot read and complete this in <2.5s,
  *   - server-side validation, capping and per-IP rate limiting.
- *  Cloudflare Turnstile is the intended fourth layer; it needs a site key
- *  provisioned in the dashboard, so the widget slot is wired but inert until
- *  VITE_TURNSTILE_SITE_KEY is set. Absent the key the form still submits and
- *  the three layers above still apply.
+ *  Cloudflare Turnstile is the fourth layer and is fully wired on both sides.
+ *  It renders only when VITE_TURNSTILE_SITE_KEY is set and is verified only
+ *  when the worker has TURNSTILE_SECRET, so turning it on is a two-secret
+ *  config change with no deploy. Both halves ship together deliberately:
+ *  setting the server secret while the client sent no token would 400 every
+ *  submission. See components/api/turnstile.tsx.
  */
 
 const MARKETS = ["UK", "US", "Sweden", "Netherlands", "Congress"] as const;
@@ -60,6 +64,10 @@ export function InterestForm() {
   const [markets, setMarkets] = useState<string[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  // Null until the challenge solves, and null again when it expires. Only
+  // meaningful when a site key is configured; the server ignores it otherwise.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const onToken = useCallback((t: string | null) => setTurnstileToken(t), []);
   // Set once on first render; compared at submit to catch instant posts.
   const mountedAt = useRef(Date.now());
 
@@ -98,6 +106,7 @@ export function InterestForm() {
           volume_estimate: data.get("volume_estimate"),
           message: data.get("message"),
           markets,
+          turnstile_token: turnstileToken,
           elapsed_ms: Date.now() - mountedAt.current,
           source_path:
             typeof window !== "undefined" ? window.location.pathname : null,
@@ -258,6 +267,8 @@ export function InterestForm() {
           type="text"
         />
       </div>
+
+      <Turnstile onToken={onToken} />
 
       {status === "error" && error ? (
         <p className="text-[13.5px] text-[#8b2020]">{error}</p>

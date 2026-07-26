@@ -19,6 +19,7 @@ import {
 } from "../../shared/sectors.js";
 
 import DefaultLayout from "@/layouts/default";
+import { SeoRail } from "@/components/seo/seo-rail";
 import { api } from "@/lib/api";
 import {
   SectorComparisonRow,
@@ -60,7 +61,12 @@ export default function SectorsPage() {
   const maxValue = publishable.reduce((m, r) => Math.max(m, r.value), 0);
 
   return (
-    <DefaultLayout>
+    <DefaultLayout drawerRight>
+      <SeoRail
+        marketId={market.id === "US" ? "us" : "uk"}
+        placement="sectors_rail"
+        ukHeading="Start investing"
+      />
       <div className="mx-auto w-full max-w-[860px] pb-16">
         <h1 className="mt-2 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
           {market.label} insider buying by sector

@@ -45,6 +45,7 @@ import {
   VerifiedNote,
 } from "@/components/brokers/broker-page-ui";
 import DefaultLayout from "@/layouts/default";
+import { SeoRail } from "@/components/seo/seo-rail";
 import { api } from "@/lib/api";
 import {
   COST_POTS,
@@ -182,7 +183,12 @@ export default function BrokerComparisonPage() {
   }
 
   return (
-    <DefaultLayout>
+    <DefaultLayout drawerRight>
+      <SeoRail
+        marketId="uk"
+        placement="broker_comparison_rail"
+        ukHeading="Top picks"
+      />
       <article className="mx-auto w-full max-w-[860px] pb-16">
         <nav className={`${R.label} pt-2`}>
           <Link className="hover:text-foreground/70" to="/brokers">

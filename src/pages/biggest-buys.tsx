@@ -41,6 +41,7 @@ import {
   useSectorMarket,
 } from "@/components/sector-ui";
 import DefaultLayout from "@/layouts/default";
+import { SeoRail } from "@/components/seo/seo-rail";
 import { API_BASE } from "@/lib/api";
 import {
   cleanCompanyName,
@@ -129,7 +130,12 @@ export default function BiggestBuysPage() {
     .filter((y) => String(y) !== year);
 
   return (
-    <DefaultLayout>
+    <DefaultLayout drawerRight>
+      <SeoRail
+        marketId={market.id === "US" ? "us" : "uk"}
+        placement="biggest_buys_rail"
+        ukHeading="Start investing"
+      />
       <article className="mx-auto w-full max-w-[860px] pb-16">
         {year && (
           <nav className={`${R.label} pt-2`}>

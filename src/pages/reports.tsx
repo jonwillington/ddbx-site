@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import { monthLabel, reportPath } from "../../shared/months.js";
 
 import DefaultLayout from "@/layouts/default";
+import { SeoRail } from "@/components/seo/seo-rail";
 import { api } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
 import { AppCtaBand } from "@/components/seo/app-cta-band";
@@ -63,7 +64,12 @@ export default function ReportsPage() {
   );
 
   return (
-    <DefaultLayout>
+    <DefaultLayout drawerRight>
+      <SeoRail
+        marketId={marketParam === "US" ? "us" : "uk"}
+        placement="reports_rail"
+        ukHeading="Start investing"
+      />
       <div className="mx-auto w-full max-w-[860px] pb-16">
         <h1 className="mt-2 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
           {label} reports

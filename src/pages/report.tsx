@@ -35,6 +35,7 @@ import { MonthlyPerformanceSection } from "@/components/monthly/monthly-performa
 import { Prose } from "@/components/monthly/monthly-prose";
 import { StoreBadges } from "@/components/app-store-badge";
 import DefaultLayout from "@/layouts/default";
+import { SeoRail } from "@/components/seo/seo-rail";
 import { api } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
 
@@ -119,7 +120,12 @@ export default function ReportPage() {
   const label = monthLabel(month);
 
   return (
-    <DefaultLayout>
+    <DefaultLayout drawerRight>
+      <SeoRail
+        marketId={marketParam === "US" ? "us" : "uk"}
+        placement="report_rail"
+        ukHeading="Start investing"
+      />
       <article className="mx-auto w-full max-w-[860px] pb-16">
         <nav className={`${R.label} pt-2`}>
           <Link className="hover:text-foreground/70" to="/reports">

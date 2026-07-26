@@ -39,6 +39,7 @@ import { money, R, useSectorMarket } from "@/components/sector-ui";
 import { AppCtaBand } from "@/components/seo/app-cta-band";
 import { learnCta } from "@/components/seo/cta-copy";
 import DefaultLayout from "@/layouts/default";
+import { SeoRail } from "@/components/seo/seo-rail";
 import { api } from "@/lib/api";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 
@@ -55,7 +56,12 @@ export function LearnIndexPage() {
   const entries: GlossaryEntry[] = owned.length > 0 ? owned : ENTRIES;
 
   return (
-    <DefaultLayout>
+    <DefaultLayout drawerRight>
+      <SeoRail
+        marketId={ownerForHost(host) === "us" ? "us" : "uk"}
+        placement="learn_index_rail"
+        ukHeading="Start investing"
+      />
       <div className="mx-auto w-full max-w-[860px] pb-16">
         <h1 className="mt-2 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
           Understanding insider dealing
@@ -113,7 +119,12 @@ export default function LearnEntryPage() {
   const cta = entry.cta ?? learnCta(entry.ctaTerm ?? entry.term.toLowerCase());
 
   return (
-    <DefaultLayout>
+    <DefaultLayout drawerRight>
+      <SeoRail
+        marketId={entry.owner === "us" ? "us" : "uk"}
+        placement="learn_entry_rail"
+        ukHeading="Start investing"
+      />
       <article className="mx-auto w-full max-w-[860px] pb-16">
         <nav className={`${R.label} pt-2`}>
           <Link className="hover:text-foreground/70" to="/learn">
