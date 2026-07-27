@@ -187,9 +187,6 @@ export function marketIdForPath(pathname, hostname) {
 
 // ---- Route shapes ---------------------------------------------------------
 
-const isPerformancePath = (path) =>
-  path === "/portfolio" || path.endsWith("/performance");
-
 const isDirectorProfilePath = (path) => /\/directors\//.test(path);
 
 /** The developer API product page. Market-blind: it is one cross-market
@@ -358,8 +355,6 @@ export function seoForPath(pathname, hostname) {
       return brandTitle(
         "Insider dealing data API — UK, US & EU filings, scored",
       );
-    if (isPerformancePath(path))
-      return brandTitle(`Portfolio (${market.label}) — ${SITE_NAME}`);
     if (isDirectorProfilePath(path))
       return brandTitle(`Director (${market.label}) — ${SITE_NAME}`);
     // Both of these sit under /brokers/ and so must be tested before the
@@ -420,8 +415,6 @@ export function seoForPath(pathname, hostname) {
   const description = (() => {
     if (isApiPath(path))
       return "One REST API for director and insider share purchases across the UK, US, Sweden and the Netherlands: screened, rated with a written rationale, and benchmarked against the index. Access and pricing on request.";
-    if (isPerformancePath(path))
-      return `Track ${market.label} insider performance versus benchmark indices on ddbx.`;
     if (isDirectorProfilePath(path))
       return `${market.label} director profile with dealing history and signal context on ddbx.`;
     if (brokerCategory) return brokerCategory.description;
@@ -463,15 +456,6 @@ export function seoForPath(pathname, hostname) {
 }
 
 // ---- Canonical ------------------------------------------------------------
-
-/** Canonical path for a market's performance page on its own domain. Mirrors
- *  marketPerformancePath() in the registry. */
-function canonicalPerformancePath(id) {
-  if (id === "uk") return "/portfolio";
-  if (id === "nl") return "/nl/performance";
-
-  return "/performance";
-}
 
 /** Canonical path for a market's dashboard on its own domain. Mirrors each
  *  registry entry's canonicalRoute. */
@@ -531,7 +515,6 @@ export function canonicalUrlFor(pathname, hostname) {
     // /api and /developers are the same page; fold the alias onto the canonical.
     if (isApiPath(path)) return API_CANONICAL_PATH;
     if (DASHBOARD_ALIASES.has(path)) return canonicalDashboardPath(id);
-    if (isPerformancePath(path)) return canonicalPerformancePath(id);
     // /compare is the legacy mount of the broker comparison page.
     if (path === "/compare") return "/brokers";
     // /report/<slug> (singular) opens the recap as a modal over the market

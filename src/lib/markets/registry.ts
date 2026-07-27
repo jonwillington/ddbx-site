@@ -150,14 +150,6 @@ export function marketDashboardPath(market: MarketRegistryEntry): string {
   return market.canonicalRoute;
 }
 
-/** Canonical performance path on the market's own domain. */
-export function marketPerformancePath(market: MarketRegistryEntry): string {
-  if (market.id === "uk") return "/portfolio";
-  if (market.id === "nl") return "/nl/performance";
-
-  return "/performance";
-}
-
 /** Build a market-aware URL. In local/dev hosts this stays relative. */
 export function marketHref(
   market: MarketRegistryEntry,
@@ -184,9 +176,6 @@ function localPathForMarket(
   canonicalPath: string,
 ): string {
   if (canonicalPath === "/") return market.route;
-  if (canonicalPath === "/performance") {
-    return market.id === "uk" ? "/portfolio" : `${market.route}/performance`;
-  }
 
   return canonicalPath;
 }

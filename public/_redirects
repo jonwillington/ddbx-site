@@ -18,6 +18,19 @@
 # "API"; the label and the path don't have to match.
 /developers/*      /developers                               301!
 
+# The retired standalone performance pages. They were public, sitemapped and
+# indexed, and the SPA has no catch-all route — so with their <Route> gone the
+# SPA fallback below would answer 200 with an empty shell, which is a soft 404
+# that stays in the index rather than leaving it. 301 to the market dashboard
+# instead: the channel's Performance tab now carries the same story, so the
+# inbound links land on the content they were pointing at. Must stay ABOVE the
+# fallback — first match wins.
+/portfolio         /                                         301!
+/performance       /                                         301!
+/us/performance    /us                                       301!
+/se/performance    /se                                       301!
+/nl/performance    /nl                                       301!
+
 # SPA fallback — MUST stay last. The site previously relied on Cloudflare's
 # implicit single-page-app fallback; introducing this _redirects file makes it
 # explicit so client routes (/dealings/:id, /directors/:id, …) keep resolving.

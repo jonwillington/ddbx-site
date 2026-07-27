@@ -45,12 +45,11 @@ const COMMON_ROUTES = ["/download", "/download/ios", "/download/android"];
 // should list canonical URLs only — listing ddbx.us/developers would contradict
 // the rel=canonical the same page emits. So it rides ddbx.uk alone.
 
-// Market dashboards + performance pages, by the host that owns them. Hidden
-// markets (/djt) and utility routes (/account-deletion) are intentionally out.
+// Market dashboards, by the host that owns them. Hidden markets (/djt) and
+// utility routes (/account-deletion) are intentionally out.
 const ROUTES_BY_HOST = {
   "ddbx.uk": [
     "/",
-    "/portfolio",
     "/brokers",
     "/developers",
     "/companies",
@@ -62,14 +61,13 @@ const ROUTES_BY_HOST = {
   "ddbx.us": [
     "/",
     "/congress",
-    "/performance",
     "/companies",
     "/reports",
     "/sectors",
     "/biggest-buys",
     "/learn",
   ],
-  "ddbx.eu": ["/", "/nl", "/performance", "/nl/performance"],
+  "ddbx.eu": ["/", "/nl"],
 };
 
 /** www.ddbx.uk → ddbx.uk. Each www host shares its apex host's URL set. */

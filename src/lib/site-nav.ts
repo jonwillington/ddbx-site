@@ -40,7 +40,6 @@ import {
   marketDashboardPath,
   marketForPath,
   marketHref,
-  marketPerformancePath,
 } from "@/lib/markets/registry";
 
 export interface NavLink {
@@ -88,10 +87,6 @@ export function footerGroups(pathname: string, hostname?: string): NavGroup[] {
       href: marketHref(home, "/biggest-buys", hostname),
     },
     { label: "Monthly reports", href: marketHref(home, "/reports", hostname) },
-    {
-      label: "Insider performance",
-      href: marketHref(home, marketPerformancePath(home), hostname),
-    },
   ];
 
   const platforms: NavLink[] = [

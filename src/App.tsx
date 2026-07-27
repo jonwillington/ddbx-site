@@ -14,7 +14,6 @@ import CompanyPage from "@/pages/company";
 import ComparePage from "@/pages/compare";
 import DownloadPage from "@/pages/download";
 import LearnEntryPage, { LearnIndexPage } from "@/pages/learn";
-import PerformancePage from "@/pages/performance";
 import ReportPage from "@/pages/report";
 import SectorPage from "@/pages/sector";
 import SectorsPage from "@/pages/sectors";
@@ -52,11 +51,6 @@ function App() {
         {/* Hidden, unlinked page for app-store account-deletion requirements.
             Deletion itself happens in-app; this just documents the steps. */}
         <Route element={<AccountDeletionPage />} path="/account-deletion" />
-        <Route element={<PerformancePage />} path="/portfolio" />
-        <Route element={<PerformancePage />} path="/performance" />
-        <Route element={<PerformancePage />} path="/us/performance" />
-        <Route element={<PerformancePage />} path="/se/performance" />
-        <Route element={<PerformancePage />} path="/nl/performance" />
         <Route element={<DirectorPage />} path="/directors/:id" />
         <Route element={<DirectorPage />} path="/us/directors/:id" />
         <Route element={<DirectorPage />} path="/se/directors/:id" />
