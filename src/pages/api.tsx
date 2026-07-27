@@ -729,11 +729,16 @@ export default function ApiPage() {
               Request access
             </p>
             <h2 className="mx-auto mt-5 max-w-[20ch] text-balance text-[32px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[44px]">
-              Pricing is quoted per use case.
+              Get in touch for pricing.
             </h2>
-            <p className="mx-auto mt-4 max-w-[40ch] text-balance text-[16.5px] leading-[1.6] text-ink/65">
+            {/* The headline used to carry "quoted per use case", which stated
+                a policy where the band wants an invitation. It survives as the
+                tail of this line: still the one commercial fact worth knowing
+                before you click, now in the sentence that already promises a
+                reply rather than in the position that should be selling. */}
+            <p className="mx-auto mt-4 max-w-[42ch] text-balance text-[16.5px] leading-[1.6] text-ink/65">
               Tell us what you&rsquo;re building and we&rsquo;ll come back with
-              scope and a number.
+              scope and a number, priced to your use case.
             </p>
 
             <button
