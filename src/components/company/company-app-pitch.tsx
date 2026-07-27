@@ -60,6 +60,10 @@ function roleOf(d: Dealing | UsDealing): string {
 
 const valueOf = (d: Dealing | UsDealing) => (isUk(d) ? d.value_gbp : d.value);
 
+/** The ratings that mean "this one was analysed" — the product's definition of
+ *  a signal. Anything else on a row is an unrated disclosure. */
+const RATED = new Set(["significant", "noteworthy", "minor"]);
+
 export function CompanyAppPitch({
   company,
   tickerKey,
@@ -93,7 +97,11 @@ export function CompanyAppPitch({
       ticker: tickerKey,
       icon: `/ios-app-icon-${marketId}.png`,
       app: `ddbx.${marketId}`,
-      tag: d.analysis?.rating === "significant" ? "SIGNAL" : "JUST IN",
+      // Signal ≡ a rated row, whatever the strength: significant, noteworthy
+      // and minor are all things the six-point check wrote up. Tagging only
+      // "significant" as SIGNAL contradicted the product's own definition and
+      // marked two thirds of our own analysis as unremarkable.
+      tag: RATED.has(d.analysis?.rating ?? "") ? "SIGNAL" : "JUST IN",
       lead: `${ticker} · ${company}`,
       body: `${nameOf(d)}${roleOf(d) ? ` (${roleOf(d)})` : ""} bought ${moneyShort(
         valueOf(d),
@@ -125,7 +133,9 @@ export function CompanyAppPitch({
         <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
           {/* ---- Left: the promise ---- */}
           <div>
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-brand-amber">
+            {/* 0.16em, the family kicker spec — `tracking-wider` is 0.05em and
+                made this the one loose-tracked eyebrow on the site. */}
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
               The app
             </p>
             <h2 className="mt-3 text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">

@@ -20,6 +20,7 @@ import {
   categoryBySlug,
   categoryPath,
   MIN_BROKERS,
+  whyWeRank,
 } from "../../../shared/broker-categories.js";
 import {
   esc,
@@ -54,7 +55,7 @@ function platformFee(fees) {
   return "—";
 }
 
-function prerender(category, brokers) {
+function prerender(category, brokers, brokerCount) {
   const entries = brokers
     .map((b, i) => {
       const pick = category.picks[b.slug] ?? b.tagline;
@@ -81,6 +82,13 @@ function prerender(category, brokers) {
   return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(category.h1)}</h1>
   <p style="font-size:13px;color:#6b6154;margin:0 0 16px"><strong>Ad</strong> — we may earn a commission if you open an account through links on this page. It doesn’t affect what you pay, or how we rank platforms.</p>
   ${intro}
+  <h2 style="font-size:15px;margin:32px 0 10px">Why we rank platforms</h2>
+  ${whyWeRank(brokerCount)
+    .map(
+      (p) =>
+        `<p style="font-size:15px;line-height:1.65;color:#4a4034;max-width:62ch">${esc(p)}</p>`,
+    )
+    .join("")}
   <h2 style="font-size:15px;margin:32px 0 10px">Our ranking</h2>
   <ol style="list-style:none;padding:0;margin:0">${entries}</ol>
   <h2 style="font-size:15px;margin:32px 0 10px">What to look for</h2>
@@ -109,7 +117,8 @@ export async function onRequestGet(context) {
   if (!category) return noindex(shell);
 
   const data = await fetchJson(`${API_BASE}/brokers?market=UK`, 3600);
-  const ranked = brokersForCategory(category, data?.brokers ?? []);
+  const all = data?.brokers ?? [];
+  const ranked = brokersForCategory(category, all);
 
   // Below the publishing bar (or the API is unreachable): the page would be a
   // list of two, which reads as a stub and ranks like one. Same threshold the
@@ -128,6 +137,6 @@ export async function onRequestGet(context) {
       { name: "UK platforms", item: `https://${CANONICAL_HOST}/brokers` },
       { name: category.h1, item: canonical },
     ],
-    body: prerender(category, ranked),
+    body: prerender(category, ranked, all.length),
   });
 }

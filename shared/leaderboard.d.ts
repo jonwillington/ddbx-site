@@ -8,6 +8,9 @@ export type Buy = Dealing | UsDealing;
 
 export declare const TOP_N: number;
 export declare const MAX_PER_COMPANY: number;
+/** First calendar year with stored filings. Mirrors TRACKING_SINCE_YEAR in
+ *  src/components/seo/tracking-notice.tsx — move them together. */
+export declare const BOARD_EARLIEST_YEAR: number;
 /** Reader-facing statement of the ranking rules, rendered on every board. */
 export declare const METHODOLOGY: string[];
 
@@ -31,7 +34,9 @@ export declare function yearBounds(
   year: string | number | null | undefined,
 ): { since: string; until: string } | null;
 export declare function leaderboardPath(year?: string | number | null): string;
+/** `earliest` is anything whose first four characters are the year — a date
+ *  string ("2026-01-01") or the year itself (BOARD_EARLIEST_YEAR). */
 export declare function archiveYears(
-  earliest: string | null | undefined,
+  earliest: string | number | null | undefined,
   today: Date | string | number,
 ): number[];

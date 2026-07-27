@@ -40,6 +40,17 @@
  *  the tail isn't noise. */
 export const TOP_N = 25;
 
+/** First calendar year with stored filings — the floor for the year archive
+ *  and for the sitemap's year URLs.
+ *
+ *  It mirrors TRACKING_SINCE_YEAR in src/components/seo/tracking-notice.tsx
+ *  and the two must move together. The duplication is deliberate: the sitemap
+ *  and the pre-render are Pages Functions and can't import a .tsx, so the
+ *  value has to exist once in plain ESM. Everything that computes a year list
+ *  reads it from here, so the page and the sitemap can't disagree with each
+ *  other even if the notice copy drifts. */
+export const BOARD_EARLIEST_YEAR = 2026;
+
 /** Whether a disclosed row counts as an open-market purchase for this market.
  *
  *  UK: the pipeline's own classification, and strictly `=== true`. A null means
@@ -148,6 +159,8 @@ export const METHODOLOGY = [
   "No more than three purchases from any single company appear on a board. One issuer filing the largest handful of the year would otherwise fill it and answer nothing; where entries are held back, the count is shown.",
   "Values are in the market's own currency and are never converted, so no exchange rate is involved.",
   "Performance is measured from the closing price on the day the purchase was disclosed — the first price a reader could have paid — not from the insider's own fill, and is marked against the most recent cached close rather than a live quote.",
+  "Alpha is the purchase's own return minus the market's return over the same period, stated in percentage points: a buy up 8% while the index rose 5% has alpha of +3. The board is ranked by the size of the purchase, never by alpha.",
+  "“Worth if still held” applies the stock's own move since disclosure to the amount originally spent. It assumes the shares were never sold and counts no dividends, costs or tax — it's a scale, not a valuation of anyone's actual holding.",
   "Companies that have since delisted may stop being priced, so their entries can show no performance figure. Past performance is not a reliable indicator of future results.",
 ];
 

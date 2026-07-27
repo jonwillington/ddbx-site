@@ -126,7 +126,7 @@ export const CATEGORIES = [
       "Compare UK Stocks & Shares ISA providers on platform fees, dealing costs and currency charges — with who each one actually suits.",
     intro: [
       "Every platform here offers a Stocks & Shares ISA, so the wrapper isn’t the differentiator — the charges inside it are. On a £20,000 allowance the gap between a free platform and a 0.45% one is meaningful before you’ve picked a single holding.",
-      "The other split is structural: percentage fees are cheaper on small pots and punishing on large ones, flat monthly fees are the reverse. Where the lines cross depends on your balance, which is why the cost model further down lets you set the pot size.",
+      "The other split is structural: percentage fees are cheaper on small pots and punishing on large ones, flat monthly fees are the reverse. Where the lines cross depends on your balance, so read the platform fee column against the pot you expect to hold rather than the one you have today.",
     ],
     whatToLookFor: [
       "Percentage fee versus flat monthly fee — the crossover point moves with your balance.",
@@ -209,7 +209,7 @@ export const CATEGORIES = [
       "The lowest-cost UK investing platforms on platform fees, dealing commission and FX — and where the headline rate hides a real cost.",
     intro: [
       "\"Cheapest\" depends on what you hold and how often you move it. A platform with no fees at all can still be the expensive option if it charges a percentage every time you convert currency to buy an American share.",
-      "The ordering below is by total cost for a typical portfolio, not by headline rate — the modelled figures further down show why those two answers differ. Each platform’s cheapness also comes with a constraint, and those are named.",
+      "The order below is editorial, not a cost ranking: the platform that looks cheapest on paper is rarely the one most people should open, because each one buys its cheapness with a constraint. The columns give you the charges; the line beside each platform names what it gives up to get there.",
     ],
     whatToLookFor: [
       "The FX fee, which is the cost most often overlooked and the one that recurs.",
@@ -259,6 +259,25 @@ export const CATEGORIES = [
     },
   },
 ];
+
+/** The "why trust this ranking" block, in the words both renderers use.
+ *
+ *  Lives here rather than in the React page for the same reason `picks` does:
+ *  the pre-render has to state it too, and a credibility claim that reads one
+ *  way to a crawler and another to a reader is worse than not making it. The
+ *  count is passed in rather than hardcoded — it's the size of the UK list the
+ *  page just loaded, so it can't go stale.
+ *
+ *  Both sentences are substantiable: the first restates the documented
+ *  methodology (badge decides eligibility, `order` decides sequence, neither
+ *  reads the affiliate terms), the second describes what `last_verified`
+ *  records. No superlative, and no ask. */
+export function whyWeRank(brokerCount) {
+  return [
+    "Carrying the badge is what makes a platform eligible for this page. The order is ours — set on charges, account range and what each platform gives up to be here, never on what it pays us.",
+    `We hold ${brokerCount} UK platforms on file. Every figure on this page is read from the provider’s own published rates and re-checked on the date shown under the ranking.`,
+  ];
+}
 
 /** Slug -> category, for the router and the Functions. */
 export function categoryBySlug(slug) {

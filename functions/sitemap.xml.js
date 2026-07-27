@@ -26,6 +26,11 @@ import {
   COMPARISONS,
 } from "../shared/broker-comparisons.js";
 import { entriesForHost, learnPath } from "../shared/glossary.js";
+import {
+  archiveYears,
+  leaderboardPath,
+  BOARD_EARLIEST_YEAR,
+} from "../shared/leaderboard.js";
 import { reportPath } from "../shared/months.js";
 import {
   sectorMeetsBar,
@@ -284,6 +289,19 @@ export async function onRequestGet(context) {
   const paths = [...(ROUTES_BY_HOST[host] ?? ["/"]), ...COMMON_ROUTES];
 
   if (host === "ddbx.uk") paths.push(...(await brokerPaths()));
+  // Year leaderboards, on the two hosts that own /biggest-buys. Derived from
+  // the same helper the boards' own archive links use, so a new year appears in
+  // the sitemap and in the page's navigation at the same moment. Years start at
+  // the first one with stored filings — the pre-render noindexes an empty
+  // board, and advertising a URL we then decline to index is the one thing the
+  // sitemap must not do.
+  if (COMPANY_MARKET_BY_HOST[host]) {
+    paths.push(
+      ...archiveYears(BOARD_EARLIEST_YEAR, new Date()).map((y) =>
+        leaderboardPath(y),
+      ),
+    );
+  }
   paths.push(...(await companyEntries(host)));
   paths.push(...(await reportEntries(host)));
   paths.push(...(await sectorEntries(host)));

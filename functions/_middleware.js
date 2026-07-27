@@ -94,10 +94,13 @@ export async function onRequest(context) {
     url.pathname === "/companies" ||
     url.pathname.startsWith("/brokers/best-for/") ||
     url.pathname.startsWith("/brokers/compare/") ||
+    url.pathname === "/reports" ||
     /^\/reports\/[^/]+$/.test(url.pathname) ||
+    url.pathname === "/sectors" ||
     /^\/sectors\/[^/]+$/.test(url.pathname) ||
     url.pathname === "/biggest-buys" ||
     url.pathname.startsWith("/biggest-buys/") ||
+    url.pathname === "/learn" ||
     /^\/learn\/[^/]+$/.test(url.pathname)
   ) {
     return res;

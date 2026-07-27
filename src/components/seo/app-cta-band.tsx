@@ -92,7 +92,7 @@ export function AppCtaBand({
           }
         >
           <div>
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-brand-amber">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
               {kicker}
             </p>
             <p className="mt-3 text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
@@ -118,7 +118,10 @@ export function AppCtaBand({
           </div>
 
           {showShot ? (
-            <div className="mx-auto w-full max-w-[240px] lg:mx-0">
+            // Desktop only: on mobile the stacked column would put a 240px
+            // device frame BELOW the store buttons — a screenshot of the app
+            // under the button that installs it, pushing the fold for nothing.
+            <div className="hidden w-full max-w-[240px] lg:block">
               <DeviceFrame
                 alt={`ddbx ${SLOT_LABEL[screenshotSlot]} screen`}
                 platform={framePlatform}

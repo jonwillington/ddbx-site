@@ -19,6 +19,8 @@ export interface SectorRollupRow {
   value: number;
   companies: number;
   people: number;
+  /** How many of `buys` carry a performance mark — the median's sample size. */
+  alphaCount: number;
   /** Ratios (0.012 = +1.2%), or null when nothing is measurable yet. */
   medianAlpha: number | null;
   medianReturn: number | null;
@@ -43,3 +45,22 @@ export declare function sectorRollup(
 ): SectorRollupRow[];
 export declare function sectorMeetsBar(row: SectorRollupRow | null): boolean;
 export declare function windowStart(today: Date | string | number): string;
+
+export type SectorMarketId = "UK" | "US";
+
+export declare const MARKET_SYMBOL: Record<SectorMarketId, string>;
+export declare const TOP_COMPANIES: number;
+export declare const RECENT_BUYS: number;
+export declare function cleanCompanyName(name: string): string;
+export declare function marketNoun(market: SectorMarketId): string;
+export declare function marketNounSingular(market: SectorMarketId): string;
+export declare function formatMoney(value: number, symbol: string): string;
+export declare function formatSignedPct(ratio: number | null): string;
+export declare function leadSentence(
+  row: SectorRollupRow,
+  market: SectorMarketId,
+): string;
+export declare function indexLeadSentence(
+  rows: SectorRollupRow[] | null | undefined,
+  market: SectorMarketId,
+): string;

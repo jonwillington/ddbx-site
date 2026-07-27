@@ -24,13 +24,16 @@ export function sentimentOrder(s: MonthlyItemSentiment): number {
 }
 
 /** Tailwind text colour for a return value, using the site's canonical
- *  positive/negative palette (see performance-chart.tsx). null → muted. */
+ *  positive/negative tokens. null → muted.
+ *
+ *  These were four bracketed hexes (#1e6b18 / #5cd84a / #8b2020 / #e84d4d) —
+ *  which are exactly the light and dark values `--positive` / `--negative`
+ *  carry, so the token form renders identically and stops this module drifting
+ *  the day the palette moves. */
 export function returnTextClass(ratio: number | null | undefined): string {
   if (ratio == null || ratio === 0) return "text-muted";
 
-  return ratio > 0
-    ? "text-[#1e6b18] dark:text-[#5cd84a]"
-    : "text-[#8b2020] dark:text-[#e84d4d]";
+  return ratio > 0 ? "text-positive" : "text-negative";
 }
 
 /** Human label + tint for the "why featured" award badge. */
@@ -42,33 +45,30 @@ export function featureBadge(reason: MonthlyFeatureReason): {
     case "best_performer":
       return {
         label: "Top performer",
-        className:
-          "bg-[#1e6b18]/12 text-[#1e6b18] dark:bg-[#5cd84a]/15 dark:text-[#5cd84a]",
+        className: "bg-positive/12 text-positive dark:bg-positive/15",
       };
     case "worst_performer":
       return {
         label: "Biggest faller",
-        className:
-          "bg-[#8b2020]/12 text-[#8b2020] dark:bg-[#e84d4d]/15 dark:text-[#e84d4d]",
+        className: "bg-negative/12 text-negative dark:bg-negative/15",
       };
     case "spike_faded":
       return {
         label: "Spike faded",
-        className:
-          "bg-[#8b2020]/10 text-[#8b2020] dark:bg-[#e84d4d]/12 dark:text-[#e84d4d]",
+        className: "bg-negative/10 text-negative dark:bg-negative/12",
       };
     case "cluster":
       return {
         label: "Cluster buy",
         className:
-          "bg-[#5a4128]/12 text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]",
+          "bg-brand-brown/12 text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan",
       };
     case "most_interesting":
     default:
       return {
         label: "Most interesting",
         className:
-          "bg-[#5a4128]/12 text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]",
+          "bg-brand-brown/12 text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan",
       };
   }
 }

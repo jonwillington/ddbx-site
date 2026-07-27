@@ -17,6 +17,7 @@
 import {
   canonicalUrlForEntry,
   entryBySlug,
+  formatUpdated,
   learnPath,
   ownerForHost,
   OWNER_HOST,
@@ -30,6 +31,12 @@ function apexHost(hostname) {
   return host.startsWith("www.") ? host.slice(4) : host;
 }
 
+// Mirrors src/pages/learn.tsx, in the same order the React page renders: the
+// one-line definition before the prose, the review date as small print, the
+// sources under the related links. Copy that exists in only one of the two is
+// the failure mode this file has to avoid — a crawler and a reader being shown
+// different pages at the same URL is the definition of cloaking, however
+// unintentional.
 function prerender(entry, host) {
   const paras = entry.body
     .map(
@@ -47,9 +54,19 @@ function prerender(entry, host) {
     )
     .join("");
 
-  return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 16px">${esc(entry.title)}</h1>
+  const sources = (entry.sources ?? [])
+    .map(
+      (s) =>
+        `<li style="margin-bottom:6px"><a href="${esc(s.url)}" rel="nofollow noopener noreferrer" target="_blank">${esc(s.label)}</a></li>`,
+    )
+    .join("");
+
+  return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(entry.title)}</h1>
+  <p style="font-size:13px;color:#6b6154;margin:0 0 20px">Last reviewed ${esc(formatUpdated(entry.updated))}</p>
+  <p style="font-size:16px;line-height:1.6;color:#1E1506;max-width:64ch;border:1px solid #e8e0d5;border-radius:16px;padding:16px 20px;margin:0 0 24px">${esc(entry.oneLiner)}</p>
   ${paras}
   ${related ? `<h2 style="font-size:15px;margin:32px 0 10px">Related</h2><ul style="font-size:14px;line-height:1.7">${related}</ul>` : ""}
+  ${sources ? `<h2 style="font-size:15px;margin:32px 0 10px">Sources</h2><ul style="font-size:14px;line-height:1.7">${sources}</ul>` : ""}
   <p style="margin-top:32px;font-size:14px"><a href="https://${esc(host)}/learn">Every explainer</a> · <a href="https://${esc(host)}/companies">Browse companies</a></p>
   <p style="margin-top:16px;font-size:13px;color:#6b6154;max-width:62ch">Information only, not investment advice.</p>`);
 }

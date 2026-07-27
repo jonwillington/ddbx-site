@@ -16,9 +16,11 @@ import type { Dealing, UsDealing } from "@/types/ddbx";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
 import {
   dealPerson,
   dealValue,
+  leadSentence,
   sectorBySlug,
   sectorByLabel,
   sectorMeetsBar,
@@ -26,7 +28,9 @@ import {
   sectorRollup,
   windowStart,
   MIN_BUYS,
+  RECENT_BUYS,
   SECTORS,
+  TOP_COMPANIES,
 } from "../../shared/sectors.js";
 
 import {
@@ -39,16 +43,31 @@ import {
 } from "@/components/sector-ui";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
-import { AppCtaBand } from "@/components/seo/app-cta-band";
+import { SeoPageShell } from "@/components/seo/page-shell";
+import { SeoSection } from "@/components/seo/section";
+import { SeoSkeleton } from "@/components/seo/skeletons";
+import { RelatedCards } from "@/components/seo/related-cards";
+import { MeterBar } from "@/components/seo/meter-bar";
 import { sectorCta } from "@/components/seo/cta-copy";
-import { api } from "@/lib/api";
-import { companyPath, cleanCompanyName, displayTicker } from "@/lib/company";
+import { TrackingNotice } from "@/components/seo/tracking-notice";
+import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
+import { TickerPill } from "@/components/ticker-pill";
+import { ClusterChip } from "@/components/cluster-chip";
+import { API_BASE } from "@/lib/api";
+import {
+  companyPath,
+  cleanCompanyName,
+  cleanInsiderName,
+  displayTicker,
+} from "@/lib/company";
+import { formatDisclosedCompact } from "@/lib/dealing-dates";
 
 export default function SectorPage() {
   const { slug } = useParams<{ slug: string }>();
   const sector = useMemo(() => sectorBySlug(slug ?? ""), [slug]);
   const market = useSectorMarket();
   const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(null);
+  const [complete, setComplete] = useState(true);
 
   useEffect(() => {
     let live = true;
@@ -58,12 +77,20 @@ export default function SectorPage() {
     // `UsDealing`, and everything downstream reads only the fields both share
     // (ticker, trade_date, sector_normalized, live_performance) plus the
     // value accessor in shared/sectors.js that knows about value_gbp vs value.
-    const load: Promise<Array<Dealing | UsDealing>> =
-      market.id === "US"
-        ? api.usDealings({ since, limit: 1000 }).then((r) => r.dealings)
-        : api.dealingsWindow(since, 1000);
-
-    load.then((d) => live && setRows(d)).catch(() => live && setRows([]));
+    //
+    // Paged rather than one capped request: the API returns at most 1,000 rows
+    // and the UK window crosses that during 2026, at which point a single call
+    // silently drops the oldest filings — and a sector page missing the start
+    // of its own window states a median drawn from the wrong sample.
+    fetchDealingsWindow({ apiBase: API_BASE, market: market.id, since })
+      .then(
+        (r: { dealings: Array<Dealing | UsDealing>; complete: boolean }) => {
+          if (!live) return;
+          setRows(r.dealings);
+          setComplete(r.complete);
+        },
+      )
+      .catch(() => live && setRows([]));
 
     return () => {
       live = false;
@@ -110,8 +137,22 @@ export default function SectorPage() {
 
     return [...byTicker.values()]
       .sort((a, b) => b.value - a.value)
-      .slice(0, 20);
+      .slice(0, TOP_COMPANIES);
   }, [deals]);
+
+  // The other ten sectors, richest first, so the onward rail is ranked rather
+  // than alphabetical — the same ordering the index uses. Above the early
+  // return for the same reason `companies` is: hook order can't vary.
+  const others = useMemo(() => {
+    if (!sector) return [];
+    const byValue = new Map(
+      sectorRollup(rows ?? []).map((r) => [r.sector.slug, r]),
+    );
+
+    return SECTORS.filter((s) => s.slug !== sector.slug)
+      .map((s) => ({ sector: s, agg: byValue.get(s.slug) ?? null }))
+      .sort((a, b) => (b.agg?.value ?? 0) - (a.agg?.value ?? 0));
+  }, [rows, sector]);
 
   if (!sector) {
     return (
@@ -129,7 +170,11 @@ export default function SectorPage() {
 
   const recent = [...deals]
     .sort((a, b) => (a.trade_date < b.trade_date ? 1 : -1))
-    .slice(0, 12);
+    .slice(0, RECENT_BUYS);
+  // Bars in the companies list scale to the biggest holding in this sector, so
+  // the list reads as a share of the sector rather than against some absolute.
+  const topCompanyValue = companies.length > 0 ? companies[0].value : 0;
+  const publishable = Boolean(row) && sectorMeetsBar(row);
 
   return (
     <DefaultLayout drawerRight>
@@ -138,98 +183,167 @@ export default function SectorPage() {
         placement="sector_rail"
         ukHeading="Start investing"
       />
-      <article className="mx-auto w-full max-w-[860px] pb-16">
-        <nav className={`${R.label} pt-2`}>
-          <Link className="hover:text-foreground/70" to="/sectors">
-            Sectors
-          </Link>
-          <span className="mx-1.5 opacity-40">/</span>
-          <span>{sector.label}</span>
-        </nav>
-
-        <h1 className="mt-5 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
-          {sector.label} — {market.label} insider buying
-        </h1>
-
-        <p className={`mt-4 max-w-[62ch] ${R.body}`}>{sector.framing}</p>
-
-        {rows === null ? (
-          <div className="mt-10 h-40 animate-pulse rounded bg-foreground/[0.06]" />
-        ) : !row || !sectorMeetsBar(row) ? (
-          <p className={`mt-10 ${R.body}`}>
+      <SeoPageShell
+        crumbs={[{ label: "Sectors", to: "/sectors" }, { label: sector.label }]}
+        cta={{
+          body: sectorCta(sector.label).body,
+          gaLabel: `Sector · ${sector.slug}`,
+          headline: sectorCta(sector.label).headline,
+          marketId: market.id === "US" ? "us" : "uk",
+          screenshotSlot: "analysis",
+        }}
+        eyebrow="Sector hub"
+        footnote={
+          <>
+            Figures cover disclosed purchases over the last twelve months and
+            are marked to the latest cached close, not live prices. Past
+            performance is not a reliable indicator of future results. This is
+            information, not investment advice.
+          </>
+        }
+        loading={rows === null}
+        notice={
+          <>
+            <TrackingNotice />
+            {!complete && (
+              <p className={`mt-2 ${R.label} leading-[1.6]`}>
+                We couldn’t load the whole period, so these figures may be
+                missing older purchases.
+              </p>
+            )}
+          </>
+        }
+        skeleton={
+          <>
+            <SeoSkeleton rows={5} variant="stat-tiles" />
+            <SeoSkeleton rows={TOP_COMPANIES} variant="ruled-list" />
+            <SeoSkeleton rows={RECENT_BUYS} variant="ruled-list" />
+          </>
+        }
+        standfirst={sector.framing}
+        title={
+          <>
+            {sector.label} — {market.label} insider buying
+          </>
+        }
+      >
+        {!publishable ? (
+          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             Fewer than {MIN_BUYS} disclosed purchases in this sector over the
             last twelve months — not enough to draw anything from.{" "}
-            <Link className="underline" to="/sectors">
+            <Link className="underline underline-offset-4" to="/sectors">
               See the sectors that are active
             </Link>
             .
           </p>
         ) : (
           <>
-            <div className={`mt-8 ${R.tile} px-5 py-4`}>
-              <SectorFigures market={market} row={row} />
-              <p className={`mt-3 ${R.label} leading-[1.6]`}>
-                Rolling twelve months. Median alpha is measured against the
-                market from the disclosure-day close — the first price a reader
-                could have paid — not from the insider’s own entry.
-              </p>
-            </div>
+            {/* The sector's thesis in numbers, before any list of it. This
+                sentence is also the page's meta description, from the same
+                function — it used to exist only in the pre-render, so a crawler
+                read a summary no visitor ever saw. */}
+            <p className={`mt-8 max-w-[62ch] ${R.body}`}>
+              {leadSentence(row!, market.id)}
+            </p>
 
-            <Section title="Companies insiders backed">
+            <SectorFigures className="mt-5" market={market} row={row!} />
+
+            <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
+              Rolling twelve months. Median alpha is the middle buy’s return
+              against the market, measured from the disclosure-day close — the
+              first price a reader could have paid — not from the insider’s own
+              entry.
+            </p>
+
+            <SeoSection
+              aside={`Top ${Math.min(TOP_COMPANIES, companies.length)} by value bought`}
+              title="Companies insiders backed"
+            >
               <ul className={`border-t ${R.rule}`}>
                 {companies.map((c) => (
                   <li
                     key={c.ticker}
-                    className={`flex items-baseline justify-between gap-4 border-b ${R.rule} py-2.5`}
+                    className={`flex items-start gap-3 border-b ${R.rule} py-3`}
                   >
-                    <span className="min-w-0">
-                      <Link
-                        className="text-[14.5px] text-foreground/85 underline-offset-4 hover:underline"
-                        to={companyPath(c.ticker)}
-                      >
-                        {cleanCompanyName(c.company) || c.ticker}
-                      </Link>
-                      <span className={`ml-2 ${R.label} tabular-nums`}>
-                        {displayTicker(c.ticker)}
+                    <CompanyLogo
+                      className="mt-0.5"
+                      size={22}
+                      ticker={c.ticker}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Link
+                          className="truncate text-[14.5px] font-medium text-foreground underline-offset-4 hover:underline"
+                          to={companyPath(c.ticker)}
+                        >
+                          {cleanCompanyName(c.company) ||
+                            displayTicker(c.ticker)}
+                        </Link>
+                        <TickerPill ticker={displayTicker(c.ticker)} />
                       </span>
-                    </span>
-                    <span className="shrink-0 text-right text-[13px] tabular-nums text-foreground/60">
-                      {money(c.value, market.symbol)}
-                      <span className="ml-2 text-foreground/40">
+                      <span className={`mt-1 block ${R.label}`}>
                         {c.buys} {c.buys === 1 ? "buy" : "buys"}
                       </span>
+                      <MeterBar
+                        className="mt-2 max-w-[22rem]"
+                        max={topCompanyValue}
+                        value={c.value}
+                      />
+                    </span>
+                    <span className="shrink-0 text-right text-[14px] font-semibold tabular-nums text-foreground">
+                      {money(c.value, market.symbol)}
                     </span>
                   </li>
                 ))}
               </ul>
-            </Section>
+            </SeoSection>
 
-            <Section title="Recent buys">
+            <SeoSection
+              aside={`The ${Math.min(RECENT_BUYS, recent.length)} most recent filings in this sector`}
+              title="Recent buys"
+            >
               <ul className={`border-t ${R.rule}`}>
                 {recent.map((d, i) => {
                   const lp = d.live_performance;
                   const alpha =
                     lp?.alpha_pct_disclosed ?? lp?.alpha_pct_trade ?? null;
+                  const ticker = displayTicker(d.ticker ?? "");
 
                   return (
                     <li
                       key={d.id ?? i}
-                      className={`flex items-baseline justify-between gap-4 border-b ${R.rule} py-2.5`}
+                      className={`flex items-start gap-3 border-b ${R.rule} py-3`}
                     >
-                      <span className="min-w-0">
-                        <span className="text-[14px] text-foreground/85">
-                          {dealPerson(d) ?? "—"}
+                      <CompanyLogo
+                        className="mt-0.5"
+                        size={22}
+                        ticker={d.ticker ?? ""}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <Link
+                            className="truncate text-[14.5px] font-medium text-foreground underline-offset-4 hover:underline"
+                            to={companyPath(d.ticker ?? "")}
+                          >
+                            {cleanCompanyName(d.company ?? "") || ticker}
+                          </Link>
+                          <TickerPill ticker={ticker} />
+                          <ClusterChip cluster={d.cluster} />
                         </span>
-                        <span className={`ml-2 ${R.label}`}>
-                          {displayTicker(d.ticker ?? "")} · {d.trade_date}
+                        <span className={`mt-1 block truncate ${R.label}`}>
+                          {cleanInsiderName(dealPerson(d) ?? "") || "—"}{" "}
+                          &middot;{" "}
+                          {formatDisclosedCompact(
+                            d.disclosed_date || d.trade_date,
+                          )}
                         </span>
                       </span>
-                      <span className="shrink-0 text-right text-[13px] tabular-nums">
-                        <span className="text-foreground/70">
+                      <span className="shrink-0 text-right">
+                        <span className="block text-[14px] font-semibold tabular-nums text-foreground">
                           {money(dealValue(d), market.symbol)}
                         </span>
                         <span
-                          className={`ml-3 ${alphaClass(alpha == null ? null : alpha / 100)}`}
+                          className={`mt-0.5 block text-[13px] tabular-nums ${alphaClass(alpha == null ? null : alpha / 100)}`}
                         >
                           {signedPct(alpha == null ? null : alpha / 100)}
                         </span>
@@ -238,57 +352,28 @@ export default function SectorPage() {
                   );
                 })}
               </ul>
-            </Section>
+            </SeoSection>
           </>
         )}
 
-        <Section title="Other sectors">
-          <ul className="space-y-1.5">
-            {SECTORS.filter((s) => s.slug !== sector.slug).map((s) => (
-              <li key={s.slug}>
-                <Link
-                  className="text-[14.5px] text-foreground/85 underline-offset-4 hover:underline"
-                  to={sectorPath(s.slug)}
-                >
-                  {s.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Section>
+        <SeoSection
+          aside="Ranked by value bought over the same twelve months."
+          title="Other sectors"
+        >
+          <RelatedCards
+            cols={3}
+            items={others.map(({ sector: s, agg }) => ({
+              to: sectorPath(s.slug),
+              title: s.label,
+              description: agg
+                ? `${money(agg.value, market.symbol)} across ${agg.buys} ${agg.buys === 1 ? "buy" : "buys"}`
+                : "No disclosed buys in the window",
+            }))}
+          />
+        </SeoSection>
 
-        <AppCtaBand
-          body={sectorCta(sector.label).body}
-          gaLabel={`Sector · ${sector.slug}`}
-          headline={sectorCta(sector.label).headline}
-          marketId={market.id === "US" ? "us" : "uk"}
-          screenshotSlot="cluster"
-        />
-
-        <p className={`mt-10 border-t ${R.rule} pt-6 ${R.label} leading-[1.6]`}>
-          Figures cover disclosed purchases over the last twelve months and are
-          marked to the latest cached close, not live prices. Past performance
-          is not a reliable indicator of future results. This is information,
-          not investment advice.
-        </p>
-      </article>
+        <LogoDevAttribution className="mt-8" />
+      </SeoPageShell>
     </DefaultLayout>
-  );
-}
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className={`mt-10 border-t ${R.rule} pt-7`}>
-      <h2 className="text-[17px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground">
-        {title}
-      </h2>
-      <div className="mt-4">{children}</div>
-    </section>
   );
 }

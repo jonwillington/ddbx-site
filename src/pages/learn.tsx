@@ -1,19 +1,26 @@
 /** The glossary — /learn (index) and /learn/:slug (entry).
  *
- *  Content lives in shared/glossary.js so functions/learn/[slug].js renders the
- *  same words. Two things about this family are load-bearing:
+ *  Content lives in shared/glossary.js so functions/learn/[slug].js and
+ *  functions/learn/index.js render the same words. Three things about this
+ *  family are load-bearing:
  *
  *  1. Every entry has ONE owning domain. UK/EU regulatory terms belong to
  *     ddbx.uk, US ones to ddbx.us, and jurisdiction-free concepts get a single
  *     owner rather than being published on both. Otherwise the same text exists
  *     at three URLs across three domains, competing with itself.
  *
- *  2. Every entry that honestly can ends with live filings. A definition of
+ *  2. Ownership decides the DATA too, not just the URL. The live examples under
+ *     an entry come from the market that owns it — /learn/form-4 shows Form 4
+ *     purchases whichever domain served it, because a US concept illustrated
+ *     with UK RNS filings in pounds is simply wrong, and the reader who
+ *     followed a link from ddbx.uk is the one most likely to be misled by it.
+ *
+ *  3. Every entry that honestly can ends with live filings. A definition of
  *     "PDMR" on its own loses to the FCA handbook and Wikipedia; the same
  *     definition followed by the PDMR purchases disclosed this week is
  *     something only we can publish. Entries where no honest example exists —
  *     closed periods, 10b5-1 plans — set liveData to null rather than forcing
- *     one.
+ *     one, and lean on a term-specific CTA instead.
  */
 import type { GlossaryEntry } from "../../shared/glossary";
 import type { Dealing, UsDealing } from "@/types/ddbx";
@@ -22,8 +29,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import {
+  canonicalUrlForEntry,
   entriesForHost,
   entryBySlug,
+  formatUpdated,
+  groupEntries,
   learnPath,
   ownerForHost,
   ENTRIES,
@@ -35,13 +45,35 @@ import {
 } from "../../shared/leaderboard.js";
 import { windowStart } from "../../shared/sectors.js";
 
-import { money, R, useSectorMarket } from "@/components/sector-ui";
-import { AppCtaBand } from "@/components/seo/app-cta-band";
-import { learnCta } from "@/components/seo/cta-copy";
-import DefaultLayout from "@/layouts/default";
+import { money, R } from "@/components/sector-ui";
+import { ClusterChip } from "@/components/cluster-chip";
+import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
+import { learnCta, learnIndexCta } from "@/components/seo/cta-copy";
+import { RelatedCards } from "@/components/seo/related-cards";
+import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
+import { SeoSection } from "@/components/seo/section";
+import { Skeleton } from "@/components/skeleton";
+import { TickerPill } from "@/components/ticker-pill";
+import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
-import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
+import {
+  cleanCompanyName,
+  cleanInsiderName,
+  companyPath,
+  displayTicker,
+} from "@/lib/company";
+import { formatDisclosedCompact } from "@/lib/dealing-dates";
+
+const EYEBROW = "Glossary";
+const FOOTNOTE = "Information only, not investment advice.";
+
+/** The feed an entry's examples come from, chosen by the entry's owner rather
+ *  than by the domain the request landed on. See the header, point 2. */
+const MARKET = {
+  uk: { id: "UK" as const, symbol: "£" },
+  us: { id: "US" as const, symbol: "$" },
+};
 
 /** Host the browser is on. On localhost and preview builds nothing owns the
  *  glossary, so the index falls back to showing everything rather than
@@ -50,41 +82,79 @@ function useHost(): string {
   return typeof window === "undefined" ? "" : window.location.hostname;
 }
 
+/** Entries this host publishes, or all of them where nothing is owned. */
+function useEntries(host: string): GlossaryEntry[] {
+  const owned = entriesForHost(host);
+
+  return owned.length > 0 ? owned : ENTRIES;
+}
+
+/** The index's grouped list, also used by the not-found state — a reader who
+ *  hit a dead slug wants the contents page, not an apology. */
+function EntryList({ entries }: { entries: GlossaryEntry[] }) {
+  const groups = groupEntries(entries);
+
+  return (
+    <div className="mt-10">
+      {groups.map((g) => (
+        <section key={g.id} className="mt-9 first:mt-0">
+          <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
+            {g.label}
+          </h2>
+          <ul className={`mt-3 border-t ${R.rule}`}>
+            {g.entries.map((e) => (
+              <li key={e.slug} className={`border-b ${R.rule}`}>
+                {/* The whole row is the target. A 17px underlined title with
+                    inert description text beneath it gave the list a ~20px
+                    tap area and no hover affordance on the part of the row a
+                    reader actually points at. */}
+                <Link
+                  className="-mx-3 block rounded-lg px-3 py-4 transition-colors hover:bg-foreground/[0.03] dark:hover:bg-white/[0.04]"
+                  to={learnPath(e.slug)}
+                >
+                  <span className="block text-[17px] font-semibold tracking-[-0.01em] text-foreground">
+                    {e.title}
+                  </span>
+                  <span className="mt-1.5 block max-w-[62ch] text-[14px] leading-[1.65] text-foreground/60">
+                    {e.description}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export function LearnIndexPage() {
   const host = useHost();
-  const owned = entriesForHost(host);
-  const entries: GlossaryEntry[] = owned.length > 0 ? owned : ENTRIES;
+  const entries = useEntries(host);
+  const marketId = ownerForHost(host) === "us" ? "us" : "uk";
 
   return (
     <DefaultLayout drawerRight>
       <SeoRail
-        marketId={ownerForHost(host) === "us" ? "us" : "uk"}
+        marketId={marketId}
         placement="learn_index_rail"
         ukHeading="Start investing"
       />
-      <div className="mx-auto w-full max-w-[860px] pb-16">
-        <h1 className="mt-2 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
-          Understanding insider dealing
-        </h1>
-        <p className={`mt-4 max-w-[62ch] ${R.body}`}>
-          What the filings mean, which disclosures are actually purchases, and
-          how much a director buying their own shares really tells you.
-        </p>
-
-        <ul className={`mt-10 border-t ${R.rule}`}>
-          {entries.map((e) => (
-            <li key={e.slug} className={`border-b ${R.rule} py-5`}>
-              <Link
-                className="text-[17px] font-semibold tracking-[-0.01em] text-foreground underline-offset-4 hover:underline"
-                to={learnPath(e.slug)}
-              >
-                {e.title}
-              </Link>
-              <p className={`mt-1.5 max-w-[62ch] ${R.body}`}>{e.description}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <SeoPageShell
+        cta={{
+          ...learnIndexCta,
+          gaLabel: "Learn · index",
+          marketId,
+          screenshotSlot: "today",
+        }}
+        eyebrow={EYEBROW}
+        footnote={FOOTNOTE}
+        standfirst="What the filings mean, which disclosures are actually purchases, and how much a director buying their own shares really tells you."
+        standfirstSize="lede"
+        title="Understanding insider dealing"
+      >
+        <EntryList entries={entries} />
+      </SeoPageShell>
     </DefaultLayout>
   );
 }
@@ -94,17 +164,23 @@ export default function LearnEntryPage() {
   const entry = useMemo(() => entryBySlug(slug ?? ""), [slug]);
   const host = useHost();
   const owner = ownerForHost(host);
+  const fallbackEntries = useEntries(host);
 
   if (!entry) {
     return (
-      <DefaultLayout>
-        <p className="mx-auto max-w-3xl py-20 text-base text-foreground/65">
-          We haven’t written that one.{" "}
-          <Link className="underline" to="/learn">
-            See every explainer
-          </Link>
-          .
-        </p>
+      <DefaultLayout drawerRight>
+        <SeoRail
+          marketId={owner === "us" ? "us" : "uk"}
+          placement="learn_index_rail"
+          ukHeading="Start investing"
+        />
+        <SeoPageShell
+          eyebrow={EYEBROW}
+          standfirst="That explainer doesn’t exist — it may have been renamed. Everything we’ve written is below."
+          title="We haven’t written that one"
+        >
+          <EntryList entries={fallbackEntries} />
+        </SeoPageShell>
       </DefaultLayout>
     );
   }
@@ -113,10 +189,16 @@ export default function LearnEntryPage() {
   // canonicalises and noindexes it, so all the page owes the reader is a way
   // across to the copy that does belong here.
   const foreign = owner !== null && owner !== entry.owner;
+  const canonical = canonicalUrlForEntry(entry);
   // Entry-specific line where the glossary supplies one — "know the moment the
   // window reopens" sells harder on /learn/closed-period than the generic
   // fallback — otherwise the family default built from the entry's own term.
   const cta = entry.cta ?? learnCta(entry.ctaTerm ?? entry.term.toLowerCase());
+  const [lede, ...rest] = entry.body;
+
+  const related = entry.related
+    .map((s) => entryBySlug(s))
+    .filter((e): e is GlossaryEntry => Boolean(e));
 
   return (
     <DefaultLayout drawerRight>
@@ -125,88 +207,137 @@ export default function LearnEntryPage() {
         placement="learn_entry_rail"
         ukHeading="Start investing"
       />
-      <article className="mx-auto w-full max-w-[860px] pb-16">
-        <nav className={`${R.label} pt-2`}>
-          <Link className="hover:text-foreground/70" to="/learn">
-            Learn
-          </Link>
-          <span className="mx-1.5 opacity-40">/</span>
-          <span>{entry.term}</span>
-        </nav>
-
-        <h1 className="mt-5 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
-          {entry.title}
-        </h1>
-
-        {foreign && (
-          <p className={`mt-4 ${R.label} leading-[1.6]`}>
-            This is a {entry.owner === "uk" ? "UK/EU" : "US"} concept — the
-            canonical version lives on{" "}
-            {entry.owner === "uk" ? "ddbx.uk" : "ddbx.us"}.
-          </p>
-        )}
-
-        <div className="mt-6 space-y-4">
-          {entry.body.map((para) => (
-            <p key={para} className={`max-w-[64ch] ${R.body}`}>
-              {para}
+      <SeoPageShell
+        crumbs={[{ label: "Learn", to: "/learn" }, { label: entry.term }]}
+        cta={{
+          ...cta,
+          gaLabel: `Learn · ${entry.slug}`,
+          marketId: entry.owner === "us" ? "us" : "uk",
+          screenshotSlot: entry.ctaSlot ?? "analysis",
+        }}
+        eyebrow={EYEBROW}
+        footnote={FOOTNOTE}
+        notice={
+          <>
+            <p className="text-[11px] leading-[1.6] text-foreground/45">
+              Last reviewed {formatUpdated(entry.updated)}
             </p>
-          ))}
+            {foreign && canonical ? (
+              // A warning set in the same faint grey as a caption isn't a
+              // warning, and one that names the other domain without linking
+              // to it asks the reader to retype a URL.
+              <p className="mt-3 rounded-xl border border-hairline bg-sheet px-4 py-3 text-[13px] leading-[1.6] text-foreground/70 dark:border-white/[0.07] dark:bg-surface">
+                This is a {entry.owner === "uk" ? "UK/EU" : "US"} concept. The
+                canonical version lives on{" "}
+                <a
+                  className="font-medium text-foreground underline underline-offset-4"
+                  href={canonical}
+                >
+                  {entry.owner === "uk" ? "ddbx.uk" : "ddbx.us"}
+                </a>
+                .
+              </p>
+            ) : null}
+          </>
+        }
+        title={entry.title}
+      >
+        {/* The definition on its own, before the argument starts. A reader who
+            wanted one sentence gets it without reading four paragraphs, and
+            it's the unit a search result can lift whole. */}
+        <p className="mt-6 rounded-2xl border border-hairline bg-sheet px-5 py-4 text-[15px] leading-[1.6] text-foreground/85 dark:border-white/[0.07] dark:bg-surface">
+          {entry.oneLiner}
+        </p>
+
+        <div className="mt-7">
+          {/* The opening paragraph carries the page's thesis, so it's set as
+              one — the body that follows steps back a size rather than running
+              at a flat 14px from the h1 down. */}
+          <p className="max-w-[64ch] text-[16.5px] leading-[1.6] tracking-[-0.006em] text-foreground/85">
+            {lede}
+          </p>
+          <div className="mt-4 space-y-4">
+            {rest.map((para) => (
+              <p
+                key={para}
+                className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80"
+              >
+                {para}
+              </p>
+            ))}
+          </div>
         </div>
 
-        {entry.liveData && (
+        {entry.liveData ? (
           <LiveExamples
             heading={entry.liveHeading ?? "Recent examples"}
             kind={entry.liveData}
+            owner={entry.owner}
           />
-        )}
+        ) : null}
 
-        <section className={`mt-10 border-t ${R.rule} pt-7`}>
-          <h2 className="text-[17px] font-semibold tracking-[-0.015em] text-foreground">
-            Related
-          </h2>
-          <ul className="mt-4 space-y-1.5">
-            {entry.related
-              .map((s) => entryBySlug(s))
-              .filter((e): e is GlossaryEntry => Boolean(e))
-              .map((e) => (
-                <li key={e.slug}>
-                  <Link
-                    className="text-[14.5px] text-foreground/85 underline-offset-4 hover:underline"
-                    to={learnPath(e.slug)}
+        {related.length > 0 ? (
+          <SeoSection title="Related">
+            <RelatedCards
+              items={related.map((e) => ({
+                // Owner-aware, matching the pre-render: a related entry this
+                // domain doesn't publish is linked absolutely at the host that
+                // does, rather than to a path that would land on a noindexed
+                // duplicate of it here.
+                to:
+                  owner !== null && e.owner !== owner
+                    ? (canonicalUrlForEntry(e) ?? learnPath(e.slug))
+                    : learnPath(e.slug),
+                // The entry's term, not its SEO title. "MAR Article 19" is a
+                // label you can scan; "MAR Article 19: managers' transactions
+                // explained" is a headline that clamps to two lines in a card.
+                title: e.term,
+                description: e.description,
+              }))}
+            />
+          </SeoSection>
+        ) : null}
+
+        {entry.sources && entry.sources.length > 0 ? (
+          <SeoSection aside="The primary instrument, not our summary of it." title="Sources">
+            <ul className="space-y-2">
+              {entry.sources.map((s) => (
+                <li key={s.url}>
+                  <a
+                    className="text-[14.5px] text-foreground/85 underline underline-offset-4 hover:text-foreground"
+                    href={s.url}
+                    rel="nofollow noopener noreferrer"
+                    target="_blank"
                   >
-                    {e.title}
-                  </Link>
+                    {s.label}
+                  </a>
                 </li>
               ))}
-          </ul>
-        </section>
-      </article>
-
-      {/* The ask. These pages exist to be found; without this they end on a
-          link list and the traffic they earn is spent. Outside <article> so
-          the band runs full-bleed rather than sitting in the prose measure. */}
-      <AppCtaBand
-        body={cta.body}
-        gaLabel={`Learn · ${entry.slug}`}
-        headline={cta.headline}
-        marketId={entry.owner === "us" ? "us" : "uk"}
-        screenshotSlot={entry.ctaSlot ?? "analysis"}
-      />
+            </ul>
+          </SeoSection>
+        ) : null}
+      </SeoPageShell>
     </DefaultLayout>
   );
 }
 
 /** Real filings under the concept just described. The part of the entry that
- *  isn't a dictionary. */
+ *  isn't a dictionary.
+ *
+ *  No ranking meter here, deliberately: these are examples of a concept, and a
+ *  bar chart implies the biggest one is the most illustrative, which it isn't.
+ */
 function LiveExamples({
   kind,
   heading,
+  owner,
 }: {
   kind: "clusters" | "open-market" | "recent";
   heading: string;
+  /** The ENTRY's owner. Not the host's — see the file header. */
+  owner: "uk" | "us";
 }) {
-  const market = useSectorMarket();
+  const market = MARKET[owner];
   const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(null);
 
   useEffect(() => {
@@ -236,43 +367,90 @@ function LiveExamples({
       .slice(0, 6);
   }, [rows, kind, market.id]);
 
-  // Nothing honest to show — render nothing rather than an empty heading.
-  if (rows !== null && examples.length === 0) return null;
+  const loading = rows === null;
+
+  // Gate the whole section, heading included. An entry whose filter matches
+  // nothing — a quiet week for clusters — must render no trace of a section
+  // rather than a heading standing over nothing.
+  if (!loading && examples.length === 0) return null;
 
   return (
-    <section className={`mt-10 border-t ${R.rule} pt-7`}>
-      <h2 className="text-[17px] font-semibold tracking-[-0.015em] text-foreground">
-        {heading}
-      </h2>
-      {rows === null ? (
-        <div className="mt-4 h-24 animate-pulse rounded bg-foreground/[0.06]" />
-      ) : (
-        <ul className={`mt-4 border-t ${R.rule}`}>
-          {examples.map((d, i) => (
-            <li
-              key={d.id ?? i}
-              className={`flex items-baseline justify-between gap-4 border-b ${R.rule} py-2.5`}
-            >
-              <span className="min-w-0">
-                <Link
-                  className="text-[14px] text-foreground/85 underline-offset-4 hover:underline"
-                  to={companyPath(d.ticker ?? "")}
-                >
-                  {cleanCompanyName(d.company ?? "") ||
-                    displayTicker(d.ticker ?? "")}
-                </Link>
-                <span className={`mt-0.5 block ${R.label}`}>
-                  {buyPerson(d) ?? "—"} · {d.trade_date}
-                  {d.cluster?.tier && ` · ${d.cluster.tier} cluster`}
-                </span>
-              </span>
-              <span className="shrink-0 text-[13px] tabular-nums text-foreground/70">
-                {money(buyValue(d), market.symbol)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+    <SeoSection
+      aside="The six most recent from the last twelve months."
+      title={heading}
+    >
+      <ul className={`border-t ${R.rule}`}>
+        {loading
+          ? Array.from({ length: 6 }, (_, i) => (
+              // Row-shaped, so arriving data fills the list in rather than
+              // replacing one short block with 300px of rows.
+              <li
+                key={i}
+                aria-busy="true"
+                className={`flex items-center gap-4 border-b ${R.rule} py-3`}
+              >
+                <Skeleton circle className="shrink-0" h={22} w={22} />
+                <div className="min-w-0 flex-1">
+                  <Skeleton className="h-[14px] w-2/5 max-w-[200px]" />
+                  <Skeleton className="mt-2 h-[11px] w-3/5 max-w-[260px]" />
+                </div>
+                <Skeleton className="h-[15px] w-14 shrink-0" />
+              </li>
+            ))
+          : examples.map((d, i) => (
+              <ExampleRow key={d.id ?? i} deal={d} symbol={market.symbol} />
+            ))}
+      </ul>
+
+      <div className="mt-4 flex flex-wrap items-baseline justify-between gap-3">
+        <Link
+          className="text-[13.5px] font-medium text-foreground underline-offset-4 hover:underline"
+          to="/biggest-buys"
+        >
+          See all recent purchases &rarr;
+        </Link>
+        <LogoDevAttribution />
+      </div>
+    </SeoSection>
+  );
+}
+
+/** One example filing. Same row grammar as the leaderboard minus the rank and
+ *  the meter — logo, name, ticker, who and when, what it cost. */
+function ExampleRow({
+  deal: d,
+  symbol,
+}: {
+  deal: Dealing | UsDealing;
+  symbol: string;
+}) {
+  const ticker = displayTicker(d.ticker ?? "");
+  const name = cleanCompanyName(d.company ?? "") || ticker;
+  const person = cleanInsiderName(buyPerson(d) ?? "");
+
+  return (
+    <li className={`flex items-baseline gap-4 border-b ${R.rule} py-3`}>
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center gap-2">
+          <CompanyLogo size={22} ticker={d.ticker ?? ""} />
+          <Link
+            className="truncate text-[14.5px] font-medium text-foreground underline-offset-4 hover:underline"
+            title={name}
+            to={companyPath(d.ticker ?? "")}
+          >
+            {name}
+          </Link>
+          <TickerPill ticker={ticker} />
+          <ClusterChip cluster={d.cluster} />
+        </span>
+        <span className={`mt-1 block truncate ${R.label}`} title={person}>
+          {person || "—"} &middot; {formatDisclosedCompact(d.disclosed_date)}
+        </span>
+      </span>
+
+      <span className="shrink-0 text-[14.5px] font-semibold tabular-nums text-foreground">
+        {money(buyValue(d), symbol)}
+      </span>
+    </li>
   );
 }

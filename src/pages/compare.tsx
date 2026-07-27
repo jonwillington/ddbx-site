@@ -5,13 +5,13 @@
 // @/lib/brokers + @/components/brokers/broker-ui.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
-import { InformationCircleIcon } from "@heroicons/react/20/solid";
 
 import { BrokerAside } from "@/components/brokers/broker-aside";
-import { Tooltip } from "@/components/tooltip";
+import { ColHeader } from "@/components/brokers/broker-page-ui";
 import {
   BadgeChip,
   BrokerComplianceNote,
+  BrokerDisclosure,
   BrokerLogo,
   BrokerVisitLink,
   OfferBadge,
@@ -87,26 +87,6 @@ function detailHref(b: BrokerOffer): string {
 // Column divider, on the broker family's hairline rather than the deals
 // table's black-alpha edge.
 const COL = "border-r border-hairline dark:border-separator";
-
-/** Column header label with an info tooltip — mirrors the deals table's
- *  HeaderLabel (market-row.tsx). */
-function ColHeader({
-  help,
-  children,
-}: {
-  help: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Tooltip
-      className="inline-flex cursor-help items-center gap-1 whitespace-nowrap align-middle"
-      content={help}
-    >
-      {children}
-      <InformationCircleIcon className="h-3 w-3 shrink-0 text-muted/40" />
-    </Tooltip>
-  );
-}
 
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
   { id: "recommended", label: "Recommended" },
@@ -256,10 +236,23 @@ export default function ComparePage() {
       <BrokerAside brokers={brokers} />
       <section className="w-full">
         <header className="mb-5">
-          <h1 className="mt-5 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
+          <p className="pt-5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
+            Broker guide
+          </p>
+          <h1 className="mt-2 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
             Compare UK trading platforms
           </h1>
+          <p className="mt-4 max-w-[62ch] text-[16.5px] leading-[1.6] tracking-[-0.006em] text-foreground/85">
+            Every UK investing platform we hold on file, with what each one
+            charges to hold your money, to trade, and to convert currency —
+            filterable by the accounts you actually need.
+          </p>
         </header>
+
+        {/* Unconditional, in the document rather than the rail: the rail is
+            hidden below 1024px, so every phone visitor was being served
+            affiliate links with no disclosure on screen. */}
+        <BrokerDisclosure className="mb-5" />
 
         {err && (
           <p className="text-sm text-foreground/60">

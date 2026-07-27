@@ -9,6 +9,12 @@
 // is 171 possible pairs; we publish six), so it is the one thing that must
 // appear in the pre-render. A crawler seeing only the fee table would see
 // exactly the templated comparison the curation was meant to avoid.
+//
+// Same rule applies to the one-line `shortVerdict` and to `whyThisPair`: both
+// are authored, both are on the React page, and text the reader gets but the
+// pre-render doesn't is a parity gap in the direction that costs us the page.
+// Section order here follows the page — answer, facts, why these two,
+// differences, verdict.
 
 import {
   brokersForComparison,
@@ -89,7 +95,10 @@ function prerender(comparison, a, b) {
   return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(comparison.title)}</h1>
   <p style="font-size:13px;color:#6b6154;margin:0 0 16px"><strong>Ad</strong> — we may earn a commission if you open an account through links on this page. It doesn’t affect what you pay, or how we rank platforms.</p>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(comparison.intro)}</p>
+  <p style="font-size:15px;line-height:1.55;color:#1E1506;max-width:62ch"><strong>Our verdict:</strong> ${esc(comparison.shortVerdict)}</p>
   ${crossoverBlock}
+  <h2 style="font-size:15px;margin:32px 0 10px">Why this pair</h2>
+  <p style="font-size:15px;line-height:1.65;color:#4a4034;max-width:62ch">${esc(comparison.whyThisPair)}</p>
   ${
     rows
       ? `<h2 style="font-size:15px;margin:32px 0 10px">Where they differ</h2>

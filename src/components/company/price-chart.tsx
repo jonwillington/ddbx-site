@@ -16,6 +16,7 @@ import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import { Skeleton } from "@/components/skeleton";
 import { api } from "@/lib/api";
 import { localeFor, SYMBOL } from "@/lib/company-format";
 
@@ -31,9 +32,59 @@ const PAD_B = 26;
 const PAD_R = 6;
 const PAD_L = 6;
 
-interface Bar {
+export interface PriceBar {
   date: string;
+  /** Native MINOR units, as the API serves them. */
   close: number;
+}
+
+/** What the page needs to know before it draws a heading over this chart. */
+export interface PriceSeries {
+  /** null while in flight. */
+  bars: PriceBar[] | null;
+  failed: boolean;
+  /** Settled, and there is nothing plottable — the section should not render
+   *  at all. A ruled "Price" heading with a caption about markers, sitting over
+   *  whitespace, is the thin-page failure mode this exists to prevent. */
+  unavailable: boolean;
+}
+
+/** Twelve months of closes for one ticker.
+ *
+ *  Lifted out of the chart so the company page can decide whether to render the
+ *  Price section *before* it renders the section's heading. The chart still
+ *  owns the drawing; the page owns the frame around it. */
+export function useCompanyPriceBars(tickerKey: string | null): PriceSeries {
+  const [bars, setBars] = useState<PriceBar[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!tickerKey) return;
+    let live = true;
+
+    setBars(null);
+    setFailed(false);
+    api
+      .priceHistory(tickerKey, 365)
+      .then((raw) => {
+        if (!live) return;
+        setBars(raw.map((b) => ({ date: b.date, close: b.close_pence })));
+      })
+      .catch(() => live && setFailed(true));
+
+    return () => {
+      live = false;
+    };
+  }, [tickerKey]);
+
+  return {
+    bars,
+    failed,
+    // A company with no cached price history is common enough (recent
+    // listings, suspended lines) that this must resolve to "no section"
+    // rather than to an error.
+    unavailable: failed || (bars != null && bars.length < 2),
+  };
 }
 
 /** A buy to mark, resolved onto the series. */
@@ -126,6 +177,7 @@ export function CompanyPriceChart({
   currency,
   deals,
   market,
+  series,
 }: {
   /** Storage key ("ARK.L" / "FCNCA") — what the prices endpoint speaks. */
   tickerKey: string;
@@ -133,41 +185,18 @@ export function CompanyPriceChart({
   /** Disclosed buys, plotted as markers. */
   deals: Array<Dealing | UsDealing>;
   market: string;
+  /** From `useCompanyPriceBars`, called by the page so it can drop the whole
+   *  section when there's no series to draw. */
+  series: PriceSeries;
 }) {
-  const [bars, setBars] = useState<Bar[] | null>(null);
-  const [failed, setFailed] = useState(false);
+  const { bars, unavailable } = series;
   const [box, width] = useMeasuredWidth();
 
-  useEffect(() => {
-    let live = true;
+  if (unavailable) return null;
 
-    setBars(null);
-    setFailed(false);
-    api
-      .priceHistory(tickerKey, 365)
-      .then((raw) => {
-        if (!live) return;
-        setBars(raw.map((b) => ({ date: b.date, close: b.close_pence })));
-      })
-      .catch(() => live && setFailed(true));
-
-    return () => {
-      live = false;
-    };
-  }, [tickerKey]);
-
-  // A company with no cached price history is common enough (recent listings,
-  // suspended lines) that this must fail silently rather than show an error.
-  if (failed || (bars && bars.length < 2)) return null;
-
-  if (!bars) {
-    return (
-      <div
-        aria-hidden
-        className="h-[220px] w-full animate-pulse rounded-xl bg-foreground/[0.04]"
-      />
-    );
-  }
+  // House skeleton, not a private pulse: the page skeleton this hands over
+  // from uses the same primitive, so the two don't pulse out of step.
+  if (!bars) return <Skeleton className="w-full rounded-xl" h={H} />;
 
   const w = width || 640;
   const closes = bars.map((b) => toMajor(b.close));

@@ -14,7 +14,19 @@ import { CompanyLogo } from "@/components/company-logo";
 /** The curated standout buys, sorted positive → neutral → negative. Each card
  *  expands in place to reveal the price arc, a price chart and the per-item
  *  retrospective / forward narrative. */
-export function MonthlyFeatured({ items }: { items: MonthlyFeaturedItem[] }) {
+export function MonthlyFeatured({
+  items,
+  heading = true,
+  openFirst = false,
+}: {
+  items: MonthlyFeaturedItem[];
+  /** Off when the caller already sets a section heading above this block. */
+  heading?: boolean;
+  /** Expand the first card on mount. The archived report page sets this: the
+   *  richest prose we publish is inside these cards, and while they're all
+   *  collapsed none of it is in the document at all. */
+  openFirst?: boolean;
+}) {
   const sorted = useMemo(
     () =>
       [...items].sort(
@@ -27,18 +39,30 @@ export function MonthlyFeatured({ items }: { items: MonthlyFeaturedItem[] }) {
 
   return (
     <section className="space-y-3">
-      <h3 className="text-sm font-semibold">Featured buys</h3>
+      {heading ? (
+        <h3 className="text-sm font-semibold">Featured buys</h3>
+      ) : null}
       <div className="space-y-3">
-        {sorted.map((item) => (
-          <FeaturedCard key={item.dealing_id} item={item} />
+        {sorted.map((item, i) => (
+          <FeaturedCard
+            key={item.dealing_id}
+            defaultOpen={openFirst && i === 0}
+            item={item}
+          />
         ))}
       </div>
     </section>
   );
 }
 
-function FeaturedCard({ item }: { item: MonthlyFeaturedItem }) {
-  const [open, setOpen] = useState(false);
+function FeaturedCard({
+  item,
+  defaultOpen = false,
+}: {
+  item: MonthlyFeaturedItem;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   const badge = featureBadge(item.feature_reason);
   const entryGbp =
     item.entry_price_pence != null ? item.entry_price_pence / 100 : null;
@@ -61,6 +85,16 @@ function FeaturedCard({ item }: { item: MonthlyFeaturedItem }) {
               {item.ticker}
             </span>
           </div>
+          {/* Who bought and when. Without it two cards for the same issuer in
+              one month (PANR.L was featured twice in June) are indistinguishable
+              while collapsed. */}
+          {(item.director_name || item.disclosed_date) && (
+            <div className="mt-0.5 truncate text-xs text-muted">
+              {[item.director_name, disclosedLabel(item.disclosed_date)]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
+          )}
           <span className={`${chip("md")} mt-1.5 ${badge.className}`}>
             {badge.label}
           </span>
@@ -129,7 +163,7 @@ function FeaturedCard({ item }: { item: MonthlyFeaturedItem }) {
               {item.sources.map((src, i) => (
                 <a
                   key={i}
-                  className="text-[#5a4128] underline-offset-2 hover:underline dark:text-[#ad9479]"
+                  className="text-brand-brown underline-offset-2 hover:underline dark:text-brand-tan"
                   href={src}
                   rel="noreferrer noopener"
                   target="_blank"
@@ -190,6 +224,21 @@ function ArcHighlights({ item }: { item: MonthlyFeaturedItem }) {
       ))}
     </div>
   );
+}
+
+/** "2026-06-12" → "12 Jun 2026". Falls back to the raw value. */
+function disclosedLabel(date: string | null | undefined): string {
+  if (!date) return "";
+  const d = new Date(`${date}T00:00:00Z`);
+
+  if (Number.isNaN(d.getTime())) return date;
+
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 function hostOf(url: string): string {

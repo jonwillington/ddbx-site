@@ -1,13 +1,30 @@
 import type { MonthlyMetrics as Metrics } from "@/types/ddbx";
+import type { StatTile } from "@/components/seo/stat-tiles";
 
 import { returnTextClass } from "./monthly-utils";
 
+import { StatTiles } from "@/components/seo/stat-tiles";
 import { formatGbp, formatSignedPct } from "@/lib/performance/format";
 
-/** Deterministic month-level metrics. The four headline cards plus an
- *  optional secondary row for median return vs the benchmark when the price
- *  series is thick enough to be honest about it. */
-export function MonthlyMetrics({ metrics }: { metrics: Metrics }) {
+/** Deterministic month-level metrics. The headline cards plus an optional
+ *  secondary row for median return vs the benchmark when the price series is
+ *  thick enough to be honest about it.
+ *
+ *  Two variants, same facts. "modal" is the recap's original container-query
+ *  card grid, unchanged. "page" is the archived report at /reports/:month,
+ *  where the numbers are set as the site's house `StatTiles` — and where the
+ *  count of distinct directors is stated rather than dropped, because the
+ *  crawler pre-render quotes it and the page has to say what the pre-render
+ *  says. */
+export function MonthlyMetrics({
+  metrics,
+  variant = "modal",
+}: {
+  metrics: Metrics;
+  variant?: "modal" | "page";
+}) {
+  if (variant === "page") return <PageMetrics metrics={metrics} />;
+
   return (
     <section className="@container space-y-3">
       {/* Container-query, not viewport: this block lives in the recap modal's
@@ -56,6 +73,79 @@ export function MonthlyMetrics({ metrics }: { metrics: Metrics }) {
         </div>
       )}
     </section>
+  );
+}
+
+/** `tone` from a ratio, for a StatTiles figure. Exactly 0 is untoned — a flat
+ *  month is neither. */
+function tone(ratio: number | null | undefined): StatTile["tone"] {
+  if (ratio == null || ratio === 0) return undefined;
+
+  return ratio > 0 ? "positive" : "negative";
+}
+
+function PageMetrics({ metrics }: { metrics: Metrics }) {
+  const headline: StatTile[] = [
+    { label: "Buys disclosed", value: String(metrics.total_buys) },
+    {
+      label: "Committed",
+      value: formatGbp(metrics.total_value_gbp, { compact: true }),
+      primary: true,
+    },
+    { label: "Companies", value: String(metrics.distinct_companies) },
+    { label: "Insiders", value: String(metrics.distinct_directors) },
+    { label: "Clusters", value: String(metrics.cluster_count) },
+  ];
+
+  const returns: StatTile[] = [];
+
+  // A median of exactly 0 is the "not enough priced buys to say" case coming
+  // back as a number, and "Median buy 0.0%" reads as a measured flat month.
+  // State it only when there is something to state.
+  if (metrics.median_return != null && metrics.median_return !== 0) {
+    returns.push({
+      label: "Median buy",
+      value: formatSignedPct(metrics.median_return),
+      tone: tone(metrics.median_return),
+    });
+  }
+  if (metrics.best_return != null) {
+    returns.push({
+      label: "Best",
+      value: formatSignedPct(metrics.best_return),
+      tone: tone(metrics.best_return),
+    });
+  }
+  if (metrics.worst_return != null) {
+    returns.push({
+      label: "Worst",
+      value: formatSignedPct(metrics.worst_return),
+      tone: tone(metrics.worst_return),
+    });
+  }
+  if (metrics.benchmark_return != null) {
+    returns.push({
+      // TODO(us-reports): "FTSE All-Share" is the UK benchmark, hardcoded.
+      // The wire format carries no benchmark name, so day one of a US report
+      // labels the S&P 500 as the FTSE. Same for the £ in `formatGbp` above —
+      // `moneyShort(value, currency)` in @/lib/company-format takes the
+      // currency, but the fix is a wire-format change, not a local one.
+      label: "FTSE All-Share",
+      value: formatSignedPct(metrics.benchmark_return),
+      tone: tone(metrics.benchmark_return),
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      <StatTiles cols={5} stats={headline} />
+      {returns.length > 0 ? (
+        <StatTiles
+          cols={returns.length >= 4 ? 4 : returns.length === 3 ? 3 : 2}
+          stats={returns}
+        />
+      ) : null}
+    </div>
   );
 }
 

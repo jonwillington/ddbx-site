@@ -17,7 +17,20 @@
 //
 // The market comes from the domain and the LSE ".L" suffix is added back here
 // — mirrors tickerToSlug/slugToKey in src/lib/company.ts.
+//
+// The head/breadcrumb/escape/fetch primitives are shared/prerender.js. This
+// Function grew private copies of all of them first, which is how it ended up
+// with a `money()` that formatted US dollars in en-GB and a `cleanCompany()`
+// that had drifted a fix behind src/lib/company.ts.
 
+import {
+  apexHost,
+  esc,
+  fetchJson,
+  noindex,
+  page,
+  renderInto,
+} from "../../shared/prerender.js";
 import { brandTitle } from "../../shared/seo.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
@@ -25,11 +38,7 @@ const API_BASE = "https://api.ddbx.uk/api";
 const MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
 const FILING_NOUN = { UK: "director dealings", US: "insider trading" };
 
-function apexHost(hostname) {
-  const host = String(hostname ?? "").toLowerCase();
-
-  return host.startsWith("www.") ? host.slice(4) : host;
-}
+const localeFor = (market) => (market === "US" ? "en-US" : "en-GB");
 
 /** "mtln" + UK -> "MTLN.L"; "fcnca" + US -> "FCNCA". */
 function slugToKey(slug, market) {
@@ -40,19 +49,27 @@ function slugToKey(slug, market) {
   return bare.endsWith(".L") ? bare : `${bare}.L`;
 }
 
-function esc(s) {
-  return String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+/** Display name, cleaned of the noise each source appends. Mirrors
+ *  `cleanCompanyName` in src/lib/company.ts — including the loop, which the
+ *  single-pass copy that used to live here did not have. Names routinely carry
+ *  TWO trailing parentheticals ("Jardine Matheson Holdings Ltd (Singapore Reg)
+ *  (JAR)"), and one pass stripped only the ticker, so the indexed <title> and
+ *  meta description carried a fragment the React page never showed. */
+const cleanCompany = (c) => {
+  let out = String(c ?? "").trim();
 
-const cleanCompany = (c) =>
-  String(c ?? "")
-    .replace(/\s*\([^)]*\)\s*$/, "")
-    .replace(/\s*\/[A-Z]{2}\/\s*$/, "")
-    .trim();
+  for (;;) {
+    const next = out
+      .replace(/\s*\([^)]*\)\s*$/, "")
+      .replace(/\s*\/[A-Z]{2}\/\s*$/, "")
+      .trim();
+
+    // Never strip the whole name away: a company literally called "(BLANK)"
+    // should render as it arrived rather than as an empty string.
+    if (next === out || next === "") return out;
+    out = next;
+  }
+};
 
 const displayTicker = (k) => String(k ?? "").replace(/\.L$/i, "");
 
@@ -74,17 +91,21 @@ function moneyShort(value, currency = "GBP") {
   return `${sym}${Math.round(n)}`;
 }
 
-function money(value, currency = "GBP") {
+/** Grouped figure. The market matters: en-GB and en-US agree on the comma for
+ *  thousands today, but this hardcoded "en-GB" for every row on ddbx.us, which
+ *  is the sort of thing that silently disagrees with the React page the moment
+ *  either locale's rules change. */
+function money(value, currency = "GBP", market = "UK") {
   const n = Number(value);
 
   if (!isFinite(n) || n === 0) return "—";
 
-  return `${SYMBOL[currency] ?? ""}${Math.round(n).toLocaleString("en-GB")}`;
+  return `${SYMBOL[currency] ?? ""}${Math.round(n).toLocaleString(localeFor(market))}`;
 }
 
 function fmtDate(iso, market) {
   try {
-    return new Intl.DateTimeFormat(market === "US" ? "en-US" : "en-GB", {
+    return new Intl.DateTimeFormat(localeFor(market), {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -97,7 +118,7 @@ function fmtDate(iso, market) {
 
 function monthYear(iso, market) {
   try {
-    return new Intl.DateTimeFormat(market === "US" ? "en-US" : "en-GB", {
+    return new Intl.DateTimeFormat(localeFor(market), {
       month: "long",
       year: "numeric",
       timeZone: "UTC",
@@ -155,6 +176,50 @@ function leadSentence(d) {
   return s;
 }
 
+/** The page's FAQ, as text.
+ *
+ *  Mirrors `companyFaq` in src/pages/company.tsx verbatim — that copy is JSX
+ *  and this Function is plain ESM outside the Vite graph, so it cannot be
+ *  imported. Change one and change the other: the pre-render exists to show a
+ *  crawler what the React page shows, and copy that disagrees is worse than
+ *  copy that's missing.
+ *
+ *  Text, NOT FAQPage schema. See the note at the top of shared/prerender.js:
+ *  Google restricted FAQ rich results to a narrow set of authoritative sources,
+ *  so the markup buys nothing and still has to be maintained. The visible
+ *  answers are the part that was actually missing — the React page carries five
+ *  paragraphs of on-topic prose that no crawler without JS could see. */
+function faq(name, market) {
+  const insider = market === "UK" ? "director" : "insider";
+  const filing =
+    market === "UK"
+      ? "a PDMR notification to the LSE"
+      : "a Form 4 filing with the SEC";
+
+  return [
+    [
+      `Where does this ${name} data come from?`,
+      `Every row is a public regulatory disclosure — ${filing} — collected within minutes of being published. We don’t take company submissions and we don’t edit the numbers; the only thing we add is the rating and the reasoning behind it.`,
+    ],
+    [
+      `Is a ${insider} buying shares a good signal?`,
+      `Sometimes. A ${insider} buying with their own money is one of the few honest signals in the market, but plenty of purchases are routine — small top-ups, scheme allocations, or a well-paid executive rounding out a holding. That’s what our six-point check is for: it separates the conviction buys from the housekeeping, and shows you which is which.`,
+    ],
+    [
+      "How often is this page updated?",
+      "The pipeline runs every 15 minutes through the trading day, so a new disclosure appears here shortly after it’s filed. Company stats refresh daily.",
+    ],
+    [
+      "Can I get alerted when someone buys?",
+      `Yes — that’s what the app is for. Follow ${name} and you’ll get a push the moment a ${insider} files, with the full analysis attached, plus alerts if the price moves after a buy you’re following.`,
+    ],
+    [
+      "Is this financial advice?",
+      "No. ddbx rates the conviction behind insider buys and shows the reasoning. It’s information, never a recommendation, and never a guarantee. What you do with it is your call.",
+    ],
+  ];
+}
+
 /** Semantic pre-render. No classes — React owns the real presentation; these
  *  inline styles only keep the sub-second pre-hydration view legible. */
 function prerender(d) {
@@ -166,62 +231,43 @@ function prerender(d) {
       (deal) => `<tr>
       <td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(fmtDate(deal.trade_date, market))}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(personName(deal))}${personRole(deal) ? ` — ${esc(personRole(deal))}` : ""}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf;text-align:right">${esc(money(dealValue(deal, market), market === "UK" ? "GBP" : "USD"))}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf;text-align:right">${esc(money(dealValue(deal, market), market === "UK" ? "GBP" : "USD", market))}</td>
     </tr>`,
     )
     .join("");
 
   const news = (d.news?.items ?? [])
     .slice(0, 6)
-    .map((n) => `<li><a href="${esc(n.url)}" rel="nofollow">${esc(n.title)}</a></li>`)
+    .map(
+      (n) => `<li><a href="${esc(n.url)}" rel="nofollow">${esc(n.title)}</a></li>`,
+    )
+    .join("");
+
+  const questions = faq(name, market)
+    .map(
+      ([q, a]) =>
+        `<h3 style="font-size:14px;margin:20px 0 6px">${esc(q)}</h3><p style="font-size:14px;line-height:1.65;color:#4a4034;max-width:62ch">${esc(a)}</p>`,
+    )
     .join("");
 
   const marketHome = market === "US" ? "https://ddbx.us/" : "https://ddbx.uk/";
 
-  return `<div style="max-width:900px;margin:0 auto;padding:32px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1E1506">
-  <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(name)} (${esc(ticker)}) ${esc(FILING_NOUN[market])}</h1>
+  // NOTE — the h1 here ("Metlen Energy & Metals PLC (MTLN) director dealings")
+  // is not the h1 React renders (just the company name). Both are defensible:
+  // this one carries the query a searcher types, that one is the cleaner
+  // document heading. Deliberately left disagreeing rather than settled
+  // unilaterally — it's an owner decision, and whichever way it goes both
+  // sides have to move together or the pre-render stops matching the page.
+  return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(name)} (${esc(ticker)}) ${esc(FILING_NOUN[market])}</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(leadSentence(d))}</p>
   <h2 style="font-size:15px;margin:32px 0 10px">${market === "UK" ? "Director" : "Insider"} buys</h2>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${rows}</tbody></table>
   ${d.stats?.description ? `<h2 style="font-size:15px;margin:32px 0 10px">About ${esc(name)}</h2><p style="font-size:14px;line-height:1.65;color:#4a4034">${esc(d.stats.description)}</p>` : ""}
   ${news ? `<h2 style="font-size:15px;margin:32px 0 10px">Recent news</h2><ul style="font-size:14px;line-height:1.8">${news}</ul>` : ""}
-  <p style="margin-top:32px;font-size:14px"><a href="${esc(marketHome)}companies">Browse every company</a> · <a href="${esc(marketHome)}">All ${esc(FILING_NOUN[market])}</a></p>
-</div>`;
+  <h2 style="font-size:15px;margin:32px 0 10px">Common questions</h2>
+  ${questions}
+  <p style="margin-top:32px;font-size:14px"><a href="${esc(marketHome)}companies">Browse every company</a> · <a href="${esc(marketHome)}">All ${esc(FILING_NOUN[market])}</a></p>`);
 }
-
-/** Breadcrumbs — the one bit of structured data these pages genuinely support. */
-function breadcrumbLd(market, company, url, host) {
-  return JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: `${market} ${FILING_NOUN[market]}`,
-        item: `https://${host}/`,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Companies",
-        item: `https://${host}/companies`,
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: cleanCompany(company),
-        item: url,
-      },
-    ],
-  }).replace(/</g, "\\u003c");
-}
-
-const setContent = (value) => ({
-  element(el) {
-    el.setAttribute("content", value);
-  },
-});
 
 export async function onRequestGet(context) {
   const { params, request } = context;
@@ -235,40 +281,13 @@ export async function onRequestGet(context) {
   // The SPA shell. React boots from this and takes over whatever we inject.
   const shell = await context.next();
 
-  let data = null;
-
-  try {
-    const res = await fetch(
-      `${API_BASE}/company/${market}/${encodeURIComponent(key)}/page`,
-      {
-        headers: { accept: "application/json" },
-        // Errors expire fast — a 404 served during a Worker deploy must not
-        // outlive the deploy (see functions/companies.js).
-        cf: {
-          cacheEverything: true,
-          cacheTtlByStatus: { "200-299": 1800, "400-499": 60, "500-599": 0 },
-        },
-      },
-    );
-
-    if (res.ok) data = await res.json();
-  } catch {
-    /* fall through — the SPA still renders, it just fetches for itself */
-  }
+  const data = await fetchJson(
+    `${API_BASE}/company/${market}/${encodeURIComponent(key)}/page`,
+  );
 
   // Unknown company: let the SPA render its own "not found" state, but keep it
   // out of the index rather than leaving a bare shell to be crawled.
-  if (!data) {
-    return new HTMLRewriter()
-      .on("head", {
-        element(el) {
-          el.append('<meta name="robots" content="noindex, follow">', {
-            html: true,
-          });
-        },
-      })
-      .transform(shell);
-  }
+  if (!data) return noindex(shell);
 
   const name = cleanCompany(data.company);
   const ticker = displayTicker(data.key);
@@ -278,34 +297,15 @@ export async function onRequestGet(context) {
   );
   const description = leadSentence(data);
 
-  return new HTMLRewriter()
-    .on("title", {
-      element(el) {
-        el.setInnerContent(title);
-      },
-    })
-    .on('meta[name="description"]', setContent(description))
-    .on('meta[property="og:title"]', setContent(title))
-    .on('meta[property="og:description"]', setContent(description))
-    .on("head", {
-      element(el) {
-        el.append(
-          [
-            `<link rel="canonical" href="${esc(canonical)}">`,
-            `<meta property="og:url" content="${esc(canonical)}">`,
-            `<meta property="og:site_name" content="ddbx">`,
-            `<meta name="twitter:title" content="${esc(title)}">`,
-            `<meta name="twitter:description" content="${esc(description)}">`,
-            `<script type="application/ld+json">${breadcrumbLd(market, data.company, canonical, host)}</script>`,
-          ].join("\n"),
-          { html: true },
-        );
-      },
-    })
-    .on("#root", {
-      element(el) {
-        el.setInnerContent(prerender(data), { html: true });
-      },
-    })
-    .transform(shell);
+  return renderInto(shell, {
+    title,
+    description,
+    canonical,
+    breadcrumbs: [
+      { name: `${market} ${FILING_NOUN[market]}`, item: `https://${host}/` },
+      { name: "Companies", item: `https://${host}/companies` },
+      { name, item: canonical },
+    ],
+    body: prerender(data),
+  });
 }

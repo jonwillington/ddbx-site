@@ -73,7 +73,7 @@ export function BrokerInline({
   return (
     <aside
       aria-label={`Invest with ${broker.name}`}
-      className={`rounded-2xl border border-[#e3d9c9] bg-[#fffdf9] p-5 dark:border-white/10 dark:bg-surface ${className ?? ""}`}
+      className={`rounded-2xl border border-hairline bg-sheet p-5 dark:border-white/10 dark:bg-surface ${className ?? ""}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">

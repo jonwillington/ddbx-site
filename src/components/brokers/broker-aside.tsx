@@ -122,6 +122,7 @@ export function BrokerNavAside({
 
 export function BrokerAside({
   brokers: provided,
+  picks: providedPicks,
   heading = "Top picks",
   placement = "rail",
   ctaVariant = "primary",
@@ -129,6 +130,14 @@ export function BrokerAside({
 }: {
   /** Pass the already-loaded list to avoid a second fetch; omit to self-load. */
   brokers?: BrokerOffer[] | null;
+  /** Which platforms get a pick card. Defaults to the site-wide recommended
+   *  set, which is right on a page that hasn't made its own argument. The
+   *  broker guides pass their own: a category page rail showing two platforms
+   *  the ranking beside it didn't choose is the page contradicting itself, and
+   *  on a head-to-head the only two platforms in question are the pair. Empty
+   *  or omitted falls back to the default, so the loading window doesn't
+   *  briefly show a rail with no picks in it. */
+  picks?: BrokerOffer[];
   heading?: string;
   /** GA label for every CTA in the rail. Defaults to the broker section's
    *  "rail"; the company pages pass "company_rail" so the two surfaces can be
@@ -161,10 +170,17 @@ export function BrokerAside({
   // while the page beside it is already drawn, which reads as a broken layout
   // rather than a loading one.
   const loading = brokers === null;
-  const picks = (brokers ?? []).filter((b) => b.recommended);
+  const picks = providedPicks?.length
+    ? providedPicks
+    : (brokers ?? []).filter((b) => b.recommended);
   // Everything the picks don't already cover — "all OTHER brokers", so the
-  // same two platforms don't appear twice in one rail.
-  const rest = recommendedOrder(brokers ?? []).filter((b) => !b.recommended);
+  // same two platforms don't appear twice in one rail. Keyed off the picks
+  // actually rendered rather than off `recommended`, or a page-supplied pick
+  // would show up in both halves.
+  const pickSlugs = new Set(picks.map((b) => b.slug));
+  const rest = recommendedOrder(brokers ?? []).filter(
+    (b) => !pickSlugs.has(b.slug),
+  );
 
   return (
     <aside className="hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">

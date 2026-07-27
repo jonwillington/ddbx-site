@@ -43,6 +43,10 @@ export declare const MIN_BROKERS: number;
 export declare const COLUMNS: Record<ColumnId, string>;
 export declare const CATEGORIES: BrokerCategory[];
 export declare const CATEGORY_SLUGS: string[];
+/** The two-sentence "why trust this ranking" block, shared by the React page
+ *  and the crawler pre-render. `brokerCount` is the size of the loaded UK
+ *  list. */
+export declare function whyWeRank(brokerCount: number): string[];
 export declare function categoryBySlug(slug: string): BrokerCategory | null;
 export declare function categoryPath(slug: string): string;
 export declare function brokersForCategory(

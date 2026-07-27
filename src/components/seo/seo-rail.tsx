@@ -1,3 +1,5 @@
+import { useLocation } from "react-router-dom";
+
 import { BUTTON_RADIUS } from "@/components/button";
 import { StoreButtons } from "@/components/store-buttons";
 import { BrokerAside } from "@/components/brokers/broker-aside";
@@ -63,6 +65,16 @@ export function SeoRail({
 /** Non-UK rail: the app, since there's no affiliate directory for the market.
  *  Same fixed shell as BrokerAside so the two are interchangeable and the
  *  gutter maths doesn't change. */
+/** Market home per rail market — the one link in the list that isn't shared
+ *  across hosts. Hardcoding "/us" here once sent Swedish readers on
+ *  /se/directors/:id to the US market home. */
+const MARKET_HOME: Record<string, string> = {
+  uk: "/",
+  us: "/us",
+  se: "/se",
+  nl: "/nl",
+};
+
 function AppPromoAside({
   marketId,
   placement,
@@ -70,6 +82,19 @@ function AppPromoAside({
   marketId: string;
   placement: string;
 }) {
+  const { pathname } = useLocation();
+  const links = [
+    ["Latest filings", MARKET_HOME[marketId] ?? "/"],
+    ["Companies", "/companies"],
+    ["Sectors", "/sectors"],
+    ["Biggest buys", "/biggest-buys"],
+    ["Glossary", "/learn"],
+    // A rail link to the page it's on is furniture pointing at itself.
+  ].filter(
+    ([, href]) =>
+      !(href === "/" ? pathname === "/" : pathname.startsWith(href)),
+  );
+
   return (
     <aside className="fixed bottom-0 right-0 top-0 z-20 hidden w-80 flex-col border-l border-[#e8e0d5] bg-[#faf7f2] dark:border-separator dark:bg-surface lg:flex">
       <div className="flex h-16 shrink-0 items-center border-b border-[#e8e0d5] px-4 dark:border-separator">
@@ -83,9 +108,13 @@ function AppPromoAside({
           <p className="text-[13px] font-semibold text-foreground">
             Every filing, the day it files
           </p>
+          {/* Deliberately NOT the AppCtaBand's claim: on short pages the rail
+              and the terminal band sit a scroll apart, and the same sentence
+              twice reads as templating. The band sells the live feed; this
+              card sells completeness. */}
           <p className="mt-2 text-xs leading-[1.6] text-foreground/55">
-            This page is a snapshot. The app tracks each disclosure as it lands
-            — rated, argued both ways, with the price history already attached.
+            The site shows a slice. The app is the whole record — every
+            disclosure, every rating, searchable back to the start.
           </p>
 
           <StoreButtons
@@ -101,13 +130,7 @@ function AppPromoAside({
         </div>
 
         <ul className="mt-4 space-y-0.5">
-          {[
-            ["Latest filings", "/us"],
-            ["Companies", "/companies"],
-            ["Sectors", "/sectors"],
-            ["Biggest buys", "/biggest-buys"],
-            ["Glossary", "/learn"],
-          ].map(([label, href]) => (
+          {links.map(([label, href]) => (
             <li key={href}>
               <a
                 className="block rounded-lg px-2 py-2 text-[13px] font-medium text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.05]"

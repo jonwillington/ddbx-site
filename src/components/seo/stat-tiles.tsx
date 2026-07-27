@@ -21,24 +21,40 @@ export interface StatTile {
   tone?: "positive" | "negative";
 }
 
+const COLS: Record<2 | 3 | 4 | 5, string> = {
+  2: "sm:grid-cols-2",
+  3: "sm:grid-cols-3",
+  4: "sm:grid-cols-4",
+  5: "sm:grid-cols-5",
+};
+
 export function StatTiles({
   stats,
   note,
+  cols = 4,
   className = "",
 }: {
   stats: StatTile[];
   /** Caveat line under the tiles — a concentration warning, a sample-size
    *  note. Set in the same small grey as every other piece of small print. */
   note?: ReactNode;
+  /** Columns at `sm` and up (always 2 below). Pass `stats.length` when it
+   *  isn't 4 — a 5-stat group in a 4-col grid leaves one tile ragged on a
+   *  row of its own. */
+  cols?: 2 | 3 | 4 | 5;
   className?: string;
 }) {
   return (
     <div className={className}>
-      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <dl className={`grid grid-cols-2 gap-2 ${COLS[cols]}`}>
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-lg border border-black/[0.06] bg-black/[0.02] px-3.5 py-3 dark:border-white/[0.07] dark:bg-white/[0.03]"
+            // The house tile: a borderless tint well, same object as the
+            // company-page metrics this component was extracted from. (It
+            // shipped with its own bordered variant first — which is how
+            // /sectors/:slug ended up drawing tiles inside tiles.)
+            className="rounded-xl bg-black/[0.035] px-3.5 py-3 dark:bg-white/[0.05]"
           >
             <dt className="text-[11px] leading-tight text-foreground/50">
               {s.label}

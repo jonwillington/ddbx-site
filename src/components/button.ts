@@ -45,5 +45,4 @@ export const BUTTON_FILLED_GROUP =
 /** The chosen segment of a segmented control / tab bar / range picker.
  *  No hover — the selected state isn't a hover target, and these sit inside a
  *  track that supplies its own radius. */
-export const BUTTON_SELECTED =
-  "bg-ink text-white dark:bg-white dark:text-ink";
+export const BUTTON_SELECTED = "bg-ink text-white dark:bg-white dark:text-ink";

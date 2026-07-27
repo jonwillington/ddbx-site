@@ -14,12 +14,15 @@
 
 import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
 import {
+  archiveYears,
   buyAlpha,
   buyPerson,
+  buyReturn,
   buyValue,
   leaderboardPath,
   rankBuys,
   yearBounds,
+  BOARD_EARLIEST_YEAR,
   METHODOLOGY,
   TOP_N,
 } from "../../shared/leaderboard.js";
@@ -56,15 +59,69 @@ function money(v, symbol) {
   return `${symbol}${Math.round(n / 1000)}k`;
 }
 
-const signedPct = (r) =>
-  r == null ? "n/a" : `${r > 0 ? "+" : ""}${(r * 100).toFixed(1)}%`;
+/** Alpha is a difference between two returns, so the unit is percentage
+ *  points. Same string the hydrated board's badge prints. */
+const signedPp = (r) =>
+  r == null ? "n/a" : `${r > 0 ? "+" : ""}${(r * 100).toFixed(1)}pp`;
 
 const displayTicker = (t) => String(t ?? "").replace(/\.L$/i, "");
 
-const cleanCompany = (c) =>
-  String(c ?? "")
+/** Mirrors cleanCompanyName in src/lib/company.ts, loop and all: names
+ *  routinely carry TWO trailing parentheticals — "Jardine Matheson Holdings
+ *  Ltd (Singapore Reg) (JAR)" — and the single pass this used to do stripped
+ *  only the ticker, so the crawler read a longer name than the reader did. */
+const cleanCompany = (c) => {
+  let out = String(c ?? "").trim();
+
+  for (;;) {
+    const next = out
+      .replace(/\s*\([^)]*\)\s*$/, "")
+      .replace(/\s*\/[A-Z]{2}\/\s*$/, "")
+      .trim();
+
+    // Never strip the whole name away: a company literally called "(BLANK)"
+    // should render as it arrived rather than as an empty cell.
+    if (next === out || next === "") return out;
+    out = next;
+  }
+};
+
+/** Mirrors cleanInsiderName in src/lib/company.ts — the UK feed files the whole
+ *  beneficial-ownership chain, and the board printed it raw here while the page
+ *  cut it back. */
+const cleanInsider = (n) => {
+  const out = String(n ?? "")
     .replace(/\s*\([^)]*\)\s*$/, "")
     .trim();
+
+  return out || String(n ?? "").trim();
+};
+
+/** Mirrors TrackingNotice in src/components/seo/tracking-notice.tsx. The page
+ *  carries this caveat and the pre-render didn't, which is the divergence that
+ *  matters most: a crawler was reading a twelve-month claim with nothing
+ *  qualifying it. */
+const TRACKING_CAVEAT =
+  "ddbx started recording disclosures in March 2026, so periods described as a full year cover only the filings since then.";
+
+/** The summary the hydrated board states in tiles above the table. */
+function summaryLine(rows, symbol) {
+  const total = rows.reduce((sum, d) => sum + buyValue(d), 0);
+  const companies = new Set(rows.map((d) => d.ticker ?? "")).size;
+  const alphas = rows
+    .map((d) => buyAlpha(d))
+    .filter((a) => a != null)
+    .sort((a, b) => a - b);
+  const mid = Math.floor(alphas.length / 2);
+  const median =
+    alphas.length === 0
+      ? null
+      : alphas.length % 2 === 1
+        ? alphas[mid]
+        : (alphas[mid - 1] + alphas[mid]) / 2;
+
+  return `${rows.length} purchases, ${money(total, symbol)} in total, across ${companies} ${companies === 1 ? "company" : "companies"}. Median alpha since disclosure: ${signedPp(median)}.`;
+}
 
 function leadSentence(rows, market, periodLabel) {
   const noun = market === "US" ? "insiders" : "directors";
@@ -75,48 +132,82 @@ function leadSentence(rows, market, periodLabel) {
   return `The ${rows.length} largest open-market purchases ${market} ${noun} made in their own companies ${periodLabel}, led by ${cleanCompany(top.company) || displayTicker(top.ticker)} at ${money(buyValue(top), SYMBOL[market])}.`;
 }
 
-function prerender(rows, suppressed, market, periodLabel, host, complete) {
+function prerender(rows, suppressed, market, periodLabel, host, complete, year) {
   const symbol = SYMBOL[market];
 
+  // The year boards are the archive and the rolling board is canonical, so the
+  // links run in both directions — a crawler that lands on /biggest-buys/2026
+  // needs a route back to the live one, and the sitemap's year URLs need an
+  // internal link behind them rather than standing on the sitemap alone.
+  const boards = [
+    ...(year
+      ? [`<a href="https://${esc(host)}/biggest-buys">The last twelve months</a>`]
+      : []),
+    ...archiveYears(BOARD_EARLIEST_YEAR, new Date())
+      .filter((y) => String(y) !== String(year))
+      .map(
+        (y) =>
+          `<a href="https://${esc(host)}${leaderboardPath(y)}">Biggest buys of ${y}</a>`,
+      ),
+  ].join(" · ");
+
+  const cell = "padding:8px 12px;border-bottom:1px solid #ece1cf";
+  const quiet = "display:block;font-size:12px;color:#6b6154;margin-top:2px";
+
   const body = rows
-    .map(
-      (d, i) => `<tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${i + 1}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf"><a href="https://${esc(host)}/company/${esc(displayTicker(d.ticker).toLowerCase())}">${esc(cleanCompany(d.company) || displayTicker(d.ticker))}</a></td>
-      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(buyPerson(d) ?? "—")}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(d.trade_date ?? "")}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(money(buyValue(d), symbol))}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(signedPct(buyAlpha(d)))}</td>
-    </tr>`,
-    )
+    .map((d, i) => {
+      const value = buyValue(d);
+      const ret = buyReturn(d);
+      const worth = ret != null && value > 0 ? value * (1 + ret) : null;
+
+      return `<tr>
+      <td style="${cell}">${i + 1}</td>
+      <td style="${cell}"><a href="https://${esc(host)}/company/${esc(displayTicker(d.ticker).toLowerCase())}">${esc(cleanCompany(d.company) || displayTicker(d.ticker))}</a>${
+        d.cluster
+          ? `<span style="${quiet}">Part of a cluster of ${esc(d.cluster.count)} insiders</span>`
+          : ""
+      }</td>
+      <td style="${cell}">${esc(cleanInsider(buyPerson(d)) || "—")}</td>
+      <td style="${cell}">${esc(d.trade_date ?? "")}</td>
+      <td style="${cell}">${esc(money(value, symbol))}${
+        worth != null && worth > 0
+          ? `<span style="${quiet}">worth ${esc(money(worth, symbol))} if still held</span>`
+          : ""
+      }</td>
+      <td style="${cell}">${esc(signedPp(buyAlpha(d)))}</td>
+    </tr>`;
+    })
     .join("");
 
   const held = [...suppressed.entries()]
-    .map(
-      ([t, n]) =>
-        `${displayTicker(t)} had ${n} further qualifying ${n === 1 ? "purchase" : "purchases"}`,
-    )
-    .join("; ");
+    .map(([t, n]) => `${displayTicker(t)} (${n} more)`)
+    .join(", ");
 
   const method = METHODOLOGY.map(
     (line) => `<li style="margin-bottom:8px">${esc(line)}</li>`,
   ).join("");
 
-  return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">The biggest ${esc(market)} insider buys ${esc(periodLabel)}</h1>
-  <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">The largest open-market purchases ${market === "US" ? "insiders" : "directors"} made in their own companies, with how each has performed against the market since it was disclosed.</p>
+  const eyebrow = "font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:#5a4128;margin:0 0 8px";
+
+  return page(`<p style="${eyebrow}">Leaderboard</p>
+  <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">The biggest ${esc(market)} insider buys ${esc(periodLabel)}</h1>
+  <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">The largest <a href="https://${esc(host)}/learn/open-market-buy">open-market purchases</a> ${market === "US" ? "insiders" : "directors"} made in their own companies, ranked by what they spent, with how each has performed against the market since it was disclosed.</p>
+  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(TRACKING_CAVEAT)}</p>
   ${complete ? "" : `<p style="font-size:13px;color:#6b6154">We couldn’t load the whole period, so this ranking may be missing older purchases.</p>`}
+  <p style="font-size:14px;color:#4a4034;max-width:62ch">${esc(summaryLine(rows, symbol))}</p>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>
     <th style="text-align:left;padding:8px 12px">#</th>
     <th style="text-align:left;padding:8px 12px">Company</th>
     <th style="text-align:left;padding:8px 12px">Bought by</th>
     <th style="text-align:left;padding:8px 12px">Date</th>
-    <th style="text-align:left;padding:8px 12px">Value</th>
-    <th style="text-align:left;padding:8px 12px">Alpha since</th>
+    <th style="text-align:left;padding:8px 12px">Value bought</th>
+    <th style="text-align:left;padding:8px 12px">Alpha since disclosure</th>
   </tr></thead><tbody>${body}</tbody></table>
-  ${held ? `<p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(held)}, held back so a single company doesn’t fill the board.</p>` : ""}
+  ${held ? `<p style="font-size:13px;color:#6b6154;max-width:62ch">Held back so one company can’t fill the board: ${esc(held)}.</p>` : ""}
   <h2 style="font-size:15px;margin:32px 0 10px">How this is put together</h2>
   <ul style="font-size:14px;line-height:1.7;color:#4a4034;max-width:64ch">${method}</ul>
-  <p style="margin-top:24px;font-size:14px"><a href="https://${esc(host)}/sectors">Buying by sector</a> · <a href="https://${esc(host)}/companies">Browse companies</a></p>`);
+  ${boards ? `<h2 style="font-size:15px;margin:32px 0 10px">Boards by year</h2><p style="font-size:14px">${boards}</p>` : ""}
+  <p style="margin-top:24px;font-size:14px"><a href="https://${esc(host)}/sectors">Buying by sector</a> · <a href="https://${esc(host)}/companies">Browse companies</a> · <a href="https://${esc(host)}/learn/open-market-buy">Open-market buys</a> · <a href="https://${esc(host)}/learn/cluster-buying">Cluster buying</a></p>`);
 }
 
 export async function onRequestGet(context) {
@@ -176,6 +267,14 @@ export async function onRequestGet(context) {
           { name: year, item: canonical },
         ]
       : [{ name: "Biggest buys", item: canonical }],
-    body: prerender(rows, suppressed, market, periodLabel, host, complete),
+    body: prerender(
+      rows,
+      suppressed,
+      market,
+      periodLabel,
+      host,
+      complete,
+      year,
+    ),
   });
 }

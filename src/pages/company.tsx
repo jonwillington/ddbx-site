@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
-import { BrokerAside } from "@/components/brokers/broker-aside";
 import { BrokerVisitLink } from "@/components/brokers/broker-ui";
 import {
   BrokerInline,
@@ -14,12 +13,18 @@ import {
 import { CompanyLogo } from "@/components/company-logo";
 import { CompanyAppPitch } from "@/components/company/company-app-pitch";
 import { MoreCompanies } from "@/components/company/more-companies";
-import { CompanyPriceChart } from "@/components/company/price-chart";
+import {
+  CompanyPriceChart,
+  useCompanyPriceBars,
+} from "@/components/company/price-chart";
 import { MarketFaq } from "@/components/market/market-faq";
 import { NewsSourceLogo } from "@/components/news-source-logo";
 import { RatingBadge } from "@/components/rating-badge";
+import { SeoRail } from "@/components/seo/seo-rail";
+import { StatTiles } from "@/components/seo/stat-tiles";
+import { Skeleton } from "@/components/skeleton";
 import { StoreButtons } from "@/components/store-buttons";
-import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
+import { BUTTON_RADIUS } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import { isAffiliateLink } from "@/lib/brokers";
@@ -41,8 +46,8 @@ const C = {
   sheet:
     "rounded-2xl border border-hairline bg-sheet shadow-[0_1px_2px_rgba(90,65,40,0.03)] dark:border-white/[0.07] dark:bg-surface",
   rule: "border-hairline dark:border-separator",
-  tile: "rounded-xl bg-black/[0.035] dark:bg-white/[0.05]",
-  label: "text-[11px] leading-none text-foreground/50",
+  // `tile` and `label` used to live here for the header metrics; those are
+  // `StatTiles` now, which owns the same borderless tint well.
   note: "text-[12px] leading-[1.6] text-foreground/45",
   prose: "text-[14px] leading-[1.65] text-foreground/70",
 } as const;
@@ -132,6 +137,25 @@ function personRole(deal: Dealing | UsDealing): string {
 
 const dealValue = (deal: Dealing | UsDealing) =>
   isUk(deal) ? deal.value_gbp : deal.value;
+
+/** Profile route for the person on a row, or null when we hold no id for them.
+ *
+ *  UK rows carry the synthetic `d-…` director key; US rows carry the reporter's
+ *  SEC CIK. /directors/:id resolves its market from the PATH rather than the
+ *  host (see director.tsx), so a US link has to carry the /us prefix or it
+ *  loads a UK profile lookup for a CIK. A row with neither id renders as plain
+ *  text — a link to a profile that 404s is worse than no link. */
+function directorHref(deal: Dealing | UsDealing): string | null {
+  if (isUk(deal)) {
+    const id = deal.director?.id;
+
+    return id ? `/directors/${encodeURIComponent(id)}` : null;
+  }
+
+  const cik = deal.reporter?.cik;
+
+  return cik ? `/us/directors/${encodeURIComponent(cik)}` : null;
+}
 
 /** STOCK Act filings disclose a band, never an exact figure — show the band. */
 function govAmount(g: GovDealing): string {
@@ -257,6 +281,13 @@ export default function CompanyPage() {
   const [data, setData] = useState<CompanyPageData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const broker = usePromotedBroker(market);
+  const marketId = market === "UK" ? "uk" : "us";
+  // Fetched from the slug rather than from the loaded bundle: it starts in
+  // parallel with the page fetch, and the section below can only decide whether
+  // to render its heading once this has settled.
+  const priceSeries = useCompanyPriceBars(
+    slug ? slugToKey(slug, market) : null,
+  );
 
   useEffect(() => {
     if (!slug) return;
@@ -276,21 +307,38 @@ export default function CompanyPage() {
 
   if (error) {
     return (
-      <DefaultLayout>
-        <div className="mx-auto max-w-[720px] py-16 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            We don&rsquo;t have dealings for that company
-          </h1>
-          <p className={`mt-3 ${C.prose}`}>
-            It may not have filed a disclosure we&rsquo;ve surfaced yet.
-          </p>
-          <Link
-            className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-foreground underline underline-offset-4"
-            to="/companies"
-          >
-            Browse every company
-            <ArrowRightIcon className="h-3.5 w-3.5" />
-          </Link>
+      // Same furniture as the loaded page: `drawerRight` + the rail. Without
+      // them the error state rendered 320px wider than every page around it, so
+      // a mistyped ticker shunted the whole layout sideways — and it was a dead
+      // end besides, which is why the onward rail is mounted below.
+      <DefaultLayout drawerRight>
+        <SeoRail
+          marketId={marketId}
+          placement="company_rail"
+          ukHeading="Start investing"
+        />
+
+        <div className="w-full pb-24 lg:pb-14">
+          <div className="mx-auto max-w-[720px] py-16 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              We don&rsquo;t have dealings for that company
+            </h1>
+            <p className={`mt-3 ${C.prose}`}>
+              It may not have filed a disclosure we&rsquo;ve surfaced yet.
+            </p>
+            <Link
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-foreground underline underline-offset-4"
+              to="/companies"
+            >
+              Browse every company
+              <ArrowRightIcon className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <MoreCompanies
+            currentKey={slug ? slugToKey(slug, market) : ""}
+            market={market}
+          />
         </div>
       </DefaultLayout>
     );
@@ -318,31 +366,49 @@ export default function CompanyPage() {
         ? "insider"
         : "insiders";
 
-  const metrics: Array<[string, string]> = [
-    ["Disclosed buys", String(summary.deals)],
-    ["Total value", moneyShort(summary.total_value, summary.currency)],
-    [
-      market === "UK" ? "Directors buying" : "Insiders buying",
-      String(summary.people),
-    ],
-    ["Most recent", fmtDate(summary.last_trade_date, market)],
-    [
-      "Rated",
-      summary.analysed > 0 ? `${summary.analysed} of ${summary.deals}` : "—",
-    ],
+  // Four tiles, not five: five never divided evenly into any breakpoint the
+  // page uses (2/2/1 on mobile, 4/1 at sm), so the row was always ragged. "Most
+  // recent" was the one the standfirst below already states in prose, so it
+  // folds in there. Total value carries the primary weight — it's the figure
+  // the page is about.
+  const metrics = [
+    { label: "Disclosed buys", value: String(summary.deals) },
+    {
+      label: "Total value",
+      value: moneyShort(summary.total_value, summary.currency),
+      primary: true,
+    },
+    {
+      label: market === "UK" ? "Directors buying" : "Insiders buying",
+      value: String(summary.people),
+    },
+    // "0 of 3" rather than an em dash: the dash reads as missing data, and the
+    // honest statement is that none of these have been written up yet.
+    { label: "Rated", value: `${summary.analysed} of ${summary.deals}` },
   ];
+
+  // Whether this company clears the bar the index applies (see companies.tsx).
+  // Below it, "Browse every company" points at a list this company isn't on.
+  const onIndex = summary.deals >= 2 || summary.analysed > 0;
+
+  // No broker to sell and no stats to state: the panel renders nothing, and
+  // the grid drops to one column so the sheet uses the width rather than
+  // sitting beside a 17rem gap.
+  const hasPanel =
+    !!broker || panelFacts(data.stats, market, ticker).length > 0;
 
   return (
     // drawerRight reserves lg:mr-80 for the fixed broker rail — the same
     // pairing /brokers/:slug uses.
     <DefaultLayout drawerRight>
       {/* Grey CTAs, and the full directory below the picks: this page's one
-          filled button is "Buy {ticker} with …" in the sticky panel. */}
-      <BrokerAside
-        showAll
-        ctaVariant="grey"
-        heading={`Invest in ${ticker}`}
+          filled button is "Buy {ticker} with …" in the sticky panel. Via
+          SeoRail so ddbx.us gets the app rail — the broker directory is UK-only
+          editorial, and it was selling UK platforms to US readers. */}
+      <SeoRail
+        marketId={marketId}
         placement="company_rail"
+        ukHeading={`Invest in ${ticker}`}
       />
 
       <div className="w-full pb-24 lg:pb-14">
@@ -366,7 +432,11 @@ export default function CompanyPage() {
           </p>
         </div>
 
-        <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+        <div
+          className={`mt-6 grid items-start gap-10 ${
+            hasPanel ? "lg:grid-cols-[minmax(0,1fr)_17rem]" : ""
+          }`}
+        >
           {/* The record: header + sections on one sheet. */}
           <div className={`min-w-0 px-5 py-6 sm:px-8 sm:py-8 ${C.sheet}`}>
             <header>
@@ -382,16 +452,7 @@ export default function CompanyPage() {
                 </div>
               </div>
 
-              <dl className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">
-                {metrics.map(([k, v]) => (
-                  <div key={k} className={`${C.tile} px-3.5 py-3`}>
-                    <dt className={C.label}>{k}</dt>
-                    <dd className="mt-1.5 truncate text-[15.5px] font-semibold leading-none tracking-[-0.01em] tabular-nums text-foreground">
-                      {v}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <StatTiles className="mt-7" cols={4} stats={metrics} />
             </header>
 
             <article className="min-w-0">
@@ -406,6 +467,16 @@ export default function CompanyPage() {
                 {summary.first_trade_date
                   ? ` since ${monthYear(summary.first_trade_date, market)}`
                   : ""}
+                {/* The date the header used to spend a fifth tile on. On a
+                    single disclosure "most recently" would be restating the
+                    only date the sentence has, so it just states it. */}
+                {!summary.last_trade_date
+                  ? ""
+                  : summary.deals > 1
+                    ? `, most recently on ${fmtDate(summary.last_trade_date, market)}`
+                    : summary.first_trade_date
+                      ? ""
+                      : ` on ${fmtDate(summary.last_trade_date, market)}`}
                 .
                 {summary.analysed > 0 && (
                   <>
@@ -420,31 +491,44 @@ export default function CompanyPage() {
               {/* The price, with the buys on it — deliberately ABOVE the
                   table. The table is the evidence; this is the claim, and a
                   visitor who reads nothing else should still leave knowing
-                  where the insiders bought relative to where it trades now. */}
-              <Section
-                aside="Daily closes for the last 12 months. Each marker is a disclosed buy, plotted at the close on the day it was made."
-                id="price"
-                label="Price"
-              >
-                <CompanyPriceChart
-                  currency={
-                    summary.currency ?? (market === "UK" ? "GBP" : "USD")
-                  }
-                  deals={data.deals}
-                  market={market}
-                  tickerKey={data.key}
-                />
-              </Section>
+                  where the insiders bought relative to where it trades now.
+                  Suppressed entirely for issuers with no cached series (recent
+                  listings, suspended lines): a ruled heading and a caption
+                  about markers, sitting over whitespace, is worse than no
+                  section at all. */}
+              {!priceSeries.unavailable && (
+                <Section
+                  aside="Daily closes for the last 12 months. Each marker is a disclosed buy, plotted at the close on the day it was made."
+                  id="price"
+                  label="Price"
+                >
+                  <CompanyPriceChart
+                    currency={
+                      summary.currency ?? (market === "UK" ? "GBP" : "USD")
+                    }
+                    deals={data.deals}
+                    market={market}
+                    series={priceSeries}
+                    tickerKey={data.key}
+                  />
+                </Section>
+              )}
 
               <Section
-                aside={`Every ${market === "UK" ? "PDMR disclosure" : "SEC Form 4"} we’ve surfaced for this issuer. Ratings are ours, not the company’s.`}
+                aside={`Every ${market === "UK" ? "PDMR disclosure" : "SEC Form 4"} we’ve surfaced for this issuer.${summary.analysed > 0 ? " Ratings are ours, not the company’s." : ""}`}
                 id="buys"
                 label={market === "UK" ? "Director buys" : "Insider buys"}
               >
-                <DealsTable deals={data.deals} market={market} />
-                <p className={`mt-3 ${C.note}`}>
-                  The reasoning behind each rating is written up in the app.
-                </p>
+                <DealsTable
+                  deals={data.deals}
+                  market={market}
+                  rated={summary.analysed > 0}
+                />
+                {summary.analysed > 0 && (
+                  <p className={`mt-3 ${C.note}`}>
+                    The reasoning behind each rating is written up in the app.
+                  </p>
+                )}
               </Section>
 
               {/* Mobile twin of the rail — the rail is hidden below lg, and
@@ -519,32 +603,14 @@ export default function CompanyPage() {
                 </Section>
               )}
 
-              <Section id="app" label="Get the alerts">
-                <p className="max-w-[42em] text-[15.5px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
-                  Follow {name} and get a push the moment{" "}
-                  {market === "UK" ? "a director" : "an insider"} files.
-                </p>
-                <p className={`mt-2.5 max-w-[42em] ${C.prose}`}>
-                  The alert goes out as the disclosure lands, and again if the
-                  price moves after a buy you&rsquo;re following. Nothing to
-                  check, nothing to subscribe to.
-                </p>
-                {/* Ghost, not filled: the page's single primary action is the
-                    broker CTA in the sticky panel. `items-start` because
-                    StoreButtons' wrapper is a flex column — without it the
-                    anchor stretches to the full content width and a compact
-                    CTA becomes a slab. */}
-                <StoreButtons
-                  buttonClassName={`inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_GHOST} px-5 py-3 text-sm font-semibold transition-colors`}
-                  className="mt-4 items-start"
-                  gaEvent="cta_company_download"
-                  gaLabel="Company page"
-                  marketId={market.toLowerCase()}
-                />
-                <p className={`mt-2 ${C.note}`}>
-                  Free for 7 days, cancel any time.
-                </p>
-              </Section>
+              {/* There used to be a "Get the alerts" section here: the same
+                  promise, the same store buttons and the same "Free for 7 days"
+                  line that `CompanyAppPitch` carries about 200px further down.
+                  Two identical asks that close together read as a page that
+                  can't stop selling — and with the mobile floating bar and
+                  BrokerInline that made four. The pitch band is the one that
+                  survives; it's the better-designed of the two and it uses this
+                  company's own disclosures as the alert copy. */}
             </article>
           </div>
 
@@ -552,7 +618,6 @@ export default function CompanyPage() {
               the company-page counterpart of the review's buy box. */}
           <CompanyPanel
             broker={broker}
-            company={name}
             market={market}
             stats={data.stats}
             ticker={ticker}
@@ -587,11 +652,17 @@ export default function CompanyPage() {
           >
             All {market} {noun}
           </Link>
+          {/* The index only lists companies with repeat buying or a written
+              analysis, so on a page below that bar "Browse every company" sent
+              a reader to a list their own company is missing from. Same
+              destination, honest label. */}
           <Link
             className="text-foreground/70 underline-offset-4 hover:underline"
             to="/companies"
           >
-            Browse every company
+            {onIndex
+              ? "Browse every company"
+              : "Companies with repeat insider buying"}
           </Link>
           {market === "UK" && (
             <Link
@@ -613,65 +684,66 @@ export default function CompanyPage() {
  *  no geometry with what actually arrives, so the page visibly re-assembled
  *  itself on load: the sheet appeared, the column narrowed to make room for
  *  the panel, and everything jumped. This is the real skeleton — the sheet,
- *  the logo, the five metric tiles, the section rules and the side panel, all
- *  at their true sizes — so the load is a fill rather than a rebuild.
+ *  the logo, the metric tiles, the section rules and the side panel, all at
+ *  their true sizes — so the load is a fill rather than a rebuild.
  *
- *  One animation on the wrapper, not per-bar: independently-pulsing blocks
- *  read as a broken interface rather than a loading one.
+ *  Every block is the house `Skeleton`. It shipped with a private `Bar` whose
+ *  tint and tempo were its own, which meant the rail (house animation) and the
+ *  document (this one) pulsed out of step on the same screen.
  */
-function Bar({ className = "" }: { className?: string }) {
-  return <div className={`rounded bg-foreground/[0.07] ${className}`} />;
-}
-
 function CompanySkeleton({ ticker }: { ticker?: string }) {
+  const marketId =
+    marketForPath(
+      "/",
+      typeof window === "undefined" ? undefined : window.location.hostname,
+    ).id === "us"
+      ? "us"
+      : "uk";
+
   return (
     <DefaultLayout drawerRight>
       {/* The rail is mounted during the load too. `drawerRight` reserves its
           320px whether or not anything is in it, so leaving it out left a bare
           cream column beside a fully-drawn skeleton — the one part of the page
-          that looked broken rather than loading. It self-loads its brokers and
-          carries its own skeleton, so it fills independently of the company. */}
-      <BrokerAside
-        showAll
-        ctaVariant="grey"
-        heading={ticker ? `Invest in ${ticker}` : "Invest in this company"}
+          that looked broken rather than loading. It self-loads, so it fills
+          independently of the company. */}
+      <SeoRail
+        marketId={marketId}
         placement="company_rail"
+        ukHeading={ticker ? `Invest in ${ticker}` : "Invest in this company"}
       />
 
-      <div aria-busy="true" className="w-full animate-pulse pb-24 lg:pb-14">
+      <div aria-busy="true" className="w-full pb-24 lg:pb-14">
         <span className="sr-only">Loading company</span>
 
         {/* Breadcrumb row. */}
         <div className="flex items-baseline justify-between gap-4">
-          <Bar className="h-3.5 w-48" />
-          <Bar className="h-3 w-32" />
+          <Skeleton className="h-[14px] w-48" />
+          <Skeleton className="h-[12px] w-32" />
         </div>
 
         <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
           <div className={`min-w-0 px-5 py-6 sm:px-8 sm:py-8 ${C.sheet}`}>
             {/* Header: logo + name + ticker line. */}
             <div className="flex items-start gap-4">
-              <div className="mt-0.5 h-12 w-12 shrink-0 rounded-full bg-foreground/[0.07]" />
+              <Skeleton circle className="mt-0.5 shrink-0" h={48} w={48} />
               <div className="min-w-0 flex-1">
-                <Bar className="h-8 w-2/3 max-w-[22rem]" />
-                <Bar className="mt-3 h-4 w-40" />
+                <Skeleton className="h-[32px] w-2/3 max-w-[22rem]" />
+                <Skeleton className="mt-3 h-[16px] w-40" />
               </div>
             </div>
 
-            {/* The five metric tiles, at their real height. */}
-            <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">
-              {Array.from({ length: 5 }, (_, i) => (
-                <div key={i} className={`${C.tile} px-3.5 py-3`}>
-                  <Bar className="h-2.5 w-3/4" />
-                  <Bar className="mt-2 h-4 w-1/2" />
-                </div>
+            {/* The four metric tiles, at their real height. */}
+            <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {Array.from({ length: 4 }, (_, i) => (
+                <Skeleton key={i} className="w-full rounded-xl" h={64} />
               ))}
             </div>
 
             {/* Standfirst. */}
             <div className="max-w-[44em] py-7">
-              <Bar className="h-4 w-full" />
-              <Bar className="mt-2.5 h-4 w-5/6" />
+              <Skeleton className="h-[16px] w-full" />
+              <Skeleton className="mt-2.5 h-[16px] w-5/6" />
             </div>
 
             {/* Price section — heading left, chart right. */}
@@ -679,10 +751,10 @@ function CompanySkeleton({ ticker }: { ticker?: string }) {
               className={`grid gap-x-10 gap-y-4 border-t ${C.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
             >
               <div>
-                <Bar className="h-4 w-16" />
-                <Bar className="mt-3 h-2.5 w-28" />
+                <Skeleton className="h-[17px] w-16" />
+                <Skeleton className="mt-3 h-[11px] w-28" />
               </div>
-              <div className="h-[220px] rounded-xl bg-foreground/[0.05]" />
+              <Skeleton className="w-full rounded-xl" h={220} />
             </div>
 
             {/* Buys table — heading left, rows right. */}
@@ -690,8 +762,8 @@ function CompanySkeleton({ ticker }: { ticker?: string }) {
               className={`grid gap-x-10 gap-y-4 border-t ${C.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
             >
               <div>
-                <Bar className="h-4 w-24" />
-                <Bar className="mt-3 h-2.5 w-32" />
+                <Skeleton className="h-[17px] w-24" />
+                <Skeleton className="mt-3 h-[11px] w-32" />
               </div>
               <div>
                 {Array.from({ length: 4 }, (_, i) => (
@@ -699,30 +771,37 @@ function CompanySkeleton({ ticker }: { ticker?: string }) {
                     key={i}
                     className={`flex items-center gap-4 border-b ${C.rule} py-3.5`}
                   >
-                    <Bar className="h-3 w-20 shrink-0" />
-                    <Bar className="h-3 flex-1" />
-                    <Bar className="h-3 w-16 shrink-0" />
-                    <Bar className="h-3 w-14 shrink-0" />
+                    <Skeleton className="h-[13px] w-20 shrink-0" />
+                    <Skeleton className="h-[13px] flex-1" />
+                    <Skeleton className="h-[13px] w-16 shrink-0" />
+                    <Skeleton className="h-[13px] w-14 shrink-0" />
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Below lg the loaded page puts BrokerInline here. Reserving its
+                height stops the whole document jumping up by a card the moment
+                the fetch lands — the one shift the skeleton was still causing
+                on the screen size where shifts cost most. */}
+            <div aria-hidden className="my-8 h-[104px] lg:hidden" />
           </div>
 
           {/* Side panel — reserving its width is the point: without it the
-              content column loads narrow and then snaps. */}
-          <aside className="hidden lg:block">
-            <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
-              <Bar className="h-11 w-full" />
-              <Bar className="mx-auto mt-2.5 h-2.5 w-2/3" />
+              content column loads narrow and then snaps. Sticky, like the real
+              one, so a load that finishes mid-scroll doesn't move it. */}
+          <aside className="hidden lg:sticky lg:top-24 lg:block">
+            <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 dark:border-brand-tan/25 dark:bg-surface-secondary">
+              <Skeleton className="w-full rounded-lg" h={44} />
+              <Skeleton className="mx-auto mt-2.5 h-[11px] w-2/3" />
               <div className="mt-4">
                 {Array.from({ length: 4 }, (_, i) => (
                   <div
                     key={i}
                     className={`flex items-center justify-between gap-4 border-b ${C.rule} py-2.5 last:border-b-0`}
                   >
-                    <Bar className="h-3 w-20" />
-                    <Bar className="h-3 w-12" />
+                    <Skeleton className="h-[13px] w-20" />
+                    <Skeleton className="h-[13px] w-12" />
                   </div>
                 ))}
               </div>
@@ -734,38 +813,59 @@ function CompanySkeleton({ ticker }: { ticker?: string }) {
   );
 }
 
+/** The facts the panel carries, in order.
+ *
+ *  Stats-derived only. Ticker rides along when there's at least one of them to
+ *  ride with — on its own it's a row restating the line under the h1. When the
+ *  list comes back empty the panel drops the whole `<dl>`: three rows of em
+ *  dashes, sticky down the side of the page, was the page's most persistent
+ *  admission that it had nothing.
+ *
+ *  Market cap and previous close live HERE and are dropped from
+ *  `StatsSection`; P/E and the rest live there and are dropped from here. The
+ *  two used to print all three of market cap, previous close and P/E within
+ *  one screen of each other. */
+function panelFacts(
+  stats: CompanyPageData["stats"],
+  market: string,
+  ticker: string,
+): Array<[string, string]> {
+  const cur = stats?.currency ?? (market === "UK" ? "GBP" : "USD");
+  const rows: Array<[string, string]> = [];
+
+  if (stats?.marketCap)
+    rows.push(["Market cap", moneyShort(stats.marketCap, cur)]);
+  if (stats?.previousClose != null)
+    rows.push(["Previous close", `${SYMBOL[cur] ?? ""}${stats.previousClose}`]);
+
+  return rows.length > 0 ? [["Ticker", ticker], ...rows] : [];
+}
+
 /** Sticky conversion panel beside the sheet. Mirrors the review's buy box:
  *  the action first, the compliance line under it, then the facts the header
- *  tiles don't already carry, so the two never repeat each other. */
+ *  tiles don't already carry, so the two never repeat each other.
+ *
+ *  Renders nothing when it would hold neither — see `hasPanel` at the call
+ *  site, which widens the sheet to the full column in that case rather than
+ *  leaving a 17rem hole beside it. */
 function CompanyPanel({
   broker,
-  company,
   market,
   stats,
   ticker,
 }: {
   broker: BrokerOffer | null;
-  company: string;
   market: string;
   stats: CompanyPageData["stats"];
   ticker: string;
 }) {
-  const cur = stats?.currency ?? (market === "UK" ? "GBP" : "USD");
-  const facts: Array<[string, string]> = [
-    ["Ticker", ticker],
-    ["Market cap", stats?.marketCap ? moneyShort(stats.marketCap, cur) : "—"],
-    [
-      "Previous close",
-      stats?.previousClose != null
-        ? `${SYMBOL[cur] ?? ""}${stats.previousClose}`
-        : "—",
-    ],
-    ["P/E ratio", stats?.peRatio != null ? stats.peRatio.toFixed(2) : "—"],
-  ];
+  const facts = panelFacts(stats, market, ticker);
+
+  if (!broker && facts.length === 0) return null;
 
   return (
-    <aside className="hidden lg:block lg:sticky lg:top-24">
-      <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
+    <aside className="hidden lg:sticky lg:top-24 lg:block">
+      <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-brand-tan/25 dark:bg-surface-secondary">
         {broker ? (
           <>
             <BrokerVisitLink
@@ -782,24 +882,47 @@ function CompanyPanel({
             </p>
           </>
         ) : (
-          <p className="text-center text-[13px] font-semibold text-foreground">
-            {company}
-          </p>
+          // No affiliate directory for this market (the whole of ddbx.us), so
+          // the slot sells the app instead of printing the company name at it.
+          // Same claim as the non-UK SeoRail card — completeness, deliberately
+          // not the pitch band's "live" claim, which sits further down the same
+          // page.
+          <>
+            <p className="text-[13px] font-semibold text-foreground">
+              Every filing, the day it files
+            </p>
+            <p className="mt-2 text-[12px] leading-[1.6] text-foreground/55">
+              The site shows a slice. The app is the whole record — every
+              disclosure, every rating, searchable back to the start.
+            </p>
+            <StoreButtons
+              buttonClassName={`inline-flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} bg-ink px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-ink/90 dark:bg-white dark:text-ink dark:hover:bg-white/90`}
+              className="mt-3.5"
+              gaEvent="cta_company_download"
+              gaLabel="Company panel"
+              marketId={market === "UK" ? "uk" : "us"}
+            />
+            <p className="mt-2.5 text-[11px] text-foreground/45">
+              Free for 7 days, cancel any time.
+            </p>
+          </>
         )}
 
-        <dl className="mt-4 text-[13px]">
-          {facts.map(([k, v]) => (
-            <div
-              key={k}
-              className={`flex justify-between gap-4 border-b ${C.rule} py-2 last:border-b-0`}
-            >
-              <dt className="text-foreground/50">{k}</dt>
-              <dd className="text-right font-semibold tabular-nums text-foreground/85">
-                {v}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        {facts.length > 0 && (
+          <dl className="mt-4 text-[13px]">
+            {facts.map(([k, v]) => (
+              <div
+                key={k}
+                className={`flex justify-between gap-4 border-b ${C.rule} py-2 last:border-b-0`}
+              >
+                <dt className="text-foreground/50">{k}</dt>
+                <dd className="text-right font-semibold tabular-nums text-foreground/85">
+                  {v}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
       </div>
     </aside>
   );
@@ -810,9 +933,14 @@ function CompanyPanel({
 function DealsTable({
   deals,
   market,
+  rated,
 }: {
   deals: Array<Dealing | UsDealing>;
   market: string;
+  /** False when nothing on this issuer has been written up — the column would
+   *  be a header over a full run of em dashes, which reads as a broken feature
+   *  rather than as an unrated company. */
+  rated: boolean;
 }) {
   return (
     <div className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
@@ -828,62 +956,87 @@ function DealsTable({
             <th className={`py-2.5 pr-4 text-right font-normal ${C.note}`}>
               Shares
             </th>
-            <th className={`py-2.5 pr-4 text-right font-normal ${C.note}`}>
+            <th
+              className={`py-2.5 text-right font-normal ${rated ? "pr-4" : ""} ${C.note}`}
+            >
               Value
             </th>
-            <th className={`py-2.5 text-right font-normal ${C.note}`}>
-              Rating
-            </th>
+            {rated && (
+              <th className={`py-2.5 text-right font-normal ${C.note}`}>
+                Rating
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
-          {deals.map((deal, i) => (
-            <tr
-              key={deal.id ?? i}
-              className={`border-b last:border-b-0 ${C.rule}`}
-            >
-              <td className="whitespace-nowrap py-3 pr-4 text-foreground/60">
-                {fmtDate(deal.trade_date, market)}
-              </td>
-              {/* Names and long role titles stay on one line — the table
+          {deals.map((deal, i) => {
+            const href = directorHref(deal);
+
+            return (
+              <tr
+                key={deal.id ?? i}
+                className={`border-b last:border-b-0 ${C.rule}`}
+              >
+                <td className="whitespace-nowrap py-3 pr-4 text-foreground/60">
+                  {fmtDate(deal.trade_date, market)}
+                </td>
+                {/* Names and long role titles stay on one line — the table
                   scrolls on narrow screens, which reads far better than a row
-                  wrapping to six. */}
-              <td className="py-3 pr-4">
-                <span className="block whitespace-nowrap font-medium text-foreground">
-                  {personName(deal)}
-                </span>
-                {personRole(deal) && (
-                  // Truncated, not wrapped: some titles run to sixty
-                  // characters ("Chief Executive Director Renewables & Energy
-                  // Transition Platform") and wrapping them pushed the rating
-                  // column off the sheet. Full text on hover.
-                  <span
-                    className={`mt-0.5 block max-w-[24ch] truncate ${C.note}`}
-                    title={personRole(deal)}
-                  >
-                    {personRole(deal)}
-                  </span>
+                  wrapping to six. The name links to the person's profile when
+                  we hold an id for them: a reader who has just seen one buy
+                  wants the other companies that director files against, and
+                  this table was the one place on the site that named someone
+                  without a route to them. */}
+                <td className="py-3 pr-4">
+                  {href ? (
+                    <Link
+                      className="block whitespace-nowrap font-medium text-foreground underline-offset-4 hover:underline"
+                      to={href}
+                    >
+                      {personName(deal)}
+                    </Link>
+                  ) : (
+                    <span className="block whitespace-nowrap font-medium text-foreground">
+                      {personName(deal)}
+                    </span>
+                  )}
+                  {personRole(deal) && (
+                    // Truncated, not wrapped: some titles run to sixty
+                    // characters ("Chief Executive Director Renewables & Energy
+                    // Transition Platform") and wrapping them pushed the rating
+                    // column off the sheet. Full text on hover.
+                    <span
+                      className={`mt-0.5 block max-w-[24ch] truncate ${C.note}`}
+                      title={personRole(deal)}
+                    >
+                      {personRole(deal)}
+                    </span>
+                  )}
+                </td>
+                <td className="whitespace-nowrap py-3 pr-4 text-right tabular-nums text-foreground/60">
+                  {Number(deal.shares).toLocaleString(localeFor(market))}
+                </td>
+                <td
+                  className={`whitespace-nowrap py-3 text-right tabular-nums font-medium text-foreground ${rated ? "pr-4" : ""}`}
+                >
+                  {money(
+                    dealValue(deal),
+                    market === "UK" ? "GBP" : "USD",
+                    market,
+                  )}
+                </td>
+                {rated && (
+                  <td className="py-3 text-right">
+                    {deal.analysis?.rating ? (
+                      <RatingBadge rating={deal.analysis.rating} />
+                    ) : (
+                      <span className={C.note}>—</span>
+                    )}
+                  </td>
                 )}
-              </td>
-              <td className="whitespace-nowrap py-3 pr-4 text-right tabular-nums text-foreground/60">
-                {Number(deal.shares).toLocaleString(localeFor(market))}
-              </td>
-              <td className="whitespace-nowrap py-3 pr-4 text-right tabular-nums font-medium text-foreground">
-                {money(
-                  dealValue(deal),
-                  market === "UK" ? "GBP" : "USD",
-                  market,
-                )}
-              </td>
-              <td className="py-3 text-right">
-                {deal.analysis?.rating ? (
-                  <RatingBadge rating={deal.analysis.rating} />
-                ) : (
-                  <span className={C.note}>—</span>
-                )}
-              </td>
-            </tr>
-          ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -896,9 +1049,11 @@ function StatsSection({
   stats: NonNullable<CompanyPageData["stats"]>;
 }) {
   const cur = stats.currency ?? "GBP";
+  // Market cap and previous close are deliberately absent: the sticky panel
+  // beside this section already states both, and the two lists sat close enough
+  // together to be read as one repeating itself. See `panelFacts`.
   const rows = (
     [
-      ["Market cap", stats.marketCap ? moneyShort(stats.marketCap, cur) : null],
       ["P/E ratio", stats.peRatio != null ? stats.peRatio.toFixed(2) : null],
       ["P/B ratio", stats.pbRatio != null ? stats.pbRatio.toFixed(2) : null],
       ["PEG ratio", stats.pegRatio != null ? stats.pegRatio.toFixed(2) : null],
@@ -909,12 +1064,6 @@ function StatsSection({
           : null,
       ],
       ["Beta", stats.beta != null ? stats.beta.toFixed(2) : null],
-      [
-        "Previous close",
-        stats.previousClose != null
-          ? `${SYMBOL[cur] ?? ""}${stats.previousClose}`
-          : null,
-      ],
       ["Open", stats.open != null ? `${SYMBOL[cur] ?? ""}${stats.open}` : null],
     ] as Array<[string, string | null]>
   ).filter((r): r is [string, string] => r[1] !== null);

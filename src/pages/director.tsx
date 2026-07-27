@@ -183,10 +183,10 @@ export default function DirectorPage() {
             </div>
             {d.profile.flags.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold mb-1 text-red-500">
+                <h3 className="text-sm font-semibold mb-1 text-negative">
                   Flags
                 </h3>
-                <ul className="text-sm list-disc pl-5 text-red-500/90">
+                <ul className="text-sm list-disc pl-5 text-negative/90">
                   {d.profile.flags.map((f, i) => (
                     <li key={i}>{f}</li>
                   ))}
@@ -217,7 +217,9 @@ export default function DirectorPage() {
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold mb-3">Prior picks</h2>
+          <h2 className="text-[17px] font-semibold tracking-[-0.015em] mb-3">
+            Prior picks
+          </h2>
           {dealings.length === 0 ? (
             <p className="text-sm text-muted">No prior picks on record yet.</p>
           ) : (

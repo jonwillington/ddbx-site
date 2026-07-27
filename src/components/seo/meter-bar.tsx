@@ -33,7 +33,7 @@ export function MeterBar({
       className={`h-[3px] w-full overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.07] ${className}`}
     >
       <div
-        className="h-full rounded-full bg-[#5a4128]/60 dark:bg-[#ad9479]/60"
+        className="h-full rounded-full bg-brand-brown/60 dark:bg-brand-tan/60"
         // A row worth 0.4% of the leader still gets a visible mark — a bar that
         // renders as nothing reads as missing data rather than as a small
         // number.

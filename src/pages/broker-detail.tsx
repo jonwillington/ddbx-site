@@ -11,12 +11,13 @@ import {
 import { BrokerNavAside } from "@/components/brokers/broker-aside";
 import {
   BrokerComplianceNote,
+  BrokerDisclosure,
   BrokerLogo,
   BrokerVisitLink,
   OfferBadge,
   StarRating,
 } from "@/components/brokers/broker-ui";
-import { R } from "@/components/brokers/broker-page-ui";
+import { CostBars, R, SourceNote } from "@/components/brokers/broker-page-ui";
 import { BUTTON_SELECTED } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
 import appShots from "@/data/broker-app-screenshots.json";
@@ -31,7 +32,6 @@ import {
   fmtVerifiedDate,
   isOfferLive,
   platformFeeSummary,
-  sourceLabel,
 } from "@/lib/brokers";
 
 type Fact = { label: string; value: React.ReactNode };
@@ -213,6 +213,12 @@ function BrokerReview({
           </p>
         </div>
 
+        {/* Unconditional, above the fold. The rail and the sticky panel carry
+            the disclosure on desktop but both are hidden below 1024px, which
+            left the mobile visit bar handing out affiliate links with nothing
+            on screen declaring them. */}
+        <BrokerDisclosure className="mt-4" />
+
         <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
           {/* The review document: header + article on one white sheet. */}
           <div className={`min-w-0 px-5 py-6 sm:px-8 sm:py-8 ${R.sheet}`}>
@@ -294,7 +300,7 @@ function BrokerReview({
               )}
 
               <div className={`space-y-4 border-t ${R.rule} pt-8`}>
-                <SourceNote broker={b} />
+                <SourceNote brokers={[b]} />
                 <BrokerComplianceNote />
               </div>
             </article>
@@ -593,15 +599,10 @@ function CostSection({
     item.total < best.total ? item : best,
   );
   const rows = [
-    { label: b.name, total: mine.total, primary: true },
-    { label: "Broker average", total: average, primary: false },
-    {
-      label: `Cheapest · ${cheapest.name}`,
-      total: cheapest.total,
-      primary: false,
-    },
+    { label: b.name, value: mine.total, primary: true },
+    { label: "Broker average", value: average },
+    { label: `Cheapest · ${cheapest.name}`, value: cheapest.total },
   ];
-  const max = Math.max(...rows.map((row) => row.total), 1);
   const parts = [
     { label: "Platform", value: mine.platform },
     { label: "Dealing", value: mine.dealing },
@@ -656,44 +657,7 @@ function CostSection({
       {/* Comparison: label · bar · value rows off one shared baseline. Only
           this broker's bar carries full ink — identity is in the row labels,
           never colour alone. */}
-      <div
-        className={`mt-6 grid grid-cols-[minmax(0,9.5rem)_1fr_auto] items-center gap-x-4 gap-y-3 border-t ${R.rule} pt-5 sm:grid-cols-[minmax(0,11rem)_1fr_auto]`}
-      >
-        {rows.map((row) => (
-          <div key={row.label} className="contents">
-            <span
-              className={`truncate text-[13px] leading-none ${
-                row.primary
-                  ? "font-semibold text-foreground"
-                  : "text-foreground/55"
-              }`}
-            >
-              {row.label}
-            </span>
-            <span className={`h-[12px] self-center border-l ${R.rule}`}>
-              <span
-                className={`block h-full rounded-r-[4px] ${
-                  row.primary
-                    ? "bg-foreground/80"
-                    : "bg-foreground/20 dark:bg-white/20"
-                }`}
-                style={{
-                  width: `${Math.max((row.total / max) * 100, 1.5)}%`,
-                }}
-              />
-            </span>
-            <span
-              className={`text-right text-[13px] leading-none tabular-nums ${
-                row.primary
-                  ? "font-semibold text-foreground"
-                  : "font-medium text-foreground/60"
-              }`}
-            >
-              {fmtMoneyRound(row.total)}
-            </span>
-          </div>
-        ))}
-      </div>
+      <CostBars className={`mt-6 border-t ${R.rule} pt-5`} rows={rows} />
 
       <details className={`group mt-6 border-t ${R.rule} pt-4`}>
         <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-foreground/60 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
@@ -842,35 +806,6 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
         </div>
       </div>
     </Section>
-  );
-}
-
-function SourceNote({ broker: b }: { broker: BrokerOffer }) {
-  if (!b.sources?.length) return null;
-
-  const sources = [
-    ...new Map(b.sources.map((source) => [sourceLabel(source), source])),
-  ];
-
-  return (
-    <p className="text-xs leading-5 text-foreground/50">
-      <span className="mr-1 font-semibold text-foreground/55">Sources</span>
-      {sources.map(([label, source], index) => (
-        <span key={label}>
-          <a
-            className="underline underline-offset-2 hover:text-foreground/70"
-            href={source}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            {label}
-          </a>
-          {index < sources.length - 1 ? " · " : ""}
-        </span>
-      ))}
-      . Checked {fmtVerifiedDate(b.last_verified)}. Always confirm current terms
-      with {b.name}.
-    </p>
   );
 }
 

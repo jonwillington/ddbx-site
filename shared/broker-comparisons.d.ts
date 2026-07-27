@@ -12,10 +12,14 @@ export interface BrokerComparison {
   b: string;
   title: string;
   description: string;
-  /** Why this pair earned a page. Reviewable justification, not display copy
-   *  by default — see the header comment in the .js. */
+  /** Why this pair earned a page — rendered as the "Why this pair" section, so
+   *  the justification is on the page rather than only in review. */
   whyThisPair: string;
   intro: string;
+  /** The verdict in one authored sentence: the pick, and the condition it holds
+   *  under. Shown under the intro for readers who won't reach the verdict
+   *  itself. Never a slice of `verdict` — see the header comment in the .js. */
+  shortVerdict: string;
   /** The authored "which one should you pick" paragraph. The reason the page
    *  exists; everything else on it is assembled from data. */
   verdict: string;

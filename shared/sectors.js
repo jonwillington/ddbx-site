@@ -54,7 +54,7 @@ export const SECTORS = [
     slug: "industrials",
     label: "Industrials",
     framing:
-      "The broadest sector on the UK market by disclosure count, spanning engineering, transport and support services.",
+      "Engineering, transport and support services under one heading — a wide, fragmented sector where the buying comes from many small registers rather than a few large ones.",
   },
   {
     slug: "health-care",
@@ -102,7 +102,7 @@ export const SECTORS = [
     slug: "telecommunications",
     label: "Telecommunications",
     framing:
-      "The smallest sector by disclosure count, and the one where month-to-month figures are least reliable.",
+      "A short list of carriers and infrastructure owners, so disclosures are few and a month-to-month figure here can turn on a single filing.",
   },
 ];
 
@@ -120,6 +120,117 @@ export function sectorByLabel(label) {
 
 export function sectorPath(slug) {
   return `/sectors/${slug}`;
+}
+
+/** Currency symbol per market, so the renderers can't disagree about it. */
+export const MARKET_SYMBOL = { UK: "£", US: "$" };
+
+/** How many companies the detail page's ranked list shows, and how many
+ *  filings sit under it. Here rather than in the page because the caption
+ *  says the number out loud ("Top 20 by value bought") and a cap that only one
+ *  of the two renderers knows about is how a "top 20" ends up showing 15. */
+export const TOP_COMPANIES = 20;
+export const RECENT_BUYS = 12;
+
+/** Display name, cleaned of the noise each source appends — "Metlen Energy &
+ *  Metals PLC (MTLN)" and "FIRST CITIZENS BANCSHARES INC /DE/".
+ *
+ *  Mirrors cleanCompanyName() in src/lib/company.ts, which the app uses and
+ *  the Pages Functions can't import (separate bundles). The pre-render was
+ *  printing the raw filed string while the hydrated page printed the cleaned
+ *  one, so a crawler and a reader saw two different company names in the same
+ *  table row. */
+export function cleanCompanyName(name) {
+  let out = String(name ?? "").trim();
+
+  for (;;) {
+    const next = out
+      .replace(/\s*\([^)]*\)\s*$/, "")
+      .replace(/\s*\/[A-Z]{2}\/\s*$/, "")
+      .trim();
+
+    if (next === out || next === "") return out;
+    out = next;
+  }
+}
+
+/** The plural noun for people who file on a market. */
+export function marketNoun(market) {
+  return market === "US" ? "insiders" : "directors";
+}
+
+/** The same noun used attributively — "disclosed director purchases", not
+ *  "disclosed directors purchases", which is what the templated sentences read
+ *  as before. */
+export function marketNounSingular(market) {
+  return market === "US" ? "insider" : "director";
+}
+
+/** Compact money. Lives here rather than in either renderer because the lead
+ *  sentence below is the page's meta description AND a paragraph on the page —
+ *  two copies of the rounding rules is two ways for those to differ. */
+export function formatMoney(value, symbol) {
+  const n = Number(value);
+
+  if (!isFinite(n) || n === 0) return "—";
+  if (n >= 1_000_000_000) return `${symbol}${(n / 1_000_000_000).toFixed(1)}bn`;
+  if (n >= 1_000_000) {
+    const m = n / 1_000_000;
+
+    return `${symbol}${m >= 10 ? Math.round(m) : m.toFixed(1)}m`;
+  }
+
+  return `${symbol}${Math.round(n / 1000)}k`;
+}
+
+/** Ratio → "+1.2%". Null renders as "n/a", which is a real state: a sector
+ *  whose buys are all too recent to have a mark has no median, and showing 0%
+ *  would assert a flat return we haven't observed. */
+export function formatSignedPct(ratio) {
+  if (ratio == null) return "n/a";
+
+  return `${ratio > 0 ? "+" : ""}${(ratio * 100).toFixed(1)}%`;
+}
+
+/** The sector's thesis in one templated sentence — the detail page's opening
+ *  paragraph and its meta description, from the same string.
+ *
+ *  Templated from real figures rather than written per sector: at this page
+ *  count model-written prose would be real API spend, and mass-generated copy
+ *  is what gets demoted. Same reasoning as functions/company/[key].js.
+ *
+ *  It used to live only in the pre-render, which meant a crawler read a
+ *  sentence of numbers that no human visitor ever saw. */
+export function leadSentence(row, market) {
+  const alpha =
+    row.medianAlpha == null
+      ? ""
+      : ` The median buy has returned ${formatSignedPct(row.medianAlpha)} against the market since it was disclosed.`;
+
+  const companies =
+    row.companies === 1
+      ? `one ${row.sector.label.toLowerCase()} company`
+      : `${row.companies} ${row.sector.label.toLowerCase()} companies`;
+
+  return `${row.buys} disclosed ${marketNounSingular(market)} purchases across ${companies} in the last twelve months, worth ${formatMoney(row.value, MARKET_SYMBOL[market])}.${alpha}`;
+}
+
+/** The same job for the index: what the eleven sectors add up to, and which
+ *  one leads. `rows` is the publishable set, already sorted by value. */
+export function indexLeadSentence(rows, market) {
+  const list = rows ?? [];
+
+  if (list.length === 0) {
+    return `Disclosed ${marketNounSingular(market)} purchases over the last twelve months, broken down by sector.`;
+  }
+
+  const buys = list.reduce((n, r) => n + r.buys, 0);
+  const value = list.reduce((n, r) => n + r.value, 0);
+  const top = list[0];
+  const sectors =
+    list.length === 1 ? "one sector" : `${list.length} sectors`;
+
+  return `${buys} disclosed ${marketNounSingular(market)} purchases worth ${formatMoney(value, MARKET_SYMBOL[market])} across ${sectors} in the last twelve months, led by ${top.sector.label.toLowerCase()} at ${formatMoney(top.value, MARKET_SYMBOL[market])}.`;
 }
 
 /** Value of a buy in its own market's currency. UK rows carry `value_gbp`,
@@ -239,6 +350,11 @@ export function sectorRollup(dealings) {
         value: a.value,
         companies: a.companies.size,
         people: a.people.size,
+        /** How many of `buys` carry a performance mark — the sample the median
+         *  is actually drawn from. Returned rather than kept private because a
+         *  median over 4 of 61 buys and one over 58 of 61 are different claims
+         *  and the page should be able to say which it's making. */
+        alphaCount: a.alphas.length,
         medianAlpha: median(a.alphas),
         medianReturn: median(a.returns),
         medianDeal: median([...a.valueByCompany.values()]),
@@ -266,9 +382,11 @@ export function sectorMeetsBar(row) {
  *  than computed from Date.now() at module scope so callers stay testable.
  *
  *  Note the API caps a single response at DEALINGS_MAX_LIMIT=1000
- *  (ddbx-data/worker/db/queries.ts). UK is at 786 rows YTD and US 532, so one
- *  request covers both today — but UK will cross 1000 during 2026 and the
- *  caller will need to page back with the `before` cursor. */
+ *  (ddbx-data/worker/db/queries.ts), which UK crosses during 2026. Callers
+ *  fetch this window through fetchDealingsWindow() in shared/dealings-feed.js,
+ *  which pages back with the `before` cursor and reports whether it finished —
+ *  a single capped request would silently drop the oldest part of the window
+ *  and every figure on these pages would quietly understate it. */
 export function windowStart(today) {
   const d = new Date(today);
 

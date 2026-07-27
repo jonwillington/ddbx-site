@@ -24,6 +24,14 @@
 //      page — the fee tables are assembled from data, but the paragraph
 //      saying which one YOU should pick is the part a template can't produce.
 //
+// `shortVerdict` is that paragraph's answer in one sentence, for readers who
+// won't scroll to the bottom of the page to find it. It is AUTHORED, never
+// sliced off the front of `verdict`: the first sentence of a verdict is usually
+// a condition ("If you'll buy US shares…") that reads as an unqualified
+// recommendation once it's on its own. Each one names the pick and the
+// condition it holds under, and must stay consistent with the paragraph it
+// summarises — if you edit one, edit both.
+//
 // Numbers stay out of the prose here for the same reason as in
 // broker-categories.js: comparative claims have to be substantiable under
 // FCA/ASA rules, and authored figures drift out of step with the table beside
@@ -55,6 +63,8 @@ export const COMPARISONS = [
       "The two platforms we rate most highly overall, both offering a genuinely free ISA. Most people starting out are choosing between exactly these.",
     intro:
       "Both are free to hold an ISA with, both charge no dealing commission, and both are FSCS protected. The differences are narrower than the marketing suggests, but they are not trivial — and which one wins depends almost entirely on whether you plan to buy American shares.",
+    shortVerdict:
+      "Trading 212 if you’ll buy US shares; Freetrade if you want a Junior ISA or funds rather than shares and ETFs alone.",
     verdict:
       "If you’ll buy US shares, Trading 212. Currency conversion is the single largest recurring cost difference between the two, it applies every time you convert, and the gap is wide. If you want a Junior ISA, or to hold funds rather than just shares and ETFs, Freetrade — Trading 212 offers neither. For a UK-shares-only ISA the two are close enough on cost that whichever app you find easier to live with is a defensible tiebreak.",
   },
@@ -69,6 +79,8 @@ export const COMPARISONS = [
       "The clearest flat-fee versus percentage-fee decision in the UK market, and both carry our ISA, SIPP and funds badges — so they compete for the same investor at the same moment.",
     intro:
       "These two are the same kind of platform — established, full-service, funds and shares in ISAs and SIPPs — charging in structurally different ways. AJ Bell takes a percentage of what you hold; interactive investor takes a fixed sum each month regardless.",
+    shortVerdict:
+      "interactive investor once your balance is above the crossover figure on this page; AJ Bell below it, and AJ Bell either way if you want a Lifetime ISA.",
     verdict:
       "The whole decision is your balance, and the crossover figure above is the answer for your pot rather than in the abstract. Below it AJ Bell is cheaper; above it interactive investor is, and the gap widens the more you accumulate — which makes ii the better home for a pension you’ll pay into for decades. Two things override the arithmetic: AJ Bell offers a LISA and ii doesn’t, and if you deal often, ii’s lower per-trade commission narrows the gap further in its favour.",
   },
@@ -83,6 +95,8 @@ export const COMPARISONS = [
       "Both carry our lowest-cost badge and both are genuinely near-free, so they surface together constantly — but they are not substitutes, and the cost comparison hides that.",
     intro:
       "On headline charges these look like the same product. They aren’t. One lets you buy any share you like; the other only holds ETFs. Comparing them on fees alone gets you the wrong answer.",
+    shortVerdict:
+      "InvestEngine if a passive ETF portfolio is the entire plan; Trading 212 the moment you want to buy an individual company.",
     verdict:
       "InvestEngine is ETFs only — no individual company shares at all. That makes it the cheaper answer when a passive portfolio is the entire plan, and a non-answer the moment you want to buy a single company. Trading 212 costs marginally more to convert currency and lets you buy anything, including fractional shares. Pick on what you intend to hold, then check the cost; doing it the other way round is how people end up on the wrong platform.",
   },
@@ -97,6 +111,8 @@ export const COMPARISONS = [
       "Both hold our lowest-cost badge and both offer an ISA, so they compete directly on price — where the deciding factor turns out not to be price.",
     intro:
       "Cost separates these two barely at all. What separates them is what you can open, and what happens to money you haven’t invested yet.",
+    shortVerdict:
+      "Trading 212 if you want a SIPP alongside the ISA; Lightyear if you keep meaningful cash uninvested and want interest paid on it.",
     verdict:
       "Trading 212 has a SIPP and Lightyear doesn’t, which settles it if you want a pension and an ISA in the same place. Lightyear pays interest on uninvested cash, which is worth having if you keep meaningful balances between purchases rather than staying fully invested. On the charges themselves, the difference is small enough that it shouldn’t drive the decision.",
   },
@@ -111,6 +127,8 @@ export const COMPARISONS = [
       "The two incumbent full-service platforms, both carrying our funds badge, with near-identical account ranges and materially different charges.",
     intro:
       "These are the two platforms most long-term UK fund investors end up choosing between. They offer much the same accounts — ISA, SIPP, LISA, Junior ISA — and much the same investment range. The charges are where they part company.",
+    shortVerdict:
+      "AJ Bell by default, on the same account range for less; Hargreaves Lansdown only if it holds funds AJ Bell doesn’t.",
     verdict:
       "AJ Bell is cheaper on both the platform charge and per-trade dealing, with the same account range, which makes it the default. Hargreaves Lansdown’s case rests on fund range and service depth rather than price. So the practical test is narrow: if you have specific funds in mind, check they’re available on AJ Bell — if they are, the cost difference is difficult to argue against over a holding period measured in decades.",
   },
@@ -125,6 +143,8 @@ export const COMPARISONS = [
       "The two platforms carrying our LISA badge. Anyone opening a Lifetime ISA is choosing between them, and the choice is about control rather than cost.",
     intro:
       "Both are app-first, both are aimed at people early in their investing, and both offer a Lifetime ISA. The difference is who picks the investments.",
+    shortVerdict:
+      "Moneybox if you want to choose the investments yourself, and a SIPP beside the LISA; Nutmeg if you’d rather they were managed for you.",
     verdict:
       "Moneybox lets you choose; Nutmeg chooses for you. That single distinction is the decision, and the difference in ongoing charge follows from it rather than being a separate consideration — managed portfolios cost more because someone is managing them. Moneybox also offers a SIPP, which Nutmeg doesn’t, so it’s the one that can hold the whole picture. If you actively don’t want to make investment decisions, the higher charge is what that’s worth to you.",
   },
