@@ -50,20 +50,62 @@ const USE_CASES = [
  *  is invisible on cream. Colours here are therefore fixed values: literals, or
  *  the fixed brand tokens (`ink`, `brand-brown`), which carry one value in both
  *  modes. */
-const FIELD =
-  "w-full rounded-xl border border-black/15 bg-white/70 px-4 py-3 text-[15px] text-ink placeholder:text-ink/35 transition-colors focus:border-brand-brown/60 focus:outline-none";
+/** The field skin: label INSIDE the box, above the value.
+ *
+ *  It was a stack of mono-uppercase labels sitting above bordered inputs, and
+ *  it read as stock. Two separate reasons, worth keeping apart:
+ *
+ *  1. Labels outside. A label above a box is two objects with a gap between
+ *     them, so five fields are ten objects and a lot of vertical air, and the
+ *     eye has to re-pair each label with its box on the way down. Inside the
+ *     box, a field is one object: the label is a caption ON the thing it names.
+ *     It also means an empty field is never a mystery box the way a
+ *     placeholder-only field is, and nothing shifts when you start typing.
+ *  2. Mono. `font-mono` uppercase is the site's EYEBROW device — a static label
+ *     you read once (section kickers, stat keys, table headers). A form control
+ *     is not that. Borrowing the eyebrow for it made a filing-cabinet form and
+ *     spent the device's meaning at the same time. Sans, sentence case, small
+ *     and quiet: it's a caption, not a heading.
+ *
+ *  `focus-within` moves the border, so the whole shell lights rather than an
+ *  inner rectangle no one can see.
+ *
+ *  The shell is `rounded-xl`, not a capsule: the capsule is the site's chip
+ *  shape and these are inputs. See components/chip.ts. */
+const SHELL =
+  "rounded-xl border border-black/15 bg-white/70 px-4 pb-2.5 pt-2.5 transition-colors focus-within:border-brand-brown/60";
+
+const FIELD_LABEL = "block text-[11.5px] font-medium leading-none text-ink/45";
+
+const CONTROL =
+  "mt-2 w-full bg-transparent text-[15px] leading-[1.4] text-ink placeholder:text-ink/30 focus:outline-none";
 
 /** BUTTON_FILLED's light-mode half, hardcoded — see the note above. */
-const SUBMIT_FILL = "bg-ink text-white hover:bg-[#2a2118] disabled:hover:bg-ink";
+const SUBMIT_FILL =
+  "bg-ink text-white hover:bg-[#2a2118] disabled:hover:bg-ink";
 
-const LABEL =
-  "mb-1.5 block font-mono text-[11px] font-semibold uppercase tracking-wider text-ink/50";
-
-/** For labels that are a sentence rather than a name. The uppercase transform
- *  turns a question into shouting, and the wide tracking that carries a
- *  two-word label falls apart over four. */
-const LABEL_SENTENCE =
-  "mb-1.5 block font-mono text-[12px] font-semibold text-ink/50";
+/** The one thing a `<select>` needs that an `<input>` doesn't: a chevron. The
+ *  native one goes with `appearance-none`, and without a replacement the
+ *  control is a box of text that gives no sign it can be opened. */
+function Chevron() {
+  return (
+    <svg
+      aria-hidden="true"
+      // Aligned to the SELECT's line, not to the shell's centre: the shell also
+      // holds the label above, so centring on it would float the chevron above
+      // the text it belongs to.
+      className="pointer-events-none absolute bottom-[13px] right-4 h-3.5 w-3.5 text-ink/35"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      viewBox="0 0 24 24"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
 
 type Status = "idle" | "sending" | "done" | "error";
 
@@ -144,7 +186,9 @@ export function InterestForm() {
   if (status === "done") {
     return (
       <div className="rounded-2xl border border-black/10 bg-white/60 p-6">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-brand-brown">
+        {/* This one KEEPS the mono eyebrow: it's a status heading you read
+            once, which is exactly what that device is for. */}
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown">
           Request received
         </p>
         <p className="mt-3 text-[16px] leading-[1.55] text-ink">
@@ -157,29 +201,29 @@ export function InterestForm() {
 
   return (
     <form noValidate className="grid gap-4" onSubmit={onSubmit}>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className={LABEL} htmlFor="api-name">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className={SHELL}>
+          <label className={FIELD_LABEL} htmlFor="api-name">
             Name
           </label>
           <input
             required
             autoComplete="name"
-            className={FIELD}
+            className={CONTROL}
             id="api-name"
             name="name"
             placeholder="Jane Okafor"
             type="text"
           />
         </div>
-        <div>
-          <label className={LABEL} htmlFor="api-email">
+        <div className={SHELL}>
+          <label className={FIELD_LABEL} htmlFor="api-email">
             Work email
           </label>
           <input
             required
             autoComplete="email"
-            className={FIELD}
+            className={CONTROL}
             id="api-email"
             name="email"
             placeholder="jane@fund.com"
@@ -188,27 +232,27 @@ export function InterestForm() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className={LABEL} htmlFor="api-company">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className={SHELL}>
+          <label className={FIELD_LABEL} htmlFor="api-company">
             Company
           </label>
           <input
             autoComplete="organization"
-            className={FIELD}
+            className={CONTROL}
             id="api-company"
             name="company"
             placeholder="Optional"
             type="text"
           />
         </div>
-        <div>
-          <label className={LABEL} htmlFor="api-use-case">
+        <div className={`${SHELL} relative`}>
+          <label className={FIELD_LABEL} htmlFor="api-use-case">
             Use case
           </label>
           <select
             required
-            className={`${FIELD} appearance-none`}
+            className={`${CONTROL} appearance-none pr-7`}
             defaultValue=""
             id="api-use-case"
             name="use_case"
@@ -222,12 +266,17 @@ export function InterestForm() {
               </option>
             ))}
           </select>
+          <Chevron />
         </div>
       </div>
 
-      <div>
-        <span className={LABEL}>Markets of interest</span>
-        <div className="flex flex-wrap gap-2">
+      {/* The markets picker gets the same shell as the fields around it. It is
+          a control with a label like any other, and left as a bare row of
+          chips under a floating caption it was the one thing on the form with
+          no box, which read as an afterthought rather than as a question. */}
+      <div className={SHELL}>
+        <span className={FIELD_LABEL}>Markets of interest</span>
+        <div className="mt-2.5 flex flex-wrap gap-2">
           {MARKETS.map((m) => {
             const on = markets.includes(m);
 
@@ -235,10 +284,13 @@ export function InterestForm() {
               <button
                 key={m}
                 aria-pressed={on}
-                className={`rounded-full border px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+                // Sentence case, sans: these are toggles you press, not the
+                // uppercase mono chips that label a rating. Capsule shape is
+                // retained because that part IS the chip system.
+                className={`rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
                   on
                     ? "border-brand-brown/50 bg-brand-brown/12 text-brand-brown"
-                    : "border-black/15 text-ink/55 hover:border-black/25"
+                    : "border-black/15 text-ink/60 hover:border-black/30 hover:text-ink/80"
                 }`}
                 type="button"
                 onClick={() => toggleMarket(m)}
@@ -250,12 +302,12 @@ export function InterestForm() {
         </div>
       </div>
 
-      <div>
-        <label className={LABEL_SENTENCE} htmlFor="api-message">
+      <div className={SHELL}>
+        <label className={FIELD_LABEL} htmlFor="api-message">
           What are you building?
         </label>
         <textarea
-          className={`${FIELD} resize-y`}
+          className={`${CONTROL} resize-y`}
           id="api-message"
           name="message"
           placeholder="A sentence or two is plenty. It’s what we quote against."
