@@ -26,6 +26,8 @@
  *  to obey is that a beat fits on one screenful — see `SHOT_W` for why the
  *  handset there is sized off the viewport height and not the column.
  */
+import { useState, type UIEvent } from "react";
+
 import { DeviceFrame } from "./device-frame";
 import { Reveal } from "./reveal";
 import { SectionHeader } from "./section-header";
@@ -37,7 +39,6 @@ import {
 } from "@/components/market/hero-notification-stack";
 import {
   appShotSrc,
-  screenAspect,
   SLOT_LABEL,
   type AppPlatform,
   type ShotSlot,
@@ -84,22 +85,22 @@ function BeatVisual({
   shotHeight?: string;
 }) {
   if (beat.slot === "alert") {
-    // The desktop bands are height-free, but the mobile carousel's slides sit
-    // in one row: an alert a third the height of a handset would drag every
-    // caption after it out of line. There, the stack floats in the middle of a
-    // box as tall as the phone it replaces — full slide width, though, since
-    // it isn't a device and squeezing it to the handset's width only makes the
-    // one live element on the page harder to read.
+    // The alert is not a device and must not wear a device's silhouette: a
+    // notification floating in a phone-tall empty box read as a layout error,
+    // not a choice. It gets a stage of its own — the tinted well the site
+    // already uses for tiles — sized to its content on the height-free desktop
+    // bands. The mobile carousel's slides sit in one row, so there the stage
+    // keeps the framed handset's height (an alert a third the height of a
+    // phone would drag every caption after it out of line) and the panel fill
+    // is what makes that height read as intentional rather than empty.
     return (
       <div
-        className="flex items-center justify-center py-4"
-        style={
-          shotHeight
-            ? { height: shotHeight }
-            : { aspectRatio: String(screenAspect(platform)) }
-        }
+        className="flex items-center justify-center rounded-2xl bg-black/[0.035] px-6 dark:bg-white/[0.05]"
+        style={shotHeight ? { height: shotHeight } : undefined}
       >
-        <HeroNotificationStack deals={dealsForMarket(marketId)} tick={tick} />
+        <div className={shotHeight ? "w-full" : "w-full max-w-[340px] py-12"}>
+          <HeroNotificationStack deals={dealsForMarket(marketId)} tick={tick} />
+        </div>
       </div>
     );
   }
@@ -274,18 +275,52 @@ function MobileTour({
   platform: AppPlatform;
   tick: number;
 }) {
+  // Which beat the track has settled nearest to, for the counter below. The
+  // scrollbar is hidden and the next-slide peek is the only other signal that
+  // this row moves sideways — the counter is the explicit one, and it's the
+  // same `01 / 05` device SectionHeader already stamps on every section.
+  const [active, setActive] = useState(0);
+
+  const onScroll = (e: UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const kids = Array.from(el.children) as HTMLElement[];
+
+    if (!kids.length) return;
+    const origin = kids[0].offsetLeft;
+    let best = 0;
+    let bestDist = Infinity;
+
+    kids.forEach((k, i) => {
+      const d = Math.abs(k.offsetLeft - origin - el.scrollLeft);
+
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    });
+    setActive(best);
+  };
+
   return (
     <div className="mt-10 lg:hidden">
-      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* snap-start rather than snap-center: centring split the peek across
+          both edges, ~12px a side, which is invisible. Left-aligned to the
+          page grid, the whole remainder shows the next slide on the right —
+          one unambiguous "there's more" edge, and the slides sit on the same
+          left margin as everything above them. */}
+      <div
+        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onScroll={onScroll}
+      >
         {beats.map((b, i) => (
           <div
             key={b.slot}
             /* Wider than the phone inside it. The slide's width is the copy's
                measure, and at the old 76% the body ran to six lines of ~30
-               characters — which cost more height than the handset saved. The
-               visible sliver of the next slide is what advertises the swipe,
-               so it stays under full-bleed. */
-            className="w-[86%] max-w-[340px] shrink-0 snap-center sm:w-[56%]"
+               characters — which cost more height than the handset saved. 82%
+               keeps the measure while leaving a peek wide enough to read as
+               the next slide rather than as a rendering artefact. */
+            className="w-[82%] max-w-[320px] shrink-0 snap-start sm:w-[56%]"
           >
             <BeatVisual
               beat={b}
@@ -314,6 +349,22 @@ function MobileTour({
             </span>
           </div>
         ))}
+      </div>
+
+      <div
+        aria-hidden
+        className="mt-5 flex items-center gap-3 font-mono text-[11px] font-semibold tracking-[0.16em] tabular-nums text-foreground/40"
+      >
+        <span>
+          {String(active + 1).padStart(2, "0")} /{" "}
+          {String(beats.length).padStart(2, "0")}
+        </span>
+        <span className="relative h-px flex-1 bg-[#e0d8cc] dark:bg-border/60">
+          <span
+            className="absolute inset-y-0 left-0 bg-brand-brown transition-[width] duration-300 dark:bg-brand-tan"
+            style={{ width: `${((active + 1) / beats.length) * 100}%` }}
+          />
+        </span>
       </div>
     </div>
   );
