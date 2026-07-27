@@ -141,8 +141,8 @@ export function InterestForm() {
           Request received
         </p>
         <p className="mt-3 text-[16px] leading-[1.55] text-[#1a140d]">
-          Thanks — we&rsquo;ll be in touch within two working days with scope
-          and pricing for what you described.
+          Thanks. We&rsquo;ll be in touch within two working days with scope and
+          pricing for what you described.
         </p>
       </div>
     );
@@ -251,7 +251,7 @@ export function InterestForm() {
           className={`${FIELD} resize-y`}
           id="api-message"
           name="message"
-          placeholder="A sentence or two is plenty — it's what we quote against."
+          placeholder="A sentence or two is plenty. It's what we quote against."
           rows={4}
         />
       </div>

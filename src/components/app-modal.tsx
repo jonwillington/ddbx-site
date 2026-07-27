@@ -25,6 +25,8 @@ export function AppModal({
   maxWidthClass = "max-w-3xl",
   bodyClassName = "px-5 md:px-7 py-6",
   titleClassName = "text-base font-semibold truncate",
+  panelClassName = "bg-background border-black/10 dark:border-white/10",
+  closeTone = "auto",
   fill = false,
 }: {
   open: boolean;
@@ -38,6 +40,14 @@ export function AppModal({
   maxWidthClass?: string;
   /** Styling for the header title. Override to make the title more dominant. */
   titleClassName?: string;
+  /** Surface + border for the panel itself. The default is theme-aware, which
+   *  is wrong on a route that pins one theme and then inverts a band inside it
+   *  (`/api` pins `.dark`, and its closing band is cream): `bg-background`
+   *  would resolve dark behind cream content. Pass literal colours there, and
+   *  a matching text colour, since the header title inherits from here. */
+  panelClassName?: string;
+  /** Match the close button to `panelClassName` when it is not theme-aware. */
+  closeTone?: "auto" | "dark" | "light";
   /** Padding/layout for the scroll body. Pass "" for full-bleed content. */
   bodyClassName?: string;
   /** When true, the desktop (lg+) body stops being the scroll container and
@@ -70,15 +80,24 @@ export function AppModal({
     };
   }, [isDesktop, open, onClose]);
 
+  // A non-theme-aware panel needs a non-theme-aware hairline with it: the
+  // default resolves to white/10 under `.dark`, which is invisible on cream.
+  const hairline =
+    closeTone === "light"
+      ? "border-black/10"
+      : "border-black/10 dark:border-white/10";
+
   const header = (
-    <div className="shrink-0 flex items-start justify-between gap-3 px-5 md:px-6 py-4 border-b border-black/10 dark:border-white/10">
+    <div
+      className={`shrink-0 flex items-start justify-between gap-3 px-5 md:px-6 py-4 border-b ${hairline}`}
+    >
       <div className="min-w-0">
         <h2 className={titleClassName}>{title}</h2>
         {subtitle && <p className="mt-0.5 text-xs text-muted">{subtitle}</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {headerRight}
-        <CloseButton onClick={onClose} />
+        <CloseButton tone={closeTone} onClick={onClose} />
       </div>
     </div>
   );
@@ -105,9 +124,17 @@ export function AppModal({
       >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/50" />
-          <Drawer.Content className="fixed bottom-2 inset-x-2 z-50 h-[92vh] max-h-[92vh] rounded-2xl bg-background border border-black/10 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden outline-none">
+          <Drawer.Content
+            className={`fixed bottom-2 inset-x-2 z-50 h-[92vh] max-h-[92vh] rounded-2xl border shadow-2xl flex flex-col overflow-hidden outline-none ${panelClassName}`}
+          >
             <div className="shrink-0 pt-3 pb-1 flex justify-center">
-              <Drawer.Handle className="!w-10 !bg-black/15 dark:!bg-white/20" />
+              <Drawer.Handle
+                className={`!w-10 ${
+                  closeTone === "light"
+                    ? "!bg-black/15"
+                    : "!bg-black/15 dark:!bg-white/20"
+                }`}
+              />
             </div>
             <Drawer.Title className="sr-only">
               {typeof title === "string" ? title : "Report"}
@@ -133,7 +160,7 @@ export function AppModal({
       />
       <div
         aria-modal="true"
-        className={`relative z-10 w-full ${maxWidthClass} max-h-[90vh] rounded-2xl bg-background border border-black/10 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden outline-none animate-content-in`}
+        className={`relative z-10 w-full ${maxWidthClass} max-h-[90vh] rounded-2xl border shadow-2xl flex flex-col overflow-hidden outline-none animate-content-in ${panelClassName}`}
         role="dialog"
       >
         {header}

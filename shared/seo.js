@@ -419,7 +419,7 @@ export function seoForPath(pathname, hostname) {
 
   const description = (() => {
     if (isApiPath(path))
-      return "One REST API for director and insider share purchases across the UK, US, Sweden and the Netherlands \u2014 screened, rated with a written rationale, and benchmarked against the index. Access and pricing on request.";
+      return "One REST API for director and insider share purchases across the UK, US, Sweden and the Netherlands: screened, rated with a written rationale, and benchmarked against the index. Access and pricing on request.";
     if (isPerformancePath(path))
       return `Track ${market.label} insider performance versus benchmark indices on ddbx.`;
     if (isDirectorProfilePath(path))
