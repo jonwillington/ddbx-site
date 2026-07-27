@@ -251,58 +251,86 @@ const SPEC = [
   ["Support", "A person, by email"],
 ];
 
-/** The hero panel's atmosphere: a lattice, a bloom and a rake of light.
+/** The page's atmosphere — the surface the hero panel sits ON, not a texture
+ *  inside it.
  *
- *  The panel was a flat dark rectangle, which on a page selling a data product
- *  read as an empty slide rather than as a surface. This gives it character
- *  without giving it colour — nothing here is a hue the brand doesn't already
- *  own, and every layer is under 10% opacity.
+ *  The API page was a dark rectangle on a flat dark page, which on a page
+ *  selling a data product read as an empty slide. The fix belongs behind the
+ *  content rather than inside it: the panel stays a clean flat card, and what
+ *  gives the page character is what you can see around and through it.
  *
- *  Three layers, in order:
+ *  It gives the page shape without giving it colour — nothing here is a hue the
+ *  brand doesn't already own, and no layer is above 9% opacity.
  *
- *  1. A 56px lattice at 4.5% white, radially masked so it exists only around
- *     the response panel and dissolves before it reaches the headline. A grid
- *     is the one ornament an API page can wear honestly — it's the shape of a
- *     table — but a grid that runs edge to edge is a wireframe, so the mask is
- *     what keeps it atmosphere.
- *  2. A warm bloom off the top-right corner, as if the response panel were lit.
- *     `brand-amber` at a tenth strength: the same accent the kicker uses, far
- *     below the threshold where it reads as a colour wash.
- *  3. A single diagonal rake of white at 3.5%, cutting the other way. It's what
- *     stops the first two from looking like a symmetric vignette.
+ *  Four layers:
  *
- *  All static — no animation, nothing to repaint on scroll. */
-function HeroAtmosphere() {
+ *  1. A 64px lattice at 3.5% white, masked to the top-right. A grid is the one
+ *     ornament an API page can wear honestly — it's the shape of a table — but
+ *     a grid that runs edge to edge is a wireframe, so the mask keeps it
+ *     atmosphere.
+ *  2. A warm `brand-amber` bloom off the top-right, as if the page were lit
+ *     from over the response panel's shoulder. A tenth strength: the same
+ *     accent the kicker uses, far below where it reads as a colour wash.
+ *  3. A second, cooler and fainter bloom low on the left, so the light has a
+ *     direction instead of a single symmetric glow.
+ *  4. Two wide diagonal rakes of white at 3%, crossing the blooms. These are
+ *     the "shape" — the thing that stops the rest reading as a vignette.
+ *
+ *  Anchored to the top and masked out by ~1500px so the lower sections and the
+ *  footer stay clean. All static gradients: no blur filters, no animation,
+ *  nothing to repaint on scroll.
+ *
+ *  Positioning: `absolute` inside an `isolate`d page wrapper rather than
+ *  `fixed`. The layout root paints an opaque background, so a negative-z layer
+ *  outside a stacking context of its own would sit behind that background and
+ *  never be seen. `isolate` on the wrapper is what lets `-z-10` mean "behind
+ *  this page's content" instead of "behind the site". */
+function PageAtmosphere() {
+  const fadeOut =
+    "linear-gradient(to bottom, #000 0%, #000 58%, rgba(0,0,0,0.45) 80%, transparent 100%)";
   const latticeMask =
-    "radial-gradient(115% 85% at 76% 6%, #000 0%, rgba(0,0,0,0.5) 40%, transparent 76%)";
+    "radial-gradient(90% 60% at 78% 12%, #000 0%, rgba(0,0,0,0.45) 45%, transparent 78%)";
 
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl"
+      // The break-out is written out rather than reusing FULL_BLEED: that
+      // constant carries `relative`, and which of `relative`/`absolute` wins
+      // depends on their order in the generated stylesheet, not on the order
+      // they appear here. Not a bet worth taking on a positioning-critical
+      // layer.
+      className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[1500px] w-screen -translate-x-1/2 overflow-hidden"
+      style={{ maskImage: fadeOut, WebkitMaskImage: fadeOut }}
     >
       <div
         className="absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.045) 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
+            "linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px)",
+          backgroundSize: "64px 64px",
           maskImage: latticeMask,
           WebkitMaskImage: latticeMask,
         }}
       />
       <div
-        className="absolute -right-[18%] -top-[45%] h-[150%] w-[80%]"
+        className="absolute -right-[15%] -top-[30%] h-[900px] w-[70%]"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(238,197,132,0.10), rgba(238,197,132,0.028) 55%, transparent 78%)",
+            "radial-gradient(closest-side, rgba(238,197,132,0.09), rgba(238,197,132,0.025) 55%, transparent 78%)",
+        }}
+      />
+      <div
+        className="absolute -left-[20%] top-[420px] h-[800px] w-[65%]"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(255,255,255,0.045), rgba(255,255,255,0.014) 55%, transparent 78%)",
         }}
       />
       <div
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(112deg, transparent 28%, rgba(255,255,255,0.035) 47%, transparent 68%)",
+            "linear-gradient(104deg, transparent 22%, rgba(255,255,255,0.030) 40%, transparent 56%), linear-gradient(76deg, transparent 44%, rgba(255,255,255,0.022) 62%, transparent 80%)",
         }}
       />
     </div>
@@ -316,300 +344,306 @@ export default function ApiPage() {
 
   return (
     <DefaultLayout>
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="pt-2 md:pt-6">
-        <div className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-[oklch(19%_0.022_55)] p-6 md:p-10 lg:p-12">
-          <HeroAtmosphere />
-          {/* `grid-cols-1` rather than bare `grid`: the implicit column is
+      {/* `isolate` scopes the atmosphere's negative z-index to this page —
+          see PageAtmosphere for why it can't just be a fixed layer. */}
+      <div className="relative isolate">
+        <PageAtmosphere />
+
+        {/* ── Hero ───────────────────────────────────────────────────────── */}
+        <section className="pt-2 md:pt-6">
+          <div className="rounded-3xl border border-white/[0.08] bg-[oklch(19%_0.022_55)] p-6 md:p-10 lg:p-12">
+            {/* `grid-cols-1` rather than bare `grid`: the implicit column is
               `auto`-sized, so the response panel's <pre> (which is ~500px of
               unbreakable monospace) widened the whole column past the viewport
               on mobile and clipped the headline and copy off the right edge.
               `grid-cols-1` is minmax(0,1fr), which lets the panel's own
               overflow-x own the scrolling instead. */}
-          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_minmax(0,560px)] lg:gap-14">
-            <div>
-              <span
-                className={`${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.lg} bg-brand-amber/15 text-brand-amber`}
-              >
-                Developer API · Private beta
-              </span>
-              <h1 className="mt-6 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-white sm:text-[44px] lg:text-[58px]">
-                Four insider registers, one JSON schema.
-              </h1>
-              <p className="mt-5 max-w-[46ch] text-[16.5px] leading-[1.55] text-white/60">
-                Every director and insider purchase across the UK, US, Sweden
-                and the Netherlands: screened, rated with a written rationale,
-                and benchmarked against the index from the day it was disclosed.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <button
-                  className={`${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink transition-colors hover:bg-white/90`}
-                  data-ga-event="cta_api_hero_request"
-                  data-ga-label="API hero"
-                  type="button"
-                  onClick={openAsk}
+            <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_minmax(0,560px)] lg:gap-14">
+              <div>
+                <span
+                  className={`${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.lg} bg-brand-amber/15 text-brand-amber`}
                 >
-                  Request access
-                </button>
-                <a
-                  className={`${BUTTON_RADIUS} bg-white/[0.08] px-6 py-3.5 text-[15px] font-semibold text-white/85 transition-colors hover:bg-white/[0.14]`}
-                  href="#reference"
-                >
-                  Read the reference
-                </a>
+                  Developer API · Private beta
+                </span>
+                <h1 className="mt-6 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-white sm:text-[44px] lg:text-[58px]">
+                  Four insider registers, one JSON schema.
+                </h1>
+                <p className="mt-5 max-w-[46ch] text-[16.5px] leading-[1.55] text-white/60">
+                  Every director and insider purchase across the UK, US, Sweden
+                  and the Netherlands: screened, rated with a written rationale,
+                  and benchmarked against the index from the day it was
+                  disclosed.
+                </p>
+                <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <button
+                    className={`${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink transition-colors hover:bg-white/90`}
+                    data-ga-event="cta_api_hero_request"
+                    data-ga-label="API hero"
+                    type="button"
+                    onClick={openAsk}
+                  >
+                    Request access
+                  </button>
+                  <a
+                    className={`${BUTTON_RADIUS} bg-white/[0.08] px-6 py-3.5 text-[15px] font-semibold text-white/85 transition-colors hover:bg-white/[0.14]`}
+                    href="#reference"
+                  >
+                    Read the reference
+                  </a>
+                </div>
               </div>
+
+              <ResponseExplorer />
             </div>
 
-            <ResponseExplorer />
-          </div>
-
-          {/* Proof cards. These used to be a separate full-bleed strip below
+            {/* Proof cards. These used to be a separate full-bleed strip below
               the hero, where four bare figures on an empty band read as filler
               between two real sections. Inside the hero they are what the
               headline is standing on. */}
-          <dl className="mt-10 grid grid-cols-2 gap-3 border-t border-white/[0.08] pt-8 sm:grid-cols-4 lg:mt-12">
-            {STATS.map((s) => (
-              <div
-                key={s.k}
-                className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3.5"
-              >
-                <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-                  {s.k}
-                </dt>
-                <dd className="mt-1.5 text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-white">
-                  {s.v}
-                </dd>
-                <p className="mt-2 text-[12px] leading-[1.45] text-white/40">
-                  {s.note}
-                </p>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
+            <dl className="mt-10 grid grid-cols-2 gap-3 border-t border-white/[0.08] pt-8 sm:grid-cols-4 lg:mt-12">
+              {STATS.map((s) => (
+                <div
+                  key={s.k}
+                  className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3.5"
+                >
+                  <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
+                    {s.k}
+                  </dt>
+                  <dd className="mt-1.5 text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-white">
+                    {s.v}
+                  </dd>
+                  <p className="mt-2 text-[12px] leading-[1.45] text-white/40">
+                    {s.note}
+                  </p>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
 
-      {/* ── 01 The data ──────────────────────────────────────────────────── */}
-      <section className={`${SECTION} pt-16 md:pt-24`}>
-        <SectionHeader
-          index={1}
-          kicker="The data"
-          sub="Most insider feeds stop at the filing. These rows carry the screen that judged it, the rating, the cluster it belongs to, the style of the buy and the price action since."
-          title="Every row carries a verdict."
-          tone="dark"
-          total={4}
-        />
+        {/* ── 01 The data ──────────────────────────────────────────────────── */}
+        <section className={`${SECTION} pt-16 md:pt-24`}>
+          <SectionHeader
+            index={1}
+            kicker="The data"
+            sub="Most insider feeds stop at the filing. These rows carry the screen that judged it, the rating, the cluster it belongs to, the style of the buy and the price action since."
+            title="Every row carries a verdict."
+            tone="dark"
+            total={4}
+          />
 
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {/* Stagger resets per row rather than running 0-300ms across all
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {/* Stagger resets per row rather than running 0-300ms across all
               six: Reveal's own note caps a stagger at ~240ms before it starts
               reading as the page being slow. */}
-          {FEATURES.map((c, i) => (
-            <Reveal key={c.h} delay={(i % 3) * 60}>
-              <div className="h-full rounded-3xl border border-white/[0.08] bg-white/[0.035] p-5">
-                <c.Icon
-                  aria-hidden="true"
-                  className="h-6 w-6 text-brand-amber"
-                  strokeWidth={1.4}
-                />
-                <h3 className="mt-4 text-[16px] font-semibold leading-snug text-white">
-                  {c.h}
-                </h3>
-                <p className="mt-2.5 text-[14px] leading-[1.6] text-white/55">
-                  {c.b}
-                </p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
+            {FEATURES.map((c, i) => (
+              <Reveal key={c.h} delay={(i % 3) * 60}>
+                <div className="h-full rounded-3xl border border-white/[0.08] bg-white/[0.035] p-5">
+                  <c.Icon
+                    aria-hidden="true"
+                    className="h-6 w-6 text-brand-amber"
+                    strokeWidth={1.4}
+                  />
+                  <h3 className="mt-4 text-[16px] font-semibold leading-snug text-white">
+                    {c.h}
+                  </h3>
+                  <p className="mt-2.5 text-[14px] leading-[1.6] text-white/55">
+                    {c.b}
+                  </p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
 
-        {/* Outside the grid on purpose. Language is a scope decision taken
+          {/* Outside the grid on purpose. Language is a scope decision taken
             once, not a seventh field that arrives in every row, and a seventh
             box would have said the opposite. See language-strip.tsx. */}
-        <Reveal className="mt-14 md:mt-20">
-          <LanguageStrip />
-        </Reveal>
-      </section>
+          <Reveal className="mt-14 md:mt-20">
+            <LanguageStrip />
+          </Reveal>
+        </section>
 
-      {/* ── 02 The picture ───────────────────────────────────────────────── */}
-      <section className={SECTION}>
-        <SectionHeader
-          index={2}
-          kicker="The picture"
-          sub="A row gives you the disclosure date, the size of the buy, the cluster it belongs to and the return since. Plot those against a price series and the buying is legible on its own timeline."
-          title="One issuer, six insiders, ninety days."
-          tone="dark"
-          total={4}
-        />
+        {/* ── 02 The picture ───────────────────────────────────────────────── */}
+        <section className={SECTION}>
+          <SectionHeader
+            index={2}
+            kicker="The picture"
+            sub="A row gives you the disclosure date, the size of the buy, the cluster it belongs to and the return since. Plot those against a price series and the buying is legible on its own timeline."
+            title="One issuer, six insiders, ninety days."
+            tone="dark"
+            total={4}
+          />
 
-        <Reveal className="mt-10">
-          <AccumulationChart />
-        </Reveal>
-        <p className="mt-4 max-w-[64ch] text-[12.5px] leading-[1.55] text-white/40">
-          Illustrative series, not a real issuer. The fields it is drawn from
-          are real: <Path>disclosed_date</Path>, <Path>value_gbp</Path>,{" "}
-          <Path>cluster</Path> and <Path>live_performance</Path>. Price bars are
-          not part of the feed; bring your own.
-        </p>
-      </section>
+          <Reveal className="mt-10">
+            <AccumulationChart />
+          </Reveal>
+          <p className="mt-4 max-w-[64ch] text-[12.5px] leading-[1.55] text-white/40">
+            Illustrative series, not a real issuer. The fields it is drawn from
+            are real: <Path>disclosed_date</Path>, <Path>value_gbp</Path>,{" "}
+            <Path>cluster</Path> and <Path>live_performance</Path>. Price bars
+            are not part of the feed; bring your own.
+          </p>
+        </section>
 
-      {/* ── 03 The reference ─────────────────────────────────────────────── */}
-      <section className={SECTION} id="reference">
-        <SectionHeader
-          index={3}
-          kicker="The reference"
-          sub="Predictable REST over JSON, with cursor pagination and edge-cached reads. A discovery endpoint means you never hardcode a market."
-          title="Ten endpoints and a bearer token."
-          tone="dark"
-          total={4}
-        />
+        {/* ── 03 The reference ─────────────────────────────────────────────── */}
+        <section className={SECTION} id="reference">
+          <SectionHeader
+            index={3}
+            kicker="The reference"
+            sub="Predictable REST over JSON, with cursor pagination and edge-cached reads. A discovery endpoint means you never hardcode a market."
+            title="Ten endpoints and a bearer token."
+            tone="dark"
+            total={4}
+          />
 
-        <div className="mt-10 grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
-          <div>
-            <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
-              Dealings
-            </h3>
-            <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
-              The core feeds. One per regulator family.
-            </p>
+          <div className="mt-10 grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
+            <div>
+              <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
+                Dealings
+              </h3>
+              <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
+                The core feeds. One per regulator family.
+              </p>
+            </div>
+            <div className="min-w-0">
+              <EndpointTable rows={DEALING_ENDPOINTS} />
+              <ParamList
+                params={[
+                  {
+                    name: "rating",
+                    desc: "significant · noteworthy · minor · routine",
+                  },
+                  {
+                    name: "view",
+                    desc: "Per-market masks, e.g. signal or interesting, to skip grants and option exercises.",
+                  },
+                  {
+                    name: "since / before",
+                    desc: "ISO dates. before is the pagination cursor; pass the oldest disclosed_date you hold.",
+                  },
+                  { name: "limit", desc: "Page size, capped per agreement." },
+                ]}
+              />
+            </div>
           </div>
-          <div className="min-w-0">
-            <EndpointTable rows={DEALING_ENDPOINTS} />
-            <ParamList
-              params={[
-                {
-                  name: "rating",
-                  desc: "significant · noteworthy · minor · routine",
-                },
-                {
-                  name: "view",
-                  desc: "Per-market masks, e.g. signal or interesting, to skip grants and option exercises.",
-                },
-                {
-                  name: "since / before",
-                  desc: "ISO dates. before is the pagination cursor; pass the oldest disclosed_date you hold.",
-                },
-                { name: "limit", desc: "Page size, capped per agreement." },
-              ]}
-            />
+
+          <div className="grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
+            <div>
+              <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
+                Context
+              </h3>
+              <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
+                Everything you join a dealing against.
+              </p>
+            </div>
+            <div className="min-w-0">
+              <EndpointTable rows={REFERENCE_ENDPOINTS} />
+            </div>
           </div>
-        </div>
 
-        <div className="grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
-          <div>
-            <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
-              Context
-            </h3>
-            <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
-              Everything you join a dealing against.
-            </p>
+          <div className="grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
+            <div>
+              <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
+                Quickstart
+              </h3>
+              <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
+                Authenticate with a bearer token. That&rsquo;s the whole setup.
+              </p>
+            </div>
+            <div className="min-w-0">
+              <CodeTabs snippets={SNIPPETS} />
+              <p className="mt-5 text-[13.5px] leading-[1.6] text-white/40">
+                Full reference, schema documentation and an OpenAPI spec ship
+                with access. Field-level definitions for <Path>analysis</Path>,{" "}
+                <Path>cluster</Path> and <Path>buy_style</Path> are included.
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <EndpointTable rows={REFERENCE_ENDPOINTS} />
-          </div>
-        </div>
+        </section>
 
-        <div className="grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
-          <div>
-            <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
-              Quickstart
-            </h3>
-            <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
-              Authenticate with a bearer token. That&rsquo;s the whole setup.
-            </p>
-          </div>
-          <div className="min-w-0">
-            <CodeTabs snippets={SNIPPETS} />
-            <p className="mt-5 text-[13.5px] leading-[1.6] text-white/40">
-              Full reference, schema documentation and an OpenAPI spec ship with
-              access. Field-level definitions for <Path>analysis</Path>,{" "}
-              <Path>cluster</Path> and <Path>buy_style</Path> are included.
-            </p>
-          </div>
-        </div>
-      </section>
+        {/* ── 04 Coverage ──────────────────────────────────────────────────── */}
+        <section className={SECTION}>
+          <SectionHeader
+            index={4}
+            kicker="The markets"
+            sub="Cross-market is the hard part and the reason this exists. Each register speaks its own language; you get one."
+            title="Four regulators, one shape."
+            tone="dark"
+            total={4}
+          />
 
-      {/* ── 04 Coverage ──────────────────────────────────────────────────── */}
-      <section className={SECTION}>
-        <SectionHeader
-          index={4}
-          kicker="The markets"
-          sub="Cross-market is the hard part and the reason this exists. Each register speaks its own language; you get one."
-          title="Four regulators, one shape."
-          tone="dark"
-          total={4}
-        />
+          <MarketGrid />
+        </section>
 
-        <MarketGrid />
-      </section>
+        {/* ── FAQ ──────────────────────────────────────────────────────────── */}
+        <section className={SECTION}>
+          <ApiFaq
+            items={FAQ}
+            standfirst="Anything not covered here, put it in the form. It reaches a person."
+            title="Before you ask for a quote"
+          />
+        </section>
 
-      {/* ── FAQ ──────────────────────────────────────────────────────────── */}
-      <section className={SECTION}>
-        <ApiFaq
-          items={FAQ}
-          standfirst="Anything not covered here, put it in the form. It reaches a person."
-          title="Before you ask for a quote"
-        />
-      </section>
-
-      {/* ── Request access — the inverted band ───────────────────────────── */}
-      <section
-        className={`${FULL_BLEED} mt-6 bg-[#f5f0e8] text-ink`}
-        id="request-access"
-      >
-        {/* Cut back to the ask, and set on the same ruled left grammar as the
+        {/* ── Request access — the inverted band ───────────────────────────── */}
+        <section
+          className={`${FULL_BLEED} mt-6 bg-[#f5f0e8] text-ink`}
+          id="request-access"
+        >
+          {/* Cut back to the ask, and set on the same ruled left grammar as the
             numbered sections above it. The two-column version carried four
             sentences of pitch and a five-row spec table beside the button,
             which is a lot of reading to put AFTER the FAQ has already answered
             everything. The pitch is one line now; the spec is a single
             hairline row of label/value pairs; the detail lives in the modal
             the button opens. */}
-        <div className="mx-auto max-w-[1280px] px-4 py-16 md:px-6 md:py-24">
-          <div className="border-t border-black/10 pt-5">
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown">
-              Request access
-            </p>
-            <h2 className="mt-5 max-w-[20ch] text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
-              Pricing is quoted per use case.
-            </h2>
-            <p className="mt-4 max-w-[38ch] text-[16px] leading-[1.6] text-ink/65">
-              Tell us what you&rsquo;re building and we&rsquo;ll come back with
-              scope and a number.
-            </p>
+          <div className="mx-auto max-w-[1280px] px-4 py-16 md:px-6 md:py-24">
+            <div className="border-t border-black/10 pt-5">
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown">
+                Request access
+              </p>
+              <h2 className="mt-5 max-w-[20ch] text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
+                Pricing is quoted per use case.
+              </h2>
+              <p className="mt-4 max-w-[38ch] text-[16px] leading-[1.6] text-ink/65">
+                Tell us what you&rsquo;re building and we&rsquo;ll come back
+                with scope and a number.
+              </p>
 
-            <button
-              className={`${BUTTON_RADIUS} mt-8 bg-ink px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118]`}
-              data-ga-event="cta_api_band_request"
-              data-ga-label="API closing band"
-              type="button"
-              onClick={openAsk}
-            >
-              Request pricing
-            </button>
-            <p className="mt-3 text-[13px] text-ink/50">
-              Two working days. No newsletter, no onward sharing.
+              <button
+                className={`${BUTTON_RADIUS} mt-8 bg-ink px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118]`}
+                data-ga-event="cta_api_band_request"
+                data-ga-label="API closing band"
+                type="button"
+                onClick={openAsk}
+              >
+                Request pricing
+              </button>
+              <p className="mt-3 text-[13px] text-ink/50">
+                Two working days. No newsletter, no onward sharing.
+              </p>
+            </div>
+
+            <dl className="mt-14 grid max-w-4xl grid-cols-2 gap-x-8 gap-y-6 border-t border-black/10 pt-8 sm:grid-cols-3 lg:grid-cols-5">
+              {SPEC.map(([k, v]) => (
+                <div key={k}>
+                  <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/40">
+                    {k}
+                  </dt>
+                  <dd className="mt-1.5 text-[13.5px] leading-[1.45] text-ink/75">
+                    {v}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+
+            <p className="mt-14 max-w-[62ch] text-xs leading-[1.6] text-ink/40">
+              Research output, not investment advice. Ratings carry a stated
+              confidence and are not recommendations to trade. Redistribution
+              rights vary by source and are agreed per contract.
             </p>
           </div>
-
-          <dl className="mt-14 grid max-w-4xl grid-cols-2 gap-x-8 gap-y-6 border-t border-black/10 pt-8 sm:grid-cols-3 lg:grid-cols-5">
-            {SPEC.map(([k, v]) => (
-              <div key={k}>
-                <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/40">
-                  {k}
-                </dt>
-                <dd className="mt-1.5 text-[13.5px] leading-[1.45] text-ink/75">
-                  {v}
-                </dd>
-              </div>
-            ))}
-          </dl>
-
-          <p className="mt-14 max-w-[62ch] text-xs leading-[1.6] text-ink/40">
-            Research output, not investment advice. Ratings carry a stated
-            confidence and are not recommendations to trade. Redistribution
-            rights vary by source and are agreed per contract.
-          </p>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <RequestAccessModal open={askOpen} onClose={() => setAskOpen(false)} />
     </DefaultLayout>
