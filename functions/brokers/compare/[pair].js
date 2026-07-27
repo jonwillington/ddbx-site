@@ -142,8 +142,10 @@ export async function onRequestGet(context) {
     title,
     description: comparison.description,
     canonical,
+    // Matches the crumb the hydrated page shows, not a second name for the
+    // same hub — structured data has to name what the reader sees.
     breadcrumbs: [
-      { name: "UK platforms", item: `https://${CANONICAL_HOST}/brokers` },
+      { name: "Broker reviews", item: `https://${CANONICAL_HOST}/brokers` },
       { name: comparison.title, item: canonical },
     ],
     body: prerender(comparison, pair.a, pair.b),

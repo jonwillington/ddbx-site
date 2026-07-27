@@ -40,16 +40,12 @@
  *  the tail isn't noise. */
 export const TOP_N = 25;
 
+import { TRACKING_SINCE_YEAR } from "./tracking.js";
+
 /** First calendar year with stored filings — the floor for the year archive
- *  and for the sitemap's year URLs.
- *
- *  It mirrors TRACKING_SINCE_YEAR in src/components/seo/tracking-notice.tsx
- *  and the two must move together. The duplication is deliberate: the sitemap
- *  and the pre-render are Pages Functions and can't import a .tsx, so the
- *  value has to exist once in plain ESM. Everything that computes a year list
- *  reads it from here, so the page and the sitemap can't disagree with each
- *  other even if the notice copy drifts. */
-export const BOARD_EARLIEST_YEAR = 2026;
+ *  and for the sitemap's year URLs. Re-exports the shared tracking floor so
+ *  the page, the pre-render and the sitemap cannot disagree. */
+export const BOARD_EARLIEST_YEAR = TRACKING_SINCE_YEAR;
 
 /** Whether a disclosed row counts as an open-market purchase for this market.
  *
@@ -158,7 +154,7 @@ export const METHODOLOGY = [
   "Each purchase is listed individually. Several insiders buying the same company on the same day appear as separate rows — that's several disclosures, not one large one. Where a purchase forms part of a cluster, it's marked.",
   "No more than three purchases from any single company appear on a board. One issuer filing the largest handful of the year would otherwise fill it and answer nothing; where entries are held back, the count is shown.",
   "Values are in the market's own currency and are never converted, so no exchange rate is involved.",
-  "Performance is measured from the closing price on the day the purchase was disclosed — the first price a reader could have paid — not from the insider's own fill, and is marked against the most recent cached close rather than a live quote.",
+  "Performance is measured from the closing price on the day the purchase was disclosed — the first price a reader could have paid — wherever that close is on file. When it isn't, the trade-day close is used instead. Either way the figure is marked against the most recent cached close rather than a live quote.",
   "Alpha is the purchase's own return minus the market's return over the same period, stated in percentage points: a buy up 8% while the index rose 5% has alpha of +3. The board is ranked by the size of the purchase, never by alpha.",
   "“Worth if still held” applies the stock's own move since disclosure to the amount originally spent. It assumes the shares were never sold and counts no dividends, costs or tax — it's a scale, not a valuation of anyone's actual holding.",
   "Companies that have since delisted may stop being priced, so their entries can show no performance figure. Past performance is not a reliable indicator of future results.",
@@ -177,16 +173,32 @@ export function leaderboardPath(year) {
   return year ? `/biggest-buys/${year}` : "/biggest-buys";
 }
 
+/** The current year joins the archive only once it has had a month to produce
+ *  a board (0-indexed, so 1 is February).
+ *
+ *  At midnight on 1 January the new year's board has ~0 eligible rows, and the
+ *  pre-render refuses to index an empty board. Offering it in the archive cards
+ *  and in the sitemap would submit a URL we then tell Google to drop, which is
+ *  the one thing the sitemap must not do. A month of filings is more than
+ *  enough for a 25-row board. */
+const CURRENT_YEAR_FROM_MONTH = 1;
+
 /** Years worth offering an archive for: every year from the first with data up
- *  to the current one. Passed `today` so callers stay testable. */
+ *  to the current one, except that the current year is held back until
+ *  CURRENT_YEAR_FROM_MONTH. Passed `today` so callers stay testable. */
 export function archiveYears(earliest, today) {
   const first = Number(String(earliest ?? "").slice(0, 4));
-  const last = new Date(today).getFullYear();
+  const now = new Date(today);
+  const last = now.getFullYear();
 
   if (!Number.isInteger(first) || first < 2000) return [];
   const out = [];
+  const currentYearReady = now.getMonth() >= CURRENT_YEAR_FROM_MONTH;
 
-  for (let y = last; y >= first; y--) out.push(y);
+  for (let y = last; y >= first; y--) {
+    if (y === last && !currentYearReady) continue;
+    out.push(y);
+  }
 
   return out;
 }

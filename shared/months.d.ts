@@ -9,3 +9,7 @@ export declare function slugToMonth(
   slug: string | null | undefined,
 ): string | null;
 export declare function reportPath(month: string | null | undefined): string;
+export declare const REPORT_CONTENTS: {
+  label: string;
+  description: string;
+}[];

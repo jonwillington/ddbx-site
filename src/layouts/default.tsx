@@ -188,10 +188,11 @@ function PrivacyContent() {
       <p>
         The site is hosted on Cloudflare Pages and uses Cloudflare Workers for
         API functionality. Cloudflare&apos;s own privacy policy governs their
-        processing of network-level data. If you accept the cookie banner, we
-        also load Google Analytics 4 (aggregate usage statistics) and the X
-        (Twitter) Ads conversion pixel (to measure ad-driven installs) — see the
-        Cookie Policy for details.
+        processing of network-level data. We use Google Analytics 4 in
+        cookieless consent mode — it sets no cookies and stores no identifiers
+        unless you accept the cookie banner. Accepting also loads the X
+        (Twitter) Ads conversion pixel (to measure ad-driven installs) — see
+        the Cookie Policy for details.
       </p>
 
       <SectionTitle>Your rights</SectionTitle>
@@ -248,19 +249,22 @@ function CookieContent() {
 
       <SectionTitle>Analytics &amp; marketing (requires consent)</SectionTitle>
       <p>
-        If you click <strong>&quot;Agree to cookies&quot;</strong> on the
-        banner, we load the following scripts. Until you agree, none of them are
-        loaded and no cookies are set by them.
+        Until you click <strong>&quot;Agree to cookies&quot;</strong> on the
+        banner, no analytics or marketing cookies are set on your device.
       </p>
       <ul className="list-disc pl-5 space-y-1">
         <li>
           <strong>Google Analytics 4</strong> — aggregate usage statistics
-          (which pages are viewed, roughly where visitors come from).
+          (which pages are viewed, roughly where visitors come from). Before
+          you agree it runs in Google&apos;s cookieless consent mode: it sets
+          no cookies and stores no identifiers. Agreeing enables its analytics
+          cookies.
         </li>
         <li>
           <strong>X (Twitter) conversion pixel</strong> — measures whether
-          visitors arriving from X ads go on to install the iOS app or sign up.
-          Loaded from <code>static.ads-twitter.com</code>.
+          visitors arriving from X ads go on to install the app or sign up.
+          Not loaded at all until you agree. Loaded from{" "}
+          <code>static.ads-twitter.com</code>.
         </li>
       </ul>
       <p>
@@ -425,9 +429,10 @@ export default function DefaultLayout({
   const platform = useDevicePlatform();
   // Direct store link for the market that owns this route + the visitor's
   // device, so the mobile floating CTA jumps straight to the right listing
-  // (iOS → App Store, Android → Play) instead of opening the chooser. On
-  // Android this always resolves (the UK app is the fallback); on iOS/desktop
-  // it's undefined for app-less markets (SE/NL), which fall back to the chooser.
+  // (iOS → App Store, Android → Play) instead of opening the chooser.
+  // Undefined — app-less markets (SE/NL on iOS) and platforms with no
+  // truthful listing (US on Android) — falls back to the chooser, which
+  // shows honest per-market availability.
   const directAppUrl = storeUrlForMarketId(
     marketForPath(
       location.pathname,

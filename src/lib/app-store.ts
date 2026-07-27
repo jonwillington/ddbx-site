@@ -67,10 +67,35 @@ export function storeUrlForMarketId(
   platform: DevicePlatform | null,
 ): string | undefined {
   if (platform === "android") {
+    // The UK-app fallback is only honest where the UK app actually carries
+    // the market's data (uk, and the EU markets it hosts). The US flavour is
+    // a separate product with its own data and paywall — a US surface
+    // showing "ddbx US" and USD pricing must never install uk.ddbx.app.
+    // Undefined here means "no truthful install target": callers fall back
+    // to the market's /download page, which says so.
+    if (id === "us" || id === "usg") return playStoreUrlForMarketId(id);
+
     return playStoreUrlForMarketId(id) ?? PLAY_STORE_URLS.uk;
   }
 
   return appStoreUrlForMarketId(id);
+}
+
+/** Where a "get the app" CTA should send this visitor when the market has no
+ *  store listing for their platform: the market's own download landing page,
+ *  which explains availability honestly, instead of a wrong-product listing. */
+export function downloadPagePathForMarketId(id: string): string {
+  return id === "us" || id === "usg" ? "/us/download" : "/download";
+}
+
+/** Single-CTA resolution that always lands somewhere truthful: the store
+ *  listing when one exists for this market + platform, the market's
+ *  /download page when it doesn't. */
+export function appHrefForMarket(
+  id: string,
+  platform: DevicePlatform | null,
+): string {
+  return storeUrlForMarketId(id, platform) ?? downloadPagePathForMarketId(id);
 }
 
 /** Per-market app links for the footer download chooser — same shape and
@@ -145,6 +170,13 @@ export function storeTargetsForMarket(
   const nativePlay = playStoreUrlForMarketId(id);
 
   if (platform === "android") {
+    // Same honesty rule as storeUrlForMarketId: no UK-app fallback for the
+    // US product. An empty list means "no badge to show" — callers render
+    // their availability copy instead of a wrong-product button.
+    if (id === "us" || id === "usg") {
+      return nativePlay ? [{ store: "android", href: nativePlay }] : [];
+    }
+
     return [{ store: "android", href: nativePlay ?? PLAY_STORE_URLS.uk }];
   }
   if (platform === "ios") {

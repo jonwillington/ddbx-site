@@ -18,6 +18,7 @@ import {
   Tick,
 } from "@/components/brokers/broker-ui";
 import DefaultLayout from "@/layouts/default";
+import { Skeleton } from "@/components/skeleton";
 import { api, type BrokerOffer } from "@/lib/api";
 import {
   fmtMoney,
@@ -232,7 +233,9 @@ export default function ComparePage() {
   const anyFilter = query.trim() !== "" || Object.values(filters).some(Boolean);
 
   return (
-    <DefaultLayout drawerRight>
+    // hideMobileCta like the reviews and the guides: every mobile card here
+    // carries its own Visit button, and the pinned app bar sat on top of them.
+    <DefaultLayout drawerRight hideMobileCta>
       <BrokerAside brokers={brokers} />
       <section className="w-full">
         <header className="mb-5">
@@ -586,17 +589,65 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Roughly a viewport of rows. The real grid loads every platform we hold
+ *  (~19), but the count isn't known before the fetch, so the skeleton draws the
+ *  fold and lets the rest arrive below it — under-drawing the fold is what
+ *  makes the page jump. */
+const SKELETON_ROWS = 8;
+
+/** The loading state at the loaded page's own geometry.
+ *
+ *  The previous version drew two pick cards at every width — they're lg:hidden
+ *  in the real layout, so desktop was shown two objects that never arrived —
+ *  above a 40px bar and six 56px rows, against a ~108px filter bar and ~76px
+ *  rows. The net effect was a redraw, which is the behaviour the house
+ *  `Skeleton` primitive and the guides' real-geometry skeletons exist to kill.
+ */
 function ComparisonSkeleton() {
   return (
-    <div className="animate-pulse space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="h-32 rounded-2xl bg-surface" />
-        <div className="h-32 rounded-2xl bg-surface" />
+    <div aria-busy="true">
+      <span className="sr-only">Loading platforms…</span>
+
+      {/* Top picks: mobile and tablet only, matching the real block's
+          `lg:hidden`. */}
+      <div className="mb-8 lg:hidden">
+        <Skeleton className="mb-3 h-[11px] w-24" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Skeleton className="w-full rounded-2xl" h={200} />
+          <Skeleton className="w-full rounded-2xl" h={200} />
+        </div>
       </div>
-      <div className="h-10 rounded-xl bg-surface" />
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="h-14 rounded-xl bg-surface" />
-      ))}
+
+      {/* Filter bar (search row + chip row), then the "N of M platforms" line. */}
+      <Skeleton className="mb-4 w-full rounded-2xl" h={108} />
+      <Skeleton className="mb-3 h-[12px] w-32" />
+
+      {/* Inside the real container, so the table's own frame and header strip
+          don't arrive with the data. */}
+      <div className="hidden overflow-hidden rounded-xl border border-hairline bg-white dark:border-separator dark:bg-surface md:block">
+        <div className="h-7 border-b border-hairline bg-black/[0.04] dark:border-separator dark:bg-white/[0.05]" />
+        <div className="divide-y divide-hairline dark:divide-separator">
+          {Array.from({ length: SKELETON_ROWS }, (_, i) => (
+            <div key={i} className="flex items-center gap-3 px-3 py-3">
+              <Skeleton className="shrink-0 rounded-lg" h={44} w={44} />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Skeleton className="h-[15px] w-40" />
+                <Skeleton className="h-4 w-20 rounded-full" />
+                <Skeleton className="h-[11px] w-56" />
+              </div>
+              <Skeleton className="h-[13px] w-24 shrink-0" />
+              <Skeleton className="h-8 w-20 shrink-0 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* The card stack the same rows become below md. */}
+      <div className="space-y-3 md:hidden">
+        {Array.from({ length: 4 }, (_, i) => (
+          <Skeleton key={i} className="w-full rounded-2xl" h={244} />
+        ))}
+      </div>
     </div>
   );
 }

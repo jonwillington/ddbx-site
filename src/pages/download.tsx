@@ -950,9 +950,13 @@ export default function DownloadPage({
   const available = !!storeHref;
 
   // Where the winner cards' "View analysis" links go: the visitor's real store
-  // if there is one, otherwise whatever they can actually install today.
+  // if there is one, otherwise this market's own App Store listing — right
+  // product even when it's the wrong platform. Never another market's app.
   const cardAppUrl =
-    storeHref ?? storeUrlForMarketId(market, detected) ?? APP_STORE_URLS.uk;
+    storeHref ??
+    storeUrlForMarketId(market, detected) ??
+    appStoreUrlForMarketId(market) ??
+    APP_STORE_URLS.uk;
 
   const prefix = market === "us" ? "/us" : "";
   const otherPath = `${prefix}/download/${platform === "ios" ? "android" : "ios"}`;

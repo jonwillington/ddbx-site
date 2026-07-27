@@ -6,7 +6,7 @@ import type { MarketDealing } from "@/lib/markets/types";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 
-import { APP_STORE_URLS, storeUrlForMarketId } from "@/lib/app-store";
+import { appHrefForMarket } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import { MarketDetailDrawer } from "@/components/market/market-detail-drawer";
 import { MarketRow, MarketRowHeader } from "@/components/market/market-row";
@@ -256,7 +256,7 @@ export default function DirectorPage() {
         DetailPosition={market.config.DetailPosition}
         DummyDetailBody={market.config.DummyDetailBody}
         allDealings={dealings}
-        appHref={storeUrlForMarketId(market.id, platform) ?? APP_STORE_URLS.uk}
+        appHref={appHrefForMarket(market.id, platform)}
         dealing={selectedDealing}
         fmt={market.config.priceFormat}
         formatTickerDisplay={market.config.formatTickerDisplay}

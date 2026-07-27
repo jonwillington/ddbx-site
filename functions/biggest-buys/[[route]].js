@@ -34,6 +34,11 @@ import {
 } from "../../shared/prerender.js";
 import { windowStart } from "../../shared/sectors.js";
 import { brandTitle, isProductionHost } from "../../shared/seo.js";
+// The same sentence TrackingNotice prints on the hydrated page. Read from
+// shared/ rather than mirrored here: a crawler reading a twelve-month claim
+// with nothing qualifying it is the divergence that matters most, and a copy of
+// the sentence is a copy that can go stale when the coverage floor moves.
+import { TRACKING_NOTICE } from "../../shared/tracking.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 const MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
@@ -97,13 +102,6 @@ const cleanInsider = (n) => {
   return out || String(n ?? "").trim();
 };
 
-/** Mirrors TrackingNotice in src/components/seo/tracking-notice.tsx. The page
- *  carries this caveat and the pre-render didn't, which is the divergence that
- *  matters most: a crawler was reading a twelve-month claim with nothing
- *  qualifying it. */
-const TRACKING_CAVEAT =
-  "ddbx started recording disclosures in March 2026, so periods described as a full year cover only the filings since then.";
-
 /** The summary the hydrated board states in tiles above the table. */
 function summaryLine(rows, symbol) {
   const total = rows.reduce((sum, d) => sum + buyValue(d), 0);
@@ -120,7 +118,10 @@ function summaryLine(rows, symbol) {
         ? alphas[mid]
         : (alphas[mid - 1] + alphas[mid]) / 2;
 
-  return `${rows.length} purchases, ${money(total, symbol)} in total, across ${companies} ${companies === 1 ? "company" : "companies"}. Median alpha since disclosure: ${signedPp(median)}.`;
+  // The median's denominator, in the same words the hydrated tiles use: a
+  // median alpha over 25 rows can rest on the handful of them old enough to
+  // have a mark, and stating the figure without the sample size overstates it.
+  return `${rows.length} purchases, ${money(total, symbol)} in total, across ${companies} ${companies === 1 ? "company" : "companies"}. Median alpha since disclosure: ${signedPp(median)}. ${alphas.length} of ${rows.length} buys have a performance mark; the median is taken from those.`;
 }
 
 function leadSentence(rows, market, periodLabel) {
@@ -192,7 +193,7 @@ function prerender(rows, suppressed, market, periodLabel, host, complete, year) 
   return page(`<p style="${eyebrow}">Leaderboard</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">The biggest ${esc(market)} insider buys ${esc(periodLabel)}</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">The largest <a href="https://${esc(host)}/learn/open-market-buy">open-market purchases</a> ${market === "US" ? "insiders" : "directors"} made in their own companies, ranked by what they spent, with how each has performed against the market since it was disclosed.</p>
-  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(TRACKING_CAVEAT)}</p>
+  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(TRACKING_NOTICE)}</p>
   ${complete ? "" : `<p style="font-size:13px;color:#6b6154">We couldn’t load the whole period, so this ranking may be missing older purchases.</p>`}
   <p style="font-size:14px;color:#4a4034;max-width:62ch">${esc(summaryLine(rows, symbol))}</p>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>
@@ -235,21 +236,35 @@ export async function onRequestGet(context) {
   if (!market) return noindex(shell);
 
   const since = bounds ? bounds.since : windowStart(new Date());
-  const { dealings, complete } = await fetchDealingsWindow({
-    apiBase: API_BASE,
-    market,
-    since,
-    until: bounds ? bounds.until : null,
-    cf: {
-      cacheEverything: true,
-      cacheTtlByStatus: { "200-299": 1800, "400-499": 60, "500-599": 0 },
-    },
-  });
+  let dealings;
+  let complete;
+
+  try {
+    ({ dealings, complete } = await fetchDealingsWindow({
+      apiBase: API_BASE,
+      market,
+      since,
+      until: bounds ? bounds.until : null,
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 1800, "400-499": 60, "500-599": 0 },
+      },
+    }));
+  } catch {
+    // A pre-render failing should cost the injected content, not the page —
+    // same posture as fetchJson in shared/prerender.js. The shell is a working
+    // SPA; a 500 here would lose the URL outright.
+    return shell;
+  }
 
   const { rows, suppressed } = rankBuys(dealings, market, TOP_N);
 
-  // An empty board is a stub — don't index one.
-  if (rows.length === 0) return noindex(shell);
+  // An empty board is a stub — don't index one. But a failed fetch produces the
+  // same empty board, and `complete` is the only thing that tells them apart:
+  // Googlebot arriving during an API incident is exactly when this fires, and
+  // noindexing then is us asking for a ranking URL to be dropped over a blip.
+  // Serve the shell untouched instead and let the next crawl settle it.
+  if (rows.length === 0) return complete ? noindex(shell) : shell;
 
   const periodLabel = year ? `in ${year}` : "of the last twelve months";
   const canonical = `https://${host}${leaderboardPath(year)}`;

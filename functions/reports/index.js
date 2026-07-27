@@ -24,7 +24,11 @@ import {
   page,
   renderInto,
 } from "../../shared/prerender.js";
-import { monthLabel, reportPath } from "../../shared/months.js";
+import {
+  REPORT_CONTENTS,
+  monthLabel,
+  reportPath,
+} from "../../shared/months.js";
 import { brandTitle, isProductionHost } from "../../shared/seo.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
@@ -38,24 +42,34 @@ function apexHost(hostname) {
   return host.startsWith("www.") ? host.slice(4) : host;
 }
 
-// £ only, matching [month].js and the SPA's formatGbp. Wrong for a US report
-// the day one exists; the currency is a wire-format change, not a local one.
+// The rounding rules of `formatGbp(v, { compact: true })` in
+// src/lib/performance/format.ts, hand-mirrored because a Pages Function can't
+// import .ts. That file is canonical: this one used to round to whole millions
+// and whole thousands, so a crawler was told "£37m · £350k" where the reader
+// was shown "£37.4m · £350.0k" — the same fact, two numbers.
+//
+// £ only, as on the page. Wrong for a US report the day one exists; the
+// currency is a wire-format change, not a local one.
 const money = (v) => {
+  if (v == null) return "—";
   const n = Number(v);
 
-  if (!isFinite(n) || n === 0) return "—";
-  if (n >= 1_000_000) {
-    const m = n / 1_000_000;
+  if (!isFinite(n)) return "—";
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "−" : "";
 
-    return `£${m >= 10 ? Math.round(m) : m.toFixed(1).replace(/\.0$/, "")}m`;
-  }
+  if (abs >= 1_000_000) return `${sign}£${(abs / 1_000_000).toFixed(1)}m`;
+  if (abs >= 1_000) return `${sign}£${(abs / 1_000).toFixed(1)}k`;
 
-  return `£${Math.round(n / 1000)}k`;
+  return `${sign}£${Math.round(abs).toLocaleString("en-GB")}`;
 };
 
-/** "2026-07-01T…" → "1 Jul 2026". Empty when unparseable. Mirrors the
- *  right-set publication date on each archive row in src/pages/reports.tsx. */
+/** "2026-07-01T…" → "1 Jul 2026". Empty when absent or unparseable — `new
+ *  Date(null)` is 1 Jan 1970, not NaN, so the absent case has to be caught
+ *  first. Mirrors the right-set publication date on each archive row in
+ *  src/pages/reports.tsx. */
 const published = (iso) => {
+  if (!iso) return "";
   const d = new Date(iso);
 
   if (Number.isNaN(d.getTime())) return "";
@@ -68,32 +82,6 @@ const published = (iso) => {
   });
 };
 
-/** The "What's in every report" explainer. Kept verbatim in step with
- *  `CONTENTS` in src/pages/reports.tsx — the pre-render and the page have to
- *  say the same thing, and this block is most of the page's crawlable prose. */
-const CONTENTS = [
-  [
-    "The month in numbers",
-    "How many purchases were disclosed, what they were worth, and how many companies and individual insiders they covered.",
-  ],
-  [
-    "A report card on the last one",
-    "Every buy we featured the previous month, re-marked against the latest close — the ones that went wrong published beside the ones that didn’t.",
-  ],
-  [
-    "The standout buys, written up",
-    "A handful of purchases in full: what happened, whether the value has already gone, and whether there is still a case.",
-  ],
-  [
-    "Where the money went",
-    "The month split by sector and by buy style, with the median return and the median alpha against the benchmark for each slice.",
-  ],
-  [
-    "Clusters",
-    "The companies where two or more insiders bought in the same month — the pattern that reads least like a one-off.",
-  ],
-];
-
 function prerender(market, summaries, latest) {
   const noun = BUYER_NOUN[market];
   const lead = summaries[0];
@@ -103,19 +91,24 @@ function prerender(market, summaries, latest) {
     ? `<p style="font-size:14px;color:#6b6154">${esc(m.total_buys)} buys · ${esc(money(m.total_value_gbp))} · ${esc(m.distinct_companies)} companies · ${esc(m.distinct_directors)} insiders</p>`
     : "";
 
+  // The promoted month is deliberately absent from this list — it is published
+  // in full immediately above, and printing it twice made the archive read as a
+  // stutter for a crawler and a reader alike. The page does the same.
   const rows = summaries
-    .map(
-      (s) =>
-        `<li style="margin-bottom:10px"><a href="${esc(reportPath(s.month))}">${esc(monthLabel(s.month))}</a>${
-          s.created_at
-            ? ` <span style="color:#6b6154">· published ${esc(published(s.created_at))}</span>`
-            : ""
-        }<br>${esc(s.headline)}</li>`,
-    )
+    .slice(1)
+    .map((s) => {
+      const date = published(s.created_at);
+
+      return `<li style="margin-bottom:10px"><a href="${esc(reportPath(s.month))}">${esc(monthLabel(s.month))}</a>${
+        date
+          ? ` <span style="color:#6b6154">· published ${esc(date)}</span>`
+          : ""
+      }<br>${esc(s.headline)}</li>`;
+    })
     .join("");
 
-  const contents = CONTENTS.map(
-    ([label, description]) =>
+  const contents = REPORT_CONTENTS.map(
+    ({ label, description }) =>
       `<li style="margin-bottom:8px"><strong>${esc(label)}</strong> — ${esc(description)}</li>`,
   ).join("");
 
@@ -132,8 +125,13 @@ function prerender(market, summaries, latest) {
   }
   <h2 style="font-size:15px;margin:32px 0 10px">What’s in every report</h2>
   <ul style="font-size:14px;line-height:1.7;max-width:62ch">${contents}</ul>
-  <h2 style="font-size:15px;margin:32px 0 10px">Every report</h2>
-  <ul style="font-size:14px;line-height:1.7">${rows}</ul>
+  ${
+    rows
+      ? `<h2 style="font-size:15px;margin:32px 0 10px">Earlier reports</h2>
+  <p style="font-size:13px;color:#6b6154">Published before ${esc(monthLabel(lead.month))}, newest first. Every month keeps its own URL.</p>
+  <ul style="font-size:14px;line-height:1.7">${rows}</ul>`
+      : ""
+  }
   <p style="margin-top:24px;font-size:13px;color:#6b6154">Reports are generated from disclosed filings and marked against subsequent closing prices. Past performance is not a reliable indicator of future results.</p>`);
 }
 

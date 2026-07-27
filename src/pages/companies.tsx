@@ -4,11 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
-import { CompanyLogo } from "@/components/company-logo";
+import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
-import { SeoSkeleton } from "@/components/seo/skeletons";
 import { companiesCta } from "@/components/seo/cta-copy";
+import { Skeleton } from "@/components/skeleton";
 import { TickerPill } from "@/components/ticker-pill";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
@@ -34,6 +34,61 @@ function initial(name: string): string {
   const ch = name.trim().charAt(0).toUpperCase();
 
   return ch >= "A" && ch <= "Z" ? ch : "#";
+}
+
+/** This page's own skeleton, not a shared variant.
+ *
+ *  It used to pass `SeoSkeleton variant="ruled-list"`: one column of ten rows,
+ *  each with a subtitle and a 3px meter bar. What arrives is a search field, a
+ *  one-line alphabet rail, then letter sections of logo rows in a 2/3-column
+ *  grid and no meter bars anywhere — a different layout, not a different row
+ *  count, so the data redrew the page instead of filling it. None of the shared
+ *  variants describe an A–Z index, and the shared module isn't the right place
+ *  to add a shape only this route has.
+ *
+ *  Counts are stand-ins (the real ones need the fetch), but the geometry is the
+ *  page's: same grid, same rules, same 22px circle leading each row. */
+function CompaniesSkeleton() {
+  const blocks = [0, 1, 2];
+  const rows = Array.from({ length: 6 }, (_, i) => i);
+
+  return (
+    <div aria-busy="true">
+      <span className="sr-only">Loading…</span>
+
+      <div className="mt-6">
+        <Skeleton className="h-[39px] w-full rounded-lg sm:max-w-[22rem]" />
+      </div>
+
+      <div className="-mx-2 mt-6 flex gap-1.5 overflow-hidden px-2 py-2">
+        {Array.from({ length: 14 }, (_, i) => (
+          <Skeleton key={i} className="h-[29px] w-9 shrink-0 rounded-lg" />
+        ))}
+      </div>
+
+      {blocks.map((b) => (
+        <section key={b} className="mt-10">
+          <div className={`border-b ${R.rule} pb-2`}>
+            <Skeleton className="h-[11px] w-3" />
+          </div>
+          <ul className="grid sm:grid-cols-2 sm:gap-x-10 xl:grid-cols-3">
+            {rows.map((i) => (
+              <li
+                key={i}
+                className={`flex items-center gap-2.5 border-b ${R.rule} py-2.5`}
+              >
+                <Skeleton circle className="shrink-0" h={22} w={22} />
+                <div className="min-w-0 flex-1">
+                  <Skeleton className="h-[18px] w-4/5 max-w-[200px]" />
+                  <Skeleton className="mt-1 h-[13px] w-1/2 max-w-[120px]" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
 }
 
 export default function CompaniesPage() {
@@ -105,11 +160,16 @@ export default function CompaniesPage() {
   const insiders = market === "UK" ? "directors" : "insiders";
   const marketId = market === "UK" ? "uk" : "us";
 
+  // Stated without the count while loading rather than left undefined: the
+  // standfirst sits ABOVE the skeleton boundary, so an absent paragraph that
+  // arrives with the data is the one shift the shell can't absorb — it pushes
+  // the whole page down. Same sentence either way, the count appended once
+  // it's a fact.
   const standfirst = failed
     ? "We couldn’t load the index just now. It’s a network hiccup rather than an empty market — try a refresh in a moment."
     : companies
       ? `${companies.length} companies whose ${insiders} have bought shares, with the filings, ratings and company stats for each.`
-      : undefined;
+      : `Companies whose ${insiders} have bought shares, with the filings, ratings and company stats for each.`;
 
   return (
     // The rail, and the `drawerRight` gutter that reserves room for it, are
@@ -127,32 +187,22 @@ export default function CompaniesPage() {
 
       <SeoPageShell
         cta={{
-          ...companiesCta,
+          ...companiesCta(marketId),
           gaLabel: "Company index",
           marketId,
         }}
         eyebrow="Company index"
         footnote={
-          // Logo.dev's free tier wants one followable link back per
-          // logo-bearing page. `LogoDevAttribution` is a <div> and the shell's
-          // footnote is a <p>, so the link is inlined here rather than nested
-          // illegally — same URL, same followable link, no hydration mismatch.
           <>
-            Companies appear here once they have repeat insider activity or a
-            written analysis on file. Logos provided by{" "}
-            <a
-              className="font-medium transition-colors hover:text-foreground"
-              href="https://logo.dev"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Logo.dev
-            </a>
-            .
+            <p>
+              Companies appear here once they have repeat insider activity or a
+              written analysis on file.
+            </p>
+            <LogoDevAttribution className="mt-2 text-[11px] leading-[1.6] text-foreground/50" />
           </>
         }
         loading={companies === null}
-        skeleton={<SeoSkeleton rows={10} variant="ruled-list" />}
+        skeleton={<CompaniesSkeleton />}
         standfirst={standfirst}
         title={`Every ${market} company with ${noun}`}
         width="wide"

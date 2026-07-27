@@ -7,7 +7,8 @@ import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { MarketSwitcher } from "@/components/market-switcher";
-import { APP_STORE_URLS, storeUrlForMarketId } from "@/lib/app-store";
+import { appHrefForMarket } from "@/lib/app-store";
+import { useAppHandoff } from "@/components/app-handoff-modal";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import {
   marketDashboardPath,
@@ -24,8 +25,11 @@ export const Navbar = () => {
   // Android), with the UK app as the fallback where a market-specific listing
   // isn't live.
   const dashboardHref = marketHref(market, marketDashboardPath(market));
-  const downloadHref =
-    storeUrlForMarketId(market.id, platform) ?? APP_STORE_URLS.uk;
+  const downloadHref = appHrefForMarket(market.id, platform);
+  // Desktop clicks get the handoff modal (pitch + QR + store choice) instead
+  // of landing cold on a store page they can't install from; mobile taps keep
+  // the direct store link.
+  const handoff = useAppHandoff(market.id, downloadHref, `Nav ${market.id}`);
 
   // Scroll-revealed download CTA: fades in once the user scrolls past the hero,
   // fades back out at the top.
@@ -141,13 +145,15 @@ export const Navbar = () => {
             )}
             data-ga-event="cta_nav_download_app"
             data-ga-label={`Nav ${market.id}`}
-            href={downloadHref}
+            href={handoff.href}
             rel="noopener noreferrer"
             target="_blank"
+            onClick={handoff.onClick}
           >
             <StoreGlyph className="h-3.5 w-3.5 shrink-0" />
             Download app
           </a>
+          {handoff.modal}
           {/* /api pins itself dark (see lib/use-pinned-theme.ts), so the
               toggle would be a control that visibly does nothing. */}
           {!isPinnedTheme && <ThemeSwitch />}

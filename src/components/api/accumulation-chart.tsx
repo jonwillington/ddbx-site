@@ -62,18 +62,94 @@ const SESSIONS = 90;
 const CHART_HEIGHT = 320;
 
 /** Illustrative close series: a long slide into a trough around session 44,
- *  then a recovery that finishes above where it started. Generated from a
- *  closed form rather than typed out so the shape stays editable in one place,
- *  and deterministic so it can't differ between renders. */
-const PRICES = Array.from({ length: SESSIONS }, (_, i) => {
-  const base = i <= 44 ? 118 - 44 * (i / 44) : 74 + 78 * ((i - 44) / 45);
-  const wobble =
-    2.4 * Math.sin(i * 1.7) +
-    1.2 * Math.sin(i * 0.55) +
-    0.8 * Math.sin(i * 3.1);
+ *  then a recovery that finishes above where it started.
+ *
+ *  The first version was a closed form — two straight ramps plus stacked
+ *  sines — and it looked like one: equal ripples on a visible period, no
+ *  gaps, the same calm in the capitulation as in the recovery, and a 45-day
+ *  rally that never once retraced. A chart that synthetic undercuts the chip
+ *  next to it: "illustrative" should mean "not a real issuer", not "not a
+ *  real market".
+ *
+ *  So the shape is authored the way a price actually moves: swing anchors —
+ *  lower highs and failed bounces on the way down, a capitulation gap into
+ *  the trough, pullbacks and a stall inside the recovery — interpolated and
+ *  then roughened with small seeded noise, snapped to half-penny ticks.
+ *  The anchors are the editable part; the trough must stay at an index the
+ *  BUYS straddle, and the last anchor must stay above the price at FIRST or
+ *  the green segment starts lying (see the colour rule above).
+ *
+ *  Deterministic by construction — fixed anchors, fixed seed — so it cannot
+ *  differ between renders. */
+const ANCHORS: Array<[session: number, price: number]> = [
+  [0, 118],
+  [6, 113.5],
+  [11, 115.5], // failed bounce — the first lower high
+  [18, 104],
+  [24, 106.5], // second bounce, weaker
+  [29, 96],
+  [34, 88],
+  [38, 79.5],
+  [41, 83.5], // dead-cat before the flush
+  [44, 73], // capitulation low; BUYS straddle this index
+  [47, 79],
+  [50, 76.5], // retest of the low
+  [55, 88],
+  [60, 97],
+  [63, 92.5], // first pullback of the recovery
+  [68, 104],
+  [72, 115],
+  [75, 110.5], // second pullback
+  [80, 126],
+  [84, 133.5],
+  [87, 143],
+  [89, 148],
+];
 
-  return Math.round((base + wobble) * 100) / 100;
-});
+/** mulberry32 — a tiny seeded PRNG, so the roughness is fixed at build time. */
+function mulberry32(seed: number): () => number {
+  let a = seed | 0;
+
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const PRICES = (() => {
+  const rand = mulberry32(11);
+  // Box–Muller: uniform pairs -> standard normal, for bell-shaped daily noise.
+  const gauss = () => {
+    const u = Math.max(rand(), 1e-9);
+
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rand());
+  };
+
+  const out: number[] = [];
+  let seg = 0;
+
+  for (let i = 0; i < SESSIONS; i += 1) {
+    while (seg < ANCHORS.length - 2 && ANCHORS[seg + 1][0] <= i) seg += 1;
+    const [s0, p0] = ANCHORS[seg];
+    const [s1, p1] = ANCHORS[seg + 1];
+    const base = p0 + (p1 - p0) * ((i - s0) / (s1 - s0));
+    // Rougher while it's falling apart than while it's grinding back — the
+    // asymmetry is half of what makes a drawdown look like one. Anchor
+    // sessions stay exact so the trough and the endpoint can't drift.
+    const isAnchor = i === s0 || i === s1;
+    const vol = isAnchor ? 0 : i <= 44 ? 0.011 : 0.007;
+    const noisy = base * (1 + vol * gauss());
+
+    // Half-penny ticks: real small-cap closes are discrete, not continuous.
+    out.push(Math.round(noisy * 2) / 2);
+  }
+
+  return out;
+})();
 
 /** Session index -> ISO date. Fixed start so the axis never moves. */
 const START = Date.UTC(2026, 1, 2);

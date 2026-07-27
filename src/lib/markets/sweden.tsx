@@ -28,7 +28,7 @@ import { buildMarketFaq } from "@/lib/markets/faq";
 import { api } from "@/lib/api";
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 import { AnalysisSection } from "@/components/analysis-section";
-import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
+import { EuWaitlistOverlay } from "@/components/discretion/eu-waitlist-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { DisclosureSection } from "@/components/disclosure-section";
 import { DetailField } from "@/components/market/detail-field";
@@ -573,18 +573,9 @@ function useSwedenGating(): GatingInfo {
   };
 }
 
-const SwedenAnalysisOverlay = () => (
-  <BlurredAnalysisOverlay
-    benefits={[
-      "Full thesis and risk breakdown on each PDMR buy",
-      "Deeper context behind the filing and instrument",
-      "Follow new insider disclosures as they arrive",
-      "The rating checklist behind every signal",
-    ]}
-    body="You've used today's free web unlock. Open the app for full analysis on every Swedish filing."
-    marketId="se"
-  />
-);
+// The truthful gate for an app-less market: no store badges (they resolved
+// to the UK app, which is not this product), but an EU-app registration.
+const SwedenAnalysisOverlay = () => <EuWaitlistOverlay marketId="se" />;
 
 /* ─── MarketConfig ───────────────────────────────────────────────────── */
 

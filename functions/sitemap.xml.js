@@ -32,6 +32,7 @@ import {
   BOARD_EARLIEST_YEAR,
 } from "../shared/leaderboard.js";
 import { reportPath } from "../shared/months.js";
+import { fetchDealingsWindow } from "../shared/dealings-feed.js";
 import {
   sectorMeetsBar,
   sectorPath,
@@ -58,7 +59,6 @@ const ROUTES_BY_HOST = {
     "/brokers",
     "/developers",
     "/companies",
-    "/reports",
     "/sectors",
     "/biggest-buys",
     "/learn",
@@ -67,7 +67,6 @@ const ROUTES_BY_HOST = {
     "/",
     "/congress",
     "/companies",
-    "/reports",
     "/sectors",
     "/biggest-buys",
     "/learn",
@@ -176,27 +175,28 @@ async function reportEntries(host) {
  *
  *  Derived from live data rather than hardcoded to the 11 ICB values: a sector
  *  with almost no disclosed activity is a stub, and which sectors are quiet
- *  changes month to month without a deploy. Same threshold the page and its
- *  pre-render apply, so a sector is never advertised here and withheld there. */
+ *  changes month to month without a deploy. Same threshold — and the same
+ *  paged window — the page and its pre-render apply, so a sector is never
+ *  advertised here and withheld there. When the window can't be fully covered
+ *  we emit nothing rather than a half-computed set. */
 async function sectorEntries(host) {
   const market = COMPANY_MARKET_BY_HOST[host];
 
   if (!market) return [];
   try {
-    const feed = market === "US" ? "us-dealings" : "dealings";
-    const since = windowStart(new Date());
-    const res = await fetch(`${API_BASE}/${feed}?since=${since}&limit=1000`, {
-      headers: { accept: "application/json" },
+    const { dealings, complete } = await fetchDealingsWindow({
+      apiBase: API_BASE,
+      market,
+      since: windowStart(new Date()),
       cf: {
         cacheEverything: true,
         cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
       },
     });
 
-    if (!res.ok) return [];
-    const body = await res.json();
+    if (!complete) return [];
 
-    return sectorRollup(body.dealings ?? [])
+    return sectorRollup(dealings)
       .filter(sectorMeetsBar)
       .map((row) => sectorPath(row.sector.slug));
   } catch {
@@ -303,7 +303,12 @@ export async function onRequestGet(context) {
     );
   }
   paths.push(...(await companyEntries(host)));
-  paths.push(...(await reportEntries(host)));
+  // `/reports` rides with the month entries: the index pre-render noindexes an
+  // empty archive (US today), and advertising a URL we then decline to index
+  // is the one thing the sitemap must not do.
+  const reports = await reportEntries(host);
+
+  if (reports.length > 0) paths.push("/reports", ...reports);
   paths.push(...(await sectorEntries(host)));
   // Glossary entries appear only in their owning host's sitemap — the whole
   // point of the ownership rule is that no entry exists at two URLs.

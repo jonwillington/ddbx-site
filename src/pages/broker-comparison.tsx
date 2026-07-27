@@ -227,9 +227,15 @@ export default function BrokerComparisonPage() {
           pair.a.badges.includes(c.badge) || pair.b.badges.includes(c.badge),
       )
     : CATEGORIES.slice(0, 3);
+  // The fallback set isn't "guides these two appear in" — neither platform is
+  // in hand in that branch — so the heading has to describe the list it labels.
+  const guidesHeading = pair ? "Guides these two appear in" : "Broker guides";
 
   return (
-    <DefaultLayout drawerRight>
+    // hideMobileCta for the same reason broker-detail passes it: the pinned app
+    // bar would sit over the verdict's two Visit buttons on a phone. The
+    // terminal band still carries the app ask, unpinned.
+    <DefaultLayout drawerRight hideMobileCta>
       {/* The rail carries the two platforms under discussion, not the site's
           general recommendations — on this page they're the only two that
           matter. */}
@@ -254,6 +260,7 @@ export default function BrokerComparisonPage() {
           media: "none",
         }}
         eyebrow="Broker guide"
+        footnote={<BrokerComplianceNote />}
         loading={brokers === null}
         notice={<BrokerDisclosure />}
         skeleton={<ComparisonSkeleton />}
@@ -371,25 +378,25 @@ export default function BrokerComparisonPage() {
             }))}
           />
 
-          <p className={`mt-7 ${R.subhead}`}>Guides these two appear in</p>
-          <RelatedCards
-            className="mt-2.5"
-            cols={2}
-            items={relevantGuides.map((c) => ({
-              to: categoryPath(c.slug),
-              title: c.h1,
-              description: c.description,
-            }))}
-          />
+          {/* Both halves gated together: RelatedCards returns null on an empty
+              list, so a pair whose platforms carry no category badge used to
+              get a heading with nothing under it. */}
+          {relevantGuides.length > 0 && (
+            <>
+              <p className={`mt-7 ${R.subhead}`}>{guidesHeading}</p>
+              <RelatedCards
+                className="mt-2.5"
+                cols={2}
+                items={relevantGuides.map((c) => ({
+                  to: categoryPath(c.slug),
+                  title: c.h1,
+                  description: c.description,
+                }))}
+              />
+            </>
+          )}
         </PageSection>
       </SeoPageShell>
-
-      {/* Kept as the component rather than folded into the shell's footnote:
-          the disclaimers are a compliance surface and shouldn't quietly change
-          size or ink to fit a layout slot. Below the band, at the true bottom. */}
-      <div className={`mx-auto w-full border-t ${R.rule} pb-16 pt-6`}>
-        <BrokerComplianceNote />
-      </div>
     </DefaultLayout>
   );
 }

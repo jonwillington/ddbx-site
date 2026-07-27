@@ -35,7 +35,10 @@ export declare function yearBounds(
 ): { since: string; until: string } | null;
 export declare function leaderboardPath(year?: string | number | null): string;
 /** `earliest` is anything whose first four characters are the year — a date
- *  string ("2026-01-01") or the year itself (BOARD_EARLIEST_YEAR). */
+ *  string ("2026-01-01") or the year itself (BOARD_EARLIEST_YEAR). The current
+ *  year is omitted until February: on 1 January its board is empty and the
+ *  pre-render noindexes it, so neither the archive cards nor the sitemap should
+ *  be advertising it yet. */
 export declare function archiveYears(
   earliest: string | number | null | undefined,
   today: Date | string | number,

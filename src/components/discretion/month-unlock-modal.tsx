@@ -12,7 +12,7 @@ import { useMediaQuery } from "@/lib/use-media-query";
  *  stay visible as headers so the depth of the archive is obvious, but
  *  clicking one opens this instead of expanding: how many trades the month
  *  holds and one App Store CTA. Bottom sheet on mobile, centered modal on
- *  desktop — same chrome split as UnlockConfirmModal. */
+ *  desktop — same chrome split the old unlock-confirm dialog used. */
 export function MonthUnlockModal({
   open,
   onClose,

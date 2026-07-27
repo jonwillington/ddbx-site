@@ -9,7 +9,21 @@
 // The links are the point. Without them the ~575 company pages would be
 // sitemap-only orphans — discoverable in principle, weakly signalled in
 // practice. This is the hub in the hub-and-spoke.
+//
+// The head/breadcrumb/escape/fetch primitives come from shared/prerender.js.
+// This Function used to carry private copies of all of them, which is how its
+// cleanCompany() ended up a fix behind src/lib/company.ts (see below) and how
+// it ended up the only pre-rendered page in the family emitting no
+// BreadcrumbList — while functions/company/[key].js names it as a crumb.
 
+import {
+  apexHost,
+  esc,
+  fetchJson,
+  noindex,
+  page,
+  renderInto,
+} from "../shared/prerender.js";
 import { brandTitle } from "../shared/seo.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
@@ -20,36 +34,35 @@ const FILING_NOUN = { UK: "director dealings", US: "insider trading" };
 /** Mirrors meetsContentBar in functions/sitemap.xml.js and companies.tsx. */
 const meetsContentBar = (c) => c.deals >= 2 || c.analysed > 0;
 
-function apexHost(hostname) {
-  const host = String(hostname ?? "").toLowerCase();
+/** Display name, cleaned of the noise each source appends. Mirrors
+ *  `cleanCompanyName` in src/lib/company.ts and the copy in
+ *  functions/company/[key].js — including the loop.
+ *
+ *  The single-pass version that used to live here is the same drift that copy
+ *  documents: names routinely carry TWO trailing parentheticals ("Jardine
+ *  Matheson Holdings Ltd (Singapore Reg) (JAR)"), so one pass stripped only the
+ *  ticker and the crawler was served a name the reader never sees — and the
+ *  injected list was alphabetised by that different string. */
+const cleanCompany = (c) => {
+  let out = String(c ?? "").trim();
 
-  return host.startsWith("www.") ? host.slice(4) : host;
-}
+  for (;;) {
+    const next = out
+      .replace(/\s*\([^)]*\)\s*$/, "")
+      .replace(/\s*\/[A-Z]{2}\/\s*$/, "")
+      .trim();
 
-function esc(s) {
-  return String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-const cleanCompany = (c) =>
-  String(c ?? "")
-    .replace(/\s*\([^)]*\)\s*$/, "")
-    .replace(/\s*\/[A-Z]{2}\/\s*$/, "")
-    .trim();
+    // Never strip the whole name away: a company literally called "(BLANK)"
+    // should render as it arrived rather than as an empty string.
+    if (next === out || next === "") return out;
+    out = next;
+  }
+};
 
 const tickerToSlug = (key) =>
   String(key ?? "")
     .replace(/\.L$/i, "")
     .toLowerCase();
-
-const setContent = (value) => ({
-  element(el) {
-    el.setAttribute("content", value);
-  },
-});
 
 function prerender(market, companies) {
   const items = companies
@@ -63,10 +76,8 @@ function prerender(market, companies) {
     )
     .join("");
 
-  return `<div style="max-width:900px;margin:0 auto;padding:32px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1E1506">
-  <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">Every ${esc(market)} company with ${esc(FILING_NOUN[market])}</h1>
-  <ul style="font-size:14px;line-height:1.9;columns:2">${items}</ul>
-</div>`;
+  return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">Every ${esc(market)} company with ${esc(FILING_NOUN[market])}</h1>
+  <ul style="font-size:14px;line-height:1.9;columns:2">${items}</ul>`);
 }
 
 export async function onRequestGet(context) {
@@ -75,49 +86,25 @@ export async function onRequestGet(context) {
   const market = MARKET_BY_HOST[host];
   const shell = await context.next();
 
-  // ddbx.eu has no company pages — the SPA renders what it renders for an
-  // unknown route, and we keep it out of the index.
-  if (!market) {
-    return new HTMLRewriter()
-      .on("head", {
-        element(el) {
-          el.append('<meta name="robots" content="noindex, follow">', {
-            html: true,
-          });
-        },
-      })
-      .transform(shell);
-  }
+  // ddbx.eu has no company pages, and neither does a preview host — the SPA
+  // renders what it renders for an unknown route, and we keep it out of the
+  // index. /companies is on the middleware's skip list, so this Function is the
+  // only thing that can set robots on this URL.
+  if (!market) return noindex(shell);
 
-  let companies = null;
+  const data = await fetchJson(`${API_BASE}/companies?market=${market}`, 3600);
+  const companies = (data?.companies ?? []).filter(
+    (c) => c.key && meetsContentBar(c),
+  );
 
-  try {
-    const res = await fetch(`${API_BASE}/companies?market=${market}`, {
-      headers: { accept: "application/json" },
-      // cacheTtlByStatus, not a blanket cacheTtl: `cacheEverything` with a flat
-      // TTL pins whatever came back — including a 404 served while a Worker
-      // deploy rolls out — for the full hour.
-      cf: {
-        cacheEverything: true,
-        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
-      },
-    });
-
-    if (res.ok) {
-      const body = await res.json();
-
-      companies = (body.companies ?? []).filter(
-        (c) => c.key && meetsContentBar(c),
-      );
-    }
-  } catch {
-    /* fall through — the SPA fetches the list for itself */
-  }
-
-  // No pre-render without data, but the page still works: React fetches the
-  // same endpoint on mount. Nothing to noindex — the URL is legitimate either
-  // way.
-  if (!companies) return shell;
+  // No data — a failed fetch, or nothing clearing the content bar. The page
+  // still works (React fetches the same endpoint on mount), but without this
+  // the response ships index.html's static <head>: the UK homepage title, the
+  // UK description, no canonical and no og:url, which on ddbx.us means the US
+  // company index published under a UK title. Same posture as
+  // functions/sectors/index.js — the URL is legitimate, a bare mismatched
+  // shell is not worth indexing.
+  if (companies.length === 0) return noindex(shell);
 
   const canonical = `https://${host}/companies`;
   const title = brandTitle(
@@ -125,32 +112,14 @@ export async function onRequestGet(context) {
   );
   const description = `Browse ${companies.length} ${market} companies whose ${market === "UK" ? "directors" : "insiders"} have bought shares, with the filings, ratings and company stats for each.`;
 
-  return new HTMLRewriter()
-    .on("title", {
-      element(el) {
-        el.setInnerContent(title);
-      },
-    })
-    .on('meta[name="description"]', setContent(description))
-    .on('meta[property="og:title"]', setContent(title))
-    .on('meta[property="og:description"]', setContent(description))
-    .on("head", {
-      element(el) {
-        el.append(
-          [
-            `<link rel="canonical" href="${esc(canonical)}">`,
-            `<meta property="og:url" content="${esc(canonical)}">`,
-            `<meta name="twitter:title" content="${esc(title)}">`,
-            `<meta name="twitter:description" content="${esc(description)}">`,
-          ].join("\n"),
-          { html: true },
-        );
-      },
-    })
-    .on("#root", {
-      element(el) {
-        el.setInnerContent(prerender(market, companies), { html: true });
-      },
-    })
-    .transform(shell);
+  return renderInto(shell, {
+    title,
+    description,
+    canonical,
+    breadcrumbs: [
+      { name: `${market} ${FILING_NOUN[market]}`, item: `https://${host}/` },
+      { name: "Companies", item: canonical },
+    ],
+    body: prerender(market, companies),
+  });
 }

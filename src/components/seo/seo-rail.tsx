@@ -1,6 +1,6 @@
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-import { BUTTON_RADIUS } from "@/components/button";
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { StoreButtons } from "@/components/store-buttons";
 import { BrokerAside } from "@/components/brokers/broker-aside";
 
@@ -62,9 +62,6 @@ export function SeoRail({
   return <AppPromoAside marketId={marketId} placement={placement} />;
 }
 
-/** Non-UK rail: the app, since there's no affiliate directory for the market.
- *  Same fixed shell as BrokerAside so the two are interchangeable and the
- *  gutter maths doesn't change. */
 /** Market home per rail market — the one link in the list that isn't shared
  *  across hosts. Hardcoding "/us" here once sent Swedish readers on
  *  /se/directors/:id to the US market home. */
@@ -74,6 +71,17 @@ const MARKET_HOME: Record<string, string> = {
   se: "/se",
   nl: "/nl",
 };
+
+/** True when the rail link points at the page the reader is already on.
+ *  Market homes (`/`, `/us`, `/se`, `/nl`) match exactly — a prefix match on
+ *  `/us` would hide "Latest filings" on every `/us/directors/:id` page. */
+function isSelfLink(pathname: string, href: string): boolean {
+  if (href === "/" || Object.values(MARKET_HOME).includes(href)) {
+    return pathname === href || pathname === `${href}/`;
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 function AppPromoAside({
   marketId,
@@ -89,22 +97,18 @@ function AppPromoAside({
     ["Sectors", "/sectors"],
     ["Biggest buys", "/biggest-buys"],
     ["Glossary", "/learn"],
-    // A rail link to the page it's on is furniture pointing at itself.
-  ].filter(
-    ([, href]) =>
-      !(href === "/" ? pathname === "/" : pathname.startsWith(href)),
-  );
+  ].filter(([, href]) => !isSelfLink(pathname, href));
 
   return (
-    <aside className="fixed bottom-0 right-0 top-0 z-20 hidden w-80 flex-col border-l border-[#e8e0d5] bg-[#faf7f2] dark:border-separator dark:bg-surface lg:flex">
-      <div className="flex h-16 shrink-0 items-center border-b border-[#e8e0d5] px-4 dark:border-separator">
+    <aside className="fixed bottom-0 right-0 top-0 z-20 hidden w-80 flex-col border-l border-hairline bg-[#faf7f2] dark:border-separator dark:bg-surface lg:flex">
+      <div className="flex h-16 shrink-0 items-center border-b border-hairline px-4 dark:border-separator">
         <h2 className="text-sm font-semibold text-foreground/80">
           Get the app
         </h2>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-        <div className="rounded-xl border border-[#e8e0d5] bg-background/40 p-4 dark:border-separator">
+        <div className="rounded-xl border border-hairline bg-background/40 p-4 dark:border-separator">
           <p className="text-[13px] font-semibold text-foreground">
             Every filing, the day it files
           </p>
@@ -118,7 +122,7 @@ function AppPromoAside({
           </p>
 
           <StoreButtons
-            buttonClassName={`inline-flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} bg-[#1a140d] px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#2a2118] dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90`}
+            buttonClassName={`inline-flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-4 py-2.5 text-[13px] font-semibold transition-colors`}
             className="mt-4"
             gaEvent="cta_seo_rail"
             gaLabel={placement}
@@ -132,12 +136,12 @@ function AppPromoAside({
         <ul className="mt-4 space-y-0.5">
           {links.map(([label, href]) => (
             <li key={href}>
-              <a
+              <Link
                 className="block rounded-lg px-2 py-2 text-[13px] font-medium text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.05]"
-                href={href}
+                to={href}
               >
                 {label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>

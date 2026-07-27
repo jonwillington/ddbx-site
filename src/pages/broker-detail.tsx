@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-  ArrowRightIcon,
   CheckIcon,
   ChevronDownIcon,
   ShieldCheckIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+
+import {
+  CATEGORIES,
+  categoryMeetsBar,
+  categoryPath,
+} from "../../shared/broker-categories.js";
 
 import { BrokerNavAside } from "@/components/brokers/broker-aside";
 import {
@@ -20,6 +25,7 @@ import {
 import { CostBars, R, SourceNote } from "@/components/brokers/broker-page-ui";
 import { BUTTON_SELECTED } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
+import { RelatedCards } from "@/components/seo/related-cards";
 import appShots from "@/data/broker-app-screenshots.json";
 import { api, type BrokerOffer } from "@/lib/api";
 import {
@@ -178,6 +184,13 @@ function BrokerReview({
   ];
   const faqs = makeFaqs(b);
   const related = brokers.filter((item) => item.slug !== b.slug).slice(0, 5);
+  // The badge is what makes a platform a member of a category ranking, so it's
+  // the honest test for "appears in". categoryMeetsBar keeps the review from
+  // pointing at a guide that's below MIN_BROKERS, which the pre-render
+  // noindexes and the page renders as an apology.
+  const guides = CATEGORIES.filter(
+    (c) => b.badges.includes(c.badge) && categoryMeetsBar(c, brokers),
+  );
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -278,24 +291,45 @@ function BrokerReview({
                 </Section>
               )}
 
-              {related.length > 0 && (
+              {(related.length > 0 || guides.length > 0) && (
                 <Section title="More reviews">
-                  <ul className="grid gap-1 sm:grid-cols-2">
-                    {related.map((item) => (
-                      <li key={item.slug}>
-                        <a
-                          className="group -mx-3 flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
-                          href={`/brokers/${item.slug}`}
-                        >
-                          <BrokerLogo broker={item} size={28} />
-                          <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-foreground/75 group-hover:text-foreground">
-                            {item.name}
-                          </span>
-                          <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-foreground/30 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground/60" />
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+                  {related.length > 0 && (
+                    <>
+                      <p className={R.subhead}>Other platforms</p>
+                      <RelatedCards
+                        className="mt-2.5"
+                        cols={2}
+                        items={related.map((item) => ({
+                          to: `/brokers/${item.slug}`,
+                          title: item.name,
+                          description: item.tagline,
+                          media: <BrokerLogo broker={item} size={22} />,
+                        }))}
+                      />
+                    </>
+                  )}
+
+                  {/* The other direction of the guide→review link: a reader who
+                      landed on the review can reach the rankings this platform
+                      is in, which nothing else on the page offered. */}
+                  {guides.length > 0 && (
+                    <>
+                      <p
+                        className={`${related.length > 0 ? "mt-7 " : ""}${R.subhead}`}
+                      >
+                        Guides {b.name} appears in
+                      </p>
+                      <RelatedCards
+                        className="mt-2.5"
+                        cols={2}
+                        items={guides.map((c) => ({
+                          to: categoryPath(c.slug),
+                          title: c.h1,
+                          description: c.description,
+                        }))}
+                      />
+                    </>
+                  )}
                 </Section>
               )}
 

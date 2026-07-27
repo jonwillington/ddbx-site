@@ -133,8 +133,11 @@ export async function onRequestGet(context) {
     title,
     description: category.description,
     canonical,
+    // "Broker reviews" is the crumb the hydrated page shows (page-shell's
+    // `crumbs`, and the review page's own nav), and structured data has to name
+    // what the reader sees.
     breadcrumbs: [
-      { name: "UK platforms", item: `https://${CANONICAL_HOST}/brokers` },
+      { name: "Broker reviews", item: `https://${CANONICAL_HOST}/brokers` },
       { name: category.h1, item: canonical },
     ],
     body: prerender(category, ranked, all.length),

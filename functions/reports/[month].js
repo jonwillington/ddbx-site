@@ -33,17 +33,23 @@ function apexHost(hostname) {
   return host.startsWith("www.") ? host.slice(4) : host;
 }
 
+// The rounding rules of `formatGbp(v, { compact: true })` in
+// src/lib/performance/format.ts, hand-mirrored because a Pages Function can't
+// import .ts. That file is canonical: the sector table, the style split and the
+// facts line all state figures the page states too, and rounding them
+// differently here handed the crawler a different number for the same fact.
 const money = (v) => {
+  if (v == null) return "—";
   const n = Number(v);
 
-  if (!isFinite(n) || n === 0) return "—";
-  if (n >= 1_000_000) {
-    const m = n / 1_000_000;
+  if (!isFinite(n)) return "—";
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "−" : "";
 
-    return `£${m >= 10 ? Math.round(m) : m.toFixed(1).replace(/\.0$/, "")}m`;
-  }
+  if (abs >= 1_000_000) return `${sign}£${(abs / 1_000_000).toFixed(1)}m`;
+  if (abs >= 1_000) return `${sign}£${(abs / 1_000).toFixed(1)}k`;
 
-  return `£${Math.round(n / 1000)}k`;
+  return `${sign}£${Math.round(abs).toLocaleString("en-GB")}`;
 };
 
 const pct = (v) =>

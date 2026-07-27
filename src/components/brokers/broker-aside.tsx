@@ -253,14 +253,14 @@ export function BrokerAside({
                             {/* The live sign-up offer is the click-worthy hook —
                               fees live on the review. Rows without one stay
                               single-line so the promos stand out. */}
-                            {b.offer_headline && (
+                            {isOfferLive(b) && b.offer_headline ? (
                               <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold leading-4 text-brand-brown dark:text-[#e7d4bf]">
                                 <GiftIcon className="h-3 w-3 shrink-0" />
                                 <span className="truncate">
                                   {b.offer_headline}
                                 </span>
                               </span>
-                            )}
+                            ) : null}
                           </span>
                         </a>
                       </li>

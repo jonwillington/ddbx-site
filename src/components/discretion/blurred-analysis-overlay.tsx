@@ -2,12 +2,14 @@ import { LockClosedIcon } from "@heroicons/react/20/solid";
 
 import { StoreBadges } from "@/components/app-store-badge";
 import { CompanyLogo } from "@/components/company-logo";
-import { playStoreUrlForMarketId } from "@/lib/app-store";
+import { PRICING, formatPrice } from "@/lib/pricing";
 
 const DEFAULT_BENEFITS = [
   "Full breakdown on every director deal — thesis, evidence, risks",
   "Real-time alerts the moment a director buys",
-  "Track every director's record across the FTSE",
+  // Market-neutral: this overlay serves the US and EU gates too, where
+  // "across the FTSE" would be the wrong index.
+  "Track every insider's record over time",
 ];
 
 interface BlurredAnalysisOverlayProps {
@@ -26,19 +28,21 @@ interface BlurredAnalysisOverlayProps {
 
 export function BlurredAnalysisOverlay({
   title = "Unlock the full analysis",
-  body = "You've used today's free analysis on the web. The DDBX app gives you the full read on every deal — for free.",
+  body = "You've used today's free analysis on the web. The DDBX app gives you the full read on every deal.",
   benefits = DEFAULT_BENEFITS,
   footnote,
   ticker,
   marketId = "uk",
 }: BlurredAnalysisOverlayProps) {
-  // "iOS & Android" only where the market genuinely ships on both; everywhere
-  // else the badges resolve to the (iOS-only) UK app, so say "iOS".
+  // Trial terms come from the pricing module — the one place on the web that
+  // states a price. This footnote used to say "Free on iOS & Android · No
+  // account required", which was false twice over: the app is a paid
+  // subscription with a trial, and it asks for an account. The conversion
+  // step must not promise what checkout then contradicts.
+  const pricing = PRICING[marketId === "us" ? "us" : "uk"];
   const resolvedFootnote =
     footnote ??
-    (playStoreUrlForMarketId(marketId)
-      ? "Free on iOS & Android · No account required"
-      : "Free on iOS · No account required");
+    `Free for ${pricing.trialDays} days, then ${formatPrice(pricing, pricing.monthly)}/month. Cancel any time.`;
 
   return (
     // Just the card — the caller positions it (the gated drawer centers it in

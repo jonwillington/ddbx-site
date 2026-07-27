@@ -27,7 +27,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { DailySummarySheet } from "./daily-summary-banner";
 import { MarketChartModeToggle } from "./market-chart-mode-toggle";
 import { MarketDetailDrawer } from "./market-detail-drawer";
-import { UnlockConfirmModal } from "./unlock-confirm-modal";
 import { MarketExplainerExperience } from "./market-explainer-experience";
 import { MarketExplainerSheet } from "./market-explainer-sheet";
 import { MarketFilterBar, type MarketViewMode } from "./market-filter-bar";
@@ -72,11 +71,7 @@ import {
 } from "@/components/monthly/monthly-utils";
 import { MonthUnlockModal } from "@/components/discretion/month-unlock-modal";
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
-import {
-  APP_STORE_URLS,
-  appStoreUrlForMarketId,
-  storeUrlForMarketId,
-} from "@/lib/app-store";
+import { appHrefForMarket, appStoreUrlForMarketId } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import { buildChannelPerformance } from "@/lib/performance/channel-summary";
 import { isSignalDealing } from "@/lib/markets/types";
@@ -97,8 +92,6 @@ import {
  *  expanded in the historical list. Older days collapse to a single deal plus
  *  an "X more deals" row that nudges toward the app. */
 const REAL_HISTORY_DAYS = 2;
-const FIRST_UNLOCK_CONFIRM =
-  "You can unlock one full analysis drawer per day on the web. Open this filing's full analysis now?";
 
 /** Hand-drawn-style curved arrow after the timeline title — sweeps down
  *  toward the rows like a margin annotation, instead of the flat straight
@@ -297,10 +290,11 @@ export function MarketPage<W>({
     dealings,
   ]);
   // Store link the in-app unlock CTAs point to, resolved for the visitor's
-  // device (Android → Play, else App Store) with the UK app as the fallback.
+  // device (Android → Play, else App Store). When the market has no truthful
+  // listing for this platform, the CTA lands on the market's /download page
+  // — never another market's app.
   const platform = useDevicePlatform();
-  const channelAppHref =
-    storeUrlForMarketId(config.id, platform) ?? APP_STORE_URLS.uk;
+  const channelAppHref = appHrefForMarket(config.id, platform);
   const channelDiscretion = gating?.enabled ?? false;
   /** Contributor cards deep-link into the deal drawer. UK has a dedicated
    *  /dealings/:id route; other markets stay on their own page and open the
@@ -1080,24 +1074,14 @@ export function MarketPage<W>({
     dayKey < todayIso &&
     !recentRealDays.has(dayKey);
 
-  // Key of the filing awaiting the "spend today's free unlock" confirmation.
-  // Non-null drives our own confirm sheet/modal (UnlockConfirmModal) in place
-  // of a native window.confirm; null when nothing is pending.
-  const [pendingUnlockKey, setPendingUnlockKey] = useState<string | null>(null);
+  // The first click opens the analysis directly — no confirmation step. The
+  // old UnlockConfirmModal asked ("Use today's free analysis?", store button
+  // primary) BEFORE any analysis had been shown, which put the ask ahead of
+  // the proof. The boundary is still legible: the drawer brackets the freebie
+  // with FreeAnalysisNotice, and subsequent opens hit the gated overlay.
   const openDealing = useCallback(
-    (d: MarketDealing<W>) => {
-      if (
-        previewMode &&
-        unlocksLeftToday > 0 &&
-        (gating?.viewedCount ?? 0) === 0
-      ) {
-        setPendingUnlockKey(d.key);
-
-        return;
-      }
-      setSelectedKey(d.key);
-    },
-    [gating?.viewedCount, previewMode, setSelectedKey, unlocksLeftToday],
+    (d: MarketDealing<W>) => setSelectedKey(d.key),
+    [setSelectedKey],
   );
 
   // The prominent ("suggested") rows of a day. When the market opts into
@@ -1638,6 +1622,7 @@ export function MarketPage<W>({
                                         config.isSignal ?? isSignalDealing
                                       }
                                       locale={config.locale}
+                                      marketId={config.id}
                                       returnPctOf={returnPctOf}
                                       showLogo={logosEnabled}
                                       variant={dayIdx % 2}
@@ -1803,19 +1788,6 @@ export function MarketPage<W>({
         monthLabel={unlockMonth?.label ?? ""}
         open={unlockMonth != null}
         onClose={() => setUnlockMonth(null)}
-      />
-
-      <UnlockConfirmModal
-        appHref={channelAppHref}
-        message={FIRST_UNLOCK_CONFIRM}
-        open={pendingUnlockKey != null}
-        onCancel={() => setPendingUnlockKey(null)}
-        onConfirm={() => {
-          const key = pendingUnlockKey;
-
-          setPendingUnlockKey(null);
-          if (key) setSelectedKey(key);
-        }}
       />
 
       {/* "What are we looking for?" — checklist markets get the full-screen

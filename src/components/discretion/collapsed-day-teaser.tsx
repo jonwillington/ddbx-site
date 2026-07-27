@@ -3,6 +3,7 @@ import type { MarketDealing } from "@/lib/markets/types";
 
 import { useState } from "react";
 
+import { useAppHandoff } from "@/components/app-handoff-modal";
 import { CompanyLogo } from "@/components/company-logo";
 import { DayUnlockSheet } from "@/components/discretion/day-unlock-sheet";
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -73,6 +74,7 @@ const MAX_AVATARS = 5;
 export function CollapsedDayTeaser<W>({
   deals,
   appHref,
+  marketId = "uk",
   fmt,
   isSignal,
   returnPctOf,
@@ -82,6 +84,8 @@ export function CollapsedDayTeaser<W>({
 }: {
   deals: MarketDealing<W>[];
   appHref: string;
+  /** Market whose app the teaser sells — drives the desktop handoff modal. */
+  marketId?: string;
   fmt: PriceFormat;
   isSignal: (d: MarketDealing<W>) => boolean;
   returnPctOf: (d: MarketDealing<W>) => number | null;
@@ -95,6 +99,11 @@ export function CollapsedDayTeaser<W>({
   // app-only) instead of bouncing cold to the App Store; md+ keeps the
   // direct link, where hover already previews the destination.
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const handoff = useAppHandoff(
+    marketId,
+    appHref,
+    `Collapsed day · ${marketId}`,
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // Avatar group: unique companies, the most interesting first (signal buys,
@@ -252,20 +261,27 @@ export function CollapsedDayTeaser<W>({
     "group flex w-full items-center gap-4 px-4 py-5 text-left transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]";
 
   if (isDesktop) {
+    // Desktop clicks get the handoff modal (pitch + QR + store choice)
+    // rather than bouncing cold to a store page a desktop can't install
+    // from; the href stays real for open-in-new-tab and crawlers.
     return (
-      <a
-        aria-label={ariaLabel}
-        className={rowClass}
-        data-ga-event="cta_collapsed_day_view_in_app"
-        data-ga-label={`${teaser.kind} · ${deals.length} deals`}
-        href={appHref}
-        rel="noreferrer"
-        target="_blank"
-      >
-        {text}
-        {cta}
-        {stack}
-      </a>
+      <>
+        <a
+          aria-label={ariaLabel}
+          className={rowClass}
+          data-ga-event="cta_collapsed_day_view_in_app"
+          data-ga-label={`${teaser.kind} · ${deals.length} deals`}
+          href={handoff.href}
+          rel="noreferrer"
+          target="_blank"
+          onClick={handoff.onClick}
+        >
+          {text}
+          {cta}
+          {stack}
+        </a>
+        {handoff.modal}
+      </>
     );
   }
 

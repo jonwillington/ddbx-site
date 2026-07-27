@@ -67,8 +67,9 @@ export function SeoPageShell({
   standfirstSize?: "body" | "lede";
   /** TrackingNotice / truncation caveat slot, directly under the standfirst. */
   notice?: ReactNode;
-  /** The terminal AppCtaBand. Omit (or pass nothing) only where a competing
-   *  ask owns the page end — /compare is the one sanctioned case. */
+  /** The terminal AppCtaBand. Omit only for error / empty boards that should
+   *  not ask (e.g. an invalid year on /biggest-buys). Broker guides pass a
+   *  quiet band with `media: "none"` so the affiliate ask stays primary. */
   cta?: ShellCta | false;
   /** Ruled small print. Always the true bottom, always below the band. */
   footnote?: ReactNode;
@@ -134,7 +135,11 @@ export function SeoPageShell({
         </p>
       ) : null}
 
-      {notice ? <div className="mt-3 max-w-[62ch]">{notice}</div> : null}
+      {notice ? (
+        <div className={width === "wide" ? "mt-3" : "mt-3 max-w-[62ch]"}>
+          {notice}
+        </div>
+      ) : null}
 
       {loading ? (
         (skeleton ?? null)
@@ -154,11 +159,11 @@ export function SeoPageShell({
           ) : null}
 
           {footnote ? (
-            <p
+            <div
               className={`mt-10 border-t ${RULE} pt-6 text-[11px] leading-[1.6] text-foreground/50`}
             >
               {footnote}
-            </p>
+            </div>
           ) : null}
         </>
       )}

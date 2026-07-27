@@ -12,6 +12,11 @@
 //
 // monthly-utils.ts now re-exports from here, so there is still one definition
 // and every existing import keeps working.
+//
+// It also holds REPORT_CONTENTS, the archive's "what's in every report"
+// explainer, for the same reason: the page and the pre-render have to state it
+// word for word, and two copies of a five-entry prose block is a drift waiting
+// to happen.
 
 export const MONTH_NAMES = [
   "January",
@@ -79,3 +84,37 @@ export function slugToMonth(slug) {
 export function reportPath(month) {
   return `/reports/${monthSlug(month)}`;
 }
+
+/** What a reader gets for the click on /reports. Every line names something the
+ *  report page actually renders — the metrics band, the report card, the
+ *  featured write-ups, the sector and style tables, the cluster roster.
+ *
+ *  Read by both src/pages/reports.tsx and functions/reports/index.js so the
+ *  crawler and the reader are given the same explainer. */
+export const REPORT_CONTENTS = [
+  {
+    label: "The month in numbers",
+    description:
+      "How many purchases were disclosed, what they were worth, and how many companies and individual insiders they covered.",
+  },
+  {
+    label: "A report card on the last one",
+    description:
+      "Every buy we featured the previous month, re-marked against the latest close — the ones that went wrong published beside the ones that didn’t.",
+  },
+  {
+    label: "The standout buys, written up",
+    description:
+      "A handful of purchases in full: what happened, whether the value has already gone, and whether there is still a case.",
+  },
+  {
+    label: "Where the money went",
+    description:
+      "The month split by sector and by buy style, with the median return and the median alpha against the benchmark for each slice.",
+  },
+  {
+    label: "Clusters",
+    description:
+      "The companies where two or more insiders bought in the same month — the pattern that reads least like a one-off.",
+  },
+];

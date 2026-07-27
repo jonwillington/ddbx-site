@@ -29,7 +29,7 @@ import { type EuRowGroup, groupRows, isEuSignal } from "@/lib/markets/sweden";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { buildMarketFaq } from "@/lib/markets/faq";
 import { AnalysisSection } from "@/components/analysis-section";
-import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
+import { EuWaitlistOverlay } from "@/components/discretion/eu-waitlist-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
@@ -484,18 +484,9 @@ function useNetherlandsGating(): GatingInfo {
   };
 }
 
-const NetherlandsAnalysisOverlay = () => (
-  <BlurredAnalysisOverlay
-    benefits={[
-      "Full thesis and risk breakdown on each PDMR buy",
-      "Review filing details with cleaner context",
-      "Follow fresh insider disclosures as they land",
-      "The rating checklist behind every signal",
-    ]}
-    body="You've used today's free web unlock. Open the app for full analysis on every Dutch filing."
-    marketId="nl"
-  />
-);
+// The truthful gate for an app-less market: no store badges (they resolved
+// to the UK app, which is not this product), but an EU-app registration.
+const NetherlandsAnalysisOverlay = () => <EuWaitlistOverlay marketId="nl" />;
 
 /* ─── MarketConfig ───────────────────────────────────────────────────── */
 

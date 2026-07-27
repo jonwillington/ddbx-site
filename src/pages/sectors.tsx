@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 
 import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
 import {
+  indexLeadSentence,
   sectorMeetsBar,
   sectorPath,
   sectorRollup,
@@ -41,6 +42,10 @@ export default function SectorsPage() {
   const market = useSectorMarket();
   const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(null);
   const [complete, setComplete] = useState(true);
+  // Third state, distinct from "no rows": an outage used to land the reader on
+  // "no sector has reached 5 disclosed purchases", which is an editorial claim
+  // about the market produced by a failed request.
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -61,9 +66,14 @@ export default function SectorsPage() {
           if (!live) return;
           setRows(r.dealings);
           setComplete(r.complete);
+          setFailed(false);
         },
       )
-      .catch(() => live && setRows([]));
+      .catch(() => {
+        if (!live) return;
+        setRows([]);
+        setFailed(true);
+      });
 
     return () => {
       live = false;
@@ -114,9 +124,11 @@ export default function SectorsPage() {
         notice={
           <>
             <TrackingNotice />
-            {!complete && (
+            {!complete && !failed && (
               // Truncation is invisible unless you say so: the table still
-              // renders and still looks complete.
+              // renders and still looks complete. Suppressed on an outright
+              // failure, where the body says so in full rather than as a
+              // caveat on figures that aren't there.
               <p className={`mt-2 ${R.label} leading-[1.6]`}>
                 We couldn’t load the whole period, so these totals may be
                 missing older purchases.
@@ -124,7 +136,15 @@ export default function SectorsPage() {
             )}
           </>
         }
-        skeleton={<SeoSkeleton rows={11} variant="ruled-list" />}
+        skeleton={
+          // Tiles then rows, because that is the loaded order — a list-only
+          // skeleton let ~110px of totals and the column header pop in above
+          // the ranking on arrival.
+          <>
+            <SeoSkeleton rows={4} variant="stat-tiles" />
+            <SeoSkeleton rows={11} variant="ruled-list" />
+          </>
+        }
         standfirst={
           <>
             Where {market.noun} have been buying their own shares over the last
@@ -132,9 +152,18 @@ export default function SectorsPage() {
             since they were disclosed.
           </>
         }
+        standfirstSize="lede"
         title={<>{market.label} insider buying by sector</>}
       >
-        {publishable.length === 0 ? (
+        {failed ? (
+          // Not "there is nothing here" — we don't know that. The onward cards
+          // below still render, so the reader has somewhere to go.
+          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+            We couldn’t load the filings just now, so there’s no breakdown to
+            show. That’s a fault at our end rather than a quiet twelve months —
+            try again shortly.
+          </p>
+        ) : publishable.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             No sector has reached {MIN_BUYS} disclosed purchases in the last
             twelve months yet, which is the bar for publishing a breakdown. In
@@ -150,11 +179,19 @@ export default function SectorsPage() {
           </p>
         ) : (
           <>
+            {/* The index's thesis in numbers, and the page's meta description,
+                from one function in shared/sectors.js — it used to exist only in
+                the pre-render, so the "led by industrials at £37m" framing was
+                read by crawlers and by no visitor. */}
+            <p className={`mt-8 max-w-[62ch] ${R.body}`}>
+              {indexLeadSentence(publishable, market.id)}
+            </p>
+
             {/* The page's own numbers, before the ranking rather than after it:
                 the reader arrives asking how much of this there is, and the
                 answer was previously only obtainable by adding up eleven rows. */}
             <StatTiles
-              className="mt-8"
+              className="mt-5"
               // "Median alpha" heads a column three lines below this and was
               // previously only explained in the footnote, 900px away.
               note="Median alpha, in the column below, is the middle buy’s return against the market since it was disclosed."

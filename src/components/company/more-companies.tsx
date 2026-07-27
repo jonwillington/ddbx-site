@@ -32,6 +32,7 @@ import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 import { CompanyLogo } from "@/components/company-logo";
 import { MeterBar } from "@/components/seo/meter-bar";
+import { Skeleton } from "@/components/skeleton";
 import { TickerPill } from "@/components/ticker-pill";
 import { api } from "@/lib/api";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
@@ -40,6 +41,21 @@ import { moneyShort } from "@/lib/company-format";
 const SHOWN = 8;
 const TOP = 3;
 const NEIGHBOURS = 3;
+
+/** The bar a company clears to be published, mirroring companies.tsx,
+ *  functions/companies.js and functions/sitemap.xml.js. Without it this module
+ *  — mounted on every company page — was the site's largest source of internal
+ *  links into the pages those three deliberately leave out, and such a card
+ *  reads "1 buy", which answers "why would I look at this" with "you wouldn't".
+ *  Same predicate in four places now; worth a shared home the next time one of
+ *  them moves. */
+const meetsContentBar = (c: CompanyIndexEntry) =>
+  c.deals >= 2 || c.analysed > 0;
+
+/** A card's value figure, or 0 when the wire omitted it (`total_value` is
+ *  optional — see api.ts). Absent is not zero, and the two have to render
+ *  differently. */
+const valueOf = (c: CompanyIndexEntry) => c.total_value ?? 0;
 
 /** FNV-1a, 32-bit. Any stable string→int would do; this one is four lines and
  *  spreads adjacent keys ("BP.L"/"BT.L") to unrelated offsets, which a length
@@ -84,6 +100,13 @@ function recency(iso: string | null | undefined): {
 
 /** The three strands, deduped, capped at SHOWN.
  *
+ *  `all` is the whole index, unfiltered — every candidate is checked against
+ *  the content bar before it can be picked, but the alphabetical strand needs
+ *  the full list to locate the current company, which is often itself below the
+ *  bar (55% of UK issuers have exactly one dealing). Filtering before this
+ *  point would lose that position and leave thin pages with no neighbour strand
+ *  at all.
+ *
  *  `all` arrives sorted by the index's own ordering; the neighbour strand needs
  *  alphabetical order specifically, so it sorts its own copy rather than
  *  trusting the caller. */
@@ -91,7 +114,7 @@ export function pickCompanies(
   all: CompanyIndexEntry[],
   currentKey: string,
 ): CompanyIndexEntry[] {
-  const pool = all.filter((c) => c.key !== currentKey);
+  const pool = all.filter((c) => c.key !== currentKey && meetsContentBar(c));
 
   if (pool.length === 0) return [];
 
@@ -99,6 +122,9 @@ export function pickCompanies(
   const seen = new Set<string>();
   const take = (c: CompanyIndexEntry | undefined) => {
     if (!c || seen.has(c.key) || picked.length >= SHOWN) return;
+    // The current company and the bar again, because the neighbour strand
+    // walks the unfiltered list rather than the pool.
+    if (c.key === currentKey || !meetsContentBar(c)) return;
     seen.add(c.key);
     picked.push(c);
   };
@@ -171,15 +197,17 @@ export function MoreCompanies({
     [rows, currentKey],
   );
 
+  const loading = rows === null;
+
   // Silent when there's nothing to link to — an empty "explore more" heading is
   // worse than no heading.
-  if (picked.length === 0) return null;
+  if (!loading && picked.length === 0) return null;
 
   const subject = market === "UK" ? "Director buying" : "Insider buying";
   // Bars are relative to the largest card in this group, not to the index —
   // scaling eight mid-cap companies against the market's biggest buy would
   // draw eight empty bars.
-  const top = Math.max(...picked.map((c) => c.total_value ?? 0));
+  const top = picked.length ? Math.max(...picked.map(valueOf)) : 0;
 
   return (
     <section className="mt-16">
@@ -200,8 +228,40 @@ export function MoreCompanies({
           the record AND below the app band, and a 600px column of onward links
           is a wall nobody scrolls to the end of. */}
       <ul className="mt-5 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {/* Card shells while the index loads. Without them a 2×4 grid of cards
+            appeared below the dark band and shoved the FAQ down the page —
+            the one shift on this route that lands after the reader has already
+            started reading. Same chrome, same internal rhythm, so the fill is
+            a fill rather than a redraw. */}
+        {loading
+          ? Array.from({ length: SHOWN }, (_, i) => (
+              <li key={i}>
+                <div className="flex h-full flex-col rounded-xl border border-hairline bg-sheet px-3.5 py-3 dark:border-white/[0.07] dark:bg-surface">
+                  <span className="flex items-start gap-2.5">
+                    <Skeleton circle className="shrink-0" h={28} w={28} />
+                    <span className="min-w-0 flex-1">
+                      <Skeleton className="h-[13px] w-full" />
+                      <Skeleton className="mt-1.5 h-[13px] w-3/5" />
+                    </span>
+                  </span>
+                  <Skeleton className="mt-2.5 h-[18px] w-16" />
+                  <Skeleton className="mt-2 h-[3px] w-full" />
+                  <Skeleton className="mt-2 h-4 w-24" />
+                </div>
+              </li>
+            ))
+          : null}
+
         {picked.map((c) => {
           const when = recency(c.last_trade_date);
+          // Absent `total_value` is "unknown", not "nothing": the card leads
+          // with the deal count instead, prints no bar (a 2px stub next to
+          // real bars reads as zero) and drops the count from the ticker line
+          // rather than printing the same string twice on one card.
+          const hasValue = valueOf(c) > 0;
+          const buys = `${c.deals} ${c.deals === 1 ? "buy" : "buys"}`;
+          const secondary =
+            c.analysed > 0 ? `${c.analysed} rated` : hasValue ? buys : null;
 
           return (
             <li key={c.key}>
@@ -221,12 +281,9 @@ export function MoreCompanies({
 
                 <span className="mt-2.5 flex items-baseline justify-between gap-2">
                   <span className="text-[15px] font-semibold tabular-nums tracking-[-0.01em] text-foreground">
-                    {c.total_value
-                      ? moneyShort(
-                          c.total_value,
-                          market === "UK" ? "GBP" : "USD",
-                        )
-                      : `${c.deals} ${c.deals === 1 ? "buy" : "buys"}`}
+                    {hasValue
+                      ? moneyShort(valueOf(c), market === "UK" ? "GBP" : "USD")
+                      : buys}
                   </span>
                   {when ? (
                     <span
@@ -241,21 +298,15 @@ export function MoreCompanies({
                   ) : null}
                 </span>
 
-                {top > 0 && (
-                  <MeterBar
-                    className="mt-2"
-                    max={top}
-                    value={c.total_value ?? 0}
-                  />
-                )}
+                {top > 0 && hasValue ? (
+                  <MeterBar className="mt-2" max={top} value={valueOf(c)} />
+                ) : null}
 
                 <span className="mt-2 flex items-center gap-2 text-[11.5px] leading-4 text-foreground/50">
                   <TickerPill ticker={displayTicker(c.key)} />
-                  <span className="truncate">
-                    {c.analysed > 0
-                      ? `${c.analysed} rated`
-                      : `${c.deals} ${c.deals === 1 ? "buy" : "buys"}`}
-                  </span>
+                  {secondary ? (
+                    <span className="truncate">{secondary}</span>
+                  ) : null}
                 </span>
               </Link>
             </li>

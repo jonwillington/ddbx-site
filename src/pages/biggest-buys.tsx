@@ -85,15 +85,26 @@ const ROW_LINK =
 const ROW_GRID =
   "grid grid-cols-[1.5rem_minmax(0,1fr)_6.5rem] items-start gap-x-3 sm:grid-cols-[2rem_minmax(0,1fr)_8.5rem] sm:gap-x-4";
 
-const CROSS_LINKS = [
-  { to: "/sectors", label: "Buying by sector", hint: "Where the money went" },
+/** Onward links, shaped as RelatedCards so the page has one card vocabulary
+ *  rather than two: these used to be a hand-rolled `R.tile` grid sitting beside
+ *  the year archive's RelatedCards. */
+const CROSS_LINKS: RelatedCard[] = [
+  {
+    to: "/sectors",
+    title: "Buying by sector",
+    description: "Where the money went",
+  },
   {
     to: "/companies",
-    label: "Browse companies",
-    hint: "Every issuer we track",
+    title: "Browse companies",
+    description: "Every issuer we track",
   },
-  { to: "/reports", label: "Monthly reports", hint: "What each month did" },
-  { to: "/learn", label: "Glossary", hint: "The filings explained" },
+  {
+    to: "/reports",
+    title: "Monthly reports",
+    description: "What each month did",
+  },
+  { to: "/learn", title: "Glossary", description: "The filings explained" },
 ];
 
 /** Alpha is a difference between two returns, so its unit is percentage
@@ -152,7 +163,16 @@ export default function BiggestBuysPage() {
           setComplete(r.complete);
         },
       )
-      .catch(() => live && setRows([]));
+      // A rejected fetch used to land on the same state as a genuinely empty
+      // board — rows `[]` with `complete` still true — so an outage published
+      // "no qualifying open-market purchases in this period" as a fact about
+      // the market. `complete: false` is the distinction the feed already draws
+      // when it breaks out on a bad response; the catch has to draw it too.
+      .catch(() => {
+        if (!live) return;
+        setRows([]);
+        setComplete(false);
+      });
 
     return () => {
       live = false;
@@ -184,6 +204,11 @@ export default function BiggestBuysPage() {
     return {
       total: ranked.reduce((sum, d) => sum + buyValue(d), 0),
       companies: new Set(ranked.map((d) => d.ticker ?? "")).size,
+      // The median's denominator. A purchase disclosed last week has no mark
+      // yet, so on a 25-row board the median can rest on a handful of the
+      // oldest rows — which is the difference between a figure worth reading
+      // and a rounding error with a plus sign in front of it.
+      alphaCount: alphas.length,
       medianAlpha:
         alphas.length === 0
           ? null
@@ -277,6 +302,25 @@ export default function BiggestBuysPage() {
           screenshotSlot: "cluster",
         }}
         eyebrow="Leaderboard"
+        // The family with the most performance figures on screen — up to 25
+        // "worth £X if still held" lines and a median alpha — was the only one
+        // with no footnote at all. The basis of those figures belongs in the
+        // page's own caption at the true bottom, not as the ninth bullet of the
+        // methodology list. LogoDevAttribution rides along so the licence link
+        // sits in the same place on every logo-bearing page (see /companies).
+        footnote={
+          <>
+            <p>
+              Performance is marked against the most recent cached close rather
+              than a live price. “Worth if still held” applies the stock’s own
+              move since disclosure to the amount originally spent, assuming the
+              shares were never sold and counting no dividends, costs or tax —
+              it is a scale, not a valuation of anyone’s holding. Past
+              performance is not a reliable indicator of future results.
+            </p>
+            <LogoDevAttribution className="mt-2 text-[11px] leading-[1.6] text-foreground/50" />
+          </>
+        }
         loading={rows === null}
         notice={
           <>
@@ -287,10 +331,11 @@ export default function BiggestBuysPage() {
               Only open-market purchases count. How we rank these ↓
             </a>
             <TrackingNotice className="mt-2.5" />
-            {!complete && (
+            {!complete && ranked.length > 0 && (
               // Truncation is invisible unless you say so: the board still
               // renders and still looks complete. Better a caveat than a wrong
-              // answer presented as a right one.
+              // answer presented as a right one. With no rows at all the body
+              // states the failure outright, so this would only say it twice.
               <p className={`mt-3 ${CAVEAT}`}>
                 We couldn’t load the whole period, so this ranking may be
                 missing older purchases.
@@ -324,7 +369,16 @@ export default function BiggestBuysPage() {
           </>
         }
       >
-        {ranked.length === 0 ? (
+        {/* An empty board and a board we couldn't fetch are the same shape and
+            two different statements. Only one of them is a fact about the
+            market, and stating it when the API is down tells a reader there was
+            no insider buying this period. */}
+        {ranked.length === 0 && !complete ? (
+          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+            We couldn’t load the board just now. It’s a network problem rather
+            than an empty period — try a refresh in a moment.
+          </p>
+        ) : ranked.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             No qualifying open-market purchases in this period.{" "}
             <a className="underline underline-offset-4" href="#methodology">
@@ -349,7 +403,10 @@ export default function BiggestBuysPage() {
             <StatTiles
               className="mt-6"
               cols={4}
-              note="Totals cover the purchases listed below, not the whole market."
+              // Same sentence the sector rows state, for the same reason: a
+              // median alpha with no denominator hides how few of the 25 rows
+              // are old enough to have a mark.
+              note={`Totals cover the purchases listed below, not the whole market. ${summary.alphaCount} of ${ranked.length} buys have a performance mark; the median is taken from those.`}
               stats={[
                 { label: "Purchases", value: ranked.length },
                 {
@@ -418,28 +475,6 @@ export default function BiggestBuysPage() {
           </>
         )}
 
-        {/* The rail carries the cross-family links, and the rail is desktop
-            only — so on a phone this board ended in a dead end. */}
-        <nav
-          aria-label="More from ddbx"
-          className="mt-9 grid grid-cols-2 gap-2 lg:hidden"
-        >
-          {CROSS_LINKS.map((l) => (
-            <Link
-              key={l.to}
-              className={`${R.tile} block px-3.5 py-3 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-brown/40`}
-              to={l.to}
-            >
-              <span className="block text-[13px] font-medium text-foreground">
-                {l.label}
-              </span>
-              <span className="mt-0.5 block text-[11.5px] leading-[1.4] text-foreground/50">
-                {l.hint}
-              </span>
-            </Link>
-          ))}
-        </nav>
-
         <SeoSection
           aside={
             <p className="text-[12px] leading-[1.5] text-foreground/45">
@@ -487,8 +522,6 @@ export default function BiggestBuysPage() {
             </Link>
             .
           </p>
-
-          <LogoDevAttribution className="mt-5" />
         </SeoSection>
 
         {archiveCards.length > 0 && (
@@ -499,6 +532,15 @@ export default function BiggestBuysPage() {
             <RelatedCards cols={3} items={archiveCards} />
           </SeoSection>
         )}
+
+        {/* Last, so the onward links close the document instead of interrupting
+            it: they used to sit between the board and the methodology, which on
+            a phone put "more from ddbx" ahead of how the board was built. Not
+            lg:hidden any more either — the rail's link list is a quieter object
+            and these tiles are worth having on desktop too. */}
+        <nav aria-label="More from ddbx" className="mt-9">
+          <RelatedCards cols={2} items={CROSS_LINKS} />
+        </nav>
       </SeoPageShell>
     </DefaultLayout>
   );
@@ -593,17 +635,23 @@ function BuyRow({
                 </>
               ) : null}
               {d.cluster ? (
+                // "of 3" alone leaves the whole framing to the chip's tooltip,
+                // which is hover-only; the pre-render says "of 3 insiders" and
+                // a cold visitor reading the board should get the same noun.
                 <span className="inline-flex items-center gap-1">
                   <ClusterChip cluster={d.cluster} />
-                  <span>of {d.cluster.count}</span>
+                  <span>of {d.cluster.count} insiders</span>
                 </span>
               ) : null}
             </span>
           </span>
 
           <span className="text-right">
-            {/* The two numbers the page exists to show. */}
+            {/* The two numbers the page exists to show. Both labelled: the row
+                link's accessible name is long, and "£4.2m" announced bare in
+                the middle of it is the figure the page is about. */}
             <span className="block text-[22px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground sm:text-[26px]">
+              <span className="sr-only">Value bought: </span>
               {money(value, symbol)}
             </span>
             <span className="mt-2 block">

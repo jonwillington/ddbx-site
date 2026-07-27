@@ -48,6 +48,7 @@ import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
+import { Skeleton } from "@/components/skeleton";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { TickerPill } from "@/components/ticker-pill";
 import { DeltaBadge } from "@/components/market/market-row";
@@ -206,12 +207,7 @@ export default function ReportPage() {
         footnote="Reports are generated from disclosed filings and marked against subsequent closing prices — the latest cached close, not live prices. Past performance is not a reliable indicator of future results."
         loading={!summary}
         notice={summary ? <Byline summary={summary} /> : undefined}
-        skeleton={
-          <>
-            <SeoSkeleton rows={5} variant="stat-tiles" />
-            <SeoSkeleton className="mt-10" rows={4} variant="doc-sections" />
-          </>
-        }
+        skeleton={<ReportSkeleton />}
         standfirst={summary?.headline}
         standfirstSize="lede"
         title={`${label} insider buying report`}
@@ -309,6 +305,31 @@ export default function ReportPage() {
         ) : null}
       </SeoPageShell>
     </DefaultLayout>
+  );
+}
+
+/** The document's own shape while it loads. The page opens with its written
+ *  intro and only then states the figures, and the figures are two tile rows —
+ *  five headline stats and the returns row — so a skeleton that led with one
+ *  tile row was redrawing the top of the page rather than filling it in.
+ *
+ *  The negative margins cancel the `stat-tiles` variant's own `mt-6` down to
+ *  the gaps the loaded rows actually sit at (`mt-8`, then `space-y-2`). */
+function ReportSkeleton() {
+  return (
+    <div aria-busy="true">
+      <span className="sr-only">Loading…</span>
+
+      <div className="mt-6 space-y-3">
+        <Skeleton className="h-[15px] w-full max-w-[600px]" />
+        <Skeleton className="h-[15px] w-full max-w-[580px]" />
+        <Skeleton className="h-[15px] w-4/5 max-w-[440px]" />
+      </div>
+
+      <SeoSkeleton className="mt-2" rows={5} variant="stat-tiles" />
+      <SeoSkeleton className="-mt-4" rows={4} variant="stat-tiles" />
+      <SeoSkeleton className="mt-6" rows={4} variant="doc-sections" />
+    </div>
   );
 }
 

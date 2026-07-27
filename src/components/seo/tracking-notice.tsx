@@ -11,23 +11,25 @@
  *  Saying so costs nothing and is the difference between a number that informs
  *  and one that's accurate about its own data while being misleading about the
  *  world. Same reasoning as the concentration caveat on the sector rows.
+ *
+ *  The year, label and sentence live in shared/tracking.js so Pages Functions
+ *  (sector / leaderboard / report pre-renders) can print the same words.
  */
 
-/** First year with stored filings. Gates the leaderboard's year archive — a
- *  "Biggest buys of 2025" link is a promise of an empty board. */
-export const TRACKING_SINCE_YEAR = 2026;
+export {
+  TRACKING_SINCE_LABEL,
+  TRACKING_SINCE_YEAR,
+  TRACKING_NOTICE,
+} from "../../../shared/tracking.js";
 
-/** Human form, used in the notice copy. Update both together if the backfill
- *  ever reaches further back. */
-export const TRACKING_SINCE_LABEL = "March 2026";
+import { TRACKING_NOTICE } from "../../../shared/tracking.js";
 
 export function TrackingNotice({ className = "" }: { className?: string }) {
   return (
     <p
       className={`text-[12.5px] leading-[1.5] text-foreground/45 ${className}`}
     >
-      ddbx started recording disclosures in {TRACKING_SINCE_LABEL}, so periods
-      described as a full year cover only the filings since then.
+      {TRACKING_NOTICE}
     </p>
   );
 }

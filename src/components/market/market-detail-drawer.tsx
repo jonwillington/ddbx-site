@@ -20,6 +20,7 @@ import { RecentBuysSection } from "@/components/market/recent-buys-section";
 import { InsiderAvatar } from "@/components/market/market-row";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import { GatedAnalysisShape } from "@/components/discretion/gated-analysis-shape";
 
 /** Warm-tint notice bracketing the freebie article: the reader is told
  *  they're spending today's one free analysis, with the app as the way to
@@ -328,11 +329,14 @@ export function MarketDetailDrawer<W>({
                 // full table is the teaser; here the drawer is purely the
                 // conversion prompt.
                 <div className="relative flex-1 min-h-0 overflow-hidden">
+                  {/* Shape, not text: rendering the real body with a dummy
+                      analysis put fabricated claims in the DOM under a real
+                      issuer's name. The silhouette blurs identically. */}
                   <div
                     aria-hidden
                     className="pointer-events-none absolute inset-0 select-none overflow-hidden px-5 pt-4 opacity-25 md:px-8 [filter:blur(6px)]"
                   >
-                    <BodyComponent allDealings={allDealings} dealing={active} />
+                    <GatedAnalysisShape />
                   </div>
                   <div className="absolute inset-0 z-10 flex items-center justify-center px-4">
                     {AnalysisOverlay && <AnalysisOverlay dealing={active} />}

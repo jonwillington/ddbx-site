@@ -29,6 +29,7 @@ import {
   MIN_BUYS,
 } from "../../shared/sectors.js";
 import { brandTitle, isProductionHost } from "../../shared/seo.js";
+import { TRACKING_NOTICE } from "../../shared/tracking.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -80,6 +81,7 @@ function prerender(rows, market, host, complete) {
 
   return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(market)} insider buying by sector</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">Where ${esc(noun)} have been buying their own shares over the last twelve months, and how those buys have performed against the market since they were disclosed.</p>
+  <p style="font-size:13px;line-height:1.5;color:#6b6154;max-width:62ch">${esc(TRACKING_NOTICE)}</p>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(indexLeadSentence(rows, market))}</p>
   <p style="font-size:14px;color:#6b6154">${buys} buys · ${esc(money(value, symbol))} · ${companies} companies · ${rows.length} sectors</p>
   ${complete ? "" : `<p style="font-size:13px;color:#6b6154;max-width:62ch">We couldn’t load the whole period, so these totals may be missing older purchases.</p>`}

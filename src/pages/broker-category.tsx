@@ -124,7 +124,12 @@ export default function BrokerCategoryPage() {
   const badge = badgeLabel(category.badge);
 
   return (
-    <DefaultLayout drawerRight>
+    // hideMobileCta for the same reason broker-detail passes it: on a phone the
+    // pinned "Start your free trial" bar sits on top of RankedBroker's
+    // full-width Visit button, which is the two-competing-asks case the desktop
+    // band already avoids with media: "none". The band at the foot of the page
+    // is still the app ask — it just isn't pinned over the affiliate one.
+    <DefaultLayout drawerRight hideMobileCta>
       {/* BrokerAside directly rather than SeoRail: the rail's picks are this
           page's own top two, not the site-wide recommendations, so the rail
           agrees with the ranking it sits beside. */}
@@ -149,6 +154,7 @@ export default function BrokerCategoryPage() {
           media: "none",
         }}
         eyebrow="Broker guide"
+        footnote={<BrokerComplianceNote />}
         loading={brokers === null}
         // Above the fold, before any commercial link — and outside the loading
         // boundary, so it is never the thing that arrives late.
@@ -275,13 +281,6 @@ export default function BrokerCategoryPage() {
           />
         </PageSection>
       </SeoPageShell>
-
-      {/* Kept as the component rather than folded into the shell's footnote:
-          the disclaimers are a compliance surface and shouldn't quietly change
-          size or ink to fit a layout slot. Below the band, at the true bottom. */}
-      <div className={`mx-auto w-full border-t ${R.rule} pb-16 pt-6`}>
-        <BrokerComplianceNote />
-      </div>
     </DefaultLayout>
   );
 }

@@ -14,6 +14,8 @@
  *     purchases whichever domain served it, because a US concept illustrated
  *     with UK RNS filings in pounds is simply wrong, and the reader who
  *     followed a link from ddbx.uk is the one most likely to be misled by it.
+ *     The rail is the deliberate exception: the data follows the entry, the
+ *     commercial furniture follows the reader — see useRailMarketId.
  *
  *  3. Every entry that honestly can ends with live filings. A definition of
  *     "PDMR" on its own loses to the FCA handbook and Wikipedia; the same
@@ -63,7 +65,11 @@ import {
   companyPath,
   displayTicker,
 } from "@/lib/company";
-import { formatDisclosedCompact } from "@/lib/dealing-dates";
+import {
+  compareDealingsNewestFirst,
+  formatDisclosedCompact,
+} from "@/lib/dealing-dates";
+import { marketForPath } from "@/lib/markets/registry";
 
 const EYEBROW = "Glossary";
 const FOOTNOTE = "Information only, not investment advice.";
@@ -80,6 +86,32 @@ const MARKET = {
  *  rendering an empty page in development. */
 function useHost(): string {
   return typeof window === "undefined" ? "" : window.location.hostname;
+}
+
+/** Market for the rail — the READER's, resolved from the domain exactly as the
+ *  sector and report pages resolve theirs, and deliberately NOT the entry's
+ *  owner.
+ *
+ *  `SeoRail` reads `"uk"` as "render the affiliate broker directory", which is
+ *  UK-only editorial. Choosing that market from the entry meant `ddbx.us` and
+ *  `ddbx.eu` served UK platform links on the seven UK-owned entries, while a UK
+ *  reader on the three US-owned ones lost the broker rail and got US App Store
+ *  buttons instead. Ownership decides the data, not the furniture.
+ *
+ *  The full market id, uncoerced: `ddbx.eu` resolves to `se`, which is the part
+ *  that keeps the UK affiliate directory off that host, and `SeoRail` takes any
+ *  id (its StoreButtons fall back to the UK app for SE and NL). `/learn` has no
+ *  market-prefixed route, so the host is the only signal — hence the "/" path,
+ *  which also keeps localhost and preview builds on the UK rail. */
+function useRailMarketId(): string {
+  return useMemo(
+    () =>
+      marketForPath(
+        "/",
+        typeof window === "undefined" ? undefined : window.location.hostname,
+      ).id,
+    [],
+  );
 }
 
 /** Entries this host publishes, or all of them where nothing is owned. */
@@ -131,12 +163,15 @@ function EntryList({ entries }: { entries: GlossaryEntry[] }) {
 export function LearnIndexPage() {
   const host = useHost();
   const entries = useEntries(host);
-  const marketId = ownerForHost(host) === "us" ? "us" : "uk";
+  const railMarketId = useRailMarketId();
+  // The band's store links are a UK/US choice — those are the two listings —
+  // so an EU reader is offered the UK app rather than nothing.
+  const ctaMarketId = ownerForHost(host) === "us" ? "us" : "uk";
 
   return (
     <DefaultLayout drawerRight>
       <SeoRail
-        marketId={marketId}
+        marketId={railMarketId}
         placement="learn_index_rail"
         ukHeading="Start investing"
       />
@@ -144,7 +179,7 @@ export function LearnIndexPage() {
         cta={{
           ...learnIndexCta,
           gaLabel: "Learn · index",
-          marketId,
+          marketId: ctaMarketId,
           screenshotSlot: "today",
         }}
         eyebrow={EYEBROW}
@@ -165,12 +200,13 @@ export default function LearnEntryPage() {
   const host = useHost();
   const owner = ownerForHost(host);
   const fallbackEntries = useEntries(host);
+  const railMarketId = useRailMarketId();
 
   if (!entry) {
     return (
       <DefaultLayout drawerRight>
         <SeoRail
-          marketId={owner === "us" ? "us" : "uk"}
+          marketId={railMarketId}
           placement="learn_index_rail"
           ukHeading="Start investing"
         />
@@ -203,7 +239,7 @@ export default function LearnEntryPage() {
   return (
     <DefaultLayout drawerRight>
       <SeoRail
-        marketId={entry.owner === "us" ? "us" : "uk"}
+        marketId={railMarketId}
         placement="learn_entry_rail"
         ukHeading="Start investing"
       />
@@ -212,6 +248,10 @@ export default function LearnEntryPage() {
         cta={{
           ...cta,
           gaLabel: `Learn · ${entry.slug}`,
+          // The one place the band and the rail disagree, deliberately: the
+          // app offered is the one that covers the concept being explained.
+          // The UK app has no Form 4 data, so /learn/form-4 offers the US app
+          // whichever domain served it.
           marketId: entry.owner === "us" ? "us" : "uk",
           screenshotSlot: entry.ctaSlot ?? "analysis",
         }}
@@ -299,7 +339,10 @@ export default function LearnEntryPage() {
         ) : null}
 
         {entry.sources && entry.sources.length > 0 ? (
-          <SeoSection aside="The primary instrument, not our summary of it." title="Sources">
+          <SeoSection
+            aside="The primary instrument, not our summary of it."
+            title="Sources"
+          >
             <ul className="space-y-2">
               {entry.sources.map((s) => (
                 <li key={s.url}>
@@ -319,6 +362,25 @@ export default function LearnEntryPage() {
       </SeoPageShell>
     </DefaultLayout>
   );
+}
+
+/** A row honest to print under a heading about purchases.
+ *
+ *  `api.dealingsWindow` serves the raw UK feed: disposals as well as buys, plus
+ *  the scheme awards, placings and option exercises that carry
+ *  `is_open_market_buy === false`. Unfiltered, "Recent PDMR purchases" printed
+ *  sells and share allotments as bare money figures — the exact mistake
+ *  /learn/open-market-buy spends four paragraphs telling readers not to make.
+ *
+ *  Softer than `isEligibleBuy`, deliberately: a row we can't price yet (the
+ *  flag is `null`) is kept, because these are six illustrations of a concept
+ *  rather than a leaderboard, and the strict test would empty the section in a
+ *  quiet week. US rows pass through — /api/us-dealings is already restricted to
+ *  Form 4 code-P acquisitions upstream, and they carry no `tx_type` to test. */
+function isPurchase(d: Dealing | UsDealing): boolean {
+  if (!("tx_type" in d)) return true;
+
+  return d.tx_type === "buy" && d.is_open_market_buy !== false;
 }
 
 /** Real filings under the concept just described. The part of the entry that
@@ -361,10 +423,13 @@ function LiveExamples({
     if (kind === "clusters") pool = pool.filter((d) => d.cluster);
     if (kind === "open-market")
       pool = pool.filter((d) => isEligibleBuy(d, market.id));
+    if (kind === "recent") pool = pool.filter(isPurchase);
 
-    return [...pool]
-      .sort((a, b) => (a.trade_date < b.trade_date ? 1 : -1))
-      .slice(0, 6);
+    // By the date the row actually prints. Disclosure lags the trade by days in
+    // the UK and up to two business days on a Form 4, so sorting on trade_date
+    // under a heading that says "most recent" rendered a visible date column
+    // that wasn't in order. The window bound is a disclosed_date too.
+    return [...pool].sort(compareDealingsNewestFirst).slice(0, 6);
   }, [rows, kind, market.id]);
 
   const loading = rows === null;

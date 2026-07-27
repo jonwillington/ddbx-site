@@ -25,14 +25,14 @@
 export function learnCta(term: string): { headline: string; body: string } {
   return {
     headline: `Stop reading about ${term}. Get told when it happens.`,
-    body: "You now know the pattern. The app spots it for you: every disclosure that matches lands as a push, rated, with the reasoning written out.",
+    body: "You now know the pattern. The app spots matching disclosures the day they file and pushes them to you.",
   };
 }
 
 /** Glossary index — the contents page has no single term to name. */
 export const learnIndexCta = {
   headline: "Learn the pattern, then watch it live.",
-  body: "The glossary explains the filings. The app shows you today’s — every director buy rated the day it’s disclosed, with the thesis attached.",
+  body: "The glossary explains the filings. The app shows you today’s — every rated buy the day it’s disclosed.",
 };
 
 /** Sector hub — index or a single sector. */
@@ -44,7 +44,7 @@ export function sectorCta(sector?: string): {
     headline: sector
       ? `Follow ${sector} insiders in real time.`
       : "Follow these insiders in real time.",
-    body: "This page is a twelve-month look back. The app is the live version — each new buy pushed the day it files, already rated, so the table above never goes stale on you.",
+    body: "This page is a twelve-month look back. The app is the live version — each new buy pushed the day it files, so the table above never goes stale on you.",
   };
 }
 
@@ -63,21 +63,28 @@ export function leaderboardCta(year?: number | string): {
 
   return {
     headline: "The next one on this list will buzz your phone.",
-    body: "This ranking is history by the time you read it. The app pushes a buy this size the day it files, with the rating and the full thesis.",
+    body: "This ranking is history by the time you read it. The app pushes a buy this size the day it files.",
   };
 }
 
 /** Monthly report archive — index or a single month. */
 export const reportsCta = {
   headline: "Read next month’s report the day it lands.",
-  body: "The archive is the record. The app is the running commentary: every rated disclosure as it files, plus the recap when the month closes.",
+  body: "The archive is the record. The app is the running commentary — every disclosure as it files, plus the recap when the month closes.",
 };
 
 /** Company index — the hub for several hundred issuer pages. */
-export const companiesCta = {
-  headline: "Every company on this index, watched for you.",
-  body: "You can check this list, or the app can check it for you — a push the day any director on it buys, with the rating and the reasoning attached.",
-};
+export function companiesCta(marketId: "uk" | "us" = "uk"): {
+  headline: string;
+  body: string;
+} {
+  const who = marketId === "us" ? "insider" : "director";
+
+  return {
+    headline: "Every company on this index, watched for you.",
+    body: `You can check this list, or the app can watch it — a push the day any ${who} on it buys, already rated.`,
+  };
+}
 
 /** Broker guides — deliberately quiet (`media: "none"`): these pages already
  *  carry an affiliate ask, and a phone screenshot next to a "visit broker"

@@ -23,13 +23,18 @@ import type { MonthlySummary, MonthlySummaryListItem } from "@/types/ddbx";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { monthLabel, reportPath } from "../../shared/months.js";
+import {
+  REPORT_CONTENTS,
+  monthLabel,
+  reportPath,
+} from "../../shared/months.js";
 
 import DefaultLayout from "@/layouts/default";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
+import { Skeleton } from "@/components/skeleton";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
@@ -41,36 +46,12 @@ import { formatGbp } from "@/lib/performance/format";
 const RULE = "border-hairline dark:border-separator";
 const BODY = "text-[14px] leading-[1.65] text-foreground/70";
 
-/** What a reader gets for the click. Every line names something the report
- *  page actually renders — the metrics band, the report card, the featured
- *  write-ups, the sector and style tables, the cluster roster. */
-const CONTENTS: { label: string; description: string }[] = [
-  {
-    label: "The month in numbers",
-    description:
-      "How many purchases were disclosed, what they were worth, and how many companies and individual insiders they covered.",
-  },
-  {
-    label: "A report card on the last one",
-    description:
-      "Every buy we featured the previous month, re-marked against the latest close — the ones that went wrong published beside the ones that didn’t.",
-  },
-  {
-    label: "The standout buys, written up",
-    description:
-      "A handful of purchases in full: what happened, whether the value has already gone, and whether there is still a case.",
-  },
-  {
-    label: "Where the money went",
-    description:
-      "The month split by sector and by buy style, with the median return and the median alpha against the benchmark for each slice.",
-  },
-  {
-    label: "Clusters",
-    description:
-      "The companies where two or more insiders bought in the same month — the pattern that reads least like a one-off.",
-  },
-];
+/** The definition-list row shared by the loaded "What's in every report" block
+ *  and its skeleton, so the two can't drift apart on rail width or padding. */
+const CONTENTS_ROW = `grid gap-x-8 gap-y-1 border-b ${RULE} py-3.5 sm:grid-cols-[13rem_minmax(0,1fr)]`;
+
+/** The promoted month's sheet — shared with the skeleton for the same reason. */
+const LEAD_SHEET = `mt-8 rounded-2xl border ${RULE} bg-sheet px-5 py-5 dark:bg-surface sm:px-6 sm:py-6`;
 
 export default function ReportsPage() {
   const { marketId, marketParam, label } = useMemo(() => {
@@ -89,6 +70,10 @@ export default function ReportsPage() {
 
   const [months, setMonths] = useState<MonthlySummaryListItem[] | null>(null);
   const [latest, setLatest] = useState<MonthlySummary | null>(null);
+  // Separate from `latest === null` so the lead sheet can tell "the figures are
+  // coming" from "that request failed" — the first reserves their height, the
+  // second closes the gap rather than pulsing at the reader forever.
+  const [figuresPending, setFiguresPending] = useState(true);
 
   useEffect(() => {
     let live = true;
@@ -108,6 +93,8 @@ export default function ReportsPage() {
     [months],
   );
   const newest = sorted[0]?.month;
+  // Everything the lead sheet doesn't already publish.
+  const earlier = useMemo(() => sorted.slice(1), [sorted]);
 
   // The index endpoint carries headlines but no figures, so the lead needs the
   // newest month's full summary. One extra request, only for the month being
@@ -117,10 +104,15 @@ export default function ReportsPage() {
     let live = true;
 
     setLatest(null);
+    setFiguresPending(true);
     api
       .monthlySummary(newest, marketParam)
-      .then((r) => live && r?.summary && setLatest(r.summary))
-      .catch(() => live && setLatest(null));
+      .then((r) => {
+        if (!live) return;
+        if (r?.summary) setLatest(r.summary);
+        setFiguresPending(false);
+      })
+      .catch(() => live && setFiguresPending(false));
 
     return () => {
       live = false;
@@ -146,7 +138,7 @@ export default function ReportsPage() {
         footnote="Reports are generated from disclosed filings and marked against subsequent closing prices. Past performance is not a reliable indicator of future results."
         loading={months === null}
         notice={<TrackingNotice />}
-        skeleton={<SeoSkeleton rows={3} variant="ruled-list" />}
+        skeleton={<ArchiveSkeleton />}
         standfirst="A report every month: what insiders bought, what it was worth, which sectors they concentrated in, and how the previous month’s featured buys have actually performed since — including the ones that didn’t work."
         title={`${label} reports`}
       >
@@ -156,15 +148,16 @@ export default function ReportsPage() {
           </p>
         ) : (
           <>
-            <LatestReport item={sorted[0]} summary={latest} />
+            <LatestReport
+              figuresPending={figuresPending}
+              item={sorted[0]}
+              summary={latest}
+            />
 
             <SeoSection title="What’s in every report">
               <dl className={`border-t ${RULE}`}>
-                {CONTENTS.map((row) => (
-                  <div
-                    key={row.label}
-                    className={`grid gap-x-8 gap-y-1 border-b ${RULE} py-3.5 sm:grid-cols-[13rem_minmax(0,1fr)]`}
-                  >
+                {REPORT_CONTENTS.map((row) => (
+                  <div key={row.label} className={CONTENTS_ROW}>
                     <dt className="text-[13.5px] font-medium text-foreground">
                       {row.label}
                     </dt>
@@ -176,36 +169,49 @@ export default function ReportsPage() {
               </dl>
             </SeoSection>
 
-            <SeoSection
-              aside={`${sorted.length} ${sorted.length === 1 ? "month" : "months"}, newest first. Every month keeps its own URL.`}
-              title="Every report"
-            >
-              <ul className={`border-t ${RULE}`}>
-                {sorted.map((m) => (
-                  <li key={m.month} className={`border-b ${RULE} py-4`}>
-                    <div className="flex items-baseline justify-between gap-4">
-                      <Link
-                        className="min-w-0 text-[16px] font-semibold tracking-[-0.01em] text-foreground underline-offset-4 hover:underline"
-                        to={reportPath(m.month)}
-                      >
-                        {monthLabel(m.month)}
-                      </Link>
-                      {m.created_at ? (
-                        <time
-                          className="shrink-0 font-mono text-[11px] tabular-nums text-foreground/45"
-                          dateTime={m.created_at}
-                        >
-                          {publishedLabel(m.created_at)}
-                        </time>
-                      ) : null}
-                    </div>
-                    <p className={`mt-1.5 max-w-[62ch] ${BODY}`}>
-                      {m.headline}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </SeoSection>
+            {/* The promoted month is deliberately absent from this list. It was
+                printed twice — the same month name and the identical headline
+                string within one scroll — which at n=2 read as a stutter rather
+                than as an archive. */}
+            {earlier.length > 0 ? (
+              <SeoSection
+                aside={`Published before ${monthLabel(sorted[0].month)}, newest first. Every month keeps its own URL.`}
+                title="Earlier reports"
+              >
+                <ul className={`border-t ${RULE}`}>
+                  {earlier.map((m) => {
+                    const published = publishedLabel(m.created_at);
+
+                    return (
+                      <li key={m.month} className={`border-b ${RULE} py-4`}>
+                        <div className="flex items-baseline justify-between gap-4">
+                          <Link
+                            className="min-w-0 text-[16px] font-semibold tracking-[-0.01em] text-foreground underline-offset-4 hover:underline"
+                            to={reportPath(m.month)}
+                          >
+                            {monthLabel(m.month)}
+                          </Link>
+                          {/* Guard on the formatted date, not on `created_at`:
+                              an unparseable timestamp is truthy and rendered an
+                              empty <time>. */}
+                          {published ? (
+                            <time
+                              className="shrink-0 font-mono text-[11px] tabular-nums text-foreground/45"
+                              dateTime={m.created_at}
+                            >
+                              {published}
+                            </time>
+                          ) : null}
+                        </div>
+                        <p className={`mt-1.5 max-w-[62ch] ${BODY}`}>
+                          {m.headline}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </SeoSection>
+            ) : null}
           </>
         )}
       </SeoPageShell>
@@ -214,22 +220,22 @@ export default function ReportsPage() {
 }
 
 /** The newest month, promoted. The figures arrive a beat after the headline
- *  does; the sheet is laid out so their arrival fills a gap rather than pushing
- *  the button down the page. */
+ *  does, from a second request, so the gap they will fill is held open at the
+ *  tiles' own height — otherwise their arrival shoves the button down the page. */
 function LatestReport({
   item,
   summary,
+  figuresPending,
 }: {
   item: MonthlySummaryListItem;
   summary: MonthlySummary | null;
+  figuresPending: boolean;
 }) {
   const label = monthLabel(item.month);
   const metrics = summary?.metrics;
 
   return (
-    <section
-      className={`mt-8 rounded-2xl border ${RULE} bg-sheet px-5 py-5 dark:bg-surface sm:px-6 sm:py-6`}
-    >
+    <section className={LEAD_SHEET}>
       <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
         Latest report
       </p>
@@ -255,6 +261,10 @@ function LatestReport({
             { label: "Insiders", value: String(metrics.distinct_directors) },
           ]}
         />
+      ) : figuresPending ? (
+        // The variant carries its own `mt-6`; `-mt-1` lands it on the loaded
+        // tiles' `mt-5`, and its 64px tiles are the height they arrive at.
+        <SeoSkeleton className="-mt-1" rows={4} variant="stat-tiles" />
       ) : null}
 
       <Link
@@ -267,8 +277,60 @@ function LatestReport({
   );
 }
 
-/** "2026-07-01T…" → "1 Jul 2026". Empty when unparseable. */
-function publishedLabel(iso: string): string {
+/** The loaded archive's own shape while it loads: the promoted sheet with its
+ *  four figures, the five-row explainer, then the earlier-months list. The
+ *  first two blocks are static editorial, so their row counts are knowable
+ *  without the fetch; only the last is a stand-in. */
+function ArchiveSkeleton() {
+  return (
+    <div aria-busy="true">
+      <span className="sr-only">Loading…</span>
+
+      <div className={LEAD_SHEET}>
+        <Skeleton className="h-[11px] w-24" />
+        <Skeleton className="mt-2.5 h-[28px] w-44" />
+        <Skeleton className="mt-3 h-[17px] w-full max-w-[52ch]" />
+        <Skeleton className="mt-2 h-[17px] w-3/5 max-w-[32ch]" />
+        <SeoSkeleton className="-mt-1" rows={4} variant="stat-tiles" />
+        <Skeleton className={`mt-5 h-[37px] w-52 ${BUTTON_RADIUS}`} />
+      </div>
+
+      <section className={`mt-10 border-t ${RULE} pt-7`}>
+        <Skeleton className="h-[17px] w-48" />
+        <div className={`mt-4 border-t ${RULE}`}>
+          {REPORT_CONTENTS.map((row) => (
+            <div key={row.label} className={CONTENTS_ROW}>
+              <Skeleton className="h-[13.5px] w-36" />
+              <div className="min-w-0">
+                <Skeleton className="h-[14px] w-full max-w-[560px]" />
+                <Skeleton className="mt-2 h-[14px] w-4/5 max-w-[460px]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={`mt-10 border-t ${RULE} pt-7`}>
+        <Skeleton className="h-[17px] w-36" />
+        <ul className={`mt-4 border-t ${RULE}`}>
+          {[0, 1].map((i) => (
+            <li key={i} className={`border-b ${RULE} py-4`}>
+              <div className="flex items-baseline justify-between gap-4">
+                <Skeleton className="h-[16px] w-40" />
+                <Skeleton className="h-[11px] w-16 shrink-0" />
+              </div>
+              <Skeleton className="mt-2 h-[14px] w-4/5 max-w-[520px]" />
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+/** "2026-07-01T…" → "1 Jul 2026". Empty when unparseable or absent. */
+function publishedLabel(iso: string | null | undefined): string {
+  if (!iso) return "";
   const d = new Date(iso);
 
   if (Number.isNaN(d.getTime())) return "";

@@ -46,6 +46,7 @@ import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
+import { Skeleton } from "@/components/skeleton";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { MeterBar } from "@/components/seo/meter-bar";
 import { sectorCta } from "@/components/seo/cta-copy";
@@ -68,6 +69,10 @@ export default function SectorPage() {
   const market = useSectorMarket();
   const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(null);
   const [complete, setComplete] = useState(true);
+  // Third state, distinct from "below the bar": an outage used to render
+  // "fewer than 5 disclosed purchases in this sector", which is a claim about
+  // the sector produced by a failed request.
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -88,9 +93,14 @@ export default function SectorPage() {
           if (!live) return;
           setRows(r.dealings);
           setComplete(r.complete);
+          setFailed(false);
         },
       )
-      .catch(() => live && setRows([]));
+      .catch(() => {
+        if (!live) return;
+        setRows([]);
+        setFailed(true);
+      });
 
     return () => {
       live = false;
@@ -154,16 +164,41 @@ export default function SectorPage() {
       .sort((a, b) => (b.agg?.value ?? 0) - (a.agg?.value ?? 0));
   }, [rows, sector]);
 
+  // Through the shell rather than a bare paragraph, as /learn does for an
+  // unknown slug: the reader gets the family header and the eleven sectors we
+  // do publish instead of a dead end with one link out of it. The edge already
+  // noindexes this URL, so this is purely a reader fix.
   if (!sector) {
     return (
-      <DefaultLayout>
-        <p className="mx-auto max-w-3xl py-20 text-base text-foreground/65">
-          We don’t track a sector by that name.{" "}
-          <Link className="underline" to="/sectors">
-            See every sector
-          </Link>
-          .
-        </p>
+      <DefaultLayout drawerRight>
+        <SeoRail
+          marketId={market.id === "US" ? "us" : "uk"}
+          placement="sector_rail"
+          ukHeading="Start investing"
+        />
+        <SeoPageShell
+          crumbs={[
+            { label: "Sectors", to: "/sectors" },
+            { label: "Not found" },
+          ]}
+          eyebrow="Sector hub"
+          standfirst="We normalise every filing into eleven sectors, and that isn’t one of them — the name may have changed. All eleven are below."
+          title="We don’t track that sector"
+        >
+          <SeoSection
+            aside="The eleven normalised sectors every filing is sorted into."
+            title="Every sector"
+          >
+            <RelatedCards
+              cols={3}
+              items={SECTORS.map((s) => ({
+                to: sectorPath(s.slug),
+                title: s.label,
+                description: s.framing,
+              }))}
+            />
+          </SeoSection>
+        </SeoPageShell>
       </DefaultLayout>
     );
   }
@@ -205,7 +240,7 @@ export default function SectorPage() {
         notice={
           <>
             <TrackingNotice />
-            {!complete && (
+            {!complete && !failed && (
               <p className={`mt-2 ${R.label} leading-[1.6]`}>
                 We couldn’t load the whole period, so these figures may be
                 missing older purchases.
@@ -214,20 +249,39 @@ export default function SectorPage() {
           </>
         }
         skeleton={
+          // `TOP_COMPANIES` (20) and `RECENT_BUYS` (12) are caps, not counts:
+          // a sector just over the publishing bar renders three company rows
+          // and five filings, so standing them in drew ~2,300px of skeleton
+          // that then collapsed. 8 and 6 read closer to the median sector.
+          // The lead-paragraph bars come first because the loaded page opens
+          // with the lead sentence, not the tiles.
           <>
+            <div className="mt-8">
+              <Skeleton className="h-[14px] w-full max-w-[52ch]" />
+              <Skeleton className="mt-2 h-[14px] w-4/5 max-w-[42ch]" />
+            </div>
             <SeoSkeleton rows={5} variant="stat-tiles" />
-            <SeoSkeleton rows={TOP_COMPANIES} variant="ruled-list" />
-            <SeoSkeleton rows={RECENT_BUYS} variant="ruled-list" />
+            <SeoSkeleton rows={8} variant="ruled-list" />
+            <SeoSkeleton rows={6} variant="ruled-list" />
           </>
         }
         standfirst={sector.framing}
+        standfirstSize="lede"
         title={
           <>
             {sector.label} — {market.label} insider buying
           </>
         }
       >
-        {!publishable ? (
+        {failed ? (
+          // Not "this sector is quiet" — we don't know that. "Other sectors"
+          // below still renders, so the reader has somewhere to go.
+          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+            We couldn’t load the filings just now, so there are no figures to
+            show for {sector.label.toLowerCase()}. That’s a fault at our end
+            rather than a quiet twelve months — try again shortly.
+          </p>
+        ) : !publishable ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             Fewer than {MIN_BUYS} disclosed purchases in this sector over the
             last twelve months — not enough to draw anything from.{" "}
