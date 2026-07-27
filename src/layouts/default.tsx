@@ -465,10 +465,13 @@ export default function DefaultLayout({
             above it the mark reads as part of the last section rather than as
             the start of the footer. */}
         <div className="mx-auto w-full max-w-[1280px] px-4 md:px-6 pt-12 pb-5 md:pt-16 text-[10px] leading-4 text-foreground/40">
-          <div className="flex items-center mb-8 md:mb-10">
+          {/* The mark sits close to the columns on purpose: at h-5 with a
+              40px gap it read as a stray object floating above an unrelated
+              nav. Bigger and tucked in, it reads as the nav's masthead. */}
+          <div className="mb-4 flex items-center">
             <img
               alt="ddbx"
-              className="h-5 max-w-[56px] opacity-30 dark:invert"
+              className="h-8 max-w-[90px] opacity-40 dark:invert"
               src="/logo.svg"
             />
           </div>
@@ -694,10 +697,19 @@ function FooterNav() {
   return (
     <nav
       aria-label="Footer"
-      className="mb-6 grid grid-cols-2 gap-x-6 gap-y-6 border-b border-separator/50 pb-6 sm:grid-cols-4"
+      className="mb-6 grid grid-cols-2 gap-x-0 gap-y-8 border-y border-separator/50 py-6 sm:grid-cols-4"
     >
+      {/* Column rules rather than gaps. A footer is the one place on the site
+          where a ruled grid is right: it's an index, and hairlines say
+          "columns of a table" where whitespace alone says "four loose
+          stacks". The nth-child variants keep the rule off whichever column
+          starts a row, which differs by breakpoint (2-up, then 4-up), so a
+          plain `divide-x` would put a stray rule down the left of row two. */}
       {groups.map((group) => (
-        <div key={group.title}>
+        <div
+          key={group.title}
+          className="border-l border-separator/50 pl-5 [&:nth-child(2n+1)]:border-l-0 [&:nth-child(2n+1)]:pl-0 sm:pl-5 sm:[&:nth-child(2n+1)]:border-l sm:[&:nth-child(2n+1)]:pl-5 sm:[&:nth-child(4n+1)]:border-l-0 sm:[&:nth-child(4n+1)]:pl-0"
+        >
           <h2 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/55">
             {group.title}
           </h2>

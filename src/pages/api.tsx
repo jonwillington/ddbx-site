@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   ArrowTrendingDownIcon,
   FunnelIcon,
-  LanguageIcon,
   PresentationChartLineIcon,
   RectangleGroupIcon,
   ScaleIcon,
@@ -24,6 +23,7 @@ import {
   ParamList,
   Path,
 } from "@/components/api/endpoint-table";
+import { LanguageStrip } from "@/components/api/language-strip";
 import { MarketGrid } from "@/components/api/market-grid";
 import { RequestAccessModal } from "@/components/api/request-access-modal";
 import { ResponseExplorer } from "@/components/api/response-explorer";
@@ -349,12 +349,14 @@ export default function ApiPage() {
                 {/* Icon in a tinted well rather than bare. Six unadorned
                     outline glyphs on a flat card read as a stock icon set;
                     the well makes each one an object the card is built
-                    around. */}
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#eec584]/[0.12] ring-1 ring-inset ring-[#eec584]/20">
+                    around. No ring on the well: the card already carries a
+                    hairline, and a second one 20px inside it reads as a
+                    button the icon isn't. */}
+                <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eec584]/[0.12]">
                   <c.Icon
                     aria-hidden="true"
-                    className="h-[18px] w-[18px] text-[#eec584]"
-                    strokeWidth={1.6}
+                    className="h-8 w-8 text-[#eec584]"
+                    strokeWidth={1.4}
                   />
                 </span>
                 <h3 className="mt-4 text-[16px] font-semibold leading-snug text-white">
@@ -366,33 +368,14 @@ export default function ApiPage() {
               </div>
             </Reveal>
           ))}
-
-          {/* Full-width seventh. Language is a scope question rather than a
-              field, so it does not sit level with the six that are fields. */}
-          <Reveal className="md:col-span-3">
-            <div className="flex flex-col gap-4 rounded-3xl border border-white/[0.09] bg-white/[0.035] p-5 sm:flex-row sm:items-center sm:gap-6">
-              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eec584]/[0.12] ring-1 ring-inset ring-[#eec584]/20">
-                <LanguageIcon
-                  aria-hidden="true"
-                  className="h-[18px] w-[18px] text-[#eec584]"
-                  strokeWidth={1.6}
-                />
-              </span>
-              <div className="min-w-0">
-                <h3 className="text-[16px] font-semibold leading-snug text-white">
-                  Written in the language you need
-                </h3>
-                <p className="mt-2 text-[14px] leading-[1.6] text-white/55">
-                  Summary, thesis, evidence and risks are written per row, so
-                  the language they land in is a scope question rather than a
-                  rebuild. Source fields keep the register&rsquo;s own wording
-                  either way: a Swedish filing stays Swedish where
-                  Finansinspektionen wrote it.
-                </p>
-              </div>
-            </div>
-          </Reveal>
         </div>
+
+        {/* Outside the grid on purpose. Language is a scope decision taken
+            once, not a seventh field that arrives in every row, and a seventh
+            box would have said the opposite. See language-strip.tsx. */}
+        <Reveal className="mt-14 md:mt-20">
+          <LanguageStrip />
+        </Reveal>
       </section>
 
       {/* ── 02 The picture ───────────────────────────────────────────────── */}
@@ -401,7 +384,7 @@ export default function ApiPage() {
           index={2}
           kicker="The picture"
           sub="A row gives you the disclosure date, the size of the buy, the cluster it belongs to and the return since. Plot those against a price series and the buying is legible on its own timeline."
-          title="One issuer, four insiders, ninety days."
+          title="One issuer, six insiders, ninety days."
           tone="dark"
           total={4}
         />
@@ -521,60 +504,56 @@ export default function ApiPage() {
         className={`${FULL_BLEED} mt-6 bg-[#f5f0e8] text-[#1a140d]`}
         id="request-access"
       >
+        {/* Centred and cut back to the ask. The two-column version carried
+            four sentences of pitch and a five-row spec table beside the
+            button, which is a lot of reading to put AFTER the FAQ has already
+            answered everything. The pitch is one line now; the spec is a
+            single hairline row of label/value pairs; the detail lives in the
+            modal the button opens. */}
         <div className="mx-auto max-w-[1280px] px-4 py-16 md:px-6 md:py-24">
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
-            <div>
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a4128]">
-                Request access
-              </p>
-              <h2 className="mt-3 text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
-                Pricing is quoted per use case.
-              </h2>
-              <p className="mt-4 max-w-[42ch] text-[16px] leading-[1.6] text-[#1a140d]/65">
-                A nightly bulk sync, a live product surface and a research
-                backtest are different shapes, and pricing them off one list
-                would mean overcharging most people. Tell us what you&rsquo;re
-                building and we&rsquo;ll come back with scope and a number.
-              </p>
+          <div className="mx-auto max-w-[46ch] text-center">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a4128]">
+              Request access
+            </p>
+            <h2 className="mt-3 text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
+              Pricing is quoted per use case.
+            </h2>
+            <p className="mx-auto mt-4 max-w-[38ch] text-[16px] leading-[1.6] text-[#1a140d]/65">
+              Tell us what you&rsquo;re building and we&rsquo;ll come back with
+              scope and a number.
+            </p>
 
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <button
-                  className={`${BUTTON_RADIUS} bg-[#1a140d] px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118]`}
-                  data-ga-event="cta_api_band_request"
-                  data-ga-label="API closing band"
-                  type="button"
-                  onClick={openAsk}
-                >
-                  Request pricing
-                </button>
-                <p className="text-[13px] text-[#1a140d]/50">
-                  Two working days. No newsletter, no onward sharing.
-                </p>
-              </div>
-            </div>
-
-            <dl className="border-t border-black/10 lg:mt-1">
-              {SPEC.map(([k, v]) => (
-                <div
-                  key={k}
-                  className="flex items-baseline justify-between gap-6 border-b border-black/10 py-3"
-                >
-                  <dt className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#1a140d]/45">
-                    {k}
-                  </dt>
-                  <dd className="text-right text-[14px] text-[#1a140d]/75">
-                    {v}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <button
+              className={`${BUTTON_RADIUS} mt-8 bg-[#1a140d] px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118]`}
+              data-ga-event="cta_api_band_request"
+              data-ga-label="API closing band"
+              type="button"
+              onClick={openAsk}
+            >
+              Request pricing
+            </button>
+            <p className="mt-3 text-[13px] text-[#1a140d]/50">
+              Two working days. No newsletter, no onward sharing.
+            </p>
           </div>
 
-          <p className="mt-12 max-w-[70ch] text-xs leading-[1.6] text-[#1a140d]/40">
-            Research output, not investment advice. Ratings and analysis are
-            generated judgements with a stated confidence, not recommendations
-            to trade. Redistribution rights for underlying regulatory content
-            vary by source and are agreed per contract.
+          <dl className="mx-auto mt-14 grid max-w-4xl grid-cols-2 gap-x-8 gap-y-6 border-t border-black/10 pt-8 text-center sm:grid-cols-3 lg:grid-cols-5">
+            {SPEC.map(([k, v]) => (
+              <div key={k}>
+                <dt className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#1a140d]/40">
+                  {k}
+                </dt>
+                <dd className="mt-1.5 text-[13.5px] leading-[1.45] text-[#1a140d]/75">
+                  {v}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <p className="mx-auto mt-14 max-w-[62ch] text-center text-xs leading-[1.6] text-[#1a140d]/40">
+            Research output, not investment advice. Ratings carry a stated
+            confidence and are not recommendations to trade. Redistribution
+            rights vary by source and are agreed per contract.
           </p>
         </div>
       </section>

@@ -1,15 +1,45 @@
-import { useId, useState } from "react";
+import type {
+  IChartApi,
+  MouseEventParams,
+  SeriesMarker,
+  Time,
+} from "lightweight-charts";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  AreaSeries,
+  ColorType,
+  LineStyle,
+  LineType,
+  TrackingModeExitMode,
+  createChart,
+  createSeriesMarkers,
+} from "lightweight-charts";
 
 import { Terminal } from "./terminal";
 
-/** "One issuer, four insiders, ninety days" — the page's one picture.
+/** "One issuer, six insiders, ninety days" — the page's one picture.
  *
- *  Everything else on `/api` argues in fields and prose, which is the right
- *  register for a reference but a poor one for the actual pitch: the reason to
- *  buy this feed is that insider buying CLUSTERS, and a cluster is a shape, not
- *  a sentence. So this draws the shape once: a price series falling, four
- *  disclosures landing into the fall, cumulative spend stepping up underneath,
- *  and the recovery after.
+ *  Everything else on `/api` argues in fields and prose, which is right for a
+ *  reference and poor for the pitch: the reason to buy this feed is that
+ *  insider buying CLUSTERS into weakness, and a cluster is a shape, not a
+ *  sentence. So this draws the shape once, and it draws it with the same chart
+ *  engine and the same colour grammar as the app.
+ *
+ *  Rendered with lightweight-charts, matching `components/mini-price-chart.tsx`
+ *  (the deal-drawer chart). A hand-rolled SVG shipped here first and was wrong
+ *  on both counts: it read as a different product, and it painted the whole
+ *  series in one brand amber, so the markers sat on a line the same colour as
+ *  themselves and the buys were invisible.
+ *
+ *  Colour follows the app's rule, not decoration:
+ *   - NEUTRAL grey before the first disclosure. Nothing is known yet, so the
+ *     line makes no claim.
+ *   - GREEN from the first disclosure on, because the position is up from
+ *     there. Same `#5cd84a` the app uses for a winning position.
+ *  Two Area series rather than one, sharing the bar at the join so the line is
+ *  continuous. If the illustration is ever edited to end BELOW the first buy,
+ *  the second segment has to go red (`#e84d4d`) or the chart starts lying.
  *
  *  ⚠ The series is SYNTHETIC and must stay labelled as such, in the panel
  *  chrome and in the caption. Every other number on this page is a real API
@@ -18,109 +48,315 @@ import { Terminal } from "./terminal";
  *  that ARE real. The `Illustrative` chip is load-bearing, not decoration.
  *
  *  Also deliberately absent: any claim that we ship the price series. We don't
- *  sell price bars (they are Yahoo-sourced and not licensed for
- *  redistribution — see investigations/2026-07-26-api-product-surface.md §1).
- *  The pitch is that the rows carry the disclosures, the sizes and the cluster,
- *  which you plot against a price series you already have.
+ *  sell price bars (Yahoo-sourced, not licensed for redistribution — see
+ *  investigations/2026-07-26-api-product-surface.md §1). The pitch is that the
+ *  rows carry the disclosures, the sizes and the cluster; the price line is
+ *  yours.
  *
- *  Hand-drawn SVG rather than lightweight-charts (which the app uses for real
- *  price charts). This needs two stacked panes, drop-lines tying a marker in
- *  one to a step in the other, and full control of the brand palette; the chart
- *  library gives none of those cheaply and costs ~45kB to say so.
+ *  Colours are hardcoded dark. The route pins `.dark`, so a theme branch here
+ *  would be a branch that never runs.
  */
 
-/** Closing price, 60 sessions. Falls into a drawdown, chops along the floor
- *  while the insiders buy, then recovers past where it started. */
-const PRICES = [
-  118, 119, 117, 120, 118, 116, 117, 114, 115, 112, 113, 110, 111, 108, 109,
-  104, 99, 101, 95, 92, 94, 89, 86, 88, 85, 83, 84, 81, 79, 82, 80, 78, 81, 83,
-  82, 85, 84, 87, 86, 89, 88, 91, 90, 93, 95, 94, 98, 101, 100, 104, 103, 107,
-  110, 109, 113, 116, 115, 120, 124, 128,
-];
+const SESSIONS = 90;
+const CHART_HEIGHT = 320;
+
+/** Illustrative close series: a long slide into a trough around session 44,
+ *  then a recovery that finishes above where it started. Generated from a
+ *  closed form rather than typed out so the shape stays editable in one place,
+ *  and deterministic so it can't differ between renders. */
+const PRICES = Array.from({ length: SESSIONS }, (_, i) => {
+  const base = i <= 44 ? 118 - 44 * (i / 44) : 74 + 78 * ((i - 44) / 45);
+  const wobble =
+    2.4 * Math.sin(i * 1.7) +
+    1.2 * Math.sin(i * 0.55) +
+    0.8 * Math.sin(i * 3.1);
+
+  return Math.round((base + wobble) * 100) / 100;
+});
+
+/** Session index -> ISO date. Fixed start so the axis never moves. */
+const START = Date.UTC(2026, 1, 2);
+const DATES = Array.from({ length: SESSIONS }, (_, i) =>
+  new Date(START + i * 86_400_000).toISOString().slice(0, 10),
+);
 
 interface Buy {
   /** Index into PRICES. */
   i: number;
-  date: string;
   who: string;
   /** Thousands of pounds. */
   value: number;
-  cluster?: string;
 }
 
+/** Eight disclosures from six people over 26 sessions, straddling the trough.
+ *  Deliberately dense: "lots of insiders, all at once, while it was falling"
+ *  is the entire argument, and three tidy markers do not make that case.
+ *
+ *  `who` doubles as the identity key behind the "six insiders" count in the
+ *  section heading, so two entries sharing a role read as the same person
+ *  buying twice (the CEO and an NED both do). Editing a role therefore edits
+ *  the headline number: keep the distinct count at six or change both. */
 const BUYS: Buy[] = [
-  { i: 22, date: "12 Mar", who: "Chief Executive", value: 240 },
-  { i: 29, date: "21 Mar", who: "Chief Financial Officer", value: 180 },
-  {
-    i: 37,
-    date: "02 Apr",
-    who: "Chair and two non-executives",
-    value: 420,
-    cluster: "3 insiders, 14 days",
-  },
-  { i: 50, date: "24 Apr", who: "Chief Executive", value: 150 },
+  { i: 30, who: "Chief Executive", value: 240 },
+  { i: 33, who: "Chief Financial Officer", value: 180 },
+  { i: 36, who: "Non-executive director", value: 120 },
+  { i: 41, who: "Chair", value: 420 },
+  { i: 44, who: "Chief Executive", value: 300 },
+  { i: 48, who: "Non-executive director", value: 150 },
+  { i: 52, who: "Chief Operating Officer", value: 260 },
+  { i: 56, who: "Company secretary", value: 200 },
 ];
 
-const W = 800;
-const PRICE_TOP = 16;
-const PRICE_BOTTOM = 196;
-const SPEND_TOP = 240;
-const SPEND_BOTTOM = 316;
-const X0 = 46;
-const X1 = 788;
-const P_MIN = 72;
-const P_MAX = 134;
-
-const x = (i: number) => X0 + (i * (X1 - X0)) / (PRICES.length - 1);
-const y = (p: number) =>
-  PRICE_BOTTOM - ((p - P_MIN) / (P_MAX - P_MIN)) * (PRICE_BOTTOM - PRICE_TOP);
-
+const FIRST = BUYS[0].i;
+const LAST_BUY = BUYS[BUYS.length - 1].i;
 const TOTAL = BUYS.reduce((a, b) => a + b.value, 0);
-const spendY = (cum: number) =>
-  SPEND_BOTTOM - (cum / TOTAL) * (SPEND_BOTTOM - SPEND_TOP);
+const INSIDERS = new Set(BUYS.map((b) => b.who)).size;
+const SINCE_FIRST =
+  ((PRICES[SESSIONS - 1] - PRICES[FIRST]) / PRICES[FIRST]) * 100;
 
-/** Running total at each buy, so the step chart and the readout can never
- *  disagree about how much had been spent by a given marker. */
-const CUMULATIVE = BUYS.reduce<number[]>(
-  (acc, b) => [...acc, (acc[acc.length - 1] ?? 0) + b.value],
-  [],
-);
+/** Running total after each buy, held flat until the next one. Drawn as a
+ *  stepped area on its own scale pinned to the bottom of the pane, which is
+ *  the volume-pane idiom every trader already reads. */
+const SPEND = (() => {
+  const out: { time: Time; value: number }[] = [];
+  let cum = 0;
+  let k = 0;
 
-const LINE = PRICES.map((p, i) => `${i === 0 ? "M" : "L"}${x(i)} ${y(p)}`).join(
-  " ",
-);
-const AREA = `${LINE} L${X1} ${PRICE_BOTTOM} L${X0} ${PRICE_BOTTOM} Z`;
+  for (let i = 0; i < SESSIONS; i += 1) {
+    while (k < BUYS.length && BUYS[k].i === i) {
+      cum += BUYS[k].value;
+      k += 1;
+    }
+    out.push({ time: DATES[i] as Time, value: cum });
+  }
 
-/** Stepped cumulative-spend outline: flat until a disclosure lands, then up. */
-const STEPS = (() => {
-  let d = `M${X0} ${SPEND_BOTTOM}`;
-
-  BUYS.forEach((b, k) => {
-    d += ` L${x(b.i)} ${spendY(CUMULATIVE[k] - b.value)} L${x(b.i)} ${spendY(CUMULATIVE[k])}`;
-  });
-
-  return `${d} L${X1} ${spendY(TOTAL)}`;
+  return out;
 })();
 
-const LAST = PRICES[PRICES.length - 1];
+const NEUTRAL_LINE = "rgba(255,255,255,0.4)";
+const NEUTRAL_FILL = "rgba(255,255,255,0.07)";
+const UP_LINE = "#5cd84a";
+const UP_FILL = "rgba(92,216,74,0.2)";
+const SPEND_LINE = "#ad9479";
+const SPEND_FILL = "rgba(173,148,121,0.15)";
 
 const money = (k: number) =>
   k >= 1000 ? `£${(k / 1000).toFixed(2)}m` : `£${k}k`;
 
+const shortDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+
 export function AccumulationChart() {
-  const [sel, setSel] = useState(2);
-  const gid = useId();
-  const active = BUYS[sel];
-  const paid = PRICES[active.i];
-  const since = ((LAST - paid) / paid) * 100;
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  /** Close + date under the crosshair while scrubbing; null when away. */
+  const [scrub, setScrub] = useState<{ value: number; time: string } | null>(
+    null,
+  );
+
+  /** Buy at the scrubbed date, when the pointer is on one. */
+  const scrubbedBuy = useMemo(
+    () => (scrub ? BUYS.find((b) => DATES[b.i] === scrub.time) : undefined),
+    [scrub],
+  );
+
+  useEffect(() => {
+    const container = containerRef.current;
+
+    if (!container) return;
+
+    const chart = createChart(container, {
+      width: container.clientWidth,
+      height: CHART_HEIGHT,
+      autoSize: false,
+      layout: {
+        background: { type: ColorType.Solid, color: "transparent" },
+        textColor: "rgba(255,255,255,0.4)",
+        fontSize: 11,
+        attributionLogo: false,
+      },
+      grid: {
+        vertLines: { visible: false },
+        horzLines: { color: "rgba(255,255,255,0.05)" },
+      },
+      timeScale: {
+        borderVisible: false,
+        fixLeftEdge: true,
+        fixRightEdge: true,
+        rightOffset: 0,
+      },
+      rightPriceScale: {
+        borderVisible: false,
+        visible: true,
+        // Bottom quarter is reserved for the cumulative-spend overlay.
+        scaleMargins: { top: 0.08, bottom: 0.28 },
+      },
+      leftPriceScale: { visible: false },
+      crosshair: {
+        mode: 1,
+        vertLine: {
+          width: 1,
+          color: "rgba(255,255,255,0.2)",
+          style: LineStyle.Dashed,
+          labelVisible: true,
+          labelBackgroundColor: "#241c14",
+        },
+        horzLine: {
+          width: 1,
+          color: "rgba(255,255,255,0.2)",
+          style: LineStyle.Dashed,
+          labelVisible: false,
+        },
+      },
+      handleScroll: false,
+      handleScale: false,
+      trackingMode: { exitMode: TrackingModeExitMode.OnTouchEnd },
+    });
+
+    const priceFormat = {
+      type: "custom" as const,
+      formatter: (v: number) => `${v.toFixed(0)}p`,
+      minMove: 0.01,
+    };
+
+    // Segment one: before anyone has filed. Neutral, because nothing is known.
+    const pre = chart.addSeries(AreaSeries, {
+      lineColor: NEUTRAL_LINE,
+      topColor: NEUTRAL_FILL,
+      bottomColor: "rgba(0,0,0,0)",
+      lineWidth: 2,
+      priceFormat,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    pre.setData(
+      PRICES.slice(0, FIRST + 1).map((v, i) => ({
+        time: DATES[i] as Time,
+        value: v,
+      })),
+    );
+
+    // Segment two: from the first disclosure. Shares bar FIRST with `pre` so
+    // the join is a continuous line rather than a visible seam.
+    const post = chart.addSeries(AreaSeries, {
+      lineColor: UP_LINE,
+      topColor: UP_FILL,
+      bottomColor: "rgba(0,0,0,0)",
+      lineWidth: 2,
+      priceFormat,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerRadius: 4,
+      crosshairMarkerBorderColor: "#241c14",
+    });
+
+    post.setData(
+      PRICES.slice(FIRST).map((v, i) => ({
+        time: DATES[FIRST + i] as Time,
+        value: v,
+      })),
+    );
+
+    // Cumulative spend, own scale, pinned to the bottom of the pane.
+    const spend = chart.addSeries(AreaSeries, {
+      lineColor: SPEND_LINE,
+      topColor: SPEND_FILL,
+      bottomColor: "rgba(0,0,0,0)",
+      lineWidth: 1,
+      lineType: LineType.WithSteps,
+      priceScaleId: "spend",
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    spend.setData(SPEND);
+    chart
+      .priceScale("spend")
+      .applyOptions({ scaleMargins: { top: 0.79, bottom: 0 } });
+
+    // One arrow per disclosure, carrying its size. The label is what turns a
+    // row of dots into "eight people spent £1.87m here".
+    //
+    // Labels are dropped on narrow canvases. Eight of them inside a 26-session
+    // window need roughly 560px to lay out; below that lightweight-charts
+    // stacks them on top of each other and the cluster becomes an unreadable
+    // pile of digits. The arrows still show the cluster, the header still
+    // shows the total, and a tap still gives the individual size.
+    const LABEL_MIN_WIDTH = 560;
+    const markersFor = (w: number): SeriesMarker<Time>[] =>
+      BUYS.map((b) => ({
+        time: DATES[b.i] as Time,
+        position: "belowBar",
+        color: UP_LINE,
+        shape: "arrowUp",
+        size: 1.1,
+        ...(w >= LABEL_MIN_WIDTH ? { text: money(b.value) } : {}),
+      }));
+
+    const markerApi = createSeriesMarkers(
+      post,
+      markersFor(container.clientWidth),
+    );
+
+    const onCrosshairMove = (param: MouseEventParams<Time>) => {
+      const data = param.time
+        ? (param.seriesData.get(post) ?? param.seriesData.get(pre))
+        : undefined;
+      const value =
+        data && "value" in data ? (data.value as number) : undefined;
+
+      setScrub(value != null ? { value, time: String(param.time) } : null);
+    };
+
+    chart.subscribeCrosshairMove(onCrosshairMove);
+    chartRef.current = chart;
+
+    // fitContent is not optional here. lightweight-charts keeps its own bar
+    // spacing rather than fitting on setData, which left the pane showing only
+    // the last ~30 sessions: the grey pre-disclosure segment and every marker
+    // sat off the left edge, so the chart argued the exact opposite of the
+    // section it illustrates. Run it after layout (rAF) and again on every
+    // resize, since applyOptions({width}) re-derives the range.
+    const fit = () => chart.timeScale().fitContent();
+
+    requestAnimationFrame(fit);
+
+    const ro = new ResizeObserver(() => {
+      const c = containerRef.current;
+
+      if (c && chartRef.current) {
+        chartRef.current.applyOptions({ width: c.clientWidth });
+        markerApi.setMarkers(markersFor(c.clientWidth));
+        fit();
+      }
+    });
+
+    ro.observe(container);
+
+    return () => {
+      ro.disconnect();
+      chart.unsubscribeCrosshairMove(onCrosshairMove);
+      chart.remove();
+      chartRef.current = null;
+    };
+  }, []);
 
   return (
     <Terminal
+      // Total only. "8 disclosures · £1.87m" is shrink-0, so on a phone it ate
+      // the width the title needed and "One issuer · 90 days" truncated to
+      // "ONE". The count already leads the readout row underneath.
       meta={money(TOTAL)}
       title={
         // Chip FIRST. The title truncates, and on a phone it truncates hard;
-        // "Illustrative" is the one word in this panel that cannot be allowed
-        // to fall off the end, so it goes where clipping starts last.
+        // "Illustrative" is the one word here that cannot fall off the end.
         <span className="flex items-center gap-2">
           <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9.5px] tracking-[0.12em] text-white/50">
             Illustrative
@@ -130,201 +366,35 @@ export function AccumulationChart() {
       }
       variant="bare"
     >
-      {/* Scrolls horizontally below ~800px rather than scaling down with the
-          viewport. A uniformly scaled SVG takes its 10px axis labels down with
-          it, and at phone width they land near 5px, which is not a chart any
-          more. Pinning the minimum to the viewBox width keeps every mark at
-          its designed size and costs a swipe. */}
-      <div className="relative">
-        {/* Right-edge fade, phones only. Without it the chart looks like it
-            simply stops mid-recovery; the soft edge is the standard "there is
-            more this way" cue and costs nothing on desktop, where the SVG
-            already fits and the fade is hidden. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[oklch(15%_0.018_55)] to-transparent sm:hidden"
-        />
-        <div className="overflow-x-auto">
-          <svg
-            aria-label="Illustrative price series with four insider purchases and their cumulative value"
-            className="block w-full min-w-[800px]"
-            role="img"
-            viewBox={`0 0 ${W} 340`}
-          >
-            <defs>
-              <linearGradient id={`${gid}-fill`} x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#eec584" stopOpacity="0.18" />
-                <stop offset="100%" stopColor="#eec584" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-
-            {/* Price gridlines. Labelled left so the drawdown has a magnitude. */}
-            {[80, 100, 120].map((p) => (
-              <g key={p}>
-                <line
-                  stroke="rgba(255,255,255,0.07)"
-                  x1={X0}
-                  x2={X1}
-                  y1={y(p)}
-                  y2={y(p)}
-                />
-                <text
-                  fill="rgba(255,255,255,0.3)"
-                  fontFamily="ui-monospace, monospace"
-                  fontSize="10"
-                  x={8}
-                  y={y(p) + 3.5}
-                >
-                  {p}p
-                </text>
-              </g>
-            ))}
-
-            <path d={AREA} fill={`url(#${gid}-fill)`} />
-            <path
-              d={LINE}
-              fill="none"
-              stroke="#eec584"
-              strokeLinejoin="round"
-              strokeWidth="1.75"
-            />
-
-            {/* Drop-lines. The single most important mark on the chart: they are
-            what ties "an insider bought here" to "the money on the books went
-            up by this much", which is the entire argument for the feed. */}
-            {BUYS.map((b, k) => (
-              <line
-                key={`drop-${b.i}`}
-                stroke={
-                  k === sel ? "rgba(238,197,132,0.5)" : "rgba(255,255,255,0.1)"
-                }
-                strokeDasharray="2 4"
-                x1={x(b.i)}
-                x2={x(b.i)}
-                y1={y(PRICES[b.i])}
-                y2={SPEND_BOTTOM}
-              />
-            ))}
-
-            {/* Cumulative spend, stepped. */}
-            <path
-              d={`${STEPS} L${X1} ${SPEND_BOTTOM} L${X0} ${SPEND_BOTTOM} Z`}
-              fill="rgba(173,148,121,0.16)"
-            />
-            <path d={STEPS} fill="none" stroke="#ad9479" strokeWidth="1.5" />
-            <line
-              stroke="rgba(255,255,255,0.12)"
-              x1={X0}
-              x2={X1}
-              y1={SPEND_BOTTOM}
-              y2={SPEND_BOTTOM}
-            />
-            <text
-              fill="rgba(255,255,255,0.3)"
-              fontFamily="ui-monospace, monospace"
-              fontSize="10"
-              x={X0}
-              y={SPEND_TOP - 8}
-            >
-              CUMULATIVE INSIDER SPEND
-            </text>
-
-            {/* Markers last so they sit above every line. Radius carries the size
-            of the buy, which is why the cluster reads as the loud one. */}
-            {BUYS.map((b, k) => {
-              const on = k === sel;
-              const r = 4 + (b.value / TOTAL) * 9;
-
-              return (
-                <g
-                  key={b.i}
-                  className="cursor-pointer"
-                  onMouseEnter={() => setSel(k)}
-                >
-                  {/* Generous invisible hit area — the drawn dot is too small to
-                  chase with a pointer, and touch needs ~24px either way. */}
-                  <circle
-                    cx={x(b.i)}
-                    cy={y(PRICES[b.i])}
-                    fill="transparent"
-                    r={18}
-                  />
-                  {on ? (
-                    <circle
-                      cx={x(b.i)}
-                      cy={y(PRICES[b.i])}
-                      fill="none"
-                      r={r + 5}
-                      stroke="rgba(238,197,132,0.35)"
-                    />
-                  ) : null}
-                  <circle
-                    cx={x(b.i)}
-                    cy={y(PRICES[b.i])}
-                    fill={on ? "#eec584" : "rgba(238,197,132,0.35)"}
-                    r={r}
-                    stroke="oklch(15% 0.018 55)"
-                    strokeWidth="2"
-                  />
-                </g>
-              );
-            })}
-          </svg>
-        </div>
-      </div>
-
-      {/* Readout. Doubles as the keyboard and touch control for the markers:
-          the SVG circles are hover-only, so without these the chart would be
-          unreachable without a mouse. */}
-      <div className="grid grid-cols-2 border-t border-white/10 sm:grid-cols-4">
-        {BUYS.map((b, k) => {
-          const on = k === sel;
-
-          return (
-            <button
-              key={b.i}
-              aria-pressed={on}
-              className={`border-white/10 px-3 py-2.5 text-left outline-none transition-colors focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[#eec584]/50 ${
-                // Two columns on mobile, so the first pair needs a rule under
-                // it as well as beside it; four across from sm up, where only
-                // the vertical rules apply.
-                k % 2 === 0 ? "border-r" : ""
-              } ${k < 2 ? "border-b sm:border-b-0" : ""} sm:border-r sm:last:border-r-0 ${
-                on ? "bg-[#eec584]/[0.09]" : "hover:bg-white/[0.04]"
-              }`}
-              type="button"
-              onClick={() => setSel(k)}
-              onFocus={() => setSel(k)}
-            >
-              <span
-                className={`block text-[10.5px] uppercase tracking-[0.12em] ${on ? "text-[#eec584]" : "text-white/35"}`}
-              >
-                {b.date}
+      {/* Scrub readout. Reserves its own height so the chart never shifts when
+          the pointer enters or leaves the plot. */}
+      <div className="flex min-h-[2.4rem] flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-white/10 px-4 py-2.5 text-[12.5px]">
+        {scrub ? (
+          <>
+            <span className="font-mono text-white/40">
+              {shortDate(scrub.time)}
+            </span>
+            <span className="tabular-nums text-white">
+              {scrub.value.toFixed(1)}p
+            </span>
+            {scrubbedBuy ? (
+              <span className="text-[#5cd84a]">
+                {scrubbedBuy.who} bought {money(scrubbedBuy.value)}
               </span>
-              <span
-                className={`mt-0.5 block text-[13px] font-semibold tabular-nums ${on ? "text-white" : "text-white/55"}`}
-              >
-                {money(b.value)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1.5 border-t border-white/10 px-4 py-3 text-[12.5px]">
-        <span className="text-white/70">{active.who}</span>
-        <span className="text-white/40">
-          paid {paid}p, {money(CUMULATIVE[sel])} on the books by this point
-        </span>
-        {active.cluster ? (
-          <span className="rounded-full bg-[#eec584]/15 px-2 py-0.5 text-[10.5px] uppercase tracking-[0.1em] text-[#eec584]">
-            Cluster · {active.cluster}
+            ) : null}
+          </>
+        ) : (
+          <span className="text-white/40">
+            {INSIDERS} insiders, {BUYS.length} disclosures over{" "}
+            {LAST_BUY - FIRST} sessions, all of them into the drawdown.
           </span>
-        ) : null}
+        )}
         <span className="ml-auto tabular-nums text-[#5cd84a]">
-          +{since.toFixed(1)}% since disclosure
+          +{SINCE_FIRST.toFixed(0)}% since the first disclosure
         </span>
       </div>
+
+      <div ref={containerRef} className="w-full px-1 pb-1" />
     </Terminal>
   );
 }

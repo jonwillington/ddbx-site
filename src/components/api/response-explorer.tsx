@@ -234,29 +234,48 @@ export function ResponseExplorer() {
         })}
       </div>
 
-      <Terminal
-        bodyClassName="min-h-[352px]"
-        meta={feed.meta}
-        title={feed.endpoint}
-      >
-        {/* Keyed so React remounts the tree on switch, which lets the fade
-            replay. Without the key it swaps in place and the change is easy to
-            miss on the wider feeds, where only the values differ. */}
-        <div
-          key={feed.id}
-          className="animate-content-in"
-          id="api-response-panel"
-        >
-          <JsonBlock value={feed.payload} />
+      {/* Every payload is rendered, all five stacked into one grid cell, with
+          the four inactive ones `invisible` rather than unmounted.
+          `visibility: hidden` still takes part in layout, so the cell is
+          always as tall as the TALLEST feed and the hero cannot resize when
+          you click between them. A `min-h` was the first attempt and is the
+          wrong tool: it is a floor, so the UK payload (22 lines) still
+          overshot it and Congress (16) still fell back to it. This has no
+          magic number to keep in sync, so a longer payload added later
+          cannot reintroduce the jump. */}
+      <Terminal meta={feed.meta} title={feed.endpoint}>
+        <div className="grid" id="api-response-panel">
+          {FEEDS.map((f, i) => (
+            <div
+              key={f.id}
+              aria-hidden={i !== active}
+              // Re-adding the class on switch is what replays the fade; the
+              // node itself is never remounted.
+              className={`col-start-1 row-start-1 ${
+                i === active ? "animate-content-in" : "invisible"
+              }`}
+            >
+              <JsonBlock value={f.payload} />
+            </div>
+          ))}
         </div>
       </Terminal>
 
-      <p
-        key={`${feed.id}-note`}
-        className="animate-content-in mt-3 min-h-[2.6em] text-[12.5px] leading-[1.5] text-white/40"
-      >
-        {feed.note}
-      </p>
+      {/* Same trick for the caption: the notes run to one or two lines
+          depending on the feed and the width. */}
+      <div className="mt-3 grid text-[12.5px] leading-[1.5] text-white/40">
+        {FEEDS.map((f, i) => (
+          <p
+            key={f.id}
+            aria-hidden={i !== active}
+            className={`col-start-1 row-start-1 ${
+              i === active ? "animate-content-in" : "invisible"
+            }`}
+          >
+            {f.note}
+          </p>
+        ))}
+      </div>
     </div>
   );
 }
