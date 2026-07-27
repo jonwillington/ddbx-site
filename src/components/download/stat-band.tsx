@@ -28,9 +28,9 @@ export function StatBand({
 
   return (
     <section
-      className={`${FULL_BLEED} border-y border-[#e7e0d4] bg-[#faf6ef] dark:border-border/50 dark:bg-surface-secondary/20`}
+      className={`${FULL_BLEED} border-y border-hairline bg-sheet dark:border-border/50 dark:bg-surface-secondary/20`}
     >
-      <div className="mx-auto max-w-5xl px-4 py-10 md:px-6 md:py-14">
+      <div className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-14">
         <div className="grid gap-8 sm:grid-cols-3">
           {stats.map((s, i) => (
             <Reveal
@@ -48,7 +48,7 @@ export function StatBand({
           ))}
         </div>
         <Reveal delay={200}>
-          <p className="mt-9 border-t border-[#e7e0d4] pt-6 text-center text-sm text-foreground/50 dark:border-border/50 sm:text-left">
+          <p className="mt-9 border-t border-hairline pt-6 text-center text-sm text-foreground/50 dark:border-border/50 sm:text-left">
             {sourceLine}
           </p>
         </Reveal>

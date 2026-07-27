@@ -41,9 +41,11 @@ export function SectionHeader({
   const rule =
     tone === "dark"
       ? "border-white/15"
-      : "border-[#e7e0d4] dark:border-border/50";
+      : "border-hairline dark:border-border/50";
   const kickerTone =
-    tone === "dark" ? "text-[#eec584]" : "text-[#5a4128] dark:text-[#ad9479]";
+    tone === "dark"
+      ? "text-brand-amber"
+      : "text-brand-brown dark:text-brand-tan";
   const numTone = tone === "dark" ? "text-white/35" : "text-foreground/35";
   const subTone = tone === "dark" ? "text-white/60" : "text-foreground/60";
 
@@ -58,7 +60,7 @@ export function SectionHeader({
           </p>
           {index != null && total != null ? (
             <p
-              className={`font-mono text-[11px] tabular-nums tracking-[0.16em] ${numTone}`}
+              className={`font-mono text-[11px] font-semibold tabular-nums tracking-[0.16em] ${numTone}`}
             >
               {String(index).padStart(2, "0")} /{" "}
               {String(total).padStart(2, "0")}

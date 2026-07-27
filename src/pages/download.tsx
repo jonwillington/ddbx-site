@@ -28,6 +28,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { StoreBadgeImg } from "@/components/app-store-badge";
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { CompanyLogo } from "@/components/company-logo";
 import { AppTour } from "@/components/download/app-tour";
 import { DownloadFaq } from "@/components/download/download-faq";
@@ -54,10 +55,14 @@ import {
 } from "@/lib/app-store";
 import { stripTickerSuffix } from "@/lib/display-name";
 import { marketForPath } from "@/lib/markets/registry";
-import { PRICING } from "@/lib/pricing";
+import { formatPrice, PRICING } from "@/lib/pricing";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 
 type MarketId = "uk" | "us";
+
+/** The page's one section box. Shared verbatim with `pages/api.tsx` — the two
+ *  pages use the same `SectionHeader` grammar and must sit on the same grid. */
+const SECTION = "mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20";
 
 // Credibility guardrails for the winners wall. The wall is social proof, so it
 // must read as "smart money", not a penny-stock pump screen.
@@ -89,6 +94,23 @@ const usd0 = new Intl.NumberFormat("en-US", {
   currency: "USD",
   maximumFractionDigits: 0,
 });
+
+/** Fixed to UTC: the wire dates are calendar days, not instants, so a US
+ *  visitor's negative offset would otherwise render them a day early. */
+const asOfFmt = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** `2026-07-24` -> `24 Jul 2026`. Falls back to the raw string rather than
+ *  printing "Invalid Date" if the wire ever hands us something else. */
+function formatAsOf(iso: string): string {
+  const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
+
+  return Number.isNaN(d.getTime()) ? iso : asOfFmt.format(d);
+}
 
 /** Ratings that count as "we flagged this" — everything above `routine`.
  *  Matches the Signal definition used across the site and the apps. */
@@ -415,7 +437,9 @@ function TrendChart({
   }
 
   const { w, h, pre, post, postArea, up, buy } = layout;
-  const color = up ? "#22a06b" : "#d1495b";
+  // Applied via `style`, not as presentation attributes: a var() reference is
+  // only reliably substituted in a CSS declaration, and inline style is one.
+  const color = up ? "var(--positive)" : "var(--negative)";
 
   return (
     <div className="relative">
@@ -429,8 +453,8 @@ function TrendChart({
       >
         <defs>
           <linearGradient id={`tg-${id}`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.22} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
+            <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.22 }} />
+            <stop offset="100%" style={{ stopColor: color, stopOpacity: 0 }} />
           </linearGradient>
         </defs>
 
@@ -439,7 +463,7 @@ function TrendChart({
         {/* Before the buy — grey, unfilled, quiet. */}
         {pre ? (
           <path
-            className="text-[#1a140d]/25 dark:text-white/25"
+            className="text-ink/25 dark:text-white/25"
             d={pre}
             fill="none"
             stroke="currentColor"
@@ -453,7 +477,7 @@ function TrendChart({
         {/* The buy itself, part one: a hairline dropped to the baseline. */}
         {pre ? (
           <line
-            className="text-[#1a140d]/20 dark:text-white/20"
+            className="text-ink/20 dark:text-white/20"
             stroke="currentColor"
             strokeDasharray="3 3"
             strokeWidth={1}
@@ -469,10 +493,10 @@ function TrendChart({
         <path
           d={post}
           fill="none"
-          stroke={color}
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={2}
+          style={{ stroke: color }}
           vectorEffect="non-scaling-stroke"
         />
       </svg>
@@ -484,7 +508,7 @@ function TrendChart({
       {pre ? (
         <span
           aria-hidden
-          className="absolute h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white dark:bg-[#1a140d]"
+          className="absolute h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white dark:bg-ink"
           style={{
             left: `${(buy[0] / w) * 100}%`,
             top: `${(buy[1] / h) * 100}%`,
@@ -519,7 +543,7 @@ function WinnerCard({
   // buttons stop lining up across a row.
   return (
     <Reveal className="h-full" delay={delay}>
-      <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-3xl border border-[#e0d8cc] bg-white/70 p-5 shadow-sm transition-shadow hover:shadow-md dark:border-border/60 dark:bg-surface-secondary/40">
+      <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-3xl border border-hairline bg-white/70 p-5 shadow-sm transition-shadow hover:shadow-md dark:border-border/60 dark:bg-surface-secondary/40">
         <div className="flex items-center gap-3">
           <CompanyLogo size={40} ticker={ticker} />
           <div className="min-w-0">
@@ -529,10 +553,10 @@ function WinnerCard({
           <div className="ml-auto text-right">
             {/* Counts up on scroll — the number IS the pitch, so it earns the
                 extra beat of attention that motion buys. */}
-            <p className="text-2xl font-bold tabular-nums text-[#1f9d63] dark:text-[#3ad48c]">
+            <p className="text-2xl font-semibold text-positive">
               <CountUp decimals={1} prefix="+" suffix="%" value={returnPct} />
             </p>
-            <p className="text-[11px] uppercase tracking-wide text-foreground/45">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
               since the buy
             </p>
           </div>
@@ -551,7 +575,7 @@ function WinnerCard({
           {/* Reads the two-tone line for anyone who doesn't infer it. Only
               shown when there IS a grey leg to explain. */}
           {winner.bars && (winner.buyIndex ?? 0) > 0 ? (
-            <p className="mt-2 flex items-center gap-3 text-[10px] uppercase tracking-wide text-foreground/40">
+            <p className="mt-2 flex items-center gap-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/40">
               <span className="flex items-center gap-1.5">
                 <span aria-hidden className="h-px w-3.5 bg-foreground/30" />
                 Before
@@ -559,7 +583,7 @@ function WinnerCard({
               <span className="flex items-center gap-1.5">
                 <span
                   aria-hidden
-                  className="h-[2px] w-3.5 rounded-full bg-[#22a06b] dark:bg-[#3ad48c]"
+                  className="h-[2px] w-3.5 rounded-full bg-positive"
                 />
                 After the buy
               </span>
@@ -576,7 +600,7 @@ function WinnerCard({
         <p className="mt-1 text-sm text-foreground/55">{metaLine}</p>
         {asOf ? (
           <p className="mt-2 text-[11px] text-foreground/40">
-            Prices as of {asOf}
+            Prices as of {formatAsOf(asOf)}
           </p>
         ) : null}
 
@@ -586,7 +610,7 @@ function WinnerCard({
             row's buttons align even when a director's role wraps to two lines. */}
         <div className="mt-auto pt-4">
           <a
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#d8cfc2] px-3.5 py-1.5 text-[13px] font-medium text-[#5a4128] transition-colors hover:bg-[#5a4128]/[0.06] dark:border-border/70 dark:text-[#ad9479] dark:hover:bg-white/5"
+            className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3.5 py-1.5 text-[13px] font-medium text-brand-brown transition-colors hover:bg-brand-brown/[0.06] dark:border-border/70 dark:text-brand-tan dark:hover:bg-white/5"
             data-ga-event="cta_download_lp"
             data-ga-label={`${gaPrefix} card analysis · ${ticker}`}
             href={appUrl}
@@ -645,7 +669,7 @@ const CONFIG: Record<MarketId, LandingConfig> = {
     winnersHeading: <>Directors bought these. Here’s how they’ve done.</>,
     winnersSub:
       "Real, recent open-market purchases by UK directors — and the share-price move since they bought. Every one of them was in the app the day it filed.",
-    winnersCtaSub: "See every director buy as it happens — free for 7 days.",
+    winnersCtaSub: `See every director buy as it happens — free for ${PRICING.uk.trialDays} days.`,
     tourHeading: "One filing, followed.",
     tourSub:
       "A director buys. Here is everything that happens next — from the second it hits the wire to what the shares had done months later.",
@@ -706,15 +730,14 @@ const CONFIG: Record<MarketId, LandingConfig> = {
       "Cluster detection: several directors in the same company, grouped and plotted on the price chart",
       "Live performance tracking from the trade date, so you can see whose buying is worth following",
       "A daily recap of the whole UK market, written for you before the open",
-      "Follow any company or director, and get told when the price moves after a buy you're watching",
-      "Placings, vestings and option exercises stripped out, so what's left is people choosing to buy",
+      "Follow any company or director, and get told when the price moves after a buy you’re watching",
+      "Placings, vestings and option exercises stripped out, so what’s left is people choosing to buy",
       "Every London-listed director dealing, back to the day we started — searchable",
       "No ads, no upsells, and your data is never resold",
     ],
     sourceLine:
       "Sourced from primary UK regulatory disclosures (RNS) as they publish — never scraped from a third-party summary.",
-    finalSub:
-      "Every UK director buy, decoded and tracked — in your pocket. Try it free for 7 days.",
+    finalSub: `Every UK director buy, decoded and tracked from the day it files. Try it free for ${PRICING.uk.trialDays} days.`,
     buyerNoun: "director",
     load: loadUk,
   },
@@ -733,7 +756,7 @@ const CONFIG: Record<MarketId, LandingConfig> = {
     winnersHeading: <>Insiders bought these. Here’s how they’ve done.</>,
     winnersSub:
       "Real, recent open-market purchases by US insiders — and the share-price move since they bought. Every one of them was in the app the day it filed.",
-    winnersCtaSub: "See every insider buy as it happens — free for 7 days.",
+    winnersCtaSub: `See every insider buy as it happens — free for ${PRICING.us.trialDays} days.`,
     tourHeading: "One filing, followed.",
     tourSub:
       "A director buys. Here is everything that happens next — from the second it hits the wire to what the shares had done months later.",
@@ -794,15 +817,14 @@ const CONFIG: Record<MarketId, LandingConfig> = {
       "Cluster detection: several insiders in the same company, grouped and plotted on the price chart",
       "Live performance tracking from the trade date, so you can see whose buying is worth following",
       "A daily recap of the whole US market, written for you before the open",
-      "Follow any company or insider, and get told when the price moves after a buy you're watching",
-      "Grants, vestings and 10b5-1 autopilot stripped out, so what's left is people choosing to buy",
+      "Follow any company or insider, and get told when the price moves after a buy you’re watching",
+      "Grants, vestings and 10b5-1 autopilot stripped out, so what’s left is people choosing to buy",
       "Congressional trading disclosed under the STOCK Act, alongside the corporate insiders",
       "No ads, no upsells, and your data is never resold",
     ],
     sourceLine:
       "Sourced from SEC EDGAR Form 4 filings as they publish — never scraped from a third-party summary.",
-    finalSub:
-      "Every US insider buy, decoded and tracked — in your pocket. Try it free for 7 days.",
+    finalSub: `Every US insider buy, decoded and tracked from the day it files. Try it free for ${PRICING.us.trialDays} days.`,
     buyerNoun: "insider",
     load: loadUs,
   },
@@ -837,11 +859,10 @@ function faqItems(
       q: `What happens when the ${p.trialDays}-day trial ends?`,
       a: (
         <>
-          You’re asked to subscribe — {p.symbol}
-          {p.monthly.toFixed(2)} a month, or {p.symbol}
-          {p.annual.toFixed(2)} for the year. Cancel any time before the trial
-          ends in your {STORE_LABEL[platform]} subscription settings and you
-          won’t be charged.
+          You’re asked to subscribe — {formatPrice(p, p.monthly)} a month, or{" "}
+          {formatPrice(p, p.annual)} for the year. Cancel any time before the
+          trial ends in your {STORE_LABEL[platform]} subscription settings and
+          you won’t be charged.
         </>
       ),
     },
@@ -1034,22 +1055,22 @@ export default function DownloadPage({
         marketId={cfg.marketId}
         platform={platform}
         sub={cfg.tourSub}
-        total={3}
+        total={4}
       />
 
       {/* ---- Winners wall ----
            Full-bleed: the cream band is the page changing surface under you,
            not a card sitting on it. */}
       <section
-        className={`${FULL_BLEED} border-y border-[#e7e0d4] bg-[#faf6ef] dark:border-border/50 dark:bg-surface-secondary/20`}
+        className={`${FULL_BLEED} border-y border-hairline bg-sheet dark:border-border/50 dark:bg-surface-secondary/20`}
       >
-        <div className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
+        <div className={SECTION}>
           <SectionHeader
             index={2}
             kicker={cfg.proofKicker}
             sub={cfg.winnersSub}
             title={cfg.winnersHeading}
-            total={3}
+            total={4}
           />
 
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -1057,7 +1078,7 @@ export default function DownloadPage({
               ? Array.from({ length: 6 }, (_, i) => (
                   <div
                     key={i}
-                    className="h-[280px] animate-pulse rounded-3xl border border-[#e0d8cc] bg-white/40 dark:border-border/60 dark:bg-surface-secondary/30"
+                    className="h-[280px] animate-pulse rounded-3xl border border-hairline bg-white/40 dark:border-border/60 dark:bg-surface-secondary/30"
                   />
                 ))
               : data.winners.map((w, i) => (
@@ -1074,7 +1095,7 @@ export default function DownloadPage({
           {available && data && data.winners.length > 0 ? (
             <Reveal className="mt-12 flex flex-col items-center gap-2.5">
               <StoreButtons
-                buttonClassName="inline-flex items-center justify-center gap-2.5 rounded-lg bg-[#1a140d] px-7 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-[#2a2118] hover:shadow-lg dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90"
+                buttonClassName={`inline-flex items-center justify-center gap-2.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-7 py-3.5 text-base font-semibold shadow-md transition-all hover:shadow-lg`}
                 gaEvent="cta_download_lp"
                 gaLabel={`${cfg.gaPrefix} winners`}
                 glyphClassName="h-[17px] w-[17px] shrink-0"
@@ -1090,13 +1111,13 @@ export default function DownloadPage({
            Two columns from lg: the card on the left, what it buys on the
            right. Stacked, the card was a narrow ribbon down the left of an
            otherwise empty screen with a nine-item list trailing off it. */}
-      <section className="mx-auto max-w-6xl px-4 py-14 md:py-20">
+      <section className={SECTION}>
         <SectionHeader
           index={3}
           kicker="The price"
-          sub="One subscription, both the alerts and the analysis. No ads, no upsells, no data resold."
+          sub="One subscription, both the alerts and the analysis. No tiers, no add-ons, nothing held back for a higher plan."
           title="What it costs"
-          total={3}
+          total={4}
         />
 
         <div className="mt-10 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
@@ -1113,25 +1134,30 @@ export default function DownloadPage({
 
       {/* ---- Final CTA ---- */}
       <section
-        className={`${FULL_BLEED} bg-[#1a140d] text-white dark:bg-[oklch(17%_0.02_55)]`}
+        className={`${FULL_BLEED} bg-ink text-white dark:bg-[oklch(17%_0.02_55)]`}
       >
-        <div className="mx-auto max-w-4xl px-4 py-16 text-center md:px-6 md:py-24">
-          <Reveal>
-            <h2 className="text-balance text-3xl font-semibold tracking-tight md:text-[42px] md:leading-[1.08]">
-              Start following the smart money today.
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-balance text-white/65">
-              {cfg.finalSub}
-            </p>
-          </Reveal>
+        <div className={SECTION}>
+          <SectionHeader
+            index={4}
+            kicker="Get the app"
+            sub={cfg.finalSub}
+            title={
+              <>
+                A {cfg.buyerNoun} buys tomorrow morning. You’ll know within
+                minutes.
+              </>
+            }
+            tone="dark"
+            total={4}
+          />
 
           <Reveal delay={120}>
-            {/* One centred column, not a row. Side by side the badge and the
-                QR had no shared baseline and no matching height, so the pair
-                sat visibly off-centre under a centred headline. */}
-            <div className="mt-10 flex flex-col items-center justify-center gap-8">
+            {/* One column, not a row. The badge block and the QR block have no
+                shared baseline and no matching height, so side by side they
+                read as two things that failed to line up. */}
+            <div className="mt-10 flex flex-col items-start gap-8">
               {available ? (
-                <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-col items-start gap-3">
                   <a
                     aria-label={`Get ddbx on the ${STORE_LABEL[platform]}`}
                     className="dl-lift inline-block"
@@ -1163,7 +1189,7 @@ export default function DownloadPage({
             </div>
           </Reveal>
 
-          <p className="mx-auto mt-14 max-w-xl text-xs leading-relaxed text-white/35">
+          <p className="mt-14 max-w-[64ch] text-xs leading-relaxed text-white/35">
             Returns shown are the share-price change since each {cfg.buyerNoun}
             ’s purchase, as of the latest cached close. Past performance is not
             a reliable indicator of future results. ddbx is information, not

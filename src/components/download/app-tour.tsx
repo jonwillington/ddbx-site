@@ -144,7 +144,7 @@ export function AppTour({
   const tick = useNotificationTick(true);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-14 md:py-24">
+    <section className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-24">
       <SectionHeader
         index={index}
         kicker={kicker}
@@ -161,7 +161,7 @@ export function AppTour({
           return (
             <Reveal key={b.slot}>
               <div
-                className={`grid items-center gap-16 border-t border-[#e7e0d4] py-14 dark:border-border/50 ${
+                className={`grid items-center gap-16 border-t border-hairline py-14 dark:border-border/50 ${
                   flip
                     ? "lg:grid-cols-[380px_minmax(0,1fr)]"
                     : "lg:grid-cols-[minmax(0,1fr)_380px]"
@@ -174,18 +174,18 @@ export function AppTour({
                 <div className={flip ? "lg:order-2" : "lg:order-1"}>
                   {/* The rail: a hairline down the copy with the timestamp
                       sitting on it, dot and all. */}
-                  <div className="border-l border-[#e0d8cc] pl-8 dark:border-border/60">
+                  <div className="border-l border-hairline pl-8 dark:border-border/60">
                     <div className="relative flex items-center gap-3">
                       <span
                         aria-hidden
-                        className="absolute -left-[calc(2rem+4.5px)] h-[9px] w-[9px] rounded-full bg-[#5a4128] dark:bg-[#ad9479]"
+                        className="absolute -left-[calc(2rem+4.5px)] h-[9px] w-[9px] rounded-full bg-brand-brown dark:bg-brand-tan"
                       />
-                      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] tabular-nums text-[#5a4128] dark:text-[#ad9479]">
+                      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] tabular-nums text-brand-brown dark:text-brand-tan">
                         {b.timestamp}
                       </span>
                       <span
                         aria-hidden
-                        className="h-px w-6 bg-[#e0d8cc] dark:bg-border/60"
+                        className="h-px w-6 bg-hairline dark:bg-border/60"
                       />
                       <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/40">
                         {b.kicker}
@@ -330,11 +330,11 @@ function MobileTour({
               shotWidth={SHOT_W}
               tick={tick}
             />
-            <p className="mt-5 flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a4128] dark:text-[#ad9479]">
+            <p className="mt-5 flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
               {b.timestamp}
               <span
                 aria-hidden
-                className="h-px w-5 bg-[#e0d8cc] dark:bg-border/60"
+                className="h-px w-5 bg-hairline dark:bg-border/60"
               />
               <span className="text-foreground/40">{b.kicker}</span>
             </p>
@@ -359,7 +359,7 @@ function MobileTour({
           {String(active + 1).padStart(2, "0")} /{" "}
           {String(beats.length).padStart(2, "0")}
         </span>
-        <span className="relative h-px flex-1 bg-[#e0d8cc] dark:bg-border/60">
+        <span className="relative h-px flex-1 bg-hairline dark:bg-border/60">
           <span
             className="absolute inset-y-0 left-0 bg-brand-brown transition-[width] duration-300 dark:bg-brand-tan"
             style={{ width: `${((active + 1) / beats.length) * 100}%` }}

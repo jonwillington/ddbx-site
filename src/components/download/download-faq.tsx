@@ -33,7 +33,7 @@ export function DownloadFaq({ items }: { items: FaqItem[] }) {
 
       {items.map((item, i) => (
         <Reveal key={item.q} delay={i * 60}>
-          <details className="dl-faq group border-b border-[#e7e0d4] dark:border-border/50">
+          <details className="dl-faq group border-b border-hairline dark:border-border/50">
             <summary className="flex cursor-pointer items-center gap-4 py-5 text-left text-base font-medium transition-colors hover:text-foreground/70">
               <span className="flex-1">{item.q}</span>
               <svg

@@ -46,7 +46,8 @@ export function QrInstall({
           width: QR_CSS_PX * 2,
           margin: 1,
           // Brand-warm rather than pure black; still far past the contrast
-          // ratio every scanner needs.
+          // ratio every scanner needs. This is `--color-ink` with an explicit
+          // alpha byte — `qrcode` wants 8-digit hex, so it can't read the token.
           color: { dark: "#1a140dff", light: "#ffffffff" },
           errorCorrectionLevel: "M",
         });

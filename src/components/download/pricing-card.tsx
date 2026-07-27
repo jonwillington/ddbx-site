@@ -24,7 +24,7 @@ function CheckMark() {
   return (
     <svg
       aria-hidden="true"
-      className="mt-[3px] h-4 w-4 shrink-0 text-[#1f9d63] dark:text-[#3ad48c]"
+      className="mt-[3px] h-4 w-4 shrink-0 text-positive"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
@@ -51,8 +51,8 @@ export function PricingCard({
     // Left-set, not centred: the section header above it is left-set now, and
     // a centred card under a left-set headline reads as two unrelated layouts.
     <Reveal className="max-w-lg">
-      <div className="overflow-hidden rounded-3xl border border-[#e0d8cc] bg-white/70 shadow-sm dark:border-border/60 dark:bg-surface-secondary/40">
-        <div className="border-b border-[#e7e0d4] bg-[#faf6ef] px-6 py-5 text-center dark:border-border/50 dark:bg-surface-secondary/30">
+      <div className="overflow-hidden rounded-3xl border border-hairline bg-white/70 shadow-sm dark:border-border/60 dark:bg-surface-secondary/40">
+        <div className="border-b border-hairline bg-sheet px-6 py-5 text-center dark:border-border/50 dark:bg-surface-secondary/30">
           <p className="text-lg font-semibold">
             Free for {pricing.trialDays} days
           </p>
@@ -61,12 +61,12 @@ export function PricingCard({
           </p>
         </div>
 
-        <div className="grid divide-y divide-[#e7e0d4] dark:divide-border/50 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+        <div className="grid divide-y divide-hairline dark:divide-border/50 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           <div className="px-6 py-6 text-center">
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-foreground/45">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
               Monthly
             </p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight">
+            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
               {formatPrice(pricing, pricing.monthly)}
             </p>
             <p className="mt-1 text-sm text-foreground/50">per month</p>
@@ -74,18 +74,18 @@ export function PricingCard({
           <div className="px-6 py-6 text-center">
             {/* Inline with the tier label, not floated into the corner — as an
                 absolute pill it collided with the centred "Annual". */}
-            <p className="flex items-center justify-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-wider text-foreground/45">
+            <p className="flex items-center justify-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
               Annual
               {saving > 0 ? (
-                <span className="rounded-full bg-[#1f9d63]/12 px-2 py-0.5 text-[10px] text-[#1f9d63] dark:bg-[#3ad48c]/15 dark:text-[#3ad48c]">
+                <span className="rounded-full bg-positive/12 px-2 py-0.5 text-[10px] tabular-nums text-positive">
                   Save {saving}%
                 </span>
               ) : null}
             </p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight">
+            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
               {formatPrice(pricing, annualPerMonth(pricing))}
             </p>
-            <p className="mt-1 text-sm text-foreground/50">
+            <p className="mt-1 text-sm tabular-nums text-foreground/50">
               per month, billed {formatPrice(pricing, pricing.annual)} yearly
             </p>
           </div>
@@ -115,7 +115,7 @@ export function IncludedList({ benefits }: { benefits: string[] }) {
 
   return (
     <Reveal delay={90}>
-      <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-foreground/45">
+      <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
         Everything included
       </p>
       <ul className="mt-5 space-y-3.5">

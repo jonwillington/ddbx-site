@@ -3,10 +3,10 @@
  *  The old one was a headline over a single static radial gradient — visibly
  *  weaker than the market pages we send people *from*. This one is built on the
  *  same lit stage the market hero uses: the live deal-radar map behind a framed
- *  panel, a wash from the left so the headline stays legible over it, and a
- *  warm spotlight pooled where the copy sits. `HeroDealMapLayer` and
- *  `useDealRadar` are imported directly rather than re-implemented, so the map
- *  is literally the same instrument, driven by the same clock.
+ *  panel and a wash from the left so the headline stays legible over it.
+ *  `HeroDealMapLayer` and `useDealRadar` are imported directly rather than
+ *  re-implemented, so the map is literally the same instrument, driven by the
+ *  same clock.
  *
  *  The right column is the live notification stack and nothing else — no
  *  handset, no app screenshot behind it. It briefly had both; the device was a
@@ -16,8 +16,8 @@
  *  reads as the product working. The screenshots keep their job in the scroll
  *  tour below.
  *
- *  Motion: the stage breathes (shared with the market hero), the stack floats
- *  on a slow 7s cycle, and both stop under prefers-reduced-motion.
+ *  Motion: the stack floats on a slow 7s cycle, and stops under
+ *  prefers-reduced-motion.
  */
 import type { ReactNode } from "react";
 
@@ -57,10 +57,6 @@ export function DownloadHero({
   return (
     <header className="relative flex min-h-[62svh] flex-col lg:min-h-[600px]">
       <style>{`
-        @keyframes dlh-breathe {
-          0%, 100% { opacity: 0.85; transform: scale(1); }
-          50%      { opacity: 1;    transform: scale(1.04); }
-        }
         @keyframes dlh-float {
           0%, 100% { transform: translateY(0); }
           50%      { transform: translateY(-10px); }
@@ -83,25 +79,9 @@ export function DownloadHero({
             oklch(19% 0.022 55 / 0.5) 38%,
             transparent 58%);
         }
-        .dlh-spot {
-          position: absolute; inset: 0;
-          background: radial-gradient(ellipse 46% 60% at 26% 42%,
-            rgba(255, 248, 232, 0.9) 0%,
-            rgba(255, 248, 232, 0.5) 30%,
-            rgba(255, 249, 235, 0.14) 55%,
-            transparent 72%);
-          will-change: opacity, transform;
-          animation: dlh-breathe 9s ease-in-out infinite;
-        }
-        :is(.dark) .dlh-spot {
-          background: radial-gradient(ellipse 46% 60% at 26% 42%,
-            rgba(196, 168, 130, 0.16) 0%,
-            rgba(196, 168, 130, 0.08) 30%,
-            transparent 72%);
-        }
         .dlh-float { animation: dlh-float 7s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) {
-          .dlh-spot, .dlh-float { animation: none !important; }
+          .dlh-float { animation: none !important; }
         }
       `}</style>
 
@@ -121,7 +101,6 @@ export function DownloadHero({
           />
         </div>
         <div className="dlh-scrim absolute inset-0 z-[5] hidden md:block" />
-        <div className="dlh-spot z-[5] hidden md:block" />
 
         {/* Mobile edge dissolves — no frame there, so the stage has to melt
             into the navbar above and the page below. */}
@@ -152,13 +131,13 @@ export function DownloadHero({
         <div className="order-2 text-center lg:order-1 lg:text-left">
           <div className="flex justify-center lg:justify-start">
             <span
-              className={`${chip("lg")} bg-[#5a4128]/10 text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]`}
+              className={`${chip("lg")} bg-brand-brown/10 text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan`}
             >
               {trialDays}-day free trial · Cancel any time
             </span>
           </div>
 
-          <h1 className="mx-auto mt-5 max-w-[560px] text-balance text-[34px] font-semibold leading-[1.05] tracking-tight lg:mx-0 lg:text-[54px]">
+          <h1 className="mx-auto mt-5 max-w-[560px] text-balance text-[34px] font-semibold leading-[1.03] tracking-[-0.028em] lg:mx-0 lg:text-[58px]">
             {headline}
           </h1>
           <p className="mx-auto mt-5 max-w-[460px] text-balance text-base leading-relaxed text-foreground/65 lg:mx-0 lg:text-lg">
@@ -221,7 +200,7 @@ export function StoreUnavailable({
   alternatives: { label: string; href: string; gaLabel: string }[];
 }) {
   return (
-    <div className="w-full max-w-[420px] rounded-2xl border border-[#e0d8cc] bg-white/70 p-5 text-left dark:border-border/60 dark:bg-surface-secondary/40">
+    <div className="w-full max-w-[420px] rounded-2xl border border-hairline bg-white/70 p-5 text-left dark:border-border/60 dark:bg-surface-secondary/40">
       <p className="text-sm leading-relaxed text-foreground/70">{message}</p>
       <div className="mt-4 flex flex-wrap gap-2.5">
         {alternatives.map((a) => (

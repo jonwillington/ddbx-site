@@ -46,15 +46,23 @@ on its own once `PLAY_STORE_URLS.us` exists.
 
 ## Screenshots
 
-None exist yet. Every screen slot renders a styled placeholder until the file
-lands — the page is designed to ship first and light up file-by-file.
+They have landed — 27 PNGs, `uk` and `us` × `ios` and `android` × the six
+slots the tour renders (`today`, `analysis`, `balance`, `cluster`,
+`performance`, `recap`). The styled placeholder is still wired up, but it is
+fallback insurance against a missing or renamed file now rather than the
+normal case.
 
 ```
 public/app-shots/<market>/<platform>/<slot>.png
   market   uk | us
   platform ios | android
-  slot     today | alert | analysis | performance | lockscreen
+  slot     today | analysis | balance | cluster | performance | recap
 ```
+
+`alert.png` exists for most pairs but is never requested: the alert beat
+renders the live notification stack instead, because a capture lands whatever
+state the simulator was in and a "markets closed for the weekend" screen under
+a heading about instant alerts is worse than no screen at all.
 
 Export **screen only** — no device chrome, no rounded corners, no drop shadow.
 The bezel is drawn in CSS (`device-frame.tsx`) so the frame can be restyled, or

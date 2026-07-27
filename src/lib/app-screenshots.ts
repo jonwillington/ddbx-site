@@ -2,10 +2,17 @@
 // `DeviceFrame`.
 //
 // The files are dropped in by hand (design exports) rather than imported, so
-// the page must survive every one of them being absent — `DeviceFrame` falls
+// the page must survive any one of them being absent — `DeviceFrame` falls
 // back to a styled placeholder per slot, and the layout is identical either
-// way. That means the tour can ship before the mockups exist and light up
-// file-by-file as they land, with no code change.
+// way.
+//
+// 27 shots have landed: uk and us × ios and android × the six slots the tour
+// actually renders (today, analysis, balance, cluster, performance, recap).
+// The placeholder is now insurance against a missing or renamed file rather
+// than the normal case. `alert.png` exists for most pairs but is never
+// requested — the alert beat renders the live notification stack instead (see
+// `BeatVisual` in app-tour.tsx). `lockscreen` is declared and unused, reserved
+// for a notification-theatre section.
 //
 // Export SCREEN-ONLY images (no device chrome, no rounded corners, no drop
 // shadow): the bezel is drawn in code, so the frame can be restyled — or the
