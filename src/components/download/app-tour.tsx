@@ -26,7 +26,7 @@
  *  to obey is that a beat fits on one screenful — see `SHOT_W` for why the
  *  handset there is sized off the viewport height and not the column.
  */
-import { useState, type UIEvent } from "react";
+import { useState, type ReactNode, type UIEvent } from "react";
 
 import { DeviceFrame } from "./device-frame";
 import { Reveal } from "./reveal";
@@ -54,6 +54,23 @@ export interface TourBeat {
   /** The benefit, in the visitor's words. */
   title: string;
   body: string;
+}
+
+/** The tinted well every beat's visual stands in.
+ *
+ *  It started as the alert beat's own stage — a notification floating in a
+ *  phone-tall empty box read as a layout error — while the handsets sat
+ *  directly on the page. That made the one non-device beat look like the
+ *  exception rather than a member of the set, and left the phones drifting on
+ *  bare cream with nothing holding them. One stage for every beat: the screens
+ *  and the alert are now the same kind of object, framed the same way, and the
+ *  section reads as a sequence instead of a pile of loose screenshots. */
+function BeatStage({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-center rounded-2xl bg-black/[0.035] p-4 dark:bg-white/[0.05] sm:p-6">
+      {children}
+    </div>
+  );
 }
 
 /** What a beat SHOWS.
@@ -87,36 +104,40 @@ function BeatVisual({
   if (beat.slot === "alert") {
     // The alert is not a device and must not wear a device's silhouette: a
     // notification floating in a phone-tall empty box read as a layout error,
-    // not a choice. It gets a stage of its own — the tinted well the site
-    // already uses for tiles — sized to its content on the height-free desktop
-    // bands. The mobile carousel's slides sit in one row, so there the stage
-    // keeps the framed handset's height (an alert a third the height of a
-    // phone would drag every caption after it out of line) and the panel fill
-    // is what makes that height read as intentional rather than empty.
+    // not a choice. On the height-free desktop bands it sizes to its content;
+    // the mobile carousel's slides sit in one row, so there it keeps the framed
+    // handset's height (an alert a third the height of a phone would drag every
+    // caption after it out of line).
     return (
-      <div
-        className="flex items-center justify-center rounded-2xl bg-black/[0.035] px-6 dark:bg-white/[0.05]"
-        style={shotHeight ? { height: shotHeight } : undefined}
-      >
-        <div className={shotHeight ? "w-full" : "w-full max-w-[340px] py-12"}>
+      <BeatStage>
+        <div
+          className={
+            shotHeight
+              ? "flex w-full items-center"
+              : "w-full max-w-[340px] py-8"
+          }
+          style={shotHeight ? { height: shotHeight } : undefined}
+        >
           <HeroNotificationStack deals={dealsForMarket(marketId)} tick={tick} />
         </div>
-      </div>
+      </BeatStage>
     );
   }
 
   return (
-    <div
-      className="mx-auto"
-      style={shotWidth ? { width: shotWidth } : undefined}
-    >
-      <DeviceFrame
-        alt={`ddbx ${SLOT_LABEL[beat.slot]} screen on ${platform === "ios" ? "iPhone" : "Android"}`}
-        platform={platform}
-        slot={beat.slot}
-        src={appShotSrc(marketId, platform, beat.slot)}
-      />
-    </div>
+    <BeatStage>
+      <div
+        className="mx-auto w-full"
+        style={shotWidth ? { width: shotWidth } : undefined}
+      >
+        <DeviceFrame
+          alt={`ddbx ${SLOT_LABEL[beat.slot]} screen on ${platform === "ios" ? "iPhone" : "Android"}`}
+          platform={platform}
+          slot={beat.slot}
+          src={appShotSrc(marketId, platform, beat.slot)}
+        />
+      </div>
+    </BeatStage>
   );
 }
 

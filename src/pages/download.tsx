@@ -28,7 +28,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { StoreBadgeImg } from "@/components/app-store-badge";
-import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import {
+  BUTTON_FILLED,
+  BUTTON_GHOST,
+  BUTTON_RADIUS,
+} from "@/components/button";
 import { CompanyLogo } from "@/components/company-logo";
 import { AppTour } from "@/components/download/app-tour";
 import { DownloadFaq } from "@/components/download/download-faq";
@@ -224,7 +228,11 @@ function feedStats<T>(
     getTicker: (x: T) => string;
     getAnalysis: (x: T) => Analysis | null | undefined;
   },
-  nouns: { filings: string; companies: string; signal: string },
+  nouns: {
+    filings: { k: string; label: string };
+    companies: { k: string; label: string };
+    signal: { k: string; label: string };
+  },
 ): Stat[] {
   const since30 = isoDaysAgo(30);
   const last30 = items.filter((x) => cfg.getDisclosedDate(x) >= since30);
@@ -234,9 +242,9 @@ function feedStats<T>(
   const signal = items.filter((x) => isSignal(cfg.getAnalysis(x))).length;
 
   return [
-    { value: last30.length, label: nouns.filings },
-    { value: companies.size, label: nouns.companies },
-    { value: signal, label: nouns.signal },
+    { ...nouns.filings, value: last30.length },
+    { ...nouns.companies, value: companies.size },
+    { ...nouns.signal, value: signal },
   ].filter((s) => s.value > 0);
 }
 
@@ -285,9 +293,15 @@ async function loadUk(want: number): Promise<MarketData> {
         getAnalysis: (d) => d.analysis,
       },
       {
-        filings: "director disclosures read in the last 30 days",
-        companies: `UK companies covered in the last ${STATS_WINDOW_DAYS} days`,
-        signal: "flagged as worth a second look",
+        filings: {
+          k: "Disclosures",
+          label: "director disclosures read in the last 30 days",
+        },
+        companies: {
+          k: "Coverage",
+          label: `UK companies covered in the last ${STATS_WINDOW_DAYS} days`,
+        },
+        signal: { k: "Signal", label: "flagged as worth a second look" },
       },
     ),
   };
@@ -357,9 +371,15 @@ async function loadUs(want: number): Promise<MarketData> {
         getAnalysis: (d) => d.analysis,
       },
       {
-        filings: "Form 4 filings read in the last 30 days",
-        companies: `US companies covered in the last ${STATS_WINDOW_DAYS} days`,
-        signal: "flagged as worth a second look",
+        filings: {
+          k: "Filings",
+          label: "Form 4 filings read in the last 30 days",
+        },
+        companies: {
+          k: "Coverage",
+          label: `US companies covered in the last ${STATS_WINDOW_DAYS} days`,
+        },
+        signal: { k: "Signal", label: "flagged as worth a second look" },
       },
     ),
   };
@@ -610,7 +630,7 @@ function WinnerCard({
             row's buttons align even when a director's role wraps to two lines. */}
         <div className="mt-auto pt-4">
           <a
-            className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3.5 py-1.5 text-[13px] font-medium text-brand-brown transition-colors hover:bg-brand-brown/[0.06] dark:border-border/70 dark:text-brand-tan dark:hover:bg-white/5"
+            className={`inline-flex items-center gap-1.5 ${BUTTON_RADIUS} ${BUTTON_GHOST} px-3.5 py-2 text-[13px] font-medium transition-colors`}
             data-ga-event="cta_download_lp"
             data-ga-label={`${gaPrefix} card analysis · ${ticker}`}
             href={appUrl}
@@ -1138,6 +1158,7 @@ export default function DownloadPage({
       >
         <div className={SECTION}>
           <SectionHeader
+            align="center"
             index={4}
             kicker="Get the app"
             sub={cfg.finalSub}
@@ -1154,10 +1175,11 @@ export default function DownloadPage({
           <Reveal delay={120}>
             {/* One column, not a row. The badge block and the QR block have no
                 shared baseline and no matching height, so side by side they
-                read as two things that failed to line up. */}
-            <div className="mt-10 flex flex-col items-start gap-8">
+                read as two things that failed to line up. Centred: this is the
+                page's last word and there is nothing beside it to align to. */}
+            <div className="mt-10 flex flex-col items-center gap-8">
               {available ? (
-                <div className="flex flex-col items-start gap-3">
+                <div className="flex flex-col items-center gap-3">
                   <a
                     aria-label={`Get ddbx on the ${STORE_LABEL[platform]}`}
                     className="dl-lift inline-block"
@@ -1189,7 +1211,7 @@ export default function DownloadPage({
             </div>
           </Reveal>
 
-          <p className="mt-14 max-w-[64ch] text-xs leading-relaxed text-white/35">
+          <p className="mx-auto mt-14 max-w-[64ch] text-center text-xs leading-relaxed text-white/35">
             Returns shown are the share-price change since each {cfg.buyerNoun}
             ’s purchase, as of the latest cached close. Past performance is not
             a reliable indicator of future results. ddbx is information, not

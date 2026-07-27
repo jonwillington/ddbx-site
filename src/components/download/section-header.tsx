@@ -27,6 +27,7 @@ export function SectionHeader({
   sub,
   /** Inverted for the dark closing band. */
   tone = "light",
+  align = "left",
   className = "",
 }: {
   kicker: string;
@@ -36,6 +37,12 @@ export function SectionHeader({
   title: ReactNode;
   sub?: ReactNode;
   tone?: "light" | "dark";
+  /** Left-set is the page's default and the reason it doesn't read as a
+   *  template. The closing band is the one exception: it's a single CTA with
+   *  nothing to its right, and left-set it left two-thirds of a full-bleed
+   *  dark band empty. The ruled kicker/number row stays put either way, so
+   *  the section still belongs to the same family. */
+  align?: "left" | "center";
   className?: string;
 }) {
   const rule =
@@ -71,12 +78,18 @@ export function SectionHeader({
         {/* Display scale, left-set. The old centred h2 topped out at 42px; a
             section opener on a page this long has to carry the weight of a
             headline, not a subheading. */}
-        <h2 className="mt-5 max-w-[18ch] text-balance text-[34px] font-semibold leading-[1.03] tracking-[-0.028em] sm:text-[46px] lg:text-[58px]">
+        <h2
+          className={`mt-5 max-w-[18ch] text-balance text-[34px] font-semibold leading-[1.03] tracking-[-0.028em] sm:text-[46px] lg:text-[58px] ${
+            align === "center" ? "mx-auto text-center" : ""
+          }`}
+        >
           {title}
         </h2>
         {sub ? (
           <p
-            className={`mt-4 max-w-[52ch] text-[16.5px] leading-[1.55] ${subTone}`}
+            className={`mt-4 max-w-[52ch] text-[16.5px] leading-[1.55] ${subTone} ${
+              align === "center" ? "mx-auto text-center" : ""
+            }`}
           >
             {sub}
           </p>

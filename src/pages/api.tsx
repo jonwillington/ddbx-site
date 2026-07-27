@@ -251,6 +251,64 @@ const SPEC = [
   ["Support", "A person, by email"],
 ];
 
+/** The hero panel's atmosphere: a lattice, a bloom and a rake of light.
+ *
+ *  The panel was a flat dark rectangle, which on a page selling a data product
+ *  read as an empty slide rather than as a surface. This gives it character
+ *  without giving it colour — nothing here is a hue the brand doesn't already
+ *  own, and every layer is under 10% opacity.
+ *
+ *  Three layers, in order:
+ *
+ *  1. A 56px lattice at 4.5% white, radially masked so it exists only around
+ *     the response panel and dissolves before it reaches the headline. A grid
+ *     is the one ornament an API page can wear honestly — it's the shape of a
+ *     table — but a grid that runs edge to edge is a wireframe, so the mask is
+ *     what keeps it atmosphere.
+ *  2. A warm bloom off the top-right corner, as if the response panel were lit.
+ *     `brand-amber` at a tenth strength: the same accent the kicker uses, far
+ *     below the threshold where it reads as a colour wash.
+ *  3. A single diagonal rake of white at 3.5%, cutting the other way. It's what
+ *     stops the first two from looking like a symmetric vignette.
+ *
+ *  All static — no animation, nothing to repaint on scroll. */
+function HeroAtmosphere() {
+  const latticeMask =
+    "radial-gradient(115% 85% at 76% 6%, #000 0%, rgba(0,0,0,0.5) 40%, transparent 76%)";
+
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl"
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.045) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+          maskImage: latticeMask,
+          WebkitMaskImage: latticeMask,
+        }}
+      />
+      <div
+        className="absolute -right-[18%] -top-[45%] h-[150%] w-[80%]"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(238,197,132,0.10), rgba(238,197,132,0.028) 55%, transparent 78%)",
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(112deg, transparent 28%, rgba(255,255,255,0.035) 47%, transparent 68%)",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function ApiPage() {
   usePinnedTheme("dark");
   const [askOpen, setAskOpen] = useState(false);
@@ -260,7 +318,8 @@ export default function ApiPage() {
     <DefaultLayout>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="pt-2 md:pt-6">
-        <div className="rounded-3xl border border-white/[0.08] bg-[oklch(19%_0.022_55)] p-6 md:p-10 lg:p-12">
+        <div className="relative isolate overflow-hidden rounded-3xl border border-white/[0.08] bg-[oklch(19%_0.022_55)] p-6 md:p-10 lg:p-12">
+          <HeroAtmosphere />
           {/* `grid-cols-1` rather than bare `grid`: the implicit column is
               `auto`-sized, so the response panel's <pre> (which is ~500px of
               unbreakable monospace) widened the whole column past the viewport

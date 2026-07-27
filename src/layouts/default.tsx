@@ -444,7 +444,12 @@ export default function DefaultLayout({
       // that break out of the centred column with `FULL_BLEED` (100vw). `clip`
       // and not `hidden`: hidden would make this a scroll container and kill
       // every position:sticky on the site. See @/components/full-bleed.
-      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
+      // The bottom padding is the fixed mobile install bar's clearance. Its
+      // solid block — button, caption, safe-area — is ~96px; at the old 5rem
+      // the footer's last line finished flush under the caption with nothing
+      // between them, so the page never looked scrolled-to-the-end. 7rem
+      // leaves a clear gap at the bottom of the scroll.
+      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
     >
       <div className="sticky top-0 z-40">
         <Navbar />
@@ -460,12 +465,12 @@ export default function DefaultLayout({
         {children}
       </main>
       <footer className="w-full border-t border-separator bg-surface/60">
-        <div className="mx-auto w-full max-w-[1280px] px-4 md:px-6 pt-10 pb-5 md:pt-12 text-[10px] leading-4 text-foreground/40">
+        <div className="mx-auto w-full max-w-[1280px] px-4 md:px-6 pt-10 pb-10 md:pt-12 md:pb-8 text-[10px] leading-4 text-foreground/40">
           {/* The wordmark is a cell of the ruled band, not a masthead floating
-              above it — on desktop it takes the left rail and the first link
-              column's hairline separates it from the index; below lg it stacks
-              inside the same rules. Floating it above the band made it read as
-              a stray object between the page and the footer. */}
+              above it — on desktop it takes the left rail beside the index;
+              below lg it stacks inside the same rules. Floating it above the
+              band made it read as a stray object between the page and the
+              footer. */}
           <div className="mb-6 border-y border-separator/50 py-6 lg:flex lg:items-start">
             <div className="mb-6 lg:mb-0 lg:w-44 lg:shrink-0">
               <img
@@ -696,21 +701,18 @@ function FooterNav() {
   return (
     <nav
       aria-label="Footer"
-      className="grid grid-cols-2 gap-x-0 gap-y-8 sm:grid-cols-3 lg:min-w-0 lg:flex-1 lg:grid-cols-5"
+      className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:min-w-0 lg:flex-1 lg:grid-cols-5"
     >
-      {/* Column rules rather than gaps. A footer is the one place on the site
-          where a ruled grid is right: it's an index, and hairlines say
-          "columns of a table" where whitespace alone says "loose stacks".
-          The nth-child variants keep the rule off whichever column starts a
-          row — 2-up, then 3-up at sm — so a plain `divide-x` would put a
-          stray rule down the left of later rows. At lg every column keeps
-          its rule: all five fit one row and the wordmark holds the left
-          rail, so the first column's hairline separates it from the mark. */}
+      {/* Whitespace, not rules. The columns were separated by hairlines on the
+          argument that a footer is an index and rules say "columns of a table"
+          — but the rows wrap at three widths, so keeping the rule off whichever
+          column starts a row took a stack of nth-child overrides, and what
+          landed on screen was a half-height line beside a two-link column and
+          a full-height one beside an eight-link column. Ragged rules read as a
+          bug. Gaps do the same separating job at every width and need no
+          exceptions. */}
       {groups.map((group) => (
-        <div
-          key={group.title}
-          className="border-l border-separator/50 pl-5 [&:nth-child(2n+1)]:border-l-0 [&:nth-child(2n+1)]:pl-0 sm:pl-5 sm:[&:nth-child(2n+1)]:border-l sm:[&:nth-child(2n+1)]:pl-5 sm:[&:nth-child(3n+1)]:border-l-0 sm:[&:nth-child(3n+1)]:pl-0 lg:[&:nth-child(3n+1)]:border-l lg:[&:nth-child(3n+1)]:pl-5"
-        >
+        <div key={group.title}>
           <h2 className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
             {group.title}
           </h2>
