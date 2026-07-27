@@ -460,23 +460,22 @@ export default function DefaultLayout({
         {children}
       </main>
       <footer className="w-full border-t border-separator bg-surface/60">
-        {/* Generous top padding and a wide gap under the wordmark: the footer
-            follows straight on from page content, so without breathing room
-            above it the mark reads as part of the last section rather than as
-            the start of the footer. */}
-        <div className="mx-auto w-full max-w-[1280px] px-4 md:px-6 pt-12 pb-5 md:pt-16 text-[10px] leading-4 text-foreground/40">
-          {/* The mark sits close to the columns on purpose: at h-5 with a
-              40px gap it read as a stray object floating above an unrelated
-              nav. Bigger and tucked in, it reads as the nav's masthead. */}
-          <div className="mb-4 flex items-center">
-            <img
-              alt="ddbx"
-              className="h-8 max-w-[90px] opacity-40 dark:invert"
-              src="/logo.svg"
-            />
+        <div className="mx-auto w-full max-w-[1280px] px-4 md:px-6 pt-10 pb-5 md:pt-12 text-[10px] leading-4 text-foreground/40">
+          {/* The wordmark is a cell of the ruled band, not a masthead floating
+              above it — on desktop it takes the left rail and the first link
+              column's hairline separates it from the index; below lg it stacks
+              inside the same rules. Floating it above the band made it read as
+              a stray object between the page and the footer. */}
+          <div className="mb-6 border-y border-separator/50 py-6 lg:flex lg:items-start">
+            <div className="mb-6 lg:mb-0 lg:w-44 lg:shrink-0">
+              <img
+                alt="ddbx"
+                className="h-7 max-w-[90px] opacity-40 dark:invert"
+                src="/logo.svg"
+              />
+            </div>
+            <FooterNav />
           </div>
-
-          <FooterNav />
 
           <p>
             Disclaimer: The information, ratings, signals, commentary, and any
@@ -697,18 +696,20 @@ function FooterNav() {
   return (
     <nav
       aria-label="Footer"
-      className="mb-6 grid grid-cols-2 gap-x-0 gap-y-8 border-y border-separator/50 py-6 sm:grid-cols-4"
+      className="grid grid-cols-2 gap-x-0 gap-y-8 sm:grid-cols-3 lg:min-w-0 lg:flex-1 lg:grid-cols-5"
     >
       {/* Column rules rather than gaps. A footer is the one place on the site
           where a ruled grid is right: it's an index, and hairlines say
-          "columns of a table" where whitespace alone says "four loose
-          stacks". The nth-child variants keep the rule off whichever column
-          starts a row, which differs by breakpoint (2-up, then 4-up), so a
-          plain `divide-x` would put a stray rule down the left of row two. */}
+          "columns of a table" where whitespace alone says "loose stacks".
+          The nth-child variants keep the rule off whichever column starts a
+          row — 2-up, then 3-up at sm — so a plain `divide-x` would put a
+          stray rule down the left of later rows. At lg every column keeps
+          its rule: all five fit one row and the wordmark holds the left
+          rail, so the first column's hairline separates it from the mark. */}
       {groups.map((group) => (
         <div
           key={group.title}
-          className="border-l border-separator/50 pl-5 [&:nth-child(2n+1)]:border-l-0 [&:nth-child(2n+1)]:pl-0 sm:pl-5 sm:[&:nth-child(2n+1)]:border-l sm:[&:nth-child(2n+1)]:pl-5 sm:[&:nth-child(4n+1)]:border-l-0 sm:[&:nth-child(4n+1)]:pl-0"
+          className="border-l border-separator/50 pl-5 [&:nth-child(2n+1)]:border-l-0 [&:nth-child(2n+1)]:pl-0 sm:pl-5 sm:[&:nth-child(2n+1)]:border-l sm:[&:nth-child(2n+1)]:pl-5 sm:[&:nth-child(3n+1)]:border-l-0 sm:[&:nth-child(3n+1)]:pl-0 lg:[&:nth-child(3n+1)]:border-l lg:[&:nth-child(3n+1)]:pl-5"
         >
           <h2 className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
             {group.title}
