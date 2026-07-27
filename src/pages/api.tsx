@@ -243,14 +243,6 @@ const FAQ = [
   },
 ];
 
-const SPEC = [
-  ["Access", "Bearer token, issued per environment"],
-  ["Markets", "Any subset, or all of them"],
-  ["History", "Sized to your backtest window"],
-  ["Language", "Analysis written in the one you need"],
-  ["Support", "A person, by email"],
-];
-
 /** The page's atmosphere — the surface the hero panel sits ON, not a texture
  *  inside it.
  *
@@ -356,6 +348,106 @@ function PageAtmosphere() {
             // The page is theme-pinned dark, so this always resolves to the
             // warm charcoal the layout root is painting.
             "linear-gradient(to bottom, transparent, var(--background, oklch(22% 0.022 55)) 88%)",
+        }}
+      />
+    </div>
+  );
+}
+
+/** The reference section's atmosphere — the same idea as `PageAtmosphere`, but
+ *  doing a different job, which is the only reason to use it twice.
+ *
+ *  Repeating the hero's warm bloom halfway down would read as wallpaper: the
+ *  same gesture at the same strength in two places is a texture, not a
+ *  composition. So this one drops the amber entirely and leads with the
+ *  lattice, wider-spaced and a touch stronger than the hero's. This is the part
+ *  of the page that IS a schema — ten endpoints, a param list and two tables —
+ *  and a grid behind it is the one ornament that means something there.
+ *
+ *  Anchored to the section rather than to a pixel offset from the top of the
+ *  page: it hangs off the section's own box with negative insets, so it stays
+ *  put when the copy above it changes length. Every gradient dies inside its
+ *  own extent — see PageAtmosphere for why that rule is absolute here. */
+function ReferenceAtmosphere() {
+  const latticeMask =
+    "radial-gradient(52% 40% at 30% 46%, #000 0%, rgba(0,0,0,0.45) 46%, transparent 76%)";
+
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute -bottom-40 -top-40 left-1/2 -z-10 w-screen -translate-x-1/2"
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(255,255,255,0.055) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.055) 1px, transparent 1px)",
+          backgroundSize: "88px 88px",
+          maskImage: latticeMask,
+          WebkitMaskImage: latticeMask,
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(56% 42% at 82% 62%, rgba(255,255,255,0.05), rgba(255,255,255,0.015) 44%, transparent 74%)",
+        }}
+      />
+    </div>
+  );
+}
+
+/** The closing band's atmosphere — the same treatment, inverted.
+ *
+ *  The band is the page's one polarity flip: cream on a permanently dark page,
+ *  because the site's grammar is "one contrasting object per page, and that
+ *  object is the ask". Flat, it was the only part of the page with no light on
+ *  it at all, which made the flip read as a missing background rather than as
+ *  a deliberate change of surface.
+ *
+ *  Inverted means inverted: the lattice is black at 3.5% instead of white at
+ *  5%, and the bloom is `brand-brown` rather than `brand-amber` — the same
+ *  accent this band already uses for its kicker. Both are centred behind the
+ *  button rather than thrown to the top-right, because the band is centred now
+ *  and the light should point at the one thing there is to do.
+ *
+ *  Fixed colour literals only, no theme-aware tokens: `.dark` is pinned on this
+ *  page, so anything token-driven inside this band resolves to its DARK value.
+ *  See the file header. */
+function BandAtmosphere() {
+  const latticeMask =
+    "radial-gradient(44% 52% at 50% 42%, #000 0%, rgba(0,0,0,0.4) 48%, transparent 78%)";
+
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(26,20,13,0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(26,20,13,0.035) 1px, transparent 1px)",
+          backgroundSize: "72px 72px",
+          maskImage: latticeMask,
+          WebkitMaskImage: latticeMask,
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            // Alphas run higher here than on the dark layers and still land
+            // softer: white over #f5f0e8 moves each channel by (255 - base) x
+            // alpha, so 50% white is a ~7-point lift where 5% white on the
+            // warm charcoal is a ~10-point one. Light surfaces need more
+            // number for less effect.
+            "radial-gradient(52% 60% at 50% 34%, rgba(90,65,40,0.08), rgba(90,65,40,0.025) 46%, transparent 76%)",
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(100deg, transparent 26%, rgba(255,255,255,0.5) 48%, transparent 70%)",
         }}
       />
     </div>
@@ -511,7 +603,8 @@ export default function ApiPage() {
         </section>
 
         {/* ── 03 The reference ─────────────────────────────────────────────── */}
-        <section className={SECTION} id="reference">
+        <section className={`${SECTION} relative isolate`} id="reference">
+          <ReferenceAtmosphere />
           <SectionHeader
             index={3}
             kicker="The reference"
@@ -611,57 +704,52 @@ export default function ApiPage() {
 
         {/* ── Request access — the inverted band ───────────────────────────── */}
         <section
-          className={`${FULL_BLEED} mt-6 bg-[#f5f0e8] text-ink`}
+          className={`${FULL_BLEED} isolate mt-6 bg-[#f5f0e8] text-ink`}
           id="request-access"
         >
-          {/* Cut back to the ask, and set on the same ruled left grammar as the
-            numbered sections above it. The two-column version carried four
-            sentences of pitch and a five-row spec table beside the button,
-            which is a lot of reading to put AFTER the FAQ has already answered
-            everything. The pitch is one line now; the spec is a single
-            hairline row of label/value pairs; the detail lives in the modal
-            the button opens. */}
-          <div className="mx-auto max-w-[1280px] px-4 py-16 md:px-6 md:py-24">
-            <div className="border-t border-black/10 pt-5">
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown">
-                Request access
-              </p>
-              <h2 className="mt-5 max-w-[20ch] text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
-                Pricing is quoted per use case.
-              </h2>
-              <p className="mt-4 max-w-[38ch] text-[16px] leading-[1.6] text-ink/65">
-                Tell us what you&rsquo;re building and we&rsquo;ll come back
-                with scope and a number.
-              </p>
+          <BandAtmosphere />
 
-              <button
-                className={`${BUTTON_RADIUS} mt-8 bg-ink px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118]`}
-                data-ga-event="cta_api_band_request"
-                data-ga-label="API closing band"
-                type="button"
-                onClick={openAsk}
-              >
-                Request pricing
-              </button>
-              <p className="mt-3 text-[13px] text-ink/50">
-                Two working days. No newsletter, no onward sharing.
-              </p>
-            </div>
+          {/* Centred, and cut to the ask alone.
 
-            <dl className="mt-14 grid max-w-4xl grid-cols-2 gap-x-8 gap-y-6 border-t border-black/10 pt-8 sm:grid-cols-3 lg:grid-cols-5">
-              {SPEC.map(([k, v]) => (
-                <div key={k}>
-                  <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/40">
-                    {k}
-                  </dt>
-                  <dd className="mt-1.5 text-[13.5px] leading-[1.45] text-ink/75">
-                    {v}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            This band went left-set-and-ruled like the numbered sections above
+            it, carrying the pitch, a five-column spec row and the legal note.
+            But it isn't a section of the document — it's the end of it, and
+            the one thing on it a visitor can act on is a single button. Set
+            left with a spec table under it, the button was one object among
+            several and the eye had to find it. Centred with nothing else in
+            the frame, it is the only place to look.
 
-            <p className="mt-14 max-w-[62ch] text-xs leading-[1.6] text-ink/40">
+            The spec row went with the left-set version rather than moving:
+            every line of it (bearer token, market subsets, history window,
+            language, support) is already answered in the FAQ directly above
+            and restated in the modal the button opens. Third time on one
+            screen was reading, not information. */}
+          <div className="relative mx-auto max-w-[1280px] px-4 py-20 text-center md:px-6 md:py-28">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown">
+              Request access
+            </p>
+            <h2 className="mx-auto mt-5 max-w-[20ch] text-balance text-[32px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[44px]">
+              Pricing is quoted per use case.
+            </h2>
+            <p className="mx-auto mt-4 max-w-[40ch] text-balance text-[16.5px] leading-[1.6] text-ink/65">
+              Tell us what you&rsquo;re building and we&rsquo;ll come back with
+              scope and a number.
+            </p>
+
+            <button
+              className={`${BUTTON_RADIUS} mt-9 bg-ink px-8 py-4 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118]`}
+              data-ga-event="cta_api_band_request"
+              data-ga-label="API closing band"
+              type="button"
+              onClick={openAsk}
+            >
+              Request pricing
+            </button>
+            <p className="mt-4 text-[13px] text-ink/50">
+              Two working days. No newsletter, no onward sharing.
+            </p>
+
+            <p className="mx-auto mt-16 max-w-[58ch] text-[11.5px] leading-[1.6] text-ink/40">
               Research output, not investment advice. Ratings carry a stated
               confidence and are not recommendations to trade. Redistribution
               rights vary by source and are agreed per contract.
