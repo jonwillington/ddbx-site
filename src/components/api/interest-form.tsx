@@ -47,16 +47,23 @@ const USE_CASES = [
  *  the closing band, which is cream. So the theme-aware tokens (`text-negative`,
  *  BUTTON_FILLED, `bg-surface`, …) would all resolve to their DARK values on a
  *  light surface — BUTTON_FILLED in particular inverts to a white fill, which
- *  is invisible on cream. Colours here are therefore literal. */
+ *  is invisible on cream. Colours here are therefore fixed values: literals, or
+ *  the fixed brand tokens (`ink`, `brand-brown`), which carry one value in both
+ *  modes. */
 const FIELD =
-  "w-full rounded-xl border border-black/15 bg-white/70 px-4 py-3 text-[15px] text-[#1a140d] placeholder:text-[#1a140d]/35 transition-colors focus:border-[#5a4128]/60 focus:outline-none";
+  "w-full rounded-xl border border-black/15 bg-white/70 px-4 py-3 text-[15px] text-ink placeholder:text-ink/35 transition-colors focus:border-brand-brown/60 focus:outline-none";
 
 /** BUTTON_FILLED's light-mode half, hardcoded — see the note above. */
-const SUBMIT_FILL =
-  "bg-[#1a140d] text-white hover:bg-[#2a2118] disabled:hover:bg-[#1a140d]";
+const SUBMIT_FILL = "bg-ink text-white hover:bg-[#2a2118] disabled:hover:bg-ink";
 
 const LABEL =
-  "mb-1.5 block font-mono text-[11px] font-semibold uppercase tracking-wider text-[#1a140d]/50";
+  "mb-1.5 block font-mono text-[11px] font-semibold uppercase tracking-wider text-ink/50";
+
+/** For labels that are a sentence rather than a name. The uppercase transform
+ *  turns a question into shouting, and the wide tracking that carries a
+ *  two-word label falls apart over four. */
+const LABEL_SENTENCE =
+  "mb-1.5 block font-mono text-[12px] font-semibold text-ink/50";
 
 type Status = "idle" | "sending" | "done" | "error";
 
@@ -137,10 +144,10 @@ export function InterestForm() {
   if (status === "done") {
     return (
       <div className="rounded-2xl border border-black/10 bg-white/60 p-6">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#5a4128]">
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-brand-brown">
           Request received
         </p>
-        <p className="mt-3 text-[16px] leading-[1.55] text-[#1a140d]">
+        <p className="mt-3 text-[16px] leading-[1.55] text-ink">
           Thanks. We&rsquo;ll be in touch within two working days with scope and
           pricing for what you described.
         </p>
@@ -230,8 +237,8 @@ export function InterestForm() {
                 aria-pressed={on}
                 className={`rounded-full border px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${
                   on
-                    ? "border-[#5a4128]/50 bg-[#5a4128]/12 text-[#5a4128]"
-                    : "border-black/15 text-[#1a140d]/55 hover:border-black/25"
+                    ? "border-brand-brown/50 bg-brand-brown/12 text-brand-brown"
+                    : "border-black/15 text-ink/55 hover:border-black/25"
                 }`}
                 type="button"
                 onClick={() => toggleMarket(m)}
@@ -244,14 +251,14 @@ export function InterestForm() {
       </div>
 
       <div>
-        <label className={LABEL} htmlFor="api-message">
+        <label className={LABEL_SENTENCE} htmlFor="api-message">
           What are you building?
         </label>
         <textarea
           className={`${FIELD} resize-y`}
           id="api-message"
           name="message"
-          placeholder="A sentence or two is plenty. It's what we quote against."
+          placeholder="A sentence or two is plenty. It’s what we quote against."
           rows={4}
         />
       </div>
@@ -283,7 +290,7 @@ export function InterestForm() {
       >
         {status === "sending" ? "Sending…" : "Request pricing"}
       </button>
-      <p className="text-[12.5px] text-[#1a140d]/50">
+      <p className="text-[12.5px] text-ink/50">
         We reply within two working days. No newsletter, no onward sharing.
       </p>
     </form>

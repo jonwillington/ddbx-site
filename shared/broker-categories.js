@@ -78,7 +78,7 @@ export const CATEGORIES = [
     description:
       "The UK investing platforms that are simplest to start with — what each one costs, which tax wrappers it supports, and who should pick which.",
     intro: [
-      "Starting out, the platform matters less than the habit — but the wrong one adds costs you won't notice for years. The three things that actually bite a beginner are a percentage platform fee on a small pot, a currency conversion charge if you buy American shares, and a tax wrapper you can't open because the app doesn't offer it.",
+      "Starting out, the platform matters less than the habit — but the wrong one adds costs you won’t notice for years. The three things that actually bite a beginner are a percentage platform fee on a small pot, a currency conversion charge if you buy American shares, and a tax wrapper you can’t open because the app doesn’t offer it.",
       "Everything below offers a Stocks & Shares ISA and FSCS protection. They differ on what they charge to hold your money, what they charge to convert it, and how much of the decision-making they take off your hands.",
     ],
     whatToLookFor: [
@@ -100,20 +100,20 @@ export const CATEGORIES = [
     ],
     picks: {
       freetrade:
-        "A free ISA and SIPP in one simple app. The default pick if you're mostly buying UK shares.",
+        "A free ISA and SIPP in one simple app. The default pick if you’re mostly buying UK shares.",
       "trading-212":
-        "The same free ISA with materially cheaper currency conversion — the better pick if you'll buy US shares.",
+        "The same free ISA with materially cheaper currency conversion — the better pick if you’ll buy US shares.",
       moneybox:
         "Worth the ongoing charge if you want a LISA and a pension sitting alongside the ISA in one app.",
       nutmeg:
-        "Pick if you'd rather not choose investments at all — the portfolio is built and run for you.",
+        "Pick if you’d rather not choose investments at all — the portfolio is built and run for you.",
       plum: "Pick if automated saving matters to you as much as investing does.",
       etoro:
         "Commission-free global shares and fractional investing in a social app. No SIPP.",
       "vanguard-uk":
-        "Only worth it if Vanguard's own index funds are all you ever want to hold.",
+        "Only worth it if Vanguard’s own index funds are all you ever want to hold.",
       wealthify:
-        "Managed portfolios like Nutmeg's, at a lower ongoing charge, with a SIPP available.",
+        "Managed portfolios like Nutmeg’s, at a lower ongoing charge, with a SIPP available.",
     },
   },
 
@@ -125,7 +125,7 @@ export const CATEGORIES = [
     description:
       "Compare UK Stocks & Shares ISA providers on platform fees, dealing costs and currency charges — with who each one actually suits.",
     intro: [
-      "Every platform here offers a Stocks & Shares ISA, so the wrapper isn't the differentiator — the charges inside it are. On a £20,000 allowance the gap between a free platform and a 0.45% one is meaningful before you've picked a single holding.",
+      "Every platform here offers a Stocks & Shares ISA, so the wrapper isn’t the differentiator — the charges inside it are. On a £20,000 allowance the gap between a free platform and a 0.45% one is meaningful before you’ve picked a single holding.",
       "The other split is structural: percentage fees are cheaper on small pots and punishing on large ones, flat monthly fees are the reverse. Where the lines cross depends on your balance, which is why the cost model further down lets you set the pot size.",
     ],
     whatToLookFor: [
@@ -152,7 +152,7 @@ export const CATEGORIES = [
       investengine:
         "ETF-only, with no platform fee on a DIY portfolio. Pick if a passive portfolio is the whole plan.",
       lightyear:
-        "Low-cost global shares with interest paid on cash you haven't invested yet. No SIPP.",
+        "Low-cost global shares with interest paid on cash you haven’t invested yet. No SIPP.",
       "aj-bell":
         "A percentage charge, but funds, investment trusts and a LISA on one established platform.",
       "interactive-investor":
@@ -169,11 +169,11 @@ export const CATEGORIES = [
     description:
       "Where to hold OEICs, unit trusts and investment trusts in the UK — platform charges, fund dealing costs and range, compared.",
     intro: [
-      "Fund investors are charged differently from share investors. Dealing commission barely matters — most platforms deal funds free — and the platform's percentage charge, levied on everything you hold, becomes the number that compounds against you.",
+      "Fund investors are charged differently from share investors. Dealing commission barely matters — most platforms deal funds free — and the platform’s percentage charge, levied on everything you hold, becomes the number that compounds against you.",
       "That makes this the category where the flat-fee model earns its keep. Below roughly £30,000 a percentage charge is usually cheaper; above it, a fixed monthly fee wins, and keeps winning as the pot grows.",
     ],
     whatToLookFor: [
-      "The platform's percentage charge, and whether it's capped.",
+      "The platform’s percentage charge, and whether it’s capped.",
       "Whether fund dealing is free — most here deal funds at no cost, but share dealing still carries commission.",
       "Fund range, if you have specific funds in mind.",
       "Flat fee versus percentage, judged against the pot you expect to hold, not the one you have today.",
@@ -196,7 +196,7 @@ export const CATEGORIES = [
       "fidelity-uk":
         "A large fund range with free fund dealing, at a percentage charge.",
       "vanguard-uk":
-        "Vanguard's own funds only. The cheapest way to hold them, and no use for anything else.",
+        "Vanguard’s own funds only. The cheapest way to hold them, and no use for anything else.",
     },
   },
 
@@ -209,13 +209,13 @@ export const CATEGORIES = [
       "The lowest-cost UK investing platforms on platform fees, dealing commission and FX — and where the headline rate hides a real cost.",
     intro: [
       "\"Cheapest\" depends on what you hold and how often you move it. A platform with no fees at all can still be the expensive option if it charges a percentage every time you convert currency to buy an American share.",
-      "The ordering below is by total cost for a typical portfolio, not by headline rate — the modelled figures further down show why those two answers differ. Each platform's cheapness also comes with a constraint, and those are named.",
+      "The ordering below is by total cost for a typical portfolio, not by headline rate — the modelled figures further down show why those two answers differ. Each platform’s cheapness also comes with a constraint, and those are named.",
     ],
     whatToLookFor: [
       "The FX fee, which is the cost most often overlooked and the one that recurs.",
       "What the platform gives up to be cheap — a narrower account range, ETFs only, or no funds.",
       "Whether \"no commission\" is funded by a wider spread or by interest retained on your cash.",
-      "Whether the free tier is the tier you'd actually use.",
+      "Whether the free tier is the tier you’d actually use.",
     ],
     columns: ["platformFee", "ukDealing", "usDealing", "fx", "fractional"],
     order: ["trading-212", "investengine", "lightyear", "xtb"],
@@ -245,7 +245,7 @@ export const CATEGORIES = [
       "How the charge behaves as the pot grows — this is the account where flat fees most often win.",
       "Whether you can hold funds and investment trusts, or only shares and ETFs.",
       "Any separate pension administration or drawdown charge, which sits outside the platform fee.",
-      "That it's genuinely self-invested, not a managed pension with a fund picker.",
+      "That it’s genuinely self-invested, not a managed pension with a fund picker.",
     ],
     columns: ["platformFee", "ukDealing", "funds", "investmentTrusts", "fx"],
     order: ["aj-bell", "freetrade", "interactive-investor"],
@@ -253,7 +253,7 @@ export const CATEGORIES = [
       "aj-bell":
         "The most complete of the three — funds, investment trusts and shares in one SIPP.",
       freetrade:
-        "A genuinely free SIPP if you're holding shares and ETFs rather than funds.",
+        "A genuinely free SIPP if you’re holding shares and ETFs rather than funds.",
       "interactive-investor":
         "A flat monthly fee, which is the cheapest of these once the pension is large.",
     },

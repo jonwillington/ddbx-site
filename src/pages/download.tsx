@@ -1144,7 +1144,7 @@ export default function DownloadPage({
                     <StoreBadgeImg size="lg" store={platform} />
                   </a>
                   <p className="text-sm text-white/55">
-                    {pricing.trialDays}-day free trial · Cancel anytime
+                    Free for {pricing.trialDays} days, cancel any time.
                   </p>
                 </div>
               ) : null}

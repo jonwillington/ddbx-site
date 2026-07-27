@@ -21,6 +21,7 @@ import type { BrokerOffer } from "@/lib/api";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 import {
   brokersForComparison,
@@ -53,6 +54,7 @@ import {
   fmtMoney,
   fmtMoneyRound,
   fmtPct,
+  fmtPotLabel,
   isOfferLive,
   platformFeeSummary,
 } from "@/lib/brokers";
@@ -64,6 +66,10 @@ const FIELDS: {
   group: "Costs" | "Accounts" | "What you can hold";
   render: (b: BrokerOffer) => React.ReactNode;
   key: (b: BrokerOffer) => string;
+  /** Set only where the two figures are directly rankable and lower is better,
+   *  so the cheaper side can carry the weight. Absent on the platform fee: a
+   *  monthly amount and a percentage aren't comparable without a balance. */
+  cost?: (b: BrokerOffer) => number | null;
 }[] = [
   {
     label: "Platform fee",
@@ -76,18 +82,21 @@ const FIELDS: {
     group: "Costs",
     render: (b) => fmtMoney(b.fees.trade_commission_uk_gbp),
     key: (b) => String(b.fees.trade_commission_uk_gbp),
+    cost: (b) => b.fees.trade_commission_uk_gbp,
   },
   {
     label: "US dealing",
     group: "Costs",
     render: (b) => fmtMoney(b.fees.trade_commission_us_gbp),
     key: (b) => String(b.fees.trade_commission_us_gbp),
+    cost: (b) => b.fees.trade_commission_us_gbp,
   },
   {
     label: "FX fee",
     group: "Costs",
     render: (b) => fmtPct(b.fees.fx_fee_pct),
     key: (b) => String(b.fees.fx_fee_pct),
+    cost: (b) => b.fees.fx_fee_pct,
   },
   {
     label: "Stocks & Shares ISA",
@@ -192,7 +201,7 @@ export default function BrokerComparisonPage() {
       <article className="mx-auto w-full max-w-[860px] pb-16">
         <nav className={`${R.label} pt-2`}>
           <Link className="hover:text-foreground/70" to="/brokers">
-            UK platforms
+            Broker reviews
           </Link>
           <span className="mx-1.5 opacity-40">/</span>
           <span>{comparison.title}</span>
@@ -330,15 +339,23 @@ function BrokerColumn({ broker: b }: { broker: BrokerOffer }) {
 
 /** The flat-fee-versus-percentage answer, solved for the reader's balance
  *  rather than quoted as a rule of thumb. Renders nothing unless exactly one
- *  side charges a flat monthly fee and the other a percentage. */
+ *  side charges a flat monthly fee and the other a percentage.
+ *
+ *  The left edge and kicker are what separate it from the affiliate offer
+ *  boxes, which wear the same tile fill: this one is arithmetic, not a promo. */
 function CrossoverCallout({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
   const crossover = feeCrossover(a, b);
 
   if (!crossover) return null;
 
   return (
-    <div className={`mt-6 ${R.tile} px-5 py-4`}>
-      <p className="text-[15.5px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
+    <div
+      className={`mt-6 ${R.tile} border-l-2 border-brand-brown/30 px-5 py-4 dark:border-[#d8c4af]/40`}
+    >
+      <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
+        Where it flips
+      </p>
+      <p className="mt-2 text-[15.5px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
         {crossover.cheaperAbove.name} becomes the cheaper platform at about{" "}
         {fmtMoneyRound(crossover.pot)}.
       </p>
@@ -351,6 +368,17 @@ function CrossoverCallout({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
       </p>
     </div>
   );
+}
+
+/** Weight on the cheaper of two comparable figures, the same signal CostTable
+ *  gives its winning column. Unrankable rows (features, or a figure missing on
+ *  one side) keep the neutral ink. */
+function cheaperInk(mine: number | null, theirs: number | null): string {
+  if (mine == null || theirs == null) return "text-foreground/85";
+
+  return mine <= theirs
+    ? "font-semibold text-foreground"
+    : "text-foreground/65";
 }
 
 /** Only the rows where the two platforms actually differ.
@@ -379,9 +407,7 @@ function DifferencesTable({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
       <table className="w-full min-w-[460px] border-collapse text-left">
         <thead>
           <tr className={`border-b ${R.rule}`}>
-            <th
-              className={`${R.label} pb-2 pr-4 font-semibold uppercase tracking-[0.1em]`}
-            />
+            <th className={`${R.label} pb-2 pr-4 font-semibold`} />
             <th className="pb-2 pr-4 text-[13px] font-semibold text-foreground">
               {a.name}
             </th>
@@ -395,7 +421,7 @@ function DifferencesTable({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
             <Fragment key={group}>
               <tr>
                 <td
-                  className={`${R.label} pb-1.5 pt-5 font-semibold uppercase tracking-[0.1em]`}
+                  className={`${R.label} pb-1.5 pt-5 font-semibold`}
                   colSpan={3}
                 >
                   {group}
@@ -403,19 +429,28 @@ function DifferencesTable({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
               </tr>
               {differing
                 .filter((f) => f.group === group)
-                .map((f) => (
-                  <tr key={f.label} className={`border-b ${R.rule}`}>
-                    <th className="py-2.5 pr-4 text-[13.5px] font-normal text-foreground/60">
-                      {f.label}
-                    </th>
-                    <td className="py-2.5 pr-4 text-[13.5px] tabular-nums text-foreground/85">
-                      {f.render(a)}
-                    </td>
-                    <td className="py-2.5 text-[13.5px] tabular-nums text-foreground/85">
-                      {f.render(b)}
-                    </td>
-                  </tr>
-                ))}
+                .map((f) => {
+                  const ca = f.cost?.(a) ?? null;
+                  const cb = f.cost?.(b) ?? null;
+
+                  return (
+                    <tr key={f.label} className={`border-b ${R.rule}`}>
+                      <th className="py-2.5 pr-4 text-[13.5px] font-normal text-foreground/60">
+                        {f.label}
+                      </th>
+                      <td
+                        className={`py-2.5 pr-4 text-[13.5px] tabular-nums ${cheaperInk(ca, cb)}`}
+                      >
+                        {f.render(a)}
+                      </td>
+                      <td
+                        className={`py-2.5 text-[13.5px] tabular-nums ${cheaperInk(cb, ca)}`}
+                      >
+                        {f.render(b)}
+                      </td>
+                    </tr>
+                  );
+                })}
             </Fragment>
           ))}
         </tbody>
@@ -430,11 +465,7 @@ function CostTable({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
       <table className="w-full min-w-[420px] border-collapse text-left">
         <thead>
           <tr className={`border-b ${R.rule}`}>
-            <th
-              className={`${R.label} pb-2 pr-4 font-semibold uppercase tracking-[0.1em]`}
-            >
-              Pot
-            </th>
+            <th className={`${R.label} pb-2 pr-4 font-semibold`}>Pot</th>
             <th className="pb-2 pr-4 text-[13px] font-semibold text-foreground">
               {a.name}
             </th>
@@ -451,7 +482,7 @@ function CostTable({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
             return (
               <tr key={pot} className={`border-b ${R.rule} last:border-b-0`}>
                 <th className="py-3 pr-4 text-[13.5px] font-medium tabular-nums text-foreground">
-                  {fmtMoneyRound(pot)}
+                  {fmtPotLabel(pot)}
                 </th>
                 <td
                   className={`py-3 pr-4 text-[13.5px] tabular-nums ${ca <= cb ? "font-semibold text-foreground" : "text-foreground/65"}`}
@@ -482,9 +513,10 @@ function ProsCons({ broker: b }: { broker: BrokerOffer }) {
             key={p}
             className="flex gap-2 text-[13.5px] leading-[1.55] text-foreground/75"
           >
-            <span aria-hidden className="text-foreground/40">
-              +
-            </span>
+            <CheckIcon
+              className="mt-[4px] h-3.5 w-3.5 shrink-0 text-positive/70"
+              strokeWidth={2.5}
+            />
             <span>{p}</span>
           </li>
         ))}
@@ -493,9 +525,10 @@ function ProsCons({ broker: b }: { broker: BrokerOffer }) {
             key={c}
             className="flex gap-2 text-[13.5px] leading-[1.55] text-foreground/75"
           >
-            <span aria-hidden className="text-foreground/40">
-              −
-            </span>
+            <XMarkIcon
+              className="mt-[4px] h-3.5 w-3.5 shrink-0 text-negative/70"
+              strokeWidth={2.5}
+            />
             <span>{c}</span>
           </li>
         ))}

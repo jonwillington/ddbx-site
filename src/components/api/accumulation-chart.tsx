@@ -36,10 +36,11 @@ import { Terminal } from "./terminal";
  *   - NEUTRAL grey before the first disclosure. Nothing is known yet, so the
  *     line makes no claim.
  *   - GREEN from the first disclosure on, because the position is up from
- *     there. Same `#5cd84a` the app uses for a winning position.
+ *     there. Read from `--positive`, the same token the app's charts use for a
+ *     winning position.
  *  Two Area series rather than one, sharing the bar at the join so the line is
  *  continuous. If the illustration is ever edited to end BELOW the first buy,
- *  the second segment has to go red (`#e84d4d`) or the chart starts lying.
+ *  the second segment has to switch to `--negative` or the chart starts lying.
  *
  *  ⚠ The series is SYNTHETIC and must stay labelled as such, in the panel
  *  chrome and in the caption. Every other number on this page is a real API
@@ -53,8 +54,8 @@ import { Terminal } from "./terminal";
  *  rows carry the disclosures, the sizes and the cluster; the price line is
  *  yours.
  *
- *  Colours are hardcoded dark. The route pins `.dark`, so a theme branch here
- *  would be a branch that never runs.
+ *  Colours resolve dark and are not branched on theme. The route pins `.dark`,
+ *  so a light branch here would be a branch that never runs.
  */
 
 const SESSIONS = 90;
@@ -135,10 +136,37 @@ const SPEND = (() => {
 
 const NEUTRAL_LINE = "rgba(255,255,255,0.4)";
 const NEUTRAL_FILL = "rgba(255,255,255,0.07)";
-const UP_LINE = "#5cd84a";
-const UP_FILL = "rgba(92,216,74,0.2)";
 const SPEND_LINE = "#ad9479";
 const SPEND_FILL = "rgba(173,148,121,0.15)";
+
+/** What `--positive` holds today, as sRGB channels. */
+const UP_FALLBACK = "92,216,74";
+
+/** The chart's green, as `r,g,b`, read from the theme once per build.
+ *
+ *  It cannot simply be `var(--positive)`: these are canvas values, and
+ *  lightweight-charts parses the colour string itself, handling hex/rgb/hsl
+ *  only, while the token is authored in oklch. So the token is round-tripped
+ *  through a 1x1 canvas, which both converts it to sRGB and leaves the channels
+ *  separate, so the 20% area fill can be built from the same value. */
+function upChannels(): string {
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue("--positive")
+    .trim();
+  const ctx = document.createElement("canvas").getContext("2d");
+
+  if (!raw || !ctx) return UP_FALLBACK;
+
+  // A colour the canvas cannot parse is ignored, leaving the sentinel behind.
+  ctx.fillStyle = "#000000";
+  ctx.fillStyle = raw;
+  if (ctx.fillStyle === "#000000") return UP_FALLBACK;
+
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+
+  return `${r},${g},${b}`;
+}
 
 const money = (k: number) =>
   k >= 1000 ? `£${(k / 1000).toFixed(2)}m` : `£${k}k`;
@@ -168,6 +196,10 @@ export function AccumulationChart() {
     const container = containerRef.current;
 
     if (!container) return;
+
+    const up = upChannels();
+    const upLine = `rgba(${up},1)`;
+    const upFill = `rgba(${up},0.2)`;
 
     const chart = createChart(container, {
       width: container.clientWidth,
@@ -245,8 +277,8 @@ export function AccumulationChart() {
     // Segment two: from the first disclosure. Shares bar FIRST with `pre` so
     // the join is a continuous line rather than a visible seam.
     const post = chart.addSeries(AreaSeries, {
-      lineColor: UP_LINE,
-      topColor: UP_FILL,
+      lineColor: upLine,
+      topColor: upFill,
       bottomColor: "rgba(0,0,0,0)",
       lineWidth: 2,
       priceFormat,
@@ -294,7 +326,7 @@ export function AccumulationChart() {
       BUYS.map((b) => ({
         time: DATES[b.i] as Time,
         position: "belowBar",
-        color: UP_LINE,
+        color: upLine,
         shape: "arrowUp",
         size: 1.1,
         ...(w >= LABEL_MIN_WIDTH ? { text: money(b.value) } : {}),
@@ -358,7 +390,7 @@ export function AccumulationChart() {
         // Chip FIRST. The title truncates, and on a phone it truncates hard;
         // "Illustrative" is the one word here that cannot fall off the end.
         <span className="flex items-center gap-2">
-          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9.5px] tracking-[0.12em] text-white/50">
+          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9.5px] uppercase tracking-[0.12em] text-white/50">
             Illustrative
           </span>
           One issuer · 90 days
@@ -368,7 +400,7 @@ export function AccumulationChart() {
     >
       {/* Scrub readout. Reserves its own height so the chart never shifts when
           the pointer enters or leaves the plot. */}
-      <div className="flex min-h-[2.4rem] flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-white/10 px-4 py-2.5 text-[12.5px]">
+      <div className="flex min-h-[2.4rem] flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-white/[0.08] px-4 py-2.5 text-[12.5px]">
         {scrub ? (
           <>
             <span className="font-mono text-white/40">
@@ -378,7 +410,7 @@ export function AccumulationChart() {
               {scrub.value.toFixed(1)}p
             </span>
             {scrubbedBuy ? (
-              <span className="text-[#5cd84a]">
+              <span className="text-positive">
                 {scrubbedBuy.who} bought {money(scrubbedBuy.value)}
               </span>
             ) : null}
@@ -389,7 +421,7 @@ export function AccumulationChart() {
             {LAST_BUY - FIRST} sessions, all of them into the drawdown.
           </span>
         )}
-        <span className="ml-auto tabular-nums text-[#5cd84a]">
+        <span className="ml-auto tabular-nums text-positive">
           +{SINCE_FIRST.toFixed(0)}% since the first disclosure
         </span>
       </div>

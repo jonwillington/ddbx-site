@@ -27,12 +27,14 @@ export function fmtMoney(v: number | null | undefined): string {
   return `£${v.toLocaleString("en-GB")}`;
 }
 
-/** "—" for unknown, "0%" for 0, otherwise percent. */
+/** "—" for unknown, "Free" for 0, otherwise percent to at most 2dp. Zero reads
+ *  as "Free" for the same reason fmtMoney does — a no-charge cell should say
+ *  so in the same words on every broker surface. */
 export function fmtPct(v: number | null | undefined): string {
   if (v == null) return "—";
-  if (v === 0) return "0%";
+  if (v === 0) return "Free";
 
-  return `${v}%`;
+  return `${Number(v.toFixed(2))}%`;
 }
 
 /** One-line platform-fee summary for the grid. */
@@ -83,6 +85,12 @@ export function sourceLabel(url: string): string {
  *  precision would overstate the accuracy of the assumptions. */
 export function fmtMoneyRound(v: number): string {
   return `£${Math.round(v).toLocaleString("en-GB")}`;
+}
+
+/** "£10k" — the compact form pot sizes take as a LABEL (toggle buttons, table
+ *  column heads). Prose keeps the full "£10,000". */
+export function fmtPotLabel(pot: number): string {
+  return `£${pot >= 1000 ? `${pot / 1000}k` : pot}`;
 }
 
 /** Today as YYYY-MM-DD in UK time. Same idiom as lib/discretion.ts, rolled

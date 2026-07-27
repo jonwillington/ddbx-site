@@ -61,7 +61,7 @@ function tokenise(line: string, key: number) {
   while ((m = stringRe.exec(line)) !== null) {
     pushPlain(line.slice(last, m.index), `p${key}-${m.index}`);
     out.push(
-      <span key={`s${key}-${m.index}`} className="text-[#eec584]">
+      <span key={`s${key}-${m.index}`} className="text-brand-amber">
         {m[0]}
       </span>,
     );
@@ -115,9 +115,9 @@ export function CodeTabs({
             key={s.label}
             aria-controls={`${groupId}-panel`}
             aria-selected={i === active}
-            className={`rounded-[7px] px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+            className={`rounded-[7px] px-3 py-1.5 font-mono text-[11px] font-semibold tracking-wider transition-colors ${
               i === active
-                ? "bg-white text-[#1a140d]"
+                ? "bg-white text-ink"
                 : "text-white/55 hover:text-white/80"
             }`}
             id={`${groupId}-tab-${i}`}

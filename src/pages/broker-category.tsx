@@ -108,7 +108,7 @@ export default function BrokerCategoryPage() {
       <article className="mx-auto w-full max-w-[860px] pb-16">
         <nav className={`${R.label} pt-2`}>
           <Link className="hover:text-foreground/70" to="/brokers">
-            UK platforms
+            Broker reviews
           </Link>
           <span className="mx-1.5 opacity-40">/</span>
           <span>{category.h1}</span>
@@ -300,15 +300,11 @@ function ComparisonTable({
       <table className="w-full min-w-[560px] border-collapse text-left">
         <thead>
           <tr className={`border-b ${R.rule}`}>
-            <th
-              className={`${R.label} pb-2 pr-4 font-semibold uppercase tracking-[0.1em]`}
-            >
-              Platform
-            </th>
+            <th className={`${R.label} pb-2 pr-4 font-semibold`}>Platform</th>
             {columns.map((c) => (
               <th
                 key={c}
-                className={`${R.label} whitespace-nowrap pb-2 pr-4 font-semibold uppercase tracking-[0.1em]`}
+                className={`${R.label} whitespace-nowrap pb-2 pr-4 font-semibold`}
               >
                 {columnLabel(c as never)}
               </th>

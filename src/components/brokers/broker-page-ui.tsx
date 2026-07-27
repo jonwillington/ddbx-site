@@ -23,11 +23,15 @@ import { Tick } from "./broker-ui";
 
 import { fmtMoney, fmtPct, platformFeeSummary } from "@/lib/brokers";
 
-/** Ruled-document tokens. Mirrors the `R` map in broker-detail.tsx. */
+/** Ruled-document tokens for the whole /brokers tree — the reviews import this
+ *  map rather than keeping a second copy. The design language it serves is
+ *  written up at the top of broker-detail.tsx. */
 export const R = {
+  // A half-step off the cream page — present but low-contrast. White is
+  // reserved for the floating buy panel so it reads as the raised object.
   sheet:
-    "rounded-2xl border border-[#e8e0d5] bg-[#faf7f2] shadow-[0_1px_2px_rgba(90,65,40,0.03)] dark:border-white/[0.07] dark:bg-surface",
-  rule: "border-[#e8e0d5] dark:border-separator",
+    "rounded-2xl border border-hairline bg-sheet shadow-[0_1px_2px_rgba(90,65,40,0.03)] dark:border-white/[0.07] dark:bg-surface",
+  rule: "border-hairline dark:border-separator",
   tile: "rounded-xl bg-black/[0.035] dark:bg-white/[0.05]",
   label: "text-[11px] leading-none text-foreground/50",
   body: "text-[14px] leading-[1.65] text-foreground/70",

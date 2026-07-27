@@ -34,14 +34,14 @@ export function ApiFaq({
     <section aria-label="Frequently asked questions" className="w-full">
       <div className="grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)] md:gap-16">
         <div className="md:sticky md:top-24 md:self-start">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#eec584]">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
             Common questions
           </p>
-          <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-white md:text-[2rem]">
+          <h2 className="mt-3 text-[26px] font-semibold leading-[1.1] tracking-[-0.02em] text-white sm:text-[30px]">
             {title}
           </h2>
           {standfirst ? (
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/50">
+            <p className="mt-4 max-w-[38ch] text-sm leading-relaxed text-white/60">
               {standfirst}
             </p>
           ) : null}

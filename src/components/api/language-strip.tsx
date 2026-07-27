@@ -41,12 +41,7 @@ const LANGUAGES = [
 
 export function LanguageStrip() {
   return (
-    <div className="relative isolate mx-auto max-w-[60ch] text-center">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -inset-x-8 -inset-y-12 -z-10 opacity-80 blur-2xl [background:radial-gradient(58%_58%_at_50%_38%,rgba(238,197,132,0.15),transparent_72%)]"
-      />
-
+    <div className="mx-auto max-w-[60ch] text-center">
       <ul className="flex flex-wrap items-center justify-center gap-2">
         {LANGUAGES.map(({ code, label, Flag }) => (
           <li key={code}>

@@ -84,8 +84,9 @@ function detailHref(b: BrokerOffer): string {
   return `/brokers/${b.slug}`;
 }
 
-// Column divider, matching the deals table (market-row.tsx).
-const COL = "border-r border-black/[0.06] dark:border-white/[0.06]";
+// Column divider, on the broker family's hairline rather than the deals
+// table's black-alpha edge.
+const COL = "border-r border-hairline dark:border-separator";
 
 /** Column header label with an info tooltip — mirrors the deals table's
  *  HeaderLabel (market-row.tsx). */
@@ -154,7 +155,7 @@ function ChipSelect({
       <button
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-2 text-xs text-foreground/85 transition-colors hover:border-[#5a4128]/50"
+        className="flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-2 text-xs text-foreground/85 transition-colors hover:border-brand-brown/50"
         type="button"
         onClick={() => setOpen((v) => !v)}
       >
@@ -255,7 +256,7 @@ export default function ComparePage() {
       <BrokerAside brokers={brokers} />
       <section className="w-full">
         <header className="mb-5">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
+          <h1 className="mt-5 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
             Compare UK trading platforms
           </h1>
         </header>
@@ -272,7 +273,7 @@ export default function ComparePage() {
           <>
             {topPicks.length > 0 && (
               <div className="mb-8 lg:hidden">
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground/50">
+                <h2 className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/50">
                   Our top picks
                 </h2>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -286,10 +287,10 @@ export default function ComparePage() {
             {/* Filter bar — styled to match the deals filter strip
                 (market-filter-bar.tsx): cream strip, rounded-full search pill,
                 deals-style dropdown + chips. */}
-            <div className="mb-4 rounded-2xl border border-separator bg-[#faf7f2] px-4 py-3.5 dark:bg-surface">
+            <div className="mb-4 rounded-2xl border border-separator bg-sheet px-4 py-3.5 dark:bg-surface">
               <div className="flex items-center gap-3">
                 <input
-                  className="min-w-0 flex-1 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground transition-colors placeholder:text-muted/60 focus:border-[#5a4128]/50 focus:outline-none"
+                  className="min-w-0 flex-1 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground transition-colors placeholder:text-muted/60 focus:border-brand-brown/50 focus:outline-none"
                   placeholder="Search platforms…"
                   type="text"
                   value={query}
@@ -314,8 +315,8 @@ export default function ComparePage() {
                       aria-pressed={active}
                       className={
                         active
-                          ? "rounded-full border border-[#5a4128]/50 bg-[#5a4128]/[0.08] px-3 py-1.5 text-xs font-medium text-[#5a4128] transition-colors dark:text-[#d8c4af]"
-                          : "rounded-full border border-separator bg-surface/40 px-3 py-1.5 text-xs text-foreground/85 transition-colors hover:border-[#5a4128]/50"
+                          ? "rounded-full border border-brand-brown/50 bg-brand-brown/[0.08] px-3 py-1.5 text-xs font-medium text-brand-brown transition-colors dark:text-[#d8c4af]"
+                          : "rounded-full border border-separator bg-surface/40 px-3 py-1.5 text-xs text-foreground/85 transition-colors hover:border-brand-brown/50"
                       }
                       type="button"
                       onClick={() =>
@@ -345,11 +346,11 @@ export default function ComparePage() {
               {visible.length} of {brokers.length} platforms
             </p>
 
-            {/* Desktop comparison table — deals-table styling (market-row.tsx):
-                flex rows, column right-borders, uppercase header strip. */}
-            <div className="hidden overflow-hidden rounded-xl border border-black/[0.08] bg-white dark:border-white/[0.08] dark:bg-surface md:block">
+            {/* Desktop comparison table — deals-table geometry (market-row.tsx)
+                on the broker family's hairlines and sentence-case headers. */}
+            <div className="hidden overflow-hidden rounded-xl border border-hairline bg-white dark:border-separator dark:bg-surface md:block">
               {/* Header */}
-              <div className="flex items-stretch select-none border-b border-black/[0.08] dark:border-white/[0.08] bg-black/[0.04] dark:bg-white/[0.05] text-[10px] font-medium uppercase tracking-wider text-muted/80">
+              <div className="flex items-stretch select-none border-b border-hairline dark:border-separator bg-black/[0.04] dark:bg-white/[0.05] text-[11px] leading-none font-medium text-foreground/50">
                 <div className={`flex-1 min-w-0 px-3 py-2 ${COL}`}>
                   <ColHeader help="The trading or investment platform, and who it’s best for.">
                     Platform
@@ -393,7 +394,7 @@ export default function ComparePage() {
                 <div className="w-32 shrink-0 px-3 py-2" />
               </div>
               {/* Rows */}
-              <div className="divide-y divide-black/[0.06] dark:divide-separator">
+              <div className="divide-y divide-hairline dark:divide-separator">
                 {visible.map((b) => (
                   <div
                     key={b.slug}
@@ -494,7 +495,7 @@ export default function ComparePage() {
 
 function TopPickCard({ broker: b }: { broker: BrokerOffer }) {
   return (
-    <div className="rounded-2xl border border-[#5a4128]/30 bg-surface/60 p-4 dark:border-[#d8c4af]/25">
+    <div className="rounded-2xl border border-brand-brown/30 bg-surface/60 p-4 dark:border-[#d8c4af]/25">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3.5">
           <BrokerLogo broker={b} size={52} />
@@ -576,7 +577,7 @@ function BrokerCard({ broker: b }: { broker: BrokerOffer }) {
           className="text-sm text-foreground/55 underline underline-offset-2 hover:text-foreground"
           href={detailHref(b)}
         >
-          Details
+          Full review
         </a>
       </div>
     </div>

@@ -10,7 +10,7 @@
 // so a stale value here is a stale value everywhere.
 //
 // The trial length is the products' introductory offer (P1W = 7 days) and
-// matches the "7-day free trial" copy already used across the hero and CTAs.
+// matches the "Free for 7 days, cancel any time." copy used across the CTAs.
 
 export interface MarketPricing {
   /** Currency symbol as it prefixes the amount, e.g. "£". */

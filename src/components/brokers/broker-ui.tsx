@@ -3,7 +3,7 @@ import type { BrokerBadge, BrokerOffer } from "@/lib/api";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
-import { GiftIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, GiftIcon } from "@heroicons/react/24/outline";
 
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import {
@@ -112,8 +112,8 @@ export function BadgeChip({ badge }: { badge: BrokerBadge }) {
         CHIP_BASE,
         CHIP_SIZE.sm,
         isTop
-          ? `${CHIP_HAIRLINE_FILLED} bg-[#5a4128] text-white dark:bg-[#d8c4af] dark:text-[#1a140d]`
-          : `${CHIP_HAIRLINE} bg-[#e8e0d5] text-foreground/70 dark:bg-surface-secondary`,
+          ? `${CHIP_HAIRLINE_FILLED} bg-brand-brown text-white dark:bg-[#d8c4af] dark:text-ink`
+          : `${CHIP_HAIRLINE} bg-hairline text-foreground/70 dark:bg-surface-secondary`,
       )}
     >
       {badgeLabel(badge)}
@@ -121,18 +121,21 @@ export function BadgeChip({ badge }: { badge: BrokerBadge }) {
   );
 }
 
-/** Boolean cell: ✓ / – / ? for true / false / unknown(null). */
+/** Boolean cell: check / em dash / ? for true / false / unknown(null). The one
+ *  vocabulary every broker surface uses, so a tick never means two things. */
 export function Tick({ value }: { value: boolean | null | undefined }) {
   if (value === true)
     return (
-      <span aria-label="Yes" className="text-[#17935a] dark:text-[#5fd39a]">
-        ✓
-      </span>
+      <CheckIcon
+        aria-label="Yes"
+        className="h-[15px] w-[15px] shrink-0 text-positive"
+        strokeWidth={2.5}
+      />
     );
   if (value === false)
     return (
-      <span aria-label="No" className="text-foreground/45">
-        –
+      <span aria-label="No" className="text-foreground/30">
+        —
       </span>
     );
 
@@ -203,11 +206,16 @@ export function RatingsStrip({
   );
 }
 
-/** Verbose boolean for detail rows: ✓ Yes / No / Not stated (null). Clearer
- *  than the compact grid Tick on a long spec page. */
+/** Verbose boolean for detail rows: check + Yes / No / Not stated (null).
+ *  Clearer than the compact grid Tick on a long spec page. */
 export function BoolValue({ value }: { value: boolean | null | undefined }) {
   if (value === true)
-    return <span className="text-[#17935a] dark:text-[#5fd39a]">✓ Yes</span>;
+    return (
+      <span className="inline-flex items-center gap-1 text-positive">
+        <CheckIcon className="h-[15px] w-[15px] shrink-0" strokeWidth={2.5} />
+        Yes
+      </span>
+    );
   if (value === false) return <span className="text-foreground/55">No</span>;
 
   return <span className="text-foreground/40">Not stated</span>;
@@ -282,7 +290,7 @@ export function OfferBadge({
   return (
     <div
       className={clsx(
-        "flex items-start gap-2 rounded-lg bg-[#5a4128]/[0.08] px-3 py-2 text-xs font-semibold leading-snug text-[#5a4128] dark:bg-[#d8c4af]/[0.14] dark:text-[#e7d4bf]",
+        "flex items-start gap-2 rounded-lg bg-brand-brown/[0.08] px-3 py-2 text-xs font-semibold leading-snug text-brand-brown dark:bg-[#d8c4af]/[0.14] dark:text-[#e7d4bf]",
         className,
       )}
     >
@@ -327,13 +335,18 @@ export function BrokerBuyBox({ broker: b }: { broker: BrokerOffer }) {
       .join(" + ") || "General only";
 
   return (
-    <div className="rounded-2xl border border-[#5a4128]/25 bg-background/60 p-4 dark:border-[#d8c4af]/25">
+    <div className="rounded-2xl border border-brand-brown/25 bg-background/60 p-4 dark:border-[#d8c4af]/25">
       <div className="flex items-center gap-3">
         <BrokerLogo broker={b} size={44} />
         <div className="min-w-0">
           <div className="truncate font-semibold text-foreground">{b.name}</div>
+          {/* Stars are driven by one named source. App Store, Play and
+              Trustpilot rate different things and don't average. */}
           {b.trust.trustpilot_rating != null && (
-            <StarRating value={b.trust.trustpilot_rating} />
+            <span className="inline-flex items-center gap-1.5">
+              <span className="text-[11px] text-foreground/50">Trustpilot</span>
+              <StarRating value={b.trust.trustpilot_rating} />
+            </span>
           )}
         </div>
       </div>

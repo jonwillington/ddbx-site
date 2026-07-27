@@ -114,7 +114,7 @@ export function Turnstile({
     <div>
       <div ref={hostRef} />
       {failed ? (
-        <p className="mt-2 text-[12.5px] text-[#1a140d]/45">
+        <p className="mt-2 text-[12.5px] text-ink/45">
           Verification could not load. You can still submit.
         </p>
       ) : null}

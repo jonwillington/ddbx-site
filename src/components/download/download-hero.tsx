@@ -154,7 +154,7 @@ export function DownloadHero({
             <span
               className={`${chip("lg")} bg-[#5a4128]/10 text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]`}
             >
-              {trialDays}-day free trial · Cancel anytime
+              {trialDays}-day free trial · Cancel any time
             </span>
           </div>
 

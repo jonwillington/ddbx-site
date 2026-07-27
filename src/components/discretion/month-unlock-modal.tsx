@@ -57,7 +57,7 @@ export function MonthUnlockModal({
         Start your free trial
       </a>
       <p className="mt-2.5 text-[11px] text-muted/70">
-        7 days free, cancel anytime.
+        Free for 7 days, cancel any time.
       </p>
     </>
   );

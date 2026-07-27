@@ -646,7 +646,7 @@ export default function DefaultLayout({
           )}
           <p className="pointer-events-none mt-2 text-center text-xs text-foreground/55">
             {directAppUrl
-              ? "7 days free, cancel anytime. On iOS and Android."
+              ? "Free for 7 days, cancel any time. On iOS and Android."
               : "Start your 7-day free trial."}
           </p>
         </div>
@@ -710,7 +710,7 @@ function FooterNav() {
           key={group.title}
           className="border-l border-separator/50 pl-5 [&:nth-child(2n+1)]:border-l-0 [&:nth-child(2n+1)]:pl-0 sm:pl-5 sm:[&:nth-child(2n+1)]:border-l sm:[&:nth-child(2n+1)]:pl-5 sm:[&:nth-child(4n+1)]:border-l-0 sm:[&:nth-child(4n+1)]:pl-0"
         >
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/55">
+          <h2 className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
             {group.title}
           </h2>
           <ul className="mt-2.5 space-y-1.5">

@@ -16,6 +16,7 @@ import {
   OfferBadge,
   StarRating,
 } from "@/components/brokers/broker-ui";
+import { R } from "@/components/brokers/broker-page-ui";
 import { BUTTON_SELECTED } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
 import appShots from "@/data/broker-app-screenshots.json";
@@ -26,6 +27,7 @@ import {
   fmtMoney,
   fmtMoneyRound,
   fmtPct,
+  fmtPotLabel,
   fmtVerifiedDate,
   isOfferLive,
   platformFeeSummary,
@@ -49,22 +51,15 @@ type Fact = { label: string; value: React.ReactNode };
  *  Rules    → one hairline colour, the same one the rail uses.
  *  Type     → sentence case everywhere; no uppercase, no letterspacing.
  *             Hierarchy comes from size and ink, not decoration.
- *  Colour   → reserved for meaning: emerald/rust ticks in the verdict, the
- *             CTA button. No per-broker brand graphics in the article.
+ *  Colour   → reserved for meaning, and taken from the canonical directional
+ *             pair: `positive` for a yes/for, `negative` for a no/against,
+ *             never a local green. No per-broker brand graphics in the article.
  *
  * Chrome (rail, sticky buy panel, mobile bar) is untouched by this system.
+ *
+ * The `R` token map that implements it lives in broker-page-ui.tsx, shared with
+ * the category and comparison guides.
  */
-const R = {
-  // A half-step off the cream page — present but low-contrast. White is
-  // reserved for the floating buy panel so it reads as the raised object.
-  sheet:
-    "rounded-2xl border border-[#e8e0d5] bg-[#faf7f2] shadow-[0_1px_2px_rgba(90,65,40,0.03)] dark:border-white/[0.07] dark:bg-surface",
-  rule: "border-[#e8e0d5] dark:border-separator",
-  tile: "rounded-xl bg-black/[0.035] dark:bg-white/[0.05]",
-  label: "text-[11px] leading-none text-foreground/50",
-  body: "text-[14px] leading-[1.65] text-foreground/70",
-  subhead: "text-[12px] font-semibold text-foreground/55",
-} as const;
 
 export default function BrokerDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -97,15 +92,22 @@ export default function BrokerDetailPage() {
   if (!brokers) {
     return (
       <DefaultLayout drawerRight>
-        <div className="mx-auto w-full max-w-[760px] animate-pulse">
-          <div className="h-4 w-48 rounded bg-foreground/10" />
-          <div className="mt-8 h-12 w-3/4 rounded bg-foreground/10" />
-          <div className="mt-4 h-5 w-2/3 rounded bg-foreground/10" />
-          <div className="mt-8 h-20 rounded bg-surface" />
-          <div className="mt-8 space-y-3">
-            <div className="h-5 w-full rounded bg-foreground/10" />
-            <div className="h-5 w-5/6 rounded bg-foreground/10" />
-            <div className="h-48 rounded bg-surface" />
+        {/* Same wrapper and rail grid as the loaded review, so nothing shifts
+            sideways when the data lands. */}
+        <div className="w-full animate-pulse pb-24 lg:pb-14">
+          <div className="h-3 w-48 rounded bg-foreground/10" />
+          <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+            <div className="min-w-0">
+              <div className="h-12 w-3/4 rounded bg-foreground/10" />
+              <div className="mt-4 h-5 w-2/3 rounded bg-foreground/10" />
+              <div className="mt-8 h-20 rounded bg-surface" />
+              <div className="mt-8 space-y-3">
+                <div className="h-5 w-full rounded bg-foreground/10" />
+                <div className="h-5 w-5/6 rounded bg-foreground/10" />
+                <div className="h-48 rounded bg-surface" />
+              </div>
+            </div>
+            <div className="hidden h-72 rounded-2xl bg-surface lg:block" />
           </div>
         </div>
       </DefaultLayout>
@@ -192,21 +194,21 @@ function BrokerReview({
 
       <div className="w-full pb-24 lg:pb-14">
         {/* Breadcrumb lives on the cream page, outside the document sheet. */}
-        <div className="flex items-baseline justify-between gap-4 text-sm">
+        <div className="flex items-baseline justify-between gap-4">
           <nav
             aria-label="Breadcrumb"
-            className="min-w-0 truncate text-foreground/50"
+            className={`${R.label} min-w-0 truncate`}
           >
             <a
-              className="transition-colors hover:text-foreground"
+              className="transition-colors hover:text-foreground/70"
               href="/brokers"
             >
               Broker reviews
             </a>
-            <span className="mx-2 text-foreground/25">/</span>
+            <span className="mx-1.5 opacity-40">/</span>
             <span className="text-foreground/75">{b.name}</span>
           </nav>
-          <p className="shrink-0 text-xs text-foreground/45">
+          <p className="shrink-0 text-[11px] leading-none text-foreground/45">
             Updated {fmtVerifiedDate(b.last_verified)}
           </p>
         </div>
@@ -247,7 +249,7 @@ function BrokerReview({
               {faqs.length > 0 && (
                 <Section id="faq" title="Questions & answers">
                   <div
-                    className={`divide-y divide-[#e8e0d5] border-t ${R.rule} dark:divide-separator`}
+                    className={`divide-y divide-hairline border-t ${R.rule} dark:divide-separator`}
                   >
                     {faqs.map((item) => (
                       <details key={item.question} className="group">
@@ -352,7 +354,7 @@ function StickyBuyPanel({
 }) {
   return (
     <aside className="hidden lg:block lg:sticky lg:top-24">
-      <div className="rounded-2xl border border-[#5a4128]/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
+      <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
         <div
           aria-hidden={!showIdentity}
           className={`grid transition-all duration-300 ease-out ${
@@ -367,7 +369,12 @@ function StickyBuyPanel({
               <div className="min-w-0">
                 <p className="truncate font-bold text-foreground">{b.name}</p>
                 {b.trust.trustpilot_rating != null && (
-                  <StarRating value={b.trust.trustpilot_rating} />
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="text-[11px] text-foreground/50">
+                      Trustpilot
+                    </span>
+                    <StarRating value={b.trust.trustpilot_rating} />
+                  </span>
                 )}
               </div>
             </div>
@@ -446,6 +453,8 @@ function ReviewHeader({
   );
 }
 
+/** Each score, attributed. Three different populations rating three different
+ *  things don't average into a fourth number, so no composite is shown. */
 function RatingsLine({ broker: b }: { broker: BrokerOffer }) {
   const ratings = [
     { label: "App Store", value: b.trust.app_store_rating },
@@ -457,18 +466,12 @@ function RatingsLine({ broker: b }: { broker: BrokerOffer }) {
 
   if (!ratings.length) return null;
 
-  const average =
-    ratings.reduce((total, item) => total + item.value, 0) / ratings.length;
-
   return (
-    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-      <StarRating value={average} />
-      <span className="text-xs text-foreground/50">
-        {ratings
-          .map((item) => `${item.label} ${item.value.toFixed(1)}`)
-          .join(" · ")}
-      </span>
-    </div>
+    <p className="mt-2.5 text-xs text-foreground/50">
+      {ratings
+        .map((item) => `${item.label} ${item.value.toFixed(1)}`)
+        .join(" · ")}
+    </p>
   );
 }
 
@@ -482,10 +485,7 @@ function VerdictColumn({
   tone: "for" | "against";
 }) {
   const Icon = tone === "for" ? CheckIcon : XMarkIcon;
-  const iconInk =
-    tone === "for"
-      ? "text-emerald-700/70 dark:text-emerald-300/70"
-      : "text-[#a74f34]/70 dark:text-[#e6997d]/70";
+  const iconInk = tone === "for" ? "text-positive/70" : "text-negative/70";
 
   return (
     <div>
@@ -621,7 +621,7 @@ function CostSection({
           type="button"
           onClick={() => setPot(value)}
         >
-          £{value >= 1000 ? `${value / 1000}k` : value}
+          {fmtPotLabel(value)}
         </button>
       ))}
     </div>
@@ -720,7 +720,7 @@ function FeeSchedule({ broker: b }: { broker: BrokerOffer }) {
 
   return (
     <div className="mt-3">
-      <dl className="divide-y divide-[#e8e0d5] text-[13px] dark:divide-separator">
+      <dl className="divide-y divide-hairline text-[13px] dark:divide-separator">
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between gap-6 py-2">
             <dt className="text-foreground/55">{label}</dt>
@@ -803,7 +803,7 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
                     {value ? (
                       <CheckIcon
                         aria-label="Yes"
-                        className="h-[15px] w-[15px] shrink-0 text-emerald-700 dark:text-emerald-300"
+                        className="h-[15px] w-[15px] shrink-0 text-positive"
                         strokeWidth={2.5}
                       />
                     ) : (
@@ -897,6 +897,24 @@ function MobileVisitBar({ broker: b }: { broker: BrokerOffer }) {
 }
 
 function makeFaqs(b: BrokerOffer) {
+  // fmtMoney/fmtPct render a zero as the table word "Free", which doesn't
+  // survive being dropped into a sentence — so the charges answer builds its
+  // own clauses rather than interpolating the formatters.
+  const uk = b.fees.trade_commission_uk_gbp;
+  const fx = b.fees.fx_fee_pct;
+  const dealing =
+    uk === 0
+      ? "UK share trades carry no commission"
+      : uk == null
+        ? "UK dealing commission isn’t published"
+        : `UK share trades cost ${fmtMoney(uk)}`;
+  const currency =
+    fx === 0
+      ? "there’s no charge to convert currency on overseas trades"
+      : fx == null
+        ? "the currency conversion charge isn’t published"
+        : `converting currency on an overseas trade costs ${fmtPct(fx)}`;
+
   return [
     {
       question: `Does ${b.name} offer a Stocks & Shares ISA?`,
@@ -907,7 +925,7 @@ function makeFaqs(b: BrokerOffer) {
     {
       question: `Does ${b.name} offer a SIPP?`,
       answer: b.accounts.sipp
-        ? `Yes. ${b.name} offers a self-invested personal pension.${b.accounts.sipp_note ? ` ${b.accounts.sipp_note}` : ""}`
+        ? `A self-invested personal pension is available.${b.accounts.sipp_note ? ` ${b.accounts.sipp_note}` : ""}`
         : `No. ${b.name} does not currently offer a SIPP.`,
     },
     {
@@ -918,12 +936,12 @@ function makeFaqs(b: BrokerOffer) {
     },
     {
       question: `How much does ${b.name} charge?`,
-      answer: `${b.name}’s platform fee is ${platformFeeSummary(b.fees)}. UK share trades cost ${fmtMoney(b.fees.trade_commission_uk_gbp)}, with an FX fee of ${fmtPct(b.fees.fx_fee_pct)} on overseas trades.`,
+      answer: `${b.name}’s platform fee is ${platformFeeSummary(b.fees)}. ${dealing}, and ${currency}.`,
     },
     {
       question: `Can I buy fractional shares with ${b.name}?`,
       answer: b.assets.fractional_shares
-        ? `Yes. ${b.name} offers fractional shares.`
+        ? `Fractional shares are available, so you can buy part of a share rather than a whole one.`
         : `No. ${b.name} does not currently offer fractional shares.`,
     },
   ];

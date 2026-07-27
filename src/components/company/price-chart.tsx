@@ -17,10 +17,13 @@ import type { Dealing, UsDealing } from "@/types/ddbx";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api";
+import { localeFor, SYMBOL } from "@/lib/company-format";
 
-const UP = "#22a06b";
-const DOWN = "#d1495b";
-const SYMBOL: Record<string, string> = { GBP: "£", USD: "$", EUR: "€" };
+/** Directional pair, read through the theme so both modes resolve. Applied via
+ *  `style` rather than as SVG presentation attributes — var() substitution in a
+ *  presentation attribute is not reliable across browsers. */
+const UP = "var(--positive)";
+const DOWN = "var(--negative)";
 
 const H = 220;
 const PAD_T = 14;
@@ -70,6 +73,31 @@ function fmtPrice(major: number, currency: string): string {
   const dp = major < 0.1 ? 4 : major < 10 ? 2 : 0;
 
   return `${sym}${major.toFixed(dp)}`;
+}
+
+function fmtDay(iso: string, market: string): string {
+  try {
+    return new Intl.DateTimeFormat(localeFor(market), {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+function fmtMonth(iso: string, market: string): string {
+  try {
+    return new Intl.DateTimeFormat(localeFor(market), {
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
 }
 
 function useMeasuredWidth() {
@@ -179,7 +207,7 @@ export function CompanyPriceChart({
       x: xAt(i),
       y: yAt(closes[i]),
       date: d.trade_date,
-      label: `${market === "UK" ? "Director" : "Insider"} buy, ${d.trade_date}${
+      label: `${market === "UK" ? "Director" : "Insider"} buy, ${fmtDay(d.trade_date, market)}${
         rating ? ` — rated ${rating}` : ""
       }`,
       ink,
@@ -190,7 +218,7 @@ export function CompanyPriceChart({
   return (
     <div ref={box}>
       <div className="flex items-baseline gap-3">
-        <p className="text-[22px] font-semibold leading-none tracking-[-0.015em] text-foreground">
+        <p className="text-[22px] font-semibold leading-none tracking-[-0.015em] tabular-nums text-foreground">
           {fmtPrice(last, currency)}
         </p>
         <p
@@ -213,8 +241,8 @@ export function CompanyPriceChart({
       >
         <defs>
           <linearGradient id={`cpc-${tickerKey}`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.18} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
+            <stop offset="0%" stopOpacity={0.18} style={{ stopColor: color }} />
+            <stop offset="100%" stopOpacity={0} style={{ stopColor: color }} />
           </linearGradient>
         </defs>
 
@@ -222,10 +250,10 @@ export function CompanyPriceChart({
         <path
           d={line}
           fill="none"
-          stroke={color}
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={1.75}
+          style={{ stroke: color }}
         />
 
         {/* Buy markers. Drawn after the line so they sit on top of it, and
@@ -245,7 +273,7 @@ export function CompanyPriceChart({
               y2={H - PAD_B}
             />
             <circle
-              className="text-[#faf7f2] dark:text-surface"
+              className="text-sheet dark:text-surface"
               cx={m.x}
               cy={m.y}
               fill="currentColor"
@@ -264,7 +292,7 @@ export function CompanyPriceChart({
           x={PAD_L}
           y={H - PAD_B + 16}
         >
-          {bars[0].date.slice(0, 7)}
+          {fmtMonth(bars[0].date, market)}
         </text>
         <text
           className="fill-foreground/40"
@@ -273,7 +301,7 @@ export function CompanyPriceChart({
           x={w - PAD_R}
           y={H - PAD_B + 16}
         >
-          {bars[bars.length - 1].date.slice(0, 7)}
+          {fmtMonth(bars[bars.length - 1].date, market)}
         </text>
       </svg>
 
@@ -283,14 +311,14 @@ export function CompanyPriceChart({
             <span className="flex items-center gap-1.5">
               <span
                 aria-hidden
-                className="h-2.5 w-2.5 rounded-full border-[2.4px] border-[#5a4128] bg-[#faf7f2] dark:bg-surface"
+                className="h-2.5 w-2.5 rounded-full border-[2.4px] border-brand-brown bg-sheet dark:bg-surface"
               />
               Rated buy
             </span>
             <span className="flex items-center gap-1.5">
               <span
                 aria-hidden
-                className="h-2.5 w-2.5 rounded-full border-[1.5px] border-[#5a4128]/30 bg-[#faf7f2] dark:bg-surface"
+                className="h-2.5 w-2.5 rounded-full border-[1.5px] border-brand-brown/30 bg-sheet dark:bg-surface"
               />
               Unrated
             </span>

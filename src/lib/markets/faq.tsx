@@ -70,7 +70,7 @@ export function buildMarketFaq({
       question: "Is it free?",
       answer: hasApp ? (
         <>
-          The app is free to start, a 7-day trial you can cancel anytime. You
+          The app is free to start, a 7-day trial you can cancel any time. You
           don&apos;t need an account to look around the web, and the first full
           analysis each day is free here too.
         </>

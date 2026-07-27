@@ -81,9 +81,9 @@ export function AppCtaBand({
 
   return (
     <section
-      className={`${FULL_BLEED} mt-16 bg-[#1a140d] text-white dark:bg-[oklch(17%_0.02_55)] ${className}`}
+      className={`${FULL_BLEED} mt-16 bg-ink text-white dark:bg-[oklch(17%_0.02_55)] ${className}`}
     >
-      <div className="mx-auto max-w-[1280px] px-4 py-10 md:px-6 md:py-20">
+      <div className="mx-auto max-w-[1280px] px-4 py-14 md:px-6 md:py-20">
         <div
           className={
             hasMedia
@@ -92,7 +92,7 @@ export function AppCtaBand({
           }
         >
           <div>
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#eec584]">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-brand-amber">
               {kicker}
             </p>
             <p className="mt-3 text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
@@ -105,7 +105,7 @@ export function AppCtaBand({
             <div className="mt-8 flex flex-col items-start gap-2.5">
               {/* Light fill: BUTTON_FILLED is near-black, which is the band. */}
               <StoreButtons
-                buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-[#1a140d] shadow-sm transition-colors hover:bg-white/90`}
+                buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
                 className="items-start"
                 gaEvent="cta_seo_band"
                 gaLabel={gaLabel}

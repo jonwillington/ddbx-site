@@ -24,6 +24,7 @@ import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import { isAffiliateLink } from "@/lib/brokers";
 import { cleanCompanyName, displayTicker, slugToKey } from "@/lib/company";
+import { localeFor, moneyShort, SYMBOL } from "@/lib/company-format";
 import { marketForPath } from "@/lib/markets/registry";
 
 /**
@@ -38,47 +39,30 @@ import { marketForPath } from "@/lib/markets/registry";
  */
 const C = {
   sheet:
-    "rounded-2xl border border-[#e8e0d5] bg-[#faf7f2] shadow-[0_1px_2px_rgba(90,65,40,0.03)] dark:border-white/[0.07] dark:bg-surface",
-  rule: "border-[#e8e0d5] dark:border-separator",
+    "rounded-2xl border border-hairline bg-sheet shadow-[0_1px_2px_rgba(90,65,40,0.03)] dark:border-white/[0.07] dark:bg-surface",
+  rule: "border-hairline dark:border-separator",
   tile: "rounded-xl bg-black/[0.035] dark:bg-white/[0.05]",
   label: "text-[11px] leading-none text-foreground/50",
   note: "text-[12px] leading-[1.6] text-foreground/45",
-  prose: "text-[14.5px] leading-[1.7] text-foreground/70",
+  prose: "text-[14px] leading-[1.65] text-foreground/70",
 } as const;
 
-const SYMBOL: Record<string, string> = { GBP: "£", USD: "$", EUR: "€" };
-
-function money(value: number | null | undefined, currency = "GBP"): string {
-  const n = Number(value);
-
-  if (!isFinite(n) || n === 0) return "—";
-
-  return `${SYMBOL[currency] ?? ""}${Math.round(n).toLocaleString("en-GB")}`;
-}
-
-function moneyShort(
+function money(
   value: number | null | undefined,
   currency = "GBP",
+  market = "UK",
 ): string {
   const n = Number(value);
 
   if (!isFinite(n) || n === 0) return "—";
-  const sym = SYMBOL[currency] ?? "";
 
-  if (n >= 1_000_000) {
-    const m = n / 1_000_000;
-
-    return `${sym}${m >= 10 ? Math.round(m) : m.toFixed(1).replace(/\.0$/, "")}m`;
-  }
-  if (n >= 1_000) return `${sym}${Math.round(n / 1_000)}k`;
-
-  return `${sym}${Math.round(n)}`;
+  return `${SYMBOL[currency] ?? ""}${Math.round(n).toLocaleString(localeFor(market))}`;
 }
 
 function fmtDate(iso: string | null | undefined, market: string): string {
   if (!iso) return "—";
   try {
-    return new Intl.DateTimeFormat(market === "US" ? "en-US" : "en-GB", {
+    return new Intl.DateTimeFormat(localeFor(market), {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -118,7 +102,7 @@ function lastUpdated(data: CompanyPageData): string | null {
 function monthYear(iso: string | null | undefined, market: string): string {
   if (!iso) return "";
   try {
-    return new Intl.DateTimeFormat(market === "US" ? "en-US" : "en-GB", {
+    return new Intl.DateTimeFormat(localeFor(market), {
       month: "long",
       year: "numeric",
       timeZone: "UTC",
@@ -175,8 +159,8 @@ function companyFaq(name: string, market: string) {
       answer: (
         <>
           Every row is a public regulatory disclosure — {filing} — collected
-          within minutes of being published. We don&apos;t take company
-          submissions and we don&apos;t edit the numbers; the only thing we add
+          within minutes of being published. We don&rsquo;t take company
+          submissions and we don&rsquo;t edit the numbers; the only thing we add
           is the rating and the reasoning behind it.
         </>
       ),
@@ -188,7 +172,7 @@ function companyFaq(name: string, market: string) {
           Sometimes. A {insider} buying with their own money is one of the few
           honest signals in the market, but plenty of purchases are routine —
           small top-ups, scheme allocations, or a well-paid executive rounding
-          out a holding. That&apos;s what our six-point check is for: it
+          out a holding. That&rsquo;s what our six-point check is for: it
           separates the conviction buys from the housekeeping, and shows you
           which is which.
         </>
@@ -199,7 +183,7 @@ function companyFaq(name: string, market: string) {
       answer: (
         <>
           The pipeline runs every 15 minutes through the trading day, so a new
-          disclosure appears here shortly after it&apos;s filed. Company stats
+          disclosure appears here shortly after it&rsquo;s filed. Company stats
           refresh daily.
         </>
       ),
@@ -208,9 +192,9 @@ function companyFaq(name: string, market: string) {
       question: "Can I get alerted when someone buys?",
       answer: (
         <>
-          Yes — that&apos;s what the app is for. Follow {name} and you&apos;ll
+          Yes — that&rsquo;s what the app is for. Follow {name} and you&rsquo;ll
           get a push the moment a {insider} files, with the full analysis
-          attached, plus alerts if the price moves after a buy you&apos;re
+          attached, plus alerts if the price moves after a buy you&rsquo;re
           following.
         </>
       ),
@@ -220,7 +204,7 @@ function companyFaq(name: string, market: string) {
       answer: (
         <>
           No. ddbx rates the <em>conviction</em> behind insider buys and shows
-          the reasoning. It&apos;s information, never a recommendation, and
+          the reasoning. It&rsquo;s information, never a recommendation, and
           never a guarantee. What you do with it is your call.
         </>
       ),
@@ -295,10 +279,10 @@ export default function CompanyPage() {
       <DefaultLayout>
         <div className="mx-auto max-w-[720px] py-16 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
-            We don&apos;t have dealings for that company
+            We don&rsquo;t have dealings for that company
           </h1>
           <p className={`mt-3 ${C.prose}`}>
-            It may not have filed a disclosure we&apos;ve surfaced yet.
+            It may not have filed a disclosure we&rsquo;ve surfaced yet.
           </p>
           <Link
             className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-foreground underline underline-offset-4"
@@ -393,8 +377,7 @@ export default function CompanyPage() {
                     {name}
                   </h1>
                   <p className="mt-1.5 max-w-xl text-[15px] leading-snug text-foreground/65 sm:text-[16px]">
-                    <span className="font-mono tracking-tight">{ticker}</span> ·{" "}
-                    {noun}
+                    <span className="font-mono">{ticker}</span> · {noun}
                   </p>
                 </div>
               </div>
@@ -403,7 +386,7 @@ export default function CompanyPage() {
                 {metrics.map(([k, v]) => (
                   <div key={k} className={`${C.tile} px-3.5 py-3`}>
                     <dt className={C.label}>{k}</dt>
-                    <dd className="mt-1.5 truncate text-[15.5px] font-semibold leading-none tracking-[-0.01em] text-foreground">
+                    <dd className="mt-1.5 truncate text-[15.5px] font-semibold leading-none tracking-[-0.01em] tabular-nums text-foreground">
                       {v}
                     </dd>
                   </div>
@@ -454,14 +437,13 @@ export default function CompanyPage() {
               </Section>
 
               <Section
-                aside={`Every ${market === "UK" ? "PDMR disclosure" : "SEC Form 4"} we've surfaced for this issuer. Ratings are ours, not the company's.`}
+                aside={`Every ${market === "UK" ? "PDMR disclosure" : "SEC Form 4"} we’ve surfaced for this issuer. Ratings are ours, not the company’s.`}
                 id="buys"
                 label={market === "UK" ? "Director buys" : "Insider buys"}
               >
                 <DealsTable deals={data.deals} market={market} />
                 <p className={`mt-3 ${C.note}`}>
-                  The full thesis, supporting evidence and price history for
-                  each buy live in the app.
+                  The reasoning behind each rating is written up in the app.
                 </p>
               </Section>
 
@@ -543,9 +525,9 @@ export default function CompanyPage() {
                   {market === "UK" ? "a director" : "an insider"} files.
                 </p>
                 <p className={`mt-2.5 max-w-[42em] ${C.prose}`}>
-                  Every disclosure rated as it lands, with the full thesis,
-                  supporting evidence and price history — plus alerts when the
-                  price moves after a buy you&apos;re following.
+                  The alert goes out as the disclosure lands, and again if the
+                  price moves after a buy you&rsquo;re following. Nothing to
+                  check, nothing to subscribe to.
                 </p>
                 {/* Ghost, not filled: the page's single primary action is the
                     broker CTA in the sticky panel. `items-start` because
@@ -730,14 +712,14 @@ function CompanySkeleton({ ticker }: { ticker?: string }) {
           {/* Side panel — reserving its width is the point: without it the
               content column loads narrow and then snaps. */}
           <aside className="hidden lg:block">
-            <div className="rounded-2xl border border-[#5a4128]/20 bg-white p-4 dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
+            <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
               <Bar className="h-11 w-full" />
               <Bar className="mx-auto mt-2.5 h-2.5 w-2/3" />
               <div className="mt-4">
                 {Array.from({ length: 4 }, (_, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-4 border-b border-separator/70 py-2.5 last:border-b-0"
+                    className={`flex items-center justify-between gap-4 border-b ${C.rule} py-2.5 last:border-b-0`}
                   >
                     <Bar className="h-3 w-20" />
                     <Bar className="h-3 w-12" />
@@ -783,7 +765,7 @@ function CompanyPanel({
 
   return (
     <aside className="hidden lg:block lg:sticky lg:top-24">
-      <div className="rounded-2xl border border-[#5a4128]/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
+      <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
         {broker ? (
           <>
             <BrokerVisitLink
@@ -809,10 +791,10 @@ function CompanyPanel({
           {facts.map(([k, v]) => (
             <div
               key={k}
-              className="flex justify-between gap-4 border-b border-separator/70 py-2 last:border-b-0"
+              className={`flex justify-between gap-4 border-b ${C.rule} py-2 last:border-b-0`}
             >
               <dt className="text-foreground/50">{k}</dt>
-              <dd className="text-right font-semibold text-foreground/85">
+              <dd className="text-right font-semibold tabular-nums text-foreground/85">
                 {v}
               </dd>
             </div>
@@ -884,10 +866,14 @@ function DealsTable({
                 )}
               </td>
               <td className="whitespace-nowrap py-3 pr-4 text-right tabular-nums text-foreground/60">
-                {Number(deal.shares).toLocaleString("en-GB")}
+                {Number(deal.shares).toLocaleString(localeFor(market))}
               </td>
               <td className="whitespace-nowrap py-3 pr-4 text-right tabular-nums font-medium text-foreground">
-                {money(dealValue(deal), market === "UK" ? "GBP" : "USD")}
+                {money(
+                  dealValue(deal),
+                  market === "UK" ? "GBP" : "USD",
+                  market,
+                )}
               </td>
               <td className="py-3 text-right">
                 {deal.analysis?.rating ? (

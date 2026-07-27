@@ -35,10 +35,9 @@ import { StoreButtons } from "@/components/store-buttons";
 import { BUTTON_RADIUS } from "@/components/button";
 import { FULL_BLEED } from "@/components/full-bleed";
 import { appShotSrc, SHOT_SLOTS } from "@/lib/app-screenshots";
+import { moneyShort } from "@/lib/company-format";
 import { useAvailableShots } from "@/lib/use-app-shots";
 import { useDevicePlatform } from "@/lib/use-device-platform";
-
-const SYMBOL: Record<string, string> = { GBP: "£", USD: "$", EUR: "€" };
 
 const isUk = (d: Dealing | UsDealing): d is Dealing => "value_gbp" in d;
 
@@ -60,22 +59,6 @@ function roleOf(d: Dealing | UsDealing): string {
 }
 
 const valueOf = (d: Dealing | UsDealing) => (isUk(d) ? d.value_gbp : d.value);
-
-function moneyShort(v: number | null | undefined, currency: string): string {
-  const n = Number(v);
-
-  if (!isFinite(n) || n === 0) return "—";
-  const sym = SYMBOL[currency] ?? "";
-
-  if (n >= 1_000_000) {
-    const m = n / 1_000_000;
-
-    return `${sym}${m >= 10 ? Math.round(m) : m.toFixed(1).replace(/\.0$/, "")}m`;
-  }
-  if (n >= 1_000) return `${sym}${Math.round(n / 1_000)}k`;
-
-  return `${sym}${Math.round(n)}`;
-}
 
 export function CompanyAppPitch({
   company,
@@ -136,17 +119,17 @@ export function CompanyAppPitch({
     // scrolled past as one more section. The change of surface IS the signal
     // that the page has stopped reporting and started asking.
     <section
-      className={`${FULL_BLEED} mt-16 bg-[#1a140d] text-white dark:bg-[oklch(17%_0.02_55)]`}
+      className={`${FULL_BLEED} mt-16 bg-ink text-white dark:bg-[oklch(17%_0.02_55)]`}
     >
       <div className="mx-auto max-w-[1280px] px-4 py-14 md:px-6 md:py-20">
         <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
           {/* ---- Left: the promise ---- */}
           <div>
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#eec584]">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-brand-amber">
               The app
             </p>
             <h2 className="mt-3 text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
-              Don&rsquo;t miss the next buy from {company}.
+              The next {company} buy lands on your phone.
             </h2>
             <p className="mt-4 max-w-[36em] text-[16px] leading-[1.6] text-white/65">
               Follow {ticker} and your phone buzzes the moment{" "}
@@ -160,7 +143,7 @@ export function CompanyAppPitch({
             <div className="mt-8 flex flex-col items-start gap-2.5">
               {/* Light fill: BUTTON_FILLED is near-black, which is the band. */}
               <StoreButtons
-                buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-[#1a140d] shadow-sm transition-colors hover:bg-white/90`}
+                buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
                 className="items-start"
                 gaEvent="cta_company_download"
                 gaLabel={`Company pitch · ${ticker}`}

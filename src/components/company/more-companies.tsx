@@ -1,4 +1,4 @@
-/** "Other companies with director dealings" — the onward-link rail at the foot
+/** "Director buying at other companies" — the onward-link rail at the foot
  *  of a company page.
  *
  *  Company pages are the site's long tail: they rank individually and each one
@@ -66,13 +66,13 @@ export function MoreCompanies({
   // worse than no heading.
   if (!rows || rows.length === 0) return null;
 
-  const noun = market === "UK" ? "director dealings" : "insider trading";
+  const subject = market === "UK" ? "Director buying" : "Insider buying";
 
   return (
     <section className="mt-16">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <h2 className="text-[17px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground">
-          Check out {noun} at these companies
+          {subject} at other companies
         </h2>
         <Link
           className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground/70 underline-offset-4 hover:underline"
@@ -87,7 +87,7 @@ export function MoreCompanies({
         {rows.map((c) => (
           <li key={c.key}>
             <Link
-              className="group flex h-full items-center gap-3 rounded-xl border border-[#e8e0d5] bg-[#faf7f2] px-3.5 py-3 transition-colors hover:border-[#d8cbb8] hover:bg-white dark:border-white/[0.07] dark:bg-surface dark:hover:border-white/15 dark:hover:bg-surface-secondary"
+              className="group flex h-full items-center gap-3 rounded-xl border border-hairline bg-sheet px-3.5 py-3 transition-colors hover:border-[#d8cbb8] hover:bg-white dark:border-white/[0.07] dark:bg-surface dark:hover:border-white/15 dark:hover:bg-surface-secondary"
               to={companyPath(c.key)}
             >
               <CompanyLogo size={32} ticker={c.key} />

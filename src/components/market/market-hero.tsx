@@ -189,7 +189,7 @@ export function MarketHero({
           <span
             className={`${chip("lg")} bg-[#5a4128]/10 text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]`}
           >
-            7-day free trial · Cancel anytime
+            7-day free trial · Cancel any time
           </span>
         </div>
       )}

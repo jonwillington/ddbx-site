@@ -107,7 +107,7 @@ const FEEDS: Feed[] = [
     Flag: SE,
     endpoint: "GET /api/eu-dealings?market=SE",
     meta: "200 OK · 96 ms",
-    note: "Finansinspektionen files in Swedish. The register's own wording is kept verbatim, and the ISIN is resolved to a tradeable ticker.",
+    note: "Finansinspektionen files in Swedish. The register’s own wording is kept verbatim, and the ISIN is resolved to a tradeable ticker.",
     payload: {
       id: "mar-se-2026-07-26-1bxqxmz",
       market: "SE",
@@ -190,21 +190,7 @@ export function ResponseExplorer() {
   const feed = FEEDS[active];
 
   return (
-    <div className="relative isolate min-w-0">
-      {/* Ambient wash behind the panel. The hero card is one flat brown, and a
-          terminal dropped onto it reads as pasted-on rather than lit. Two soft
-          brand-amber radials give the object somewhere to sit. Purely
-          decorative, so it stays out of the accessibility tree.
-
-          `isolate` on the parent is load-bearing: it gives this a stacking
-          context to sit behind. Without it `-z-10` resolves against the hero
-          card and the gradient paints UNDER that card's opaque background,
-          which is to say nowhere. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -inset-x-4 -inset-y-10 -z-10 opacity-70 blur-2xl [background:radial-gradient(60%_45%_at_78%_8%,rgba(238,197,132,0.16),transparent_70%),radial-gradient(55%_40%_at_10%_95%,rgba(173,148,121,0.14),transparent_72%)] sm:-inset-x-10"
-      />
-
+    <div className="min-w-0">
       {/* Buttons with aria-pressed rather than a real tablist. A tablist owes
           the user roving tabindex and arrow-key navigation; these are five
           toggles that swap one panel, and claiming the pattern without
@@ -218,9 +204,9 @@ export function ResponseExplorer() {
               key={f.id}
               aria-controls="api-response-panel"
               aria-pressed={on}
-              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#eec584]/40 ${
+              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-amber/40 ${
                 on
-                  ? "border-[#eec584]/45 bg-[#eec584]/15 text-[#eec584]"
+                  ? "border-brand-amber/45 bg-brand-amber/15 text-brand-amber"
                   : "border-white/10 text-white/45 hover:border-white/20 hover:text-white/70"
               }`}
               title={f.label}

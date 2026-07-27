@@ -36,7 +36,7 @@ const CANONICAL_HOST = "ddbx.uk";
 const fmtMoney = (v) =>
   v == null ? "—" : v === 0 ? "Free" : `£${Number(v).toLocaleString("en-GB")}`;
 
-const fmtPct = (v) => (v == null ? "—" : v === 0 ? "0%" : `${v}%`);
+const fmtPct = (v) => (v == null ? "—" : v === 0 ? "Free" : `${Number(v.toFixed(2))}%`);
 
 /** Mirrors platformFeeSummary() in src/lib/brokers.ts. */
 function platformFee(fees) {

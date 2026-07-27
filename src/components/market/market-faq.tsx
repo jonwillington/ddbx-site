@@ -19,10 +19,10 @@ export function MarketFaq({ items }: { items?: MarketFaqItem[] }) {
     >
       <div className="grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)] md:gap-16">
         <div className="md:sticky md:top-24 md:self-start">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
             Common questions
           </p>
-          <h2 className="mt-2 text-2xl font-semibold leading-tight tracking-tight text-foreground md:text-[2rem]">
+          <h2 className="mt-2 text-[20px] font-semibold leading-[1.2] tracking-[-0.015em] text-foreground sm:text-[22px]">
             Everything investors ask first
           </h2>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
@@ -37,7 +37,7 @@ export function MarketFaq({ items }: { items?: MarketFaqItem[] }) {
               className="group border-b border-black/[0.08] dark:border-white/[0.1]"
             >
               <summary className="flex cursor-pointer list-none select-none items-center justify-between gap-4 py-5 text-left">
-                <span className="text-lg font-medium leading-snug tracking-tight text-foreground/90 transition-colors duration-200 group-hover:text-foreground md:text-xl">
+                <span className="text-[16px] font-medium leading-snug tracking-tight text-foreground/90 transition-colors duration-200 group-hover:text-foreground md:text-[17px]">
                   {item.question}
                 </span>
                 <PlusIcon className="h-5 w-5 shrink-0 text-muted transition-transform duration-300 ease-out group-open:rotate-45" />

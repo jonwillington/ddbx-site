@@ -13,7 +13,6 @@ import { useLocation } from "react-router-dom";
 import { useUrlParam } from "@/lib/use-url-overlay";
 import DefaultLayout from "@/layouts/default";
 import { Skeleton } from "@/components/skeleton";
-import { subtitle, title } from "@/components/primitives";
 import { api, type Dealing } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
 import {
@@ -80,10 +79,10 @@ export default function PerformancePage() {
     return (
       <DefaultLayout>
         <section className="py-8 space-y-3">
-          <h1 className={`${title({ size: "sm" })} !block`}>
+          <h1 className="text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
             Performance — {market.label}
           </h1>
-          <p className={subtitle({ class: "mt-2" })}>
+          <p className="mt-2 text-lg text-muted lg:text-xl">
             Coming soon. The performance pipeline (analyst-screened picks, hold
             simulation, sector attribution, benchmark alpha) currently only
             covers the UK. {market.label} will land once ddbx-data exposes the
@@ -176,7 +175,9 @@ function UkPerformancePage() {
   return (
     <DefaultLayout drawerRight={isTradingDay}>
       <section className="py-8 space-y-6 animate-content-in">
-        <h1 className={`${title({ size: "sm" })} !block mb-8`}>Performance</h1>
+        <h1 className="mb-8 text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
+          Performance
+        </h1>
 
         {dealings == null ? (
           <PerformanceSkeleton />
@@ -331,7 +332,7 @@ function ModeToggle({
           key={m}
           className={`px-3 py-1 rounded-full font-medium transition-colors ${
             value === m
-              ? "bg-[#5a4128]/15 text-[#5a4128] dark:text-[#a88c6e]"
+              ? "bg-brand-brown/15 text-brand-brown dark:text-[#a88c6e]"
               : "text-muted hover:text-foreground"
           }`}
           type="button"

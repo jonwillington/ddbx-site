@@ -7,9 +7,11 @@ import type { ReactNode } from "react";
  *
  *  1. **No macOS traffic lights.** The site does no skeuomorphism anywhere, and
  *     three coloured dots are the single most generic thing a code block can
- *     wear. The header instead reuses SectionHeader's grammar — mono uppercase
- *     kicker left, mono tabular counter right — transposed onto dark, so the
- *     object reads as ddbx rather than as a widget lifted from a docs theme.
+ *     wear. The header instead reuses SectionHeader's grammar — mono kicker
+ *     left, mono tabular counter right — transposed onto dark, so the object
+ *     reads as ddbx rather than as a widget lifted from a docs theme. The
+ *     title keeps its authored casing: it usually holds a real endpoint path,
+ *     which an uppercase transform would corrupt.
  *
  *  2. **No highlight library, and no cold hues.** The palette contains zero
  *     blue/violet/cyan, so every stock theme (Prism, Shiki defaults, Dracula)
@@ -26,16 +28,16 @@ import type { ReactNode } from "react";
 /** Brand-family syntax palette. Keys sit quietest, string values carry the
  *  amber that the dark bands already use for kickers, numbers step warmer. */
 const TOKEN = {
-  key: "text-[#ad9479]",
-  string: "text-[#eec584]",
+  key: "text-brand-tan",
+  string: "text-brand-amber",
   number: "text-[#e8a878]",
   keyword: "text-[#d8b48c]",
   punct: "text-white/40",
   comment: "text-white/35",
   /** Directional only — a return/alpha figure, where green is honest. */
-  gain: "text-[#5cd84a]",
-  /** The other half of directional. Matches the dark `--negative` token. */
-  loss: "text-[oklch(64%_0.185_25)]",
+  gain: "text-positive",
+  /** The other half of directional. */
+  loss: "text-negative",
 } as const;
 
 export type TokenKind = keyof typeof TOKEN;
@@ -58,7 +60,7 @@ export function Tok({
  *  overriding className because `p-0` and `p-4` are the same Tailwind utility
  *  and which one wins is a stylesheet-order coin flip. */
 const BODY_VARIANT = {
-  code: "overflow-x-auto p-4 font-mono text-[12.5px] leading-[1.6] text-[#f5f0e8]/90",
+  code: "overflow-x-auto p-4 font-mono text-[12.5px] leading-[1.6] tabular-nums text-[#f5f0e8]/90",
   bare: "text-[#f5f0e8]/90",
 } as const;
 
@@ -83,8 +85,8 @@ export function Terminal({
     <div
       className={`overflow-hidden rounded-2xl bg-[oklch(15%_0.018_55)] shadow-sm ring-1 ring-white/[0.06] ${className}`}
     >
-      <div className="flex items-baseline justify-between gap-4 border-b border-white/10 px-4 py-2.5">
-        <p className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#eec584]">
+      <div className="flex items-baseline justify-between gap-4 border-b border-white/[0.08] px-4 py-2.5">
+        <p className="truncate font-mono text-[11px] font-semibold tracking-[0.16em] text-brand-amber">
           {title}
         </p>
         {meta ? (

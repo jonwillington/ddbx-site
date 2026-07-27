@@ -28,6 +28,18 @@
      surfaces where tailwind's emerald-300/400 went muddy. */
   --color-positive: var(--positive);
   --color-negative: var(--negative);
+
+  /* Recurring brand literals, promoted to names. These six hexes were
+     repeated as raw `[#…]` values across the page families and had started
+     to drift into one-off near-misses (#e7d4bf, #f1eae0, #fffdf9). Values
+     unchanged — prefer the utility forms (border-hairline, bg-sheet,
+     text-brand-amber, …) over new bracketed literals. */
+  --color-hairline: #e8e0d5;    /* light-mode rule / sheet edge on cream  */
+  --color-sheet: #faf7f2;       /* raised document sheet over the page    */
+  --color-ink: #1a140d;         /* near-black — same value BUTTON_FILLED uses */
+  --color-brand-brown: #5a4128; /* brand accent on light surfaces         */
+  --color-brand-amber: #eec584; /* brand accent on dark surfaces          */
+  --color-brand-tan: #ad9479;   /* mid-brown support on dark surfaces     */
 }
 
 /* ─── Warm light theme ───────────────────────────────────────────────────────

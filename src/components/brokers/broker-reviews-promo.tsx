@@ -81,7 +81,7 @@ export function BrokerReviewsPromo({
   if (variant === "bar") {
     return (
       <a
-        className={`group flex items-center gap-5 overflow-hidden rounded-xl border border-[#e8e0d5] bg-gradient-to-br from-[#faf7f2] to-[#f1eae0] px-5 py-5 transition-colors dark:border-separator dark:from-surface dark:to-surface-secondary ${className ?? ""}`}
+        className={`group flex items-center gap-5 overflow-hidden rounded-xl border border-hairline bg-sheet px-5 py-5 transition-colors dark:border-separator dark:bg-surface ${className ?? ""}`}
         data-ga-event="cta_broker_reviews"
         data-ga-label="market_table_bar"
         href="/compare"
@@ -92,7 +92,7 @@ export function BrokerReviewsPromo({
           {logos.map((b, i) => (
             <span
               key={b.slug}
-              className="rounded-2xl ring-2 ring-[#faf7f2] dark:ring-surface"
+              className="rounded-2xl ring-2 ring-sheet dark:ring-surface"
               style={{ marginLeft: i === 0 ? 0 : -14, zIndex: LOGO_COUNT - i }}
             >
               <BrokerLogo broker={b} size={56} />
@@ -101,7 +101,7 @@ export function BrokerReviewsPromo({
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5a4128]/70 dark:text-[#d8c4af]/70">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-brown/70 dark:text-[#d8c4af]/70">
             UK brokers
           </p>
           <h3 className="truncate text-lg font-semibold leading-snug text-foreground md:text-xl">
@@ -124,14 +124,14 @@ export function BrokerReviewsPromo({
 
   return (
     <a
-      className={`group block overflow-hidden rounded-2xl border border-[#e8e0d5] bg-gradient-to-br from-[#faf7f2] to-[#f1eae0] p-5 shadow-[0_18px_44px_-20px_rgba(30,21,6,0.28)] transition-colors dark:border-separator dark:from-surface dark:to-surface-secondary ${className ?? ""}`}
+      className={`group block overflow-hidden rounded-2xl border border-hairline bg-sheet p-5 shadow-[0_1px_2px_rgba(90,65,40,0.03)] transition-colors dark:border-separator dark:bg-surface ${className ?? ""}`}
       data-ga-event="cta_broker_reviews"
       data-ga-label="market_today_mobile"
       href="/compare"
       rel="noopener"
       target="_blank"
     >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5a4128]/70 dark:text-[#d8c4af]/70">
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-brown/70 dark:text-[#d8c4af]/70">
         UK brokers
       </p>
       <h3 className="mt-1.5 text-lg font-semibold leading-snug text-foreground">
@@ -145,7 +145,7 @@ export function BrokerReviewsPromo({
         {logos.map((b, i) => (
           <span
             key={b.slug}
-            className="rounded-xl ring-2 ring-[#faf7f2] dark:ring-surface"
+            className="rounded-xl ring-2 ring-sheet dark:ring-surface"
             style={{ marginLeft: i === 0 ? 0 : -10, zIndex: LOGO_COUNT - i }}
           >
             <BrokerLogo broker={b} size={44} />

@@ -3,7 +3,6 @@
 // requirements for a publicly reachable deletion-instructions URL. It is not
 // added to the navbar or footer LEGAL_LINKS, so it's only reachable directly.
 import DefaultLayout from "@/layouts/default";
-import { title } from "@/components/primitives";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -17,7 +16,9 @@ export default function AccountDeletionPage() {
   return (
     <DefaultLayout>
       <section className="py-8 space-y-4 animate-content-in max-w-prose">
-        <h1 className={title({ size: "sm" })}>Account deletion</h1>
+        <h1 className="text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
+          Account deletion
+        </h1>
 
         <div className="text-sm leading-relaxed text-foreground/70 space-y-4">
           <p>

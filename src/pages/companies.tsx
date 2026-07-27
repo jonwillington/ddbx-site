@@ -11,7 +11,7 @@ import { marketForPath } from "@/lib/markets/registry";
 
 /** Shared with company.tsx — see the note there. */
 const R = {
-  rule: "border-[#e8e0d5] dark:border-separator",
+  rule: "border-hairline dark:border-separator",
   label: "text-[11px] leading-none text-foreground/50",
   body: "text-[14px] leading-[1.65] text-foreground/70",
 } as const;
@@ -91,7 +91,7 @@ export default function CompaniesPage() {
       />
 
       <div className="w-full pb-10">
-        <h1 className="text-[26px] font-semibold leading-[1.15] tracking-tight text-foreground md:text-[32px]">
+        <h1 className="text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
           Every {market} company with {noun}
         </h1>
         <p className={`mt-3 max-w-[62ch] ${R.body}`}>
@@ -135,7 +135,7 @@ export default function CompaniesPage() {
                   >
                     {cleanCompanyName(c.company) || c.key}
                   </Link>{" "}
-                  <span className={`${R.label} tabular-nums`}>
+                  <span className={`${R.label} font-mono`}>
                     {displayTicker(c.key)}
                   </span>{" "}
                   <span className="text-[12px] text-foreground/35">
@@ -147,7 +147,9 @@ export default function CompaniesPage() {
           </section>
         ))}
 
-        <p className={`mt-12 border-t ${R.rule} pt-6 ${R.label} leading-[1.6]`}>
+        <p
+          className={`mt-12 border-t ${R.rule} pt-6 text-[11px] leading-[1.6] text-foreground/50`}
+        >
           Companies appear here once they have repeat insider activity or a
           written analysis on file.
         </p>

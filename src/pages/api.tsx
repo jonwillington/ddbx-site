@@ -45,7 +45,8 @@ import { usePinnedTheme } from "@/lib/use-pinned-theme";
  *   - Because `.dark` is pinned, theme-aware tokens inside the cream band
  *     resolve to their DARK values. Everything in that band, in
  *     `interest-form.tsx` and in the request modal is therefore written with
- *     literal colours.
+ *     fixed colours only: literals, or the fixed brand tokens (`ink`,
+ *     `brand-brown`), never the theme-aware ones.
  *
  *  Copy rules, both hard constraints:
  *   1. Never mention a free tier, a public sandbox or the currently-open
@@ -214,7 +215,7 @@ const FAQ = [
   },
   {
     q: "How quickly do new filings appear?",
-    a: "The ingest pipeline runs every 15 minutes against each regulator's source, so a disclosure is generally readable within minutes of publication. Deep analysis on the rows that clear triage follows shortly after.",
+    a: "The ingest pipeline runs every 15 minutes against each regulator’s source, so a disclosure is generally readable within minutes of publication. Deep analysis on the rows that clear triage follows shortly after.",
   },
   {
     q: "How far back does history go?",
@@ -222,7 +223,7 @@ const FAQ = [
   },
   {
     q: "Can we get the analysis in another language?",
-    a: "The written fields (summary, thesis, evidence, key risks) are generated per row, so the language they land in is a scope question rather than a rebuild. Say which one you need when you ask for a quote. Source fields keep the register's own wording either way: a Swedish filing stays Swedish where Finansinspektionen wrote it.",
+    a: "Yes. The written fields (summary, thesis, evidence, key risks) are generated per row, so another language is a scope decision taken at contract time, not a rebuild. Say which one you need when you ask for a quote. Source fields keep the register’s own wording either way: a Swedish filing stays Swedish where Finansinspektionen wrote it.",
   },
   {
     q: "Is the analysis investment advice?",
@@ -230,7 +231,7 @@ const FAQ = [
   },
   {
     q: "Can we redistribute the data in our own product?",
-    a: "Depends on the field and the market. Our generated analysis, ratings and derived metrics are ours to license. Redistribution rights for underlying regulatory content vary by source, so they are agreed per contract rather than assumed. We will be specific about what you can and cannot pass on.",
+    a: "Depends on the field and the market. Our generated analysis, ratings and derived metrics are ours to license. Redistribution rights for underlying regulatory content vary by source, so every contract states them field by field. We will be specific about what you can and cannot pass on.",
   },
   {
     q: "What happens when a filing is amended or restated?",
@@ -269,11 +270,11 @@ export default function ApiPage() {
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_minmax(0,560px)] lg:gap-14">
             <div>
               <span
-                className={`${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.lg} bg-[#eec584]/15 text-[#eec584]`}
+                className={`${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.lg} bg-brand-amber/15 text-brand-amber`}
               >
                 Developer API · Private beta
               </span>
-              <h1 className="mt-6 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-white sm:text-[44px] lg:text-[54px]">
+              <h1 className="mt-6 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-white sm:text-[44px] lg:text-[58px]">
                 Four insider registers, one JSON schema.
               </h1>
               <p className="mt-5 max-w-[46ch] text-[16.5px] leading-[1.55] text-white/60">
@@ -283,7 +284,7 @@ export default function ApiPage() {
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <button
-                  className={`${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-[#1a140d] transition-colors hover:bg-white/90`}
+                  className={`${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink transition-colors hover:bg-white/90`}
                   data-ga-event="cta_api_hero_request"
                   data-ga-label="API hero"
                   type="button"
@@ -307,16 +308,16 @@ export default function ApiPage() {
               the hero, where four bare figures on an empty band read as filler
               between two real sections. Inside the hero they are what the
               headline is standing on. */}
-          <dl className="mt-10 grid grid-cols-2 gap-3 border-t border-white/[0.07] pt-8 sm:grid-cols-4 lg:mt-12">
+          <dl className="mt-10 grid grid-cols-2 gap-3 border-t border-white/[0.08] pt-8 sm:grid-cols-4 lg:mt-12">
             {STATS.map((s) => (
               <div
                 key={s.k}
                 className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3.5"
               >
-                <dt className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-white/40">
+                <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
                   {s.k}
                 </dt>
-                <dd className="mt-1.5 text-[26px] font-semibold leading-none tracking-[-0.02em] text-white">
+                <dd className="mt-1.5 text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-white">
                   {s.v}
                 </dd>
                 <p className="mt-2 text-[12px] leading-[1.45] text-white/40">
@@ -345,20 +346,12 @@ export default function ApiPage() {
               reading as the page being slow. */}
           {FEATURES.map((c, i) => (
             <Reveal key={c.h} delay={(i % 3) * 60}>
-              <div className="h-full rounded-3xl border border-white/[0.09] bg-white/[0.035] p-5">
-                {/* Icon in a tinted well rather than bare. Six unadorned
-                    outline glyphs on a flat card read as a stock icon set;
-                    the well makes each one an object the card is built
-                    around. No ring on the well: the card already carries a
-                    hairline, and a second one 20px inside it reads as a
-                    button the icon isn't. */}
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eec584]/[0.12]">
-                  <c.Icon
-                    aria-hidden="true"
-                    className="h-8 w-8 text-[#eec584]"
-                    strokeWidth={1.4}
-                  />
-                </span>
+              <div className="h-full rounded-3xl border border-white/[0.08] bg-white/[0.035] p-5">
+                <c.Icon
+                  aria-hidden="true"
+                  className="h-6 w-6 text-brand-amber"
+                  strokeWidth={1.4}
+                />
                 <h3 className="mt-4 text-[16px] font-semibold leading-snug text-white">
                   {c.h}
                 </h3>
@@ -501,30 +494,31 @@ export default function ApiPage() {
 
       {/* ── Request access — the inverted band ───────────────────────────── */}
       <section
-        className={`${FULL_BLEED} mt-6 bg-[#f5f0e8] text-[#1a140d]`}
+        className={`${FULL_BLEED} mt-6 bg-[#f5f0e8] text-ink`}
         id="request-access"
       >
-        {/* Centred and cut back to the ask. The two-column version carried
-            four sentences of pitch and a five-row spec table beside the
-            button, which is a lot of reading to put AFTER the FAQ has already
-            answered everything. The pitch is one line now; the spec is a
-            single hairline row of label/value pairs; the detail lives in the
-            modal the button opens. */}
+        {/* Cut back to the ask, and set on the same ruled left grammar as the
+            numbered sections above it. The two-column version carried four
+            sentences of pitch and a five-row spec table beside the button,
+            which is a lot of reading to put AFTER the FAQ has already answered
+            everything. The pitch is one line now; the spec is a single
+            hairline row of label/value pairs; the detail lives in the modal
+            the button opens. */}
         <div className="mx-auto max-w-[1280px] px-4 py-16 md:px-6 md:py-24">
-          <div className="mx-auto max-w-[46ch] text-center">
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5a4128]">
+          <div className="border-t border-black/10 pt-5">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown">
               Request access
             </p>
-            <h2 className="mt-3 text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
+            <h2 className="mt-5 max-w-[20ch] text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
               Pricing is quoted per use case.
             </h2>
-            <p className="mx-auto mt-4 max-w-[38ch] text-[16px] leading-[1.6] text-[#1a140d]/65">
+            <p className="mt-4 max-w-[38ch] text-[16px] leading-[1.6] text-ink/65">
               Tell us what you&rsquo;re building and we&rsquo;ll come back with
               scope and a number.
             </p>
 
             <button
-              className={`${BUTTON_RADIUS} mt-8 bg-[#1a140d] px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118]`}
+              className={`${BUTTON_RADIUS} mt-8 bg-ink px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118]`}
               data-ga-event="cta_api_band_request"
               data-ga-label="API closing band"
               type="button"
@@ -532,25 +526,25 @@ export default function ApiPage() {
             >
               Request pricing
             </button>
-            <p className="mt-3 text-[13px] text-[#1a140d]/50">
+            <p className="mt-3 text-[13px] text-ink/50">
               Two working days. No newsletter, no onward sharing.
             </p>
           </div>
 
-          <dl className="mx-auto mt-14 grid max-w-4xl grid-cols-2 gap-x-8 gap-y-6 border-t border-black/10 pt-8 text-center sm:grid-cols-3 lg:grid-cols-5">
+          <dl className="mt-14 grid max-w-4xl grid-cols-2 gap-x-8 gap-y-6 border-t border-black/10 pt-8 sm:grid-cols-3 lg:grid-cols-5">
             {SPEC.map(([k, v]) => (
               <div key={k}>
-                <dt className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#1a140d]/40">
+                <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/40">
                   {k}
                 </dt>
-                <dd className="mt-1.5 text-[13.5px] leading-[1.45] text-[#1a140d]/75">
+                <dd className="mt-1.5 text-[13.5px] leading-[1.45] text-ink/75">
                   {v}
                 </dd>
               </div>
             ))}
           </dl>
 
-          <p className="mx-auto mt-14 max-w-[62ch] text-center text-xs leading-[1.6] text-[#1a140d]/40">
+          <p className="mt-14 max-w-[62ch] text-xs leading-[1.6] text-ink/40">
             Research output, not investment advice. Ratings carry a stated
             confidence and are not recommendations to trade. Redistribution
             rights vary by source and are agreed per contract.

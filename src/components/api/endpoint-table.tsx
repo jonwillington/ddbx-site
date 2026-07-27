@@ -14,7 +14,7 @@ import { CHIP_BASE, CHIP_HAIRLINE, CHIP_SIZE } from "@/components/chip";
  *  mark.
  */
 
-export const METHOD_CHIP = `${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.sm} bg-[#ad9479]/15 text-[#ad9479]`;
+export const METHOD_CHIP = `${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.sm} bg-brand-tan/15 text-brand-tan`;
 
 /** Inline-code mark, dark-surface variant of TickerPill. */
 export function Path({ children }: { children: React.ReactNode }) {
@@ -54,7 +54,7 @@ export function EndpointTable({ rows }: { rows: Endpoint[] }) {
                 <Path>{r.path}</Path>
                 {r.beta ? (
                   <span
-                    className={`${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.sm} ml-2 bg-[#eec584]/15 text-[#eec584]`}
+                    className={`${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.sm} ml-2 bg-brand-amber/15 text-brand-amber`}
                   >
                     Beta
                   </span>
@@ -82,7 +82,7 @@ export function ParamList({
     <dl className="mt-4 grid gap-x-6 gap-y-2 sm:grid-cols-[9rem_minmax(0,1fr)]">
       {params.map((p) => (
         <div key={p.name} className="contents">
-          <dt className="font-mono text-[12px] font-medium text-[#ad9479]">
+          <dt className="font-mono text-[12px] font-medium text-brand-tan">
             {p.name}
           </dt>
           <dd className="text-[13.5px] leading-[1.55] text-white/55">

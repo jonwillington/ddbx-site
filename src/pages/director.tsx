@@ -13,7 +13,6 @@ import { MarketRow, MarketRowHeader } from "@/components/market/market-row";
 import { Skeleton } from "@/components/skeleton";
 import DefaultLayout from "@/layouts/default";
 import { useDashboardMetricMode } from "@/lib/dashboard-metric-mode";
-import { subtitle, title } from "@/components/primitives";
 import {
   api,
   type DirectorDetail,
@@ -137,8 +136,10 @@ export default function DirectorPage() {
     <DefaultLayout>
       <section className="py-8 space-y-8 animate-content-in">
         <div>
-          <h1 className={title({ size: "sm" })}>{d.name}</h1>
-          <p className={subtitle({ class: "mt-2" })}>
+          <h1 className="text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
+            {d.name}
+          </h1>
+          <p className="mt-2 text-lg text-muted lg:text-xl">
             {d.role} · {d.company}
             {d.age_band && ` · ${d.age_band}`}
             {d.tenure_years != null && ` · ${d.tenure_years}y tenure`}
@@ -199,7 +200,7 @@ export default function DirectorPage() {
           {dealings.length === 0 ? (
             <p className="text-sm text-muted">No prior picks on record yet.</p>
           ) : (
-            <div className="bg-[#faf7f2] dark:bg-surface rounded-xl overflow-hidden">
+            <div className="bg-sheet dark:bg-surface rounded-xl overflow-hidden">
               <MarketRowHeader
                 benchmarkLabel={market.config.benchmarkLabel}
                 chartMode={chartMode}
