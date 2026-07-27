@@ -413,7 +413,14 @@ export default function DefaultLayout({
   }, [drawerRight]);
 
   const [followOpen, setFollowOpen] = useState(false);
-  const [appsOpen, setAppsOpen] = useState(false);
+  // Which store the chooser was opened for: "ios"/"android" when the visitor
+  // clicked a specific badge, "auto" when they clicked a store-agnostic CTA and
+  // the device sniff should decide, false when closed. Tracking the intent is
+  // what stops the Google Play badge listing App Store links on desktop, where
+  // there's no device to sniff.
+  const [appsOpen, setAppsOpen] = useState<false | "auto" | "ios" | "android">(
+    false,
+  );
   const legalPage = pathToLegalPage(location.pathname);
   const platform = useDevicePlatform();
   // Direct store link for the market that owns this route + the visitor's
@@ -587,7 +594,7 @@ export default function DefaultLayout({
                 data-ga-event="cta_footer_download"
                 data-ga-label="Footer Google Play"
                 type="button"
-                onClick={() => setAppsOpen(true)}
+                onClick={() => setAppsOpen("android")}
               >
                 <StoreBadgeImg size="sm" store="android" />
               </button>
@@ -597,7 +604,7 @@ export default function DefaultLayout({
                 data-ga-event="cta_footer_download"
                 data-ga-label="Footer App Store"
                 type="button"
-                onClick={() => setAppsOpen(true)}
+                onClick={() => setAppsOpen("ios")}
               >
                 <StoreBadgeImg size="sm" store="ios" />
               </button>
@@ -642,7 +649,7 @@ export default function DefaultLayout({
               data-ga-event="cta_floating_download_chooser"
               data-ga-label="Floating mobile CTA"
               type="button"
-              onClick={() => setAppsOpen(true)}
+              onClick={() => setAppsOpen("auto")}
             >
               <StoreGlyph className="h-5 w-5 shrink-0" />
               <span>Download the app</span>
@@ -667,9 +674,19 @@ export default function DefaultLayout({
       />
 
       <MarketChooserModal
-        choices={buildAppChoices(platform)}
-        open={appsOpen}
-        subtitle="Get the app for your market."
+        choices={buildAppChoices(
+          platform,
+          appsOpen === "auto" || appsOpen === false ? null : appsOpen,
+        )}
+        open={appsOpen !== false}
+        // Named explicitly on the Play route, because that's the list where
+        // rows are greyed out (only the UK flavour is on Play today) and an
+        // unexplained "Coming soon" reads as broken rather than honest.
+        subtitle={
+          appsOpen === "android"
+            ? "Get it on Google Play — the UK app is live today."
+            : "Get the app for your market."
+        }
         title="Download the ddbx app"
         onClose={() => setAppsOpen(false)}
       />

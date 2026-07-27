@@ -158,17 +158,28 @@ export function storeTargetsForMarket(
   return targets;
 }
 
-/** The download chooser, resolved for the visitor's platform. iOS and desktop
- *  keep the App Store links above. On Android, a row is only tappable where
- *  that market has a live Play listing (UK today) — every other market shows
- *  the "Coming soon" state rather than sending an Android user to an iOS-only
- *  listing. The chooser is explicit market selection, so it stays honest;
- *  the UK-app fallback lives only in the single-tap CTAs
- *  (`storeUrlForMarketId`). */
+/** The download chooser, resolved for the store the visitor asked for — or for
+ *  their device when they didn't ask.
+ *
+ *  `store` is what the visitor clicked: the footer has a Google Play badge and
+ *  an App Store badge, and both used to open this chooser with nothing but the
+ *  device sniff to go on. On desktop that sniff yields neither platform, so the
+ *  Play badge opened a list of five App Store links — a Google Play button that
+ *  sent you to Apple. Pass the badge's own store and the rows follow it.
+ *
+ *  `null` keeps the device-derived behaviour, for entry points that aren't
+ *  store-specific (the floating mobile CTA).
+ *
+ *  Either way a row is only tappable where that market has a live listing in
+ *  the resolved store (Play: UK only today) — every other market shows the
+ *  "Coming soon" state rather than sending an Android user to an iOS-only
+ *  listing. The chooser is explicit market selection, so it stays honest; the
+ *  UK-app fallback lives only in the single-tap CTAs (`storeUrlForMarketId`). */
 export function buildAppChoices(
   platform: DevicePlatform | null,
+  store: DevicePlatform | null = null,
 ): MarketChoice[] {
-  if (platform !== "android") return APP_CHOICES;
+  if ((store ?? platform) !== "android") return APP_CHOICES;
 
   return APP_CHOICES.map((choice) => {
     const play = PLAY_STORE_URLS[choice.id];
