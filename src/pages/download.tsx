@@ -36,6 +36,7 @@ import {
 import { CompanyLogo } from "@/components/company-logo";
 import { AppTour } from "@/components/download/app-tour";
 import { DownloadFaq } from "@/components/download/download-faq";
+import { DownloadRail } from "@/components/download/download-rail";
 import {
   DownloadHero,
   StoreUnavailable,
@@ -1035,7 +1036,18 @@ export default function DownloadPage({
   }, [cfg]);
 
   return (
-    <DefaultLayout>
+    // drawerRight reserves lg:mr-80 for the fixed install rail — the same
+    // pairing every other page in the section uses. The FULL_BLEED bands below
+    // stay correct inside it: the band's centre lands on the narrowed column's
+    // centre, its left overhang is clipped by the layout root and its right
+    // runs under the rail (see /company/:key, which does the same).
+    <DefaultLayout drawerRight>
+      <DownloadRail
+        gaLabel={cfg.gaPrefix}
+        marketId={cfg.marketId}
+        platform={platform}
+      />
+
       <DownloadHero
         gaLabel={cfg.gaPrefix}
         headline={cfg.heroHeadline}
@@ -1120,6 +1132,7 @@ export default function DownloadPage({
                 gaLabel={`${cfg.gaPrefix} winners`}
                 glyphClassName="h-[17px] w-[17px] shrink-0"
                 marketId={cfg.marketId}
+                platform={platform}
               />
               <p className="text-sm text-foreground/55">{cfg.winnersCtaSub}</p>
             </Reveal>

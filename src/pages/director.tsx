@@ -11,6 +11,7 @@ import { useDevicePlatform } from "@/lib/use-device-platform";
 import { MarketDetailDrawer } from "@/components/market/market-detail-drawer";
 import { MarketRow, MarketRowHeader } from "@/components/market/market-row";
 import { Skeleton } from "@/components/skeleton";
+import { SeoRail } from "@/components/seo/seo-rail";
 import DefaultLayout from "@/layouts/default";
 import { useDashboardMetricMode } from "@/lib/dashboard-metric-mode";
 import {
@@ -124,16 +125,36 @@ export default function DirectorPage() {
     [dealings, selectedKey],
   );
 
-  if (err) return <DefaultLayout>Error: {err}</DefaultLayout>;
+  // The rail rides every state, loading and error included: it's fixed and
+  // market-derived, so nothing about it waits on the fetch, and reserving the
+  // gutter up front stops the article shifting 320px sideways when the
+  // director resolves.
+  const rail = (
+    <SeoRail
+      marketId={market.id}
+      placement="director_rail"
+      ukHeading={d ? `Invest in ${d.company}` : undefined}
+    />
+  );
+
+  if (err)
+    return (
+      <DefaultLayout drawerRight>
+        {rail}
+        Error: {err}
+      </DefaultLayout>
+    );
   if (!d)
     return (
-      <DefaultLayout>
+      <DefaultLayout drawerRight>
+        {rail}
         <DirectorSkeleton />
       </DefaultLayout>
     );
 
   return (
-    <DefaultLayout>
+    <DefaultLayout drawerRight>
+      {rail}
       <section className="py-8 space-y-8 animate-content-in">
         <div>
           <h1 className="text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">

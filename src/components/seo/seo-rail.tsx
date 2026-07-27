@@ -28,8 +28,13 @@ export function SeoRail({
   ukHeading = "Start investing",
   placement,
 }: {
-  /** Same coercion the sibling AppCtaBand takes on every one of these pages. */
-  marketId: "uk" | "us";
+  /** Any market id. Only `"uk"` selects the affiliate directory; everything
+   *  else gets the app rail, whose StoreButtons already fall back to the UK
+   *  app for markets with no store listing of their own (SE, NL). Widened from
+   *  `"uk" | "us"` when /directors/:id joined the family — that route serves
+   *  four markets, and coercing SE to "us" would have put the US app in a
+   *  Swedish reader's rail. */
+  marketId: string;
   /** Header for the UK (broker) rail only. Named for its branch rather than
    *  called `heading`, because the two rails are selling different things: a
    *  broker-flavoured "Start investing" sitting above an App Store button
