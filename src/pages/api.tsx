@@ -260,25 +260,38 @@ const SPEC = [
  *  gives the page character is what you can see around and through it.
  *
  *  It gives the page shape without giving it colour — nothing here is a hue the
- *  brand doesn't already own, and no layer is above 9% opacity.
+ *  brand doesn't already own.
  *
- *  Four layers:
+ *  Five layers, all of them percentage-positioned gradients painted on
+ *  full-size `inset-0` divs:
  *
- *  1. A 64px lattice at 3.5% white, masked to the top-right. A grid is the one
- *     ornament an API page can wear honestly — it's the shape of a table — but
- *     a grid that runs edge to edge is a wireframe, so the mask keeps it
- *     atmosphere.
- *  2. A warm `brand-amber` bloom off the top-right, as if the page were lit
- *     from over the response panel's shoulder. A tenth strength: the same
- *     accent the kicker uses, far below where it reads as a colour wash.
- *  3. A second, cooler and fainter bloom low on the left, so the light has a
- *     direction instead of a single symmetric glow.
- *  4. Two wide diagonal rakes of white at 3%, crossing the blooms. These are
- *     the "shape" — the thing that stops the rest reading as a vignette.
+ *  1. A 64px lattice at 5% white, masked to a soft lobe around the response
+ *     panel. A grid is the one ornament an API page can wear honestly — it's
+ *     the shape of a table — but a grid that runs edge to edge is a wireframe,
+ *     so the mask is what keeps it atmosphere.
+ *  2. A warm `brand-amber` bloom over the top-right, as if the page were lit
+ *     from over the response panel's shoulder. Same accent the kicker uses.
+ *  3. A cooler, wider bloom low on the left, so the light has a direction
+ *     instead of being one symmetric glow.
+ *  4. Two broad diagonal rakes of white crossing the blooms. These are the
+ *     "shape" — the thing that stops the rest reading as a vignette. They run
+ *     off both sides of the viewport on purpose: a band that bleeds off the
+ *     edge reads as a shape passing through, where one that stops inside the
+ *     frame reads as an object someone forgot to finish.
+ *  5. A fade to the page background across the bottom, so the whole thing
+ *     dissolves before the lower sections rather than ending.
  *
- *  Anchored to the top and masked out by ~1500px so the lower sections and the
- *  footer stay clean. All static gradients: no blur filters, no animation,
- *  nothing to repaint on scroll.
+ *  NOTHING MAY TERMINATE AT THIS ELEMENT'S BOX EDGE. The first version clipped
+ *  the lattice — its radial mask was still at ~85% strength where the layer's
+ *  right edge met the root's `overflow-x-clip`, which put a hard vertical seam
+ *  down the page and made the whole effect read as something cut off. Hence:
+ *  no `overflow-hidden` here, no child positioned outside the box, every radial
+ *  reaching full transparency inside its own extent, and the bottom handled by
+ *  a fade layer rather than a `mask-image` on this element (a mask would tile
+ *  by default over anything that overflowed).
+ *
+ *  All static gradients: no blur filters, no animation, nothing to repaint on
+ *  scroll.
  *
  *  Positioning: `absolute` inside an `isolate`d page wrapper rather than
  *  `fixed`. The layout root paints an opaque background, so a negative-z layer
@@ -286,10 +299,8 @@ const SPEC = [
  *  never be seen. `isolate` on the wrapper is what lets `-z-10` mean "behind
  *  this page's content" instead of "behind the site". */
 function PageAtmosphere() {
-  const fadeOut =
-    "linear-gradient(to bottom, #000 0%, #000 58%, rgba(0,0,0,0.45) 80%, transparent 100%)";
   const latticeMask =
-    "radial-gradient(90% 60% at 78% 12%, #000 0%, rgba(0,0,0,0.45) 45%, transparent 78%)";
+    "radial-gradient(46% 40% at 72% 20%, #000 0%, rgba(0,0,0,0.5) 45%, transparent 76%)";
 
   return (
     <div
@@ -299,38 +310,52 @@ function PageAtmosphere() {
       // depends on their order in the generated stylesheet, not on the order
       // they appear here. Not a bet worth taking on a positioning-critical
       // layer.
-      className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[1500px] w-screen -translate-x-1/2 overflow-hidden"
-      style={{ maskImage: fadeOut, WebkitMaskImage: fadeOut }}
+      //
+      // `-top-24` runs it up behind the sticky navbar, which paints its own
+      // background over the top: the layer's top edge is never a line you can
+      // see, for the same reason nothing else here stops at a boundary.
+      className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-[1700px] w-screen -translate-x-1/2"
     >
       <div
         className="absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px)",
+            "linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)",
           backgroundSize: "64px 64px",
           maskImage: latticeMask,
           WebkitMaskImage: latticeMask,
         }}
       />
       <div
-        className="absolute -right-[15%] -top-[30%] h-[900px] w-[70%]"
+        className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(238,197,132,0.09), rgba(238,197,132,0.025) 55%, transparent 78%)",
-        }}
-      />
-      <div
-        className="absolute -left-[20%] top-[420px] h-[800px] w-[65%]"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(255,255,255,0.045), rgba(255,255,255,0.014) 55%, transparent 78%)",
+            "radial-gradient(64% 46% at 74% 12%, rgba(238,197,132,0.19), rgba(238,197,132,0.06) 44%, transparent 72%)",
         }}
       />
       <div
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(104deg, transparent 22%, rgba(255,255,255,0.030) 40%, transparent 56%), linear-gradient(76deg, transparent 44%, rgba(255,255,255,0.022) 62%, transparent 80%)",
+            "radial-gradient(58% 40% at 14% 46%, rgba(255,255,255,0.075), rgba(255,255,255,0.022) 44%, transparent 74%)",
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(104deg, transparent 20%, rgba(255,255,255,0.055) 40%, transparent 58%), linear-gradient(76deg, transparent 42%, rgba(255,255,255,0.038) 62%, transparent 82%)",
+        }}
+      />
+      <div
+        className="absolute inset-x-0 bottom-0 h-[620px]"
+        style={{
+          background:
+            // `--background`, not `--color-background`: globals.css defines the
+            // raw custom property and Tailwind's `bg-background` maps onto it.
+            // The page is theme-pinned dark, so this always resolves to the
+            // warm charcoal the layout root is painting.
+            "linear-gradient(to bottom, transparent, var(--background, oklch(22% 0.022 55)) 88%)",
         }}
       />
     </div>
