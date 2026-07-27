@@ -70,10 +70,10 @@ const STYLE_LABEL: Record<
   neutral: "Neutral",
 };
 
-// Faux cards shown blurred under the contributors CTA — never the real
-// holdings, so the picks aren't sitting in the DOM for a "view source" peek.
-// Two are enough to seat the CTA without stretching the rail.
-const DECOY = [{ returnPct: 0.184 }, { returnPct: 0.092 }];
+// The number on the faux row shown blurred above the contributors CTA — never
+// a real holding, so the gated picks aren't sitting in the DOM for a
+// "view source" peek. One row is enough to say "the list continues".
+const DECOY_RETURN = 0.184;
 
 function toneClass(ratio: number | null): string {
   if (ratio == null) return "text-muted";
@@ -113,7 +113,7 @@ export function ChannelPerformance({
   dealHref,
 }: Props) {
   return (
-    <div className="px-5 lg:px-4 py-4 space-y-5">
+    <div className="px-5 lg:px-4 py-3.5 space-y-3">
       <HeadlineAlpha benchmarkLabel={benchmarkLabel} summary={summary} />
 
       <Contributors
@@ -182,48 +182,44 @@ function HeadlineAlpha({
   const benchTone = pairTone(benchmarkReturnPct, picksReturnPct);
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-[#d8cec1]/70 bg-white/45 px-4 py-4 shadow-[0_12px_32px_-28px_rgba(61,43,26,0.7)] dark:border-border/70 dark:bg-surface-secondary/35">
+    <section className="relative overflow-hidden rounded-2xl border border-hairline bg-white/45 px-3.5 py-3 shadow-[0_12px_32px_-28px_rgba(61,43,26,0.7)] dark:border-border/70 dark:bg-surface-secondary/35">
       <div
         aria-hidden
         className="pointer-events-none absolute -right-12 -top-16 h-36 w-36 rounded-full bg-positive/10 blur-2xl"
       />
       <div className="relative">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
-            90-day performance
-          </span>
-          <span className="text-[10px] text-muted">
+        <div className="flex items-baseline justify-between gap-3">
+          <Eyebrow>90-day performance</Eyebrow>
+          <span className="font-mono text-[10px] text-muted tabular-nums">
             {lastUpdated ? `Updated ${formatUpdated(lastUpdated)}` : ""}
           </span>
         </div>
 
-        <p className="mt-2.5 text-xs font-medium text-foreground/75">
+        <p className="mt-2 text-[11px] font-medium text-foreground/70">
           Beating the {benchmarkLabel ?? "market"}?
         </p>
         {alphaPct != null && <Verdict alphaPct={alphaPct} />}
 
-        <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[#ddd4c8]/70 bg-[#ddd4c8]/70 dark:border-border/70 dark:bg-border/70">
-          <div className="bg-[#faf7f2]/90 p-2.5 dark:bg-surface">
-            <Stat
-              align="left"
-              label={UNIVERSE_LABEL[headlineUniverse]}
-              muted={picksTone.muted}
-              tone={picksTone.className}
-              value={formatSignedPct(picksReturnPct)}
-            />
-          </div>
-          <div className="bg-[#faf7f2]/90 p-2.5 dark:bg-surface">
-            <Stat
-              align="right"
-              label="The market"
-              muted={benchTone.muted}
-              tone={benchTone.className}
-              value={formatSignedPct(benchmarkReturnPct)}
-            />
-          </div>
-        </div>
+        {/* The comparison as two full-width rows rather than a 2×2 grid of
+            boxes: the long universe label ("Noteworthy picks") no longer wraps
+            to a second line, the numbers share one right edge, and the whole
+            pair costs two rules instead of four walls. */}
+        <dl className="mt-2.5 divide-y divide-hairline/90 border-y border-hairline/90 dark:divide-border/60 dark:border-border/60">
+          <Stat
+            label={UNIVERSE_LABEL[headlineUniverse]}
+            muted={picksTone.muted}
+            tone={picksTone.className}
+            value={formatSignedPct(picksReturnPct)}
+          />
+          <Stat
+            label="The market"
+            muted={benchTone.muted}
+            tone={benchTone.className}
+            value={formatSignedPct(benchmarkReturnPct)}
+          />
+        </dl>
 
-        <p className="mt-2 text-[10px] leading-relaxed text-muted">
+        <p className="mt-1.5 text-[10px] leading-snug text-muted">
           Equal-weight return from picks disclosed in the last{" "}
           {CHANNEL_WINDOW_DAYS} days.
         </p>
@@ -247,14 +243,14 @@ function Verdict({ alphaPct }: { alphaPct: number }) {
 
   return (
     <p
-      className={`mt-0.5 text-[1.7rem] font-semibold leading-tight tracking-[-0.025em] tabular-nums ${toneClass}`}
+      className={`mt-px text-[1.75rem] font-semibold leading-[1.05] tracking-[-0.03em] tabular-nums ${toneClass}`}
     >
       {level ? (
         "Level with it"
       ) : (
         <>
           {ahead ? "Yes" : "No"}
-          <span className="font-normal text-foreground/60 text-base">
+          <span className="font-normal text-foreground/55 text-sm">
             {ahead ? ", by " : ", behind by "}
           </span>
           {`${Math.abs(pp).toFixed(1)}pp`}
@@ -264,30 +260,30 @@ function Verdict({ alphaPct }: { alphaPct: number }) {
   );
 }
 
+/** One row of the hero comparison strip: label left, figure on the shared
+ *  right edge. */
 function Stat({
   label,
   value,
-  align,
   tone,
   muted,
 }: {
   label: string;
   value: string;
-  align: "left" | "right";
   tone: string;
   muted: boolean;
 }) {
   return (
-    <div className={`flex-1 ${align === "right" ? "text-right" : "text-left"}`}>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+    <div className="flex items-baseline justify-between gap-3 py-1.5">
+      <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
         {label}
-      </div>
-      <div
-        className={`text-lg font-semibold tabular-nums ${tone}`}
+      </dt>
+      <dd
+        className={`text-[15px] font-semibold leading-none tabular-nums ${tone}`}
         style={muted ? { opacity: MUTED_OPACITY } : undefined}
       >
         {value}
-      </div>
+      </dd>
     </div>
   );
 }
@@ -300,29 +296,67 @@ function MarketBeat({ count, total }: { count: number; total: number }) {
   const rate = count / total;
 
   return (
-    <section className="rounded-2xl bg-[#eee9e1]/65 p-3.5 dark:bg-surface-secondary/55">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <SectionHeading>Picks that beat the market</SectionHeading>
-          <p className="mt-0.5 text-[11px] text-muted tabular-nums">
-            {count} of {total} buys
-          </p>
-        </div>
-        <span className="text-2xl font-semibold tracking-tight text-positive tabular-nums">
+    <section className="rounded-xl bg-hairline/50 px-3 py-2.5 dark:bg-surface-secondary/55">
+      <div className="flex items-baseline justify-between gap-3">
+        <Eyebrow>Picks that beat the market</Eyebrow>
+        <span className="text-xl font-semibold leading-none tracking-tight text-positive tabular-nums">
           {Math.round(rate * 100)}%
         </span>
       </div>
       <div
         aria-label={`${count} of ${total} buys beat the market`}
-        className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-foreground/10"
+        className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/10"
         role="img"
       >
         <div
-          className="h-full rounded-full bg-positive shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] dark:bg-positive/80"
+          className="h-full rounded-full bg-positive dark:bg-positive/80"
           style={{ width: `${rate * 100}%` }}
         />
       </div>
+      <p className="mt-1.5 font-mono text-[10px] text-muted tabular-nums">
+        {count} of {total} buys
+      </p>
     </section>
+  );
+}
+
+/** A ranked row whose bar is the row itself — the magnitude fills the track
+ *  behind the label instead of sitting on a second line under it. Halves the
+ *  height of every leaderboard row, which is what buys the fifth sector. */
+function TrackRow({
+  label,
+  suffix,
+  value,
+  ratio,
+}: {
+  label: string;
+  suffix?: string;
+  value: number;
+  ratio: number;
+}) {
+  return (
+    <li className="relative overflow-hidden rounded-md bg-hairline/45 dark:bg-separator/40">
+      <div
+        aria-hidden
+        className={`absolute inset-y-0 left-0 ${value >= 0 ? "bg-positive/20" : "bg-negative/20"}`}
+        style={{ width: `${Math.max(4, ratio * 100)}%` }}
+      />
+      <div className="relative flex items-baseline justify-between gap-2 px-2 py-[3px]">
+        <span className="truncate text-[11.5px] text-foreground/85">
+          {label}
+          {suffix && (
+            <span className="ml-1 font-mono text-[9.5px] text-muted">
+              {suffix}
+            </span>
+          )}
+        </span>
+        <span
+          className={`shrink-0 text-[11.5px] font-semibold tabular-nums ${toneClass(value)}`}
+        >
+          {formatSignedPct(value)}
+        </span>
+      </div>
+    </li>
   );
 }
 
@@ -334,37 +368,19 @@ function SectorLeaderboard({
   const max = Math.max(...sectors.map((s) => Math.abs(s.meanAlphaPct)), 0.0001);
 
   return (
-    <section className="space-y-2">
-      <div>
-        <SectionHeading>Where picks found an edge</SectionHeading>
-        <p className="mt-0.5 text-[10px] text-muted">
-          Average return above the market
-        </p>
+    <section className="border-t border-hairline pt-3 dark:border-border/60">
+      <div className="flex items-baseline justify-between gap-3">
+        <Eyebrow>Where picks found an edge</Eyebrow>
+        <span className="shrink-0 text-[10px] text-muted">vs market</span>
       </div>
-      <ul className="space-y-1.5">
-        {sectors.slice(0, 4).map((s) => (
-          <li key={s.sector} className="text-xs">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="truncate text-foreground/80">{s.sector}</span>
-              <span
-                className={`tabular-nums font-medium shrink-0 ${toneClass(s.meanAlphaPct)}`}
-              >
-                {formatSignedPct(s.meanAlphaPct)}
-              </span>
-            </div>
-            <div className="mt-1 h-1 rounded-full bg-[#e8e0d5]/60 dark:bg-separator/60 overflow-hidden">
-              <div
-                className={
-                  s.meanAlphaPct >= 0
-                    ? "h-full rounded-full bg-positive/70"
-                    : "h-full rounded-full bg-negative/70"
-                }
-                style={{
-                  width: `${Math.max(6, (Math.abs(s.meanAlphaPct) / max) * 100)}%`,
-                }}
-              />
-            </div>
-          </li>
+      <ul className="mt-2 space-y-1">
+        {sectors.slice(0, 5).map((s) => (
+          <TrackRow
+            key={s.sector}
+            label={s.sector}
+            ratio={Math.abs(s.meanAlphaPct) / max}
+            value={s.meanAlphaPct}
+          />
         ))}
       </ul>
     </section>
@@ -376,27 +392,20 @@ function StyleRace({
 }: {
   styles: ChannelPerformanceSummary["styles"];
 }) {
+  const max = Math.max(...styles.map((s) => Math.abs(s.meanReturnPct)), 0.0001);
+
   return (
-    <section className="space-y-2">
-      <SectionHeading>Contrarian vs momentum</SectionHeading>
-      <ul className="space-y-1">
+    <section className="border-t border-hairline pt-3 dark:border-border/60">
+      <Eyebrow>Contrarian vs momentum</Eyebrow>
+      <ul className="mt-2 space-y-1">
         {styles.map((s) => (
-          <li
+          <TrackRow
             key={s.kind}
-            className="flex items-baseline justify-between gap-2 text-xs"
-          >
-            <span className="text-foreground/80">
-              {STYLE_LABEL[s.kind]}
-              <span className="ml-1 text-[10px] text-muted">
-                ({s.dealCount})
-              </span>
-            </span>
-            <span
-              className={`tabular-nums font-medium ${toneClass(s.meanReturnPct)}`}
-            >
-              {formatSignedPct(s.meanReturnPct)}
-            </span>
-          </li>
+            label={STYLE_LABEL[s.kind]}
+            ratio={Math.abs(s.meanReturnPct) / max}
+            suffix={`${s.dealCount}`}
+            value={s.meanReturnPct}
+          />
         ))}
       </ul>
     </section>
@@ -428,23 +437,71 @@ function Contributors({
   const visible = gated ? rows.slice(0, UNBLURRED) : rows;
   const hiddenCount = gated ? Math.max(0, rows.length - UNBLURRED) : 0;
 
+  const [hero, ...rest] = visible;
+
   return (
-    <section className="space-y-2">
+    <section>
       <div className="flex items-baseline justify-between gap-3">
-        <SectionHeading>Best recent picks</SectionHeading>
-        <span className="text-[10px] text-muted">since disclosure</span>
+        <Eyebrow>Best recent picks</Eyebrow>
+        <span className="shrink-0 text-[10px] text-muted">
+          since disclosure
+        </span>
       </div>
-      <ul className="space-y-1.5">
-        {visible.map((row, i) => (
-          <ContributorCard
-            key={row.id}
-            formatStake={formatStake}
-            rank={i}
-            row={row}
-            onOpen={setExplained}
-          />
-        ))}
+
+      <ul className="mt-2 space-y-1.5">
+        <HeroContributorCard
+          formatStake={formatStake}
+          row={hero}
+          onOpen={setExplained}
+        />
       </ul>
+
+      {/* The runners-up as one plate of hairline-divided rows rather than four
+          separately bordered cards: same information, ~40% of the height, and
+          every return lands on one right edge so the column can be scanned in
+          a single pass. The gate's ghost row and CTA are rows of the same
+          plate — the list ends in a lock rather than a floating button. */}
+      {(rest.length > 0 || (gated && hiddenCount > 0)) && (
+        <ul className="mt-1.5 divide-y divide-hairline/80 overflow-hidden rounded-xl border border-hairline dark:divide-border/50 dark:border-border/50">
+          {rest.map((row) => (
+            <ContributorRow key={row.id} row={row} onOpen={setExplained} />
+          ))}
+
+          {gated && hiddenCount > 0 && (
+            <li>
+              <a
+                className="group block"
+                data-ga-event="cta_channel_see_all_picks_in_app"
+                data-ga-label={`See all ${rows.length} picks in app`}
+                href={appHref}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none flex select-none items-center gap-2.5 px-2.5 py-1.5 opacity-50"
+                  style={{
+                    filter: "blur(4px)",
+                    maskImage: "linear-gradient(to bottom, black, transparent)",
+                  }}
+                >
+                  <span className="h-[26px] w-[26px] shrink-0 rounded-full bg-foreground/10" />
+                  <span className="h-2.5 w-24 rounded bg-foreground/15" />
+                  <span className="ml-auto text-[15px] font-bold text-positive tabular-nums">
+                    {formatSignedPct(DECOY_RETURN)}
+                  </span>
+                </span>
+
+                <span className="flex items-center justify-center gap-1.5 bg-sheet/70 px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-brown transition-colors group-hover:bg-brand-brown/[0.07] dark:bg-surface/70 dark:text-brand-tan dark:group-hover:bg-surface-secondary/80">
+                  <LockClosedIcon className="h-3 w-3 opacity-70" />
+                  Unlock {hiddenCount} more{" "}
+                  {hiddenCount === 1 ? "pick" : "picks"}
+                </span>
+              </a>
+            </li>
+          )}
+        </ul>
+      )}
 
       <ContributorExplainer
         appHref={appHref}
@@ -453,120 +510,92 @@ function Contributors({
         row={explained}
         onClose={() => setExplained(null)}
       />
-
-      {gated && hiddenCount > 0 && (
-        <a
-          className="group mt-2 block"
-          data-ga-event="cta_channel_see_all_picks_in_app"
-          data-ga-label={`See all ${rows.length} picks in app`}
-          href={appHref}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <div className="relative h-12 overflow-hidden">
-            <div
-              aria-hidden
-              className="pointer-events-none select-none space-y-1.5 opacity-50"
-              style={{
-                filter: "blur(5px)",
-                maskImage: "linear-gradient(to bottom, black, transparent)",
-              }}
-            >
-              {DECOY.slice(0, 1).map((d, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 rounded-xl border border-[#d0c8be]/50 p-3 dark:border-border/50"
-                >
-                  <span className="h-9 w-9 shrink-0 rounded-full bg-foreground/10" />
-                  <span className="min-w-0 flex-1 space-y-1.5">
-                    <span className="block h-2.5 w-24 rounded bg-foreground/15" />
-                    <span className="block h-2 w-12 rounded bg-foreground/10" />
-                  </span>
-                  <span className="text-lg font-bold text-positive tabular-nums">
-                    {formatSignedPct(d.returnPct)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Pulled up over the decoy's fade — the ghost row disappears
-              *behind* the button instead of leaving a dead strip of
-              faded-to-nothing pixels between the list and the CTA. */}
-          <span className="relative -mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#d0c8be]/60 bg-[#f5f0e8]/80 px-4 py-2 text-[11px] font-medium text-[#5a4128] backdrop-blur-sm transition-colors group-hover:border-[#5a4128]/35 group-hover:bg-[#f1ebe2]/80 dark:border-border/60 dark:bg-surface/80 dark:text-[#ad9479] dark:group-hover:border-[#ad9479]/35 dark:group-hover:bg-surface-secondary/80">
-            <LockClosedIcon className="h-3 w-3 opacity-70" />
-            Unlock {hiddenCount} more {hiddenCount === 1 ? "pick" : "picks"} in
-            the app
-          </span>
-        </a>
-      )}
     </section>
   );
 }
 
-/** Ranked pick card — logo, company, and a big bold return, so the winners
- *  read as names to follow rather than lines in a table. Rank 0 is the hero:
- *  larger logo, larger number, a lifted plate, and the iOS-style £1,000 payoff
- *  line ("£1,000 at disclosure → £1,774 today"). The list is
- *  winners-only, so the payoff never shows a loss — same guarantee the app's
- *  plate makes by rendering only when in profit. */
-function ContributorCard({
+/** The top pick, kept as a lifted card — logo, company, a big bold return, and
+ *  the iOS-style £1,000 payoff line ("£1,000 at disclosure → £1,894 today").
+ *  The list is winners-only, so the payoff never shows a loss — same guarantee
+ *  the app's plate makes by rendering only when in profit. */
+function HeroContributorCard({
   row,
-  rank,
   formatStake,
   onOpen,
 }: {
   row: ChannelContributor;
-  rank: number;
   formatStake?: (n: number) => string;
   onOpen: (row: ChannelContributor) => void;
 }) {
-  const hero = rank === 0;
-
   return (
     <li>
       <button
-        className={`block w-full rounded-xl border px-3 py-2.5 text-left transition-all group ${
-          hero
-            ? "border-[#cfc5b8]/80 bg-white/45 shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] hover:border-positive/30 hover:bg-white/70 dark:border-border/70 dark:bg-surface-secondary/35"
-            : "border-[#d0c8be]/50 hover:bg-[#f1ebe2]/60 dark:border-border/50 dark:hover:bg-surface-secondary/60"
-        }`}
+        className="group block w-full rounded-xl border border-hairline bg-white/45 px-3 py-2.5 text-left shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] transition-all hover:border-positive/30 hover:bg-white/70 dark:border-border/70 dark:bg-surface-secondary/35"
         data-ga-event="cta_channel_open_contributor_explainer"
         data-ga-label={row.ticker}
         type="button"
         onClick={() => onOpen(row)}
       >
-        <span className="flex items-center gap-3">
-          <CompanyLogo size={hero ? 44 : 36} ticker={row.ticker} />
-          <span className="flex-1 min-w-0">
-            <span
-              className={`block truncate font-semibold text-foreground group-hover:text-[#5a4128] dark:group-hover:text-[#ad9479] ${
-                hero ? "text-sm" : "text-xs"
-              }`}
-            >
+        <span className="flex items-center gap-2.5">
+          <CompanyLogo size={38} ticker={row.ticker} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[13px] font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
               {row.company}
             </span>
-            <span className="block font-mono text-[10px] text-muted">
+            <span className="block font-mono text-[10px] leading-tight text-muted">
               {row.ticker}
             </span>
           </span>
           <span
-            className={`shrink-0 tabular-nums font-bold ${
-              hero ? "text-2xl" : "text-lg"
-            } ${toneClass(row.returnPct)}`}
+            className={`shrink-0 text-2xl font-bold leading-none tabular-nums ${toneClass(row.returnPct)}`}
           >
             {formatSignedPct(row.returnPct)}
           </span>
         </span>
 
-        {hero && formatStake && (
-          <span className="mt-2.5 flex items-baseline gap-1 border-t border-positive/15 pt-2 text-[11px] tabular-nums text-muted">
+        {formatStake && (
+          <span className="mt-2 flex items-baseline gap-1 border-t border-positive/15 pt-1.5 text-[10.5px] tabular-nums text-muted">
             {formatStake(STAKE)} at disclosure →
             <span className="font-semibold text-foreground">
               {formatStake(STAKE * (1 + row.returnPct))} today
             </span>
           </span>
         )}
+      </button>
+    </li>
+  );
+}
+
+/** A runner-up as a single line: logo, name, ticker, return. One row per pick
+ *  so four of them read as a ranked column rather than four stacked boxes. */
+function ContributorRow({
+  row,
+  onOpen,
+}: {
+  row: ChannelContributor;
+  onOpen: (row: ChannelContributor) => void;
+}) {
+  return (
+    <li>
+      <button
+        className="group flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left transition-colors hover:bg-brand-brown/[0.05] dark:hover:bg-surface-secondary/60"
+        data-ga-event="cta_channel_open_contributor_explainer"
+        data-ga-label={row.ticker}
+        type="button"
+        onClick={() => onOpen(row)}
+      >
+        <CompanyLogo size={26} ticker={row.ticker} />
+        <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
+          {row.company}
+        </span>
+        <span className="shrink-0 font-mono text-[9.5px] text-muted">
+          {row.ticker}
+        </span>
+        <span
+          className={`w-[3.5rem] shrink-0 text-right text-[15px] font-bold tabular-nums ${toneClass(row.returnPct)}`}
+        >
+          {formatSignedPct(row.returnPct)}
+        </span>
       </button>
     </li>
   );
@@ -684,9 +713,12 @@ function ContributorExplainer({
   );
 }
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+/** The rail's single heading device — the house eyebrow spec at the dense-rail
+ *  size. Four differently-styled section titles used to compete with the
+ *  figures; one repeated label lets the numbers carry the panel. */
+function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[11px] font-semibold tracking-[-0.005em] text-foreground/75">
+    <h3 className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
       {children}
     </h3>
   );
