@@ -72,8 +72,12 @@ const USE_CASES = [
  *
  *  The shell is `rounded-xl`, not a capsule: the capsule is the site's chip
  *  shape and these are inputs. See components/chip.ts. */
+/* The ring, not just the border tint, is the focus indicator: a 1px edge
+   changing shade is easy to miss and doesn't survive a high-contrast setting.
+   `focus-within` rather than `focus-visible-within` — support for the latter is
+   still thin, and a ring on a clicked text field is conventional anyway. */
 const SHELL =
-  "rounded-xl border border-black/15 bg-white/70 px-4 pb-2.5 pt-2.5 transition-colors focus-within:border-brand-brown/60";
+  "rounded-xl border border-black/15 bg-white/70 px-4 pb-2.5 pt-2.5 transition-colors focus-within:border-brand-brown/60 focus-within:ring-2 focus-within:ring-brand-brown/30";
 
 const FIELD_LABEL = "block text-[11.5px] font-medium leading-none text-ink/45";
 

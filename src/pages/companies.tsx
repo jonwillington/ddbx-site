@@ -214,7 +214,7 @@ export default function CompaniesPage() {
                 <span className="sr-only">Search companies</span>
                 <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/35" />
                 <input
-                  className={`w-full rounded-lg border ${R.rule} bg-sheet py-2 pl-9 pr-3 text-base sm:text-[14px] text-foreground outline-none transition-colors placeholder:text-foreground/35 focus-visible:border-brand-brown/40 dark:bg-surface`}
+                  className={`w-full rounded-lg border ${R.rule} bg-sheet py-2 pl-9 pr-3 text-base sm:text-[14px] text-foreground outline-none transition-colors placeholder:text-foreground/35 focus-visible:border-brand-brown/40 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:bg-surface dark:focus-visible:ring-brand-tan/40`}
                   placeholder="Search name or ticker"
                   type="search"
                   value={query}

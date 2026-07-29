@@ -292,7 +292,7 @@ export default function ComparePage() {
                 <label className="min-w-0 flex-1">
                   <span className="sr-only">Search platforms</span>
                   <input
-                    className="w-full rounded-full border border-separator bg-transparent px-4 py-2 text-base text-foreground transition-colors placeholder:text-muted/60 focus:border-brand-brown/50 focus:outline-none sm:text-sm"
+                    className="w-full rounded-full border border-separator bg-transparent px-4 py-2 text-base text-foreground outline-none transition-colors placeholder:text-muted/60 focus-visible:border-brand-brown/50 focus-visible:ring-2 focus-visible:ring-brand-brown/40 sm:text-sm dark:focus-visible:ring-brand-tan/40"
                     placeholder="Search platforms…"
                     type="text"
                     value={query}

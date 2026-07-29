@@ -330,7 +330,7 @@ function Select({
   return (
     <div className="relative">
       <select
-        className="w-full appearance-none rounded-full border border-separator bg-surface/40 px-4 py-2.5 pr-10 text-base sm:text-sm font-medium text-foreground focus:border-[#5a4128]/50 focus:outline-none"
+        className="w-full appearance-none rounded-full border border-separator bg-surface/40 px-4 py-2.5 pr-10 text-base sm:text-sm font-medium text-foreground outline-none focus-visible:border-[#5a4128]/50 focus-visible:ring-2 focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
