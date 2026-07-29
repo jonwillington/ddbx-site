@@ -8,8 +8,9 @@ import { Provider } from "./provider.tsx";
 import { bootstrapAnalytics } from "@/lib/cookie-consent";
 import "@/styles/globals.css";
 
-// GA4 loads on every visit (no consent gate). Runs before React mounts so
-// gtag is defined when DocumentTitle fires the initial page_view.
+// GA4 loads on every visit, but under Consent Mode with storage denied until
+// the banner is accepted (see lib/cookie-consent.ts). Runs before React mounts
+// so gtag is defined when DocumentTitle fires the initial page_view.
 bootstrapAnalytics();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
