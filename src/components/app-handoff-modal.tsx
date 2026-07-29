@@ -134,9 +134,22 @@ export function AppHandoffModal({
   );
 }
 
+/** Props a store-bound anchor spreads to join the handoff flow.
+ *
+ *  `data-ga-store-intercepted` is what tells the GA click tracker that this
+ *  anchor's store href is decorative — see the note on the desktop branch of
+ *  `useAppHandoff`. It ships as one object precisely so a caller can't wire
+ *  up `href` + `onClick` and quietly leave the marker off.
+ */
+export interface AppHandoffAnchorProps {
+  href: string;
+  onClick?: (e: React.MouseEvent) => void;
+  "data-ga-store-intercepted"?: "true";
+}
+
 /** Turns a direct store CTA into the handoff flow on desktop only.
  *
- *  Returns the props a store-bound anchor should spread: on iOS/Android the
+ *  Spread `anchorProps` onto the store-bound anchor: on iOS/Android the
  *  original href passes through untouched (the tap installs); on desktop the
  *  click is intercepted and the modal opens instead. Mount `modal` once,
  *  anywhere in the same tree.
@@ -146,8 +159,7 @@ export function useAppHandoff(
   href: string,
   placement: string,
 ): {
-  href: string;
-  onClick?: (e: React.MouseEvent) => void;
+  anchorProps: AppHandoffAnchorProps;
   modal: React.ReactNode;
 } {
   const platform = useDevicePlatform();
@@ -163,12 +175,17 @@ export function useAppHandoff(
   );
 
   if (isMobile) {
-    return { href, modal: null };
+    return { anchorProps: { href }, modal: null };
   }
 
   return {
-    href,
-    onClick,
+    // The href stays a real store URL (open-in-new-tab, crawlers, copy-link),
+    // but this click never leaves the site — it opens the modal. Without the
+    // marker the delegated tracker in lib/cookie-consent.ts sees a store
+    // destination and counts a `store_click` for a desktop visitor who went
+    // nowhere. The genuine store click still gets counted, one beat later,
+    // from the badges inside the modal.
+    anchorProps: { href, onClick, "data-ga-store-intercepted": "true" },
     modal: (
       <AppHandoffModal
         marketId={marketId}

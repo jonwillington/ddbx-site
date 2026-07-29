@@ -160,10 +160,9 @@ export const Navbar = () => {
             )}
             data-ga-event="cta_nav_download_app"
             data-ga-label={`Nav ${market.id}`}
-            href={handoff.href}
             rel="noopener noreferrer"
             target="_blank"
-            onClick={handoff.onClick}
+            {...handoff.anchorProps}
           >
             <StoreGlyph className="h-3.5 w-3.5 shrink-0" />
             Download app

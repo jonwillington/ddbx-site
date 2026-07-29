@@ -168,7 +168,19 @@ function bootstrapClickTracking(): void {
       // than from what it was called. Nothing to remember to tag, and it
       // stays correct for CTAs that don't exist yet. The specific event still
       // fires alongside it; this is in addition, never instead.
-      if (destination && isStoreUrl(destination)) {
+      //
+      // The one thing "where it went" can't see: an anchor whose store href is
+      // real but whose click is intercepted — the desktop app-handoff modal
+      // (components/app-handoff-modal.tsx) keeps the store URL for
+      // open-in-new-tab and crawlers, then preventDefaults and opens a modal.
+      // This listener is capture-phase, so it runs BEFORE React's handler and
+      // `defaultPrevented` is still false here; the interception has to be
+      // declared up front rather than observed. Those anchors carry
+      // `data-ga-store-intercepted`, and the real store click is counted from
+      // the badges inside the modal instead.
+      const intercepted = target.dataset.gaStoreIntercepted === "true";
+
+      if (destination && !intercepted && isStoreUrl(destination)) {
         window.gtag?.("event", "store_click", {
           event_category: "conversion",
           event_label: eventLabel,

@@ -271,10 +271,9 @@ export function CollapsedDayTeaser<W>({
           className={rowClass}
           data-ga-event="cta_collapsed_day_view_in_app"
           data-ga-label={`${teaser.kind} · ${deals.length} deals`}
-          href={handoff.href}
           rel="noreferrer"
           target="_blank"
-          onClick={handoff.onClick}
+          {...handoff.anchorProps}
         >
           {text}
           {cta}
