@@ -77,8 +77,11 @@ const SHELL =
 
 const FIELD_LABEL = "block text-[11.5px] font-medium leading-none text-ink/45";
 
+/* 16px on mobile, 15px from `sm` up: below 16 iOS Safari zooms the page the
+   moment a field takes focus, and we no longer suppress that with a viewport
+   lock (see index.html). */
 const CONTROL =
-  "mt-2 w-full bg-transparent text-[15px] leading-[1.4] text-ink placeholder:text-ink/30 focus:outline-none";
+  "mt-2 w-full bg-transparent text-base sm:text-[15px] leading-[1.4] text-ink placeholder:text-ink/30 focus:outline-none";
 
 /** BUTTON_FILLED's light-mode half, hardcoded — see the note above. */
 const SUBMIT_FILL =

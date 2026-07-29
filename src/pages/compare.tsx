@@ -286,7 +286,7 @@ export default function ComparePage() {
             <div className="mb-4 rounded-2xl border border-separator bg-sheet px-4 py-3.5 dark:bg-surface">
               <div className="flex items-center gap-3">
                 <input
-                  className="min-w-0 flex-1 rounded-full border border-separator bg-transparent px-4 py-2 text-sm text-foreground transition-colors placeholder:text-muted/60 focus:border-brand-brown/50 focus:outline-none"
+                  className="min-w-0 flex-1 rounded-full border border-separator bg-transparent px-4 py-2 text-base text-foreground transition-colors placeholder:text-muted/60 focus:border-brand-brown/50 focus:outline-none sm:text-sm"
                   placeholder="Search platforms…"
                   type="text"
                   value={query}

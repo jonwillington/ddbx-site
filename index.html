@@ -46,6 +46,11 @@
     <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
     <!-- theme-color is injected by the inline script above (and kept in sync by
          theme-switch.tsx) so it tracks the active theme; no static tag here. -->
+    <!-- The only viewport tag. Deliberately carries no `maximum-scale` or
+         `user-scalable` — locking zoom fails WCAG 1.4.4, and Safari ignores it
+         for pinch anyway, so the lock only ever punished other browsers. The
+         iOS focus-zoom it was there to suppress is handled properly instead:
+         every text input renders at 16px on mobile (`text-base sm:text-sm`). -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>ddbx · Director Dealings — UK Insider Transactions</title>
     <meta key="title" content="ddbx · Director Dealings — UK Insider Transactions" property="og:title" />
@@ -69,11 +74,6 @@
     <meta content="summary_large_image" name="twitter:card" />
     <meta content="@ddbxuk" name="twitter:site" />
     <meta content="https://ddbx.uk/og-uk.png" name="twitter:image" />
-    <meta
-      key="viewport"
-      content="viewport-fit=cover, width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
-      name="viewport"
-    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet" />

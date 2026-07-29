@@ -116,7 +116,7 @@ export function EuWaitlistOverlay({
             <input
               required
               autoComplete="email"
-              className="w-full rounded-lg border border-black/15 bg-white px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-brand-brown/50 focus:ring-2 focus:ring-brand-brown/25 dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground dark:placeholder:text-foreground/35"
+              className="w-full rounded-lg border border-black/15 bg-white px-3.5 py-2.5 text-base sm:text-sm text-ink outline-none placeholder:text-ink/35 focus:border-brand-brown/50 focus:ring-2 focus:ring-brand-brown/25 dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground dark:placeholder:text-foreground/35"
               inputMode="email"
               name="email"
               placeholder="you@example.com"
