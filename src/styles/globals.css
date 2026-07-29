@@ -88,6 +88,10 @@
 
 body {
   font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  /* macOS renders text a weight heavier than drawn. Applied once at the root
+     so it covers everything rather than being remembered per component. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   /* iOS 26 Safari ignores <meta name="theme-color"> and instead tints the top
      status bar + bottom toolbar from the background-color of the body (or of a
      fixed/sticky element at the edge). Our page colour lived only on an inner
@@ -100,6 +104,22 @@ body {
 
 .dark body {
   background-color: var(--background);
+}
+
+/* Selection carries the brand instead of the UA's stock blue, which is the one
+   cold colour left on an otherwise warm page. Both pairs put near-black ink on
+   a light brand fill, so the selected text stays the most legible thing on
+   screen in either theme — a tinted selection that merely tints is worse than
+   the default it replaced. Set on ::selection only; ::-moz-selection is no
+   longer needed for any browser we support. */
+::selection {
+  background-color: var(--color-brand-amber);
+  color: var(--color-ink);
+}
+
+.dark ::selection {
+  background-color: var(--color-brand-tan);
+  color: var(--color-ink);
 }
 
 @keyframes ho-ticker {
