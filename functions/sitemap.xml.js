@@ -54,6 +54,10 @@ const COMMON_ROUTES = ["/download", "/download/ios", "/download/android"];
 // Market dashboards, by the host that owns them. Hidden markets (/djt) and
 // utility routes (/account-deletion) are intentionally out.
 const ROUTES_BY_HOST = {
+  // /how-it-works is per-host rather than a COMMON_ROUTE: ddbx.uk and ddbx.us
+  // publish materially different documents (different regulator, exchange and
+  // noun for the filer), while ddbx.eu 301s to ddbx.uk because SE and NL run no
+  // analysis layer for it to describe.
   "ddbx.uk": [
     "/",
     "/brokers",
@@ -62,6 +66,7 @@ const ROUTES_BY_HOST = {
     "/sectors",
     "/biggest-buys",
     "/learn",
+    "/how-it-works",
   ],
   "ddbx.us": [
     "/",
@@ -70,6 +75,7 @@ const ROUTES_BY_HOST = {
     "/sectors",
     "/biggest-buys",
     "/learn",
+    "/how-it-works",
   ],
   "ddbx.eu": ["/", "/nl"],
 };

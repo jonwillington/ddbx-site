@@ -1,49 +1,15 @@
 import type { RatingChecklist } from "@/types/ddbx";
 
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { Link } from "react-router-dom";
 
-export const CHECKLIST_LABELS: {
-  key: keyof RatingChecklist;
-  label: string;
-  tooltip: string;
-}[] = [
-  {
-    key: "open_market_buy",
-    label: "Open-market buy",
-    tooltip:
-      "Purchased on the open market — not via an options exercise, LTIP vesting, or employee share scheme. A stronger signal of deliberate investment.",
-  },
-  {
-    key: "senior_insider",
-    label: "Senior insider",
-    tooltip:
-      "The buyer is a CEO, CFO, Chairman, or board-level director with genuine operational insight into the business.",
-  },
-  {
-    key: "meaningful_conviction",
-    label: "Meaningful conviction",
-    tooltip:
-      "The purchase size is large relative to the director's likely compensation, suggesting real personal conviction rather than a token gesture.",
-  },
-  {
-    key: "no_alternative_explanation",
-    label: "No scheme or plan",
-    tooltip:
-      "The purchase doesn't appear to result from a pre-arranged trading plan, SAYE/10b5-1 plan, or required ownership policy — suggesting it's an active investment decision.",
-  },
-  {
-    key: "supporting_context_found",
-    label: "Supporting context found",
-    tooltip:
-      "External news, filings, or analyst commentary support a bullish view the director may be acting on.",
-  },
-  {
-    key: "no_major_counter_signal",
-    label: "No major counter-signal",
-    tooltip:
-      "No recent red flags — profit warnings, accounting irregularities, or heavy insider selling — that would undercut the signal.",
-  },
-];
+import { CHECKS, HOW_IT_WORKS_PATH } from "@/lib/methodology";
+
+/** Kept as a named export because callers outside this file import it for the
+ *  labels alone. The list itself is no longer defined here — it used to be a
+ *  third independent copy of the six checks, written in a different voice from
+ *  the walkthrough's and the drawer's. See src/lib/methodology.ts. */
+export const CHECKLIST_LABELS = CHECKS;
 
 /** The six criteria behind a rating, each expandable to its explanation.
  *
@@ -70,7 +36,7 @@ export function RatingChecklistView({
         </span>
       </div>
       <ul className="divide-y divide-black/10 dark:divide-white/10 border-y border-black/10 dark:border-white/10">
-        {CHECKLIST_LABELS.map(({ key, label, tooltip }) => {
+        {CHECKS.map(({ key, label, body }) => {
           const ok = checklist[key];
 
           return (
@@ -100,13 +66,23 @@ export function RatingChecklistView({
                 </summary>
                 {/* Aligned under the label, clearing the tick's gutter. */}
                 <p className="pl-8 pr-2 pb-3 -mt-0.5 text-xs leading-relaxed text-muted">
-                  {tooltip}
+                  {body}
                 </p>
               </details>
             </li>
           );
         })}
       </ul>
+      {/* The rows say what each check is; this is the way through to why each
+          one earns its place, and to the pipeline that produced the ticks. */}
+      <p className="mt-3 text-xs text-muted">
+        <Link
+          className="underline underline-offset-4 hover:text-foreground"
+          to={HOW_IT_WORKS_PATH}
+        >
+          How we rate a purchase
+        </Link>
+      </p>
     </div>
   );
 }

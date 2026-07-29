@@ -131,6 +131,12 @@ const UK_US_ONLY_PREFIXES = [
   "/biggest-buys",
   "/companies",
   "/reports",
+  // /how-it-works describes six checks, four ratings and a written analysis.
+  // SE and NL run no analysis layer (their triage tables are empty and their
+  // rows carry no checklist), so served on ddbx.eu the page would be a careful
+  // description of something those markets don't do — the one failure mode a
+  // methodology page cannot have. Send it to the host that does it.
+  "/how-it-works",
 ];
 
 /** True when `pathname` is a UK/US-only research page being served on a host
@@ -258,6 +264,8 @@ const leaderboardFromPath = (path) => {
   return yearBounds(match[1]) ? { year: match[1] } : null;
 };
 
+const isHowItWorksPath = (path) => path === "/how-it-works";
+
 const isLearnIndexPath = (path) => path === "/learn";
 
 const learnEntryFromPath = (path) =>
@@ -381,6 +389,15 @@ export function seoForPath(pathname, hostname) {
     if (learnEntry) return brandTitle(learnEntry.title);
     if (isLearnIndexPath(path))
       return brandTitle("Understanding insider dealing");
+    // Market-specific, unlike /developers: the regulator, the exchange and the
+    // noun for the filer all change, so ddbx.uk and ddbx.us publish genuinely
+    // different documents rather than one page twice. ddbx.eu 301s to ddbx.uk.
+    if (isHowItWorksPath(path))
+      return brandTitle(
+        id === "us"
+          ? "How we rate US insider stock purchases — our method"
+          : "How we rate UK director share purchases — our method",
+      );
     if (isBrokerDetailPath(path))
       return brandTitle(
         `${brokerFromPath(path)} review — fees, accounts & verdict`,
@@ -426,6 +443,10 @@ export function seoForPath(pathname, hostname) {
     if (leaderboard)
       return `The largest open-market share purchases ${market.label} insiders made in their own companies ${period}, ranked by value, with how each has performed against the market since it was disclosed.`;
     if (learnEntry) return learnEntry.description;
+    if (isHowItWorksPath(path))
+      return id === "us"
+        ? "How a Form 4 becomes a rating: the six checks every US insider purchase is scored against, what each rating means, where the filings come from, and where the method stops."
+        : "How an RNS disclosure becomes a rating: the six checks every UK director share purchase is scored against, what each rating means, where the filings come from, and where the method stops.";
     if (isLearnIndexPath(path))
       return "What insider filings mean, which disclosures are actually purchases, and how much a director buying their own shares really tells you.";
     if (isSectorsIndexPath(path))

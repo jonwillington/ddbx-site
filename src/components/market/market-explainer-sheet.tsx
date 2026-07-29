@@ -1,18 +1,23 @@
 import type { ReactNode } from "react";
 
 import { SparklesIcon } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
 
 import { AppDrawer } from "@/components/app-drawer";
 import { marketCopyFor } from "@/lib/markets/market-copy";
+import { CHECKS, CHECK_COUNT_WORD, HOW_IT_WORKS_PATH } from "@/lib/methodology";
 
 /** "What are we looking for?" — the quiet drawer form of the explainer.
  *  Checklist markets (UK/US/EU) now open MarketExplainerExperience — the
  *  full-screen walkthrough — instead; MarketPage renders this drawer only for
  *  markets that pass a bespoke `explainer` body (Congress, whose signal model
- *  is its own). The default six-point body below is kept as the reference
- *  copy: it mirrors RatingChecklist in ddbx-data (worker/db/types.ts) and the
- *  iOS RatingChecklist.labels — the same six checks the walkthrough plays
- *  through scene by scene. */
+ *  is its own).
+ *
+ *  The default six-point body reads from src/lib/methodology.ts. It used to be
+ *  declared inline here as "the reference copy", which is exactly how it ended
+ *  up disagreeing with the walkthrough and the per-filing checklist about what
+ *  the six checks are called. There is no reference copy any more; there is one
+ *  list, and this renders its `label` + `body` pair. */
 export function MarketExplainerSheet({
   open,
   onClose,
@@ -46,35 +51,6 @@ export function MarketExplainerSheet({
   }
   const insidersTitle =
     c.insiderTermPlural.charAt(0).toUpperCase() + c.insiderTermPlural.slice(1);
-
-  // The six checks, in the order they're scored. Mirrors CHECKLIST_KEYS in
-  // ddbx-data/worker/pipeline/analyze.ts; labels match the iOS sheet.
-  const checklist: { title: string; body: string }[] = [
-    {
-      title: "Open-market buy",
-      body: "They paid for the shares themselves on the open market. Not an option grant, a vesting, or an internal transfer.",
-    },
-    {
-      title: "Senior insider",
-      body: "The buyer is a CEO, CFO, or a board member close to the business, not a junior name on the register.",
-    },
-    {
-      title: "Meaningful conviction",
-      body: "The amount is large relative to what they earn, so it reads as a real commitment rather than a token.",
-    },
-    {
-      title: "No scheme or plan",
-      body: "Nothing mechanical explains the timing: no dividend reinvestment, no pre-arranged trading plan, no contractual or tax deadline.",
-    },
-    {
-      title: "Supporting context",
-      body: "Either there is news that makes the timing make sense, or nothing public argues against it. A buy in a quiet period can be the strongest kind.",
-    },
-    {
-      title: "No major counter-signal",
-      body: "Nothing serious points the other way: no other insiders selling at the same time, no open investigation, no sign the business is still getting worse.",
-    },
-  ];
 
   return (
     <AppDrawer
@@ -118,18 +94,20 @@ export function MarketExplainerSheet({
         <section className="space-y-3">
           <h3 className="text-sm font-semibold">The six-point checklist</h3>
           <p className="text-sm leading-relaxed text-foreground/70">
-            Six things we look for in any {c.insiderTerm} purchase. A buy that
-            clears all six is what we rate highest; the more it misses, the
-            further it sinks down the list.
+            {CHECK_COUNT_WORD.charAt(0).toUpperCase() +
+              CHECK_COUNT_WORD.slice(1)}{" "}
+            things we look for in any {c.insiderTerm} purchase. A buy that
+            clears all {CHECK_COUNT_WORD} is what we rate highest; the more it
+            misses, the further it sinks down the list.
           </p>
           <ol className="space-y-3">
-            {checklist.map((item, i) => (
-              <li key={item.title} className="flex gap-3">
+            {CHECKS.map((item, i) => (
+              <li key={item.key} className="flex gap-3">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5a4128]/12 text-xs font-semibold text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]">
                   {i + 1}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold">{item.title}</p>
+                  <p className="text-sm font-semibold">{item.label}</p>
                   <p className="mt-0.5 text-sm leading-relaxed text-foreground/70">
                     {item.body}
                   </p>
@@ -137,6 +115,14 @@ export function MarketExplainerSheet({
               </li>
             ))}
           </ol>
+          <p className="text-sm">
+            <Link
+              className="text-foreground/70 underline underline-offset-4 hover:text-foreground"
+              to={HOW_IT_WORKS_PATH}
+            >
+              The full method, check by check
+            </Link>
+          </p>
         </section>
 
         {/* Still tuning */}

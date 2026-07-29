@@ -84,6 +84,21 @@ export const Navbar = () => {
           },
         ]
       : []),
+    // Gated to the two markets that publish it: /how-it-works describes six
+    // checks, four ratings and a written analysis, and SE/NL run no analysis
+    // layer for it to describe — on ddbx.eu the route 301s to ddbx.uk (see
+    // isForeignResearchPath in shared/seo.js), so linking it there would put a
+    // cross-domain redirect in the primary nav. Congress and Trump Media ride
+    // the US domain but score on their own model, so they're out too.
+    ...(market.id === "uk" || market.id === "us"
+      ? [
+          {
+            label: "Method",
+            href: "/how-it-works",
+            match: (p: string) => p === "/how-it-works",
+          },
+        ]
+      : []),
     // The developer API is one cross-market product, so this is the only nav
     // item with no market gate. Note it also gives SE/NL a nav bar for the
     // first time: `showNav` needs more than one item, and those markets

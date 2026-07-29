@@ -1,14 +1,16 @@
 import type { MarketDealing } from "@/lib/markets/types";
 import type { PriceFormat } from "@/components/position-card";
-import type { RatingChecklist } from "@/types/ddbx";
+import type { CheckContext } from "@/lib/methodology";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { shortDate } from "./market-utils";
 
 import { CloseButton } from "@/components/close-button";
 import { CompanyLogo } from "@/components/company-logo";
 import { marketCopyFor } from "@/lib/markets/market-copy";
+import { CHECKS, HOW_IT_WORKS_PATH } from "@/lib/methodology";
 
 /** "What are we looking for?" — the explainer as a full-screen walkthrough
  *  instead of a drawer. The hero's atmosphere (warm spotlight, drifting
@@ -22,79 +24,18 @@ import { marketCopyFor } from "@/lib/markets/market-copy";
  *
  *  Web-only surface. Congress brings its own signal model and keeps the
  *  MarketExplainerSheet drawer; this component renders for checklist markets
- *  (UK/US/SE/NL). The six checks mirror RatingChecklist in
- *  ddbx-data/worker/db/types.ts — same order, same meaning.
+ *  (UK/US/SE/NL).
+ *
+ *  The six checks come from src/lib/methodology.ts — one scene per check, in
+ *  scoring order, using its `question` for the scene title and its `passLine`
+ *  to narrate the featured filing's verdict. They used to be declared here,
+ *  which is how the walkthrough, the drawer and the per-filing checklist ended
+ *  up describing the same six tests in three different voices. The long-form
+ *  version of the same material is /how-it-works, linked from the finale.
  *
  *  Navigation: click/tap anywhere advances, arrow keys step both ways,
  *  Escape closes, the progress dots jump. All animation is CSS-only and
  *  respects prefers-reduced-motion. */
-
-/** One scene per checklist key, in scoring order. `passLine` narrates the
- *  verdict for the featured filing; the generic `body` carries the scene when
- *  there is no featured filing (or the check somehow didn't pass). */
-const CHECKS: {
-  key: keyof RatingChecklist;
-  title: string;
-  body: string;
-  passLine: (ctx: FeaturedContext) => string;
-}[] = [
-  {
-    key: "open_market_buy",
-    title: "Was it an open-market buy?",
-    body: "They paid for the shares themselves on the open market. Not an option grant, a vesting, or an internal transfer.",
-    passLine: (c) =>
-      c.price
-        ? `${c.name} paid ${c.price} a share on the open market — ${c.value} of their own money.`
-        : `${c.name} put ${c.value} of their own money in on the open market.`,
-  },
-  {
-    key: "senior_insider",
-    title: "Was it a senior insider?",
-    body: "The buyer is a CEO, CFO, or a board member close to the business, not a junior name on the register.",
-    passLine: (c) =>
-      c.role
-        ? `${c.name} is ${c.role} at ${c.company} — close enough to see the whole picture.`
-        : `${c.name} is a senior insider at ${c.company}.`,
-  },
-  {
-    key: "meaningful_conviction",
-    title: "Did they show real conviction?",
-    body: "The amount is large relative to what they earn, so it reads as a real commitment rather than a token.",
-    passLine: (c) => `${c.value} of personal capital. That is not a token.`,
-  },
-  {
-    key: "no_alternative_explanation",
-    title: "Was the timing their own call?",
-    body: "Nothing mechanical explains the timing: no dividend reinvestment, no pre-arranged trading plan, no contractual or tax deadline.",
-    passLine: () =>
-      "Nothing mechanical explains the timing — no plan, no scheme, no deadline forcing it.",
-  },
-  {
-    key: "supporting_context_found",
-    title: "Does the context hold up?",
-    body: "Either there is news that makes the timing make sense, or nothing public argues against it. A buy in a quiet period can be the strongest kind.",
-    passLine: (c) =>
-      `The timing holds up against everything public about ${c.company}.`,
-  },
-  {
-    key: "no_major_counter_signal",
-    title: "Is the picture otherwise clean?",
-    body: "Nothing serious points the other way: no other insiders selling at the same time, no open investigation, no sign the business is still getting worse.",
-    passLine: () =>
-      "No insiders selling against it, no open investigation, nothing pointing the other way.",
-  },
-];
-
-/** Pre-formatted strings the verdict lines interpolate. */
-interface FeaturedContext {
-  name: string;
-  role?: string;
-  company: string;
-  /** Per-share entry, already through fmt.formatPrice. Null when unpriced. */
-  price: string | null;
-  /** Deal value, already through fmt.formatValue. */
-  value: string;
-}
 
 /** Ambient blip anchor points — hand-placed in the side gutters like the
  *  hero's, clear of the centre column where the scene text sits. */
@@ -185,7 +126,7 @@ export function MarketExplainerExperience({
     );
   }, [dealings]);
 
-  const ctx: FeaturedContext | null = featured
+  const ctx: CheckContext | null = featured
     ? {
         name: featured.insiderName,
         role: featured.insiderRole,
@@ -443,7 +384,7 @@ export function MarketExplainerExperience({
                 Check {step} of {CHECKS.length}
               </p>
               <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight md:text-5xl md:leading-[1.05]">
-                {check.title}
+                {check.question}
               </h2>
               <p className="mx-auto mt-4 max-w-md text-balance text-[15px] leading-relaxed text-[#f3ecdf]/65">
                 {check.body}
@@ -529,7 +470,7 @@ function IntroScene({
   showLogo,
   onBegin,
 }: {
-  ctx: FeaturedContext | null;
+  ctx: CheckContext | null;
   dealing: MarketDealing<unknown> | null;
   exchange: string;
   insiderTermPlural: string;
@@ -652,6 +593,19 @@ function FinaleScene({
           </button>
         )}
       </div>
+      {/* The walkthrough is a demonstration and has no URL of its own — this
+          is the way to the written version, which does. Quiet, below the two
+          real CTAs: a reader who wanted the argument rather than the demo is a
+          minority, but until now there was nowhere to send them. */}
+      <p className="mt-7 text-[13px] text-[#f3ecdf]/45">
+        <Link
+          className="underline underline-offset-4 transition-colors hover:text-[#f3ecdf]/80"
+          to={HOW_IT_WORKS_PATH}
+          onClick={onClose}
+        >
+          Read the full method
+        </Link>
+      </p>
     </>
   );
 }

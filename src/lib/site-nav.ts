@@ -104,6 +104,22 @@ export function footerGroups(pathname: string, hostname?: string): NavGroup[] {
   ];
 
   const app: NavLink[] = [
+    // First in the group, and deliberately above the store links: it is the
+    // page that answers the question a reader has before they'd consider
+    // installing anything, and it had no entry point outside a modal on the
+    // homepage hero until it got a URL.
+    //
+    // UK-pinned for SE and NL, like the broker links below. Those markets run
+    // no analysis layer, so ddbx.eu/how-it-works 301s to ddbx.uk — and a footer
+    // that advertises a redirecting URL is the thing this module exists to
+    // avoid. UK and US each own their own copy and link to it directly.
+    {
+      label: "How it works",
+      href:
+        home.id === "se" || home.id === "nl"
+          ? ukHref("/how-it-works", hostname)
+          : marketHref(home, "/how-it-works", hostname),
+    },
     { label: "Get the app", href: marketHref(home, "/download", hostname) },
     {
       label: "iPhone",

@@ -101,7 +101,8 @@ export async function onRequest(context) {
     url.pathname === "/biggest-buys" ||
     url.pathname.startsWith("/biggest-buys/") ||
     url.pathname === "/learn" ||
-    /^\/learn\/[^/]+$/.test(url.pathname)
+    /^\/learn\/[^/]+$/.test(url.pathname) ||
+    url.pathname === "/how-it-works"
   ) {
     return res;
   }

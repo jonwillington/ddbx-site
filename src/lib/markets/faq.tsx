@@ -11,6 +11,10 @@
 
 import type { MarketFaqItem } from "./types";
 
+import { Link } from "react-router-dom";
+
+import { HOW_IT_WORKS_PATH } from "@/lib/methodology";
+
 export function buildMarketFaq({
   /** How this market names the person doing the buying, lower-case and
    *  singular-general, e.g. "company director", "US insider", "member of
@@ -35,9 +39,16 @@ export function buildMarketFaq({
       answer: (
         <>
           No. ddbx rates the <em>conviction</em> behind insider buys (how well
-          each one clears our six-point check) and shows the reasoning.
-          It&apos;s information, never a recommendation, and never a guarantee.
-          What you do with it is your call.
+          each one clears{" "}
+          <Link
+            className="underline underline-offset-2 hover:opacity-70"
+            to={HOW_IT_WORKS_PATH}
+          >
+            our six-point check
+          </Link>
+          ) and shows the reasoning. It&apos;s information, never a
+          recommendation, and never a guarantee. What you do with it is your
+          call.
         </>
       ),
     },

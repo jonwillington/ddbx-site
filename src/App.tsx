@@ -13,6 +13,7 @@ import CompaniesPage from "@/pages/companies";
 import CompanyPage from "@/pages/company";
 import ComparePage from "@/pages/compare";
 import DownloadPage from "@/pages/download";
+import HowItWorksPage from "@/pages/how-it-works";
 import LearnEntryPage, { LearnIndexPage } from "@/pages/learn";
 import ReportPage from "@/pages/report";
 import SectorPage from "@/pages/sector";
@@ -128,6 +129,11 @@ function App() {
             canonical target every January. */}
         {/* Glossary. Each entry has one owning domain (see shared/glossary.js)
             so the same text never exists at three URLs across three hosts. */}
+        {/* The methodology, with a URL. The full-screen walkthrough on the
+            market hero demonstrates the same six checks but is a modal — it
+            can't be linked to, shared or indexed. Both read from
+            src/lib/methodology.ts. */}
+        <Route element={<HowItWorksPage />} path="/how-it-works" />
         <Route element={<LearnIndexPage />} path="/learn" />
         <Route element={<LearnEntryPage />} path="/learn/:slug" />
         <Route element={<BiggestBuysPage />} path="/biggest-buys" />
