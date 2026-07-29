@@ -96,7 +96,7 @@ export function RecentBuysSection<W>({
           so it lives behind an accordion that summarises the count. */}
       <button
         aria-expanded={open}
-        className="flex w-full items-baseline justify-between gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
+        className="flex w-full items-baseline justify-between gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40"
         type="button"
         onClick={() => setOpen((o) => !o)}
       >

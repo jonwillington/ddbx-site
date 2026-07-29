@@ -892,7 +892,7 @@ function CongressExplainer() {
         <ol className="space-y-3">
           {criteria.map((item, i) => (
             <li key={item.title} className="flex gap-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5a4128]/12 text-xs font-semibold text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-brown/12 text-xs font-semibold text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan">
                 {i + 1}
               </span>
               <div>
@@ -928,7 +928,7 @@ function CongressExplainer() {
         </ul>
       </section>
 
-      <section className="rounded-xl border border-[#5a4128]/20 bg-[#5a4128]/[0.06] p-4 dark:border-[#ad9479]/25 dark:bg-[#ad9479]/[0.08]">
+      <section className="rounded-xl border border-brand-brown/20 bg-brand-brown/[0.06] p-4 dark:border-brand-tan/25 dark:bg-brand-tan/[0.08]">
         <h3 className="text-sm font-semibold">Still tuning</h3>
         <p className="mt-1.5 text-sm leading-relaxed text-foreground/70">
           This is an early preview. As we see how these trades play out, we
@@ -947,7 +947,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   heroHeadline: (
     <>
       Which members of{" "}
-      <span className="text-[#5a4128] dark:text-[#ad9479]">Congress</span> have
+      <span className="text-brand-brown dark:text-brand-tan">Congress</span> have
       been buying stocks?
     </>
   ),

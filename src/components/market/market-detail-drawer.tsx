@@ -36,10 +36,10 @@ function FreeAnalysisNotice({
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-[#d8d0c6] bg-[#f4eee6] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/[0.04]">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-[#5a4128] dark:text-[#c9b49f]">
+        <p className="text-sm font-semibold text-brand-brown dark:text-[#c9b49f]">
           You're using your one free analysis for today
         </p>
-        <p className="mt-0.5 text-xs leading-relaxed text-[#7a634b] dark:text-[#ad9479]">
+        <p className="mt-0.5 text-xs leading-relaxed text-[#7a634b] dark:text-brand-tan">
           The app has every analysis, every day.
         </p>
       </div>
@@ -391,7 +391,7 @@ export function MarketDetailDrawer<W>({
                             className={`relative shrink-0 ${showLogo ? "w-14" : "w-5"}`}
                           >
                             <div
-                              className={`absolute top-0 bottom-1/2 rounded-bl-[14px] border-b-2 border-l-2 border-[#5a4128]/25 dark:border-[#ad9479]/30 ${showLogo ? "left-7 right-1.5" : "left-2 right-0"}`}
+                              className={`absolute top-0 bottom-1/2 rounded-bl-[14px] border-b-2 border-l-2 border-brand-brown/25 dark:border-brand-tan/30 ${showLogo ? "left-7 right-1.5" : "left-2 right-0"}`}
                             />
                           </div>
                           <div className="flex items-center gap-3 py-2">
@@ -408,7 +408,7 @@ export function MarketDetailDrawer<W>({
                                 />
                                 <span
                                   aria-hidden
-                                  className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-[#5a4128]/15 dark:ring-[#ad9479]/20"
+                                  className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-brand-brown/15 dark:ring-brand-tan/20"
                                 />
                               </div>
                             )}

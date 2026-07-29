@@ -26,12 +26,12 @@ const SIZES = {
 
 const TONES = {
   /** Theme-aware: light-contrast circle against the page background. */
-  auto: "bg-black/[0.05] text-muted hover:bg-black/[0.09] hover:text-foreground dark:bg-white/[0.08] dark:hover:bg-white/[0.14] dark:hover:text-foreground focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40",
+  auto: "bg-black/[0.05] text-muted hover:bg-black/[0.09] hover:text-foreground dark:bg-white/[0.08] dark:hover:bg-white/[0.14] dark:hover:text-foreground focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40",
   /** For always-dark surfaces (explainer stage) in either theme. */
   dark: "bg-white/[0.08] text-[#f3ecdf]/60 hover:bg-white/[0.14] hover:text-[#f3ecdf] focus-visible:ring-white/40",
   /** For always-cream surfaces in either theme. `auto`'s light half, literal. */
   light:
-    "bg-black/[0.05] text-[#1a140d]/55 hover:bg-black/[0.09] hover:text-[#1a140d] focus-visible:ring-[#5a4128]/40",
+    "bg-black/[0.05] text-ink/55 hover:bg-black/[0.09] hover:text-ink focus-visible:ring-brand-brown/40",
 } as const;
 
 export function CloseButton({

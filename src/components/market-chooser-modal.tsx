@@ -108,7 +108,7 @@ export function MarketChooserModal({
           return (
             <a
               key={c.id}
-              className="group flex items-center gap-3 rounded-xl border border-black/10 bg-black/[0.02] p-3.5 transition-colors hover:border-[#5a4128]/40 hover:bg-[#5a4128]/[0.05] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-[#ad9479]/40 dark:hover:bg-[#ad9479]/[0.07]"
+              className="group flex items-center gap-3 rounded-xl border border-black/10 bg-black/[0.02] p-3.5 transition-colors hover:border-brand-brown/40 hover:bg-brand-brown/[0.05] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-brand-tan/40 dark:hover:bg-brand-tan/[0.07]"
               data-ga-event="cta_chooser_open_store"
               data-ga-label={c.id}
               href={c.href}
@@ -117,7 +117,7 @@ export function MarketChooserModal({
               onClick={onClose}
             >
               {inner}
-              <ArrowUpRightIcon className="h-4 w-4 shrink-0 text-muted/40 transition-colors group-hover:text-[#5a4128] dark:group-hover:text-[#ad9479]" />
+              <ArrowUpRightIcon className="h-4 w-4 shrink-0 text-muted/40 transition-colors group-hover:text-brand-brown dark:group-hover:text-brand-tan" />
             </a>
           );
         })}

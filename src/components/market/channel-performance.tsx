@@ -682,7 +682,7 @@ function ContributorExplainer({
           </div>
 
           <a
-            className="mt-6 flex w-full items-center justify-center rounded-lg bg-[#1a140d] px-5 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118] dark:bg-white dark:text-[#1a140d] dark:hover:bg-white/90"
+            className="mt-6 flex w-full items-center justify-center rounded-lg bg-ink px-5 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118] dark:bg-white dark:text-ink dark:hover:bg-white/90"
             data-ga-event="cta_channel_picks_explainer_download"
             data-ga-label={row.ticker}
             href={appHref}

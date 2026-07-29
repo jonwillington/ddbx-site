@@ -108,7 +108,7 @@ function SummaryBody({
 
 function StatChip({ label, value }: { label: string; value: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8e0d5] dark:bg-surface-secondary px-2.5 py-1">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-hairline dark:bg-surface-secondary px-2.5 py-1">
       <span className="text-xs font-semibold tabular-nums">{value}</span>
       <span className="text-[11px] text-muted">{label}</span>
     </span>

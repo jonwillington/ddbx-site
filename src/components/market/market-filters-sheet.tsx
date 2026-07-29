@@ -64,8 +64,8 @@ export function MarketFiltersSheet({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const direction = isDesktop ? "right" : "bottom";
   const contentClass = isDesktop
-    ? "fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-sm rounded-2xl border border-[#e8e0d5] dark:border-separator bg-[#f5f0e8] dark:bg-background shadow-2xl flex flex-col overflow-hidden outline-none"
-    : "fixed bottom-0 inset-x-0 z-50 max-h-[88vh] rounded-t-2xl border-t border-[#e8e0d5] dark:border-separator bg-[#f5f0e8] dark:bg-background flex flex-col overflow-hidden outline-none";
+    ? "fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-sm rounded-2xl border border-hairline dark:border-separator bg-[#f5f0e8] dark:bg-background shadow-2xl flex flex-col overflow-hidden outline-none"
+    : "fixed bottom-0 inset-x-0 z-50 max-h-[88vh] rounded-t-2xl border-t border-hairline dark:border-separator bg-[#f5f0e8] dark:bg-background flex flex-col overflow-hidden outline-none";
 
   const strengthValue = heroFilterId ?? heroFilters?.[0]?.id ?? "";
 
@@ -104,13 +104,13 @@ export function MarketFiltersSheet({
     <Drawer.Root direction={direction}>
       <Drawer.Trigger asChild>
         <button
-          className="relative flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-2 text-xs text-foreground/85 hover:border-[#5a4128]/50 transition-colors"
+          className="relative flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-2 text-xs text-foreground/85 hover:border-brand-brown/50 transition-colors"
           type="button"
         >
           <AdjustmentsHorizontalIcon className="w-4 h-4" />
           <span className="font-medium">Filters</span>
           {hasActiveFilter && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#5a4128] dark:bg-[#ad9479]" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-brand-brown dark:bg-brand-tan" />
           )}
         </button>
       </Drawer.Trigger>
@@ -330,7 +330,7 @@ function Select({
   return (
     <div className="relative">
       <select
-        className="w-full appearance-none rounded-full border border-separator bg-surface/40 px-4 py-2.5 pr-10 text-base sm:text-sm font-medium text-foreground outline-none focus-visible:border-[#5a4128]/50 focus-visible:ring-2 focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
+        className="w-full appearance-none rounded-full border border-separator bg-surface/40 px-4 py-2.5 pr-10 text-base sm:text-sm font-medium text-foreground outline-none focus-visible:border-brand-brown/50 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -365,7 +365,7 @@ function Segmented({
             aria-pressed={isCurrent}
             className={`flex-1 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
               isCurrent
-                ? "bg-[#5a4128]/15 text-[#3d2b1a] dark:text-[#ad9479]"
+                ? "bg-brand-brown/15 text-[#3d2b1a] dark:text-brand-tan"
                 : "text-muted hover:text-foreground"
             }`}
             type="button"
@@ -409,7 +409,7 @@ function MultiSelect({
             aria-pressed={on}
             className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
               on
-                ? "border-[#5a4128]/40 bg-[#5a4128]/15 text-[#3d2b1a] dark:text-[#ad9479]"
+                ? "border-brand-brown/40 bg-brand-brown/15 text-[#3d2b1a] dark:text-brand-tan"
                 : "border-separator text-muted hover:text-foreground"
             }`}
             type="button"

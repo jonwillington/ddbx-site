@@ -71,7 +71,7 @@ export function EuWaitlistOverlay({
   };
 
   return (
-    <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-[#e8e0d5] dark:border-separator bg-[#faf7f2]/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
+    <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-hairline dark:border-separator bg-sheet/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
       <span className="relative mb-4 inline-block">
         {ticker ? (
           <CompanyLogo className="shadow-lg" size={80} ticker={ticker} />
@@ -82,7 +82,7 @@ export function EuWaitlistOverlay({
             src="/ios-app-logo.svg"
           />
         )}
-        <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-ink text-white ring-2 ring-[#faf7f2] dark:bg-white dark:text-ink dark:ring-surface">
+        <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-ink text-white ring-2 ring-sheet dark:bg-white dark:text-ink dark:ring-surface">
           <LockClosedIcon className="h-3.5 w-3.5" />
         </span>
       </span>

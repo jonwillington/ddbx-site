@@ -1181,7 +1181,7 @@ export function MarketPage<W>({
       : rows.map(renderDayRow);
 
   const emptyState = filteredDealings.length === 0 && !loading && (
-    <div className="bg-[#faf7f2] dark:bg-surface rounded-xl px-4 py-10 text-center text-sm text-muted">
+    <div className="bg-sheet dark:bg-surface rounded-xl px-4 py-10 text-center text-sm text-muted">
       {search.trim() ? (
         <>
           No filings match{" "}
@@ -1239,7 +1239,7 @@ export function MarketPage<W>({
                 aria-selected={view === v.id}
                 className={`text-sm px-4 py-1.5 rounded-full transition-colors font-medium ${
                   view === v.id
-                    ? "bg-[#5a4128]/15 text-[#3d2b1a] dark:text-[#ad9479]"
+                    ? "bg-brand-brown/15 text-[#3d2b1a] dark:text-brand-tan"
                     : "text-muted hover:text-foreground"
                 }`}
                 role="tab"
@@ -1289,7 +1289,7 @@ export function MarketPage<W>({
             in — month header bar, then the darker well with date-chip rail +
             white day cards — so nothing jumps when the rows paint. */}
         {loading && filteredDealings.length === 0 && (
-          <div className="bg-[#faf7f2] dark:bg-surface rounded-xl overflow-hidden animate-content-in">
+          <div className="bg-sheet dark:bg-surface rounded-xl overflow-hidden animate-content-in">
             <div className="flex items-center justify-between px-6 py-5">
               <div className="flex items-center gap-3">
                 <CalendarDaysIcon className="w-5 h-5 shrink-0 text-muted/40" />
@@ -1338,7 +1338,7 @@ export function MarketPage<W>({
         {dealings.length > 0 && (
           <div
             ref={filterBarRef}
-            className="sticky top-[64px] z-20 -mx-4 md:-mx-6 bg-[#faf7f2] dark:bg-surface rounded-t-xl border-b border-[#e8e0d5]/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
+            className="sticky top-[64px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
           >
             {/* Search + filters are hidden on mobile — the wrapper stays so the
                 table keeps its rounded top edge and the -mt-6 tuck anchor. */}
@@ -1381,7 +1381,7 @@ export function MarketPage<W>({
 
         {/* By-gain view */}
         {filteredDealings.length > 0 && viewMode === "by-gain" && (
-          <div className="bg-[#faf7f2] dark:bg-surface rounded-b-xl animate-content-in -mt-6 -mx-4 md:-mx-6">
+          <div className="bg-sheet dark:bg-surface rounded-b-xl animate-content-in -mt-6 -mx-4 md:-mx-6">
             <MarketRowHeader
               benchmarkLabel={config.benchmarkLabel}
               chartMode={chartMode}
@@ -1458,11 +1458,11 @@ export function MarketPage<W>({
                         second button opts back in. Both are real buttons, both
                         are tabbable, both show a focus ring. */}
                     <div
-                      className={`relative w-full flex items-center justify-between px-6 py-5 bg-[#faf7f2] dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-xl"} ${monthOpen ? "" : "rounded-b-xl"}`}
+                      className={`relative w-full flex items-center justify-between px-6 py-5 bg-sheet dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-xl"} ${monthOpen ? "" : "rounded-b-xl"}`}
                     >
                       <button
                         aria-expanded={monthGated ? undefined : monthOpen}
-                        className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-[#ad9479]/40"
+                        className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-brand-tan/40"
                         data-ga-event={
                           monthGated ? "cta_month_unlock_open" : "toggle_month"
                         }
@@ -1494,7 +1494,7 @@ export function MarketPage<W>({
                             <>
                               <span className="mx-2 text-muted">·</span>
                               <button
-                                className="pointer-events-auto rounded-sm text-sm font-medium text-[#5a4128] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[#5a4128]/40 dark:text-[#ad9479] dark:focus-visible:ring-[#ad9479]/40"
+                                className="pointer-events-auto rounded-sm text-sm font-medium text-brand-brown outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:text-brand-tan dark:focus-visible:ring-brand-tan/40"
                                 data-ga-event="cta_view_month_report"
                                 data-ga-label={`View report ${monthIso}`}
                                 type="button"
@@ -1525,7 +1525,7 @@ export function MarketPage<W>({
                     </div>
                   </div>
                   {monthOpen && (
-                    <div className="bg-[#faf7f2] dark:bg-surface rounded-b-xl">
+                    <div className="bg-sheet dark:bg-surface rounded-b-xl">
                       {/* Teaser mode has no table columns to head — the rows
                           are flat avatar → logos links. */}
                       {!simpleGatedRows && (
@@ -1555,7 +1555,7 @@ export function MarketPage<W>({
                             {config.timelineTitle}
                             <TimelineSwoosh
                               aria-hidden
-                              className="ml-2 inline h-6 w-6 translate-y-1 text-[#5a4128]/60 dark:text-[#ad9479]/70 md:h-7 md:w-7"
+                              className="ml-2 inline h-6 w-6 translate-y-1 text-brand-brown/60 dark:text-brand-tan/70 md:h-7 md:w-7"
                             />
                           </h2>
                         )}
@@ -1654,7 +1654,7 @@ export function MarketPage<W>({
                                       rows on a tinted, ringed inset card, so a
                                       newcomer sees exactly which filings cleared
                                       the check. Skipped rows sit outside it. */}
-                                      <div className="m-2 overflow-hidden rounded-xl bg-[#faf7f2] ring-1 ring-black/[0.07] divide-y divide-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10 dark:divide-separator">
+                                      <div className="m-2 overflow-hidden rounded-xl bg-sheet ring-1 ring-black/[0.07] divide-y divide-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10 dark:divide-separator">
                                         <MarketIntroBanner
                                           onDismiss={intro.dismiss}
                                           onExplain={() =>
@@ -1706,9 +1706,9 @@ export function MarketPage<W>({
                 {/* Same two-action row as the month headers above — see the
                     note there for why the row action is a stretched button
                     rather than a wrapper around the recap link. */}
-                <div className="relative w-full flex items-center justify-between rounded-xl px-6 py-5 bg-[#faf7f2] dark:bg-surface">
+                <div className="relative w-full flex items-center justify-between rounded-xl px-6 py-5 bg-sheet dark:bg-surface">
                   <button
-                    className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-[#ad9479]/40"
+                    className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-brand-tan/40"
                     data-ga-event="cta_month_unlock_open"
                     data-ga-label={`${monthLabel(r.month)} · app-only`}
                     onClick={() =>
@@ -1725,7 +1725,7 @@ export function MarketPage<W>({
                       {monthLabel(r.month)}
                       <span className="mx-2 text-muted">·</span>
                       <button
-                        className="pointer-events-auto rounded-sm text-sm font-medium text-[#5a4128] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[#5a4128]/40 dark:text-[#ad9479] dark:focus-visible:ring-[#ad9479]/40"
+                        className="pointer-events-auto rounded-sm text-sm font-medium text-brand-brown outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:text-brand-tan dark:focus-visible:ring-brand-tan/40"
                         data-ga-event="cta_view_month_report"
                         data-ga-label={`View report ${r.month}`}
                         type="button"

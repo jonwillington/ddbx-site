@@ -38,7 +38,7 @@ export function MonthUnlockModal({
 
   const body = (
     <>
-      <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[#1a140d] text-white dark:bg-white dark:text-[#1a140d]">
+      <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-ink text-white dark:bg-white dark:text-ink">
         <LockClosedIcon className="h-5 w-5" />
       </span>
       <h2 className="mt-3 text-lg font-semibold tracking-[-0.02em]">{title}</h2>

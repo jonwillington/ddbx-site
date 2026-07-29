@@ -44,7 +44,7 @@ const FILLED_CTA = `inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FIL
  *  turned down. The old brown capsule read as a chip, not a button. A visible
  *  hairline border does the affordance work here: the 7% tint alone dissolved
  *  into the hero's cream wash and read as a disabled chip. */
-const GHOST_CTA = `inline-flex items-center ${BUTTON_RADIUS} ${BUTTON_GHOST} border border-[#1a140d]/[0.18] dark:border-white/20 px-6 py-3 text-base font-semibold backdrop-blur-sm transition-colors`;
+const GHOST_CTA = `inline-flex items-center ${BUTTON_RADIUS} ${BUTTON_GHOST} border border-ink/[0.18] dark:border-white/20 px-6 py-3 text-base font-semibold backdrop-blur-sm transition-colors`;
 
 type PulsePoint = {
   left: string;
@@ -143,7 +143,7 @@ export function MarketHero({
   const resolvedHeadline = headline ?? subhead ?? (
     <>
       Which directors have been buying shares in{" "}
-      <span className="text-[#5a4128] dark:text-[#ad9479]">{marketLabel}</span>{" "}
+      <span className="text-brand-brown dark:text-brand-tan">{marketLabel}</span>{" "}
       companies?
     </>
   );
@@ -187,7 +187,7 @@ export function MarketHero({
       {appShowcase && (
         <div className={`flex ${ctaJustify}`}>
           <span
-            className={`${chip("lg")} bg-[#5a4128]/10 text-[#5a4128] dark:bg-[#ad9479]/15 dark:text-[#ad9479]`}
+            className={`${chip("lg")} bg-brand-brown/10 text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan`}
           >
             7-day free trial · Cancel any time
           </span>

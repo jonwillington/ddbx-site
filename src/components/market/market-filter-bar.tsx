@@ -103,14 +103,14 @@ export function MarketFilterBar({
     !!onHeroFilterChange;
 
   return (
-    <div className="flex items-center gap-3 bg-[#faf7f2] dark:bg-surface px-5 py-3.5">
+    <div className="flex items-center gap-3 bg-sheet dark:bg-surface px-5 py-3.5">
       {/* The visible cue is the placeholder, which disappears on input and is
           never read as a name by assistive tech — so the label is carried
           separately and hidden. Same shape as the companies-page search. */}
       <label className="flex-1 min-w-0">
         <span className="sr-only">Search dealings</span>
         <input
-          className="w-full rounded-full border border-separator bg-transparent px-4 py-2 text-base sm:text-sm text-foreground placeholder:text-muted/60 outline-none focus-visible:border-[#5a4128]/50 focus-visible:ring-2 focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40 transition-colors"
+          className="w-full rounded-full border border-separator bg-transparent px-4 py-2 text-base sm:text-sm text-foreground placeholder:text-muted/60 outline-none focus-visible:border-brand-brown/50 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40 transition-colors"
           placeholder={searchPlaceholder}
           type="text"
           value={search}
@@ -223,7 +223,7 @@ function FilterSelect({
       <button
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-1.5 text-xs text-foreground/85 hover:border-[#5a4128]/50 transition-colors"
+        className="flex items-center gap-1.5 rounded-full border border-separator bg-surface/40 px-3 py-1.5 text-xs text-foreground/85 hover:border-brand-brown/50 transition-colors"
         type="button"
         onClick={() => setOpen((v) => !v)}
       >

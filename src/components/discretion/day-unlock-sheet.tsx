@@ -58,7 +58,7 @@ export function DayUnlockSheet({
               {tickers.map((t) => (
                 <span key={t} className="relative inline-block">
                   <CompanyLogo size={44} ticker={t} />
-                  <span className="absolute -bottom-1 -right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#1a140d] text-white ring-2 ring-background dark:bg-white dark:text-[#1a140d]">
+                  <span className="absolute -bottom-1 -right-1 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-ink text-white ring-2 ring-background dark:bg-white dark:text-ink">
                     <LockClosedIcon className="h-2.5 w-2.5" />
                   </span>
                 </span>

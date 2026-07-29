@@ -12,7 +12,7 @@ import { Tooltip } from "@/components/tooltip";
  *  means. Returns null when there's no cluster, so callers can drop it in
  *  unconditionally. */
 
-const BASE = `${chip()} bg-[#e8e0d5] text-[#5a4128] dark:bg-surface-secondary dark:text-foreground/75`;
+const BASE = `${chip()} bg-hairline text-brand-brown dark:bg-surface-secondary dark:text-foreground/75`;
 
 const TOOLTIP =
   "This purchase is part of a wider trend of insiders buying this stock.";

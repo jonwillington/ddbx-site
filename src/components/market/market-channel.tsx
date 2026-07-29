@@ -151,15 +151,15 @@ export function MarketChannel({
   }
 
   return (
-    <aside className="hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-[#e8e0d5] dark:border-separator bg-[#faf7f2] dark:bg-surface z-20">
+    <aside className="hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">
       {/* Header — matches navbar h-16 */}
-      <div className="h-16 px-4 flex items-center border-b border-[#e8e0d5] dark:border-separator shrink-0">
+      <div className="h-16 px-4 flex items-center border-b border-hairline dark:border-separator shrink-0">
         {tabs}
       </div>
 
       <div className="relative flex-1 min-h-0">
-        <div className="absolute inset-x-0 top-0 h-4 pointer-events-none z-[1] bg-gradient-to-b from-[#faf7f2] dark:from-surface to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-4 pointer-events-none z-[1] bg-gradient-to-t from-[#faf7f2] dark:from-surface to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-4 pointer-events-none z-[1] bg-gradient-to-b from-sheet dark:from-surface to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-4 pointer-events-none z-[1] bg-gradient-to-t from-sheet dark:from-surface to-transparent" />
         <div className="h-full overflow-y-auto overscroll-contain">{body}</div>
       </div>
     </aside>
@@ -182,7 +182,7 @@ function TabButton({
       aria-selected={active}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
         active
-          ? "bg-[#5a4128]/15 text-[#3d2b1a] dark:text-[#ad9479]"
+          ? "bg-brand-brown/15 text-[#3d2b1a] dark:text-brand-tan"
           : "text-muted hover:text-foreground"
       }`}
       role="tab"
@@ -311,13 +311,13 @@ function NewsRow({
       >
         <NewsSourceLogo className="mt-0.5" url={item.url} />
         <span className="min-w-0">
-          <span className="flex items-center gap-1.5 text-[10px] font-mono leading-none text-[#5a4128]/90 dark:text-[#ad9479] mb-1">
+          <span className="flex items-center gap-1.5 text-[10px] font-mono leading-none text-brand-brown/90 dark:text-brand-tan mb-1">
             {fresh && (
               <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#7c5cbf] animate-[fade-in-up_0.3s_ease-out]" />
             )}
             {item.source}
           </span>
-          <span className="inline-flex items-start gap-1.5 text-xs text-foreground/90 leading-snug line-clamp-3 group-hover:text-[#5a4128] transition-colors">
+          <span className="inline-flex items-start gap-1.5 text-xs text-foreground/90 leading-snug line-clamp-3 group-hover:text-brand-brown transition-colors">
             <span>{item.title}</span>
             <ArrowTopRightOnSquareIcon className="w-2.5 h-2.5 shrink-0 mt-0.5 opacity-60 group-hover:opacity-100" />
           </span>

@@ -174,7 +174,7 @@ export function MarketTodayHero<W>({
       ) : TodayEmpty ? (
         <TodayEmpty />
       ) : (
-        <div className="rounded-xl border border-black/[0.08] bg-[#faf7f2] px-6 py-10 text-center text-sm text-muted dark:border-white/[0.08] dark:bg-surface">
+        <div className="rounded-xl border border-black/[0.08] bg-sheet px-6 py-10 text-center text-sm text-muted dark:border-white/[0.08] dark:bg-surface">
           No filings disclosed today yet.
         </div>
       )}
@@ -236,10 +236,10 @@ function TodayCard<W>({
 
   return (
     <button
-      className={`group h-full w-full animate-today-hero-item rounded-xl border bg-[#faf7f2] p-4 text-left transition-colors duration-150 dark:bg-surface md:p-5
+      className={`group h-full w-full animate-today-hero-item rounded-xl border bg-sheet p-4 text-left transition-colors duration-150 dark:bg-surface md:p-5
         ${
           selected
-            ? "border-[#5a4128]/40 bg-[#5a4128]/[0.04] dark:border-[#ad9479]/40 dark:bg-[#5a4128]/[0.18]"
+            ? "border-brand-brown/40 bg-brand-brown/[0.04] dark:border-brand-tan/40 dark:bg-brand-brown/[0.18]"
             : "border-black/[0.08] hover:border-black/[0.18] dark:border-white/[0.08] dark:hover:border-white/[0.18]"
         }
         ${muted ? "opacity-75" : ""}`}
@@ -254,7 +254,7 @@ function TodayCard<W>({
             ticker={dealing.ticker || ""}
           />
         ) : (
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-sm font-semibold text-muted dark:bg-surface-secondary">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-hairline font-mono text-sm font-semibold text-muted dark:bg-surface-secondary">
             {tickerLabel.slice(0, 3)}
           </div>
         )}
@@ -363,10 +363,10 @@ function TodayDeckCard<W>({
 
   return (
     <button
-      className={`group flex w-full flex-col overflow-hidden rounded-[20px] border bg-[#faf7f2] p-5 text-left shadow-[0_18px_44px_-16px_rgba(30,21,6,0.26)] transition-colors duration-150 dark:bg-surface md:p-6
+      className={`group flex w-full flex-col overflow-hidden rounded-[20px] border bg-sheet p-5 text-left shadow-[0_18px_44px_-16px_rgba(30,21,6,0.26)] transition-colors duration-150 dark:bg-surface md:p-6
         ${
           selected
-            ? "border-[#5a4128]/40 bg-[#5a4128]/[0.04] dark:border-[#ad9479]/40 dark:bg-[#5a4128]/[0.18]"
+            ? "border-brand-brown/40 bg-brand-brown/[0.04] dark:border-brand-tan/40 dark:bg-brand-brown/[0.18]"
             : "border-black/[0.08] dark:border-white/[0.08]"
         }`}
       onClick={onSelect}
@@ -399,7 +399,7 @@ function TodayDeckCard<W>({
             ticker={dealing.ticker || ""}
           />
         ) : (
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-lg font-semibold text-muted dark:bg-surface-secondary">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-hairline font-mono text-lg font-semibold text-muted dark:bg-surface-secondary">
             {tickerLabel.slice(0, 3)}
           </div>
         )}
@@ -448,7 +448,7 @@ function TodayDeckCard<W>({
           {shownStats.map((s) => (
             <div
               key={s.label}
-              className="flex flex-col gap-0.5 bg-[#faf7f2] px-3 py-2 dark:bg-surface"
+              className="flex flex-col gap-0.5 bg-sheet px-3 py-2 dark:bg-surface"
             >
               <dt className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted/80">
                 {s.label}
@@ -955,14 +955,14 @@ function EmptyDayContainer<W>({
           className={`relative flex flex-col p-6 md:p-8 ${
             view.isLive
               ? "bg-[#2E7D32]/[0.06] dark:bg-[#2E7D32]/[0.15]"
-              : "bg-[#faf7f2] dark:bg-surface"
+              : "bg-sheet dark:bg-surface"
           }`}
         >
           {view.isLive && <LiveWash />}
           <MarketAnchorPanel view={view} />
         </div>
         {showGrid && (
-          <div className="flex min-w-0 flex-col bg-[#faf7f2] dark:bg-surface">
+          <div className="flex min-w-0 flex-col bg-sheet dark:bg-surface">
             <div className="flex items-center justify-between px-4 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
               <span>Biggest gainers · last 30 days</span>
               <span className="font-normal normal-case tracking-normal text-muted/70">
@@ -1029,8 +1029,8 @@ function BestThisWeekCell<W>({
     <button
       className={`group flex items-center gap-3 p-3 text-left transition-colors ${
         selected
-          ? "bg-[#5a4128]/[0.06] dark:bg-[#5a4128]/[0.20]"
-          : "bg-[#faf7f2] hover:bg-[#f1ebe2] dark:bg-surface dark:hover:bg-surface-secondary"
+          ? "bg-brand-brown/[0.06] dark:bg-brand-brown/[0.20]"
+          : "bg-sheet hover:bg-[#f1ebe2] dark:bg-surface dark:hover:bg-surface-secondary"
       }`}
       onClick={onSelect}
     >
@@ -1041,7 +1041,7 @@ function BestThisWeekCell<W>({
           ticker={dealing.ticker || ""}
         />
       ) : (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e8e0d5] font-mono text-[10px] font-semibold text-muted dark:bg-surface-secondary">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-hairline font-mono text-[10px] font-semibold text-muted dark:bg-surface-secondary">
           {tickerLabel.slice(0, 3)}
         </div>
       )}
@@ -1069,7 +1069,7 @@ function BestThisWeekCell<W>({
 
 function BestThisWeekCellSkeleton({ showLogo }: { showLogo: boolean }) {
   return (
-    <div className="flex items-center gap-3 bg-[#faf7f2] p-3 dark:bg-surface">
+    <div className="flex items-center gap-3 bg-sheet p-3 dark:bg-surface">
       {showLogo ? (
         <Skeleton circle h={32} w={32} />
       ) : (
@@ -1092,7 +1092,7 @@ function BestThisWeekCellSkeleton({ showLogo }: { showLogo: boolean }) {
 function TodayCardSkeleton({ hero = false }: { hero?: boolean }) {
   return (
     <div
-      className={`w-full border border-black/[0.08] bg-[#faf7f2] dark:border-white/[0.08] dark:bg-surface ${hero ? "rounded-[20px] p-5 shadow-[0_18px_44px_-16px_rgba(30,21,6,0.26)] md:p-6" : "h-full rounded-xl p-4 md:p-5"}`}
+      className={`w-full border border-black/[0.08] bg-sheet dark:border-white/[0.08] dark:bg-surface ${hero ? "rounded-[20px] p-5 shadow-[0_18px_44px_-16px_rgba(30,21,6,0.26)] md:p-6" : "h-full rounded-xl p-4 md:p-5"}`}
     >
       <div className={`flex items-start gap-3.5 ${hero ? "" : "gap-4"}`}>
         <Skeleton circle h={48} w={48} />

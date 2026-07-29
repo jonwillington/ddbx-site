@@ -157,7 +157,7 @@ function CalendarDayChip({
       }`}
     >
       <span
-        className={`bg-[#5a4128] text-center font-bold uppercase tracking-[0.08em] text-[#f5f0e8] dark:bg-[#ad9479] dark:text-[#1a140d] ${
+        className={`bg-brand-brown text-center font-bold uppercase tracking-[0.08em] text-[#f5f0e8] dark:bg-brand-tan dark:text-ink ${
           size === "md" ? "py-[2px] text-[8px]" : "py-[2px] text-[7px]"
         }`}
       >
@@ -285,7 +285,7 @@ export function MarketDaySummaryRow({
 
   return (
     <button
-      className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
+      className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40"
       data-ga-event="open_day_summary"
       data-ga-label={label}
       type="button"
@@ -295,7 +295,7 @@ export function MarketDaySummaryRow({
       <div className="md:hidden px-3 py-2.5 flex items-center gap-2.5">
         <AiAvatar />
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-[#5a4128] dark:text-[#ad9479] leading-tight">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-brand-brown dark:text-brand-tan leading-tight">
             {label}
           </div>
           <div className="text-[13px] font-medium text-foreground/90 mt-0.5 truncate">
@@ -310,7 +310,7 @@ export function MarketDaySummaryRow({
         <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
           <AiAvatar />
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#5a4128] dark:text-[#ad9479] leading-tight">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-brand-brown dark:text-brand-tan leading-tight">
               {label}
             </div>
             <div className="text-[13px] font-medium text-foreground/90 mt-0.5 truncate">
@@ -561,7 +561,7 @@ export function MarketClusterRow<W>({
     <div className="divide-y divide-black/[0.06] dark:divide-separator">
       <button
         aria-expanded={open}
-        className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
+        className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40"
         data-ga-event="toggle_cluster"
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -574,7 +574,7 @@ export function MarketClusterRow<W>({
           {showLogo && <CompanyLogo size={28} ticker={rawTicker} />}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-[#e8e0d5] dark:bg-surface-secondary shrink-0">
+              <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary shrink-0">
                 {ticker}
               </span>
               <span className="text-[13px] font-medium truncate">
@@ -591,7 +591,7 @@ export function MarketClusterRow<W>({
         {/* ── Desktop (md+) ── */}
         <div className="hidden md:flex items-stretch">
           <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-            <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-[#e8e0d5] dark:bg-surface-secondary">
+            <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary">
               {ticker}
             </span>
           </div>
@@ -713,7 +713,7 @@ export function MemberAppTeaserRow({
 
   return (
     <a
-      className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
+      className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40"
       data-ga-event="cta_gated_row_app"
       data-ga-label={insiderName}
       href={appHref}
@@ -810,7 +810,7 @@ export function MemberClusterRow({
     <div className="divide-y divide-black/[0.06] dark:divide-separator">
       <button
         aria-expanded={open}
-        className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40"
+        className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40"
         data-ga-event="toggle_cluster"
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -992,10 +992,10 @@ export function MarketRow<W>({
 
   return (
     <button
-      className={`w-full text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:focus-visible:ring-[#ad9479]/40
+      className={`w-full text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40
         ${muted ? "opacity-65" : ""}
         ${muted && !selected ? "bg-black/[0.025] dark:bg-white/[0.04]" : ""}
-        ${selected ? "bg-[#5a4128]/[0.07] dark:bg-[#5a4128]/[0.20]" : "hover:bg-black/[0.03] dark:hover:bg-white/5"}`}
+        ${selected ? "bg-brand-brown/[0.07] dark:bg-brand-brown/[0.20]" : "hover:bg-black/[0.03] dark:hover:bg-white/5"}`}
       data-ga-event="open_deal"
       data-ga-label={rawTicker}
       onClick={onSelect}
@@ -1034,7 +1034,7 @@ export function MarketRow<W>({
           </div>
         )}
         <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-          <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-[#e8e0d5] dark:bg-surface-secondary">
+          <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary">
             {ticker}
           </span>
         </div>

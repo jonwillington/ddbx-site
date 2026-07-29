@@ -201,7 +201,7 @@ export function MonthlyPriceChart({
 
           {/* price line */}
           <path
-            className="text-[#5a4128] dark:text-[#ad9479]"
+            className="text-brand-brown dark:text-brand-tan"
             d={geom.path}
             fill="none"
             stroke="currentColor"
@@ -213,7 +213,7 @@ export function MonthlyPriceChart({
           {/* disclosure marker */}
           {geom.discIdx >= 0 && (
             <circle
-              className="text-[#5a4128] dark:text-[#ad9479]"
+              className="text-brand-brown dark:text-brand-tan"
               cx={geom.x(geom.discIdx)}
               cy={geom.y(bars[geom.discIdx].price)}
               fill="currentColor"

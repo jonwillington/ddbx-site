@@ -100,7 +100,7 @@ function AppPromoAside({
   ].filter(([, href]) => !isSelfLink(pathname, href));
 
   return (
-    <aside className="fixed bottom-0 right-0 top-0 z-20 hidden w-80 flex-col border-l border-hairline bg-[#faf7f2] dark:border-separator dark:bg-surface lg:flex">
+    <aside className="fixed bottom-0 right-0 top-0 z-20 hidden w-80 flex-col border-l border-hairline bg-sheet dark:border-separator dark:bg-surface lg:flex">
       <div className="flex h-16 shrink-0 items-center border-b border-hairline px-4 dark:border-separator">
         <h2 className="text-sm font-semibold text-foreground/80">
           Get the app

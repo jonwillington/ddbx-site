@@ -449,8 +449,8 @@ export function MiniPriceChart({
             key={key}
             className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
               period === key
-                ? "border-[#5a4128]/50 bg-[#5a4128]/10 text-[#5a4128] dark:text-[#a88c6e]"
-                : "border-black/10 dark:border-white/10 text-muted hover:border-[#5a4128]/30"
+                ? "border-brand-brown/50 bg-brand-brown/10 text-brand-brown dark:text-[#a88c6e]"
+                : "border-black/10 dark:border-white/10 text-muted hover:border-brand-brown/30"
             }`}
             onClick={() => setPeriod(key)}
           >

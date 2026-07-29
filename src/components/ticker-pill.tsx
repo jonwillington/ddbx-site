@@ -14,7 +14,7 @@ export function TickerPill({
 }) {
   return (
     <span
-      className={`inline-block shrink-0 rounded bg-[#e8e0d5] px-1.5 font-mono text-[11px] font-semibold tabular-nums text-foreground/70 dark:bg-surface-secondary ${className}`}
+      className={`inline-block shrink-0 rounded bg-hairline px-1.5 font-mono text-[11px] font-semibold tabular-nums text-foreground/70 dark:bg-surface-secondary ${className}`}
     >
       {ticker}
     </span>

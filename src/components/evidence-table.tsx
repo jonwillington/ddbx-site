@@ -76,7 +76,7 @@ export function EvidenceTable({
                 <p className="text-xs mt-2">
                   {sourceUrl ? (
                     <a
-                      className="inline-flex items-center gap-0.5 text-[#5a4128] dark:text-[#a88c6e] hover:underline underline-offset-2"
+                      className="inline-flex items-center gap-0.5 text-brand-brown dark:text-[#a88c6e] hover:underline underline-offset-2"
                       href={sourceUrl}
                       rel="noopener noreferrer"
                       target="_blank"

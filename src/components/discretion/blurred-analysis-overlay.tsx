@@ -47,7 +47,7 @@ export function BlurredAnalysisOverlay({
   return (
     // Just the card — the caller positions it (the gated drawer centers it in
     // a locked, non-scrolling viewport).
-    <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-[#e8e0d5] dark:border-separator bg-[#faf7f2]/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
+    <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-hairline dark:border-separator bg-sheet/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
       {/* The thing being locked, at poster size: the company whose analysis
           sits under the blur, padlocked in the corner. Sells the specific
           unlock, not the brand in the abstract. */}
@@ -61,7 +61,7 @@ export function BlurredAnalysisOverlay({
             src="/ios-app-logo.svg"
           />
         )}
-        <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-[#1a140d] text-white ring-2 ring-[#faf7f2] dark:bg-white dark:text-[#1a140d] dark:ring-surface">
+        <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-ink text-white ring-2 ring-sheet dark:bg-white dark:text-ink dark:ring-surface">
           <LockClosedIcon className="h-3.5 w-3.5" />
         </span>
       </span>
@@ -70,7 +70,7 @@ export function BlurredAnalysisOverlay({
       <ul className="text-left text-sm space-y-1.5 mb-5">
         {benefits.map((line) => (
           <li key={line} className="flex items-start gap-2 text-foreground/80">
-            <span className="text-[#5a4128] dark:text-[#ad9479] mt-0.5">✓</span>
+            <span className="text-brand-brown dark:text-brand-tan mt-0.5">✓</span>
             <span>{line}</span>
           </li>
         ))}

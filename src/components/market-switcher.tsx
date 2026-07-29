@@ -186,7 +186,7 @@ function MobileSheet({
 
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/50 z-40" />
-        <Drawer.Content className="fixed bottom-0 inset-x-0 z-50 flex flex-col rounded-t-2xl border-t border-[#e8e0d5] dark:border-separator bg-[#f5f0e8] dark:bg-background outline-none">
+        <Drawer.Content className="fixed bottom-0 inset-x-0 z-50 flex flex-col rounded-t-2xl border-t border-hairline dark:border-separator bg-[#f5f0e8] dark:bg-background outline-none">
           <div className="mx-auto mt-3 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-black/15 dark:bg-white/20" />
 
           <div className="px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 overflow-y-auto">

@@ -108,7 +108,7 @@ function PillGroup<T extends string>({
             block ? "flex-1 px-3 py-2 text-sm" : "px-2.5 py-0.5 text-[11px]"
           } ${
             selected === item.id
-              ? "bg-[#5a4128]/15 text-[#3d2b1a] dark:text-[#ad9479]"
+              ? "bg-brand-brown/15 text-[#3d2b1a] dark:text-brand-tan"
               : "text-muted hover:text-foreground"
           }`}
           type="button"

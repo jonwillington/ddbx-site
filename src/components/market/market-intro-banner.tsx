@@ -50,7 +50,7 @@ export function MarketIntroBanner({
   onDismiss: () => void;
 }) {
   return (
-    <div className="relative bg-[#faf7f2] px-4 py-3.5 dark:bg-white/[0.03] md:px-5">
+    <div className="relative bg-sheet px-4 py-3.5 dark:bg-white/[0.03] md:px-5">
       <div className="flex items-start gap-3 pr-6">
         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-foreground/70 dark:bg-white/[0.08] dark:text-foreground/70">
           <ExclamationCircleIcon className="h-4 w-4" />

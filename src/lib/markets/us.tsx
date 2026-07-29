@@ -680,7 +680,7 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   heroHeadline: (
     <>
       Start following the{" "}
-      <span className="text-[#5a4128] dark:text-[#ad9479]">money</span>.
+      <span className="text-brand-brown dark:text-brand-tan">money</span>.
     </>
   ),
   heroSubhead:
