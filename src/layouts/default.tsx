@@ -191,8 +191,8 @@ function PrivacyContent() {
         processing of network-level data. We use Google Analytics 4 in
         cookieless consent mode — it sets no cookies and stores no identifiers
         unless you accept the cookie banner. Accepting also loads the X
-        (Twitter) Ads conversion pixel (to measure ad-driven installs) — see
-        the Cookie Policy for details.
+        (Twitter) Ads conversion pixel (to measure ad-driven installs) — see the
+        Cookie Policy for details.
       </p>
 
       <SectionTitle>Your rights</SectionTitle>
@@ -255,15 +255,15 @@ function CookieContent() {
       <ul className="list-disc pl-5 space-y-1">
         <li>
           <strong>Google Analytics 4</strong> — aggregate usage statistics
-          (which pages are viewed, roughly where visitors come from). Before
-          you agree it runs in Google&apos;s cookieless consent mode: it sets
-          no cookies and stores no identifiers. Agreeing enables its analytics
+          (which pages are viewed, roughly where visitors come from). Before you
+          agree it runs in Google&apos;s cookieless consent mode: it sets no
+          cookies and stores no identifiers. Agreeing enables its analytics
           cookies.
         </li>
         <li>
           <strong>X (Twitter) conversion pixel</strong> — measures whether
-          visitors arriving from X ads go on to install the app or sign up.
-          Not loaded at all until you agree. Loaded from{" "}
+          visitors arriving from X ads go on to install the app or sign up. Not
+          loaded at all until you agree. Loaded from{" "}
           <code>static.ads-twitter.com</code>.
         </li>
       </ul>
@@ -463,6 +463,16 @@ export default function DefaultLayout({
       // leaves a clear gap at the bottom of the scroll.
       className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
     >
+      {/* First focusable thing on every page. Off-screen until it takes focus,
+          then it parks itself over the navbar — otherwise a keyboard visitor
+          tabs the whole masthead, market switcher and ticker before reaching
+          the content, on every single navigation. */}
+      <a
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2.5 focus:text-sm focus:font-medium focus:text-white focus:outline-none focus:ring-2 focus:ring-brand-amber dark:focus:bg-brand-amber dark:focus:text-ink dark:focus:ring-ink"
+        href="#main"
+      >
+        Skip to content
+      </a>
       <div className="sticky top-0 z-40">
         <Navbar />
         {ticker && (
@@ -473,7 +483,14 @@ export default function DefaultLayout({
           </div>
         )}
       </div>
-      <main className="mx-auto w-full max-w-[1280px] px-4 md:px-6 flex-grow pt-8">
+      {/* tabIndex -1 so the skip link actually moves focus here rather than
+          only moving the scroll position; scroll-mt clears the sticky header,
+          which would otherwise cover the top of what we just jumped to. */}
+      <main
+        className="mx-auto w-full max-w-[1280px] px-4 md:px-6 flex-grow pt-8 scroll-mt-24 outline-none"
+        id="main"
+        tabIndex={-1}
+      >
         {children}
       </main>
       <footer className="w-full border-t border-separator bg-surface/60">
