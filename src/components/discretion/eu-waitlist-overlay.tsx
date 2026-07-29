@@ -145,8 +145,9 @@ export function EuWaitlistOverlay({
           </form>
 
           {state === "error" ? (
-            <p className="mt-2.5 text-[12.5px] text-negative">
-              That didn&apos;t go through — please try again.
+            <p className="mt-2.5 text-[12.5px] text-negative" role="alert">
+              Unable to register that address. Check your connection and try
+              again.
             </p>
           ) : (
             <p className="mt-2.5 text-[11px] text-muted/60">

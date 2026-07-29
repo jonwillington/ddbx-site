@@ -112,6 +112,12 @@ function Chevron() {
 
 type Status = "idle" | "sending" | "done" | "error";
 
+/** Shown whenever the failure has no explanation worth passing on — a dropped
+ *  connection, or a status code. "Something went wrong" tells you nothing you
+ *  couldn't see; this at least ends in something to do. */
+const SUBMIT_FAILED =
+  "Unable to send your request. Check your connection and try again, or email hello@ddbx.uk.";
+
 export function InterestForm() {
   const [markets, setMarkets] = useState<string[]>([]);
   const [status, setStatus] = useState<Status>("idle");
@@ -172,17 +178,19 @@ export function InterestForm() {
           error?: string;
         };
 
-        throw new Error(body.error ?? `Request failed (${res.status})`);
+        // The server writes `error` for the failures it can actually explain
+        // (a rejected address, a failed challenge). Everything else is a status
+        // code, which is not something to put in front of a reader.
+        setStatus("error");
+        setError(body.error ?? SUBMIT_FAILED);
+
+        return;
       }
       setStatus("done");
       window.gtag?.("event", "api_interest_submit");
-    } catch (err) {
+    } catch {
       setStatus("error");
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Email hello@ddbx.uk instead.",
-      );
+      setError(SUBMIT_FAILED);
     }
   }
 
@@ -332,8 +340,12 @@ export function InterestForm() {
 
       <Turnstile onToken={onToken} />
 
+      {/* role="alert" so a submit that fails is spoken rather than silently
+          appearing above a button the reader is still focused on. */}
       {status === "error" && error ? (
-        <p className="text-[13.5px] text-[#8b2020]">{error}</p>
+        <p className="text-[13.5px] text-negative" role="alert">
+          {error}
+        </p>
       ) : null}
 
       <button

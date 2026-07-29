@@ -257,9 +257,13 @@ export default function ComparePage() {
             affiliate links with no disclosure on screen. */}
         <BrokerDisclosure className="mb-5" />
 
+        {/* The raw `err` string used to be interpolated here. It's a fetch or
+            status message written for a log, not for a reader, and it never
+            told anyone what to do — so it stays out of the copy. */}
         {err && (
-          <p className="text-sm text-foreground/60">
-            Couldn’t load the comparison ({err}). Please try again shortly.
+          <p className="text-sm text-foreground/60" role="alert">
+            Unable to load the comparison. Reload the page, or try again in a
+            few minutes.
           </p>
         )}
 
