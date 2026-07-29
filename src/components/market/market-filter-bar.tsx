@@ -104,13 +104,19 @@ export function MarketFilterBar({
 
   return (
     <div className="flex items-center gap-3 bg-[#faf7f2] dark:bg-surface px-5 py-3.5">
-      <input
-        className="flex-1 min-w-0 rounded-full border border-separator bg-transparent px-4 py-2 text-base sm:text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-[#5a4128]/50 transition-colors"
-        placeholder={searchPlaceholder}
-        type="text"
-        value={search}
-        onChange={(e) => onSearch(e.target.value)}
-      />
+      {/* The visible cue is the placeholder, which disappears on input and is
+          never read as a name by assistive tech — so the label is carried
+          separately and hidden. Same shape as the companies-page search. */}
+      <label className="flex-1 min-w-0">
+        <span className="sr-only">Search dealings</span>
+        <input
+          className="w-full rounded-full border border-separator bg-transparent px-4 py-2 text-base sm:text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-[#5a4128]/50 transition-colors"
+          placeholder={searchPlaceholder}
+          type="text"
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+        />
+      </label>
       {searchStatus && <div className="shrink-0">{searchStatus}</div>}
 
       {/* Filters live in a drawer at every width now (search stays inline). The
