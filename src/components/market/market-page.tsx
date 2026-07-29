@@ -1448,57 +1448,65 @@ export function MarketPage<W>({
                       top: `${64 + (filterBarHeight || 0)}px`,
                     }}
                   >
-                    <button
-                      className={`w-full flex items-center justify-between px-6 py-5 hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors bg-[#faf7f2] dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-xl"} ${monthOpen ? "" : "rounded-b-xl"}`}
-                      data-ga-event={
-                        monthGated ? "cta_month_unlock_open" : "toggle_month"
-                      }
-                      data-ga-label={
-                        monthGated
-                          ? `${month.label} ${month.year} · ${month.count}`
-                          : `${month.label} ${month.year}`
-                      }
-                      onClick={() =>
-                        monthGated
-                          ? setUnlockMonth({
-                              label: `${month.label} ${month.year}`,
-                              count: month.count,
-                            })
-                          : toggleMonth(month.key)
-                      }
+                    {/* Two actions share this row: the row itself toggles (or
+                        unlocks) the month, and "View report" opens the recap.
+                        They can't nest — an interactive control inside a
+                        <button> is invalid, and a screen reader folds the inner
+                        label into the outer button's name. So the row action is
+                        a real <button> stretched behind the content, and the
+                        content layer is pointer-transparent except where the
+                        second button opts back in. Both are real buttons, both
+                        are tabbable, both show a focus ring. */}
+                    <div
+                      className={`relative w-full flex items-center justify-between px-6 py-5 bg-[#faf7f2] dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-xl"} ${monthOpen ? "" : "rounded-b-xl"}`}
                     >
-                      <div className="flex items-center gap-3 text-left">
+                      <button
+                        aria-expanded={monthGated ? undefined : monthOpen}
+                        className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-[#ad9479]/40"
+                        data-ga-event={
+                          monthGated ? "cta_month_unlock_open" : "toggle_month"
+                        }
+                        data-ga-label={
+                          monthGated
+                            ? `${month.label} ${month.year} · ${month.count}`
+                            : `${month.label} ${month.year}`
+                        }
+                        onClick={() =>
+                          monthGated
+                            ? setUnlockMonth({
+                                label: `${month.label} ${month.year}`,
+                                count: month.count,
+                              })
+                            : toggleMonth(month.key)
+                        }
+                      >
+                        <span className="sr-only">
+                          {monthGated
+                            ? `Unlock ${month.label} ${month.year}`
+                            : `${month.label} ${month.year}`}
+                        </span>
+                      </button>
+                      <div className="pointer-events-none relative flex items-center gap-3 text-left">
                         <CalendarDaysIcon className="w-5 h-5 text-muted shrink-0" />
                         <div className="text-xl font-semibold">
                           {month.label} {month.year}
                           {hasReport && (
                             <>
                               <span className="mx-2 text-muted">·</span>
-                              <span
-                                className="cursor-pointer text-sm font-medium text-[#5a4128] hover:underline dark:text-[#ad9479]"
+                              <button
+                                className="pointer-events-auto rounded-sm text-sm font-medium text-[#5a4128] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[#5a4128]/40 dark:text-[#ad9479] dark:focus-visible:ring-[#ad9479]/40"
                                 data-ga-event="cta_view_month_report"
                                 data-ga-label={`View report ${monthIso}`}
-                                role="button"
-                                tabIndex={0}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openRecap(monthIso!);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    openRecap(monthIso!);
-                                  }
-                                }}
+                                type="button"
+                                onClick={() => openRecap(monthIso!)}
                               >
-                                View Report
-                              </span>
+                                View report
+                              </button>
                             </>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
+                      <div className="pointer-events-none relative flex items-center gap-3 shrink-0">
                         <span className="text-xs text-muted">
                           {config.isSkipped
                             ? month.skippedCount > 0
@@ -1514,7 +1522,7 @@ export function MarketPage<W>({
                           />
                         )}
                       </div>
-                    </button>
+                    </div>
                   </div>
                   {monthOpen && (
                     <div className="bg-[#faf7f2] dark:bg-surface rounded-b-xl">
@@ -1695,46 +1703,43 @@ export function MarketPage<W>({
                 the same month-unlock modal, minus a count. */}
             {appOnlyMonths.map((r) => (
               <div key={r.month} className="pt-3">
-                <button
-                  className="w-full flex items-center justify-between rounded-xl px-6 py-5 bg-[#faf7f2] transition-colors hover:bg-black/[0.03] dark:bg-surface dark:hover:bg-white/[0.03]"
-                  data-ga-event="cta_month_unlock_open"
-                  data-ga-label={`${monthLabel(r.month)} · app-only`}
-                  onClick={() =>
-                    setUnlockMonth({ label: monthLabel(r.month), count: null })
-                  }
-                >
-                  <div className="flex items-center gap-3 text-left">
+                {/* Same two-action row as the month headers above — see the
+                    note there for why the row action is a stretched button
+                    rather than a wrapper around the recap link. */}
+                <div className="relative w-full flex items-center justify-between rounded-xl px-6 py-5 bg-[#faf7f2] dark:bg-surface">
+                  <button
+                    className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5a4128]/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-[#ad9479]/40"
+                    data-ga-event="cta_month_unlock_open"
+                    data-ga-label={`${monthLabel(r.month)} · app-only`}
+                    onClick={() =>
+                      setUnlockMonth({ label: monthLabel(r.month), count: null })
+                    }
+                  >
+                    <span className="sr-only">
+                      Unlock {monthLabel(r.month)}
+                    </span>
+                  </button>
+                  <div className="pointer-events-none relative flex items-center gap-3 text-left">
                     <CalendarDaysIcon className="w-5 h-5 text-muted shrink-0" />
                     <div className="text-xl font-semibold">
                       {monthLabel(r.month)}
                       <span className="mx-2 text-muted">·</span>
-                      <span
-                        className="cursor-pointer text-sm font-medium text-[#5a4128] hover:underline dark:text-[#ad9479]"
+                      <button
+                        className="pointer-events-auto rounded-sm text-sm font-medium text-[#5a4128] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[#5a4128]/40 dark:text-[#ad9479] dark:focus-visible:ring-[#ad9479]/40"
                         data-ga-event="cta_view_month_report"
                         data-ga-label={`View report ${r.month}`}
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openRecap(r.month);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            openRecap(r.month);
-                          }
-                        }}
+                        type="button"
+                        onClick={() => openRecap(r.month)}
                       >
-                        View Report
-                      </span>
+                        View report
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="pointer-events-none relative flex items-center gap-3 shrink-0">
                     <span className="text-xs text-muted">In the app</span>
                     <LockClosedIcon className="w-4 h-4 text-muted shrink-0" />
                   </div>
-                </button>
+                </div>
               </div>
             ))}
           </div>
