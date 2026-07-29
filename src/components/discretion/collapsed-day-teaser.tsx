@@ -250,7 +250,7 @@ export function CollapsedDayTeaser<W>({
   const cta = (
     <span
       aria-hidden
-      className="hidden shrink-0 items-center gap-1 rounded-full border border-[#5a4128]/25 px-3 py-1 text-[11px] font-medium text-[#5a4128] opacity-0 transition-all duration-200 -translate-x-1 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 sm:inline-flex dark:border-[#ad9479]/25 dark:text-[#ad9479]"
+      className="hidden shrink-0 items-center gap-1 rounded-full border border-[#5a4128]/25 px-3 py-1 text-[11px] font-medium text-[#5a4128] opacity-0 transition-[transform,opacity] duration-200 -translate-x-1 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 sm:inline-flex dark:border-[#ad9479]/25 dark:text-[#ad9479]"
     >
       Full day in the app <span aria-hidden>→</span>
     </span>

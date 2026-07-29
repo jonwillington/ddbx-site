@@ -276,7 +276,7 @@ export function MarketDetailDrawer<W>({
               </Drawer.Description>
 
               <div
-                className={`shrink-0 flex items-center gap-3 px-5 md:px-8 py-4 border-b transition-all duration-200
+                className={`shrink-0 flex items-center gap-3 px-5 md:px-8 py-4 border-b transition-[border-color,box-shadow] duration-200
                 ${
                   scrolled
                     ? "border-black/10 dark:border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.3)]"

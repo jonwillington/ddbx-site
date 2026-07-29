@@ -160,7 +160,7 @@ export function BrokerReviewsPromo({
 
       <span
         ref={buttonRef}
-        className={`mt-4 inline-flex items-center gap-1.5 ${BUTTON_RADIUS} ${BUTTON_FILLED_GROUP} px-4 py-2.5 text-sm font-semibold transition-all duration-500 ease-out ${
+        className={`mt-4 inline-flex items-center gap-1.5 ${BUTTON_RADIUS} ${BUTTON_FILLED_GROUP} px-4 py-2.5 text-sm font-semibold transition-[transform,opacity,background-color] duration-500 ease-out ${
           revealed ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
         }`}
       >

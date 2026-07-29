@@ -44,7 +44,7 @@ export function CookieBanner() {
   return (
     <div
       aria-hidden={!inView}
-      className={`fixed inset-x-0 bottom-4 z-50 hidden md:flex justify-center px-4 pointer-events-none transition-all ease-out ${hasRightSidebar ? "lg:right-80" : ""} ${inView ? "translate-y-0 opacity-100 duration-300" : "translate-y-24 opacity-0 duration-300"}`}
+      className={`fixed inset-x-0 bottom-4 z-50 hidden md:flex justify-center px-4 pointer-events-none transition-[transform,opacity] ease-out ${hasRightSidebar ? "lg:right-80" : ""} ${inView ? "translate-y-0 opacity-100 duration-300" : "translate-y-24 opacity-0 duration-300"}`}
     >
       <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-separator bg-[#f5f0e8]/95 dark:bg-background/95 backdrop-blur-md shadow-lg px-4 py-2 text-xs text-foreground/70">
         <span>We hate this banner as much as you do.</span>

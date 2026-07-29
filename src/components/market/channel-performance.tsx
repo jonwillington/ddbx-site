@@ -530,7 +530,7 @@ function HeroContributorCard({
   return (
     <li>
       <button
-        className="group block w-full rounded-xl border border-hairline bg-white/45 px-3 py-2.5 text-left shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] transition-all hover:border-positive/30 hover:bg-white/70 dark:border-border/70 dark:bg-surface-secondary/35"
+        className="group block w-full rounded-xl border border-hairline bg-white/45 px-3 py-2.5 text-left shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] transition-colors hover:border-positive/30 hover:bg-white/70 dark:border-border/70 dark:bg-surface-secondary/35"
         data-ga-event="cta_channel_open_contributor_explainer"
         data-ga-label={row.ticker}
         type="button"

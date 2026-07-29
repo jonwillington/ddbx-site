@@ -397,7 +397,7 @@ function StickyBuyPanel({
       <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
         <div
           aria-hidden={!showIdentity}
-          className={`grid transition-all duration-300 ease-out ${
+          className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
             showIdentity
               ? "grid-rows-[1fr] opacity-100"
               : "grid-rows-[0fr] opacity-0"

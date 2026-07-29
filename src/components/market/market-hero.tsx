@@ -38,13 +38,13 @@ import { StoreButtons } from "@/components/store-buttons";
  *  renders in this style: the App Store link where one exists (UK, US),
  *  otherwise the explainer is promoted so the row never reads as two equal
  *  ghost buttons. */
-const FILLED_CTA = `inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg`;
+const FILLED_CTA = `inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`;
 
 /** Ghost secondary — same radius and near-black family as the primary, just
  *  turned down. The old brown capsule read as a chip, not a button. A visible
  *  hairline border does the affordance work here: the 7% tint alone dissolved
  *  into the hero's cream wash and read as a disabled chip. */
-const GHOST_CTA = `inline-flex items-center ${BUTTON_RADIUS} ${BUTTON_GHOST} border border-[#1a140d]/[0.18] dark:border-white/20 px-6 py-3 text-base font-semibold backdrop-blur-sm transition-all`;
+const GHOST_CTA = `inline-flex items-center ${BUTTON_RADIUS} ${BUTTON_GHOST} border border-[#1a140d]/[0.18] dark:border-white/20 px-6 py-3 text-base font-semibold backdrop-blur-sm transition-colors`;
 
 type PulsePoint = {
   left: string;
@@ -606,7 +606,7 @@ export function MarketHero({
               <div className="w-[440px] shrink-0">
                 {notifRow}
                 <StoreButtons
-                  buttonClassName={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg`}
+                  buttonClassName={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
                   className="mt-7"
                   gaEvent="cta_hero_download_app"
                   gaLabel="Hero desktop download"
@@ -630,7 +630,7 @@ export function MarketHero({
               {headlineBlock}
               <div className="hidden md:block">
                 <StoreButtons
-                  buttonClassName={`inline-flex items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-all hover:shadow-lg`}
+                  buttonClassName={`inline-flex items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
                   className="items-center sm:flex-row"
                   gaEvent="cta_hero_download_app"
                   gaLabel="Hero compact download"

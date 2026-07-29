@@ -1131,7 +1131,7 @@ export default function DownloadPage({
           {available && data && data.winners.length > 0 ? (
             <Reveal className="mt-12 flex flex-col items-center gap-2.5">
               <StoreButtons
-                buttonClassName={`inline-flex items-center justify-center gap-2.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-7 py-3.5 text-base font-semibold shadow-md transition-all hover:shadow-lg`}
+                buttonClassName={`inline-flex items-center justify-center gap-2.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-7 py-3.5 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
                 gaEvent="cta_download_lp"
                 gaLabel={`${cfg.gaPrefix} winners`}
                 glyphClassName="h-[17px] w-[17px] shrink-0"
