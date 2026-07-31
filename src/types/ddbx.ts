@@ -95,6 +95,13 @@ export interface MarketConfig {
      *  pitfalls), so it stays off until the pipeline reconciles those. See
      *  ddbx-ios-app/investigations/2026-06-14-analyst-data-plan.md. */
     analystTargets: boolean;
+    /** Filing-activity surface: how much the market as a whole is filing,
+     *  against its own recent baseline (GET /api/filing-activity). US-only.
+     *  It rests on EDGAR's daily form index, which gives an authoritative
+     *  market-wide Form 4 count per day; the UK has no equivalent published
+     *  denominator (RNS carries no comparable daily census), so a "quiet for
+     *  the season" claim there would be unfalsifiable. */
+    filingActivity: boolean;
   };
 }
 
@@ -128,6 +135,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       // a reliable block; the rest (incl. the USD-ADR FTSE giants) show the
       // empty state. FX-converting those ADR targets is the next improvement.
       analystTargets: true,
+      filingActivity: false,
     },
   },
   US: {
@@ -179,6 +187,9 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       // US analyst coverage is strong + clean (spike 2026-06-15: 12/15 with a
       // real consensus). First market to surface the `analyst` block.
       analystTargets: true,
+      // US only: EDGAR publishes a day-complete Form 4 index, so "the whole
+      // market filed N today" is a real number rather than an inference.
+      filingActivity: true,
     },
   },
   SE: {
@@ -203,6 +214,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       tweets: false,
       monthlySummary: false,
       analystTargets: false,
+      filingActivity: false,
     },
   },
   NL: {
@@ -227,6 +239,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       tweets: false,
       monthlySummary: false,
       analystTargets: false,
+      filingActivity: false,
     },
   },
   USG: {
@@ -263,6 +276,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       tweets: true,
       monthlySummary: false,
       analystTargets: false,
+      filingActivity: false,
     },
   },
 };
@@ -348,6 +362,25 @@ export interface DirectorSummary {
   company: string;
   age_band?: string;
   tenure_years?: number;
+  /**
+   * Name-variant-tolerant identity for this reporter. `id` is derived from the
+   * filed name, so one person filing under several spellings gets several ids —
+   * Ninety One's founder-CEO appears as "Hendrik du Toit", "Hendrik du Toit and
+   * Kim McFarland" and "Hendrik du Toit / Kim McFarland", i.e. three ids for two
+   * people. Anything that groups or de-duplicates insiders must key on THIS,
+   * not `id`, or it will show one person as three.
+   *
+   * Format: sorted, pipe-delimited `<first-initial>.<surname>` parts, one per
+   * person named in the filing ("h.toit|k.mcfarland"). A joint filing therefore
+   * SHARES a part with each individual's own filings, so membership is set
+   * OVERLAP, not string equality — split on "|" and test for any common part.
+   * Corporate reporters key on their whole normalised name instead.
+   *
+   * Derived by entityKey() in worker/pipeline/accumulation.ts, which is the
+   * canonical definition. Null/absent only for rows predating migration 066
+   * that the backfill hasn't reached; fall back to `id` when it's missing.
+   */
+  entity_key?: string | null;
 }
 
 // DealingCurrency is the *disclosure* currency on a UK-pipeline row: an
@@ -472,6 +505,51 @@ export interface Dealing {
   /** Buy-style signal (contrarian / momentum / neutral). See BuyStyle.
    *  Null/absent when unclassified or not a confirmed open-market buy. */
   buy_style?: BuyStyle | null;
+  /** Position in an ongoing accumulation run. See AccumulationRunInfo.
+   *  Null/absent for a first buy, a sell, or a row stamped before
+   *  migration 066. */
+  accumulation_run?: AccumulationRunInfo | null;
+}
+
+/**
+ * Accumulation run — a sequence of open-market buys by ONE insider in ONE
+ * issuer with no gap longer than 30 days. Introduced 2026-07-30 after Ninety
+ * One's founder-CEO filed six buys in a month and each was independently
+ * triaged, analysed by Opus and pushed, producing six near-identical cards.
+ *
+ * Descriptive, not judgmental. A long run is NOT currently treated as a weaker
+ * (or stronger) signal — no verdict, rating or floor depends on these numbers.
+ * Consumers should render it as context ("4th purchase in a run, £2.1m since
+ * 2 July"), not as a quality score.
+ *
+ * Stamped at triage time and never revised, so the figures are AS OF this
+ * dealing: `n_buys` counts the run's buys up to and including this one and
+ * never grows when later filings arrive.
+ *
+ *  - `seq` / `n_buys`: 1 for the first buy in a run. Equal by construction;
+ *    both are carried because `seq` reads as position and `n_buys` as a count.
+ *  - `analysis_carried_from`: set when this row's analysis was copied from an
+ *    earlier buy in the run rather than generated. Its `summary` is a
+ *    deterministic sentence about this filing; the rest of the analysis
+ *    (thesis, evidence, risks) is the earlier row's company-level case.
+ *    Consumers may want to show "assessment carried forward" rather than imply
+ *    the analysis was freshly written about this trade.
+ */
+export interface AccumulationRunInfo {
+  seq: number;
+  n_buys: number;
+  /** Summed consideration of the run's buys up to and including this one, GBP. */
+  total_gbp: number;
+  /** Trade date of the run's first buy. */
+  first_date: string;
+  /** Dealing id whose analysis this row reuses, or null when freshly analysed. */
+  analysis_carried_from?: string | null;
+  /** Trade date (ISO) of that dealing. Carried explicitly because it is NOT
+   *  `first_date` — the analysis is copied from the run's most recent generated
+   *  analysis, which is usually a later buy than the run's first. Consumers name
+   *  this date in the provenance line, so getting it from `first_date` would put
+   *  a wrong date in front of the reader. Null when nothing was carried. */
+  analysis_carried_from_date?: string | null;
 }
 
 export interface PerformanceRow {
@@ -854,6 +932,206 @@ export interface MonthlySummaryListItem {
  *  a market, newest first. */
 export interface MonthlySummariesResponse {
   summaries: MonthlySummaryListItem[];
+}
+
+// ─── Weekly Wrapped ──────────────────────────────────────────────────────
+//
+// A deterministic, scene-by-scene recap of one week's insider buying, shown
+// from Saturday 00:00 market-time on the dashboard's weekend card. No LLM
+// anywhere in this path — every number and every string is computed.
+//
+// Three surfaces render the same digest (iOS SwiftUI, Android Compose, and
+// the share-card PNG), so the digest is computed once server-side and the
+// display strings ship WITH it. Clients animate from the raw numbers and
+// display the strings; nobody re-derives a total. See
+// ddbx-ios-app/investigations/2026-07-26-weekly-wrapped.md.
+
+/** Which scene a card renders as. Clients switch on this for layout.
+ *
+ *  CONTRACT: consumers MUST skip kinds they don't recognise rather than fail
+ *  the decode. Both mobile clients are hand-mirrored with no CI and can't be
+ *  rolled back once shipped, so this is what lets the server add cards to
+ *  builds already in the field. Adding a kind is back-compatible; changing
+ *  the meaning of an existing one is not. */
+export type WeeklyCardKind =
+  /** Opener: how much buying happened. */
+  | "week_in_numbers"
+  /** Several insiders converged on one issuer. The hero card when present. */
+  | "not_alone"
+  /** Someone bought into a drawdown, off `buy_style`. */
+  | "buying_the_dip"
+  /** The week's largest single purchase. */
+  | "biggest_cheque"
+  /** The week's buys that earned a `significant` rating.
+   *
+   *  Deliberately rating-led rather than "passed all six checks": analysis
+   *  only runs on rows that already cleared triage, so 60-100% of analysed US
+   *  rows and ~45% of UK ones pass the full checklist. A 6/6 count reads as a
+   *  highlight but isn't one. `significant` runs 5-11 a week on UK and 0-17 on
+   *  US, which is a real filter. */
+  | "cleared_the_bar"
+  /** An insider materially grew their own position (US only — needs
+   *  `shares_after`, which UK filings don't carry). */
+  | "grew_their_stake"
+  /** Where the money went, by sector. */
+  | "money_map"
+  /** Closer: the week's standout, plus the share card. */
+  | "finale";
+
+/** Pre-rendered, house-style copy for one card. Written server-side so all
+ *  three surfaces read identically and wording can be tuned without an App
+ *  Store or Play release. Clients own only market vocabulary that's already
+ *  localised (iOS `MarketCopy`); nothing here should fight it. */
+export interface WeeklyCardCopy {
+  /** Short label above the headline ("CHECK 2 OF 6" equivalent). */
+  eyebrow: string;
+  /** The line that lands. One sentence, no em-dashes. */
+  headline: string;
+  /** Optional supporting line beneath. */
+  subhead?: string | null;
+  /** Optional small print (caveats, exclusions). Used by the US opener to
+   *  disclose trimmed filings. */
+  footnote?: string | null;
+}
+
+/** The specific filing a card is about, carried in full so the scene renders
+ *  without a follow-up fetch. Absent on cards about the week as a whole.
+ *
+ *  Deliberately self-contained rather than a `dealing_id` to hydrate: the US
+ *  market has no detail-by-id endpoint (`MARKET_CONFIG.US.endpoints.dealing`
+ *  is undefined), so a client-side hydrate would work on UK and fail on US. */
+export interface WeeklyCardSubject {
+  /** Wire id of the underlying dealing. For deep-linking where the market
+   *  supports it; clients must not depend on being able to resolve it. */
+  dealing_id: string;
+  ticker: string;
+  company: string;
+  insider_name: string;
+  insider_role: string;
+  /** Total consideration in the market's raw wire units (GBP for UK, USD for
+   *  US). Null when the filing carried no price. */
+  value: number | null;
+  disclosed_date: string; // ISO
+  sector_normalized?: SectorNormalized | null;
+}
+
+/** One slice of the sector breakdown on a `money_map` card. */
+export interface WeeklySectorSlice {
+  sector: SectorNormalized;
+  buy_count: number;
+  /** Raw wire units, already trimmed by the outlier defence. */
+  value: number;
+  /** Share of the week's trimmed total, 0-1. */
+  share: number;
+}
+
+/** Raw numbers behind a card. Every field optional: each `kind` populates the
+ *  handful it needs, and clients read only what their scene animates. Kept
+ *  flat (rather than a discriminated union) so the Swift/Kotlin mirrors stay
+ *  trivial and tolerate the server populating new fields. */
+export interface WeeklyCardStats {
+  /** Open-market buys in the week, after filtering. */
+  buy_count?: number;
+  /** Distinct issuers. */
+  company_count?: number;
+  /** Distinct insiders. */
+  insider_count?: number;
+  /** Sum of buy values in raw wire units, AFTER the outlier trim. This is the
+   *  number to display. */
+  total_value?: number;
+  /** Untrimmed sum, for audit. Do not display: on US this is dominated by
+   *  implausible filings (see `excluded_count`). */
+  total_value_raw?: number;
+  /** How many filings the outlier defence removed from the aggregates. When
+   *  > 0 the copy discloses it in `footnote`. */
+  excluded_count?: number;
+  /** Largest single buy, raw wire units. */
+  max_value?: number;
+  /** Median buy, raw wire units. */
+  median_value?: number;
+  /** Trailing-12-week median the week is being judged against, raw wire
+   *  units. Lets a scene say "3× a normal week" without a second call. */
+  baseline_median_value?: number;
+  /** Signed, <= 0. From `BuyStyle.drawdown_from_high_pct`. */
+  drawdown_pct?: number;
+  /** Trailing window the drawdown is measured over, days. */
+  drawdown_window_days?: number;
+  /** Position growth, 0-1 (0.47 = grew the stake by 47%). US only. */
+  stake_increase_pct?: number;
+  /** Distinct insiders in the `not_alone` cluster. */
+  cluster_insider_count?: number;
+  /** Combined value of the cluster's buys, raw wire units. */
+  cluster_value?: number;
+  /** Buys rated `significant` in the week. */
+  significant_count?: number;
+}
+
+/** One reason a card's subject matters, for the finale. Deterministic: every
+ *  one is derived from a signal the deck already computed (cluster size,
+ *  drawdown, value against the trailing baseline, rating), never from the LLM
+ *  analysis prose. A reader is being asked to believe the claim, so it has to
+ *  be something we can show our working for. */
+export interface WeeklyReason {
+  /** Short label, e.g. "THREE BUYERS". */
+  label: string;
+  /** One sentence of evidence, e.g. "Three insiders bought inside five days." */
+  detail: string;
+}
+
+/** One scene in the deck. */
+export interface WeeklyCard {
+  kind: WeeklyCardKind;
+  copy: WeeklyCardCopy;
+  /** The filing this card is about, when it's about one. */
+  subject?: WeeklyCardSubject | null;
+  /** Supporting filings (e.g. the other legs of a cluster). */
+  related?: WeeklyCardSubject[] | null;
+  /** Sector breakdown, `money_map` only. */
+  sectors?: WeeklySectorSlice[] | null;
+  /** Why the subject is worth the reader's attention. `finale` only. */
+  reasons?: WeeklyReason[] | null;
+  /** The subject's existing one-line analysis summary, reused verbatim.
+   *
+   *  This is the only model-written text in the digest, and it costs nothing:
+   *  the analysis was generated and stored when the filing was ingested, so
+   *  the wrapped is reading it rather than commissioning it. The feature's
+   *  "no additional AI spend" constraint is intact.
+   *
+   *  Sits ABOVE the deterministic `reasons`, which are the evidence: prose
+   *  earns attention, the checkable facts underneath earn trust. */
+  narrative?: string | null;
+  /** Every issuer bought in the week, most-bought first. `week_in_numbers`
+   *  only, where the clients render the logos as the opening visual. Tickers
+   *  rather than full subjects: the scene needs a logo and nothing else, and a
+   *  50-issuer week shouldn't carry 50 subject objects. */
+  tickers?: string[] | null;
+  stats?: WeeklyCardStats | null;
+}
+
+/** One week's recap for one market. Cards are pre-ordered: render them in
+ *  array order and the deck reads correctly.
+ *
+ *  A week that doesn't clear the floor produces NO digest at all rather than
+ *  a thin one — the endpoint 404s and the dashboard keeps its plain weekend
+ *  card. Never ship a wrapped that can't fill itself. */
+export interface WeeklyDigest {
+  market: Market;
+  /** ISO date of the week's Monday. Primary key with `market`. */
+  week_start: string;
+  /** ISO date of the week's Friday. */
+  week_end: string;
+  cards: WeeklyCard[];
+  /** Absolute URL of the shareable PNG for this week. */
+  share_image_url?: string | null;
+  /** Digest schema version, for client-side handling of future reshapes. */
+  version: number;
+  created_at: string; // ISO datetime UTC
+}
+
+/** Response shape for GET /api/weekly-digest. `digest` is null when the week
+ *  didn't qualify, which clients treat as "no wrapped this week". */
+export interface WeeklyDigestResponse {
+  digest: WeeklyDigest | null;
 }
 
 export interface PortfolioPoint {
@@ -1632,6 +1910,12 @@ export interface GovDealing {
    *  this is the user-facing label (the triage verdict is pipeline-internal).
    *  Matches `analysis.rating` when a narrative analysis exists. */
   rating?: Rating;
+
+  /** The continuous conviction score behind `rating` (govRating's 0–~8 scale:
+   *  >=5 significant, >=3 noteworthy). Exposed — not discarded — so consumers can
+   *  rank the strongest few WITHIN a tier and lead with them, rather than sorting
+   *  on the 4-bucket label alone. Present only on rated signal rows. */
+  rating_score?: number;
 
   /** Plain-English breakdown of WHY this row got its verdict/rating, derived
    *  from the same deterministic factors the scorers use (jurisdiction, owner,
