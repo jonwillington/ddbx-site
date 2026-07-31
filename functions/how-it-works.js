@@ -1,12 +1,21 @@
 // Crawler pre-render for the methodology page: ddbx.uk/how-it-works,
 // ddbx.us/how-it-works.
 //
-// Unlike every other Function in this directory, this one fetches nothing. The
-// page is entirely editorial — six checks, six pipeline stages, four ratings —
-// and all of it is static text the SPA holds in src/lib/methodology.ts. So the
-// pre-render's job is only to make sure a crawler that doesn't run JS finds the
-// argument rather than an empty <div id="root">, which is what it found for the
-// whole time this content lived inside a modal.
+// Almost all of this page is editorial — six checks, six pipeline stages, four
+// ratings — and all of that is static text the SPA holds in
+// src/lib/methodology.ts. So the pre-render's job is mostly to make sure a
+// crawler that doesn't run JS finds the argument rather than an empty
+// <div id="root">, which is what it found for the whole time this content lived
+// inside a modal.
+//
+// The one fetch is /api/coverage, which is what the page's volume section
+// renders. It is here rather than hard-coded for the same reason the React side
+// fetches it: a number typed into a file is wrong within a week. The endpoint is
+// edge-cached for six hours and `fetchJson` returns null on any failure, so the
+// worst case is a crawler seeing the page without its numbers rather than a
+// crawler seeing numbers the database stopped agreeing with. The parity rule
+// applies as everywhere else in this directory: what the crawler is told here is
+// visible text on the hydrated page.
 //
 // The duplication with methodology.ts is the same deliberate trade the rest of
 // this directory makes: Pages Functions are bundled separately from the Vite app
@@ -25,8 +34,45 @@
 // <head>: title, description, canonical, the preview-host noindex. Nothing else
 // sets them.
 
-import { apexHost, esc, noindex, page, renderInto } from "../shared/prerender.js";
+import {
+  apexHost,
+  esc,
+  fetchJson,
+  noindex,
+  page,
+  renderInto,
+} from "../shared/prerender.js";
 import { brandTitle, isProductionHost, marketIdForPath } from "../shared/seo.js";
+
+const API_BASE = "https://api.ddbx.uk/api";
+
+/** Feed display names AND their caveats. Mirrors FEEDS in src/lib/coverage.ts —
+ *  the same duplication trade the rest of this file makes, and for the same
+ *  reason.
+ *
+ *  The notes are not optional here. An earlier version of this Function carried
+ *  the numbers and left the caveats to hydration, which meant the crawled page
+ *  said "Netherlands. 11,908 records" with nothing to say that those reach back
+ *  to 2006 because of a one-off bulk load. That is the single biggest figure in
+ *  the list and this is the surface most likely to be quoted verbatim by a
+ *  search snippet, so dropping the caveat broke the parity rule in precisely
+ *  the direction that flatters us. */
+const FEEDS = {
+  UK: { name: "United Kingdom" },
+  US: { name: "United States" },
+  SE: { name: "Sweden" },
+  NL: {
+    name: "Netherlands",
+    note: "Seeded with the register’s own back history, so these records reach far further back than the live watch does.",
+  },
+  USG: {
+    name: "US Congress",
+    note: "Amount bands rather than exact values, and sorted by fixed rules rather than by a model.",
+  },
+};
+const FEED_ORDER = ["UK", "US", "SE", "NL", "USG"];
+
+const num = (n) => Number(n ?? 0).toLocaleString("en-GB");
 
 /** Per-market vocabulary. Mirrors MARKET_COPY in src/lib/markets/market-copy.ts
  *  for the two hosts that publish this page. */
@@ -122,10 +168,75 @@ const list = (items, render) =>
     .map(render)
     .join("")}</ol>`;
 
-function prerender(copy) {
+/** The volume section, or nothing.
+ *
+ *  Omitted entirely when the fetch failed. A crawler served "0 disclosure
+ *  records" would be told something false about the corpus, and false is
+ *  strictly worse than absent. */
+function coverageSection(coverage) {
+  if (!coverage?.totals) return "";
+
+  const feeds = FEED_ORDER.map((id) =>
+    (coverage.markets ?? []).find((m) => m.market === id),
+  ).filter(Boolean);
+
+  return `<h2 style="font-size:17px;margin:32px 0 10px">What we’ve read so far</h2>
+  <p style="font-size:14px;line-height:1.7;max-width:62ch">Five disclosure feeds, each read in its own format: ${num(
+    coverage.totals.disclosures,
+  )} disclosure records, ${num(
+    coverage.totals.triage_decisions,
+  )} first-pass sorting decisions (${num(
+    coverage.totals.triage_llm,
+  )} of them made by a model, the rest by fixed rules) and ${num(
+    coverage.totals.analyses,
+  )} full written analyses. The price history behind every return on the site runs to ${num(
+    coverage.prices?.observations,
+  )} daily closes across ${num(
+    coverage.prices?.tickers,
+  )} tickers. A disclosure record is one row as its regulator filed it, not one trade: the feeds are not like-for-like and the total is not a count of purchases.</p>
+  <ul style="font-size:14px;line-height:1.7;padding-left:18px">${feeds
+    .map((f) => {
+      const feed = FEEDS[f.market] ?? { name: f.market };
+
+      return `<li><strong>${esc(feed.name)}.</strong> ${num(
+        f.disclosures,
+      )} records, ${num(f.insiders)} filers, ${num(f.issuers)} issuers.${
+        feed.note ? ` ${esc(feed.note)}` : ""
+      }</li>`;
+    })
+    .join("")}</ul>`;
+}
+
+/** How much of the corpus has a measured outcome, and at which horizons.
+ *
+ *  The least flattering paragraph on the page, which is why it is pre-rendered
+ *  rather than left to hydration: the visible claim and the crawled claim have
+ *  to be the same claim, and this is the one a reader is most entitled to. */
+function measuredSection(coverage) {
+  const horizons = (coverage?.outcomes?.horizons ?? []).filter(
+    (h) => h.events > 0,
+  );
+
+  if (!horizons.length) return "";
+
+  const split = horizons
+    .map((h) => `${num(h.events)} at ${h.horizon_days} days`)
+    .join(", ");
+
+  return `<h2 style="font-size:17px;margin:32px 0 10px">What we can measure, and how much of it there is</h2>
+  <p style="font-size:14px;line-height:1.7;max-width:62ch">Rated buys are followed from their disclosure-day close and scored against the index, both legs taken from the same price series and stored beside a benchmark over the identical window. It runs on the two rated markets, the United Kingdom and the United States, and has measured ${num(
+    coverage.outcomes.events,
+  )} buys between them. The count thins out fast as the horizon lengthens: ${esc(
+    split,
+  )}. The thirty-day evidence is real; the one-year evidence barely exists yet, which is why performance figures elsewhere on the site are described as a small sample rather than as a track record.</p>`;
+}
+
+function prerender(copy, coverage) {
   return page(
     `<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 16px">How we rate ${esc(copy.possessive)} share purchase</h1>
-  <p style="font-size:16px;line-height:1.6;color:#4a4034;max-width:62ch">Several hundred ${esc(copy.insiderTermPlural)} disclose share dealings every month, and almost none of them mean anything. This is what we do with them — how a filing becomes a rating, what the six checks behind that rating actually test, and where the method stops.</p>
+  <p style="font-size:16px;line-height:1.6;color:#4a4034;max-width:62ch">Several hundred ${esc(copy.insiderTermPlural)} disclose share dealings every month, and almost none of them mean anything. This is what we do with them — how a filing becomes a rating, what the six checks behind that rating actually test, how much we have put through it, and where the method stops.</p>
+
+  ${coverageSection(coverage)}
 
   <h2 style="font-size:17px;margin:32px 0 10px">What happens to a disclosure</h2>
   ${list(
@@ -149,6 +260,8 @@ function prerender(copy) {
 
   <h2 style="font-size:17px;margin:32px 0 10px">Where the filings come from</h2>
   <p style="font-size:14px;line-height:1.7;max-width:62ch">We read ${esc(copy.source)}, covering companies listed on ${esc(copy.exchange)}, filed by the people local rules call ${esc(copy.insiderTermPlural)} — in their own format, never a third party’s summary of them, checked every fifteen minutes through the trading day.</p>
+
+  ${measuredSection(coverage)}
 
   <h2 style="font-size:17px;margin:32px 0 10px">Where the method stops</h2>
   <p style="font-size:14px;line-height:1.7;max-width:62ch">A rating describes how a purchase reads against six specific tests. It is not advice, not a price target, and carries no view on whether the shares are worth buying today. The checks are judgements and can be marked wrongly in either direction; the pipeline only sees what gets disclosed; and the checklist itself is adjusted as the record builds, so a filing’s rating can change after publication.</p>
@@ -176,11 +289,15 @@ export async function onRequestGet(context) {
 
   const canonical = `https://${host}/how-it-works`;
 
+  // Six hours, matching the endpoint's own max-age. Null on any failure, which
+  // drops the two counted sections rather than failing the pre-render.
+  const coverage = await fetchJson(`${API_BASE}/coverage`, 21600);
+
   return renderInto(shell, {
     title: brandTitle(copy.titleRest),
     description: copy.description,
     canonical,
     breadcrumbs: [{ name: "How it works", item: canonical }],
-    body: prerender(copy),
+    body: prerender(copy, coverage),
   });
 }

@@ -34,10 +34,10 @@ export interface MarketConfig {
   name: string;
   /** Region groups markets that share a wire format and pipeline shape.
    *  "UK" and "US" are one-market regions; "EU" covers all MAR-jurisdiction
-   *  members and shares the EuDealing wire format. "GOV" is US government-
+   *  members and shares the EuDealing wire format. "USG" is US government-
    *  insider (congressional STOCK Act) trading — same US equity universe but a
    *  different insider class, its own GovDealing wire format and pipeline. */
-  region: "UK" | "US" | "EU" | "GOV";
+  region: "UK" | "US" | "EU" | "USG";
   /** Primary listing currency (ISO 4217). Note: for UK this is the canonical
    *  product currency; an LSE-listed company can still disclose in EUR/USD —
    *  see the comment block on Dealing.currency below. */
@@ -245,7 +245,7 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
   USG: {
     code: "USG",
     name: "US Congress (House)",
-    region: "GOV",
+    region: "USG",
     currency: "USD",
     wireType: "GovDealing",
     directorIdKind: "bioguide",
@@ -2123,4 +2123,120 @@ export interface BrokerOffer {
   field_sources?: Record<string, string>;
   /** Editorial confidence/caveat notes (not shown to users). */
   confidence_notes?: string | null;
+}
+
+/* ===========================================================================
+ * Coverage — what the pipeline has actually ingested, counted from the tables
+ * ===========================================================================
+ *
+ * Served by GET /api/coverage and read by the published methodology page. It
+ * exists because the alternative is a human typing "over 20,000 filings" into
+ * a marketing paragraph and nobody re-typing it for a year. Every field here
+ * is a COUNT() over a real table at request time, so the page can only ever
+ * claim what the database can show.
+ *
+ * The naming is deliberately unflattering. `disclosures` is rows, not trades:
+ * a US Form 4 arrives as one row per transaction line and an EU notification
+ * likewise, a congressional row is an amount band, and the UK table is a
+ * purchase as filed rather than a confirmed on-market buy (that confirmation
+ * is `open_market_buys`, a flag set later). Those are not like-for-like, they
+ * must not be summed and presented as "trades", and the field name is the
+ * first line of defence against a consumer doing exactly that.
+ */
+
+/** A feed with its own regulator, format and filer vocabulary. `USG` is the
+ *  US House PTR corpus, which is a disclosure regime rather than a market. */
+export type CoverageMarketId = "UK" | "US" | "NL" | "SE" | "USG";
+
+export interface CoverageMarket {
+  market: CoverageMarketId;
+  /** Rows in this feed's disclosure table. See the header: rows, not trades. */
+  disclosures: number;
+  /** The subset the classifier marked as a genuine open-market buy.
+   *
+   *  Read this as a floor, not as a partition. The flag is set by a classifier
+   *  that runs after ingest, so a row it has not reached counts here exactly
+   *  like a row it assessed and rejected. `disclosures - open_market_buys` is
+   *  therefore "not confirmed on-market", which is not the same claim as "not
+   *  an open-market buy", and no consumer should render it as the latter.
+   *  Nullable for a feed carrying no classifier at all, which none is today. */
+  open_market_buys: number | null;
+  /** Distinct filers, keyed on whatever stable identity the feed has: a
+   *  director id (UK), a reporting CIK (US), a bioguide or filer name (USG),
+   *  a PDMR name (NL/SE, which publish no cross-border id). */
+  insiders: number;
+  /** Distinct issuers, on the same basis: ticker (UK), issuer CIK (US), LEI
+   *  (NL/SE), ticker (USG). */
+  issuers: number;
+  /** The span of `disclosed_date` values held, which is NOT the same as how
+   *  long the feed has been watched. NL was seeded by a historical bulk load
+   *  and so reports 2006 here despite live monitoring starting in 2026; UK, US
+   *  and SE report their real monitoring start because nothing was backfilled.
+   *  Label this as records held, never as "tracking since". Trade dates are
+   *  not exposed at all: they widen the same window further with no way for a
+   *  consumer to tell backfill from coverage. */
+  first_disclosed: string | null;
+  last_disclosed: string | null;
+}
+
+/** Computed post-event returns at one horizon. */
+export interface CoverageHorizon {
+  horizon_days: number;
+  /** Distinct events measured, not rows: an event is counted once even though
+   *  it is stored twice (trade-anchored and disclosure-anchored). */
+  events: number;
+}
+
+export interface CoverageResponse {
+  /** ISO timestamp the counts were taken. Cached, so this can lag the clock. */
+  generated_at: string;
+  markets: CoverageMarket[];
+  totals: {
+    /** Sum of every feed's rows. Rows, not trades. */
+    disclosures: number;
+    /** First-pass classifier decisions written across all feeds. */
+    triage_decisions: number;
+    /** Of those, the ones an LLM made. The rest are deterministic rules, which
+     *  is the whole of the congressional feed today. */
+    triage_llm: number;
+    /** Full written analyses. */
+    analyses: number;
+    /** Distinct filers and issuers summed across feeds, NOT deduplicated
+     *  across them: one person filing in two markets counts twice. */
+    insiders: number;
+    issuers: number;
+    /** Logged pipeline executions since the run ledger was added. */
+    pipeline_runs: number;
+  };
+  /** The daily-close panel every return on the site is computed from. */
+  prices: {
+    observations: number;
+    tickers: number;
+    first_date: string | null;
+    last_date: string | null;
+  };
+  /** Post-event returns, benchmark-adjusted (the `outcomes` table). Small
+   *  relative to `totals.disclosures` and heavily weighted to the shortest
+   *  horizon — consumers should show the horizon split rather than the
+   *  headline, which on its own implies a depth of evidence we don't have. */
+  outcomes: {
+    rows: number;
+    events: number;
+    horizons: CoverageHorizon[];
+  };
+  /** The offline SEC panel the checks are calibrated against. Isolated in its
+   *  own database, loaded in bulk rather than continuously, and never served
+   *  to users as content. Null when that database is unreachable, so a page
+   *  can omit the section instead of printing zeroes. */
+  research: {
+    filings: number;
+    transactions: number;
+    insiders: number;
+    issuers: number;
+    price_bars: number;
+    price_tickers: number;
+    outcomes: number;
+    first_filing: string | null;
+    last_filing: string | null;
+  } | null;
 }

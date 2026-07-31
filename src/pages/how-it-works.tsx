@@ -28,18 +28,29 @@
  *  shared/seo.js), and the SPA branch below only ever renders on localhost.
  */
 import type { GlossaryEntry } from "../../shared/glossary";
+import type { Rating } from "@/types/ddbx";
 
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import { entryBySlug, learnPath, ownerForHost } from "../../shared/glossary.js";
 
-import { PipelineDiagram } from "@/components/how-it-works/pipeline-diagram";
+import {
+  CoverageTiles,
+  FeedGrid,
+  OutcomeCoverage,
+} from "@/components/how-it-works/coverage-panel";
+import {
+  PipelineDiagram,
+  StepNode,
+} from "@/components/how-it-works/pipeline-diagram";
+import { RatingBadge } from "@/components/rating-badge";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoSection } from "@/components/seo/section";
 import DefaultLayout from "@/layouts/default";
+import { approx, count, useCoverage } from "@/lib/coverage";
 import { marketCopyFor } from "@/lib/markets/market-copy";
 import { marketForPath } from "@/lib/markets/registry";
 import {
@@ -54,6 +65,29 @@ const RULE = "border-hairline dark:border-separator";
 const DIVIDE = "divide-black/[0.06] dark:divide-white/[0.08]";
 const FOOTNOTE =
   "Information only, not investment advice. A rating describes how a purchase reads against our checks — it is not a forecast, and past disclosures are not a guide to what any share will do next.";
+
+/** The numbered run, in reading order. Kept as data because it drives two
+ *  things that have to agree: the contents strip at the top and the `NN / 07`
+ *  counter on each section rule. Hand-numbering those was how the page would
+ *  eventually end up with two section fives. */
+const CONTENTS = [
+  { id: "coverage", label: "What we’ve read" },
+  { id: "pipeline", label: "The pipeline" },
+  { id: "checks", label: "The checks" },
+  { id: "ratings", label: "The ratings" },
+  { id: "sources", label: "The sources" },
+  { id: "measured", label: "What we can measure" },
+  { id: "limits", label: "Where it stops" },
+];
+
+/** 1-based position of a section in the run. Returns undefined for an id that
+ *  isn't in CONTENTS, so a typo renders no counter at all rather than the
+ *  silently wrong "00 / 07" that a bare `indexOf + 1` produces. */
+function stepOf(id: string): number | undefined {
+  const i = CONTENTS.findIndex((c) => c.id === id);
+
+  return i === -1 ? undefined : i + 1;
+}
 
 /** Glossary entries a reader of this page plausibly wants next, in the order
  *  they'd want them. Filtered to the host's own entries at render — linking to
@@ -76,6 +110,10 @@ export default function HowItWorksPage() {
   // The band and the rail are a UK/US choice — those are the two app listings —
   // so anyone who reaches this on a third host is offered the UK app.
   const appMarketId = market.id === "us" ? "us" : "uk";
+
+  // Snapshot first, live counts when they land. Never a loading state: the
+  // fallback is a dated measurement, so there is nothing to wait for.
+  const { data: coverage, source } = useCoverage();
 
   const related = useMemo(() => {
     const owner = ownerForHost(hostname ?? "");
@@ -103,7 +141,7 @@ export default function HowItWorksPage() {
         }}
         eyebrow={EYEBROW}
         footnote={FOOTNOTE}
-        standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is what we do with them — how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks behind that rating actually test, and where the method stops.`}
+        standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is what we do with them — how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks behind that rating actually test, how much we have put through it, and where the method stops. Every figure below is counted from the database rather than written into the page.`}
         standfirstSize="lede"
         title={`How we rate ${
           copy.insiderTerm === "director" ? "a director’s" : "an insider’s"
@@ -122,25 +160,103 @@ export default function HowItWorksPage() {
           almost entirely in the sorting.
         </p>
 
+        {/* The contents strip. Every one of these sections has carried an `id`
+            and a scroll margin since the page shipped and nothing has ever
+            linked to them, so a reader arriving for "what are the six checks"
+            has had to scroll past the pipeline to find out.
+
+            Deliberately NOT sticky. The sticky version wrapped to three or four
+            rows of chips on a phone, which put its own bottom edge below the
+            96px scroll margin the sections reserve: clicking a link scrolled
+            the target underneath the bar it was clicked from, and the page
+            appeared not to respond. A contents list at the top of a document is
+            the ordinary shape and has none of that risk. */}
+        <nav
+          aria-label="On this page"
+          className={`mt-8 flex flex-wrap gap-1.5 border-t ${RULE} pt-5`}
+        >
+          {CONTENTS.map((c, i) => (
+            <a
+              key={c.id}
+              className={`rounded-full border border-hairline bg-sheet px-2.5 py-1 text-[11.5px] leading-4 text-foreground/70 transition-colors hover:border-brand-brown/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-separator dark:bg-surface dark:hover:border-white/20`}
+              href={`#${c.id}`}
+            >
+              <span className="mr-1.5 font-mono text-[10px] tabular-nums text-foreground/40">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              {c.label}
+            </a>
+          ))}
+        </nav>
+
+        <SeoSection
+          aside="Counted from the database, not written into the page."
+          id="coverage"
+          index={stepOf("coverage")}
+          title="What we’ve read so far"
+          total={CONTENTS.length}
+        >
+          <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+            A method is only worth what it has been applied to, so here is the
+            size of the thing. Five disclosure feeds, each read in its own
+            format: {count(coverage.totals.disclosures)} disclosure records,{" "}
+            {count(coverage.totals.triage_decisions)} first-pass sorting
+            decisions, of which {count(coverage.totals.triage_llm)} were made by
+            a model and the rest by fixed rules, and{" "}
+            {count(coverage.totals.analyses)} full written analyses. The price
+            history behind every chart and every return on the site runs to{" "}
+            {count(coverage.prices.observations)} daily closes across{" "}
+            {count(coverage.prices.tickers)} tickers, back to{" "}
+            {coverage.prices.first_date?.slice(0, 4) ?? "2016"}.
+          </p>
+
+          <CoverageTiles data={coverage} source={source} />
+          <FeedGrid data={coverage} />
+
+          <p className="mt-7 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+            The feeds are not equivalent and the grid is laid out so you can see
+            that rather than take our word for it. A US, Swedish or Dutch row is
+            a single transaction line from a filing that may hold several; a
+            congressional row is an amount band rather than a price, sorted by
+            fixed rules rather than by a model. The open-market count on each
+            card is a floor: it counts the rows a classifier has confirmed were
+            bought on the market, so the remainder is “not confirmed” rather
+            than “not a buy”.
+          </p>
+        </SeoSection>
+
         <SeoSection
           aside="Filing to rating, in six stages."
           id="pipeline"
+          index={stepOf("pipeline")}
           title="What happens to a disclosure"
+          total={CONTENTS.length}
         >
           <PipelineDiagram />
 
-          <ol className="mt-9 space-y-7">
+          {/* The diagram numbers its stages in badges; the prose underneath
+              used to number them again in a different visual language, inline
+              in the heading, which read as two unrelated lists about the same
+              six things. Same badge, ruled rows, one sequence. */}
+          <ol className={`mt-9 border-t ${RULE}`}>
             {PIPELINE.map((stage, i) => (
-              <li key={stage.id}>
-                <h3 className="text-[15px] font-semibold leading-[1.35] tracking-[-0.01em] text-foreground">
-                  <span className="mr-2 font-mono text-[12px] font-semibold text-brand-brown dark:text-brand-tan">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  {stage.title}
-                </h3>
-                <p className="mt-2 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-                  {stage.body}
-                </p>
+              <li key={stage.id} className={`border-b ${RULE} py-5`}>
+                <div className="flex gap-4">
+                  <StepNode index={i} />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <h3 className="text-[16px] font-semibold leading-[1.35] tracking-[-0.015em] text-foreground">
+                        {stage.title}
+                      </h3>
+                      <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-brand-brown dark:text-brand-tan">
+                        {stage.meta}
+                      </p>
+                    </div>
+                    <p className="mt-2.5 max-w-[62ch] text-[15px] leading-[1.7] text-foreground/80">
+                      {stage.body}
+                    </p>
+                  </div>
+                </div>
               </li>
             ))}
           </ol>
@@ -149,7 +265,9 @@ export default function HowItWorksPage() {
         <SeoSection
           aside="Applied in this order, to every purchase that reaches the read."
           id="checks"
+          index={stepOf("checks")}
           title={`The ${CHECK_COUNT_WORD} checks`}
+          total={CONTENTS.length}
         >
           <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
             Each check is a yes or no. They are not weighted against each other
@@ -163,8 +281,8 @@ export default function HowItWorksPage() {
             {CHECKS.map((check, i) => (
               <li key={check.key} className={`border-b ${RULE} py-6`}>
                 <div className="flex gap-4">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-brand-brown/25 bg-sheet font-mono text-[10.5px] font-semibold text-brand-brown dark:border-brand-tan/30 dark:bg-surface dark:text-brand-tan">
-                    {i + 1}
+                  <span className="mt-0.5">
+                    <StepNode index={i} />
                   </span>
                   <div className="min-w-0">
                     <h3 className="text-[16px] font-semibold leading-[1.35] tracking-[-0.015em] text-foreground">
@@ -189,16 +307,23 @@ export default function HowItWorksPage() {
         <SeoSection
           aside="What the label on a filing is telling you."
           id="ratings"
+          index={stepOf("ratings")}
           title="The four ratings"
+          total={CONTENTS.length}
         >
+          {/* The real badge, not a mono word set to look like one. These are
+              the four objects a reader will meet on every filing in the app,
+              and a page that describes them in a different visual language
+              than the product uses has made the reader learn them twice. The
+              taper in size and fill is itself part of the explanation. */}
           <dl className={`border-t ${RULE}`}>
             {RATING_SCALE.map((r) => (
               <div
                 key={r.rating}
-                className={`grid gap-x-6 gap-y-1.5 border-b ${RULE} py-4 sm:grid-cols-[9rem_minmax(0,1fr)]`}
+                className={`grid gap-x-6 gap-y-2 border-b ${RULE} py-4 sm:grid-cols-[9rem_minmax(0,1fr)]`}
               >
-                <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-brown dark:text-brand-tan">
-                  {r.rating}
+                <dt className="flex items-start">
+                  <RatingBadge rating={r.rating as Rating} />
                 </dt>
                 <dd className="max-w-[58ch] text-[14.5px] leading-[1.65] text-foreground/80">
                   {r.meaning}
@@ -211,7 +336,9 @@ export default function HowItWorksPage() {
         <SeoSection
           aside={`Built for ${copy.regionName}.`}
           id="sources"
+          index={stepOf("sources")}
           title="Where the filings come from"
+          total={CONTENTS.length}
         >
           {/* The exchange is left to the table below rather than named here as
               well: for the UK `regulatorFullName` already contains the venue
@@ -247,23 +374,86 @@ export default function HowItWorksPage() {
         </SeoSection>
 
         <SeoSection
+          aside="The evidence behind the last stage, at its real size."
+          id="measured"
+          index={stepOf("measured")}
+          title="What we can measure, and how much of it there is"
+          total={CONTENTS.length}
+        >
+          <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+            The last stage of the pipeline follows a rated buy and scores it
+            against the index, which is the only way a rating ever gets checked
+            rather than argued about. It runs on the two rated markets, the
+            United Kingdom and the United States, and has measured{" "}
+            {count(coverage.outcomes.events)} buys between them. The count thins
+            out fast as the horizon lengthens:
+          </p>
+
+          <OutcomeCoverage data={coverage} />
+
+          <p className="mt-5 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+            Both legs of every one of those returns are market closes off the
+            same price series, entry and exit, rather than the price the insider
+            filed — a ratio of two closes is unit-free, which removes an entire
+            class of error around splits, currency and depositary ratios. Each
+            is stored beside its benchmark over the identical window, so what we
+            keep is the difference against the market rather than the raw
+            direction. Rows that look wrong are flagged and kept, never dropped,
+            because quietly discarding the ugly ones biases a sample in exactly
+            the direction that flatters us.
+          </p>
+
+          <p className="mt-4 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+            Read the shape of that table honestly and it says the thirty-day
+            evidence is real and the one-year evidence barely exists yet. That
+            is the whole reason performance figures elsewhere on the site are
+            described as a small sample rather than as a track record.
+          </p>
+
+          {/* Rendered only when the research database answered. The `research`
+              field is nullable precisely so this section can be absent rather
+              than claim "0 insider transactions from 0 filings", which is the
+              one thing worse than saying nothing. */}
+          {coverage.research ? (
+            <p className="mt-4 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+              The checks themselves are tuned against a much larger offline
+              panel: {approx(coverage.research.transactions)} insider
+              transactions from {approx(coverage.research.filings)} US Form 4
+              filings since {coverage.research.first_filing?.slice(0, 4)}, held
+              in a separate database and never served as content here. It is US
+              filings because that is where a corpus of this size can be had in
+              bulk; what it calibrates is the shape of the checks, which are the
+              same six in every market. A change to a check has to survive that
+              panel before it ships.
+            </p>
+          ) : null}
+        </SeoSection>
+
+        <SeoSection
           aside="The parts worth knowing before you lean on any of it."
           id="limits"
+          index={stepOf("limits")}
           title="Where the method stops"
+          total={CONTENTS.length}
         >
-          <ul className="space-y-4">
+          {/* Cards rather than a bulleted list. Five caveats set as run-in bold
+              paragraphs is the shape of small print a reader skims past, and
+              these are the paragraphs on the page most worth not skimming. */}
+          <div className="grid gap-3 sm:grid-cols-2">
             {LIMITS.map((limit) => (
-              <li
+              <div
                 key={limit.title}
-                className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80"
+                className="rounded-xl border border-hairline bg-sheet px-4 py-3.5 dark:border-white/[0.07] dark:bg-surface"
               >
-                <span className="font-semibold text-foreground">
-                  {limit.title}.
-                </span>{" "}
-                {limit.body}
-              </li>
+                <h3 className="text-[14px] font-semibold leading-[1.35] tracking-[-0.01em] text-foreground">
+                  {limit.title}
+                </h3>
+                <p className="mt-2 text-[13.5px] leading-[1.6] text-foreground/65">
+                  {limit.body}
+                </p>
+              </div>
             ))}
-          </ul>
+          </div>
         </SeoSection>
 
         {related.length > 0 ? (
@@ -315,7 +505,7 @@ const LIMITS: { title: string; body: string }[] = [
   },
   {
     title: "The record behind it is still short",
-    body: "Ratings are scored against what the shares did next, but the stored history only goes back so far, so the feedback loop is thinner than it will be. Treat any performance figure on the site as a description of a small sample.",
+    body: "Ratings are scored against what the shares did next, but that scoring covers a fraction of what we hold and is concentrated at thirty days. The section above shows the exact shape of it. Treat any performance figure on the site as a description of a small sample.",
   },
   {
     title: "The checklist moves",

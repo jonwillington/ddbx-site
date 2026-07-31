@@ -121,7 +121,7 @@ export function PipelineDiagram() {
                 <span
                   className={`h-0.5 w-px ${first ? "bg-transparent" : "bg-hairline dark:bg-separator"}`}
                 />
-                <Node index={i} />
+                <StepNode index={i} />
                 {!last && (
                   <span className="w-px flex-1 bg-hairline dark:bg-separator" />
                 )}
@@ -142,7 +142,7 @@ export function PipelineDiagram() {
                   <span className="ddbx-flow-pulse absolute left-1/2 top-1/2 h-1 w-1 -translate-y-1/2 rounded-full bg-brand-brown/60 dark:bg-brand-amber/70" />
                 )}
                 <span className="relative">
-                  <Node index={i} />
+                  <StepNode index={i} />
                 </span>
               </div>
 
@@ -169,8 +169,14 @@ export function PipelineDiagram() {
 }
 
 /** A numbered stop on the rail. Mono figures so the six read as a sequence
- *  rather than as six unrelated badges. */
-function Node({ index }: { index: number }) {
+ *  rather than as six unrelated badges.
+ *
+ *  Exported because /how-it-works draws the same badge beside each of the six
+ *  checks, and for a while did it by holding a byte-identical copy of this
+ *  class string in the page. Two copies of a token is how a page starts
+ *  reading as generated: one of them gets tuned, and the reader sees two
+ *  slightly different objects doing the same job. */
+export function StepNode({ index }: { index: number }) {
   return (
     <span className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-brand-brown/25 bg-sheet font-mono text-[10.5px] font-semibold text-brand-brown dark:border-brand-tan/30 dark:bg-surface dark:text-brand-tan">
       {index + 1}

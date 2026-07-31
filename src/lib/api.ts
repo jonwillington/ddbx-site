@@ -1,6 +1,7 @@
 import type {
   BrokerBadge,
   BrokerOffer,
+  CoverageResponse,
   DailySummaryResponse,
   Dealing,
   DirectorDetail,
@@ -186,6 +187,10 @@ export const api = {
         `/prices/history?ticker=${encodeURIComponent(ticker)}&days=${days}`,
       ).then((r) => r.bars),
     ),
+  /** What the pipeline has ingested, counted from the tables. Cached hard at
+   *  the edge (six hours) because every figure is an unindexed COUNT, and
+   *  cached again here so two components on one page share the request. */
+  coverage: () => cached("coverage", () => get<CoverageResponse>("/coverage")),
   gbpPerUsdHistory: (days = 730) =>
     get<{ rates: { date: string; gbp_per_usd: number }[] }>(
       `/fx/gbp-per-usd?days=${days}`,
