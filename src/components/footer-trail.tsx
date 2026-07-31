@@ -1,33 +1,34 @@
-/** The tick field pinned to the bottom of every page, under the footer box.
+/** The sweep pinned to the bottom of every page, under the footer box.
  *
- *  Decorative, but not arbitrary: it's an abstraction of what the site is for.
- *  Disclosures don't arrive evenly — they land in clusters around results,
- *  close periods and the days after them, with long quiet stretches between,
- *  and a handful in any run matter more than the rest. So: irregular bursts
- *  with an asymmetric envelope, a low continuous rhythm underneath so the
- *  baseline never goes dead, and the occasional tall mark standing clear of
- *  its cluster. No axes, no labels, nothing to read — the shape is the point.
+ *  Two bundles of fine strands running in opposite directions — one rising
+ *  left-to-right, one falling — that pinch to a waist where they cross and fan
+ *  open towards both edges. Buying and selling pressure crossing each other is
+ *  the thing this site watches, so the figure is the subject in the abstract;
+ *  read it as flow rather than as a chart, because there is nothing in it to
+ *  read. It replaced a perspective floor grid (a texture that could have sat
+ *  under any site) and then a field of ticks (legible enough to invite being
+ *  read as data it wasn't).
  *
- *  This replaced a perspective floor grid, which was a texture that could have
- *  sat under any site at all.
+ *  Three things that are load-bearing, in case this gets retuned:
  *
- *  Two things about the implementation:
+ *  - **Strands are spaced by an explicit width envelope, not by scaling one
+ *    curve about a pivot.** The scaling trick is far cheaper (one path plus N
+ *    <use>) and gives the same silhouette, but it leaves the strands stacked
+ *    within a pixel or two of each other over most of the width, where 20
+ *    overlapping alphas compound into a solid black smear. Physically
+ *    separating them is what keeps this a set of lines.
+ *  - **The composition is asymmetric on purpose.** Equal bundles crossing at
+ *    the midpoint read as a corporate bowtie; the crossing sits at ~40%, the
+ *    rising bundle is wider and louder than the falling one, and `bow` bends
+ *    each centre line off a straight interpolation so they aren't mirrors.
+ *  - **It stretches to the wrapper (preserveAspectRatio="none").** That's
+ *    deliberate: the wrapper is shorter on small screens, so the whole figure
+ *    just flattens rather than being cropped or re-lofted. Smooth curves take
+ *    that squash without artefacts — a tick field would not have.
  *
- *  - The SVG is at a FIXED pixel size (3000 × 160), not stretched to the
- *    container. Scaling it to the viewport would squash the tick spacing on a
- *    phone into a solid smear and stretch it into a picket fence on a desktop;
- *    at fixed size the rhythm is identical at every width and a wider viewport
- *    simply reveals more of the field. 3000px is wider than any realistic
- *    window, and it's centred, so both ends stay off-screen.
- *  - The geometry is baked, not generated at runtime: it was produced once by a
- *    seeded walk and pasted here, so every visitor sees the same field and the
- *    page ships no generator. Ticks are grouped into a handful of alpha buckets
- *    and emitted as one path each — a few kB rather than the ~25kB the same
- *    field costs as individual <line> elements.
- *
- *  The mask is what keeps it a detail rather than a motif: tops dissolve
- *  upwards so nothing terminates on a cut edge, and both sides fade out so the
- *  field has no ends.
+ *  Geometry is baked rather than computed at runtime: ~7kB of path data
+ *  produced once from the generator, so there's no maths on the client and
+ *  every visitor sees the same figure.
  */
 export function FooterTrail() {
   return (
@@ -37,70 +38,197 @@ export function FooterTrail() {
           position: absolute;
           inset-inline: 0;
           bottom: 0;
-          height: 160px;
+          height: 130px;
           overflow: hidden;
           pointer-events: none;
+          /* Fades the ends and the top so the figure has no cut edges and
+             dissolves into the page rather than stopping at a boundary. */
           -webkit-mask-image:
-            linear-gradient(to top, #000 0, #000 22%, transparent 97%),
-            linear-gradient(to right, transparent 0, #000 10%, #000 90%, transparent 100%);
+            linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%),
+            linear-gradient(to top, #000 0, #000 74%, transparent 100%);
           mask-image:
-            linear-gradient(to top, #000 0, #000 22%, transparent 97%),
-            linear-gradient(to right, transparent 0, #000 10%, #000 90%, transparent 100%);
+            linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%),
+            linear-gradient(to top, #000 0, #000 74%, transparent 100%);
           -webkit-mask-composite: source-in;
           mask-composite: intersect;
         }
+        @media (min-width: 768px) {
+          .footer-trail { height: 200px; }
+        }
         .footer-trail-art {
           position: absolute;
-          bottom: 0;
-          left: 50%;
-          margin-left: -1500px;
-          stroke: #5a4128;
-          stroke-width: 1;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          display: block;
+        }
+        .footer-trail-art path {
           fill: none;
-          shape-rendering: crispEdges;
+          stroke-width: 1;
+          /* Without this the non-uniform stretch would thin the strokes out
+             vertically and they'd disappear on short viewports. */
+          vector-effect: non-scaling-stroke;
         }
-        /* Amber on the dark page, and pulled back — a light line on a dark
-           ground reads considerably louder than the same alpha does on cream. */
-        :is(.dark) .footer-trail-art {
-          stroke: #eec584;
-          opacity: 0.78;
-        }
-        .footer-trail-accent { opacity: 0.72; }
+        /* Brand brown into tan on cream; amber into tan on the dark page, where
+           the whole group is pulled back — light strands on a dark ground read
+           considerably louder than the same alpha does on cream. */
+        .footer-trail-art .s1 { stop-color: #5a4128; }
+        .footer-trail-art .s2 { stop-color: #ad9479; }
+        :is(.dark) .footer-trail-art .s1 { stop-color: #eec584; }
+        :is(.dark) .footer-trail-art .s2 { stop-color: #ad9479; }
+        :is(.dark) .footer-trail-art { opacity: 0.8; }
       `}</style>
       <svg
         className="footer-trail-art"
-        height="160"
-        viewBox="0 0 3000 160"
-        width="3000"
+        preserveAspectRatio="none"
+        viewBox="0 0 1200 200"
       >
-        <path
-          d="M78 160V151M367 160V154M376 160V155M506 160V155M541 160V154M561 160V156M823 160V155M838 160V156M853 160V152M1005 160V156M1017 160V154M1039 160V157M1309 160V156M1675 160V151M1689 160V155M1997 160V153M2309 160V150M2394 160V152M2406 160V154M2418 160V152M2675 160V156M2786 160V150M2816 160V152M2826 160V151M2861 160V156M2886 160V153"
-          opacity="0.16"
-        />
-        <path
-          d="M9 160V157M35 160V152M49 160V153M63 160V157M93 160V151M330 160V156M339 160V157M405 160V155M520 160V153M530 160V151M551 160V150M574 160V153M598 160V151M753 160V151M765 160V153M777 160V154M789 160V157M799 160V156M813 160V151M863 160V155M1027 160V155M1051 160V151M1062 160V157M1076 160V153M1091 160V157M1100 160V151M1254 160V153M1259 160V155M1264 160V151M1279 160V152M1293 160V151M1323 160V156M1333 160V156M1357 160V157M1362 160V155M1367 160V153M1373 160V150M1535 160V147M1541 160V153M1547 160V152M1561 160V151M1585 160V152M1597 160V156M1609 160V157M1622 160V150M1633 160V152M1699 160V153M1976 160V154M1984 160V154M2008 160V155M2279 160V154M2287 160V155M2295 160V152M2320 160V153M2343 160V156M2358 160V153M2368 160V155M2382 160V156M2429 160V155M2443 160V150M2457 160V154M2467 160V151M2472 160V145M2581 160V156M2595 160V152M2608 160V150M2618 160V153M2629 160V156M2640 160V155M2649 160V151M2770 160V151M2801 160V155M2837 160V150M2847 160V155M2876 160V155M2896 160V152"
-          opacity="0.24"
-        />
-        <path
-          d="M21 160V156M107 160V144M316 160V142M323 160V151M353 160V155M389 160V156M410 160V154M416 160V152M421 160V148M427 160V141M433 160V140M501 160V141M587 160V155M592 160V154M604 160V143M610 160V137M615 160V134M736 160V136M742 160V143M747 160V146M759 160V154M869 160V152M875 160V148M881 160V140M888 160V137M999 160V148M1227 160V140M1238 160V144M1248 160V152M1344 160V153M1378 160V145M1384 160V140M1390 160V140M1530 160V139M1572 160V152M1647 160V154M1662 160V150M1708 160V154M1716 160V153M1725 160V150M1968 160V150M2018 160V152M2031 160V155M2042 160V147M2233 160V135M2241 160V137M2249 160V146M2256 160V148M2264 160V149M2272 160V153M2332 160V157M2452 160V155M2462 160V153M2482 160V139M2487 160V137M2492 160V124M2576 160V143M2665 160V154M2680 160V147M2687 160V139M2904 160V150M2912 160V133"
-          opacity="0.32"
-        />
-        <path
-          d="M114 160V132M135 160V110M281 160V116M288 160V116M295 160V125M302 160V129M309 160V132M438 160V135M444 160V122M495 160V117M621 160V129M633 160V121M719 160V111M724 160V125M730 160V120M894 160V120M900 160V116M906 160V110M980 160V94M993 160V138M1105 160V144M1110 160V136M1121 160V132M1206 160V124M1222 160V133M1232 160V145M1243 160V148M1395 160V130M1401 160V127M1406 160V124M1412 160V114M1418 160V121M1513 160V113M1524 160V129M1733 160V145M1741 160V141M1750 160V136M1758 160V135M1766 160V134M1926 160V129M1934 160V131M1942 160V142M1951 160V141M1959 160V146M2049 160V138M2210 160V122M2218 160V130M2226 160V133M2477 160V143M2497 160V117M2571 160V125M2763 160V133M2919 160V116M2926 160V107M2984 160V112M2999 160V127"
-          opacity="0.4"
-        />
-        <path
-          d="M121 160V112M128 160V105M142 160V115M163 160V95M260 160V112M267 160V96M274 160V114M450 160V117M455 160V116M489 160V112M627 160V129M644 160V104M661 160V76M713 160V110M918 160V92M925 160V87M937 160V59M974 160V79M986 160V113M1116 160V138M1126 160V119M1169 160V115M1185 160V119M1201 160V129M1211 160V136M1216 160V133M1423 160V104M1434 160V92M1440 160V102M1485 160V96M1507 160V107M1519 160V124M1783 160V123M1808 160V121M1817 160V117M1892 160V124M1901 160V124M1909 160V121M1917 160V123M2057 160V128M2065 160V121M2080 160V95M2088 160V86M2164 160V93M2180 160V100M2187 160V110M2195 160V111M2203 160V126M2502 160V120M2507 160V114M2512 160V113M2561 160V108M2566 160V100M2693 160V117M2699 160V122M2751 160V106M2757 160V118M2933 160V89M2991 160V100"
-          opacity="0.48"
-        />
-        <path
-          d="M149 160V100M156 160V90M170 160V83M177 160V96M184 160V75M191 160V87M198 160V95M205 160V76M212 160V98M219 160V74M226 160V90M233 160V88M239 160V93M246 160V95M253 160V100M461 160V103M467 160V110M472 160V103M478 160V97M484 160V106M638 160V109M650 160V108M656 160V88M667 160V83M673 160V79M679 160V73M684 160V88M690 160V91M696 160V91M702 160V105M707 160V99M912 160V109M931 160V79M943 160V58M949 160V81M956 160V87M962 160V72M968 160V67M1131 160V121M1137 160V112M1142 160V107M1147 160V117M1153 160V119M1158 160V115M1163 160V108M1174 160V121M1179 160V111M1190 160V112M1195 160V115M1429 160V116M1446 160V82M1451 160V99M1457 160V84M1463 160V84M1468 160V106M1474 160V84M1479 160V95M1491 160V111M1496 160V100M1502 160V119M1775 160V133M1792 160V120M1800 160V120M1825 160V115M1833 160V119M1842 160V113M1850 160V109M1859 160V116M1867 160V121M1875 160V122M1884 160V117M2072 160V113M2095 160V107M2103 160V89M2111 160V76M2118 160V97M2126 160V72M2134 160V91M2141 160V91M2149 160V107M2157 160V103M2172 160V99M2517 160V95M2522 160V101M2527 160V92M2532 160V84M2537 160V68M2541 160V94M2546 160V75M2551 160V89M2556 160V98M2706 160V115M2712 160V89M2719 160V100M2725 160V103M2731 160V87M2738 160V74M2744 160V84M2941 160V98M2948 160V64M2955 160V66M2962 160V71M2970 160V78M2977 160V76"
-          opacity="0.56"
-        />
-        <path
-          className="footer-trail-accent"
-          d="M267 160V50M309 160V99M696 160V43M730 160V82M1917 160V86M2699 160V85"
-        />
+        <defs>
+          <linearGradient
+            gradientUnits="userSpaceOnUse"
+            id="footerTrailStroke"
+            x1="0"
+            x2="1200"
+          >
+            <stop className="s1" offset="0" />
+            <stop className="s2" offset="0.46" />
+            <stop className="s1" offset="1" />
+          </linearGradient>
+        </defs>
+        <g stroke="url(#footerTrailStroke)">
+          <path
+            d="M0 138Q100 140 150 139Q200 138 250 135Q300 132 350 128Q400 123 450 116Q500 109 550 99Q600 88 650 78Q700 67 750 57Q800 46 850 37Q900 27 950 19Q1000 10 1050 4Q1100 -3 1150 -7L1200 -12"
+            opacity="0.090"
+          />
+          <path
+            d="M0 141Q100 143 150 142Q200 140 250 137Q300 133 350 129Q400 124 450 117Q500 109 550 99Q600 89 650 79Q700 68 750 58Q800 48 850 39Q900 30 950 22Q1000 14 1050 8Q1100 2 1150 -2L1200 -7"
+            opacity="0.195"
+          />
+          <path
+            d="M0 144Q100 145 150 144Q200 142 250 138Q300 134 350 129Q400 124 450 117Q500 110 550 100Q600 90 650 80Q700 70 750 60Q800 50 850 42Q900 33 950 26Q1000 18 1050 12Q1100 6 1150 3L1200 -1"
+            opacity="0.248"
+          />
+          <path
+            d="M0 147Q100 148 150 146Q200 144 250 140Q300 136 350 131Q400 125 450 118Q500 110 550 101Q600 91 650 81Q700 71 750 62Q800 52 850 44Q900 36 950 29Q1000 21 1050 16Q1100 11 1150 8L1200 4"
+            opacity="0.289"
+          />
+          <path
+            d="M0 150Q100 150 150 148Q200 145 250 141Q300 137 350 131Q400 125 450 118Q500 110 550 101Q600 92 650 83Q700 73 750 64Q800 55 850 47Q900 38 950 32Q1000 25 1050 20Q1100 15 1150 13L1200 10"
+            opacity="0.321"
+          />
+          <path
+            d="M0 154Q100 153 150 150Q200 147 250 143Q300 138 350 132Q400 126 450 119Q500 111 550 102Q600 92 650 83Q700 74 750 66Q800 57 850 49Q900 41 950 35Q1000 29 1050 25Q1100 20 1150 18L1200 15"
+            opacity="0.348"
+          />
+          <path
+            d="M0 157Q100 155 150 152Q200 149 250 144Q300 139 350 133Q400 126 450 119Q500 111 550 102Q600 93 650 84Q700 75 750 67Q800 59 850 52Q900 44 950 39Q1000 33 1050 29Q1100 24 1150 23L1200 21"
+            opacity="0.369"
+          />
+          <path
+            d="M0 160Q100 157 150 154Q200 150 250 145Q300 140 350 134Q400 127 450 119Q500 111 550 103Q600 94 650 86Q700 77 750 69Q800 61 850 54Q900 47 950 42Q1000 36 1050 33Q1100 29 1150 28L1200 26"
+            opacity="0.384"
+          />
+          <path
+            d="M0 163Q100 160 150 156Q200 152 250 147Q300 141 350 134Q400 127 450 120Q500 112 550 104Q600 95 650 87Q700 78 750 71Q800 63 850 57Q900 50 950 45Q1000 40 1050 37Q1100 34 1150 33L1200 32"
+            opacity="0.394"
+          />
+          <path
+            d="M0 166Q100 162 150 158Q200 154 250 148Q300 142 350 135Q400 128 450 120Q500 112 550 104Q600 96 650 88Q700 80 750 73Q800 65 850 59Q900 53 950 49Q1000 44 1050 41Q1100 38 1150 38L1200 37"
+            opacity="0.399"
+          />
+          <path
+            d="M0 170Q100 165 150 160Q200 155 250 149Q300 143 350 136Q400 128 450 120Q500 112 550 104Q600 96 650 89Q700 81 750 74Q800 67 850 62Q900 56 950 52Q1000 47 1050 45Q1100 43 1150 43L1200 43"
+            opacity="0.399"
+          />
+          <path
+            d="M0 173Q100 167 150 162Q200 157 250 151Q300 144 350 137Q400 129 450 121Q500 113 550 105Q600 97 650 90Q700 83 750 76Q800 69 850 64Q900 59 950 55Q1000 51 1050 49Q1100 47 1150 48L1200 48"
+            opacity="0.394"
+          />
+          <path
+            d="M0 176Q100 169 150 164Q200 159 250 152Q300 145 350 137Q400 129 450 121Q500 113 550 106Q600 98 650 91Q700 84 750 78Q800 72 850 67Q900 62 950 59Q1000 55 1050 54Q1100 52 1150 53L1200 54"
+            opacity="0.384"
+          />
+          <path
+            d="M0 179Q100 172 150 166Q200 160 250 153Q300 146 350 138Q400 130 450 122Q500 113 550 106Q600 99 650 92Q700 85 750 80Q800 74 850 69Q900 64 950 61Q1000 58 1050 57Q1100 56 1150 58L1200 59"
+            opacity="0.369"
+          />
+          <path
+            d="M0 182Q100 174 150 168Q200 162 250 155Q300 147 350 139Q400 130 450 122Q500 114 550 107Q600 100 650 94Q700 87 750 82Q800 76 850 72Q900 67 950 65Q1000 62 1050 62Q1100 61 1150 63L1200 65"
+            opacity="0.348"
+          />
+          <path
+            d="M0 186Q100 177 150 171Q200 164 250 156Q300 148 350 140Q400 131 450 123Q500 114 550 107Q600 100 650 94Q700 88 750 83Q800 78 850 74Q900 70 950 68Q1000 66 1050 66Q1100 66 1150 68L1200 70"
+            opacity="0.321"
+          />
+          <path
+            d="M0 189Q100 179 150 173Q200 166 250 158Q300 149 350 140Q400 131 450 123Q500 114 550 108Q600 101 650 96Q700 90 750 85Q800 80 850 77Q900 73 950 72Q1000 70 1050 70Q1100 70 1150 73L1200 76"
+            opacity="0.289"
+          />
+          <path
+            d="M0 192Q100 182 150 175Q200 167 250 159Q300 150 350 141Q400 132 450 124Q500 115 550 109Q600 102 650 97Q700 91 750 87Q800 82 850 79Q900 76 950 75Q1000 73 1050 74Q1100 75 1150 78L1200 81"
+            opacity="0.248"
+          />
+          <path
+            d="M0 195Q100 184 150 177Q200 169 250 160Q300 151 350 142Q400 132 450 124Q500 115 550 109Q600 103 650 98Q700 93 750 89Q800 84 850 82Q900 79 950 78Q1000 77 1050 78Q1100 79 1150 83L1200 87"
+            opacity="0.195"
+          />
+          <path
+            d="M0 198Q100 186 150 179Q200 171 250 162Q300 152 350 143Q400 133 450 124Q500 115 550 110Q600 104 650 99Q700 94 750 90Q800 86 850 84Q900 82 950 82Q1000 81 1050 83Q1100 84 1150 88L1200 92"
+            opacity="0.090"
+          />
+          <path
+            d="M0 32Q100 42 150 49Q200 56 250 64Q300 72 350 81Q400 90 450 99Q500 108 550 117Q600 125 650 131Q700 137 750 143Q800 148 850 152Q900 155 950 157Q1000 159 1050 159Q1100 159 1150 156L1200 153"
+            opacity="0.070"
+          />
+          <path
+            d="M0 37Q100 46 150 52Q200 58 250 66Q300 74 350 83Q400 91 450 100Q500 109 550 117Q600 125 650 132Q700 138 750 144Q800 149 850 154Q900 158 950 160Q1000 162 1050 163Q1100 163 1150 161L1200 158"
+            opacity="0.172"
+          />
+          <path
+            d="M0 41Q100 49 150 55Q200 61 250 69Q300 76 350 84Q400 92 450 101Q500 109 550 117Q600 125 650 132Q700 139 750 145Q800 151 850 156Q900 160 950 163Q1000 165 1050 166Q1100 167 1150 165L1200 163"
+            opacity="0.222"
+          />
+          <path
+            d="M0 45Q100 52 150 58Q200 63 250 70Q300 77 350 85Q400 93 450 102Q500 110 550 118Q600 126 650 133Q700 140 750 146Q800 152 850 157Q900 162 950 165Q1000 168 1050 170Q1100 171 1150 170L1200 169"
+            opacity="0.257"
+          />
+          <path
+            d="M0 49Q100 55 150 61Q200 66 250 73Q300 79 350 87Q400 94 450 102Q500 110 550 118Q600 126 650 134Q700 141 750 148Q800 154 850 159Q900 164 950 168Q1000 171 1050 173Q1100 175 1150 175L1200 174"
+            opacity="0.281"
+          />
+          <path
+            d="M0 54Q100 59 150 64Q200 68 250 74Q300 80 350 88Q400 95 450 103Q500 111 550 119Q600 127 650 135Q700 142 750 149Q800 155 850 161Q900 166 950 171Q1000 175 1050 177Q1100 179 1150 179L1200 179"
+            opacity="0.295"
+          />
+          <path
+            d="M0 58Q100 62 150 66Q200 70 250 76Q300 82 350 89Q400 96 450 104Q500 111 550 119Q600 127 650 135Q700 142 750 150Q800 157 850 163Q900 169 950 174Q1000 178 1050 181Q1100 183 1150 184L1200 184"
+            opacity="0.300"
+          />
+          <path
+            d="M0 62Q100 65 150 69Q200 73 250 79Q300 84 350 91Q400 97 450 105Q500 112 550 120Q600 127 650 135Q700 143 750 151Q800 158 850 165Q900 171 950 176Q1000 181 1050 184Q1100 187 1150 188L1200 189"
+            opacity="0.295"
+          />
+          <path
+            d="M0 67Q100 69 150 72Q200 75 250 80Q300 85 350 92Q400 98 450 105Q500 112 550 120Q600 128 650 136Q700 144 750 152Q800 159 850 166Q900 173 950 179Q1000 184 1050 188Q1100 191 1150 193L1200 194"
+            opacity="0.281"
+          />
+          <path
+            d="M0 71Q100 72 150 75Q200 77 250 82Q300 87 350 93Q400 99 450 106Q500 113 550 121Q600 128 650 137Q700 145 750 153Q800 161 850 168Q900 175 950 181Q1000 187 1050 191Q1100 195 1150 198L1200 200"
+            opacity="0.257"
+          />
+          <path
+            d="M0 75Q100 75 150 78Q200 80 250 84Q300 88 350 94Q400 100 450 107Q500 113 550 121Q600 129 650 138Q700 146 750 154Q800 162 850 170Q900 177 950 184Q1000 190 1050 195Q1100 199 1150 202L1200 205"
+            opacity="0.222"
+          />
+          <path
+            d="M0 79Q100 78 150 80Q200 82 250 86Q300 90 350 96Q400 101 450 108Q500 114 550 122Q600 129 650 138Q700 147 750 156Q800 164 850 172Q900 180 950 187Q1000 193 1050 198Q1100 203 1150 207L1200 210"
+            opacity="0.172"
+          />
+          <path
+            d="M0 84Q100 82 150 84Q200 85 250 88Q300 91 350 96Q400 101 450 108Q500 114 550 122Q600 129 650 138Q700 147 750 156Q800 165 850 174Q900 182 950 189Q1000 196 1050 202Q1100 208 1150 212L1200 215"
+            opacity="0.070"
+          />
+        </g>
       </svg>
     </div>
   );
