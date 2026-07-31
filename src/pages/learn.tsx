@@ -72,7 +72,6 @@ import {
 import { marketForPath } from "@/lib/markets/registry";
 
 const EYEBROW = "Glossary";
-const FOOTNOTE = "Information only, not investment advice.";
 
 /** The feed an entry's examples come from, chosen by the entry's owner rather
  *  than by the domain the request landed on. See the header, point 2. */
@@ -183,7 +182,6 @@ export function LearnIndexPage() {
           screenshotSlot: "today",
         }}
         eyebrow={EYEBROW}
-        footnote={FOOTNOTE}
         standfirst="What the filings mean, which disclosures are actually purchases, and how much a director buying their own shares really tells you."
         standfirstSize="lede"
         title="Understanding insider dealing"
@@ -256,7 +254,6 @@ export default function LearnEntryPage() {
           screenshotSlot: entry.ctaSlot ?? "analysis",
         }}
         eyebrow={EYEBROW}
-        footnote={FOOTNOTE}
         notice={
           <>
             <p className="text-[11px] leading-[1.6] text-foreground/45">

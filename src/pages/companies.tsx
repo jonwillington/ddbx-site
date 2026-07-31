@@ -192,15 +192,6 @@ export default function CompaniesPage() {
           marketId,
         }}
         eyebrow="Company index"
-        footnote={
-          <>
-            <p>
-              Companies appear here once they have repeat insider activity or a
-              written analysis on file.
-            </p>
-            <LogoDevAttribution className="mt-2 text-[11px] leading-[1.6] text-foreground/50" />
-          </>
-        }
         loading={companies === null}
         skeleton={<CompaniesSkeleton />}
         standfirst={standfirst}
@@ -302,6 +293,10 @@ export default function CompaniesPage() {
                 </ul>
               </section>
             ))}
+            {/* The logo.dev licence link, which is a condition of using the
+                marks rather than small print we chose to write. It closes the
+                index because that is where the logos stop. */}
+            <LogoDevAttribution className="mt-10" />
           </>
         )}
       </SeoPageShell>

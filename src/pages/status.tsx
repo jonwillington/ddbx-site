@@ -15,9 +15,9 @@
  *     the moment a reader checking whether their data is stale is shown a
  *     paid broker placement next to it, the page stops reading as an
  *     engineering artefact and starts reading as marketing — which is exactly
- *     the reading that makes a status page worthless. The footnote's link to
- *     `/api` is the only forward path, and it goes to the page a reader who
- *     cares about uptime actually wants.
+ *     the reading that makes a status page worthless. The `/api` link at the
+ *     end of "How these checks work" is the only forward path, and it goes to
+ *     the page a reader who cares about uptime actually wants.
  *
  *  2. NO INVENTED NUMBERS. See the header comment in `lib/status.ts` for the
  *     full argument. Short version: every figure below is measured in the
@@ -142,32 +142,6 @@ export default function StatusPage() {
       <SeoPageShell
         cta={false}
         eyebrow="Service status"
-        footnote={
-          <>
-            {/* The scoping caveat only — what this page covers is now the
-                standfirst's job, and saying it twice made the footnote read as
-                a restatement rather than as the small print it is. */}
-            <p>
-              These checks do not cover the App Store, the Play Store, or your
-              own network, so a problem you can see that this page cannot is
-              most likely one of those.
-            </p>
-            <p className="mt-2">
-              Endpoint documentation lives on the{" "}
-              <Link className="underline underline-offset-2" to="/api">
-                developer API page
-              </Link>
-              . If something looks wrong and this page says it isn’t, tell us:{" "}
-              <a
-                className="underline underline-offset-2"
-                href="mailto:hello@ddbx.uk"
-              >
-                hello@ddbx.uk
-              </a>
-              .
-            </p>
-          </>
-        }
         standfirst={
           <>
             Live checks against the public API that ddbx.uk, ddbx.us, ddbx.eu
@@ -228,6 +202,29 @@ export default function StatusPage() {
               There is no ninety-day uptime history here yet. That needs a
               monitor running server-side rather than in your browser, and it is
               on the list.
+            </p>
+            {/* The scoping caveat and the way out, in the body rather than in
+                the small print under the fold. A reader who has decided this
+                page is wrong needs the email in front of them, not in grey at
+                the bottom. */}
+            <p>
+              These checks do not cover the App Store, the Play Store, or your
+              own network, so a problem you can see that this page cannot is
+              most likely one of those.
+            </p>
+            <p>
+              Endpoint documentation lives on the{" "}
+              <Link className="underline underline-offset-2" to="/api">
+                developer API page
+              </Link>
+              . If something looks wrong and this page says it isn’t, tell us:{" "}
+              <a
+                className="underline underline-offset-2"
+                href="mailto:hello@ddbx.uk"
+              >
+                hello@ddbx.uk
+              </a>
+              .
             </p>
           </div>
         </SeoSection>

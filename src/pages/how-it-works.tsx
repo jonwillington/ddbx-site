@@ -63,8 +63,6 @@ import {
 const EYEBROW = "Methodology";
 const RULE = "border-hairline dark:border-separator";
 const DIVIDE = "divide-black/[0.06] dark:divide-white/[0.08]";
-const FOOTNOTE =
-  "Information only, not investment advice. A rating describes how a purchase reads against our checks — it is not a forecast, and past disclosures are not a guide to what any share will do next.";
 
 /** The numbered run, in reading order. Kept as data because it drives two
  *  things that have to agree: the contents strip at the top and the `NN / 07`
@@ -140,7 +138,6 @@ export default function HowItWorksPage() {
           screenshotSlot: "analysis",
         }}
         eyebrow={EYEBROW}
-        footnote={FOOTNOTE}
         standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is what we do with them — how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks behind that rating actually test, how much we have put through it, and where the method stops. Every figure below is counted from the database rather than written into the page.`}
         standfirstSize="lede"
         title={`How we rate ${
@@ -484,7 +481,7 @@ export default function HowItWorksPage() {
   );
 }
 
-/** The caveats, stated plainly rather than buried in the footnote.
+/** The caveats, stated plainly rather than buried in small print.
  *
  *  A methodology page that only lists strengths is marketing wearing a lab
  *  coat, and every one of these is a question a careful reader arrives with.

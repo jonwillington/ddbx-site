@@ -135,7 +135,6 @@ export default function ReportsPage() {
           screenshotSlot: "recap",
         }}
         eyebrow="Monthly report"
-        footnote="Reports are generated from disclosed filings and marked against subsequent closing prices. Past performance is not a reliable indicator of future results."
         loading={months === null}
         notice={<TrackingNotice />}
         skeleton={<ArchiveSkeleton />}

@@ -204,7 +204,6 @@ export default function ReportPage() {
           screenshotSlot: "recap",
         }}
         eyebrow="Monthly report"
-        footnote="Reports are generated from disclosed filings and marked against subsequent closing prices — the latest cached close, not live prices. Past performance is not a reliable indicator of future results."
         loading={!summary}
         notice={summary ? <Byline summary={summary} /> : undefined}
         skeleton={<ReportSkeleton />}

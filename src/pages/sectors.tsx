@@ -110,16 +110,6 @@ export default function SectorsPage() {
           screenshotSlot: "analysis",
         }}
         eyebrow="Sector hub"
-        footnote={
-          <>
-            Rolling twelve months of disclosed purchases. Sectors with fewer
-            than {MIN_BUYS} buys in the window are omitted. Median alpha is the
-            middle result once every buy in the sector is measured against the
-            market from its disclosure-day close — not from the insider’s own
-            entry price — and is marked to the latest cached close. Past
-            performance is not a reliable indicator of future results.
-          </>
-        }
         loading={rows === null}
         notice={
           <>
@@ -192,8 +182,8 @@ export default function SectorsPage() {
                 answer was previously only obtainable by adding up eleven rows. */}
             <StatTiles
               className="mt-5"
-              // "Median alpha" heads a column three lines below this and was
-              // previously only explained in the footnote, 900px away.
+              // "Median alpha" heads a column three lines below this, and this
+              // note is now the only place it is explained.
               note="Median alpha, in the column below, is the middle buy’s return against the market since it was disclosed."
               stats={[
                 { label: "Buys", value: totals.buys },

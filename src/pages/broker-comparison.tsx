@@ -260,7 +260,6 @@ export default function BrokerComparisonPage() {
           media: "none",
         }}
         eyebrow="Broker guide"
-        footnote={<BrokerComplianceNote />}
         loading={brokers === null}
         notice={<BrokerDisclosure />}
         skeleton={<ComparisonSkeleton />}
@@ -396,6 +395,11 @@ export default function BrokerComparisonPage() {
             </>
           )}
         </PageSection>
+
+        {/* The affiliate compliance note, in the body for the same reason
+            /broker/:slug and /compare put it there: it is a disclosure about
+            the commercial links above it, not decoration under the fold. */}
+        <BrokerComplianceNote className="mt-10" />
       </SeoPageShell>
     </DefaultLayout>
   );

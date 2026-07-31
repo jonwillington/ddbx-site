@@ -228,14 +228,6 @@ export default function SectorPage() {
           screenshotSlot: "analysis",
         }}
         eyebrow="Sector hub"
-        footnote={
-          <>
-            Figures cover disclosed purchases over the last twelve months and
-            are marked to the latest cached close, not live prices. Past
-            performance is not a reliable indicator of future results. This is
-            information, not investment advice.
-          </>
-        }
         loading={rows === null}
         notice={
           <>

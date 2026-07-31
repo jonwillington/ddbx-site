@@ -1,14 +1,19 @@
 /** The one shell every SEO page composes — eyebrow, crumbs, h1, standfirst,
- *  notice, content, terminal band, ruled footnote, in that order, always.
+ *  notice, content, terminal band, in that order, always.
  *
- *  Before this existed the family had five standfirst species, four footnote
- *  treatments, zero family eyebrows and two pages with the conversion band in
- *  the middle of the document. The shell makes the ordering mechanical: the
- *  band always sits after the last content section, the small print always
- *  reads as the caption of the whole page at the true bottom, and while the
- *  page is loading the band and footnote are suppressed entirely — a dark
- *  full-bleed ask flashing above the fold and then being shoved 1,500px down
- *  by arriving data was the family's single worst loading behaviour.
+ *  Before this existed the family had five standfirst species, zero family
+ *  eyebrows and two pages with the conversion band in the middle of the
+ *  document. The shell makes the ordering mechanical: the band always sits
+ *  after the last content section, and while the page is loading the band is
+ *  suppressed entirely — a dark full-bleed ask flashing above the fold and
+ *  then being shoved 1,500px down by arriving data was the family's single
+ *  worst loading behaviour.
+ *
+ *  There was a ruled `footnote` slot here too, carrying a line of small print
+ *  under the band. It went because on most of the family it restated the
+ *  standfirst in grey; the pages that had something real to say (a licence
+ *  attribution, an affiliate compliance note) now say it in the body, where it
+ *  is read rather than skipped.
  *
  *  The eyebrow is the family stamp ("Sector hub", "Glossary", "Broker guide").
  *  It is deliberately the same mono brown kicker the download page and app
@@ -40,8 +45,6 @@ export interface ShellCta {
   screenshotSlot?: ShotSlot;
 }
 
-const RULE = "border-hairline dark:border-separator";
-
 export function SeoPageShell({
   eyebrow,
   crumbs,
@@ -50,7 +53,6 @@ export function SeoPageShell({
   standfirstSize = "body",
   notice,
   cta,
-  footnote,
   width = "article",
   loading = false,
   skeleton,
@@ -71,13 +73,11 @@ export function SeoPageShell({
    *  not ask (e.g. an invalid year on /biggest-buys). Broker guides pass a
    *  quiet band with `media: "none"` so the affiliate ask stays primary. */
   cta?: ShellCta | false;
-  /** Ruled small print. Always the true bottom, always below the band. */
-  footnote?: ReactNode;
   /** "article" = the 860px document measure; "wide" = the full column, for
    *  the broker guides whose ruled sections span the shell. */
   width?: "article" | "wide";
-  /** While true, `skeleton` replaces children and the band + footnote are
-   *  suppressed so nothing below the fold pre-renders and then jumps. */
+  /** While true, `skeleton` replaces children and the band is suppressed so
+   *  nothing below the fold pre-renders and then jumps. */
   loading?: boolean;
   skeleton?: ReactNode;
   children: ReactNode;
@@ -156,14 +156,6 @@ export function SeoPageShell({
               media={cta.media}
               screenshotSlot={cta.screenshotSlot}
             />
-          ) : null}
-
-          {footnote ? (
-            <div
-              className={`mt-10 border-t ${RULE} pt-6 text-[11px] leading-[1.6] text-foreground/50`}
-            >
-              {footnote}
-            </div>
           ) : null}
         </>
       )}

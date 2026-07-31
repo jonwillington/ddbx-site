@@ -302,25 +302,6 @@ export default function BiggestBuysPage() {
           screenshotSlot: "cluster",
         }}
         eyebrow="Leaderboard"
-        // The family with the most performance figures on screen — up to 25
-        // "worth £X if still held" lines and a median alpha — was the only one
-        // with no footnote at all. The basis of those figures belongs in the
-        // page's own caption at the true bottom, not as the ninth bullet of the
-        // methodology list. LogoDevAttribution rides along so the licence link
-        // sits in the same place on every logo-bearing page (see /companies).
-        footnote={
-          <>
-            <p>
-              Performance is marked against the most recent cached close rather
-              than a live price. “Worth if still held” applies the stock’s own
-              move since disclosure to the amount originally spent, assuming the
-              shares were never sold and counting no dividends, costs or tax —
-              it is a scale, not a valuation of anyone’s holding. Past
-              performance is not a reliable indicator of future results.
-            </p>
-            <LogoDevAttribution className="mt-2 text-[11px] leading-[1.6] text-foreground/50" />
-          </>
-        }
         loading={rows === null}
         notice={
           <>
@@ -541,6 +522,11 @@ export default function BiggestBuysPage() {
         <nav aria-label="More from ddbx" className="mt-9">
           <RelatedCards cols={2} items={CROSS_LINKS} />
         </nav>
+
+        {/* The logo.dev licence link, which is a condition of using the marks
+            rather than small print we chose to write. Same closing position as
+            /companies so it sits in one place on every logo-bearing page. */}
+        <LogoDevAttribution className="mt-10" />
       </SeoPageShell>
     </DefaultLayout>
   );
