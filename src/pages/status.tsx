@@ -144,11 +144,13 @@ export default function StatusPage() {
         eyebrow="Service status"
         footnote={
           <>
+            {/* The scoping caveat only — what this page covers is now the
+                standfirst's job, and saying it twice made the footnote read as
+                a restatement rather than as the small print it is. */}
             <p>
-              This page checks the same public API that ddbx.uk, ddbx.us,
-              ddbx.eu and the iOS and Android apps read from. It does not check
-              the App Store, the Play Store, or your own network, so a problem
-              you can see that this page cannot is most likely one of those.
+              These checks do not cover the App Store, the Play Store, or your
+              own network, so a problem you can see that this page cannot is
+              most likely one of those.
             </p>
             <p className="mt-2">
               Endpoint documentation lives on the{" "}
@@ -168,10 +170,9 @@ export default function StatusPage() {
         }
         standfirst={
           <>
-            Every figure on this page is measured from your browser, right now,
-            against the live API at api.ddbx.uk. Nothing here is pre-written:
-            open your network tab and you will see the same requests these rows
-            report on, with the same timings.
+            Live checks against the public API that ddbx.uk, ddbx.us, ddbx.eu
+            and the mobile apps all read from. {PROBES.length} endpoints,
+            re-checked every minute while this page is open.
           </>
         }
         standfirstSize="lede"
@@ -217,25 +218,22 @@ export default function StatusPage() {
               reported as not responding.
             </p>
             <p>
-              “Newest record” is read from the response itself, not from a
-              separate claim: it is the timestamp on the most recent row that
-              endpoint would serve you. On the UK and US feeds the API returns a
-              calendar date rather than a time, so those rows show a date. Bars
-              beside each status show the checks made during this page view
-              only. They start empty and fill as you stay, because this page has
-              no memory of anything that happened before you opened it.
+              The line under each endpoint is the timestamp on the most recent
+              row it would serve you. The UK and US feeds return a calendar date
+              rather than a time, so those rows show a date. Bars beside each
+              status are the checks made during this page view, so they start
+              empty and fill as you stay.
             </p>
             <p>
-              That last point is the reason there is no ninety-day uptime chart
-              here. Drawing one honestly needs a monitor that ran while nobody
-              was watching, and we would rather show you a smaller number of
-              real measurements than a wall of green we cannot stand behind.
+              There is no ninety-day uptime history here yet. That needs a
+              monitor running server-side rather than in your browser, and it is
+              on the list.
             </p>
           </div>
         </SeoSection>
 
         <SeoSection
-          aside="All times UTC. Cadence, not outcome — that a job is scheduled is not a claim it succeeded."
+          aside="All times UTC. These are the schedules the jobs run on, not a record of individual runs."
           title="Ingest schedule"
         >
           <div className="overflow-x-auto">
@@ -274,9 +272,7 @@ export default function StatusPage() {
         >
           {INCIDENTS.length === 0 ? (
             <p className="text-[14px] leading-[1.65] text-foreground/60">
-              No incidents recorded. This log starts on 2026-07-31, the day this
-              page shipped, so an empty list means nothing has been written here
-              yet rather than that nothing has ever gone wrong.
+              No incidents recorded since this log started on 2026-07-31.
             </p>
           ) : (
             <ol className="space-y-6">
