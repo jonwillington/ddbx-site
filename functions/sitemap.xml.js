@@ -67,6 +67,9 @@ const ROUTES_BY_HOST = {
     "/biggest-buys",
     "/learn",
     "/how-it-works",
+    // Same rule as /developers above: cross-market page, canonicalises to
+    // ddbx.uk, so it rides this host alone rather than joining COMMON_ROUTES.
+    "/status",
   ],
   "ddbx.us": [
     "/",

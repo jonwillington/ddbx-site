@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 
 import { AppDrawer } from "@/components/app-drawer";
@@ -589,6 +589,20 @@ export default function DefaultLayout({
               >
                 Sitemap
               </a>
+              <span aria-hidden className="text-foreground/20">
+                ·
+              </span>
+
+              {/* Router link, unlike Sitemap above — /status is a real SPA
+                  route, and a full page load would throw away the probe
+                  results the visitor is about to watch arrive. */}
+              <Link
+                className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2"
+                data-ga-event="nav_footer_status"
+                to="/status"
+              >
+                Status
+              </Link>
               <span aria-hidden className="text-foreground/20">
                 ·
               </span>

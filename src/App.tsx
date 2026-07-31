@@ -18,6 +18,7 @@ import LearnEntryPage, { LearnIndexPage } from "@/pages/learn";
 import ReportPage from "@/pages/report";
 import SectorPage from "@/pages/sector";
 import SectorsPage from "@/pages/sectors";
+import StatusPage from "@/pages/status";
 import ReportsPage from "@/pages/reports";
 import DirectorPage from "@/pages/director";
 import CongressPreviewPage from "@/pages/congress-preview";
@@ -100,6 +101,10 @@ function App() {
             proxying the worker under this origin. */}
         <Route element={<ApiPage />} path="/developers" />
         <Route element={<ApiPage />} path="/api" />
+        {/* Cross-market, like /api: the API it probes is the same one behind
+            every domain, so ddbx.us/status and ddbx.eu/status render the same
+            page and canonicalise to ddbx.uk/status. */}
+        <Route element={<StatusPage />} path="/status" />
         <Route element={<ComparePage />} path="/compare" />
         <Route element={<ComparePage />} path="/brokers" />
         {/* Category and head-to-head landing pages sit one level below

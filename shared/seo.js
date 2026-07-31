@@ -206,6 +206,10 @@ const isApiPath = (path) => path === "/developers" || path === "/api";
 
 const API_CANONICAL_PATH = "/developers";
 
+/** Service status. Cross-market like /developers — one API, one page, folded
+ *  onto ddbx.uk so the three hosts don't publish three copies of it. */
+const isStatusPath = (path) => path === "/status";
+
 const isBrokerIndexPath = (path) => path === "/brokers" || path === "/compare";
 
 /** "/brokers/best-for/isa" -> the category, or null. */
@@ -363,6 +367,8 @@ export function seoForPath(pathname, hostname) {
       return brandTitle(
         "Insider dealing data API — UK, US & EU filings, scored",
       );
+    // Also market-blind, and for the same reason: one API behind every host.
+    if (isStatusPath(path)) return brandTitle("Service status");
     if (isDirectorProfilePath(path))
       return brandTitle(`Director (${market.label}) — ${SITE_NAME}`);
     // Both of these sit under /brokers/ and so must be tested before the
@@ -432,6 +438,8 @@ export function seoForPath(pathname, hostname) {
   const description = (() => {
     if (isApiPath(path))
       return "One REST API for director and insider share purchases across the UK, US, Sweden and the Netherlands: screened, rated with a written rationale, and benchmarked against the index. Access and pricing on request.";
+    if (isStatusPath(path))
+      return "Live availability of the ddbx API and the UK, US, Sweden and Netherlands disclosure feeds, measured in your browser as you read, with the ingest schedule and incident history.";
     if (isDirectorProfilePath(path))
       return `${market.label} director profile with dealing history and signal context on ddbx.`;
     if (brokerCategory) return brokerCategory.description;
@@ -528,7 +536,7 @@ export function canonicalUrlFor(pathname, hostname) {
   // entries below already avoid. It folds onto ddbx.uk, and only that URL is
   // in the sitemap (see functions/sitemap.xml.js).
   const marketHost =
-    isBrokerPath || isApiPath(path)
+    isBrokerPath || isApiPath(path) || isStatusPath(path)
       ? "ddbx.uk"
       : (MARKET_HOST_BY_ID[id] ?? "ddbx.uk");
 
