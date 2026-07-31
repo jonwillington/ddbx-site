@@ -1,34 +1,33 @@
-/** The perspective grid that trails away beneath the footer box.
+/** The tick field pinned to the bottom of every page, under the footer box.
  *
- *  Purely decorative: it gives the bottom of every page an ending instead of
- *  letting the content just stop. The footer sits on it as a raised sheet, so
- *  the two are designed together — the grid's horizon is the box's bottom edge,
- *  and the plane runs *towards* the viewer from there, cells opening up as they
- *  come forward. Read it as the surface the footer sheet is resting on.
+ *  Decorative, but not arbitrary: it's an abstraction of what the site is for.
+ *  Disclosures don't arrive evenly — they land in clusters around results,
+ *  close periods and the days after them, with long quiet stretches between,
+ *  and a handful in any run matter more than the rest. So: irregular bursts
+ *  with an asymmetric envelope, a low continuous rhythm underneath so the
+ *  baseline never goes dead, and the occasional tall mark standing clear of
+ *  its cluster. No axes, no labels, nothing to read — the shape is the point.
  *
- *  How the geometry works, since the numbers look arbitrary otherwise:
+ *  This replaced a perspective floor grid, which was a texture that could have
+ *  sat under any site at all.
  *
- *  - The wrapper carries `perspective` with its origin at `50% 0%`, which puts
- *    the eye level — and therefore the vanishing point — on the wrapper's top
- *    edge, i.e. flush with the underside of the box.
- *  - The plane is rotated about that same top edge (`transform-origin: 50% 0%`,
- *    `rotateX(78deg)`), which tips its far end towards the viewer. Everything
- *    below the origin gains +z, so it magnifies as it descends.
- *  - The plane is deliberately taller (500px) and wider (±25%) than the box it
- *    is clipped to. Its far edge projects well past the bottom of the wrapper;
- *    what you see is the near half, and the rest is cropped.
- *  - `perspective: 700px` is the lens. Shorter values fan the vertical lines
- *    out to a fish-eye and blow the near cells up to two per screen; this is
- *    roughly a normal lens at the 1280px content width.
+ *  Two things about the implementation:
  *
- *  The mask is what keeps it a detail rather than a motif — it fades the
- *  crowded band right under the horizon (where 1px lines converge and alias),
- *  the near edge, and both sides, so the grid dissolves into the page on every
- *  side instead of ending on a cut.
+ *  - The SVG is at a FIXED pixel size (3000 × 160), not stretched to the
+ *    container. Scaling it to the viewport would squash the tick spacing on a
+ *    phone into a solid smear and stretch it into a picket fence on a desktop;
+ *    at fixed size the rhythm is identical at every width and a wider viewport
+ *    simply reveals more of the field. 3000px is wider than any realistic
+ *    window, and it's centred, so both ends stay off-screen.
+ *  - The geometry is baked, not generated at runtime: it was produced once by a
+ *    seeded walk and pasted here, so every visitor sees the same field and the
+ *    page ships no generator. Ticks are grouped into a handful of alpha buckets
+ *    and emitted as one path each — a few kB rather than the ~25kB the same
+ *    field costs as individual <line> elements.
  *
- *  Colours are the brand hairline browns, not greys: warm-brown at low alpha on
- *  cream, brand amber at lower alpha on the dark page, where a light-on-dark
- *  line of the same alpha reads much louder.
+ *  The mask is what keeps it a detail rather than a motif: tops dissolve
+ *  upwards so nothing terminates on a cut edge, and both sides fade out so the
+ *  field has no ends.
  */
 export function FooterTrail() {
   return (
@@ -38,42 +37,71 @@ export function FooterTrail() {
           position: absolute;
           inset-inline: 0;
           bottom: 0;
-          height: 7rem;
+          height: 160px;
           overflow: hidden;
           pointer-events: none;
-          perspective: 700px;
-          perspective-origin: 50% 0%;
           -webkit-mask-image:
-            linear-gradient(to bottom, transparent 0%, #000 10%, #000 38%, transparent 88%),
-            linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%);
+            linear-gradient(to top, #000 0, #000 22%, transparent 97%),
+            linear-gradient(to right, transparent 0, #000 10%, #000 90%, transparent 100%);
           mask-image:
-            linear-gradient(to bottom, transparent 0%, #000 10%, #000 38%, transparent 88%),
-            linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%);
+            linear-gradient(to top, #000 0, #000 22%, transparent 97%),
+            linear-gradient(to right, transparent 0, #000 10%, #000 90%, transparent 100%);
           -webkit-mask-composite: source-in;
           mask-composite: intersect;
         }
-        @media (min-width: 768px) {
-          .footer-trail { height: 14rem; }
-        }
-        .footer-trail-plane {
+        .footer-trail-art {
           position: absolute;
-          top: 0;
-          left: -25%;
-          right: -25%;
-          height: 500px;
-          transform-origin: 50% 0%;
-          transform: rotateX(78deg);
-          background-image:
-            repeating-linear-gradient(to right,  rgba(90, 65, 40, 0.34) 0 1px, transparent 1px 64px),
-            repeating-linear-gradient(to bottom, rgba(90, 65, 40, 0.34) 0 1px, transparent 1px 34px);
+          bottom: 0;
+          left: 50%;
+          margin-left: -1500px;
+          stroke: #5a4128;
+          stroke-width: 1;
+          fill: none;
+          shape-rendering: crispEdges;
         }
-        :is(.dark) .footer-trail-plane {
-          background-image:
-            repeating-linear-gradient(to right,  rgba(238, 197, 132, 0.24) 0 1px, transparent 1px 64px),
-            repeating-linear-gradient(to bottom, rgba(238, 197, 132, 0.24) 0 1px, transparent 1px 34px);
+        /* Amber on the dark page, and pulled back — a light line on a dark
+           ground reads considerably louder than the same alpha does on cream. */
+        :is(.dark) .footer-trail-art {
+          stroke: #eec584;
+          opacity: 0.78;
         }
+        .footer-trail-accent { opacity: 0.72; }
       `}</style>
-      <div className="footer-trail-plane" />
+      <svg
+        className="footer-trail-art"
+        height="160"
+        viewBox="0 0 3000 160"
+        width="3000"
+      >
+        <path
+          d="M78 160V151M367 160V154M376 160V155M506 160V155M541 160V154M561 160V156M823 160V155M838 160V156M853 160V152M1005 160V156M1017 160V154M1039 160V157M1309 160V156M1675 160V151M1689 160V155M1997 160V153M2309 160V150M2394 160V152M2406 160V154M2418 160V152M2675 160V156M2786 160V150M2816 160V152M2826 160V151M2861 160V156M2886 160V153"
+          opacity="0.16"
+        />
+        <path
+          d="M9 160V157M35 160V152M49 160V153M63 160V157M93 160V151M330 160V156M339 160V157M405 160V155M520 160V153M530 160V151M551 160V150M574 160V153M598 160V151M753 160V151M765 160V153M777 160V154M789 160V157M799 160V156M813 160V151M863 160V155M1027 160V155M1051 160V151M1062 160V157M1076 160V153M1091 160V157M1100 160V151M1254 160V153M1259 160V155M1264 160V151M1279 160V152M1293 160V151M1323 160V156M1333 160V156M1357 160V157M1362 160V155M1367 160V153M1373 160V150M1535 160V147M1541 160V153M1547 160V152M1561 160V151M1585 160V152M1597 160V156M1609 160V157M1622 160V150M1633 160V152M1699 160V153M1976 160V154M1984 160V154M2008 160V155M2279 160V154M2287 160V155M2295 160V152M2320 160V153M2343 160V156M2358 160V153M2368 160V155M2382 160V156M2429 160V155M2443 160V150M2457 160V154M2467 160V151M2472 160V145M2581 160V156M2595 160V152M2608 160V150M2618 160V153M2629 160V156M2640 160V155M2649 160V151M2770 160V151M2801 160V155M2837 160V150M2847 160V155M2876 160V155M2896 160V152"
+          opacity="0.24"
+        />
+        <path
+          d="M21 160V156M107 160V144M316 160V142M323 160V151M353 160V155M389 160V156M410 160V154M416 160V152M421 160V148M427 160V141M433 160V140M501 160V141M587 160V155M592 160V154M604 160V143M610 160V137M615 160V134M736 160V136M742 160V143M747 160V146M759 160V154M869 160V152M875 160V148M881 160V140M888 160V137M999 160V148M1227 160V140M1238 160V144M1248 160V152M1344 160V153M1378 160V145M1384 160V140M1390 160V140M1530 160V139M1572 160V152M1647 160V154M1662 160V150M1708 160V154M1716 160V153M1725 160V150M1968 160V150M2018 160V152M2031 160V155M2042 160V147M2233 160V135M2241 160V137M2249 160V146M2256 160V148M2264 160V149M2272 160V153M2332 160V157M2452 160V155M2462 160V153M2482 160V139M2487 160V137M2492 160V124M2576 160V143M2665 160V154M2680 160V147M2687 160V139M2904 160V150M2912 160V133"
+          opacity="0.32"
+        />
+        <path
+          d="M114 160V132M135 160V110M281 160V116M288 160V116M295 160V125M302 160V129M309 160V132M438 160V135M444 160V122M495 160V117M621 160V129M633 160V121M719 160V111M724 160V125M730 160V120M894 160V120M900 160V116M906 160V110M980 160V94M993 160V138M1105 160V144M1110 160V136M1121 160V132M1206 160V124M1222 160V133M1232 160V145M1243 160V148M1395 160V130M1401 160V127M1406 160V124M1412 160V114M1418 160V121M1513 160V113M1524 160V129M1733 160V145M1741 160V141M1750 160V136M1758 160V135M1766 160V134M1926 160V129M1934 160V131M1942 160V142M1951 160V141M1959 160V146M2049 160V138M2210 160V122M2218 160V130M2226 160V133M2477 160V143M2497 160V117M2571 160V125M2763 160V133M2919 160V116M2926 160V107M2984 160V112M2999 160V127"
+          opacity="0.4"
+        />
+        <path
+          d="M121 160V112M128 160V105M142 160V115M163 160V95M260 160V112M267 160V96M274 160V114M450 160V117M455 160V116M489 160V112M627 160V129M644 160V104M661 160V76M713 160V110M918 160V92M925 160V87M937 160V59M974 160V79M986 160V113M1116 160V138M1126 160V119M1169 160V115M1185 160V119M1201 160V129M1211 160V136M1216 160V133M1423 160V104M1434 160V92M1440 160V102M1485 160V96M1507 160V107M1519 160V124M1783 160V123M1808 160V121M1817 160V117M1892 160V124M1901 160V124M1909 160V121M1917 160V123M2057 160V128M2065 160V121M2080 160V95M2088 160V86M2164 160V93M2180 160V100M2187 160V110M2195 160V111M2203 160V126M2502 160V120M2507 160V114M2512 160V113M2561 160V108M2566 160V100M2693 160V117M2699 160V122M2751 160V106M2757 160V118M2933 160V89M2991 160V100"
+          opacity="0.48"
+        />
+        <path
+          d="M149 160V100M156 160V90M170 160V83M177 160V96M184 160V75M191 160V87M198 160V95M205 160V76M212 160V98M219 160V74M226 160V90M233 160V88M239 160V93M246 160V95M253 160V100M461 160V103M467 160V110M472 160V103M478 160V97M484 160V106M638 160V109M650 160V108M656 160V88M667 160V83M673 160V79M679 160V73M684 160V88M690 160V91M696 160V91M702 160V105M707 160V99M912 160V109M931 160V79M943 160V58M949 160V81M956 160V87M962 160V72M968 160V67M1131 160V121M1137 160V112M1142 160V107M1147 160V117M1153 160V119M1158 160V115M1163 160V108M1174 160V121M1179 160V111M1190 160V112M1195 160V115M1429 160V116M1446 160V82M1451 160V99M1457 160V84M1463 160V84M1468 160V106M1474 160V84M1479 160V95M1491 160V111M1496 160V100M1502 160V119M1775 160V133M1792 160V120M1800 160V120M1825 160V115M1833 160V119M1842 160V113M1850 160V109M1859 160V116M1867 160V121M1875 160V122M1884 160V117M2072 160V113M2095 160V107M2103 160V89M2111 160V76M2118 160V97M2126 160V72M2134 160V91M2141 160V91M2149 160V107M2157 160V103M2172 160V99M2517 160V95M2522 160V101M2527 160V92M2532 160V84M2537 160V68M2541 160V94M2546 160V75M2551 160V89M2556 160V98M2706 160V115M2712 160V89M2719 160V100M2725 160V103M2731 160V87M2738 160V74M2744 160V84M2941 160V98M2948 160V64M2955 160V66M2962 160V71M2970 160V78M2977 160V76"
+          opacity="0.56"
+        />
+        <path
+          className="footer-trail-accent"
+          d="M267 160V50M309 160V99M696 160V43M730 160V82M1917 160V86M2699 160V85"
+        />
+      </svg>
     </div>
   );
 }

@@ -495,13 +495,12 @@ export default function DefaultLayout({
         {children}
       </main>
       {/* The footer is a raised sheet on the page, not a band ruled off from it:
-          a bordered box inside the content column, with the perspective grid
-          running away underneath. The box's own edge and shadow do the
-          separating the old full-width `border-t` did, and the grid gives the
-          bottom of the page a horizon to end on. The wrapper's bottom padding
-          is the grid's room — FooterTrail pins itself to the bottom of this
-          <footer>, so the two heights are deliberately the same pair. */}
-      <footer className="relative w-full pt-14 pb-28 md:pt-20 md:pb-56">
+          a bordered box inside the content column, with the tick field running
+          along the bottom underneath it. The box's own edge and shadow do the
+          separating the old full-width `border-t` did. The bottom padding is
+          the field's room — FooterTrail pins itself to the bottom of this
+          <footer> at a fixed 160px, so `pb-40` has to match it. */}
+      <footer className="relative w-full pt-14 pb-40 md:pt-20">
         <FooterTrail />
         <div className="relative mx-auto w-full max-w-[1280px] px-4 md:px-6">
           <div className="rounded-2xl border border-hairline bg-sheet px-5 py-8 md:px-8 md:py-10 shadow-[0_18px_44px_-28px_rgba(90,65,40,0.45),0_1px_2px_rgba(90,65,40,0.03)] text-[10px] leading-4 text-foreground/40 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)]">
