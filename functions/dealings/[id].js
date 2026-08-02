@@ -12,8 +12,9 @@
 // Adding US is a follow-up on the data side, not a change here.
 
 import {
+  analysisShape,
   awaitingOutcome,
-  CHECKLIST_LABELS,
+  checkContext,
   citedSources,
   cleanName,
   clusterSentence,
@@ -28,6 +29,7 @@ import {
   shares,
   styleSentence,
 } from "../../shared/filings.js";
+import { CHECKS } from "../../shared/methodology.js";
 import { sectorByLabel, sectorPath } from "../../shared/sectors.js";
 import {
   apexHost,
@@ -51,15 +53,26 @@ function prerender(d, host) {
 
   const context = [clusterSentence(d), styleSentence(d)].filter(Boolean);
 
+  // The checklist carries the same three things the hydrated page shows: the
+  // question, the verdict, and — where it passed — what we found for THIS
+  // filing. Parity is not optional here: a crawler reading six bare labels
+  // while a visitor reads six explanations is two different pages.
+  const ctx = checkContext(d);
   const checklist = d.analysis?.checklist
-    ? CHECKLIST_LABELS.map(
-        ([key, label]) =>
-          `<tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(label)}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${d.analysis.checklist[key] ? "Met" : "Not met"}</td>
-    </tr>`,
-      ).join("")
+    ? CHECKS.map((c) => {
+        const ok = !!d.analysis.checklist[c.key];
+
+        return `<tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(c.question)}<br><span style="color:#6b6154;font-size:13px">${esc(ok ? c.passLine(ctx) : c.body)}</span></td>
+      <td style="padding:8px 12px;border-bottom:1px solid #ece1cf;white-space:nowrap">${ok ? "Met" : "Not met"}</td>
+    </tr>`;
+      }).join("")
     : "";
+
+  const shape = analysisShape(d);
+  const met = d.analysis?.checklist
+    ? CHECKS.filter((c) => d.analysis.checklist[c.key]).length
+    : 0;
 
   const outcome = awaitingOutcome(d)
     ? `This filing was disclosed on ${esc(d.disclosed_date)} and the latest close we hold is the same day, so there is no return to report yet.`
@@ -92,10 +105,15 @@ function prerender(d, host) {
 
   ${
     checklist
-      ? `<h2 style="font-size:15px;margin:32px 0 10px">Rated ${esc(d.analysis.rating)}</h2>
-  <p style="font-size:13px;color:#6b6154;margin:0 0 8px">The six checks every purchase is scored against.</p>
-  <table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${checklist}</tbody></table>
-  <p style="font-size:14px;line-height:1.6;color:#5a4d3a;max-width:62ch">Confidence ${Math.round((d.analysis.confidence ?? 0) * 100)}%, over a ${esc(d.analysis.catalyst_window ?? "")} window. The written assessment behind this rating is in the app. <a href="https://${esc(host)}/how-it-works">How the checks work</a>.</p>`
+      ? `<h2 style="font-size:15px;margin:32px 0 10px">Why this was rated ${esc(d.analysis.rating)}</h2>
+  <p style="font-size:13px;color:#6b6154;margin:0 0 8px">${met} of ${CHECKS.length} checks met. <a href="https://${esc(host)}/how-it-works">How the checks work</a>.</p>
+  <table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${checklist}</tbody></table>`
+      : ""
+  }
+  ${
+    shape
+      ? `<h2 style="font-size:15px;margin:32px 0 8px">The case, in full</h2>
+  <p style="font-size:14px;line-height:1.6;color:#5a4d3a;max-width:62ch">The written case for and against this buy runs to ${shape.thesis} ${shape.thesis === 1 ? "point" : "points"}, ${shape.for} ${shape.for === 1 ? "piece" : "pieces"} of evidence for and ${shape.against} against, and ${shape.risks} key ${shape.risks === 1 ? "risk" : "risks"}${shape.confidence != null ? `, written with ${shape.confidence}% stated confidence` : ""}${shape.window ? ` over a ${esc(shape.window)} catalyst window` : ""}. It is in the app.</p>`
       : ""
   }
 

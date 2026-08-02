@@ -26,7 +26,9 @@
 //   - the disclosure facts (who, what role, how many shares, at what price,
 //     what it cost, traded when, disclosed when, how many days apart). All of
 //     this is public record in the RNS or the Form 4 already.
-//   - the rating and its confidence, and the six-point checklist behind it.
+//   - the rating and its confidence, and the six-point checklist behind it,
+//     with each check's own explanation and, where it passed, what we found
+//     for THIS filing (shared/methodology.js owns that copy).
 //     The method is already published in full at /how-it-works, so the
 //     per-filing OUTCOME of that method gives nothing away that the method
 //     page does not.
@@ -231,16 +233,47 @@ export function styleSentence(d) {
     : `They bought into strength, at or near the trailing ${b.window_days}-day high.`;
 }
 
-/** The six checks, as label/value pairs in the order /how-it-works states
- *  them. Keys mirror `RatingChecklist` in ddbx-data. */
-export const CHECKLIST_LABELS = [
-  ["open_market_buy", "Open-market purchase"],
-  ["senior_insider", "Senior insider"],
-  ["meaningful_conviction", "Meaningful size for them"],
-  ["no_alternative_explanation", "No routine explanation"],
-  ["supporting_context_found", "Supporting context found"],
-  ["no_major_counter_signal", "No major counter-signal"],
-];
+/** The context a check's `passLine` interpolates, pre-formatted.
+ *
+ *  shared/methodology.js does no number formatting on purpose — the market
+ *  that owns the filing owns its currency — so this is where a UK row's pence
+ *  and pounds get turned into strings. */
+export function checkContext(d) {
+  return {
+    name: d?.director?.name ?? "The insider",
+    role: d?.director?.role || undefined,
+    company: cleanName(d?.company) || d?.ticker || "the company",
+    price: d?.price_pence ? sharePrice(d) : null,
+    value: money(d?.value_gbp, d?.currency),
+  };
+}
+
+/** What the withheld assessment CONTAINS, as counts.
+ *
+ *  This is the page's conversion unit and the honest form of it. The written
+ *  analysis stays in the app (see this file's header), but how much of it there
+ *  is, and what shape it takes, is metadata rather than content — and it is far
+ *  more persuasive than the sentence it replaced ("the written assessment is in
+ *  the app"), because "five points for, three against, three risks" is a
+ *  specific claim a reader can weigh.
+ *
+ *  Both the crawler and the visitor see exactly this. Nothing here reveals a
+ *  word of the analysis. */
+export function analysisShape(d) {
+  const a = d?.analysis;
+
+  if (!a) return null;
+
+  return {
+    thesis: a.thesis_points?.length ?? 0,
+    for: a.evidence_for?.length ?? 0,
+    against: a.evidence_against?.length ?? 0,
+    risks: a.key_risks?.length ?? 0,
+    window: a.catalyst_window ?? null,
+    confidence: a.confidence == null ? null : Math.round(a.confidence * 100),
+    sources: citedSources(d).length,
+  };
+}
 
 /** Cited sources, deduplicated, with our written detail stripped.
  *

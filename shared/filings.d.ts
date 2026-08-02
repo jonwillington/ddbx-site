@@ -1,7 +1,8 @@
 // Types for shared/filings.js. See shared/seo.d.ts for why the module is plain
 // ESM with its types declared alongside.
 
-import type { Dealing, RatingChecklist } from "../src/types/ddbx";
+import type { Dealing } from "../src/types/ddbx";
+import type { CheckContext } from "./methodology";
 
 export interface CitedSource {
   headline: string;
@@ -10,7 +11,18 @@ export interface CitedSource {
 }
 
 export declare const FILING_NOTICE: string;
-export declare const CHECKLIST_LABELS: [keyof RatingChecklist, string][];
+export interface AnalysisShape {
+  thesis: number;
+  for: number;
+  against: number;
+  risks: number;
+  window: string | null;
+  confidence: number | null;
+  sources: number;
+}
+
+export declare function checkContext(d: Dealing): CheckContext;
+export declare function analysisShape(d: Dealing): AnalysisShape | null;
 
 export declare function filingMeetsBar(d: Dealing | null | undefined): boolean;
 export declare function filingPath(id: string): string;

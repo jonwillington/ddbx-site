@@ -1,24 +1,34 @@
 /** One disclosure, one permanent URL — /dealings/d-1825cd96b288f7e1.
  *
- *  The atomic unit of the whole product, and until now a route that rendered
- *  the market dashboard. `GET /api/dealings/:id` has always worked; nothing
- *  joined it to a page.
+ *  The atomic unit of the product, and the page a stranger is most likely to
+ *  arrive on: a filing URL is what gets shared, cited and linked. So it has two
+ *  jobs at once — be a complete, honest record of one purchase, and be the best
+ *  argument the site makes for the app.
  *
- *  Two things make this more than a row with a URL on it:
+ *  The composition follows from that, and the ORDER is the argument:
  *
- *  1. **What happened next.** The outcome section is marked to the latest
- *     cached close, so the page keeps changing after it is published. That is
- *     the difference between a filing page and an archive entry, and it is why
- *     the page stays worth re-crawling for years rather than going stale the
- *     week it appears.
- *  2. **The checklist.** The six checks that produced the rating, per filing.
- *     /how-it-works publishes the method; this publishes the method's answer.
+ *    what happened  ->  what it did  ->  how we judged it  ->  what's behind it
  *
- *  WHAT IT DOES NOT SHOW is decided in shared/filings.js — read the header
- *  there before adding anything from `analysis`. The short version: the written
- *  thesis, the evidence detail and the risks stay in the app, because the site
- *  gates them everywhere else and showing a crawler more than a visitor is
- *  cloaking rather than a clever workaround.
+ *  1. `VerdictBand` — the purchase and its outcome, side by side, as the two
+ *     largest objects on the page.
+ *  2. The price chart, interactive, with the trade and the disclosure marked.
+ *     The gap between those two markers is the single most under-appreciated
+ *     fact about insider filings and it is the one thing a static table can
+ *     never show.
+ *  3. `RatingChecks` — the six checks, each expandable to what it asks and what
+ *     we found here. This is the method demonstrated on a real filing rather
+ *     than described in the abstract, which is why it sits on this page rather
+ *     than being a link to /how-it-works.
+ *  4. `AssessmentPanel` — what the written analysis contains, in counts, with
+ *     the sources it drew on. The ask.
+ *
+ *  The reference table comes last, because it is the part a reader consults
+ *  rather than reads.
+ *
+ *  WHAT IS DELIBERATELY ABSENT is decided in shared/filings.js. Read that
+ *  header before adding anything from `analysis`: the thesis, the evidence
+ *  detail and the risks stay in the app, and showing a crawler more than a
+ *  visitor is cloaking rather than a clever workaround.
  */
 import type { Dealing } from "@/types/ddbx";
 
@@ -26,36 +36,39 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import {
-  awaitingOutcome,
-  CHECKLIST_LABELS,
+  analysisShape,
   citedSources,
   cleanName,
-  clusterSentence,
   disclosureLagDays,
   FILING_NOTICE,
   filingLeadSentence,
   filingMeetsBar,
   money,
-  outcomeSentence,
   sharePrice,
   shares,
-  signedPct,
-  styleSentence,
 } from "../../shared/filings.js";
 import { sectorByLabel, sectorPath } from "../../shared/sectors.js";
 
+import {
+  AssessmentPanel,
+  ContextCards,
+  RatingChecks,
+  VerdictBand,
+} from "@/components/filing/filing-ui";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
+import { Skeleton } from "@/components/skeleton";
 import { RelatedCards } from "@/components/seo/related-cards";
-import { StatTiles } from "@/components/seo/stat-tiles";
 import { RatingBadge } from "@/components/rating-badge";
 import { CompanyLogo } from "@/components/company-logo";
+import { MiniPriceChart } from "@/components/mini-price-chart";
 import { TickerPill } from "@/components/ticker-pill";
 import { api } from "@/lib/api";
 import { companyPath, displayTicker } from "@/lib/company";
+import { UkMarket } from "@/lib/markets/uk";
 
 const RULE = "border-hairline dark:border-separator";
 const R = {
@@ -100,6 +113,36 @@ export default function FilingPage() {
   }, [id]);
 
   const sources = useMemo(() => (deal ? citedSources(deal) : []), [deal]);
+  const shape = useMemo(() => (deal ? analysisShape(deal) : null), [deal]);
+
+  const context = useMemo(() => {
+    if (!deal) return [];
+    const out: { label: string; value: string; body: string }[] = [];
+    const c = deal.cluster;
+    const b = deal.buy_style;
+
+    if (c?.count && c.count >= 2) {
+      out.push({
+        label: "Cluster",
+        value: `${c.count} insiders`,
+        body: `Bought this company inside a ${c.window_days}-day window. A ${c.tier} cluster: breadth is a signal one purchase on its own cannot give you.`,
+      });
+    }
+    if (b?.kind && b.kind !== "neutral") {
+      const off = Math.abs(Math.round((b.drawdown_from_high_pct || 0) * 100));
+
+      out.push({
+        label: "Buy style",
+        value: b.kind === "contrarian" ? "Into weakness" : "Into strength",
+        body:
+          b.kind === "contrarian"
+            ? `Bought ${off}% below the trailing ${b.window_days}-day high. Leaning into a drawdown rather than chasing one.`
+            : `Bought at or near the trailing ${b.window_days}-day high, with the price already running.`,
+      });
+    }
+
+    return out;
+  }, [deal]);
 
   if (status === "missing" || status === "failed") {
     return (
@@ -148,7 +191,13 @@ export default function FilingPage() {
     ? sectorByLabel(deal.sector_normalized)
     : null;
   const analysed = filingMeetsBar(deal);
-  const lp = deal?.live_performance;
+  const name = deal
+    ? cleanName(deal.company) || displayTicker(deal.ticker)
+    : "Filing";
+  // Numbered run over the sections that make the argument. The reference table
+  // and "read next" sit outside it — a counter on an appendix suggests it is
+  // part of the read.
+  const total = analysed ? 4 : 2;
 
   return (
     <DefaultLayout drawerRight>
@@ -156,20 +205,13 @@ export default function FilingPage() {
       <SeoPageShell
         crumbs={[
           { label: "Companies", to: "/companies" },
-          ...(deal
-            ? [
-                {
-                  label: cleanName(deal.company) || displayTicker(deal.ticker),
-                  to: companyPath(deal.ticker),
-                },
-              ]
-            : []),
+          ...(deal ? [{ label: name, to: companyPath(deal.ticker) }] : []),
           { label: deal?.disclosed_date ?? "Filing" },
         ]}
         cta={{
-          body: "This page is one filing. The app is the running feed: every disclosure the day it files, with the full written assessment, the evidence on both sides and the price history attached.",
+          body: "This page is one filing. The app is the running feed: every disclosure the day it files, already rated, with the written case attached and an alert when the price moves after a buy you’re following.",
           gaLabel: `Filing · ${id ?? ""}`,
-          headline: "Read the full assessment in the app.",
+          headline: "Every filing, the day it files.",
           marketId: "uk",
           screenshotSlot: "analysis",
         }}
@@ -177,7 +219,8 @@ export default function FilingPage() {
         loading={status === "loading"}
         skeleton={
           <>
-            <SeoSkeleton rows={4} variant="stat-tiles" />
+            <Skeleton className="mt-7 h-[168px] w-full rounded-2xl" />
+            <Skeleton className="mt-6 h-[220px] w-full rounded-2xl" />
             <SeoSkeleton rows={6} variant="ruled-list" />
           </>
         }
@@ -191,9 +234,7 @@ export default function FilingPage() {
                 size={40}
                 ticker={deal.ticker}
               />
-              <span>
-                {cleanName(deal.company) || displayTicker(deal.ticker)}
-              </span>
+              <span>{name}</span>
             </span>
           ) : (
             "Filing"
@@ -217,34 +258,89 @@ export default function FilingPage() {
               ) : null}
             </div>
 
-            <StatTiles
-              className="mt-7"
-              cols={4}
-              stats={[
-                {
-                  label: "Consideration",
-                  value: money(deal.value_gbp, deal.currency),
-                  primary: true,
-                },
-                { label: "Shares", value: shares(deal.shares) },
-                { label: "Price paid", value: sharePrice(deal) },
-                {
-                  label: "Disclosure lag",
-                  value:
-                    lag == null
-                      ? "—"
-                      : lag === 0
-                        ? "Same day"
-                        : `${lag} ${lag === 1 ? "day" : "days"}`,
-                },
-              ]}
-            />
+            <VerdictBand deal={deal} />
 
+            {/* The chart carries its own period switcher and crosshair, so it
+                is the one genuinely interactive object on an otherwise static
+                document. Markers on both the trade and the disclosure make the
+                lag visible instead of merely stated. */}
+            <SeoSection
+              aside="Trade and disclosure are marked. Drag or hover to scrub the price."
+              index={1}
+              title="The price around the buy"
+              total={total}
+            >
+              <div className="mt-4">
+                <MiniPriceChart
+                  disclosedDate={deal.disclosed_date}
+                  entryPrice={deal.price_pence}
+                  fmt={UkMarket.priceFormat}
+                  muted={deal.is_open_market_buy === false}
+                  tickerForApi={deal.ticker}
+                  tickerForDisplay={displayTicker(deal.ticker)}
+                  tradeDate={deal.trade_date}
+                />
+              </div>
+              <p className={`mt-4 max-w-[62ch] ${R.label} leading-[1.6]`}>
+                {FILING_NOTICE}
+              </p>
+            </SeoSection>
+
+            {context.length > 0 ? (
+              <SeoSection
+                aside="What else was happening around this purchase."
+                index={2}
+                title="Context"
+                total={total}
+              >
+                <ContextCards items={context} />
+              </SeoSection>
+            ) : (
+              <SeoSection
+                aside="What else was happening around this purchase."
+                index={2}
+                title="Context"
+                total={total}
+              >
+                <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+                  No other insiders bought this company inside the cluster
+                  window, and there isn’t enough price history to classify what
+                  this one was buying into.
+                </p>
+              </SeoSection>
+            )}
+
+            {analysed && deal.analysis?.checklist ? (
+              <SeoSection
+                aside="The same six checks every purchase is scored against, answered for this one."
+                index={3}
+                title={`Why this was rated ${deal.analysis.rating}`}
+                total={total}
+              >
+                <RatingChecks checklist={deal.analysis.checklist} deal={deal} />
+              </SeoSection>
+            ) : null}
+
+            {analysed && shape ? (
+              <SeoSection
+                aside="What the written assessment covers, and what it drew on."
+                index={4}
+                title="The case, in full"
+                total={total}
+              >
+                <AssessmentPanel
+                  rating={deal.analysis?.rating ?? "significant"}
+                  shape={shape}
+                  sources={sources}
+                />
+              </SeoSection>
+            ) : null}
+
+            {/* Reference, not narrative — so it sits below the argument and
+                outside the numbered run. */}
             <SeoSection
               aside="The filing, as it was disclosed."
-              index={1}
-              title="What was bought"
-              total={analysed ? 4 : 3}
+              title="The record"
             >
               <dl className={`mt-4 border-t ${RULE}`}>
                 <Row label="Insider" value={deal.director.name} />
@@ -256,12 +352,28 @@ export default function FilingPage() {
                       className="underline underline-offset-4"
                       to={companyPath(deal.ticker)}
                     >
-                      {cleanName(deal.company) || displayTicker(deal.ticker)}
+                      {name}
                     </Link>
                   }
                 />
+                <Row label="Shares" value={shares(deal.shares)} />
+                <Row label="Price paid" value={sharePrice(deal)} />
+                <Row
+                  label="Consideration"
+                  value={money(deal.value_gbp, deal.currency)}
+                />
                 <Row label="Traded" value={deal.trade_date} />
                 <Row label="Disclosed" value={deal.disclosed_date} />
+                <Row
+                  label="Disclosure lag"
+                  value={
+                    lag == null
+                      ? "—"
+                      : lag === 0
+                        ? "Same day"
+                        : `${lag} ${lag === 1 ? "day" : "days"}`
+                  }
+                />
                 <Row
                   label="Transaction"
                   value={
@@ -275,169 +387,13 @@ export default function FilingPage() {
               </dl>
             </SeoSection>
 
-            <SeoSection
-              aside={
-                awaitingOutcome(deal)
-                  ? "Marked from the disclosure-day close, so there is nothing to measure yet."
-                  : "Measured from the disclosure-day close, not the insider’s own entry."
-              }
-              index={2}
-              title="What happened next"
-              total={analysed ? 4 : 3}
-            >
-              {awaitingOutcome(deal) ? (
-                <p className={`mt-4 max-w-[62ch] ${R.body}`}>
-                  This filing was disclosed on {deal.disclosed_date} and the
-                  latest close we hold is the same day, so there is no return to
-                  report yet. This section fills in as the price moves.
-                </p>
-              ) : outcomeSentence(deal) ? (
-                <>
-                  <p className={`mt-4 max-w-[62ch] ${R.body}`}>
-                    {outcomeSentence(deal)}
-                  </p>
-                  <StatTiles
-                    className="mt-5"
-                    cols={2}
-                    stats={[
-                      {
-                        label: "Since disclosure",
-                        value: signedPct(lp?.return_pct_disclosed) ?? "—",
-                        primary: true,
-                        tone:
-                          (lp?.return_pct_disclosed ?? 0) >= 0
-                            ? "positive"
-                            : "negative",
-                      },
-                      {
-                        label: "Against the market",
-                        value: signedPct(lp?.alpha_pct_disclosed) ?? "—",
-                        tone:
-                          (lp?.alpha_pct_disclosed ?? 0) >= 0
-                            ? "positive"
-                            : "negative",
-                      },
-                    ]}
-                  />
-                </>
-              ) : (
-                <p className={`mt-4 max-w-[62ch] ${R.body}`}>
-                  We don’t hold a price mark for this filing yet, so there is no
-                  return to report.
-                </p>
-              )}
-              <p className={`mt-4 max-w-[62ch] ${R.label} leading-[1.6]`}>
-                {FILING_NOTICE}
-              </p>
-            </SeoSection>
-
-            <SeoSection
-              aside="What else was happening around this purchase."
-              index={3}
-              title="Context"
-              total={analysed ? 4 : 3}
-            >
-              <ul className={`mt-4 border-t ${RULE}`}>
-                {[clusterSentence(deal), styleSentence(deal)]
-                  .filter((x): x is string => !!x)
-                  .map((line) => (
-                    <li
-                      key={line}
-                      className={`border-b ${RULE} py-3 ${R.body}`}
-                    >
-                      {line}
-                    </li>
-                  ))}
-                {!clusterSentence(deal) && !styleSentence(deal) ? (
-                  <li className={`border-b ${RULE} py-3 ${R.body}`}>
-                    No cluster of other insiders around this purchase, and not
-                    enough price history to classify what they were buying into.
-                  </li>
-                ) : null}
-              </ul>
-            </SeoSection>
-
-            {analysed && deal.analysis ? (
-              <SeoSection
-                aside="The six checks every purchase is scored against."
-                index={4}
-                title={`Rated ${deal.analysis.rating}`}
-                total={4}
-              >
-                {deal.analysis.checklist ? (
-                  <ul className={`mt-4 border-t ${RULE}`}>
-                    {CHECKLIST_LABELS.map(([key, label]) => {
-                      const passed = Boolean(
-                        deal.analysis?.checklist?.[
-                          key as keyof typeof deal.analysis.checklist
-                        ],
-                      );
-
-                      return (
-                        <li
-                          key={key}
-                          className={`flex items-center justify-between gap-4 border-b ${RULE} py-2.5`}
-                        >
-                          <span className="text-[13.5px] text-foreground/80">
-                            {label}
-                          </span>
-                          <span
-                            className={`text-[12px] ${passed ? "text-positive" : "text-foreground/30"}`}
-                          >
-                            {passed ? "Met" : "Not met"}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : null}
-
-                <p className={`mt-4 max-w-[62ch] ${R.body}`}>
-                  Confidence {Math.round((deal.analysis.confidence ?? 0) * 100)}
-                  %, over a {deal.analysis.catalyst_window} window. The written
-                  assessment behind this rating, with the case for and against
-                  and the risks, is in the app.{" "}
-                  <Link
-                    className="underline underline-offset-4"
-                    to="/how-it-works"
-                  >
-                    How the checks work
-                  </Link>
-                  .
-                </p>
-
-                {sources.length > 0 ? (
-                  <div className="mt-6">
-                    <p className={R.label}>Sources used ({sources.length})</p>
-                    <ul className={`mt-2 border-t ${RULE}`}>
-                      {sources.map((s) => (
-                        <li key={s.url} className={`border-b ${RULE} py-2.5`}>
-                          <a
-                            className="text-[13.5px] text-foreground/80 underline-offset-4 hover:underline"
-                            href={s.url}
-                            rel="nofollow noopener noreferrer"
-                            target="_blank"
-                          >
-                            {s.headline}
-                          </a>
-                          <span className={`mt-0.5 block ${R.label}`}>
-                            {s.label}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </SeoSection>
-            ) : null}
-
             <SeoSection aside="Where to go from here." title="Read next">
               <RelatedCards
                 cols={2}
                 items={[
                   {
                     to: companyPath(deal.ticker),
-                    title: `Every filing at ${cleanName(deal.company) || displayTicker(deal.ticker)}`,
+                    title: `Every filing at ${name}`,
                     description:
                       "The issuer's full record: who has bought, how much, and how those purchases have done.",
                   },
@@ -452,10 +408,10 @@ export default function FilingPage() {
                       ]
                     : []),
                   {
-                    to: "/learn/open-market-buy",
-                    title: "Open-market buy vs vesting",
+                    to: "/how-it-works",
+                    title: "How a filing becomes a rating",
                     description:
-                      "Why only one of these is a decision, and how to tell them apart in a filing.",
+                      "The six checks in full, what each rating means, and where the method stops.",
                   },
                   {
                     to: "/biggest-buys",
