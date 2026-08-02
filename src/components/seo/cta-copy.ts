@@ -86,6 +86,32 @@ export function companiesCta(marketId: "uk" | "us" = "uk"): {
   };
 }
 
+/** A Congress member page. `name` is the member's, already formatted.
+ *
+ *  The one family whose ask has to be written defensively. Every other CTA here
+ *  can promise to tell you when someone buys; on a page about a named
+ *  legislator that framing tips into "follow this politician's trades", which
+ *  is both a claim we do not make and a tone that turns a public-record page
+ *  into a tip sheet. So the ask is about the FILING arriving, not about the
+ *  person being worth following, and it names the disclosure lag — the one
+ *  genuinely useful thing the app does here, since a PTR can land 45 days after
+ *  the trade and nobody watching a website will catch it the day it posts. */
+export function congressMemberCta(name: string): {
+  headline: string;
+  body: string;
+} {
+  return {
+    headline: `Know when ${name} files, not weeks later.`,
+    body: "Congressional filings can arrive up to 45 days after the trade and are published without notice. The app picks up each new disclosure the day it posts, with the committee context attached.",
+  };
+}
+
+/** The member directory and the committee pages. */
+export const congressIndexCta = {
+  headline: "Every congressional filing, the day it posts.",
+  body: "This directory is the record to date. The app watches the House Clerk and Senate feeds directly, so a new disclosure reaches you without you checking anything.",
+};
+
 /** Broker guides — deliberately quiet (`media: "none"`): these pages already
  *  carry an affiliate ask, and a phone screenshot next to a "visit broker"
  *  button is two competing asks in one viewport. */

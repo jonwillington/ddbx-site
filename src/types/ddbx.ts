@@ -1934,6 +1934,124 @@ export interface GovDealing {
   cluster?: ClusterInfo | null;
 }
 
+/** One issuer a member has filed on, with how often. Ranked by count. */
+export interface GovMemberIssuer {
+  ticker: string;
+  company: string;
+  count: number;
+  sector_normalized?: SectorNormalized | null;
+  /** True when the member sits on a committee with jurisdiction over this
+   *  issuer's sector — the "in lane" fact the member page is built around.
+   *  Derived from the same committeeJurisdiction map the triage scorer uses,
+   *  so the page and the rating can never disagree. */
+  in_lane: boolean;
+}
+
+/** Member-level rollup for a Congress profile page.
+ *
+ *  DELIBERATELY BAND-ONLY. PTR amounts are disclosed as ranges, so this carries
+ *  `total_min`/`total_max` (the sum of the band floors and the sum of the band
+ *  ceilings) and NEVER a midpoint total. `GovDealing.amount_mid` exists for
+ *  sorting; summing it would manufacture a precise-looking figure the filings
+ *  do not support, which is the easiest way to make a page about a real person
+ *  wrong. */
+export interface GovMemberStats {
+  /** Rows (PTR table lines), not filings. */
+  filings: number;
+  /** Distinct PTR filing ids — one PTR carries many rows. */
+  filing_docs: number;
+  first_disclosed: string | null;
+  last_disclosed: string | null;
+  /** Sum of `amount_min` / `amount_max` across counted rows (USD). */
+  total_min: number;
+  total_max: number;
+  issuers: number;
+  /** Rows whose issuer sector falls under a committee the member sits on.
+   *  ONLY MEANINGFUL WHEN `jurisdiction_modelled` IS TRUE — see below. */
+  in_lane_count: number;
+  /** Whether we model a jurisdiction for any committee this member sits on.
+   *
+   *  False for every senator today: the jurisdiction map covers House
+   *  committees only (see JURISDICTION_PUBLISHED). When this is false,
+   *  `in_lane_count` is 0 because the question was never asked, NOT because
+   *  the member bought outside their lane. A consumer that renders "0 in-lane
+   *  purchases" without checking this flag is publishing a fact about our
+   *  coverage as a fact about a named person. */
+  jurisdiction_modelled: boolean;
+  /** DISTINCT FILINGS filed past the STOCK Act 45-day window — not rows.
+   *  One late PTR carrying 320 lines is one late filing, and counting it as
+   *  320 would turn a single administrative failure into a pattern. */
+  late_filings: number;
+  /** Rows in the member's own name (vs spouse / joint / dependent child). */
+  self_count: number;
+  /** Rows that cleared the triage floor — the "signal" subset. */
+  signal_count: number;
+  /** Distinct filings the pipeline classified as a bulk portfolio disclosure
+   *  rather than a discrete decision (`us_gov_filing_analyses.kind =
+   *  'rebalance'`). A member page whose totals are dominated by one of these
+   *  must say so: 320 lines across 303 issuers in a single PTR is an account
+   *  disclosure, not 320 investment decisions. */
+  bulk_filings: number;
+  /** Rows belonging to those bulk filings. The denominator for the caveat. */
+  bulk_rows: number;
+  /** Rows in the single largest filing. Lets a page state the concentration
+   *  directly ("303 of these came from one filing"). */
+  largest_filing_rows: number;
+}
+
+/** GET /api/directors/usg/:bioguide — one member, their roster record, their
+ *  rollup and their filings. Mirrors the entity-detail shape of the other
+ *  markets' directorDetail, which `/api/markets` has advertised since the USG
+ *  market was added (the route itself only landed 2026-08-02). */
+export interface GovDirectorDetail {
+  /** Bioguide id. */
+  id: string;
+  reporter: GovReporter;
+  stats: GovMemberStats;
+  top_tickers: GovMemberIssuer[];
+  sectors: { sector_normalized: SectorNormalized; count: number }[];
+  /** Newest first, capped. Full wire rows so consumers reuse their existing
+   *  GovDealing rendering rather than a second, thinner shape. */
+  dealings: GovDealing[];
+}
+
+/** One row of the tracked-member directory. The rollup without the filings —
+ *  enough to rank, filter and describe a member in a list, and to decide
+ *  whether their page clears a publishing bar, without fetching 75 details. */
+export interface GovMemberSummary {
+  id: string;
+  name: string;
+  chamber: GovChamber;
+  party?: "D" | "R" | "I";
+  state?: string;
+  district?: number;
+  photo_url?: string;
+  /** Full committees only — subcommittees are dropped here, since they carry
+   *  no jurisdiction and would swamp a list. */
+  committees: string[];
+  stats: GovMemberStats;
+}
+
+/** GET /api/directors/usg — every member with stored filings. */
+export interface GovMembersResponse {
+  members: GovMemberSummary[];
+}
+
+/** GET /api/gov-committees — the committees the rating engine models a
+ *  jurisdiction for, with the sectors each oversees. Published so consumers
+ *  state the same lane the scorer applies rather than a hand-copied one. */
+export interface GovCommitteesResponse {
+  committees: {
+    committee: string;
+    sectors: SectorNormalized[];
+    /** Members in our roster who sit on it and have filings. */
+    member_count: number;
+  }[];
+  /** Stated so consumers can caveat correctly rather than inferring it from an
+   *  all-House list. */
+  chambers_modelled: GovChamber[];
+}
+
 // ============================================================================
 // Broker comparison / affiliate directory
 // ============================================================================

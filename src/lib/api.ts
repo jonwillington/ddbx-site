@@ -7,7 +7,10 @@ import type {
   DirectorDetail,
   EuDealing,
   EuDirectorDetail,
+  GovCommitteesResponse,
   GovDealing,
+  GovDirectorDetail,
+  GovMemberSummary,
   LatestPrice,
   MonthlySummariesResponse,
   MonthlySummaryResponse,
@@ -270,6 +273,20 @@ export const api = {
 
     return get<{ dealings: GovDealing[] }>(`/gov-dealings${suffix}`);
   },
+  /** Every tracked member with a rollup, minus their filings — the directory
+   *  behind /congress/members and the source the sitemap applies its bar to.
+   *
+   *  NOT `/directors/usg`, which is what `/api/markets` implies: that path is
+   *  swallowed by the UK `/api/directors/:id` route and answers "not found".
+   *  The per-member detail below does live under `/directors/usg/:id`. */
+  govMembers: () => get<{ members: GovMemberSummary[] }>("/gov-members"),
+  /** One member: roster record, complete rollup, and their filings (capped). */
+  govMember: (bioguide: string) =>
+    get<GovDirectorDetail>(`/directors/usg/${encodeURIComponent(bioguide)}`),
+  /** The committees the rating engine models a jurisdiction for, and the
+   *  sectors each oversees. Read rather than hand-copied so the site states the
+   *  same lane the scorer applies. */
+  govCommittees: () => get<GovCommitteesResponse>("/gov-committees"),
   usDealings: (
     opts: {
       limit?: number;
@@ -361,7 +378,10 @@ export type {
   DirectorDetail,
   EuDealing,
   EuDirectorDetail,
+  GovCommitteesResponse,
   GovDealing,
+  GovDirectorDetail,
+  GovMemberSummary,
   LatestPrice,
   MonthlySummariesResponse,
   MonthlySummaryResponse,

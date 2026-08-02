@@ -22,6 +22,10 @@ import StatusPage from "@/pages/status";
 import ReportsPage from "@/pages/reports";
 import DirectorPage from "@/pages/director";
 import CongressPreviewPage from "@/pages/congress-preview";
+import CongressCommitteePage from "@/pages/congress-committee";
+import CongressCommitteesPage from "@/pages/congress-committees";
+import CongressMemberPage from "@/pages/congress-member";
+import CongressMembersPage from "@/pages/congress-members";
 import DjtPreviewPage from "@/pages/djt-preview";
 import MarketHomePage from "@/pages/market-home";
 import NetherlandsPreviewPage from "@/pages/netherlands-preview";
@@ -63,6 +67,25 @@ function App() {
             (per-market insider detail). */}
         <Route element={<CongressPreviewPage />} path="/directors" />
         <Route element={<CongressPreviewPage />} path="/congress" />
+        {/* Congress directory. Mounted under /congress/members/ and
+            /congress/committees/ rather than a bare /congress/:slug, which
+            would make the two indexes ambiguous with a member slug and would
+            force the Pages Function at functions/congress/[slug].js to
+            disambiguate them by shape. Two explicit prefixes, two Function
+            directories, no ambiguity. */}
+        <Route element={<CongressMembersPage />} path="/congress/members" />
+        <Route
+          element={<CongressMemberPage />}
+          path="/congress/members/:slug"
+        />
+        <Route
+          element={<CongressCommitteesPage />}
+          path="/congress/committees"
+        />
+        <Route
+          element={<CongressCommitteePage />}
+          path="/congress/committees/:slug"
+        />
         <Route element={<DjtPreviewPage />} path="/djt" />
         <Route element={<SwedenPreviewPage />} path="/se-preview" />
         <Route element={<SwedenPreviewPage />} path="/se" />

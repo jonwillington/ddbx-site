@@ -25,6 +25,15 @@ import {
   comparisonPath,
   COMPARISONS,
 } from "../shared/broker-comparisons.js";
+import {
+  committeeMeetsBar,
+  committeePath,
+  committeeSlug,
+  memberMeetsBar,
+  memberPath,
+  memberSlug,
+  membersOnCommittee,
+} from "../shared/congress.js";
 import { entriesForHost, learnPath } from "../shared/glossary.js";
 import {
   archiveYears,
@@ -263,6 +272,77 @@ async function companyEntries(host) {
   }
 }
 
+/** The Congress directory: the member and committee pages that clear their bars.
+ *
+ *  ddbx.us only — the USG market is mounted on the US domain, so listing these
+ *  on ddbx.uk would contradict the rel=canonical the same pages emit.
+ *
+ *  Both bars are the ones shared/congress.js defines and the pre-render
+ *  Functions apply, so a member or a committee is never advertised here and
+ *  then noindexed on arrival. `lastmod` is the member's most recent filing
+ *  date, which is exactly when their page last changed.
+ *
+ *  Failure posture matches brokerPaths and sectorEntries: an outage costs URLs,
+ *  not the document. */
+async function congressEntries(host) {
+  if (host !== "ddbx.us") return [];
+  try {
+    const cf = {
+      cacheEverything: true,
+      cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+    };
+    const [membersRes, committeesRes] = await Promise.all([
+      fetch(`${API_BASE}/gov-members`, {
+        headers: { accept: "application/json" },
+        cf,
+      }),
+      fetch(`${API_BASE}/gov-committees`, {
+        headers: { accept: "application/json" },
+        cf,
+      }),
+    ]);
+
+    if (!membersRes.ok) return [];
+    const { members } = await membersRes.json();
+
+    if (!members?.length) return [];
+
+    const entries = [{ path: "/congress/members", lastmod: null }];
+
+    for (const m of members) {
+      if (!memberMeetsBar(m)) continue;
+      entries.push({
+        path: memberPath(memberSlug(m.name, m.id)),
+        lastmod: m.stats.last_disclosed || null,
+      });
+    }
+
+    // The committee index rides with its entries: if the lane map is
+    // unavailable we publish neither, rather than advertising a hub whose
+    // children are missing.
+    if (committeesRes.ok) {
+      const { committees } = await committeesRes.json();
+      const published = (committees ?? []).filter((c) =>
+        committeeMeetsBar(membersOnCommittee(members, c.committee)),
+      );
+
+      if (published.length > 0) {
+        entries.push({ path: "/congress/committees", lastmod: null });
+        for (const c of published) {
+          entries.push({
+            path: committeePath(committeeSlug(c.committee)),
+            lastmod: null,
+          });
+        }
+      }
+    }
+
+    return entries;
+  } catch {
+    return [];
+  }
+}
+
 const xmlEscape = (s) =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -319,6 +399,7 @@ export async function onRequestGet(context) {
 
   if (reports.length > 0) paths.push("/reports", ...reports);
   paths.push(...(await sectorEntries(host)));
+  paths.push(...(await congressEntries(host)));
   // Glossary entries appear only in their owning host's sitemap — the whole
   // point of the ownership rule is that no entry exists at two URLs.
   paths.push(...entriesForHost(host).map((e) => learnPath(e.slug)));

@@ -284,6 +284,56 @@ const sectorFromPath = (path) =>
     ? sectorBySlug(decodeURIComponent(path.slice("/sectors/".length)))
     : null;
 
+/** Congress directory shapes.
+ *
+ *  All four live under /congress/, which `marketIdForPath` already resolves to
+ *  the "usg" market, so they canonicalise to ddbx.us without another branch.
+ *
+ *  The member and committee titles here are the SPA's FALLBACK only. The
+ *  pre-render Functions replace the head with the real name and rollup, exactly
+ *  as functions/company/[key].js does — but a Function cannot run on a
+ *  client-side navigation, so these have to say something better than the
+ *  Congress dashboard's title. The slug carries enough to do that. */
+const isCongressMembersIndexPath = (path) => path === "/congress/members";
+
+const isCongressCommitteesIndexPath = (path) =>
+  path === "/congress/committees";
+
+/** "/congress/members/nancy-pelosi-p000197" -> "Nancy Pelosi".
+ *
+ *  Title-cased from the slug with the bioguide dropped. Imperfect on names the
+ *  slug flattened (a hyphenated surname, "Jr."), which is acceptable for a
+ *  fallback the crawler never sees and a reader sees for one paint. */
+const congressMemberNameFromPath = (path) => {
+  if (!path.startsWith("/congress/members/")) return null;
+  const slug = decodeURIComponent(path.slice("/congress/members/".length));
+
+  if (!slug || slug.includes("/")) return null;
+
+  const parts = slug.split("-").filter(Boolean);
+  // Drop the trailing bioguide when it is one.
+  if (parts.length > 1 && /^[a-z]\d{6}$/i.test(parts[parts.length - 1])) {
+    parts.pop();
+  }
+  if (parts.length === 0) return null;
+
+  return parts.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+};
+
+/** "/congress/committees/financial-services" -> "Financial Services". */
+const congressCommitteeNameFromPath = (path) => {
+  if (!path.startsWith("/congress/committees/")) return null;
+  const slug = decodeURIComponent(path.slice("/congress/committees/".length));
+
+  if (!slug || slug.includes("/")) return null;
+
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+};
+
 const isCompaniesIndexPath = (path) => path === "/companies";
 
 const isCompanyDetailPath = (path) =>
@@ -354,6 +404,8 @@ export function seoForPath(pathname, hostname) {
   const sector = sectorFromPath(path);
   const leaderboard = leaderboardFromPath(path);
   const learnEntry = learnEntryFromPath(path);
+  const congressMember = congressMemberNameFromPath(path);
+  const congressCommittee = congressCommitteeNameFromPath(path);
   const period = leaderboard?.year
     ? `in ${leaderboard.year}`
     : "of the last twelve months";
@@ -395,6 +447,19 @@ export function seoForPath(pathname, hostname) {
     if (learnEntry) return brandTitle(learnEntry.title);
     if (isLearnIndexPath(path))
       return brandTitle("Understanding insider dealing");
+    // Congress, before the generic branches: these are /congress/* paths and
+    // nothing else here claims them, but the ordering keeps them next to the
+    // descriptions that pair with them.
+    if (congressMember)
+      return brandTitle(`${congressMember} stock trades — filings and committees`);
+    if (isCongressMembersIndexPath(path))
+      return brandTitle("Members of Congress who file stock purchases");
+    if (congressCommittee)
+      return brandTitle(
+        `${congressCommittee} committee — members who buy stocks`,
+      );
+    if (isCongressCommitteesIndexPath(path))
+      return brandTitle("Congressional committees and the sectors they oversee");
     // Market-specific, unlike /developers: the regulator, the exchange and the
     // noun for the filer all change, so ddbx.uk and ddbx.us publish genuinely
     // different documents rather than one page twice. ddbx.eu 301s to ddbx.uk.
@@ -457,6 +522,14 @@ export function seoForPath(pathname, hostname) {
         : "How an RNS disclosure becomes a rating: the six checks every UK director share purchase is scored against, what each rating means, where the filings come from, and where the method stops.";
     if (isLearnIndexPath(path))
       return "What insider filings mean, which disclosures are actually purchases, and how much a director buying their own shares really tells you.";
+    if (congressMember)
+      return `Every stock purchase ${congressMember} has disclosed under the STOCK Act — the value bands, the companies, the accounts they were filed for, and which of their committees oversee the sectors involved.`;
+    if (isCongressMembersIndexPath(path))
+      return "Every member of Congress with a disclosed stock purchase on record, with the value bands, the companies and the committee jurisdiction behind each one.";
+    if (congressCommittee)
+      return `Members of the House ${congressCommittee} committee who have disclosed stock purchases, the sectors the committee oversees, and which of those purchases fall inside its jurisdiction.`;
+    if (isCongressCommitteesIndexPath(path))
+      return "Which House committees oversee which sectors, and which members of each have disclosed stock purchases in the industries they legislate on.";
     if (isSectorsIndexPath(path))
       return `Where ${market.label} insiders are buying, broken down by sector — disclosed volume and value, and the median performance of each sector's buys against the market.`;
     if (isReportsIndexPath(path))
