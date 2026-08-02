@@ -1,24 +1,125 @@
 # Next feature families: people, filings, outcomes
 
 **Date**: 2026-08-02
-**Status**: in progress — see §0 for what is built
+**Status**: three families built and committed, unpushed; see §0
 **Scope**: `ddbx-site`, plus one required `ddbx-data` endpoint (§2.1)
 
 ---
 
 ## 0. Status
 
+**Three of the six families are built, verified and committed. Nothing is
+pushed** — see §0.4, which is the only thing here that needs you.
+
 | # | Family | State |
 |---|---|---|
-| 1 | Congress member + committee pages | see §2 |
-| 2 | Per-filing permanent pages | see §3 |
-| 3 | Weekly digest URLs | see §4 |
-| 4 | Outcomes study | see §5 |
-| 5 | Index membership hubs | specified, not built (§6) |
-| 6 | Director person pages | blocked on a posture decision (§7) |
+| 1 | Congress member + committee pages | **Built.** 45 URLs on ddbx.us (§2) |
+| 2 | Per-filing permanent pages | **Built.** 310 URLs on ddbx.uk (§3) |
+| 3 | Weekly digest URLs | **Built.** 35 URLs, archive backfilled (§4) |
+| 4 | Outcomes study | **Do not build yet.** The data is not there (§5) |
+| 5 | Index membership hubs | Specified, not built (§6) |
+| 6 | Director person pages | Blocked on a posture decision you own (§7) |
 
-This section is updated as work lands. Everything below §1 is the plan as
-written; where §0 and a later section disagree, §0 is current.
+Roughly **390 new indexable URLs**. `ddbx.uk` goes 318 → 650, `ddbx.us`
+189 → 234.
+
+### 0.1 What shipped
+
+**`ddbx-data` (deployed, live).** Three additive endpoints, no wire-format
+break, no consumer breakage:
+
+- `GET /api/directors/usg/:bioguide` — the member detail `/api/markets` has
+  advertised since the USG market was added and which **404'd**. That was a
+  standing contract bug independent of this work.
+- `GET /api/gov-members` — the tracked-member directory (75 members). Not
+  `/api/directors/usg`: that path is swallowed by the UK `/api/directors/:id`
+  route registered ~4,500 lines earlier, which matches it with `id="usg"` and
+  answers "not found".
+- `GET /api/gov-committees` — the committees the rating engine models a
+  jurisdiction for, published so the site states the scorer's lane instead of a
+  hand-copied one.
+- `GET /api/weekly-digests` — the digest archive index.
+
+**`ddbx-site` (committed, NOT pushed).** Three page families, each with a
+shared ESM module, React pages, pre-render Functions, `seo.js` entries,
+middleware skip-list entries and sitemap blocks.
+
+### 0.2 Three things the data said that this plan got wrong
+
+Each of these changed what was built, and each was found by checking rather
+than by reasoning.
+
+1. **The jurisdiction model is House-only.** `JURISDICTION_SIC` covers 11 House
+   committees; no Senate committee has a lane. So a senator's `in_lane_count`
+   is 0 **because the question was never asked**, and 26 of the 75 members are
+   in that position. Publishing "none of their purchases were in their lane"
+   for them would state a fact about our coverage as a fact about a named
+   legislator. A `jurisdiction_modelled` flag now carries the distinction all
+   the way to the page, and the committee family is 11 pages rather than the
+   116 the raw roster would have produced.
+2. **The outcomes study is not buildable.** §5 recommended leading with the
+   Netherlands: 11,908 disclosures back to 2006. The NL feed carries **zero
+   performance data** — `MARKET_CONFIG.NL.performance` is `false`, and a
+   200-row sample has no `live_performance` on any row. There is no price
+   history for Euronext Amsterdam in the system to compute returns from. The
+   only corpus with marks is UK, at 797 rows over five months. Details and what
+   would change it in §5.
+3. **The weekly archive was two weeks deep, not twenty.** Digests are built
+   lazily on request and stored, and nothing had ever asked for an old one.
+   Backfilled through the endpoint's own build-and-store path.
+
+### 0.3 Two judgement calls made without you
+
+**The discretion-mode boundary on filing pages** (§3.4). These pages could
+carry the full written analysis; that would hand away what the app is for. The
+tempting workaround — analysis for the crawler, blur for the visitor — is
+cloaking. So the boundary is one both see: facts, rating, the six-point
+checklist, cluster and buy style, what happened next, and the third-party
+sources cited. The thesis, evidence detail and risks stay in the app. It
+follows the precedent `/company/:key` already set. Reversing it is a one-file
+change in `shared/filings.js`, whose header argues the case in full.
+
+**Publishing pages about named legislators at all** (§2.4). The mitigation is
+that every qualification renders *above* the numbers rather than under them.
+Pelosi's page states that 100% of the purchases were filed for a spouse
+account; a member whose 361 companies came from bulk account filings is tagged
+as such in the directory. If you would rather not publish these, the sitemap
+block and four routes come out cleanly.
+
+### 0.4 The one thing that needs you
+
+**`git push` publishes all of it.** ddbx-site auto-deploys to Cloudflare Pages
+on push to `main`, so the three commits go live the moment they leave the
+machine, and ~390 URLs start being indexed. That is outward-facing and slow to
+unwind, so I have not pushed. The commits are on `main` locally:
+
+```
+bff89ad feat(weekly): give the weekly digest a URL, and an archive to sit in
+37860ad feat(filings): give every analysed disclosure a permanent page
+dec5640 feat(congress): member and committee pages, with the caveats above the numbers
+```
+
+`ddbx-data` **is** deployed — those changes are additive endpoints with no
+consumer breakage, and the site's new pages need them regardless.
+
+Your four uncommitted WIP files (`blurred-analysis-overlay.tsx`,
+`market-hero.tsx`, `market-page.tsx`, `lib/markets/congress.tsx`) were in the
+tree throughout and are untouched.
+
+### 0.5 How it was verified
+
+Under `wrangler pages dev` against the live API, not by typechecking — which is
+how the 2026-07-26 batch found its real bugs, and it worked again. Checked for
+every family: exactly one `rel=canonical` per page, correct titles and
+descriptions, `noindex` on non-owning hosts / below-bar records / malformed
+slugs, and sitemap counts matching what the pre-renders will actually index.
+
+Rendered in a headless browser too, which caught five defects typechecking
+could not: two `h1`s carrying the same member name, a no-committee case stating
+the same absence twice, a committee lead sentence repeating the jurisdiction
+clause already in its standfirst, a "+0.0% against +0.0%" outcome on a filing
+disclosed the same day, and a weekly total tile disagreeing with the headline
+above it by £30k.
 
 ---
 
@@ -288,47 +389,71 @@ this week") we are uniquely placed to answer.
 
 ---
 
-## 5. The outcomes study
+## 5. The outcomes study — do not build it yet
 
-The authority play, and the one page here a journalist might cite.
+**Recommendation reversed after checking the data.** This section originally
+recommended leading with the Netherlands. That is not buildable, and the UK
+alternative is not credible. Nothing was built.
 
-### 5.1 The honest version
+### 5.1 Why the Netherlands does not work
 
-The pitch writes itself as "do director buys beat the market?" The data does
-not yet support the version of that sentence anyone would want to publish for
-the UK: **UK history starts 2026-03-09**, five months and 801 open-market buys.
-A performance study over five months is a weather report.
+The pitch was strong: 11,908 disclosures, 6,142 open-market buys, back to
+2006, through the crisis, COVID and the rate shock. A twenty-year series
+nobody on the site has ever looked at.
 
-Two options, and the second is better:
+**The NL feed carries no performance data at all.**
+`MARKET_CONFIG.NL.performance` is `false`, and a 200-row sample of
+`/api/eu-dealings?market=NL` returns zero rows with `live_performance` and zero
+with `performance`. The rows carry price and volume as filed, and nothing to
+mark them against: there is no Euronext Amsterdam price history in the system,
+and no benchmark series for it.
 
-**(a) Publish the UK study with the window stated.** Honest, small, and the
-tracking notice already carries the caveat. It will read as thin to exactly the
-audience it is meant to impress.
+So the corpus is 11,908 records of what was bought and no record of what
+happened next. A returns study needs the second half.
 
-**(b) Lead with the Netherlands.** 11,908 disclosures, 6,142 open-market buys,
-**back to 2006** — through the financial crisis, the recovery, COVID and the
-rate shock. That is a real series and it is sitting unused because NL is a
-waitlist market on the front end. A study titled *"Twenty years of insider
-buying on Euronext Amsterdam"* is a substantially better artefact than anything
-the UK corpus can currently support, and it makes the case for the product
-without depending on the market we sell.
+### 5.2 Why the UK alternative is not credible either
 
-Recommend (b), with the UK and US as a stated-window appendix that grows into
-the lead over time.
+797 UK rows carry `live_performance`, over a window that starts 2026-03-09.
+Five months. "Do director buys beat the market, measured over one summer" is a
+weather report with a methodology section, and it would be published to exactly
+the audience most able to notice.
 
-### 5.2 Constraints
+The US corpus is shallower still (from 2026-05-13).
+
+### 5.3 What would change it
+
+In rough order of cost:
+
+1. **Backfill Euronext Amsterdam price history in `ddbx-data`**, plus an AEX
+   benchmark series, and mark the existing NL rows. This is the one that
+   unlocks a genuinely distinctive artefact, and it is a data-platform project
+   rather than a site one. It would also let NL graduate from waitlist market
+   to one with a Performance surface.
+2. **Wait.** The UK series reaches twelve months in March 2027 and two years in
+   March 2028. A twelve-month study over ~2,000 buys is publishable; today's is
+   not.
+3. **A narrower question that five months can answer honestly**, which is the
+   only version buildable this quarter: not "do director buys beat the market"
+   but something the window genuinely covers, e.g. how the *rated* buys have
+   done against the unrated ones, framed explicitly as a five-month read on the
+   rating rather than on insider buying. Lower ceiling, but true.
+
+I would take (1), sequenced as a `ddbx-data` piece of work, and not publish
+anything until it lands. A weak study is worse than no study, because the whole
+point of the page is to be the thing a journalist can cite.
+
+### 5.4 If it is ever built, the constraints stand
 
 - Full methodology on the page: universe, exclusions, benchmark, how alpha is
-  computed from trade date vs disclosure date, and what a follower could
+  computed from trade date versus disclosure date, and what a follower could
   actually have captured.
 - Survivorship and delisting handled explicitly, or stated as unhandled.
-- `live_performance` is as of the last **cached** close, not live. Say so.
+- `live_performance` is as of the last **cached** close, not live.
 - Past-performance disclaimer, no forward-looking language.
-- Stable canonical, refreshed quarterly, with a visible "last updated".
-- **Watch the unit trap.** `live_performance.*_pct_*` are percentages; the
-  monthly summary's `median_alpha` is a ratio. Two conventions for one idea in
-  one API — this already produced a 100× error on the sector hubs. Use
-  `toRatio()`; do not hand-roll the conversion.
+- Stable canonical, refreshed quarterly, visible "last updated".
+- **The unit trap.** `live_performance.*_pct_*` are percentages; the monthly
+  summary's `median_alpha` is a ratio. This already produced a 100× error on
+  the sector hubs. Use `toRatio()`.
 
 ---
 
@@ -404,10 +529,44 @@ comparison, sector context, glossary anchors, and the new per-filing pages
 
 ## 10. Open questions
 
-1. **Search Console.** Nothing here is measurable without it, and the honest
-   answer to "which of the nine existing families works" is currently "nobody
-   knows". This is the highest-value input available and it costs nothing.
-2. **NL as the study subject** (§5.1) — leading with a market we do not sell
-   is unusual. It is also the only 20-year series we have.
-3. **Director pages** (§7) — the posture, not the build.
-4. **The 368 company pages** (§8) — enrich, noindex, or knowingly keep.
+Ordered by what they block.
+
+1. **Push or not** (§0.4). Three commits sit on local `main`; pushing
+   auto-deploys ~390 URLs. Nothing else here matters until this is decided.
+2. **Search Console.** Still the highest-value input available and it costs
+   nothing. The honest answer to "which of the nine existing families works" is
+   currently "nobody knows", and that is now true of twelve families. Every
+   prioritisation call in this document would be sharper with a month of
+   impression data behind it.
+3. **The discretion boundary on filing pages** (§0.3, §3.4). Ratified or
+   loosened. It is one file.
+4. **Euronext Amsterdam price backfill** (§5.3) — the gate on the only genuinely
+   link-earning page on the list.
+5. **Director person pages** (§7) — the posture, not the build.
+6. **The 368 company pages** (§8) — enrich, noindex, or knowingly keep. Now
+   sitting under 310 filing pages that link into them, which strengthens the
+   enrich case.
+
+---
+
+## 11. Follow-ups this work created
+
+Small, real, and none of them blocking.
+
+- **US filing pages.** `/dealings/:id` is UK-only because `/api/us-dealings`
+  has no per-row detail route. Adding one in `ddbx-data` roughly doubles the
+  family. The Function and the sitemap block name each other so both move
+  together.
+- **`/api/markets` still advertises endpoints that do not exist.** The USG
+  `directorDetail` 404 is fixed; nothing has audited the rest of the discovery
+  document against reality, and both apps read it.
+- **Em dashes in `cta-copy.ts` and in `seo.js` titles** contradict
+  `HOUSE_STYLE_RULES`, which bans them outright. The new copy uses parentheses
+  in prose and keeps the em dash only as a title separator, matching the
+  existing convention rather than unilaterally diverging. Worth one decision
+  either way, applied across the site rather than per family.
+- **`src/pages/broker-detail.tsx` still emits `FAQPage` JSON-LD**, which the
+  2026-07-26 plan already ruled out. Still worth removing.
+- **Weekly digests are built lazily**, so the archive is only as deep as it has
+  been asked for. A cron that walks the last N weeks would keep it from going
+  stale again; today it is correct only because it was backfilled by hand.
