@@ -153,7 +153,7 @@ function ContactContent() {
 function PrivacyContent() {
   return (
     <>
-      <p>Last updated: 1 April 2026</p>
+      <p>Last updated: 2 August 2026</p>
       <p>
         DDBX (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates the
         website ddbx.uk. This Privacy Policy explains how we collect, use, and
@@ -189,11 +189,11 @@ function PrivacyContent() {
       <p>
         The site is hosted on Cloudflare Pages and uses Cloudflare Workers for
         API functionality. Cloudflare&apos;s own privacy policy governs their
-        processing of network-level data. We use Google Analytics 4 in
-        cookieless consent mode — it sets no cookies and stores no identifiers
-        unless you accept the cookie banner. Accepting also loads the X
-        (Twitter) Ads conversion pixel (to measure ad-driven installs) — see the
-        Cookie Policy for details.
+        processing of network-level data. We use Google Analytics 4 for
+        aggregate usage statistics; it sets an analytics cookie when you arrive.
+        Accepting the cookie banner additionally loads the X (Twitter) Ads
+        conversion pixel (to measure ad-driven installs) — see the Cookie Policy
+        for details.
       </p>
 
       <SectionTitle>Your rights</SectionTitle>
@@ -217,7 +217,7 @@ function PrivacyContent() {
 function CookieContent() {
   return (
     <>
-      <p>Last updated: 1 April 2026</p>
+      <p>Last updated: 2 August 2026</p>
       <p>
         This Cookie Policy explains how DDBX uses cookies and similar
         technologies when you visit ddbx.uk.
@@ -248,24 +248,30 @@ function CookieContent() {
         </li>
       </ul>
 
-      <SectionTitle>Analytics &amp; marketing (requires consent)</SectionTitle>
-      <p>
-        Until you click <strong>&quot;Agree to cookies&quot;</strong> on the
-        banner, no analytics or marketing cookies are set on your device.
-      </p>
+      <SectionTitle>Analytics</SectionTitle>
+      <p>These are set when you arrive, before you interact with the banner.</p>
       <ul className="list-disc pl-5 space-y-1">
         <li>
           <strong>Google Analytics 4</strong> — aggregate usage statistics
-          (which pages are viewed, roughly where visitors come from). Before you
-          agree it runs in Google&apos;s cookieless consent mode: it sets no
-          cookies and stores no identifiers. Agreeing enables its analytics
-          cookies.
+          (which pages are viewed, roughly where visitors come from). It sets an
+          analytics cookie so repeat visits from the same browser are counted
+          once rather than as new people each time. We do not send it your name,
+          email, or anything you type into the site, and Google&apos;s
+          advertising signals are switched off, so the data is not used to
+          personalise ads.
         </li>
+      </ul>
+
+      <SectionTitle>Marketing (requires consent)</SectionTitle>
+      <p>
+        Not loaded at all until you click{" "}
+        <strong>&quot;Agree to cookies&quot;</strong> on the banner.
+      </p>
+      <ul className="list-disc pl-5 space-y-1">
         <li>
           <strong>X (Twitter) conversion pixel</strong> — measures whether
-          visitors arriving from X ads go on to install the app or sign up. Not
-          loaded at all until you agree. Loaded from{" "}
-          <code>static.ads-twitter.com</code>.
+          visitors arriving from X ads go on to install the app or sign up.
+          Loaded from <code>static.ads-twitter.com</code>.
         </li>
       </ul>
       <p>
@@ -275,9 +281,24 @@ function CookieContent() {
 
       <SectionTitle>Changing your mind</SectionTitle>
       <p>
-        Cleared site data or a fresh browser will show the banner again. To
-        re-trigger it on the same browser, visit any page with{" "}
-        <code>?cookies=reset</code> appended to the URL.
+        Cleared site data or a fresh browser will show the banner again, and the
+        marketing pixel goes back to not loading. To re-trigger the banner on
+        the same browser, visit any page with <code>?cookies=reset</code>{" "}
+        appended to the URL.
+      </p>
+      <p>
+        To opt out of the analytics cookie, use your browser&apos;s cookie
+        controls or its Do Not Track / tracker-blocking settings, or install
+        Google&apos;s official{" "}
+        <a
+          className="underline underline-offset-2"
+          href="https://tools.google.com/dlpage/gaoptout"
+          rel="noreferrer noopener"
+          target="_blank"
+        >
+          Analytics opt-out add-on
+        </a>
+        . Clearing site data removes it too.
       </p>
 
       <SectionTitle>Changes to this policy</SectionTitle>

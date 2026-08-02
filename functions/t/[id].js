@@ -58,13 +58,12 @@ const monogram = (ticker) => String(ticker ?? "").replace(/\.L$/i, "").slice(0, 
 // inline so the cold-traffic funnel is measurable: a page_view on load plus a
 // click event on each CTA. Per-domain measurement IDs mirror the SPA's GA_IDS.
 //
-// Consent mirrors the SPA's posture too, and it has to: this page carries no
-// cookie banner, and the Cookie Policy (src/layouts/default.tsx) tells every
-// visitor that nothing is stored until they accept one. So GA4 boots under
-// Consent Mode v2 with analytics_storage DENIED — cookieless pings, no
-// identifiers, the funnel still measurable. Share links are how cold traffic
-// arrives from X, which makes this the page most likely to be someone's first
-// touch and the last place to be quietly setting a _ga cookie.
+// Consent mirrors the SPA's posture too, and it has to: analytics_storage
+// granted for every visitor, ad signals denied. It ran denied-by-default for a
+// few days from 29 July 2026, which cost the measurement of exactly the traffic
+// this page exists to measure — share links are how cold traffic arrives from
+// X, and none of it reached GA4's reports as cookieless pings. The page carries
+// no cookie banner, so denied here meant denied forever.
 const GA_IDS = {
   "ddbx.eu": "G-0R0DR69FXM",
   "www.ddbx.eu": "G-0R0DR69FXM",
@@ -88,17 +87,14 @@ function analyticsHead(gaId, { dealId, ticker, rating, title, url }) {
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
-  // Consent Mode v2 defaults MUST precede config. Same-origin as the SPA, so
-  // a visitor who already accepted the banner on the site proper is honoured
-  // here (key mirrors STORAGE_KEY in src/lib/cookie-consent.ts); everyone else
-  // stays cookieless. Ad signals stay denied permanently — no Google ads.
-  var ddbxAccepted = false;
-  try { ddbxAccepted = localStorage.getItem('ddbx.cookies.consent') === 'accepted'; } catch (e) {}
+  // Consent Mode v2 defaults MUST precede config. Matches the SPA
+  // (src/lib/cookie-consent.ts): analytics granted, ad signals denied
+  // permanently — no Google ads products anywhere on the site.
   gtag('consent', 'default', {
     ad_storage: 'denied',
     ad_user_data: 'denied',
     ad_personalization: 'denied',
-    analytics_storage: ddbxAccepted ? 'granted' : 'denied'
+    analytics_storage: 'granted'
   });
   gtag('js', new Date());
   gtag('config', ${js(gaId)}, { send_page_view: false });

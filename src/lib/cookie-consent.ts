@@ -1,21 +1,27 @@
 // Analytics + cookie consent.
 //
 // GA4 loads on app start (per-domain measurement ID) via `bootstrapAnalytics`,
-// called from main.tsx — but under Google Consent Mode v2 with
-// `analytics_storage` DENIED by default: no GA cookies are set and pings are
-// cookieless until the visitor accepts the banner, at which point consent is
-// upgraded. This is what makes the Cookie Policy's "no cookies until you
-// agree" claim true — the previous arrangement loaded GA4 unconditionally
-// with storage on, which contradicted the policy (and PECR). If you change
-// the consent flow, change the policy copy in layouts/default.tsx in the
-// same commit; the two are one claim.
+// called from main.tsx, with `analytics_storage` GRANTED for every visitor.
+//
+// It briefly ran the other way — Consent Mode v2 defaulting to denied, storage
+// only on acceptance — and the cost was not subtle. Cookieless pings don't
+// reach GA4's standard reports; they feed behavioural modelling, which needs
+// consented-user volume this site doesn't have. Combined with a banner that
+// renders on `md:` and up only, every mobile visit went unmeasured, and
+// reported traffic collapsed from 27 July 2026. Measuring the site is the
+// priority here; this is a deliberate trade against the stricter PECR reading,
+// not an oversight.
+//
+// Ad signals stay denied permanently — we run no Google ads products — and
+// the X (Twitter) ads pixel stays fully gated behind explicit acceptance.
+//
+// The Cookie Policy in layouts/default.tsx describes this arrangement in
+// as many words. The two are one claim: change the consent flow and change
+// the copy in the same commit.
 //
 // Page views are owned by DocumentTitle, which fires the initial view once
 // `window.gtag` is defined and then one per SPA navigation. `config` uses
 // `send_page_view: false` so gtag.js doesn't double-count.
-//
-// The X (Twitter) ads pixel stays fully gated: it only loads on explicit
-// acceptance.
 //
 // Toggle precedence (highest wins):
 //   1. URL: `?cookies=reset` clears the saved choice (handy for testing).
@@ -95,14 +101,15 @@ export function bootstrapAnalytics(): void {
   window.gtag = function gtag() {
     window.dataLayer!.push(arguments);
   };
-  // Consent Mode v2 defaults MUST precede config. Denied = cookieless pings
-  // only; acceptCookies() upgrades analytics_storage. Ad signals stay denied
-  // permanently — we run no Google ads products.
+  // Consent Mode v2 defaults MUST precede config. analytics_storage is granted
+  // for everyone — see the note at the top of this file for why the banner no
+  // longer gates it. Ad signals stay denied permanently: we run no Google ads
+  // products, and the banner is what gates the X pixel.
   window.gtag("consent", "default", {
     ad_storage: "denied",
     ad_user_data: "denied",
     ad_personalization: "denied",
-    analytics_storage: readStored() === "accepted" ? "granted" : "denied",
+    analytics_storage: "granted",
   });
   window.gtag("js", new Date());
   window.gtag("config", measurementId, { send_page_view: false });
@@ -299,8 +306,8 @@ export function acceptCookies(): void {
     // localStorage unavailable — trackers will load this session but not stick.
   }
   bootstrapAnalytics();
-  // Already bootstrapped on app start with storage denied — flip it on.
-  window.gtag?.("consent", "update", { analytics_storage: "granted" });
+  // No analytics_storage upgrade to make — it was granted at bootstrap. What
+  // acceptance actually buys is the X pixel, which loads nowhere else.
   bootstrapTwitterPixel();
   window.dispatchEvent(new CustomEvent(EVENT_NAME));
 }
