@@ -13,6 +13,7 @@ import CompaniesPage from "@/pages/companies";
 import CompanyPage from "@/pages/company";
 import ComparePage from "@/pages/compare";
 import DownloadPage from "@/pages/download";
+import FilingPage from "@/pages/filing";
 import HowItWorksPage from "@/pages/how-it-works";
 import LearnEntryPage, { LearnIndexPage } from "@/pages/learn";
 import ReportPage from "@/pages/report";
@@ -49,7 +50,9 @@ function App() {
             the modal above had no URL of its own to link to or index. */}
         <Route element={<ReportsPage />} path="/reports" />
         <Route element={<ReportPage />} path="/reports/:month" />
-        <Route element={<UkPreviewPage />} path="/dealings/:id" />
+        {/* One disclosure, one permanent URL. Was the UK dashboard, which
+            meant every shared filing link landed on the same generic page. */}
+        <Route element={<FilingPage />} path="/dealings/:id" />
         <Route element={<MarketHomePage />} path="/contact" />
         <Route element={<MarketHomePage />} path="/privacy" />
         <Route element={<MarketHomePage />} path="/cookies" />

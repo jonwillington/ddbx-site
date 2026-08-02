@@ -34,6 +34,7 @@ import {
   memberSlug,
   membersOnCommittee,
 } from "../shared/congress.js";
+import { filingPath } from "../shared/filings.js";
 import { entriesForHost, learnPath } from "../shared/glossary.js";
 import {
   archiveYears,
@@ -272,6 +273,61 @@ async function companyEntries(host) {
   }
 }
 
+/** Per-filing pages: every UK disclosure carrying a written analysis.
+ *
+ *  Three rating-filtered calls rather than one paged walk over the whole feed.
+ *  `rating=` returns exactly the analysed set for that band, which IS the
+ *  publishing bar (see filingMeetsBar in shared/filings.js), so the sitemap
+ *  cannot drift from what the pre-render will actually index. 310 UK rows
+ *  today; each call is edge-cached for an hour.
+ *
+ *  ddbx.uk only. /api/dealings/:id serves the UK pipeline and there is no US
+ *  per-row detail route yet, so a ddbx.us filing page would 404 against the API
+ *  rather than render. When that route lands, add the host here and in
+ *  functions/dealings/[id].js together.
+ *
+ *  `lastmod` is the disclosure date: the facts on the page are fixed at
+ *  disclosure, and the outcome section moves with the market rather than with
+ *  an edit, so a lastmod that tracked the price mark would tell crawlers the
+ *  document changed every day. */
+const RATED_BANDS = ["significant", "noteworthy", "minor"];
+
+async function filingEntries(host) {
+  if (host !== "ddbx.uk") return [];
+  try {
+    const pages = await Promise.all(
+      RATED_BANDS.map((rating) =>
+        fetch(`${API_BASE}/dealings?rating=${rating}&limit=1000`, {
+          headers: { accept: "application/json" },
+          cf: {
+            cacheEverything: true,
+            cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+          },
+        }).then((r) => (r.ok ? r.json() : null)),
+      ),
+    );
+
+    // One band failing would silently drop a third of the family, so a partial
+    // result publishes nothing rather than a set that looks complete.
+    if (pages.some((p) => !p)) return [];
+
+    const seen = new Set();
+    const out = [];
+
+    for (const p of pages) {
+      for (const d of p.dealings ?? []) {
+        if (!d.id || seen.has(d.id)) continue;
+        seen.add(d.id);
+        out.push({ path: filingPath(d.id), lastmod: d.disclosed_date || null });
+      }
+    }
+
+    return out;
+  } catch {
+    return [];
+  }
+}
+
 /** The Congress directory: the member and committee pages that clear their bars.
  *
  *  ddbx.us only — the USG market is mounted on the US domain, so listing these
@@ -400,6 +456,7 @@ export async function onRequestGet(context) {
   if (reports.length > 0) paths.push("/reports", ...reports);
   paths.push(...(await sectorEntries(host)));
   paths.push(...(await congressEntries(host)));
+  paths.push(...(await filingEntries(host)));
   // Glossary entries appear only in their owning host's sitemap — the whole
   // point of the ownership rule is that no entry exists at two URLs.
   paths.push(...entriesForHost(host).map((e) => learnPath(e.slug)));

@@ -294,6 +294,13 @@ const sectorFromPath = (path) =>
  *  as functions/company/[key].js does — but a Function cannot run on a
  *  client-side navigation, so these have to say something better than the
  *  Congress dashboard's title. The slug carries enough to do that. */
+/** "/dealings/d-abc123" -> the id, or null. The SPA fallback only: the
+ *  pre-render Function at functions/dealings/[id].js replaces the head with the
+ *  company, the role and the consideration, but it cannot run on a client-side
+ *  navigation. There is nothing in the URL to describe the filing with, so the
+ *  fallback says what KIND of page it is rather than inventing a subject. */
+const isFilingPath = (path) => /^\/dealings\/[A-Za-z0-9_-]{4,64}$/.test(path);
+
 const isCongressMembersIndexPath = (path) => path === "/congress/members";
 
 const isCongressCommitteesIndexPath = (path) =>
@@ -450,6 +457,8 @@ export function seoForPath(pathname, hostname) {
     // Congress, before the generic branches: these are /congress/* paths and
     // nothing else here claims them, but the ordering keeps them next to the
     // descriptions that pair with them.
+    if (isFilingPath(path))
+      return brandTitle(`${market.label} insider purchase — the filing in full`);
     if (congressMember)
       return brandTitle(`${congressMember} stock trades — filings and committees`);
     if (isCongressMembersIndexPath(path))
@@ -522,6 +531,8 @@ export function seoForPath(pathname, hostname) {
         : "How an RNS disclosure becomes a rating: the six checks every UK director share purchase is scored against, what each rating means, where the filings come from, and where the method stops.";
     if (isLearnIndexPath(path))
       return "What insider filings mean, which disclosures are actually purchases, and how much a director buying their own shares really tells you.";
+    if (isFilingPath(path))
+      return `One disclosed insider purchase in full: who bought, how many shares, at what price, how long the disclosure took, and how the shares have done against the market since.`;
     if (congressMember)
       return `Every stock purchase ${congressMember} has disclosed under the STOCK Act — the value bands, the companies, the accounts they were filed for, and which of their committees oversee the sectors involved.`;
     if (isCongressMembersIndexPath(path))
