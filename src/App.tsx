@@ -14,6 +14,7 @@ import CompanyPage from "@/pages/company";
 import ComparePage from "@/pages/compare";
 import DownloadPage from "@/pages/download";
 import FilingPage from "@/pages/filing";
+import WeeklyWeekPage, { WeeklyIndexPage } from "@/pages/weekly";
 import HowItWorksPage from "@/pages/how-it-works";
 import LearnEntryPage, { LearnIndexPage } from "@/pages/learn";
 import ReportPage from "@/pages/report";
@@ -48,6 +49,10 @@ function App() {
         <Route element={<MarketHomePage />} path="/report/:month" />
         {/* The archive. The same reports as real, permanently-addressed pages —
             the modal above had no URL of its own to link to or index. */}
+        {/* Weekly digests. /weekly is the ARCHIVE INDEX, not "this week" —
+            see shared/weeks.js for why there is no undated week page. */}
+        <Route element={<WeeklyIndexPage />} path="/weekly" />
+        <Route element={<WeeklyWeekPage />} path="/weekly/:week" />
         <Route element={<ReportsPage />} path="/reports" />
         <Route element={<ReportPage />} path="/reports/:month" />
         {/* One disclosure, one permanent URL. Was the UK dashboard, which

@@ -25,6 +25,7 @@ import { monthLabel, reportPath, slugToMonth } from "./months.js";
 import { canonicalUrlForEntry, entryBySlug } from "./glossary.js";
 import { yearBounds } from "./leaderboard.js";
 import { sectorBySlug } from "./sectors.js";
+import { weekFromPath, weekLabel } from "./weeks.js";
 
 export const BRAND = "ddbx";
 export const SITE_NAME = "Director Dealings";
@@ -299,6 +300,12 @@ const sectorFromPath = (path) =>
  *  company, the role and the consideration, but it cannot run on a client-side
  *  navigation. There is nothing in the URL to describe the filing with, so the
  *  fallback says what KIND of page it is rather than inventing a subject. */
+const isWeeklyIndexPath = (path) => path === "/weekly";
+
+/** "/weekly/2026-07-27" -> the week start, or null. Validated through
+ *  shared/weeks.js so a mid-week date never resolves. */
+const weekFromSeoPath = (path) => weekFromPath(path);
+
 const isFilingPath = (path) => /^\/dealings\/[A-Za-z0-9_-]{4,64}$/.test(path);
 
 const isCongressMembersIndexPath = (path) => path === "/congress/members";
@@ -411,6 +418,7 @@ export function seoForPath(pathname, hostname) {
   const sector = sectorFromPath(path);
   const leaderboard = leaderboardFromPath(path);
   const learnEntry = learnEntryFromPath(path);
+  const weekStart = weekFromSeoPath(path);
   const congressMember = congressMemberNameFromPath(path);
   const congressCommittee = congressCommitteeNameFromPath(path);
   const period = leaderboard?.year
@@ -457,6 +465,12 @@ export function seoForPath(pathname, hostname) {
     // Congress, before the generic branches: these are /congress/* paths and
     // nothing else here claims them, but the ordering keeps them next to the
     // descriptions that pair with them.
+    if (weekStart)
+      return brandTitle(
+        `${market.label} insider buying, week of ${weekLabel(weekStart)}`,
+      );
+    if (isWeeklyIndexPath(path))
+      return brandTitle(`${market.label} insider buying, week by week`);
     if (isFilingPath(path))
       return brandTitle(`${market.label} insider purchase — the filing in full`);
     if (congressMember)
@@ -531,6 +545,10 @@ export function seoForPath(pathname, hostname) {
         : "How an RNS disclosure becomes a rating: the six checks every UK director share purchase is scored against, what each rating means, where the filings come from, and where the method stops.";
     if (isLearnIndexPath(path))
       return "What insider filings mean, which disclosures are actually purchases, and how much a director buying their own shares really tells you.";
+    if (weekStart)
+      return `What ${market.label} insiders bought in the week of ${weekLabel(weekStart)}: how much in total, the biggest single purchase, where the money went by sector, and which buys cleared the rating bar.`;
+    if (isWeeklyIndexPath(path))
+      return `A short read on each week of disclosed ${market.label} insider buying: the totals, the biggest cheque, the sectors it went into and the buys that cleared the bar.`;
     if (isFilingPath(path))
       return `One disclosed insider purchase in full: who bought, how many shares, at what price, how long the disclosure took, and how the shares have done against the market since.`;
     if (congressMember)

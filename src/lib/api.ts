@@ -1,3 +1,4 @@
+import type { WeekIndexEntry } from "../../shared/weeks";
 import type {
   BrokerBadge,
   BrokerOffer,
@@ -19,6 +20,7 @@ import type {
   UkNewsItem,
   UsDealing,
   UsDirectorDetail,
+  WeeklyDigest,
 } from "@/types/ddbx";
 
 /** One issuer in the /companies index. */
@@ -280,6 +282,24 @@ export const api = {
    *  swallowed by the UK `/api/directors/:id` route and answers "not found".
    *  The per-member detail below does live under `/directors/usg/:id`. */
   govMembers: () => get<{ members: GovMemberSummary[] }>("/gov-members"),
+  /** One market-week's editorial digest. `weekStart` must be a Monday; the
+   *  worker normalises anything else, but the site only ever passes stored
+   *  week starts. */
+  weeklyDigest: (market: string, weekStart?: string) => {
+    const qs = new URLSearchParams({ market });
+
+    if (weekStart) qs.set("week_start", weekStart);
+
+    return get<{ digest: WeeklyDigest | null }>(
+      `/weekly-digest?${qs.toString()}`,
+    );
+  },
+  /** The weeks a market has a stored digest for, newest first. Stored rows are
+   *  exactly the publishable weeks, so no extra bar applies. */
+  weeklyDigests: (market: string) =>
+    get<{ market: string; weeks: WeekIndexEntry[] }>(
+      `/weekly-digests?market=${encodeURIComponent(market)}`,
+    ),
   /** One member: roster record, complete rollup, and their filings (capped). */
   govMember: (bioguide: string) =>
     get<GovDirectorDetail>(`/directors/usg/${encodeURIComponent(bioguide)}`),

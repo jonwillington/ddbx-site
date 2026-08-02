@@ -106,6 +106,8 @@ export async function onRequest(context) {
     // the market dashboard and still wants this module's head, so only the two
     // sub-families and their detail pages are excluded.
     /^\/dealings\/[^/]+$/.test(url.pathname) ||
+    url.pathname === "/weekly" ||
+    /^\/weekly\/[^/]+$/.test(url.pathname) ||
     url.pathname === "/congress/members" ||
     /^\/congress\/members\/[^/]+$/.test(url.pathname) ||
     url.pathname === "/congress/committees" ||

@@ -35,6 +35,7 @@ import {
   membersOnCommittee,
 } from "../shared/congress.js";
 import { filingPath } from "../shared/filings.js";
+import { weekPath } from "../shared/weeks.js";
 import { entriesForHost, learnPath } from "../shared/glossary.js";
 import {
   archiveYears,
@@ -273,6 +274,47 @@ async function companyEntries(host) {
   }
 }
 
+/** Weekly digests: the index plus every stored week.
+ *
+ *  UK on ddbx.uk, US on ddbx.us. No content bar of its own — buildWeeklyDigest
+ *  returns null for a week with nothing worth saying, so a stored row IS a
+ *  publishable week and the pre-render will index exactly this set.
+ *
+ *  `lastmod` is the week end: a digest is generated once for a closed week and
+ *  does not change afterwards.
+ *
+ *  The index rides with its entries. An archive hub advertised with no children
+ *  is the one thing a sitemap must not do. */
+async function weeklyEntries(host) {
+  const market = COMPANY_MARKET_BY_HOST[host];
+
+  if (!market) return [];
+  try {
+    const res = await fetch(`${API_BASE}/weekly-digests?market=${market}`, {
+      headers: { accept: "application/json" },
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
+    });
+
+    if (!res.ok) return [];
+    const { weeks } = await res.json();
+
+    if (!weeks?.length) return [];
+
+    return [
+      { path: "/weekly", lastmod: weeks[0].week_end || null },
+      ...weeks.map((w) => ({
+        path: weekPath(w.week_start),
+        lastmod: w.week_end || null,
+      })),
+    ];
+  } catch {
+    return [];
+  }
+}
+
 /** Per-filing pages: every UK disclosure carrying a written analysis.
  *
  *  Three rating-filtered calls rather than one paged walk over the whole feed.
@@ -457,6 +499,7 @@ export async function onRequestGet(context) {
   paths.push(...(await sectorEntries(host)));
   paths.push(...(await congressEntries(host)));
   paths.push(...(await filingEntries(host)));
+  paths.push(...(await weeklyEntries(host)));
   // Glossary entries appear only in their owning host's sitemap — the whole
   // point of the ownership rule is that no entry exists at two URLs.
   paths.push(...entriesForHost(host).map((e) => learnPath(e.slug)));
