@@ -38,6 +38,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   analysisShape,
   citedSources,
+  clusterSentence,
   cleanName,
   disclosureLagDays,
   FILING_NOTICE,
@@ -55,6 +56,7 @@ import {
   RatingChecks,
   VerdictBand,
 } from "@/components/filing/filing-ui";
+import { ClusterPanel } from "@/components/filing/cluster-panel";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoPageShell } from "@/components/seo/page-shell";
@@ -117,17 +119,12 @@ export default function FilingPage() {
 
   const context = useMemo(() => {
     if (!deal) return [];
+    // Cluster is NOT here: it has its own panel below, drawn from the issuer's
+    // filings. Leaving a summary card alongside it put two statements of the
+    // same fact on screen, with different numbers.
     const out: { label: string; value: string; body: string }[] = [];
-    const c = deal.cluster;
     const b = deal.buy_style;
 
-    if (c?.count && c.count >= 2) {
-      out.push({
-        label: "Cluster",
-        value: `${c.count} insiders`,
-        body: `Bought this company inside a ${c.window_days}-day window. A ${c.tier} cluster: breadth is a signal one purchase on its own cannot give you.`,
-      });
-    }
     if (b?.kind && b.kind !== "neutral") {
       const off = Math.abs(Math.round((b.drawdown_from_high_pct || 0) * 100));
 
@@ -186,6 +183,7 @@ export default function FilingPage() {
     );
   }
 
+  const hasCluster = !!(deal?.cluster?.count && deal.cluster.count >= 2);
   const lag = deal ? disclosureLagDays(deal) : null;
   const sector = deal?.sector_normalized
     ? sectorByLabel(deal.sector_normalized)
@@ -287,13 +285,24 @@ export default function FilingPage() {
               </p>
             </SeoSection>
 
-            {context.length > 0 ? (
+            {context.length > 0 || hasCluster ? (
               <SeoSection
-                aside="What else was happening around this purchase."
+                aside={
+                  hasCluster
+                    ? `A ${deal.cluster?.tier} cluster: ${deal.cluster?.count} insiders bought inside a ${deal.cluster?.window_days}-day window. Breadth is a signal one purchase on its own cannot give you.`
+                    : "What else was happening around this purchase."
+                }
                 index={2}
-                title="Context"
+                title={hasCluster ? "They were not the only one" : "Context"}
                 total={total}
               >
+                {/* The cluster, drawn from the issuer's own filings, above the
+                    summary cards. It renders null when the co-buyers cannot be
+                    loaded, so the cards below are always the floor. */}
+                <ClusterPanel
+                  deal={deal}
+                  fallback={clusterSentence(deal) ?? ""}
+                />
                 <ContextCards items={context} />
               </SeoSection>
             ) : (

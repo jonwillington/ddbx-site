@@ -43,6 +43,18 @@ import {
   LockClosedIcon,
   MinusIcon,
 } from "@heroicons/react/20/solid";
+import {
+  BanknotesIcon,
+  CalendarDaysIcon,
+  ExclamationTriangleIcon,
+  IdentificationIcon,
+  ListBulletIcon,
+  MinusCircleIcon,
+  NewspaperIcon,
+  PlusCircleIcon,
+  ScaleIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline";
 
 import { CHECKS } from "../../../shared/methodology.js";
 import {
@@ -67,6 +79,26 @@ const RULE = "border-hairline dark:border-separator";
  *  bordered panel and a bare grid on one page. */
 const CARD =
   "rounded-3xl border border-hairline bg-white/70 dark:border-border/60 dark:bg-surface-secondary/40";
+
+/** One icon per check, keyed on `RatingChecklist`.
+ *
+ *  Presentation only, so it lives here rather than in shared/methodology.js —
+ *  the pre-render has no icons and does not need any, and putting a component
+ *  reference in the data module would stop the Pages Functions importing it.
+ *
+ *  Chosen to be readable at 24px without a legend: money for "did they pay",
+ *  a badge for "who are they", scales for "how much relative to them", a
+ *  calendar for "was the timing forced", a newspaper for "does the record
+ *  agree", a shield for "is anything pointing the other way". Same 24/outline
+ *  set and the same 1.4 stroke as the /api feature grid. */
+const CHECK_ICON: Record<string, typeof BanknotesIcon> = {
+  open_market_buy: BanknotesIcon,
+  senior_insider: IdentificationIcon,
+  meaningful_conviction: ScaleIcon,
+  no_alternative_explanation: CalendarDaysIcon,
+  supporting_context_found: NewspaperIcon,
+  no_major_counter_signal: ShieldCheckIcon,
+};
 
 /** The eyebrow spec, unchanged from every other kicker on the site: mono, 11px,
  *  semibold, uppercase, 0.16em. It was set at 10px here, which is the one size
@@ -198,66 +230,80 @@ export function RatingChecks({
       </div>
       <MeterBar className="mt-2" max={CHECKS.length} value={met} />
 
-      <ul className={`mt-5 border-t ${RULE}`}>
+      {/* A card grid, not ruled rows.
+          The rows were correct and inert: a 14px question, a 13.5px finding
+          and a grey toggle, six times, reading as a form someone had filled
+          in. This is the /api page's feature grid — icon, 17px heading, 14px
+          body, in a bordered card — applied to the one place on the site where
+          the method is shown working. Two columns at the document measure: at
+          three the questions wrap to three lines each. */}
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {CHECKS.map((c) => {
           const ok = Boolean(checklist[c.key]);
+          const Icon = CHECK_ICON[c.key];
 
           return (
-            <li key={c.key} className={`border-b ${RULE} py-3.5`}>
-              <div className="flex items-start gap-3">
+            <div
+              key={c.key}
+              className={`flex h-full flex-col ${CARD} p-5 ${
+                ok ? "" : "opacity-90"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                {Icon ? (
+                  <Icon
+                    aria-hidden
+                    className={`h-6 w-6 shrink-0 ${
+                      ok
+                        ? "text-brand-brown dark:text-brand-tan"
+                        : "text-foreground/25"
+                    }`}
+                    strokeWidth={1.4}
+                  />
+                ) : null}
                 <span
-                  aria-hidden
-                  className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                  className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                     ok
                       ? "bg-positive/12 text-positive"
-                      : "bg-foreground/[0.06] text-foreground/35"
+                      : "bg-foreground/[0.06] text-foreground/40"
                   }`}
                 >
                   {ok ? (
-                    <CheckIcon className="h-3.5 w-3.5" />
+                    <CheckIcon aria-hidden className="h-3.5 w-3.5" />
                   ) : (
-                    <MinusIcon className="h-3.5 w-3.5" />
+                    <MinusIcon aria-hidden className="h-3.5 w-3.5" />
                   )}
+                  {ok ? "Met" : "Not met"}
                 </span>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-4">
-                    <p className="min-w-0 text-[14px] font-medium text-foreground">
-                      {c.question}
-                    </p>
-                    <span
-                      className={`shrink-0 text-[12px] ${ok ? "text-positive" : "text-foreground/35"}`}
-                    >
-                      {ok ? "Met" : "Not met"}
-                    </span>
-                  </div>
-
-                  <p
-                    className={`mt-1.5 max-w-[60ch] text-[13.5px] leading-[1.6] ${
-                      ok ? "text-foreground/80" : "text-foreground/55"
-                    }`}
-                  >
-                    {ok ? c.passLine(ctx) : c.body}
-                  </p>
-
-                  <details className="group mt-1.5">
-                    <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-[12px] text-foreground/40 transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
-                      Why this check matters
-                      <ChevronDownIcon
-                        aria-hidden
-                        className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
-                      />
-                    </summary>
-                    <p className="mt-2 max-w-[60ch] border-l-2 border-hairline pl-3 text-[13px] leading-[1.65] text-foreground/55 dark:border-separator">
-                      {c.detail}
-                    </p>
-                  </details>
-                </div>
               </div>
-            </li>
+
+              <h3 className="mt-4 text-[17px] font-semibold leading-snug tracking-[-0.012em] text-foreground">
+                {c.question}
+              </h3>
+              <p
+                className={`mt-2.5 text-[14px] leading-[1.6] ${
+                  ok ? "text-foreground/70" : "text-foreground/50"
+                }`}
+              >
+                {ok ? c.passLine(ctx) : c.body}
+              </p>
+
+              <details className="group mt-auto pt-3">
+                <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-[12px] text-foreground/40 transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
+                  Why this check matters
+                  <ChevronDownIcon
+                    aria-hidden
+                    className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
+                  />
+                </summary>
+                <p className="mt-2 text-[13px] leading-[1.65] text-foreground/55">
+                  {c.detail}
+                </p>
+              </details>
+            </div>
           );
         })}
-      </ul>
+      </div>
     </div>
   );
 }
@@ -285,19 +331,36 @@ export function AssessmentPanel({
   rating: string;
 }) {
   const [open, setOpen] = useState(false);
+  // Icon + figure + label, not a ruled two-column list of numbers. These four
+  // counts ARE the offer, and setting them as a spec table made the panel read
+  // as a footnote about the analysis rather than a description of it. Same
+  // 24/outline set and 1.4 stroke as the check cards above, so the two sections
+  // read as one system.
   const items = [
     {
       n: shape.thesis,
+      Icon: ListBulletIcon,
       one: "point in the thesis",
       many: "points in the thesis",
     },
     {
       n: shape.for,
+      Icon: PlusCircleIcon,
       one: "piece of evidence for",
       many: "pieces of evidence for",
     },
-    { n: shape.against, one: "piece against", many: "pieces against" },
-    { n: shape.risks, one: "key risk", many: "key risks" },
+    {
+      n: shape.against,
+      Icon: MinusCircleIcon,
+      one: "piece against",
+      many: "pieces against",
+    },
+    {
+      n: shape.risks,
+      Icon: ExclamationTriangleIcon,
+      one: "key risk",
+      many: "key risks",
+    },
   ].filter((i) => i.n > 0);
 
   return (
@@ -307,22 +370,27 @@ export function AssessmentPanel({
           <LockClosedIcon aria-hidden className="h-3.5 w-3.5" />
           In the app
         </p>
-        <p className="mt-3 max-w-[54ch] text-[16.5px] font-semibold leading-[1.35] tracking-[-0.012em] text-foreground">
+        <p className="mt-3 max-w-[24ch] text-balance text-[22px] font-semibold leading-[1.2] tracking-[-0.022em] text-foreground sm:text-[26px]">
           The written case for and against this buy, rated {rating}.
         </p>
 
-        <ul className="mt-5 grid gap-x-8 gap-y-2 sm:grid-cols-2">
+        <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {items.map((i) => (
             <li
               key={i.many}
-              className={`flex items-baseline gap-2.5 border-b ${RULE} pb-2`}
+              className={`rounded-2xl border ${RULE} bg-black/[0.015] px-4 py-3.5 dark:bg-white/[0.03]`}
             >
-              <span className="text-[17px] font-semibold tabular-nums text-foreground">
+              <i.Icon
+                aria-hidden
+                className="h-5 w-5 text-brand-brown dark:text-brand-tan"
+                strokeWidth={1.4}
+              />
+              <p className="mt-2.5 text-[28px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground">
                 {i.n}
-              </span>
-              <span className="text-[13px] text-foreground/60">
+              </p>
+              <p className="mt-1.5 text-[12.5px] leading-[1.35] text-foreground/55">
                 {i.n === 1 ? i.one : i.many}
-              </span>
+              </p>
             </li>
           ))}
         </ul>
