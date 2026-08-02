@@ -66,7 +66,10 @@ export default function CongressCommitteesPage() {
   const ranked = useMemo(
     () =>
       [...(lanes?.committees ?? [])]
-        .map((c) => ({ ...c, members: membersOnCommittee(members, c.committee) }))
+        .map((c) => ({
+          ...c,
+          members: membersOnCommittee(members, c.committee),
+        }))
         .sort((a, b) => b.members.length - a.members.length),
     [lanes, members],
   );
@@ -124,9 +127,7 @@ export default function CongressCommitteesPage() {
                         </span>
                         <span className={`mt-0.5 block ${R.label}`}>
                           Oversees{" "}
-                          {listSentence(
-                            c.sectors.map((s) => s.toLowerCase()),
-                          )}
+                          {listSentence(c.sectors.map((s) => s.toLowerCase()))}
                         </span>
                       </span>
                       <span className="shrink-0 text-[13px] tabular-nums text-foreground/60">

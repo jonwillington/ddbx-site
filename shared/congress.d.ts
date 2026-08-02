@@ -77,3 +77,4 @@ export declare function membersOnCommittee(
 export type { GovDealing, GovMemberSummary };
 
 export declare function bulkTag(m: GovMemberSummary): string | null;
+export declare function bandCompact(min: number, max: number): string;

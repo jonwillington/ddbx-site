@@ -10,6 +10,26 @@
  *
  *  `primary` marks the one number the page is actually about; `tone` colours a
  *  return using the site's own `--positive`/`--negative` tokens.
+ *
+ *  ---------------------------------------------------------------------------
+ *  Levelled off /api, 2026-08-02
+ *  ---------------------------------------------------------------------------
+ *
+ *  These shipped as borderless tint wells with a plain 11px label and a 15.5px
+ *  figure — quiet enough that a page's headline number carried no more weight
+ *  than the caption under it. The /api page's proof cards are the house's
+ *  finished version of the same object, and `download/stat-band.tsx` is that
+ *  object already translated out of the dark palette. So the spec comes from
+ *  there rather than being invented again:
+ *
+ *    card    rounded-2xl, hairline border, bg-white/70 (surface-secondary/40 dark)
+ *    label   font-mono 11px semibold uppercase tracking-[0.16em]
+ *    figure  26px (32px primary), semibold, leading-none, tabular-nums
+ *
+ *  The mono uppercase label is the load-bearing part. It is the same eyebrow
+ *  spec the section kickers and the page eyebrows use, so a figure now reads as
+ *  part of the same system as the headings around it instead of as a caption
+ *  someone set in the body face.
  */
 import type { ReactNode } from "react";
 
@@ -50,18 +70,18 @@ export function StatTiles({
         {stats.map((s) => (
           <div
             key={s.label}
-            // The house tile: a borderless tint well, same object as the
-            // company-page metrics this component was extracted from. (It
-            // shipped with its own bordered variant first — which is how
-            // /sectors/:slug ended up drawing tiles inside tiles.)
-            className="rounded-xl bg-black/[0.035] px-3.5 py-3 dark:bg-white/[0.05]"
+            // The house tile, per /api and download/stat-band.tsx. Bordered
+            // rather than a bare tint: the tint alone disappeared against the
+            // page on the light palette, and the border is what makes a row of
+            // these read as a set of objects rather than as banding.
+            className="h-full rounded-2xl border border-hairline bg-white/70 px-4 py-3.5 dark:border-border/60 dark:bg-surface-secondary/40"
           >
-            <dt className="text-[11px] leading-tight text-foreground/50">
+            <dt className="font-mono text-[11px] font-semibold uppercase leading-tight tracking-[0.16em] text-foreground/45">
               {s.label}
             </dt>
             <dd
-              className={`mt-1 font-semibold tabular-nums tracking-[-0.01em] ${
-                s.primary ? "text-[19px]" : "text-[15.5px]"
+              className={`mt-2 font-semibold leading-none tabular-nums tracking-[-0.02em] ${
+                s.primary ? "text-[32px]" : "text-[26px]"
               } ${
                 s.tone === "positive"
                   ? "text-positive"
@@ -76,7 +96,7 @@ export function StatTiles({
         ))}
       </dl>
       {note ? (
-        <p className="mt-2 text-[12px] leading-[1.5] text-foreground/45">
+        <p className="mt-3 text-[12.5px] leading-[1.45] text-foreground/50">
           {note}
         </p>
       ) : null}

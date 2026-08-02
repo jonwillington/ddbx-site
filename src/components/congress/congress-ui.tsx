@@ -49,6 +49,12 @@ export const R = {
 
 const RULE = "border-hairline dark:border-separator";
 
+/** The house card, levelled off /api via download/stat-band.tsx. Same constant
+ *  as components/filing/filing-ui.tsx so a reader moving between a member page
+ *  and a filing page sees one object, not two near-misses. */
+const CARD =
+  "rounded-3xl border border-hairline bg-white/70 dark:border-border/60 dark:bg-surface-secondary/40";
+
 /* ─── Identity ───────────────────────────────────────────────────────────── */
 
 /** The member's name and portrait, for the shell's `title` slot.
@@ -167,9 +173,7 @@ export function HowToRead({
   if (!lead && items.length === 0) return null;
 
   return (
-    <aside
-      className={`mt-7 rounded-2xl border ${RULE} bg-black/[0.02] p-5 dark:bg-white/[0.03]`}
-    >
+    <aside className={`mt-7 ${CARD} p-5 sm:p-6`}>
       <p className={R.eyebrow}>How to read this</p>
       {lead ? (
         <p className="mt-3 max-w-[68ch] text-[14px] font-medium leading-[1.6] text-foreground/85">

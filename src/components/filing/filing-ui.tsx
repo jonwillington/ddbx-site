@@ -58,8 +58,21 @@ import { BUTTON_RADIUS } from "@/components/button";
 import { MeterBar } from "@/components/seo/meter-bar";
 
 const RULE = "border-hairline dark:border-separator";
+
+/** The house card, levelled off /api via its light translation in
+ *  download/stat-band.tsx and download/pricing-card.tsx: a hairline border over
+ *  a near-white fill, rounded-3xl for a page-scale panel. Named rather than
+ *  repeated so the three set pieces below cannot drift into three different
+ *  cards, which is how the first version ended up with a tinted panel, a
+ *  bordered panel and a bare grid on one page. */
+const CARD =
+  "rounded-3xl border border-hairline bg-white/70 dark:border-border/60 dark:bg-surface-secondary/40";
+
+/** The eyebrow spec, unchanged from every other kicker on the site: mono, 11px,
+ *  semibold, uppercase, 0.16em. It was set at 10px here, which is the one size
+ *  the house spec does not use outside a dense rail. */
 const LABEL =
-  "font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/40";
+  "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45";
 
 /* ─── The verdict band ───────────────────────────────────────────────────── */
 
@@ -83,13 +96,11 @@ export function VerdictBand({ deal }: { deal: Dealing }) {
   const up = (ret ?? 0) >= 0;
 
   return (
-    <div
-      className={`mt-7 grid overflow-hidden rounded-2xl border ${RULE} sm:grid-cols-2`}
-    >
+    <div className={`mt-7 grid overflow-hidden ${CARD} sm:grid-cols-2`}>
       {/* The buy */}
-      <div className="bg-black/[0.02] p-5 dark:bg-white/[0.03] sm:p-6">
+      <div className="p-5 sm:p-6">
         <p className={LABEL}>The purchase</p>
-        <p className="mt-3 text-[34px] font-semibold leading-none tracking-[-0.025em] text-foreground">
+        <p className="mt-3 text-[36px] font-semibold leading-none tracking-[-0.028em] tabular-nums text-foreground sm:text-[44px]">
           {money(deal.value_gbp, deal.currency)}
         </p>
         <p className="mt-3 text-[13.5px] leading-[1.6] text-foreground/60">
@@ -103,14 +114,14 @@ export function VerdictBand({ deal }: { deal: Dealing }) {
         </p>
       </div>
 
-      {/* The outcome. Bordered rather than tinted differently: two tints would
-          read as two unrelated cards, and these are one comparison. */}
+      {/* The outcome. A rule rather than a second fill: two tints would read as
+          two unrelated cards, and these are one comparison. */}
       <div className={`border-t ${RULE} p-5 sm:border-l sm:border-t-0 sm:p-6`}>
         <p className={LABEL}>Since disclosure</p>
         {hasOutcome ? (
           <>
             <p
-              className={`mt-3 text-[34px] font-semibold leading-none tracking-[-0.025em] tabular-nums ${
+              className={`mt-3 text-[36px] font-semibold leading-none tracking-[-0.028em] tabular-nums sm:text-[44px] ${
                 up ? "text-positive" : "text-negative"
               }`}
             >
@@ -125,7 +136,7 @@ export function VerdictBand({ deal }: { deal: Dealing }) {
           </>
         ) : (
           <>
-            <p className="mt-3 text-[34px] font-semibold leading-none tracking-[-0.025em] text-foreground/25">
+            <p className="mt-3 text-[36px] font-semibold leading-none tracking-[-0.028em] text-foreground/25 sm:text-[44px]">
               {dayZero ? "Too soon" : "No mark"}
             </p>
             <p className="mt-3 text-[13.5px] leading-[1.6] text-foreground/60">
@@ -290,8 +301,8 @@ export function AssessmentPanel({
   ].filter((i) => i.n > 0);
 
   return (
-    <div className={`mt-4 overflow-hidden rounded-2xl border ${RULE}`}>
-      <div className="bg-black/[0.02] p-5 dark:bg-white/[0.03] sm:p-6">
+    <div className={`mt-4 overflow-hidden ${CARD}`}>
+      <div className="p-5 sm:p-6">
         <p className={`flex items-center gap-2 ${LABEL}`}>
           <LockClosedIcon aria-hidden className="h-3.5 w-3.5" />
           In the app
@@ -402,12 +413,9 @@ export function ContextCards({
       className={`mt-4 grid gap-3 ${items.length > 1 ? "sm:grid-cols-2" : ""}`}
     >
       {items.map((i) => (
-        <div
-          key={i.label}
-          className={`rounded-2xl border ${RULE} bg-black/[0.02] p-5 dark:bg-white/[0.03]`}
-        >
+        <div key={i.label} className={`${CARD} h-full p-5`}>
           <p className={LABEL}>{i.label}</p>
-          <p className="mt-2.5 text-[19px] font-semibold leading-[1.2] tracking-[-0.015em] text-foreground">
+          <p className="mt-2.5 text-[22px] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground">
             {i.value}
           </p>
           <p className="mt-2 text-[13px] leading-[1.6] text-foreground/60">

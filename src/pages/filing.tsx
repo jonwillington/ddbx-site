@@ -265,13 +265,14 @@ export default function FilingPage() {
                 document. Markers on both the trade and the disclosure make the
                 lag visible instead of merely stated. */}
             <SeoSection
-              aside="Trade and disclosure are marked. Drag or hover to scrub the price."
+              aside="Trade and disclosure are marked, with the price paid and the disclosure-day close drawn as levels. Drag or hover to scrub."
               index={1}
               title="The price around the buy"
               total={total}
             >
               <div className="mt-4">
                 <MiniPriceChart
+                  detailed
                   disclosedDate={deal.disclosed_date}
                   entryPrice={deal.price_pence}
                   fmt={UkMarket.priceFormat}

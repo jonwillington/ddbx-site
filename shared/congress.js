@@ -148,6 +148,22 @@ export function band(min, max) {
   return `${usd(lo)} to ${usd(hi)}`;
 }
 
+/** The band again, tightened for a stat tile.
+ *
+ *  `band()` reads correctly in a sentence and badly in a 4-column grid: "$62k
+ *  to $930k" wraps onto two lines at tile width, which made the one tile
+ *  carrying the headline figure taller than its neighbours. A hyphenated range
+ *  fits on one line, and HOUSE_STYLE_RULES specifies plain hyphens for ranges. */
+export function bandCompact(min, max) {
+  const lo = Number(min) || 0;
+  const hi = Number(max) || 0;
+
+  if (!lo && !hi) return "n/a";
+  if (lo === hi) return usd(lo);
+
+  return `${usd(lo)}-${usd(hi)}`;
+}
+
 /** Party and seat, as one chip's worth of text: "R-GA-7", "D-CA", "R-OK". */
 export function seat(m) {
   const parts = [m.party, m.state].filter(Boolean);

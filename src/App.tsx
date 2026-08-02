@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { BetaTag } from "@/components/market/beta-tag";
 import { CookieBanner } from "@/components/cookie-banner";
 import { DocumentTitle } from "@/components/document-title";
+import { ScrollToTop } from "@/components/scroll-to-top";
 import AccountDeletionPage from "@/pages/account-deletion";
 import ApiPage from "@/pages/api";
 import BiggestBuysPage from "@/pages/biggest-buys";
@@ -39,6 +40,7 @@ function App() {
   return (
     <div className="relative">
       <DocumentTitle />
+      <ScrollToTop />
       <BetaTag />
       <Routes>
         <Route element={<MarketHomePage />} path="/" />

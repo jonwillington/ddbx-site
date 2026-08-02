@@ -19,7 +19,7 @@ import type { GovMemberSummary } from "@/types/ddbx";
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  band,
+  bandCompact,
   CONGRESS_NOTICE,
   CONGRESS_SOURCE,
   memberMeetsBar,
@@ -127,7 +127,7 @@ export default function CongressMembersPage() {
                 { label: "Filings", value: totals.filings },
                 {
                   label: "Combined band",
-                  value: band(totals.min, totals.max),
+                  value: bandCompact(totals.min, totals.max),
                 },
                 { label: "With a page", value: totals.published },
               ]}

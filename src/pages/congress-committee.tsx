@@ -24,7 +24,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import {
-  band,
+  bandCompact,
   committeeLeadSentence,
   committeeMeetsBar,
   committeePath,
@@ -246,7 +246,10 @@ export default function CongressCommitteePage() {
                   primary: true,
                 },
                 { label: "Filings", value: totals.filings },
-                { label: "Combined band", value: band(totals.min, totals.max) },
+                {
+                  label: "Combined band",
+                  value: bandCompact(totals.min, totals.max),
+                },
                 { label: "In-lane purchases", value: totals.inLaneRows },
               ]}
             />

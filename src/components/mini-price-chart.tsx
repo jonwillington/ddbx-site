@@ -33,7 +33,11 @@ const PERIODS: { key: Period; label: string }[] = [
  *  director stepped in. */
 const PRE_BUY_CONTEXT_DAYS = 5;
 
+/** Inline height. The drawer's chart is a supporting glance in a narrow
+ *  column; the filing page's is the section, so `detailed` gets the room a
+ *  price axis and two reference levels need to breathe. */
 const CHART_HEIGHT = 168;
+const CHART_HEIGHT_DETAILED = 260;
 
 /** Bar depth requested per ticker. Matches `historyDays` in the iOS deal
  *  detail view so both clients cut "Max" to the same window. */
@@ -63,6 +67,7 @@ export function MiniPriceChart({
   normalizeClose,
   muted = false,
   showFigures = true,
+  detailed = false,
 }: {
   tickerForApi: string;
   tickerForDisplay: string;
@@ -91,6 +96,20 @@ export function MiniPriceChart({
    *  this the same three figures rendered twice, inches apart, which is the
    *  duplication iOS removed in b64f22f. */
   showFigures?: boolean;
+  /** Technical presentation, for surfaces where the chart IS the content rather
+   *  than a supporting glance — the per-filing page, primarily.
+   *
+   *  Turns on a right price axis, faint horizontal gridlines, the crosshair's
+   *  price label, and a dashed reference line at the entry price. Off by
+   *  default so the drawer's inline chart, which sits in a narrow column under
+   *  a position card that already carries the numbers, is unchanged: a price
+   *  axis there would be a third statement of the same figures.
+   *
+   *  The reference line is the part that earns the word "technical". Every
+   *  return on this site is measured from a specific anchor, and drawing that
+   *  anchor across the series turns "+43.2% since disclosure" from a claim into
+   *  something a reader can see. */
+  detailed?: boolean;
 }) {
   const [period, setPeriod] = useState<Period>("around");
   const [allBars, setAllBars] = useState<{ date: string; close: number }[]>([]);
@@ -243,7 +262,7 @@ export function MiniPriceChart({
 
     const chart = createChart(container, {
       width: container.clientWidth,
-      height: CHART_HEIGHT,
+      height: detailed ? CHART_HEIGHT_DETAILED : CHART_HEIGHT,
       autoSize: false,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
@@ -253,7 +272,16 @@ export function MiniPriceChart({
       },
       grid: {
         vertLines: { visible: false },
-        horzLines: { visible: false },
+        // Horizontal only, and faint. Vertical gridlines on a time axis with
+        // irregular trading days produce bands that mean nothing; horizontals
+        // are price levels, which is the axis a reader is actually reading.
+        horzLines: detailed
+          ? {
+              visible: true,
+              color: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.045)",
+              style: LineStyle.Dotted,
+            }
+          : { visible: false },
       },
       timeScale: {
         borderVisible: false,
@@ -268,7 +296,10 @@ export function MiniPriceChart({
       },
       rightPriceScale: {
         borderVisible: false,
-        visible: false,
+        visible: detailed,
+        // Room above and below the series so the line never runs into the
+        // axis labels or the reference line's own tag.
+        scaleMargins: detailed ? { top: 0.12, bottom: 0.12 } : undefined,
       },
       leftPriceScale: { visible: false },
       crosshair: {
@@ -284,7 +315,10 @@ export function MiniPriceChart({
           width: 1,
           color: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)",
           style: LineStyle.Dashed,
-          labelVisible: false,
+          // The price label only makes sense once there is an axis to read it
+          // against; without one it is a number floating at the edge.
+          labelVisible: detailed,
+          labelBackgroundColor: isDark ? "#1a1a1a" : "#5a4128",
         },
       },
       handleScroll: false,
@@ -310,15 +344,42 @@ export function MiniPriceChart({
     );
 
     // Director's paid price — faint dotted baseline. Kept subtle so the
-    // price action stays the main visual.
+    // price action stays the main visual. In `detailed` mode it earns an axis
+    // label and a title, because there it is one of two reference levels and an
+    // unlabelled line is a line the reader has to guess at.
     series.createPriceLine({
       price: entryPrice,
       color: isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.22)",
       lineWidth: 1,
       lineStyle: LineStyle.Dotted,
-      axisLabelVisible: false,
-      title: "",
+      axisLabelVisible: detailed,
+      title: detailed ? "Paid" : "",
     });
+
+    // The disclosure-day close, in detailed mode only: the anchor every return
+    // on this site is measured from, and the first price a reader could
+    // actually have paid. Drawing it turns "+43.2% since disclosure" from a
+    // figure in a tile into a distance you can see on the chart.
+    //
+    // Taken from the bar `placement` already resolved rather than from a new
+    // prop, so it cannot disagree with the marker sitting on the same bar.
+    // Suppressed when it coincides with the paid price (a same-day disclosure
+    // at an unmoved price), where two labels would overlap to say one thing.
+    if (detailed && placement.discBar) {
+      const anchor = placement.discBar.close;
+      const apart = Math.abs(anchor - entryPrice) / (entryPrice || 1);
+
+      if (apart > 0.002) {
+        series.createPriceLine({
+          price: anchor,
+          color: isDark ? "rgba(238,197,132,0.55)" : "rgba(90,65,40,0.45)",
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+          axisLabelVisible: true,
+          title: "Disclosed",
+        });
+      }
+    }
 
     // Trade + disclosure markers, seated on the bars `placement` resolved —
     // exact day, else the nearest *prior* close, so a weekend or bank-holiday
@@ -516,7 +577,10 @@ export function MiniPriceChart({
 
       {/* Bleed past the card's p-4 so the plot runs edge-to-edge. The meta
           rows above stay padded; only the canvas reaches the card borders. */}
-      <div className="relative -mx-4" style={{ height: CHART_HEIGHT }}>
+      <div
+        className="relative -mx-4"
+        style={{ height: detailed ? CHART_HEIGHT_DETAILED : CHART_HEIGHT }}
+      >
         {plotted.length >= 2 ? (
           <div ref={containerRef} className="h-full w-full" />
         ) : (

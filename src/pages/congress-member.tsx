@@ -31,7 +31,7 @@ import { Link, useParams } from "react-router-dom";
 
 import {
   advisorNote,
-  band,
+  bandCompact,
   bioguideFromSlug,
   bulkNote,
   committeePath,
@@ -298,7 +298,7 @@ export default function CongressMemberPage() {
               stats={[
                 {
                   label: "Disclosed band",
-                  value: band(s.total_min, s.total_max),
+                  value: bandCompact(s.total_min, s.total_max),
                   primary: true,
                 },
                 { label: "Filings", value: s.filing_docs },
