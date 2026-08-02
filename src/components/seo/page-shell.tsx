@@ -119,7 +119,12 @@ export function SeoPageShell({
         {eyebrow}
       </p>
 
-      <h1 className="mt-2 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
+      {/* Levelled off /api's hero h1 (34/44/58). Stepped to 34/44 for the
+          860px document measure: the top rung is for a full-width marketing
+          hero, not a column with a rail beside it. Supersedes the 30/38
+          "guide page" species in the 2026-07-27 type conventions — the
+          record-page species (28/34, company and broker detail) is unchanged. */}
+      <h1 className="mt-2 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-foreground sm:text-[44px]">
         {title}
       </h1>
 
@@ -127,7 +132,7 @@ export function SeoPageShell({
         <p
           className={
             standfirstSize === "lede"
-              ? "mt-4 max-w-[62ch] text-[16.5px] leading-[1.6] tracking-[-0.006em] text-foreground/85"
+              ? "mt-5 max-w-[58ch] text-[16.5px] leading-[1.55] tracking-[-0.006em] text-foreground/75"
               : "mt-4 max-w-[62ch] text-[14px] leading-[1.65] text-foreground/70"
           }
         >
