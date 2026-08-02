@@ -39,6 +39,15 @@ function inWindow(iso: string, anchor: string, days: number) {
   return Math.abs(b - a) <= days * 86_400_000;
 }
 
+const monthAbbr = (iso: string) =>
+  new Date(`${String(iso).slice(0, 10)}T00:00:00Z`).toLocaleDateString(
+    "en-GB",
+    {
+      month: "short",
+      timeZone: "UTC",
+    },
+  );
+
 interface Peer {
   id: string;
   name: string;
@@ -122,6 +131,7 @@ export function ClusterPanel({
     weekday: string;
     dayNum: string;
     weekend: boolean;
+    monthStart: boolean;
     buys: Peer[];
   }[] = [];
 
@@ -134,6 +144,7 @@ export function ClusterPanel({
       iso,
       ...chipParts(iso),
       weekend: dow === 0 || dow === 6,
+      monthStart: days.length === 0 || d.getUTCDate() === 1,
       buys: peers.filter((p) => p.date === iso),
     });
   }
@@ -187,23 +198,40 @@ export function ClusterPanel({
                     : undefined
                 }
               >
-                {has ? (
-                  <CalendarDayChip
-                    dayNum={d.dayNum}
-                    muted={!isThis}
-                    size="sm"
-                    weekday={d.weekday}
-                  />
-                ) : (
-                  <span className="flex h-9 w-9 flex-col items-center justify-center">
-                    <span className="text-[8px] font-semibold uppercase tracking-[0.08em] text-foreground/25">
-                      {d.weekday.slice(0, 1)}
-                    </span>
-                    <span className="mt-0.5 text-[12px] tabular-nums text-foreground/30">
-                      {d.dayNum}
-                    </span>
+                {/* Plain type, not a calendar chip.
+                    The chips are the LIST's device below; repeating them here
+                    put five boxed dates immediately above five more, so the
+                    strip stopped reading as a continuous run of days and
+                    started reading as a second, competing list. A purchase day
+                    is marked by weight and colour on the number instead, which
+                    is all the strip needs to say. */}
+                <span className="flex h-9 flex-col items-center justify-center">
+                  <span
+                    className={`text-[8.5px] font-semibold uppercase tracking-[0.1em] ${
+                      has ? "text-foreground/45" : "text-foreground/25"
+                    }`}
+                  >
+                    {d.weekday.slice(0, has ? 3 : 1)}
                   </span>
-                )}
+                  <span
+                    className={`mt-0.5 tabular-nums ${
+                      isThis
+                        ? "text-[17px] font-semibold text-brand-brown dark:text-brand-tan"
+                        : has
+                          ? "text-[15px] font-semibold text-foreground/80"
+                          : "text-[12px] text-foreground/30"
+                    }`}
+                  >
+                    {d.dayNum}
+                  </span>
+                </span>
+                {/* The month, on its first day in the window (and on the very
+                    first cell, which may not be a 1st). Without it the run
+                    reads 29, 30, 1, 2 with no indication that it turned over. */}
+                <span className="h-3 text-[8.5px] font-semibold uppercase tracking-[0.1em] text-brand-brown dark:text-brand-tan">
+                  {d.monthStart ? monthAbbr(d.iso) : ""}
+                </span>
+
                 {/* One stem per purchase that day, so two filings on one date
                     are visible as two. */}
                 <span className="flex h-4 items-end gap-0.5">
@@ -230,11 +258,22 @@ export function ClusterPanel({
             key={p.id}
             className={`flex items-center gap-3 border-b ${RULE} py-3`}
           >
-            <CalendarDayChip
-              {...chipParts(p.date)}
-              muted={!p.isThis}
-              size="sm"
-            />
+            {/* Chip plus month. The chip carries a weekday and a day number,
+                which is a complete date only inside a known month — and a
+                cluster window routinely straddles two, so a column reading
+                29, 3, 17, 6, 1 was unreadable without one. Mirrors
+                MarketDayHeader, which pairs the same chip with a month label
+                for the same reason. */}
+            <span className="flex shrink-0 flex-col items-center gap-1">
+              <CalendarDayChip
+                {...chipParts(p.date)}
+                muted={!p.isThis}
+                size="sm"
+              />
+              <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground/40">
+                {monthAbbr(p.date)}
+              </span>
+            </span>
             <span className="min-w-0 flex-1">
               {p.isThis ? (
                 <span className="text-[13.5px] font-semibold text-foreground">
