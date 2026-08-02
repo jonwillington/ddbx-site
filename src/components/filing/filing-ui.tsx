@@ -230,76 +230,78 @@ export function RatingChecks({
       </div>
       <MeterBar className="mt-2" max={CHECKS.length} value={met} />
 
-      {/* A card grid, not ruled rows.
-          The rows were correct and inert: a 14px question, a 13.5px finding
-          and a grey toggle, six times, reading as a form someone had filled
-          in. This is the /api page's feature grid — icon, 17px heading, 14px
-          body, in a bordered card — applied to the one place on the site where
-          the method is shown working. Two columns at the document measure: at
-          three the questions wrap to three lines each. */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      {/* Stacked, one per row, with the verdict as the dominant object.
+          The two-column grid read as a set of tiles to scan; these are six
+          findings to be read in order, and the answer to each — met or not —
+          is the thing a reader is looking for. So the tick is a 48px disc at
+          the head of the row rather than an 18px chip in a corner, the
+          question is 19px, and the finding is 15px at near-full contrast. */}
+      <div className="mt-6 space-y-3">
         {CHECKS.map((c) => {
           const ok = Boolean(checklist[c.key]);
           const Icon = CHECK_ICON[c.key];
 
           return (
-            <div
-              key={c.key}
-              className={`flex h-full flex-col ${CARD} p-5 ${
-                ok ? "" : "opacity-90"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                {Icon ? (
-                  <Icon
-                    aria-hidden
-                    className={`h-6 w-6 shrink-0 ${
-                      ok
-                        ? "text-brand-brown dark:text-brand-tan"
-                        : "text-foreground/25"
-                    }`}
-                    strokeWidth={1.4}
-                  />
-                ) : null}
+            <div key={c.key} className={`${CARD} p-5 sm:p-6`}>
+              <div className="flex items-start gap-4 sm:gap-5">
                 <span
-                  className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                  aria-hidden
+                  className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12 ${
                     ok
                       ? "bg-positive/12 text-positive"
-                      : "bg-foreground/[0.06] text-foreground/40"
+                      : "bg-foreground/[0.06] text-foreground/30"
                   }`}
                 >
                   {ok ? (
-                    <CheckIcon aria-hidden className="h-3.5 w-3.5" />
+                    <CheckIcon className="h-6 w-6 sm:h-7 sm:w-7" />
                   ) : (
-                    <MinusIcon aria-hidden className="h-3.5 w-3.5" />
+                    <MinusIcon className="h-6 w-6 sm:h-7 sm:w-7" />
                   )}
-                  {ok ? "Met" : "Not met"}
                 </span>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <h3 className="text-[19px] font-semibold leading-snug tracking-[-0.015em] text-foreground sm:text-[21px]">
+                      {c.question}
+                    </h3>
+                    <span
+                      className={`shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                        ok ? "text-positive" : "text-foreground/35"
+                      }`}
+                    >
+                      {ok ? "Met" : "Not met"}
+                    </span>
+                  </div>
+
+                  <p
+                    className={`mt-2 max-w-[62ch] text-[15px] leading-[1.6] ${
+                      ok ? "text-foreground/80" : "text-foreground/55"
+                    }`}
+                  >
+                    {ok ? c.passLine(ctx) : c.body}
+                  </p>
+
+                  <details className="group mt-3">
+                    <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-[12.5px] text-foreground/45 transition-colors hover:text-foreground/75 [&::-webkit-details-marker]:hidden">
+                      {Icon ? (
+                        <Icon
+                          aria-hidden
+                          className="h-4 w-4 text-brand-brown dark:text-brand-tan"
+                          strokeWidth={1.6}
+                        />
+                      ) : null}
+                      Why this check matters
+                      <ChevronDownIcon
+                        aria-hidden
+                        className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
+                      />
+                    </summary>
+                    <p className="mt-2.5 max-w-[62ch] text-[13.5px] leading-[1.65] text-foreground/55">
+                      {c.detail}
+                    </p>
+                  </details>
+                </div>
               </div>
-
-              <h3 className="mt-4 text-[17px] font-semibold leading-snug tracking-[-0.012em] text-foreground">
-                {c.question}
-              </h3>
-              <p
-                className={`mt-2.5 text-[14px] leading-[1.6] ${
-                  ok ? "text-foreground/70" : "text-foreground/50"
-                }`}
-              >
-                {ok ? c.passLine(ctx) : c.body}
-              </p>
-
-              <details className="group mt-auto pt-3">
-                <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-[12px] text-foreground/40 transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
-                  Why this check matters
-                  <ChevronDownIcon
-                    aria-hidden
-                    className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
-                  />
-                </summary>
-                <p className="mt-2 text-[13px] leading-[1.65] text-foreground/55">
-                  {c.detail}
-                </p>
-              </details>
             </div>
           );
         })}
@@ -336,28 +338,42 @@ export function AssessmentPanel({
   // as a footnote about the analysis rather than a description of it. Same
   // 24/outline set and 1.4 stroke as the check cards above, so the two sections
   // read as one system.
+  // Coloured semantically, not decoratively. These four are not four of the
+  // same thing: evidence FOR and evidence AGAINST are the two halves of the
+  // argument and the site already owns a colour for each direction
+  // (--positive / --negative), and the risks are the warning. Rendering them
+  // in one uniform brown made the panel read as a spec table where the
+  // interesting fact — that the assessment argues both ways — was invisible.
   const items = [
     {
       n: shape.thesis,
       Icon: ListBulletIcon,
+      well: "bg-brand-brown/[0.06] dark:bg-brand-tan/[0.08]",
+      ink: "text-brand-brown dark:text-brand-tan",
       one: "point in the thesis",
       many: "points in the thesis",
     },
     {
       n: shape.for,
       Icon: PlusCircleIcon,
+      well: "bg-positive/[0.08]",
+      ink: "text-positive",
       one: "piece of evidence for",
       many: "pieces of evidence for",
     },
     {
       n: shape.against,
       Icon: MinusCircleIcon,
+      well: "bg-negative/[0.08]",
+      ink: "text-negative",
       one: "piece against",
       many: "pieces against",
     },
     {
       n: shape.risks,
       Icon: ExclamationTriangleIcon,
+      well: "bg-brand-amber/[0.22] dark:bg-brand-amber/[0.12]",
+      ink: "text-brand-brown dark:text-brand-amber",
       one: "key risk",
       many: "key risks",
     },
@@ -376,19 +392,16 @@ export function AssessmentPanel({
 
         <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {items.map((i) => (
-            <li
-              key={i.many}
-              className={`rounded-2xl border ${RULE} bg-black/[0.015] px-4 py-3.5 dark:bg-white/[0.03]`}
-            >
-              <i.Icon
-                aria-hidden
-                className="h-5 w-5 text-brand-brown dark:text-brand-tan"
-                strokeWidth={1.4}
-              />
-              <p className="mt-2.5 text-[28px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground">
+            <li key={i.many} className={`rounded-2xl px-4 py-4 ${i.well}`}>
+              <span
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/75 dark:bg-black/25 ${i.ink}`}
+              >
+                <i.Icon aria-hidden className="h-5 w-5" strokeWidth={1.7} />
+              </span>
+              <p className="mt-3 text-[32px] font-semibold leading-none tabular-nums tracking-[-0.025em] text-foreground">
                 {i.n}
               </p>
-              <p className="mt-1.5 text-[12.5px] leading-[1.35] text-foreground/55">
+              <p className="mt-1.5 text-[12.5px] leading-[1.35] text-foreground/60">
                 {i.n === 1 ? i.one : i.many}
               </p>
             </li>

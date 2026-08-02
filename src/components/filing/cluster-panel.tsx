@@ -22,6 +22,7 @@ import { Link } from "react-router-dom";
 
 import { cleanName, filingPath, money } from "../../../shared/filings.js";
 
+import { CalendarDayChip, chipParts } from "@/components/calendar-day-chip";
 import { api } from "@/lib/api";
 
 const RULE = "border-hairline dark:border-separator";
@@ -37,13 +38,6 @@ function inWindow(iso: string, anchor: string, days: number) {
 
   return Math.abs(b - a) <= days * 86_400_000;
 }
-
-const dayLabel = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
 
 interface Peer {
   id: string;
@@ -113,47 +107,120 @@ export function ClusterPanel({
   const dates = peers.map((p) => Date.parse(`${p.date}T00:00:00Z`));
   const min = Math.min(...dates);
   const max = Math.max(...dates);
-  const span = Math.max(1, max - min);
   const top = Math.max(...peers.map((p) => p.value), 1);
   const total = peers.reduce((n, p) => n + p.value, 0);
 
+  // A day per column across the whole window, not two labelled endpoints.
+  // The claim being made is about TIMING, and a bare line with a dot at each
+  // end told a reader nothing about the shape of it: whether five purchases
+  // landed on one afternoon or trickled over three weeks, and whether the gaps
+  // are weekends or actual silence. Every calendar day is drawn, weekends are
+  // marked as non-trading, and the days with a purchase carry the site's
+  // calendar chip.
+  const days: {
+    iso: string;
+    weekday: string;
+    dayNum: string;
+    weekend: boolean;
+    buys: Peer[];
+  }[] = [];
+
+  for (let t = min; t <= max; t += 86_400_000) {
+    const d = new Date(t);
+    const iso = d.toISOString().slice(0, 10);
+    const dow = d.getUTCDay();
+
+    days.push({
+      iso,
+      ...chipParts(iso),
+      weekend: dow === 0 || dow === 6,
+      buys: peers.filter((p) => p.date === iso),
+    });
+  }
+
+  const monthSpan = [
+    ...new Set(
+      days.map((d) =>
+        new Date(`${d.iso}T00:00:00Z`).toLocaleDateString("en-GB", {
+          month: "long",
+          year: "numeric",
+          timeZone: "UTC",
+        }),
+      ),
+    ),
+  ].join(" to ");
+
   return (
     <div className="mt-5">
-      {/* The window, as a line with a mark per purchase. Dates rather than a
-          bar chart: the claim being made is about TIMING — several people
-          acting close together — and a chart of values would answer a
-          different question. */}
-      <div className="px-1">
-        <div className={`relative h-9 border-b ${RULE}`}>
-          {peers.map((p) => {
-            const x = ((Date.parse(`${p.date}T00:00:00Z`) - min) / span) * 100;
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
+          {monthSpan}
+        </p>
+        <p className="text-[12px] text-foreground/45">
+          {days.length} days, {peers.length} purchases
+        </p>
+      </div>
+
+      {/* Horizontal scroll rather than squeezing: a 30-day cluster at the
+          document measure would give each day 28px, which is narrower than the
+          chip and unreadable. The strip scrolls; the list below is complete
+          either way. */}
+      <div className="-mx-4 mt-3 overflow-x-auto px-4 pb-1">
+        <div className="flex min-w-full gap-1">
+          {days.map((d) => {
+            const has = d.buys.length > 0;
+            const isThis = d.buys.some((b) => b.isThis);
 
             return (
-              <span
-                key={`${p.id}-tick`}
-                className="absolute bottom-0 -translate-x-1/2"
-                style={{ left: `${x}%` }}
-                title={`${p.name}, ${dayLabel(p.date)}`}
+              <div
+                key={d.iso}
+                className={`flex min-w-[34px] flex-1 flex-col items-center gap-1.5 rounded-lg py-2 ${
+                  d.weekend ? "bg-foreground/[0.03]" : ""
+                }`}
+                title={
+                  has
+                    ? d.buys
+                        .map(
+                          (b) => `${b.name}, ${money(b.value, deal.currency)}`,
+                        )
+                        .join("\n")
+                    : undefined
+                }
               >
-                <span
-                  className={`block rounded-full ${
-                    p.isThis
-                      ? "h-3 w-3 bg-brand-brown ring-4 ring-brand-brown/15 dark:bg-brand-tan dark:ring-brand-tan/15"
-                      : "h-2 w-2 bg-foreground/25"
-                  }`}
-                  style={{ transform: "translateY(50%)" }}
-                />
-              </span>
+                {has ? (
+                  <CalendarDayChip
+                    dayNum={d.dayNum}
+                    muted={!isThis}
+                    size="sm"
+                    weekday={d.weekday}
+                  />
+                ) : (
+                  <span className="flex h-9 w-9 flex-col items-center justify-center">
+                    <span className="text-[8px] font-semibold uppercase tracking-[0.08em] text-foreground/25">
+                      {d.weekday.slice(0, 1)}
+                    </span>
+                    <span className="mt-0.5 text-[12px] tabular-nums text-foreground/30">
+                      {d.dayNum}
+                    </span>
+                  </span>
+                )}
+                {/* One stem per purchase that day, so two filings on one date
+                    are visible as two. */}
+                <span className="flex h-4 items-end gap-0.5">
+                  {d.buys.map((b) => (
+                    <span
+                      key={b.id}
+                      className={`w-1 rounded-full ${
+                        b.isThis
+                          ? "h-4 bg-brand-brown dark:bg-brand-tan"
+                          : "h-2.5 bg-foreground/25"
+                      }`}
+                    />
+                  ))}
+                </span>
+              </div>
             );
           })}
-        </div>
-        <div className="mt-2 flex justify-between text-[11px] tabular-nums text-foreground/40">
-          <span>
-            {dayLabel(peers.reduce((a, b) => (a.date < b.date ? a : b)).date)}
-          </span>
-          <span>
-            {dayLabel(peers.reduce((a, b) => (a.date > b.date ? a : b)).date)}
-          </span>
         </div>
       </div>
 
@@ -161,8 +228,13 @@ export function ClusterPanel({
         {peers.map((p) => (
           <li
             key={p.id}
-            className={`flex items-center gap-3 border-b ${RULE} py-2.5`}
+            className={`flex items-center gap-3 border-b ${RULE} py-3`}
           >
+            <CalendarDayChip
+              {...chipParts(p.date)}
+              muted={!p.isThis}
+              size="sm"
+            />
             <span className="min-w-0 flex-1">
               {p.isThis ? (
                 <span className="text-[13.5px] font-semibold text-foreground">
@@ -180,7 +252,7 @@ export function ClusterPanel({
                 </Link>
               )}
               <span className="mt-0.5 block text-[12px] text-foreground/45">
-                {p.role || "Insider"} · {dayLabel(p.date)}
+                {p.role || "Insider"}
               </span>
             </span>
             <span className="w-20 shrink-0 sm:w-32">

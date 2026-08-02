@@ -18,6 +18,7 @@ import {
   shortDate,
 } from "./market-utils";
 
+import { CalendarDayChip } from "@/components/calendar-day-chip";
 import { Skeleton } from "@/components/skeleton";
 import { CompanyLogo } from "@/components/company-logo";
 import { chip } from "@/components/chip";
@@ -141,39 +142,6 @@ export function MarketRowHeader({
  *  entirely in CSS (no image assets), so repeating it for every day in the
  *  list costs nothing. Brand-toned rather than the classic red so thirty of
  *  them read as structure, not decoration. */
-function CalendarDayChip({
-  weekday,
-  dayNum,
-  size = "md",
-}: {
-  weekday: string;
-  dayNum: string;
-  size?: "sm" | "md";
-}) {
-  return (
-    <span
-      className={`flex shrink-0 flex-col overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-surface-secondary ${
-        size === "md" ? "w-10" : "w-9"
-      }`}
-    >
-      <span
-        className={`bg-brand-brown text-center font-bold uppercase tracking-[0.08em] text-[#f5f0e8] dark:bg-brand-tan dark:text-ink ${
-          size === "md" ? "py-[2px] text-[8px]" : "py-[2px] text-[7px]"
-        }`}
-      >
-        {weekday.slice(0, 3)}
-      </span>
-      <span
-        className={`text-center font-semibold leading-none tabular-nums text-foreground/90 ${
-          size === "md" ? "py-1 text-base" : "py-1 text-base"
-        }`}
-      >
-        {dayNum}
-      </span>
-    </span>
-  );
-}
-
 /** Date marker rendered for each day inside an open month. At wide desktop
  *  widths `variant="rail"` sits in a dedicated gutter to the left of the day
  *  card. Below `xl` the default inline variant sits ABOVE the day card on the
