@@ -26,8 +26,10 @@ import type { RelatedCard } from "@/components/seo/related-cards";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ArrowRightIcon } from "@heroicons/react/20/solid";
 
 import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
+import { filingPath } from "../../shared/filings.js";
 import {
   archiveYears,
   buyAlpha,
@@ -81,9 +83,14 @@ const ROW_LINK =
 
 /** Rank gutter, detail, figures — and the meter bar spanning all three on its
  *  own grid row, so the bar is a full-width measure rather than a 22rem stub
- *  that stopped short of the numbers it was scaled against. */
+ *  that stopped short of the numbers it was scaled against.
+ *
+ *  The figures column is wide because it now carries a PAIR: what was paid and
+ *  what it is worth. On a phone that pair stacks and the column stays narrow;
+ *  from `sm` it sits on one line with an arrow between, which is the whole
+ *  point of showing them together. */
 const ROW_GRID =
-  "grid grid-cols-[1.5rem_minmax(0,1fr)_6.5rem] items-start gap-x-3 sm:grid-cols-[2rem_minmax(0,1fr)_8.5rem] sm:gap-x-4";
+  "grid grid-cols-[1.5rem_minmax(0,1fr)_5.5rem] items-start gap-x-3 sm:grid-cols-[2rem_minmax(0,1fr)_15rem] sm:gap-x-4";
 
 /** Onward links, shaped as RelatedCards so the page has one card vocabulary
  *  rather than two: these used to be a hand-rolled `R.tile` grid sitting beside
@@ -437,6 +444,7 @@ export default function BiggestBuysPage() {
                       .length + 1
                   }
                   locale={locale}
+                  marketId={market.id}
                   position={i + 1}
                   symbol={market.symbol}
                   topValue={topValue}
@@ -536,6 +544,7 @@ function BuyRow({
   deal: d,
   entry,
   locale,
+  marketId,
   position,
   symbol,
   topValue,
@@ -545,6 +554,8 @@ function BuyRow({
    *  ticker appeared higher up. */
   entry: number;
   locale: string;
+  /** "UK" | "US" — decides whether the row can reach a filing page. */
+  marketId: string;
   position: number;
   symbol: string;
   /** Rank 1's consideration — every bar is drawn relative to it. */
@@ -562,10 +573,21 @@ function BuyRow({
   // different measurement wearing the same label.
   const ret = buyReturn(d);
   const worthNow = ret != null && value > 0 ? value * (1 + ret) : null;
+  const worthUp = (ret ?? 0) >= 0;
+  // THE ROW GOES TO THE PURCHASE, NOT THE ISSUER.
+  //
+  // Every row on this board is one specific disclosure and each one has a
+  // permanent page of its own; sending all of them to the company index page
+  // instead threw away the thing the reader clicked. Only the UK feed has
+  // filing pages (`/dealings/:id` is a UK pipeline route — see
+  // functions/dealings/[id].js) and a `UsDealing` carries an `id` of its own,
+  // so this gates on the market rather than on the field being present.
+  const href =
+    marketId === "UK" && d.id ? filingPath(d.id) : companyPath(d.ticker ?? "");
 
   return (
     <li className={`border-b ${R.rule}`}>
-      <Link className={ROW_LINK} to={companyPath(d.ticker ?? "")}>
+      <Link className={ROW_LINK} to={href}>
         <div className={ROW_GRID}>
           {/* Zero-padded mono rank. The podium carries full ink and everything
               below it drops back — a ranked list where 1 and 17 are set in the
@@ -594,7 +616,11 @@ function BuyRow({
               ) : (
                 <CompanyLogo size={28} ticker={d.ticker ?? ""} />
               )}
-              <span className="min-w-0 truncate text-[14.5px] font-medium leading-[1.35] text-foreground">
+              {/* The company is what a reader is scanning for, and at 14.5px
+                  medium it was set smaller than the alpha chip beside it and no
+                  heavier than the buyer's name underneath. A leaderboard's rows
+                  are named things; the name gets the weight. */}
+              <span className="min-w-0 truncate text-[16px] font-semibold leading-[1.3] tracking-[-0.012em] text-foreground sm:text-[18px]">
                 {cleanCompanyName(d.company ?? "") || ticker}
               </span>
               <TickerPill ticker={ticker} />
@@ -633,12 +659,44 @@ function BuyRow({
           </span>
 
           <span className="text-right">
-            {/* The two numbers the page exists to show. Both labelled: the row
-                link's accessible name is long, and "£4.2m" announced bare in
+            {/* WHAT THEY PAID, AND WHAT IT IS WORTH — AS A PAIR.
+                What the stake became was a line of 11.5px grey small print
+                under an alpha chip: the single most concrete fact on the row,
+                set smaller than the date. The percentage says how it moved;
+                this says what it turned into, and it is the thing a reader
+                pictures. So it now sits beside the consideration at the same
+                scale, in the direction's colour, with an arrow pointing at it —
+                the row reads "£3.8m became £5.2m" at a glance.
+
+                Stacked on a phone with the arrow turned down, side by side from
+                `sm`, because two 26px figures and an arrow do not fit in a
+                narrow column and shrinking them to fit would give back exactly
+                the prominence this is here to add. Both labelled: the row
+                link's accessible name is long, and a bare "£4.2m" announced in
                 the middle of it is the figure the page is about. */}
-            <span className="block text-[22px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground sm:text-[26px]">
-              <span className="sr-only">Value bought: </span>
-              {money(value, symbol)}
+            <span className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:justify-end sm:gap-2.5">
+              <span className="text-[19px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground sm:text-[26px]">
+                <span className="sr-only">Value bought: </span>
+                {money(value, symbol)}
+              </span>
+              {worthNow != null && worthNow > 0 && (
+                <>
+                  <ArrowRightIcon
+                    aria-hidden
+                    className={`h-3.5 w-3.5 shrink-0 rotate-90 sm:h-4 sm:w-4 sm:rotate-0 ${
+                      worthUp ? "text-positive/60" : "text-negative/60"
+                    }`}
+                  />
+                  <span
+                    className={`text-[19px] font-semibold leading-none tabular-nums tracking-[-0.02em] sm:text-[26px] ${
+                      worthUp ? "text-positive" : "text-negative"
+                    }`}
+                  >
+                    <span className="sr-only">Worth now, if still held: </span>
+                    {money(worthNow, symbol)}
+                  </span>
+                </>
+              )}
             </span>
             <span className="mt-2 block">
               <span className="sr-only">Alpha since disclosure: </span>
@@ -650,13 +708,6 @@ function BuyRow({
                 <DeltaBadge suffix="pp" value={alpha * 100} />
               )}
             </span>
-            {/* What the stake became. The percentage says how it moved; this
-                says what it turned into, which is the thing a reader pictures. */}
-            {worthNow != null && worthNow > 0 && (
-              <span className="mt-1.5 block text-[11.5px] leading-[1.35] tabular-nums text-foreground/45">
-                worth {money(worthNow, symbol)} if still held
-              </span>
-            )}
           </span>
 
           <MeterBar

@@ -19,6 +19,7 @@ import type { Dealing } from "@/types/ddbx";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRightIcon, CheckIcon } from "@heroicons/react/20/solid";
 
 import { cleanName, filingPath, money } from "../../../shared/filings.js";
 
@@ -116,7 +117,6 @@ export function ClusterPanel({
   const dates = peers.map((p) => Date.parse(`${p.date}T00:00:00Z`));
   const min = Math.min(...dates);
   const max = Math.max(...dates);
-  const top = Math.max(...peers.map((p) => p.value), 1);
   const total = peers.reduce((n, p) => n + p.value, 0);
 
   // A day per column across the whole window, not two labelled endpoints.
@@ -232,19 +232,30 @@ export function ClusterPanel({
                   {d.monthStart ? monthAbbr(d.iso) : ""}
                 </span>
 
-                {/* One stem per purchase that day, so two filings on one date
-                    are visible as two. */}
-                <span className="flex h-4 items-end gap-0.5">
-                  {d.buys.map((b) => (
-                    <span
-                      key={b.id}
-                      className={`w-1 rounded-full ${
-                        b.isThis
-                          ? "h-4 bg-brand-brown dark:bg-brand-tan"
-                          : "h-2.5 bg-foreground/25"
-                      }`}
-                    />
-                  ))}
+                {/* A TICK PER PURCHASE, NOT A TALLY STEM.
+                    These were 1px-wide stems of two different heights, which
+                    at strip scale is a smudge: nothing about them said "a
+                    purchase landed here" rather than "this column has some
+                    quantity in it", and the days with no buy looked the same as
+                    the days with one until you counted pixels. A tick is the
+                    one mark that reads as an event at 14px. This filing's own
+                    is knocked out of a filled disc so it stays the anchor. */}
+                <span className="flex h-5 items-center justify-center gap-0.5">
+                  {d.buys.map((b) =>
+                    b.isThis ? (
+                      <span
+                        key={b.id}
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-brown text-white dark:bg-brand-tan dark:text-[#1a140d]"
+                      >
+                        <CheckIcon className="h-3.5 w-3.5" />
+                      </span>
+                    ) : (
+                      <CheckIcon
+                        key={b.id}
+                        className="h-4 w-4 text-brand-brown/55 dark:text-brand-tan/60"
+                      />
+                    ),
+                  )}
                 </span>
               </div>
             );
@@ -252,64 +263,96 @@ export function ClusterPanel({
         </div>
       </div>
 
+      {/* WHAT EACH PERSON PUT IN IS THE ROW'S HEADLINE, AND EVERY ROW IS A DOOR.
+       *
+       *  Two things were wrong here. The value was 13px grey at the end of the
+       *  row, quieter than the name beside it, on a panel whose entire argument
+       *  is how much money went in — and the bar in front of it was drawn
+       *  against the largest peer, so the top row was always full and the
+       *  bottom always a stub, which is a restatement of the sort order rather
+       *  than a fact about any purchase. The figure is now the largest thing on
+       *  the row and the bar is gone.
+       *
+       *  And every one of these peers has a filing page of its own, which the
+       *  row reached only through an underline on the name. The whole row is
+       *  the link now, with the arrow saying so. */}
       <ul className={`mt-4 border-t ${RULE}`}>
-        {peers.map((p) => (
-          <li
-            key={p.id}
-            className={`flex items-center gap-3 border-b ${RULE} py-3`}
-          >
-            {/* Chip plus month. The chip carries a weekday and a day number,
-                which is a complete date only inside a known month — and a
-                cluster window routinely straddles two, so a column reading
-                29, 3, 17, 6, 1 was unreadable without one. Mirrors
-                MarketDayHeader, which pairs the same chip with a month label
-                for the same reason. */}
-            <span className="flex shrink-0 flex-col items-center gap-1">
-              <CalendarDayChip
-                {...chipParts(p.date)}
-                muted={!p.isThis}
-                size="sm"
-              />
-              <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground/40">
-                {monthAbbr(p.date)}
-              </span>
-            </span>
-            <span className="min-w-0 flex-1">
-              {p.isThis ? (
-                <span className="text-[13.5px] font-semibold text-foreground">
-                  {p.name}
-                  <span className="ml-2 rounded bg-brand-brown/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan">
-                    This buy
-                  </span>
+        {peers.map((p) => {
+          const body = (
+            <>
+              {/* Chip plus month. The chip carries a weekday and a day number,
+                  which is a complete date only inside a known month — and a
+                  cluster window routinely straddles two, so a column reading
+                  29, 3, 17, 6, 1 was unreadable without one. Mirrors
+                  MarketDayHeader, which pairs the same chip with a month label
+                  for the same reason. */}
+              <span className="flex shrink-0 flex-col items-center gap-1">
+                <CalendarDayChip
+                  {...chipParts(p.date)}
+                  muted={!p.isThis}
+                  size="sm"
+                />
+                <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground/40">
+                  {monthAbbr(p.date)}
                 </span>
-              ) : (
-                <Link
-                  className="text-[13.5px] text-foreground/85 underline-offset-4 hover:underline"
-                  to={filingPath(p.id)}
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span
+                  className={`block text-[14px] ${
+                    p.isThis
+                      ? "font-semibold text-foreground"
+                      : "text-foreground/85"
+                  }`}
                 >
                   {p.name}
+                  {p.isThis ? (
+                    <span className="ml-2 rounded bg-brand-brown/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan">
+                      This buy
+                    </span>
+                  ) : null}
+                </span>
+                <span className="mt-0.5 block text-[12px] text-foreground/45">
+                  {p.role || "Insider"}
+                </span>
+              </span>
+
+              <span
+                className={`shrink-0 text-right text-[19px] font-semibold leading-none tabular-nums tracking-[-0.02em] sm:text-[22px] ${
+                  p.isThis ? "text-foreground" : "text-foreground/80"
+                }`}
+              >
+                {money(p.value, deal.currency)}
+              </span>
+
+              {/* A fixed slot either way, so the figures stay in one column
+                  whether or not the row is a link. */}
+              <span className="flex w-4 shrink-0 justify-end">
+                {p.isThis ? null : (
+                  <ArrowRightIcon
+                    aria-hidden
+                    className="h-4 w-4 text-foreground/25 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-foreground/60"
+                  />
+                )}
+              </span>
+            </>
+          );
+
+          return (
+            <li key={p.id} className={`border-b ${RULE}`}>
+              {p.isThis ? (
+                <div className="flex items-center gap-3 py-3">{body}</div>
+              ) : (
+                <Link
+                  className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-3 outline-none transition-colors hover:bg-foreground/[0.03] focus-visible:ring-2 focus-visible:ring-brand-brown/40"
+                  to={filingPath(p.id)}
+                >
+                  {body}
                 </Link>
               )}
-              <span className="mt-0.5 block text-[12px] text-foreground/45">
-                {p.role || "Insider"}
-              </span>
-            </span>
-            <span className="w-20 shrink-0 sm:w-32">
-              <span
-                aria-hidden
-                className={`block h-[4px] rounded-full ${
-                  p.isThis
-                    ? "bg-brand-brown/70 dark:bg-brand-tan/70"
-                    : "bg-foreground/15"
-                }`}
-                style={{ width: `${Math.max(6, (p.value / top) * 100)}%` }}
-              />
-            </span>
-            <span className="w-16 shrink-0 text-right text-[13px] tabular-nums text-foreground/70">
-              {money(p.value, deal.currency)}
-            </span>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
       {/* Deliberately states purchases and value, NOT a headcount.
@@ -318,10 +361,18 @@ export function ClusterPanel({
           (it picked up a person-closely-associated filing the detector does
           not treat as a separate member) and printed it three lines from the
           detector's, disagreeing. One idea, one source. */}
+      {/* "inside {windowDays} days" was wrong, and visibly so: `inWindow`
+          collects purchases up to `windowDays` EITHER SIDE of this trade, so
+          the drawn set spans up to twice the detector's window and the strip
+          above it was printing "19 days" three lines from a sentence claiming
+          14. The span is stated as what it is. The detector's own headline
+          figure still lives in the section aside, which is the one place it is
+          authoritative. */}
       <p className="mt-3 text-[13px] leading-[1.6] text-foreground/55">
         {money(total, deal.currency)} across {peers.length}{" "}
         {peers.length === 1 ? "disclosed purchase" : "disclosed purchases"} at{" "}
-        {cleanName(deal.company)} inside {windowDays} days.
+        {cleanName(deal.company)}, within {windowDays} days either side of this
+        one.
       </p>
     </div>
   );

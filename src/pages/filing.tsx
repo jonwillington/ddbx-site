@@ -352,7 +352,21 @@ export default function FilingPage() {
               aside="The filing, as it was disclosed."
               title="The record"
             >
-              <dl className={`mt-4 border-t ${RULE}`}>
+              {/* A GRID, NOT TEN FULL-WIDTH ROWS.
+                  As `label ......... value` across the whole 860px measure,
+                  every pair had 500px of empty carpet between its two halves,
+                  so reading it meant tracking a line across the page ten times
+                  and the block occupied a screen and a half to carry ten short
+                  facts. Two and three up puts each label next to its own value
+                  and lets the reference section read as the spec sheet it is.
+
+                  Two columns, not three: there are ten fields, so two divides
+                  evenly and every row of the grid is full. Three would leave a
+                  single cell on the last row with its rule running a third of
+                  the way across, which reads as a table that failed to finish. */}
+              <dl
+                className={`mt-4 grid gap-x-8 border-t ${RULE} sm:grid-cols-2`}
+              >
                 <Row label="Insider" value={deal.director.name} />
                 <Row label="Role" value={deal.director.role} />
                 <Row
@@ -406,6 +420,10 @@ export default function FilingPage() {
                     title: `Every filing at ${name}`,
                     description:
                       "The issuer's full record: who has bought, how much, and how those purchases have done.",
+                    // The issuer's own mark rather than the generic company
+                    // glyph: this card points at one specific company and the
+                    // logo is the fastest way to say which.
+                    media: <CompanyLogo size={32} ticker={deal.ticker} />,
                   },
                   ...(sector
                     ? [
@@ -439,11 +457,20 @@ export default function FilingPage() {
   );
 }
 
+/** One cell of the record grid: label over value, both left-set.
+ *
+ *  Left-set rather than the label-left/value-right split it replaced. In a
+ *  three-column grid a right-aligned value sits against the NEXT column's
+ *  label, which reads as a pair that isn't one; stacking removes the ambiguity
+ *  and lets a long value ("Person Closely Associated with the CFO") wrap inside
+ *  its own cell instead of pushing its label out of the column. */
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className={`flex justify-between gap-6 border-b ${RULE} py-2.5`}>
-      <dt className="text-[13px] text-foreground/50">{label}</dt>
-      <dd className="text-right text-[13.5px] text-foreground/85">{value}</dd>
+    <div className={`min-w-0 border-b ${RULE} py-3`}>
+      <dt className="text-[11.5px] leading-none text-foreground/45">{label}</dt>
+      <dd className="mt-1.5 break-words text-[14px] leading-[1.4] text-foreground/85">
+        {value}
+      </dd>
     </div>
   );
 }

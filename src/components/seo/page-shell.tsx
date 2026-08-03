@@ -46,6 +46,7 @@ export interface ShellCta {
 }
 
 export function SeoPageShell({
+  back,
   eyebrow,
   crumbs,
   title,
@@ -58,6 +59,13 @@ export function SeoPageShell({
   skeleton,
   children,
 }: {
+  /** Optional return control, rendered above the crumbs. Distinct from them:
+   *  crumbs are the site's structure ("Companies / Hercules / this filing") and
+   *  are always true, whereas back is the reader's own history and is only
+   *  honest when they arrived from inside the site. `BackLink` decides that
+   *  for itself and renders nothing when they didn't, so passing it
+   *  unconditionally is safe. */
+  back?: ReactNode;
   /** Family stamp — "Sector hub", "Leaderboard", "Glossary", "Report",
    *  "Broker guide", "Company index". */
   eyebrow: string;
@@ -88,10 +96,14 @@ export function SeoPageShell({
         width === "article" ? "max-w-[860px]" : ""
       }`}
     >
+      {back ? <div className="pt-2">{back}</div> : null}
+
       {crumbs && crumbs.length > 0 ? (
         <nav
           aria-label="Breadcrumb"
-          className="pt-2 text-[11px] leading-[1.5] text-foreground/50"
+          className={`text-[11px] leading-[1.5] text-foreground/50 ${
+            back ? "mt-2" : "pt-2"
+          }`}
         >
           {crumbs.map((c, i) => (
             <span key={`${c.label}-${i}`}>
@@ -113,7 +125,7 @@ export function SeoPageShell({
 
       <p
         className={`font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan ${
-          crumbs && crumbs.length > 0 ? "mt-4" : "pt-2"
+          (crumbs && crumbs.length > 0) || back ? "mt-4" : "pt-2"
         }`}
       >
         {eyebrow}

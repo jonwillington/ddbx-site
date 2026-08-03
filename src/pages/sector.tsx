@@ -15,8 +15,10 @@ import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ArrowRightIcon } from "@heroicons/react/20/solid";
 
 import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
+import { filingPath } from "../../shared/filings.js";
 import {
   dealPerson,
   dealValue,
@@ -394,6 +396,23 @@ export default function SectorPage() {
                           {signedPct(alpha == null ? null : alpha / 100)}
                         </span>
                       </span>
+                      {/* The filing itself. Each of these rows IS one
+                          disclosure with a permanent page of its own, and the
+                          only link on the row went to the issuer — so the most
+                          specific thing on screen was the one thing you could
+                          not open. A separate control rather than wrapping the
+                          row, because the company name is already a link and
+                          links do not nest. UK only: `/dealings/:id` is a UK
+                          pipeline route. */}
+                      {market.id === "UK" && d.id ? (
+                        <Link
+                          aria-label={`Open this filing at ${cleanCompanyName(d.company ?? "") || ticker}`}
+                          className="mt-0.5 shrink-0 rounded-md p-1 text-foreground/25 outline-none transition-colors hover:text-foreground/70 focus-visible:ring-2 focus-visible:ring-brand-brown/40"
+                          to={filingPath(d.id)}
+                        >
+                          <ArrowRightIcon aria-hidden className="h-4 w-4" />
+                        </Link>
+                      ) : null}
                     </li>
                   );
                 })}

@@ -62,6 +62,28 @@ Both scripts assume `ddbx-data` is cloned alongside `ddbx-site`. Override with
 **Workflow**: when you change types in `ddbx-data`, run `npm run sync:types`
 here in the same change cycle. CI runs `check:types` to catch drift.
 
+## Static page rules — read before building or restyling a page
+
+`investigations/2026-08-03-static-page-rules.md` is the house grammar for every
+static page, extracted from `/api` (the reference implementation). Ten rules;
+two of them absolute:
+
+1. **Never bare content.** Every static page is a selling tool: it carries a
+   "what this is" section, educational material, `RelatedCards` and the
+   terminal ask, below its data.
+2. **Never state a number you do not have.** No em-dash in a figure slot, no
+   zero computed from an empty set. Say "Not enough data yet", and say when it
+   will exist. Empty and failed are different states.
+
+The rest cover sectioning, section alternation, typographic weighting, loading
+states that match the arrived geometry, grids whose rules finish, shared column
+specs, everything-specific-is-a-link, colour that carries meaning, and back vs
+crumbs. There is a checklist at the foot of the doc.
+
+Enforcement lives in `src/components/seo/*` (`SeoPageShell`, `SeoSection`,
+`StatTiles`, `RelatedCards`, `SeoSkeleton`) plus `BackLink` — compose those
+rather than reimplementing them.
+
 ## UI patterns
 
 - **Close/dismiss ("X") buttons**: ALWAYS use `CloseButton` from

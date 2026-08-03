@@ -17,6 +17,8 @@ import type { Dealing, TriageVerdict } from "@/types/ddbx";
 import { useEffect, useMemo, useState } from "react";
 import { InformationCircleIcon as InformationCircleOutlineIcon } from "@heroicons/react/24/outline";
 
+import { filingPath } from "../../../shared/filings.js";
+
 import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { buildMarketFaq } from "@/lib/markets/faq";
@@ -409,6 +411,10 @@ const UkAnalysisOverlay = ({ dealing }: { dealing?: { ticker: string } }) => (
 
 export const UkMarket: MarketConfig<Dealing> = {
   id: "uk",
+  // The only market with a filing route today. `MarketDealing.id` is
+  // `Dealing.id` for UK (see toMarketDealing below), which is exactly what
+  // /dealings/:id resolves.
+  filingHref: (d) => (d.id ? filingPath(d.id) : null),
   title: "UK director dealings (preview)",
   heroHeadline: (
     <>

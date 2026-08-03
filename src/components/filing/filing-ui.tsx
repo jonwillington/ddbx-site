@@ -41,20 +41,26 @@ import {
   CheckIcon,
   ChevronDownIcon,
   LockClosedIcon,
-  MinusIcon,
+  XMarkIcon,
 } from "@heroicons/react/20/solid";
 import {
   BanknotesIcon,
   CalendarDaysIcon,
-  ExclamationTriangleIcon,
   IdentificationIcon,
-  ListBulletIcon,
-  MinusCircleIcon,
   NewspaperIcon,
-  PlusCircleIcon,
   ScaleIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
+// Solid, for the assessment panel only. The check rows below use the outline
+// set at 1.6 stroke as a quiet affordance beside a link; the four counts in the
+// panel are the offer itself and outline glyphs at that scale read as unfilled
+// placeholders rather than marks.
+import {
+  ExclamationTriangleIcon,
+  ListBulletIcon,
+  MinusCircleIcon,
+  PlusCircleIcon,
+} from "@heroicons/react/24/solid";
 
 import { CHECKS } from "../../../shared/methodology.js";
 import {
@@ -244,18 +250,30 @@ export function RatingChecks({
           return (
             <div key={c.key} className={`${CARD} p-5 sm:p-6`}>
               <div className="flex items-start gap-4 sm:gap-5">
+                {/* SOLID, IN FULL COLOUR, BOTH WAYS.
+                    A pass/fail verdict rendered as a 12%-tint disc with a
+                    hairline glyph inside it is a verdict you have to look for,
+                    and a miss rendered in grey reads as "not assessed" rather
+                    than "failed". The app answers each check with a filled
+                    green circle or a filled red one (WhatWeLookForView), which
+                    is the treatment a reader can take in from across the room.
+                    Same here: filled disc, knocked-out glyph, red for a miss. */}
                 <span
                   aria-hidden
-                  className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12 ${
-                    ok
-                      ? "bg-positive/12 text-positive"
-                      : "bg-foreground/[0.06] text-foreground/30"
+                  className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white shadow-sm sm:h-12 sm:w-12 ${
+                    ok ? "bg-positive" : "bg-negative"
                   }`}
                 >
                   {ok ? (
-                    <CheckIcon className="h-6 w-6 sm:h-7 sm:w-7" />
+                    <CheckIcon
+                      className="h-7 w-7 sm:h-8 sm:w-8"
+                      strokeWidth={2}
+                    />
                   ) : (
-                    <MinusIcon className="h-6 w-6 sm:h-7 sm:w-7" />
+                    <XMarkIcon
+                      className="h-7 w-7 sm:h-8 sm:w-8"
+                      strokeWidth={2}
+                    />
                   )}
                 </span>
 
@@ -266,7 +284,7 @@ export function RatingChecks({
                     </h3>
                     <span
                       className={`shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] ${
-                        ok ? "text-positive" : "text-foreground/35"
+                        ok ? "text-positive" : "text-negative"
                       }`}
                     >
                       {ok ? "Met" : "Not met"}
@@ -390,20 +408,38 @@ export function AssessmentPanel({
           The written case for and against this buy, rated {rating}.
         </p>
 
-        <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* STACKED, NOT A ROW OF FOUR.
+            As a 4-across strip each count got a quarter of the column, which
+            capped the figure at 32px and squeezed its label onto three lines —
+            so the panel's whole argument ("this much was written, and it argues
+            both ways") was the smallest type in the section. One row each gives
+            the figure the full measure, lets the label sit beside it as a
+            sentence rather than under it as a caption, and puts a lock at the
+            end of every line: the eyebrow says "in the app" once, but each of
+            these four is individually behind it, and a reader who lands
+            mid-panel should not have to infer that. */}
+        <ul className="mt-6 space-y-2">
           {items.map((i) => (
-            <li key={i.many} className={`rounded-2xl px-4 py-4 ${i.well}`}>
-              <span
-                className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/75 dark:bg-black/25 ${i.ink}`}
-              >
-                <i.Icon aria-hidden className="h-5 w-5" strokeWidth={1.7} />
+            <li
+              key={i.many}
+              className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 sm:gap-5 sm:px-5 ${i.well}`}
+            >
+              <span className={`shrink-0 ${i.ink}`}>
+                <i.Icon aria-hidden className="h-8 w-8 sm:h-9 sm:w-9" />
               </span>
-              <p className="mt-3 text-[32px] font-semibold leading-none tabular-nums tracking-[-0.025em] text-foreground">
+              <p
+                className={`w-[2.5ch] shrink-0 text-right text-[34px] font-semibold leading-none tabular-nums tracking-[-0.025em] sm:text-[40px] ${i.ink}`}
+              >
                 {i.n}
               </p>
-              <p className="mt-1.5 text-[12.5px] leading-[1.35] text-foreground/60">
+              <p className="min-w-0 flex-1 text-[15px] leading-[1.35] text-foreground/75 sm:text-[16.5px]">
                 {i.n === 1 ? i.one : i.many}
               </p>
+              <LockClosedIcon
+                aria-hidden
+                className="h-4 w-4 shrink-0 text-foreground/30"
+              />
+              <span className="sr-only">In the app</span>
             </li>
           ))}
         </ul>

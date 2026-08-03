@@ -339,8 +339,37 @@ export function MiniPriceChart({
       crosshairMarkerBorderColor: isDark ? "#1a1a1a" : "#ffffff",
     });
 
+    // THE RUN-UP IS NOT THE DIRECTOR'S. Everything before the trade marker is
+    // drawn in neutral grey and only the post-buy segment carries green or red.
+    //
+    // Colouring the whole series one colour said something the data doesn't:
+    // on a window that opens weeks before the purchase, a stock that had
+    // already climbed 30% before the director touched it rendered as one
+    // continuous green line running through the marker, which reads as the buy
+    // having caught the whole move. The split makes the marker the moment the
+    // measurement starts, which is what every return figure on this site is
+    // actually anchored to.
+    //
+    // Per-point overrides rather than two series: a second series would need
+    // its own scale, its own crosshair and a duplicated bar at the join.
+    const preBuyLine = isDark ? "rgba(255,255,255,0.34)" : "rgba(0,0,0,0.28)";
+    const preBuyFill = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.035)";
+    const tradeIdx = placement.tradeBar
+      ? plotted.findIndex((b) => b.date === placement.tradeBar?.date)
+      : -1;
+
     series.setData(
-      plotted.map((b) => ({ time: b.date as Time, value: b.close })),
+      plotted.map((b, i) => {
+        // `tradeIdx > 0`: with the buy on the first bar there is no run-up to
+        // grey, and greying bar zero alone would read as a rendering fault.
+        const beforeBuy = tradeIdx > 0 && i < tradeIdx;
+
+        return {
+          time: b.date as Time,
+          value: b.close,
+          ...(beforeBuy ? { lineColor: preBuyLine, topColor: preBuyFill } : {}),
+        };
+      }),
     );
 
     // Director's paid price — faint dotted baseline. Kept subtle so the

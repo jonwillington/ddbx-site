@@ -395,6 +395,17 @@ export interface MarketConfig<W = unknown> {
    *  Defaults to "Insider"; congress overrides to "Congress member". */
   insiderLabel?: string;
 
+  /** The permanent public URL for one disclosure, when the market has one.
+   *
+   *  Every deal a reader opens in the drawer is a filing with its own page,
+   *  and until this existed the drawer was a dead end: you could read the
+   *  analysis but not link to it, cite it or come back to it. Set per market
+   *  because `/dealings/:id` is a UK pipeline route — the US, SE and NL feeds
+   *  have no filing route yet and must return null rather than a 404.
+   *
+   *  Returning null is the "no page for this one" answer and renders nothing. */
+  filingHref?: (dealing: MarketDealing<W>) => string | null;
+
   /** Component slot rendered in the row's right-most column. Receives the
    *  MarketDealing so it can read raw extras (Form 4 amendment flag, etc).
    *  Should produce visually compact chip(s). */

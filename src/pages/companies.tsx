@@ -75,12 +75,12 @@ function CompaniesSkeleton() {
             {rows.map((i) => (
               <li
                 key={i}
-                className={`flex items-center gap-2.5 border-b ${R.rule} py-2.5`}
+                className={`flex items-center gap-3 border-b ${R.rule} py-3`}
               >
-                <Skeleton circle className="shrink-0" h={22} w={22} />
+                <Skeleton circle className="shrink-0" h={34} w={34} />
                 <div className="min-w-0 flex-1">
-                  <Skeleton className="h-[18px] w-4/5 max-w-[200px]" />
-                  <Skeleton className="mt-1 h-[13px] w-1/2 max-w-[120px]" />
+                  <Skeleton className="h-[19px] w-4/5 max-w-[200px]" />
+                  <Skeleton className="mt-1.5 h-[13px] w-1/2 max-w-[120px]" />
                 </div>
               </li>
             ))}
@@ -254,24 +254,38 @@ export default function CompaniesPage() {
                 </h2>
                 {/* A grid rather than CSS columns: each row now carries a logo,
                     a pill and a right-aligned figure, and multi-column flow
-                    can't keep those columns aligned across the break. */}
-                <ul className="grid sm:grid-cols-2 sm:gap-x-10 xl:grid-cols-3">
+                    can't keep those columns aligned across the break.
+                    `items-stretch` so the fillers below inherit their row's
+                    height and their rule lands on the same line as the real
+                    rows'. */}
+                <ul className="grid items-stretch sm:grid-cols-2 sm:gap-x-10 xl:grid-cols-3">
                   {list.map((c) => (
                     <li key={c.key} className={`border-b ${R.rule}`}>
                       <Link
-                        className="group flex items-center gap-2.5 py-2.5"
+                        className="group flex items-center gap-3 py-3"
                         to={companyPath(c.key)}
                       >
+                        {/* The mark is the row's anchor. At 22px it was
+                            smaller than the ticker pill next to it and read as
+                            a bullet; an index of several hundred issuers is
+                            scanned by logo long before it is read by name. */}
                         <CompanyLogo
                           className="shrink-0"
-                          size={22}
+                          size={34}
                           ticker={c.key}
                         />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[14.5px] text-foreground/85 underline-offset-4 group-hover:underline">
+                          {/* Three levels, not three weights of grey: the name
+                              is the row, the ticker and counts are its
+                              caption, the total is the figure. Before this the
+                              name sat at 14.5px/85 opacity — lighter than the
+                              total beside it, so the first thing the eye found
+                              in a row was the money rather than the company
+                              the row is about. */}
+                          <span className="block truncate text-[16px] font-medium leading-[1.3] tracking-[-0.01em] text-foreground underline-offset-4 group-hover:underline">
                             {cleanCompanyName(c.company) || c.key}
                           </span>
-                          <span className="mt-1 flex items-center gap-1.5 text-[11.5px] leading-none text-foreground/45">
+                          <span className="mt-1.5 flex items-center gap-1.5 text-[11.5px] leading-none text-foreground/45">
                             <TickerPill ticker={displayTicker(c.key)} />
                             <span className="truncate">
                               {c.deals} {c.deals === 1 ? "buy" : "buys"}
@@ -280,7 +294,7 @@ export default function CompaniesPage() {
                           </span>
                         </span>
                         {c.total_value ? (
-                          <span className="shrink-0 text-right text-[13.5px] font-semibold tabular-nums text-foreground">
+                          <span className="shrink-0 text-right text-[15px] font-semibold tabular-nums tracking-[-0.01em] text-foreground">
                             {moneyShort(
                               c.total_value,
                               market === "UK" ? "GBP" : "USD",
@@ -290,6 +304,37 @@ export default function CompaniesPage() {
                       </Link>
                     </li>
                   ))}
+                  {/* RULES THAT FINISH.
+                      With N companies in a 2- or 3-column grid the last row is
+                      usually short, and because the rule lives on each row it
+                      stopped a third or two-thirds of the way across — every
+                      letter section ended on a line that looked like a
+                      rendering fault. These carry the rule over the empty
+                      cells. Two sets, because the number of gaps depends on
+                      the column count and the column count is a media query:
+                      the 2-up fillers show only between `sm` and `xl`, the 3-up
+                      fillers only from `xl`, and at one column there are no
+                      gaps to fill. */}
+                  {Array.from(
+                    { length: (2 - (list.length % 2)) % 2 },
+                    (_, i) => (
+                      <li
+                        key={`fill2-${i}`}
+                        aria-hidden
+                        className={`hidden border-b ${R.rule} sm:block xl:hidden`}
+                      />
+                    ),
+                  )}
+                  {Array.from(
+                    { length: (3 - (list.length % 3)) % 3 },
+                    (_, i) => (
+                      <li
+                        key={`fill3-${i}`}
+                        aria-hidden
+                        className={`hidden border-b ${R.rule} xl:block`}
+                      />
+                    ),
+                  )}
                 </ul>
               </section>
             ))}

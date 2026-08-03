@@ -143,7 +143,9 @@ export function MarketHero({
   const resolvedHeadline = headline ?? subhead ?? (
     <>
       Which directors have been buying shares in{" "}
-      <span className="text-brand-brown dark:text-brand-tan">{marketLabel}</span>{" "}
+      <span className="text-brand-brown dark:text-brand-tan">
+        {marketLabel}
+      </span>{" "}
       companies?
     </>
   );

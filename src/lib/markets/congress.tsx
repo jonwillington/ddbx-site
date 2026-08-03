@@ -947,8 +947,8 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   heroHeadline: (
     <>
       Which members of{" "}
-      <span className="text-brand-brown dark:text-brand-tan">Congress</span> have
-      been buying stocks?
+      <span className="text-brand-brown dark:text-brand-tan">Congress</span>{" "}
+      have been buying stocks?
     </>
   ),
   // US-market copy uses US English.

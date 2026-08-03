@@ -3,8 +3,10 @@ import type { GatingInfo, MarketDealing } from "@/lib/markets/types";
 import type { PriceFormat } from "@/components/position-card";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Drawer } from "vaul";
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon } from "@heroicons/react/20/solid";
 
 import { CloseButton } from "@/components/close-button";
 import { CompanyLogo } from "@/components/company-logo";
@@ -82,6 +84,7 @@ export function MarketDetailDrawer<W>({
   formatTickerDisplay,
   insiderLabel = "Insider",
   detailFields,
+  filingHref,
 }: {
   dealing: MarketDealing<W> | null;
   /** Full in-memory dealings list — used by RecentBuysSection to surface
@@ -122,6 +125,10 @@ export function MarketDetailDrawer<W>({
   detailFields?: (
     dealing: MarketDealing<W>,
   ) => Array<{ label: string; value: ReactNode } | null | false | undefined>;
+  /** Permanent public URL for the open disclosure. See MarketConfig.filingHref
+   *  — null (or an absent prop) means this market has no filing route and the
+   *  link is suppressed rather than rendered dead. */
+  filingHref?: (dealing: MarketDealing<W>) => string | null;
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const direction = isDesktop ? "right" : "bottom";
@@ -498,6 +505,30 @@ export function MarketDetailDrawer<W>({
                           </>
                         )}
                       </dl>
+
+                      {/* THE WAY OUT OF THE DRAWER.
+                          Every disclosure in here has a permanent page, and
+                          this modal was the site's largest dead end: the deal
+                          a reader opens from the list, from a director profile
+                          or from the channel could be read but not linked,
+                          cited or returned to. One quiet line under the
+                          metadata, because the drawer's job is still the
+                          analysis and this is a route rather than an ask.
+                          Suppressed entirely on markets with no filing route
+                          (see MarketConfig.filingHref). */}
+                      {filingHref?.(active) ? (
+                        <Link
+                          className="group -mt-2 inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground/60 underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-brand-brown/40"
+                          to={filingHref(active)!}
+                          onClick={onClose}
+                        >
+                          Open the full filing page
+                          <ArrowRightIcon
+                            aria-hidden
+                            className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5"
+                          />
+                        </Link>
+                      ) : null}
 
                       {DetailPosition && <DetailPosition dealing={active} />}
 

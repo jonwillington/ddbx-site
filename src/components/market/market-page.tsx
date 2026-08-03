@@ -1330,125 +1330,138 @@ export function MarketPage<W>({
           </div>
         )}
 
-        {/* Sticky filter bar — single instance shared by both view bodies.
+        {/* THE FILTER BAR AND THE LIST IT FILTERS, IN ONE BOX.
+            A sticky element sticks for as long as its PARENT is on screen, and
+            this one's parent was the whole page section — so once the reader
+            scrolled past the last dealing the search field, the preview counter
+            and the Filters button stayed pinned over the FAQ and the closing
+            band, hovering above content none of them can act on. Wrapping the
+            bar together with the two view bodies makes the list itself the
+            stick range: the bar rides the table and releases the moment the
+            table ends. No scroll listener, no measurement.
+            `space-y-6` is the section's own rhythm, restated here because the
+            wrapper now owns the gaps between these children (the `-mt-6` tucks
+            on the view bodies cancel it to seat them under the bar). */}
+        <div className="space-y-6">
+          {/* Sticky filter bar — single instance shared by both view bodies.
             Sits right beneath the navbar with rounded top + opaque bg so
             it doubles as the table's curved top edge AND masks anything
             scrolling beneath it. Stays visible when the hero filter
             narrows the list to zero so the user can switch back. */}
-        {dealings.length > 0 && (
-          <div
-            ref={filterBarRef}
-            className="sticky top-[64px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
-          >
-            {/* Search + filters are hidden on mobile — the wrapper stays so the
+          {dealings.length > 0 && (
+            <div
+              ref={filterBarRef}
+              className="sticky top-[64px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
+            >
+              {/* Search + filters are hidden on mobile — the wrapper stays so the
                 table keeps its rounded top edge and the -mt-6 tuck anchor. */}
-            <div className="hidden md:block">
-              <MarketFilterBar
-                extraFilterValues={extraFilterValues}
-                extraFilters={allExtraFilters.map((ef) => ({
-                  id: ef.id,
-                  label: ef.label,
-                  question: ef.question,
-                  description: ef.description,
-                  kind: ef.kind,
-                  options: ef.options,
-                  defaultValue: ef.defaultValue,
-                }))}
-                heroFilterId={heroFilterId}
-                heroFilters={config.heroFilters?.map((f) => ({
-                  id: f.id,
-                  label: f.label,
-                }))}
-                search={search}
-                searchStatus={previewStatus}
-                signalFilter={signalFilter}
-                trailing={chartModeToggle}
-                viewMode={viewMode}
-                onExtraFilterChange={(id, value) =>
-                  setExtraFilterValues((prev) => ({ ...prev, [id]: value }))
-                }
-                onHeroFilterChange={setHeroFilterId}
-                onReset={resetFilters}
-                onSearch={setSearch}
-                onSignalFilterChange={setSignalFilter}
-                onViewMode={setViewMode}
-              />
-            </div>
-          </div>
-        )}
-
-        {emptyState}
-
-        {/* By-gain view */}
-        {filteredDealings.length > 0 && viewMode === "by-gain" && (
-          <div className="bg-sheet dark:bg-surface rounded-b-xl animate-content-in -mt-6 -mx-4 md:-mx-6">
-            <MarketRowHeader
-              benchmarkLabel={config.benchmarkLabel}
-              chartMode={chartMode}
-              columnHelp={config.columnHelp}
-              showLegCount={config.showLegCount}
-              valueColumnClass={config.priceFormat.valueColumnClass}
-            />
-            <div className="divide-y divide-black/[0.06] dark:divide-separator overflow-hidden rounded-b-xl">
-              {byGain.map(({ dealing: d }) => (
-                <MarketRow
-                  key={d.key}
-                  RowActionCell={config.RowActionCell}
-                  RowNameBadge={config.RowNameBadge}
-                  benchmarkBars={benchmarkBars}
-                  benchmarkCurrent={benchmarkCurrent}
-                  benchmarkEntry={benchmarkEntry(d)}
-                  benchmarkLabel={config.benchmarkLabel}
-                  chartMode={chartMode}
-                  dealing={d}
-                  fmt={config.priceFormat}
-                  formatTickerDisplay={config.formatTickerDisplay}
-                  isMuted={config.isRowMuted}
-                  locale={config.locale}
-                  noPosteriorData={stockNoPosteriorData(d)}
-                  selected={selectedKey === d.key}
-                  showLegCount={config.showLegCount}
-                  showLogo={logosEnabled}
-                  stockBars={stockBars[d.ticker]}
-                  stockCurrentMajor={stockCurrent(d.ticker)}
-                  stockEntry={stockEntry(d)}
-                  onSelect={() => openDealing(d)}
+              <div className="hidden md:block">
+                <MarketFilterBar
+                  extraFilterValues={extraFilterValues}
+                  extraFilters={allExtraFilters.map((ef) => ({
+                    id: ef.id,
+                    label: ef.label,
+                    question: ef.question,
+                    description: ef.description,
+                    kind: ef.kind,
+                    options: ef.options,
+                    defaultValue: ef.defaultValue,
+                  }))}
+                  heroFilterId={heroFilterId}
+                  heroFilters={config.heroFilters?.map((f) => ({
+                    id: f.id,
+                    label: f.label,
+                  }))}
+                  search={search}
+                  searchStatus={previewStatus}
+                  signalFilter={signalFilter}
+                  trailing={chartModeToggle}
+                  viewMode={viewMode}
+                  onExtraFilterChange={(id, value) =>
+                    setExtraFilterValues((prev) => ({ ...prev, [id]: value }))
+                  }
+                  onHeroFilterChange={setHeroFilterId}
+                  onReset={resetFilters}
+                  onSearch={setSearch}
+                  onSignalFilterChange={setSignalFilter}
+                  onViewMode={setViewMode}
                 />
-              ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Chronological / month + day buckets */}
-        {filteredDealings.length > 0 && viewMode === "chronological" && (
-          <div className="space-y-6 animate-content-in -mt-6 -mx-4 md:-mx-6">
-            {monthBuckets.map((month, monthIdx) => {
-              // Older months gate behind the app while discretion is on:
-              // the header stays (the archive's depth is the point) but a
-              // click opens the month-unlock modal instead of expanding.
-              const monthGated = (gating?.enabled ?? false) && monthIdx > 0;
-              const monthOpen =
-                !monthGated && (openMonths?.has(month.key) ?? false);
-              // bucketByMonth keys on "<MonthName>-<year>"; derive the ISO
-              // "YYYY-MM" from any day in the bucket to match the recap index.
-              const monthIso = month.days[0]?.key.slice(0, 7);
-              const hasReport = !!monthIso && recapMonthSet.has(monthIso);
-              // Days that actually render something — used to slot the mobile
-              // broker promo after the first two, so empty days (which render
-              // nothing) don't throw the position off.
-              const contentDays = month.days.filter(
-                (d) => d.suggested.length > 0 || d.skipped.length > 0,
-              );
+          {emptyState}
 
-              return (
-                <div key={month.key}>
-                  <div
-                    className={`sticky z-10 ${monthIdx === 0 ? "" : "pt-3"} bg-[#f5f0e8] dark:bg-background`}
-                    style={{
-                      top: `${64 + (filterBarHeight || 0)}px`,
-                    }}
-                  >
-                    {/* Two actions share this row: the row itself toggles (or
+          {/* By-gain view */}
+          {filteredDealings.length > 0 && viewMode === "by-gain" && (
+            <div className="bg-sheet dark:bg-surface rounded-b-xl animate-content-in -mt-6 -mx-4 md:-mx-6">
+              <MarketRowHeader
+                benchmarkLabel={config.benchmarkLabel}
+                chartMode={chartMode}
+                columnHelp={config.columnHelp}
+                showLegCount={config.showLegCount}
+                valueColumnClass={config.priceFormat.valueColumnClass}
+              />
+              <div className="divide-y divide-black/[0.06] dark:divide-separator overflow-hidden rounded-b-xl">
+                {byGain.map(({ dealing: d }) => (
+                  <MarketRow
+                    key={d.key}
+                    RowActionCell={config.RowActionCell}
+                    RowNameBadge={config.RowNameBadge}
+                    benchmarkBars={benchmarkBars}
+                    benchmarkCurrent={benchmarkCurrent}
+                    benchmarkEntry={benchmarkEntry(d)}
+                    benchmarkLabel={config.benchmarkLabel}
+                    chartMode={chartMode}
+                    dealing={d}
+                    fmt={config.priceFormat}
+                    formatTickerDisplay={config.formatTickerDisplay}
+                    isMuted={config.isRowMuted}
+                    locale={config.locale}
+                    noPosteriorData={stockNoPosteriorData(d)}
+                    selected={selectedKey === d.key}
+                    showLegCount={config.showLegCount}
+                    showLogo={logosEnabled}
+                    stockBars={stockBars[d.ticker]}
+                    stockCurrentMajor={stockCurrent(d.ticker)}
+                    stockEntry={stockEntry(d)}
+                    onSelect={() => openDealing(d)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Chronological / month + day buckets */}
+          {filteredDealings.length > 0 && viewMode === "chronological" && (
+            <div className="space-y-6 animate-content-in -mt-6 -mx-4 md:-mx-6">
+              {monthBuckets.map((month, monthIdx) => {
+                // Older months gate behind the app while discretion is on:
+                // the header stays (the archive's depth is the point) but a
+                // click opens the month-unlock modal instead of expanding.
+                const monthGated = (gating?.enabled ?? false) && monthIdx > 0;
+                const monthOpen =
+                  !monthGated && (openMonths?.has(month.key) ?? false);
+                // bucketByMonth keys on "<MonthName>-<year>"; derive the ISO
+                // "YYYY-MM" from any day in the bucket to match the recap index.
+                const monthIso = month.days[0]?.key.slice(0, 7);
+                const hasReport = !!monthIso && recapMonthSet.has(monthIso);
+                // Days that actually render something — used to slot the mobile
+                // broker promo after the first two, so empty days (which render
+                // nothing) don't throw the position off.
+                const contentDays = month.days.filter(
+                  (d) => d.suggested.length > 0 || d.skipped.length > 0,
+                );
+
+                return (
+                  <div key={month.key}>
+                    <div
+                      className={`sticky z-10 ${monthIdx === 0 ? "" : "pt-3"} bg-[#f5f0e8] dark:bg-background`}
+                      style={{
+                        top: `${64 + (filterBarHeight || 0)}px`,
+                      }}
+                    >
+                      {/* Two actions share this row: the row itself toggles (or
                         unlocks) the month, and "View report" opens the recap.
                         They can't nest — an interactive control inside a
                         <button> is invalid, and a screen reader folds the inner
@@ -1457,293 +1470,302 @@ export function MarketPage<W>({
                         content layer is pointer-transparent except where the
                         second button opts back in. Both are real buttons, both
                         are tabbable, both show a focus ring. */}
-                    <div
-                      className={`relative w-full flex items-center justify-between px-6 py-5 bg-sheet dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-xl"} ${monthOpen ? "" : "rounded-b-xl"}`}
-                    >
-                      <button
-                        aria-expanded={monthGated ? undefined : monthOpen}
-                        className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-brand-tan/40"
-                        data-ga-event={
-                          monthGated ? "cta_month_unlock_open" : "toggle_month"
-                        }
-                        data-ga-label={
-                          monthGated
-                            ? `${month.label} ${month.year} · ${month.count}`
-                            : `${month.label} ${month.year}`
-                        }
-                        onClick={() =>
-                          monthGated
-                            ? setUnlockMonth({
-                                label: `${month.label} ${month.year}`,
-                                count: month.count,
-                              })
-                            : toggleMonth(month.key)
-                        }
+                      <div
+                        className={`relative w-full flex items-center justify-between px-6 py-5 bg-sheet dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-xl"} ${monthOpen ? "" : "rounded-b-xl"}`}
                       >
-                        <span className="sr-only">
-                          {monthGated
-                            ? `Unlock ${month.label} ${month.year}`
-                            : `${month.label} ${month.year}`}
-                        </span>
-                      </button>
-                      <div className="pointer-events-none relative flex items-center gap-3 text-left">
-                        <CalendarDaysIcon className="w-5 h-5 text-muted shrink-0" />
-                        <div className="text-xl font-semibold">
-                          {month.label} {month.year}
-                          {hasReport && (
-                            <>
-                              <span className="mx-2 text-muted">·</span>
-                              <button
-                                className="pointer-events-auto rounded-sm text-sm font-medium text-brand-brown outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:text-brand-tan dark:focus-visible:ring-brand-tan/40"
-                                data-ga-event="cta_view_month_report"
-                                data-ga-label={`View report ${monthIso}`}
-                                type="button"
-                                onClick={() => openRecap(monthIso!)}
-                              >
-                                View report
-                              </button>
-                            </>
+                        <button
+                          aria-expanded={monthGated ? undefined : monthOpen}
+                          className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-brand-tan/40"
+                          data-ga-event={
+                            monthGated
+                              ? "cta_month_unlock_open"
+                              : "toggle_month"
+                          }
+                          data-ga-label={
+                            monthGated
+                              ? `${month.label} ${month.year} · ${month.count}`
+                              : `${month.label} ${month.year}`
+                          }
+                          onClick={() =>
+                            monthGated
+                              ? setUnlockMonth({
+                                  label: `${month.label} ${month.year}`,
+                                  count: month.count,
+                                })
+                              : toggleMonth(month.key)
+                          }
+                        >
+                          <span className="sr-only">
+                            {monthGated
+                              ? `Unlock ${month.label} ${month.year}`
+                              : `${month.label} ${month.year}`}
+                          </span>
+                        </button>
+                        <div className="pointer-events-none relative flex items-center gap-3 text-left">
+                          <CalendarDaysIcon className="w-5 h-5 text-muted shrink-0" />
+                          <div className="text-xl font-semibold">
+                            {month.label} {month.year}
+                            {hasReport && (
+                              <>
+                                <span className="mx-2 text-muted">·</span>
+                                <button
+                                  className="pointer-events-auto rounded-sm text-sm font-medium text-brand-brown outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:text-brand-tan dark:focus-visible:ring-brand-tan/40"
+                                  data-ga-event="cta_view_month_report"
+                                  data-ga-label={`View report ${monthIso}`}
+                                  type="button"
+                                  onClick={() => openRecap(monthIso!)}
+                                >
+                                  View report
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="pointer-events-none relative flex items-center gap-3 shrink-0">
+                          <span className="text-xs text-muted">
+                            {config.isSkipped
+                              ? month.skippedCount > 0
+                                ? `${month.suggestedCount} analysed · ${month.skippedCount} skipped`
+                                : `${month.suggestedCount} analysed`
+                              : `${month.count} ${month.count === 1 ? "filing" : "filings"}`}
+                          </span>
+                          {monthGated ? (
+                            <LockClosedIcon className="w-4 h-4 text-muted shrink-0" />
+                          ) : (
+                            <ChevronDownIcon
+                              className={`w-5 h-5 text-muted shrink-0 transition-transform duration-200 ${monthOpen ? "rotate-180" : ""}`}
+                            />
                           )}
                         </div>
                       </div>
-                      <div className="pointer-events-none relative flex items-center gap-3 shrink-0">
-                        <span className="text-xs text-muted">
-                          {config.isSkipped
-                            ? month.skippedCount > 0
-                              ? `${month.suggestedCount} analysed · ${month.skippedCount} skipped`
-                              : `${month.suggestedCount} analysed`
-                            : `${month.count} ${month.count === 1 ? "filing" : "filings"}`}
-                        </span>
-                        {monthGated ? (
-                          <LockClosedIcon className="w-4 h-4 text-muted shrink-0" />
-                        ) : (
-                          <ChevronDownIcon
-                            className={`w-5 h-5 text-muted shrink-0 transition-transform duration-200 ${monthOpen ? "rotate-180" : ""}`}
-                          />
-                        )}
-                      </div>
                     </div>
-                  </div>
-                  {monthOpen && (
-                    <div className="bg-sheet dark:bg-surface rounded-b-xl">
-                      {/* Teaser mode has no table columns to head — the rows
+                    {monthOpen && (
+                      <div className="bg-sheet dark:bg-surface rounded-b-xl">
+                        {/* Teaser mode has no table columns to head — the rows
                           are flat avatar → logos links. */}
-                      {!simpleGatedRows && (
-                        <div className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:gap-3 xl:px-3 xl:bg-black/[0.04] dark:xl:bg-white/[0.05]">
-                          <div className="hidden xl:flex items-center border-b border-black/[0.08] py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted/80 dark:border-white/[0.08]">
-                            Date
+                        {!simpleGatedRows && (
+                          <div className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:gap-3 xl:px-3 xl:bg-black/[0.04] dark:xl:bg-white/[0.05]">
+                            <div className="hidden xl:flex items-center border-b border-black/[0.08] py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted/80 dark:border-white/[0.08]">
+                              Date
+                            </div>
+                            <MarketRowHeader
+                              hideDate
+                              inset
+                              benchmarkLabel={config.benchmarkLabel}
+                              chartMode={chartMode}
+                              columnHelp={config.columnHelp}
+                              showLegCount={config.showLegCount}
+                              valueColumnClass={
+                                config.priceFormat.valueColumnClass
+                              }
+                            />
                           </div>
-                          <MarketRowHeader
-                            hideDate
-                            inset
-                            benchmarkLabel={config.benchmarkLabel}
-                            chartMode={chartMode}
-                            columnHelp={config.columnHelp}
-                            showLegCount={config.showLegCount}
-                            valueColumnClass={
-                              config.priceFormat.valueColumnClass
-                            }
-                          />
-                        </div>
-                      )}
-                      <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
-                        {/* Plain-English claim above the first day — names
+                        )}
+                        <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
+                          {/* Plain-English claim above the first day — names
                             the market's own insider term and the one fact
                             that matters: their own money. */}
-                        {monthIdx === 0 && config.timelineTitle && (
-                          <h2 className="px-1 pt-2 pb-1 text-xl font-semibold leading-snug tracking-[-0.02em] text-foreground/90 md:text-2xl">
-                            {config.timelineTitle}
-                            <TimelineSwoosh
-                              aria-hidden
-                              className="ml-2 inline h-6 w-6 translate-y-1 text-brand-brown/60 dark:text-brand-tan/70 md:h-7 md:w-7"
-                            />
-                          </h2>
-                        )}
-                        {contentDays.map((day, dayIdx) => {
-                          const isIntroDay =
-                            day.key === introDayKey && !intro.dismissed;
-                          const collapsed = isDayCollapsed(day.key);
-                          const collapsedDeals = collapsed
-                            ? [...day.suggested, ...day.skipped]
-                            : [];
-                          // A gap that straddles Sat/Sun gets a labelled
-                          // break so the timeline reads in trading weeks
-                          // rather than one undifferentiated run of days.
-                          const prevDay = contentDays[dayIdx - 1];
-                          const weekendBreak =
-                            prevDay != null &&
-                            weekendBetween(prevDay.key, day.key);
+                          {monthIdx === 0 && config.timelineTitle && (
+                            <h2 className="px-1 pt-2 pb-1 text-xl font-semibold leading-snug tracking-[-0.02em] text-foreground/90 md:text-2xl">
+                              {config.timelineTitle}
+                              <TimelineSwoosh
+                                aria-hidden
+                                className="ml-2 inline h-6 w-6 translate-y-1 text-brand-brown/60 dark:text-brand-tan/70 md:h-7 md:w-7"
+                              />
+                            </h2>
+                          )}
+                          {contentDays.map((day, dayIdx) => {
+                            const isIntroDay =
+                              day.key === introDayKey && !intro.dismissed;
+                            const collapsed = isDayCollapsed(day.key);
+                            const collapsedDeals = collapsed
+                              ? [...day.suggested, ...day.skipped]
+                              : [];
+                            // A gap that straddles Sat/Sun gets a labelled
+                            // break so the timeline reads in trading weeks
+                            // rather than one undifferentiated run of days.
+                            const prevDay = contentDays[dayIdx - 1];
+                            const weekendBreak =
+                              prevDay != null &&
+                              weekendBetween(prevDay.key, day.key);
 
-                          return (
-                            <Fragment key={day.key}>
-                              {weekendBreak && <WeekendBreak />}
-                              <div className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:items-start xl:gap-3">
-                                <MarketDayHeader
-                                  day={day.day}
-                                  isoDate={day.key}
-                                  locale={config.locale}
-                                  variant="rail"
-                                  weekday={day.weekday}
-                                />
-                                {/* Below xl the date sits above the card on
+                            return (
+                              <Fragment key={day.key}>
+                                {weekendBreak && <WeekendBreak />}
+                                <div className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:items-start xl:gap-3">
+                                  <MarketDayHeader
+                                    day={day.day}
+                                    isoDate={day.key}
+                                    locale={config.locale}
+                                    variant="rail"
+                                    weekday={day.weekday}
+                                  />
+                                  {/* Below xl the date sits above the card on
                                     the well, mirroring the desktop rail, so
                                     the scroll reads as a dated timeline. */}
-                                <MarketDayHeader
-                                  day={day.day}
-                                  isoDate={day.key}
-                                  locale={config.locale}
-                                  weekday={day.weekday}
-                                />
-                                <div
-                                  className={`rounded-xl overflow-hidden bg-white dark:bg-surface-secondary ${
-                                    isIntroDay
-                                      ? ""
-                                      : "divide-y divide-black/[0.06] dark:divide-separator"
-                                  }`}
-                                >
-                                  {config.id === "uk" &&
-                                    !collapsed &&
-                                    dailySummaries.get(day.key) && (
-                                      <MarketDaySummaryRow
-                                        headline={
-                                          dailySummaries.get(day.key)!.headline
+                                  <MarketDayHeader
+                                    day={day.day}
+                                    isoDate={day.key}
+                                    locale={config.locale}
+                                    weekday={day.weekday}
+                                  />
+                                  <div
+                                    className={`rounded-xl overflow-hidden bg-white dark:bg-surface-secondary ${
+                                      isIntroDay
+                                        ? ""
+                                        : "divide-y divide-black/[0.06] dark:divide-separator"
+                                    }`}
+                                  >
+                                    {config.id === "uk" &&
+                                      !collapsed &&
+                                      dailySummaries.get(day.key) && (
+                                        <MarketDaySummaryRow
+                                          headline={
+                                            dailySummaries.get(day.key)!
+                                              .headline
+                                          }
+                                          isToday={day.key === todayIso}
+                                          valueColumnClass={
+                                            config.priceFormat.valueColumnClass
+                                          }
+                                          onOpen={() =>
+                                            setOpenSummaryDate(day.key)
+                                          }
+                                        />
+                                      )}
+                                    {collapsed ? (
+                                      // Older day under discretion: no real rows —
+                                      // an avatar-group teaser card with one smart
+                                      // headline (best gain → value → signal →
+                                      // quantity) that links to the app.
+                                      <CollapsedDayTeaser
+                                        appHref={channelAppHref}
+                                        deals={collapsedDeals}
+                                        fmt={config.priceFormat}
+                                        isSignal={
+                                          config.isSignal ?? isSignalDealing
                                         }
-                                        isToday={day.key === todayIso}
-                                        valueColumnClass={
-                                          config.priceFormat.valueColumnClass
-                                        }
-                                        onOpen={() =>
-                                          setOpenSummaryDate(day.key)
-                                        }
+                                        locale={config.locale}
+                                        marketId={config.id}
+                                        returnPctOf={returnPctOf}
+                                        showLogo={logosEnabled}
+                                        variant={dayIdx % 2}
                                       />
-                                    )}
-                                  {collapsed ? (
-                                    // Older day under discretion: no real rows —
-                                    // an avatar-group teaser card with one smart
-                                    // headline (best gain → value → signal →
-                                    // quantity) that links to the app.
-                                    <CollapsedDayTeaser
-                                      appHref={channelAppHref}
-                                      deals={collapsedDeals}
-                                      fmt={config.priceFormat}
-                                      isSignal={
-                                        config.isSignal ?? isSignalDealing
-                                      }
-                                      locale={config.locale}
-                                      marketId={config.id}
-                                      returnPctOf={returnPctOf}
-                                      showLogo={logosEnabled}
-                                      variant={dayIdx % 2}
-                                    />
-                                  ) : config.clusterByPerson ? (
-                                    // Person-grouped markets (Congress): fold the
-                                    // WHOLE day — suggested + skipped — into one
-                                    // group per member, so a member never appears
-                                    // as both a cluster and loose rows. No corporate
-                                    // intro banner.
-                                    <>
-                                      {renderSuggestedRows([
-                                        ...day.suggested,
-                                        ...day.skipped,
-                                      ])}
-                                    </>
-                                  ) : isIntroDay ? (
-                                    <>
-                                      {/* Grouped "signal" panel — the intro banner
+                                    ) : config.clusterByPerson ? (
+                                      // Person-grouped markets (Congress): fold the
+                                      // WHOLE day — suggested + skipped — into one
+                                      // group per member, so a member never appears
+                                      // as both a cluster and loose rows. No corporate
+                                      // intro banner.
+                                      <>
+                                        {renderSuggestedRows([
+                                          ...day.suggested,
+                                          ...day.skipped,
+                                        ])}
+                                      </>
+                                    ) : isIntroDay ? (
+                                      <>
+                                        {/* Grouped "signal" panel — the intro banner
                                       as a curved header wrapping the analysed
                                       rows on a tinted, ringed inset card, so a
                                       newcomer sees exactly which filings cleared
                                       the check. Skipped rows sit outside it. */}
-                                      <div className="m-2 overflow-hidden rounded-xl bg-sheet ring-1 ring-black/[0.07] divide-y divide-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10 dark:divide-separator">
-                                        <MarketIntroBanner
-                                          onDismiss={intro.dismiss}
-                                          onExplain={() =>
-                                            setExplainerOpen(true)
-                                          }
-                                        />
-                                        {renderSuggestedRows(day.suggested)}
-                                      </div>
-                                      {day.skipped.length > 0 && (
-                                        <div className="divide-y divide-black/[0.06] border-t border-black/[0.06] dark:divide-separator dark:border-separator">
-                                          {renderSkippedRows(day.skipped)}
+                                        <div className="m-2 overflow-hidden rounded-xl bg-sheet ring-1 ring-black/[0.07] divide-y divide-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10 dark:divide-separator">
+                                          <MarketIntroBanner
+                                            onDismiss={intro.dismiss}
+                                            onExplain={() =>
+                                              setExplainerOpen(true)
+                                            }
+                                          />
+                                          {renderSuggestedRows(day.suggested)}
                                         </div>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <>
-                                      {renderSuggestedRows(day.suggested)}
-                                      {renderSkippedRows(day.skipped)}
-                                    </>
-                                  )}
+                                        {day.skipped.length > 0 && (
+                                          <div className="divide-y divide-black/[0.06] border-t border-black/[0.06] dark:divide-separator dark:border-separator">
+                                            {renderSkippedRows(day.skipped)}
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {renderSuggestedRows(day.suggested)}
+                                        {renderSkippedRows(day.skipped)}
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                              {/* Broker teaser slotted into the table after the
+                                {/* Broker teaser slotted into the table after the
                                   first two days (UK only) — a thin one-line bar
                                   on all breakpoints, beside the right rail. */}
-                              {monthIdx === 0 &&
-                                config.id === "uk" &&
-                                dayIdx === 1 && (
-                                  <BrokerReviewsPromo
-                                    className="hidden md:flex xl:ml-[3.75rem]"
-                                    variant="bar"
-                                  />
-                                )}
-                            </Fragment>
-                          );
-                        })}
+                                {monthIdx === 0 &&
+                                  config.id === "uk" &&
+                                  dayIdx === 1 && (
+                                    <BrokerReviewsPromo
+                                      className="hidden md:flex xl:ml-[3.75rem]"
+                                      variant="bar"
+                                    />
+                                  )}
+                              </Fragment>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    )}
+                  </div>
+                );
+              })}
 
-            {/* Months the fetch doesn't reach — locked headers so the
+              {/* Months the fetch doesn't reach — locked headers so the
                 archive reads deeper than the free window. A click opens
                 the same month-unlock modal, minus a count. */}
-            {appOnlyMonths.map((r) => (
-              <div key={r.month} className="pt-3">
-                {/* Same two-action row as the month headers above — see the
+              {appOnlyMonths.map((r) => (
+                <div key={r.month} className="pt-3">
+                  {/* Same two-action row as the month headers above — see the
                     note there for why the row action is a stretched button
                     rather than a wrapper around the recap link. */}
-                <div className="relative w-full flex items-center justify-between rounded-xl px-6 py-5 bg-sheet dark:bg-surface">
-                  <button
-                    className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-brand-tan/40"
-                    data-ga-event="cta_month_unlock_open"
-                    data-ga-label={`${monthLabel(r.month)} · app-only`}
-                    onClick={() =>
-                      setUnlockMonth({ label: monthLabel(r.month), count: null })
-                    }
-                  >
-                    <span className="sr-only">
-                      Unlock {monthLabel(r.month)}
-                    </span>
-                  </button>
-                  <div className="pointer-events-none relative flex items-center gap-3 text-left">
-                    <CalendarDaysIcon className="w-5 h-5 text-muted shrink-0" />
-                    <div className="text-xl font-semibold">
-                      {monthLabel(r.month)}
-                      <span className="mx-2 text-muted">·</span>
-                      <button
-                        className="pointer-events-auto rounded-sm text-sm font-medium text-brand-brown outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:text-brand-tan dark:focus-visible:ring-brand-tan/40"
-                        data-ga-event="cta_view_month_report"
-                        data-ga-label={`View report ${r.month}`}
-                        type="button"
-                        onClick={() => openRecap(r.month)}
-                      >
-                        View report
-                      </button>
+                  <div className="relative w-full flex items-center justify-between rounded-xl px-6 py-5 bg-sheet dark:bg-surface">
+                    <button
+                      className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-brand-tan/40"
+                      data-ga-event="cta_month_unlock_open"
+                      data-ga-label={`${monthLabel(r.month)} · app-only`}
+                      onClick={() =>
+                        setUnlockMonth({
+                          label: monthLabel(r.month),
+                          count: null,
+                        })
+                      }
+                    >
+                      <span className="sr-only">
+                        Unlock {monthLabel(r.month)}
+                      </span>
+                    </button>
+                    <div className="pointer-events-none relative flex items-center gap-3 text-left">
+                      <CalendarDaysIcon className="w-5 h-5 text-muted shrink-0" />
+                      <div className="text-xl font-semibold">
+                        {monthLabel(r.month)}
+                        <span className="mx-2 text-muted">·</span>
+                        <button
+                          className="pointer-events-auto rounded-sm text-sm font-medium text-brand-brown outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:text-brand-tan dark:focus-visible:ring-brand-tan/40"
+                          data-ga-event="cta_view_month_report"
+                          data-ga-label={`View report ${r.month}`}
+                          type="button"
+                          onClick={() => openRecap(r.month)}
+                        >
+                          View report
+                        </button>
+                      </div>
+                    </div>
+                    <div className="pointer-events-none relative flex items-center gap-3 shrink-0">
+                      <span className="text-xs text-muted">In the app</span>
+                      <LockClosedIcon className="w-4 h-4 text-muted shrink-0" />
                     </div>
                   </div>
-                  <div className="pointer-events-none relative flex items-center gap-3 shrink-0">
-                    <span className="text-xs text-muted">In the app</span>
-                    <LockClosedIcon className="w-4 h-4 text-muted shrink-0" />
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
+        {/* ^ end of the filter bar's stick range. Anything below this line
+            scrolls with the bar released. */}
 
         {pricesAsOf && (
           <div className="text-center text-[11px] text-muted/70">
@@ -1777,6 +1799,7 @@ export function MarketPage<W>({
         appHref={channelAppHref}
         dealing={selectedDealing}
         detailFields={config.detailFields}
+        filingHref={config.filingHref}
         fmt={config.priceFormat}
         formatTickerDisplay={config.formatTickerDisplay}
         gating={gating}

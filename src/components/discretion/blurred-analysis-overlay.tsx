@@ -70,7 +70,9 @@ export function BlurredAnalysisOverlay({
       <ul className="text-left text-sm space-y-1.5 mb-5">
         {benefits.map((line) => (
           <li key={line} className="flex items-start gap-2 text-foreground/80">
-            <span className="text-brand-brown dark:text-brand-tan mt-0.5">✓</span>
+            <span className="text-brand-brown dark:text-brand-tan mt-0.5">
+              ✓
+            </span>
             <span>{line}</span>
           </li>
         ))}

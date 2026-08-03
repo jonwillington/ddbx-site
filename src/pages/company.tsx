@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
+import { filingPath } from "../../shared/filings.js";
+
 import { BrokerVisitLink } from "@/components/brokers/broker-ui";
 import {
   BrokerInline,
@@ -977,8 +979,30 @@ function DealsTable({
                 key={deal.id ?? i}
                 className={`border-b last:border-b-0 ${C.rule}`}
               >
+                {/* THE DATE IS THE DOOR TO THE FILING.
+                    Every row of this table is one disclosure with a permanent
+                    page of its own, and the table linked the person but never
+                    the purchase — so the issuer's own record was the one place
+                    on the site where you could see a filing and not open it.
+                    The date cell carries it: it is the row's identity, it is
+                    already first, and the person column is spoken for. UK only,
+                    because `/dealings/:id` is a UK pipeline route (see
+                    functions/dealings/[id].js). */}
                 <td className="whitespace-nowrap py-3 pr-4 text-foreground/60">
-                  {fmtDate(deal.trade_date, market)}
+                  {market === "UK" && deal.id ? (
+                    <Link
+                      className="group inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline"
+                      to={filingPath(deal.id)}
+                    >
+                      {fmtDate(deal.trade_date, market)}
+                      <ArrowRightIcon
+                        aria-hidden
+                        className="h-3 w-3 text-foreground/25 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-foreground/60"
+                      />
+                    </Link>
+                  ) : (
+                    fmtDate(deal.trade_date, market)
+                  )}
                 </td>
                 {/* Names and long role titles stay on one line — the table
                   scrolls on narrow screens, which reads far better than a row

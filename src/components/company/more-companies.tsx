@@ -28,10 +28,12 @@ import type { CompanyIndexEntry } from "@/lib/api";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRightIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowRightIcon,
+  ArrowTrendingUpIcon,
+} from "@heroicons/react/24/outline";
 
 import { CompanyLogo } from "@/components/company-logo";
-import { MeterBar } from "@/components/seo/meter-bar";
 import { Skeleton } from "@/components/skeleton";
 import { TickerPill } from "@/components/ticker-pill";
 import { api } from "@/lib/api";
@@ -204,10 +206,6 @@ export function MoreCompanies({
   if (!loading && picked.length === 0) return null;
 
   const subject = market === "UK" ? "Director buying" : "Insider buying";
-  // Bars are relative to the largest card in this group, not to the index —
-  // scaling eight mid-cap companies against the market's biggest buy would
-  // draw eight empty bars.
-  const top = picked.length ? Math.max(...picked.map(valueOf)) : 0;
 
   return (
     <section className="mt-16">
@@ -244,8 +242,7 @@ export function MoreCompanies({
                       <Skeleton className="mt-1.5 h-[13px] w-3/5" />
                     </span>
                   </span>
-                  <Skeleton className="mt-2.5 h-[18px] w-16" />
-                  <Skeleton className="mt-2 h-[3px] w-full" />
+                  <Skeleton className="mt-2.5 h-[21px] w-20" />
                   <Skeleton className="mt-2 h-4 w-24" />
                 </div>
               </li>
@@ -260,8 +257,14 @@ export function MoreCompanies({
           // rather than printing the same string twice on one card.
           const hasValue = valueOf(c) > 0;
           const buys = `${c.deals} ${c.deals === 1 ? "buy" : "buys"}`;
-          const secondary =
-            c.analysed > 0 ? `${c.analysed} rated` : hasValue ? buys : null;
+          // With the figure now reading as "this much was added", the line
+          // beneath says what it is spread across. Without a value the count
+          // IS the figure above, so it isn't repeated here.
+          const secondary = hasValue
+            ? `across ${buys}${c.analysed > 0 ? ` · ${c.analysed} rated` : ""}`
+            : c.analysed > 0
+              ? `${c.analysed} rated`
+              : null;
 
           return (
             <li key={c.key}>
@@ -279,11 +282,35 @@ export function MoreCompanies({
                   </span>
                 </span>
 
+                {/* THE FIGURE IS AN INCREASE, SO IT IS DRAWN AS ONE.
+                    The bar under here was scaled to the largest card in the
+                    group, which meant it encoded this card's rank among eight
+                    and nothing else: a £7.5m issuer filled it and a £31k issuer
+                    got a dot, on cards that are not a ranking and are not
+                    presented as one. Nobody can read a quantity off it and it
+                    was the second-largest object on the card.
+
+                    What the number actually is: how much these insiders added
+                    to their own holdings. So it is set larger, with a rising
+                    arrow in front of it, and the count moves to the line below
+                    where it says what the figure is spread across. */}
                 <span className="mt-2.5 flex items-baseline justify-between gap-2">
-                  <span className="text-[15px] font-semibold tabular-nums tracking-[-0.01em] text-foreground">
-                    {hasValue
-                      ? moneyShort(valueOf(c), market === "UK" ? "GBP" : "USD")
-                      : buys}
+                  <span className="flex min-w-0 items-baseline gap-1">
+                    {hasValue ? (
+                      <ArrowTrendingUpIcon
+                        aria-hidden
+                        className="h-3.5 w-3.5 shrink-0 translate-y-[2px] text-positive"
+                        strokeWidth={2.2}
+                      />
+                    ) : null}
+                    <span className="truncate text-[18px] font-semibold tabular-nums tracking-[-0.015em] text-foreground">
+                      {hasValue
+                        ? moneyShort(
+                            valueOf(c),
+                            market === "UK" ? "GBP" : "USD",
+                          )
+                        : buys}
+                    </span>
                   </span>
                   {when ? (
                     <span
@@ -297,10 +324,6 @@ export function MoreCompanies({
                     </span>
                   ) : null}
                 </span>
-
-                {top > 0 && hasValue ? (
-                  <MeterBar className="mt-2" max={top} value={valueOf(c)} />
-                ) : null}
 
                 <span className="mt-2 flex items-center gap-2 text-[11.5px] leading-4 text-foreground/50">
                   <TickerPill ticker={displayTicker(c.key)} />
