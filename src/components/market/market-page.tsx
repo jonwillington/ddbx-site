@@ -46,6 +46,7 @@ import {
 import { type SparkBar } from "./market-row-spark";
 import { MarketChannel } from "./market-channel";
 import { MarketFaq } from "./market-faq";
+import { MarketPlans } from "./market-plans";
 import {
   bucketByMonth,
   buildUniversalFilters,
@@ -1348,6 +1349,23 @@ export function MarketPage<W>({
             it doubles as the table's curved top edge AND masks anything
             scrolling beneath it. Stays visible when the hero filter
             narrows the list to zero so the user can switch back. */}
+          {/* Advance declarations. Rendered ABOVE the dealings feed when the
+              market marks them as leading, because for a market with this
+              disclosure regime the declaration is the event and the completed
+              purchase that follows is only its receipt. Markets without a
+              plans config render exactly as before. */}
+          {config.plans?.leads ? (
+            <MarketPlans
+              emptyLabel={config.plans.emptyLabel}
+              fetchPlans={config.plans.fetchPlans}
+              formatValue={
+                config.priceFormat?.formatValue ?? ((v: number) => String(v))
+              }
+              subtitle={config.plans.subtitle}
+              title={config.plans.title}
+            />
+          ) : null}
+
           {dealings.length > 0 && (
             <div
               ref={filterBarRef}
@@ -1772,6 +1790,18 @@ export function MarketPage<W>({
             Prices as of {shortDate(pricesAsOf, config.locale)}
           </div>
         )}
+
+        {config.plans && !config.plans.leads ? (
+          <MarketPlans
+            emptyLabel={config.plans.emptyLabel}
+            fetchPlans={config.plans.fetchPlans}
+            formatValue={
+              config.priceFormat?.formatValue ?? ((v: number) => String(v))
+            }
+            subtitle={config.plans.subtitle}
+            title={config.plans.title}
+          />
+        ) : null}
 
         <MarketFaq items={config.faq} />
       </section>

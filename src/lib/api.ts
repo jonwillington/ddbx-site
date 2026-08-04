@@ -119,6 +119,60 @@ const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "/api";
  *  the company-logo image proxy resolve to the same origin. */
 export const API_BASE = BASE;
 
+/* Korea wire shapes. Korea is data-side only in ddbx-data — deliberately not
+ * part of the `Market` union or MARKET_CONFIG — so these are declared here
+ * rather than arriving through the synced types. */
+export interface KrPlanWire {
+  rcept_no: string;
+  stock_code: string | null;
+  company: string;
+  company_en: string | null;
+  venue: string;
+  reporter_name: string;
+  reporter_name_en: string | null;
+  major_holder: string | null;
+  position: string | null;
+  filed_date: string;
+  window_start: string | null;
+  window_end: string | null;
+  notice_days: number | null;
+  purpose: string | null;
+  purpose_reading: { label: string; hint: string } | null;
+  plan_shares: number | null;
+  plan_value_krw: number | null;
+  plan_pct: number | null;
+  is_withdrawal: number;
+  executed_shares: number | null;
+  executed_value_krw: number | null;
+}
+
+export interface KrDealingWire {
+  id: string;
+  stock_code: string | null;
+  company: string;
+  company_en: string | null;
+  reporter_name: string;
+  reporter_name_en: string | null;
+  position: string | null;
+  reason_code: string;
+  trade_date: string;
+  disclosed_date: string;
+  shares_change: number;
+  price_krw: number | null;
+  value_krw: number | null;
+  plan_report_date: string | null;
+}
+
+export interface KrPlansResponse {
+  plans: KrPlanWire[];
+  notice?: {
+    headline: string;
+    body: string;
+    learn_more_label?: string;
+    learn_more_path?: string;
+  };
+}
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
 
@@ -344,6 +398,20 @@ export const api = {
 
     return get<{ dealings: UsDealing[] }>(`/djt-dealings${suffix}`);
   },
+  /** Korea (KRX) advance trading declarations — FSCMA art. 173-3 filings an
+   *  insider makes BEFORE buying. The payload carries its own explainer copy
+   *  so the wording travels with the data. See ddbx-data /api/kr-plans. */
+  krPlans: (opts: { limit?: number } = {}) =>
+    get<KrPlansResponse>(`/kr-plans?limit=${opts.limit ?? 60}`),
+
+  /** Korea executed dealings. `minKrw` is a per-filing value floor; without
+   *  one the feed is unreadable (median individual buy ~£15k, and a seventh
+   *  of filings are treasury-stock bonuses). */
+  krDealings: (opts: { limit?: number; minKrw?: number } = {}) =>
+    get<{ dealings: KrDealingWire[] }>(
+      `/kr-dealings?limit=${opts.limit ?? 60}&min_krw=${opts.minKrw ?? 0}`,
+    ),
+
   euScrape: async (from: string, to: string): Promise<EuScrapeResult> => {
     // Dry-run EU scrape (currently Sweden FI). Returns parsed rows without
     // persistence — kept around for ad-hoc spot-checks of the parser. The

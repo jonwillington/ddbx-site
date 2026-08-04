@@ -42,6 +42,10 @@ export const MARKET_HOST_BY_ID = {
   djt: "ddbx.us",
   se: "ddbx.eu",
   nl: "ddbx.eu",
+  // Korea has no domain of its own. It rides the primary host at /kr rather
+  // than waiting on one; this map is the only place that assumption lives, so
+  // pointing it at a Korean domain later is a one-line change.
+  kr: "ddbx.uk",
 };
 
 /** Market a bare domain root resolves to. A host absent from this map is a
@@ -169,9 +173,11 @@ export function marketIdForPath(pathname, hostname) {
   if (path.startsWith("/us-preview")) return "us";
   if (path.startsWith("/se-preview") || path.startsWith("/eu")) return "se";
   if (path.startsWith("/nl-preview")) return "nl";
+  if (path.startsWith("/kr-preview")) return "kr";
   if (path === "/us" || path.startsWith("/us/")) return "us";
   if (path === "/se" || path.startsWith("/se/")) return "se";
   if (path === "/nl" || path.startsWith("/nl/")) return "nl";
+  if (path === "/kr" || path.startsWith("/kr/")) return "kr";
   // Congress: canonical /congress plus the legacy exact /directors path.
   // `/directors/:id` is a UK director profile, so only the bare /directors
   // maps here. Before the host default so it wins on ddbx.us.

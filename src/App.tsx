@@ -31,6 +31,7 @@ import CongressMemberPage from "@/pages/congress-member";
 import CongressMembersPage from "@/pages/congress-members";
 import DjtPreviewPage from "@/pages/djt-preview";
 import MarketHomePage from "@/pages/market-home";
+import KoreaPreviewPage from "@/pages/korea-preview";
 import NetherlandsPreviewPage from "@/pages/netherlands-preview";
 import SwedenPreviewPage from "@/pages/sweden-preview";
 import UsPreviewPage from "@/pages/us-preview";
@@ -101,6 +102,8 @@ function App() {
         <Route element={<SwedenPreviewPage />} path="/se" />
         <Route element={<NetherlandsPreviewPage />} path="/nl-preview" />
         <Route element={<NetherlandsPreviewPage />} path="/nl" />
+        <Route element={<KoreaPreviewPage />} path="/kr-preview" />
+        <Route element={<KoreaPreviewPage />} path="/kr" />
         <Route element={<UkPreviewPage />} path="/uk-preview" />
         {/* Broker comparison + affiliate directory (UK). Always public. */}
         {/* Conversion-focused app-install landing pages. Public, ungated.

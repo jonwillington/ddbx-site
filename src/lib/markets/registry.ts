@@ -13,6 +13,7 @@ import type { MarketConfig } from "./types";
 
 import {
   GB,
+  KR,
   NL,
   SE,
   US,
@@ -30,21 +31,23 @@ import {
 } from "../../../shared/seo.js";
 
 import { CongressMarket } from "./congress";
+import { KoreaMarket } from "./korea";
 import { DjtMarket } from "./djt";
 import { NetherlandsMarket } from "./netherlands";
 import { SwedenMarket } from "./sweden";
 import { UkMarket } from "./uk";
 import { UsMarket } from "./us";
 
-export type MarketRegion = "europe" | "north-america";
+export type MarketRegion = "europe" | "north-america" | "asia";
 
 export const REGION_LABEL: Record<MarketRegion, string> = {
   europe: "Europe",
   "north-america": "North America",
+  asia: "Asia",
 };
 
 /** Order regions render in the switcher dropdown. */
-export const REGION_ORDER: MarketRegion[] = ["europe", "north-america"];
+export const REGION_ORDER: MarketRegion[] = ["europe", "north-america", "asia"];
 
 export interface MarketRegistryEntry {
   /** MarketConfig.id — "uk" | "us" | "se" | "nl". */
@@ -129,6 +132,16 @@ export const MARKETS: MarketRegistryEntry[] = [
     Flag: NL,
     region: "europe",
     config: NetherlandsMarket as MarketConfig,
+  },
+  {
+    id: "kr",
+    code: "KR",
+    label: "Korea",
+    route: "/kr",
+    canonicalRoute: "/kr",
+    Flag: KR,
+    region: "asia",
+    config: KoreaMarket as MarketConfig,
   },
 ];
 

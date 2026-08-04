@@ -169,6 +169,92 @@ export interface DealingsPayload<W = unknown> {
   stats: MarketStats;
 }
 
+/* ─── Advance declarations ───────────────────────────────────────────────
+ *
+ * A MarketPlan is a trade an insider has publicly committed to but has NOT
+ * yet made. It is deliberately NOT a MarketDealing: that interface requires
+ * tradeDate, entryPrice, shares and value, every one of which describes a
+ * purchase that already happened. Mapping a declaration onto it would put a
+ * future window into a field labelled trade date and invent an entry price
+ * for something nobody has bought, which is exactly the misreading these
+ * feeds are most vulnerable to.
+ *
+ * Korea (KRX) is the first market with this shape: FSCMA art. 173-3 requires
+ * officers and major shareholders to declare a purchase at least 30 days
+ * ahead once it reaches 1% of shares or 50bn won. Other jurisdictions are
+ * moving the same way, which is why this lives in the shared types rather
+ * than in one market's module.
+ */
+export interface MarketPlan {
+  key: string;
+  id: string;
+  ticker: string;
+  company: string;
+  insiderName: string;
+  insiderRole?: string;
+  /** What the filer is to the company — "Effective controlling shareholder",
+   *  "Shareholder holding 10% or more". Usually more informative than the
+   *  job title, because the filing threshold selects for ownership. */
+  holderStatus?: string;
+  /** When the declaration was filed. THIS is the event date: the moment
+   *  something is learned. */
+  filedDate: string;
+  /** The window the trade must happen inside. Neither bound is a trade date
+   *  and neither should be rendered as one. */
+  windowStart: string | null;
+  windowEnd: string | null;
+  /** Days of forewarning: filedDate → windowStart. */
+  noticeDays: number | null;
+  /** Intended, not executed. */
+  plannedShares: number | null;
+  plannedValue: number | null;
+  /** Intended purchase as a share of the company. */
+  plannedPercent: number | null;
+  /** Reader-facing reading of the filer's stated reason, when one can be
+   *  determined. Null renders nothing rather than guessing. */
+  purposeLabel?: string | null;
+  purposeHint?: string | null;
+  /** Verbatim, as filed. Shown beneath the label so the filing's own words
+   *  stay available. */
+  purposeRaw?: string | null;
+  /** A declaration the filer has since cancelled. Shown, not hidden — a
+   *  controlling shareholder calling off a purchase is itself news, and
+   *  dropping them would make the feed look more decisive than the record. */
+  isWithdrawn: boolean;
+  /** What has actually been filed against this plan so far, if anything.
+   *  Present so a plan can show its own outcome; NOT a signal in its own
+   *  right, and must never be promoted above the declaration. */
+  executedShares?: number | null;
+  executedValue?: number | null;
+}
+
+export interface PlansPayload {
+  plans: MarketPlan[];
+  /** Explainer served alongside the data so the wording cannot drift from
+   *  what the rows mean. */
+  notice?: {
+    headline: string;
+    body: string;
+    learnMoreLabel?: string;
+    learnMorePath?: string;
+  };
+}
+
+/** Optional plans surface on a MarketConfig. A market that omits this renders
+ *  exactly as before. */
+export interface MarketPlansConfig {
+  /** Section heading — "Declared purchases". */
+  title: string;
+  /** One line under it. */
+  subtitle?: string;
+  /** True when declarations are the market's headline object and should
+   *  render ABOVE the dealings feed. */
+  leads?: boolean;
+  fetchPlans: () => Promise<PlansPayload>;
+  /** Empty-state copy. */
+  emptyLabel?: string;
+}
+
 /** News item shape that the today drawer renders. Markets without a news
  *  source can simply omit fetchNews from their MarketConfig. */
 export interface NewsItem {
@@ -383,6 +469,9 @@ export interface MarketConfig<W = unknown> {
   /** Fetch dealings for a given view. Adapter does its own bucketing into
    *  MarketDealings before returning. */
   fetchDealings: (opts: { view: string }) => Promise<DealingsPayload<W>>;
+  /** Advance declarations, for markets that have them. Omit and nothing
+   *  changes. See MarketPlan for why these are not MarketDealings. */
+  plans?: MarketPlansConfig;
 
   /** Optional news source. /api/news/uk for UK; nothing yet for US/EU. */
   fetchNews?: () => Promise<NewsPayload>;
