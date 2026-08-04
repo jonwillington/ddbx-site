@@ -52,6 +52,15 @@ const MARKET_COPY: Record<string, MarketCopy> = {
     insiderTermPlural: "PDMRs",
     insiderNote: "Persons Discharging Managerial Responsibilities",
   },
+  kr: {
+    regionName: "Korea",
+    exchangeShortName: "KRX",
+    exchangeFullName: "Korea Exchange (KOSPI & KOSDAQ)",
+    regulatorFullName: "DART filings to the Financial Supervisory Service",
+    insiderTerm: "insider",
+    insiderTermPlural: "insiders",
+    insiderNote: "company officers & major shareholders",
+  },
   nl: {
     regionName: "the Netherlands",
     exchangeShortName: "Amsterdam",

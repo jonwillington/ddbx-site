@@ -426,6 +426,63 @@ export default function HowItWorksPage() {
           ) : null}
         </SeoSection>
 
+        {/* Korea only. Every other market in the product reports a purchase
+            that HAS happened; Korea's headline feed reports ones that have
+            not. That distinction is the single thing a reader most needs and
+            most easily misses, so it gets a section rather than a footnote.
+            The /api/kr-plans payload links straight to this anchor. */}
+        {market.id === "kr" ? (
+          <SeoSection
+            aside="Why the Korean feed reads differently from every other one here."
+            id="korea-advance-plans"
+            title="Trades declared before they happen"
+          >
+            <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+              Korea is the only market here where the disclosure arrives{" "}
+              <em>before</em> the trade. Officers and major shareholders have to
+              declare a planned purchase in advance, naming themselves, the
+              size, and the window it has to happen in. When you read one of
+              these, nothing has been bought yet.
+            </p>
+
+            <dl
+              className={`mt-5 overflow-hidden rounded-xl border ${RULE} divide-y ${DIVIDE}`}
+            >
+              <MetaRow
+                label="When it applies"
+                value="A planned trade that, with the previous six months of dealing, reaches 1% of the company's shares or 50bn won"
+              />
+              <MetaRow
+                label="How far ahead"
+                value="At least 30 days before the window opens"
+              />
+              <MetaRow
+                label="The window"
+                value="30 days or less, and the trade must land at 70% to 130% of the declared amount"
+              />
+              <MetaRow
+                label="If they change their mind"
+                value="The plan can be withdrawn, and about one in ten is. Withdrawals are shown next to the plan they cancel"
+              />
+            </dl>
+
+            <p className="mt-5 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+              Because the threshold is a share of the company rather than a cash
+              amount, the people who file are mostly controlling shareholders and
+              large holders, not rank-and-file managers. That makes it a
+              different population from the director buys on the other market
+              pages, and it is worth reading it as one.
+            </p>
+
+            <p className="mt-4 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+              We lead this page with the declarations rather than the completed
+              purchases that follow them. The declaration is the moment
+              something is learned; the filing that confirms it, weeks later,
+              tells you only that a plan already on the record was carried out.
+            </p>
+          </SeoSection>
+        ) : null}
+
         <SeoSection
           aside="The parts worth knowing before you lean on any of it."
           id="limits"
