@@ -127,6 +127,22 @@ function App() {
           element={<DownloadPage platform="android" />}
           path="/us/download/android"
         />
+        {/* Traditional Chinese edition of the UK install pages, for a Hong
+            Kong audience. The prefix is the ONLY language selector — no
+            Accept-Language sniff, so the URL is stable for crawlers and
+            shareable by the reader. UK app only: there is no Chinese US
+            edition, and the page falls back to English rather than rendering
+            English prose in a zh-HK document if one is ever reached on
+            ddbx.us. See src/lib/download/copy.tsx. */}
+        <Route element={<DownloadPage />} path="/zh-hk/download" />
+        <Route
+          element={<DownloadPage platform="ios" />}
+          path="/zh-hk/download/ios"
+        />
+        <Route
+          element={<DownloadPage platform="android" />}
+          path="/zh-hk/download/android"
+        />
         {/* Developer API product page. Cross-market by construction — one
             page, no market prop, no discretion gating.
             /developers is canonical; /api is an alias that 301s to it at the

@@ -15,6 +15,7 @@ import {
   IOS_APP_LOGO_BY_MARKET,
   storeUrlForMarketId,
 } from "@/lib/app-store";
+import { useDownloadCopy } from "@/lib/download/copy";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { marketContactEmail, marketForPath } from "@/lib/markets/registry";
@@ -449,6 +450,12 @@ export default function DefaultLayout({
   );
   const legalPage = pathToLegalPage(location.pathname);
   const platform = useDevicePlatform();
+  // The floating mobile install bar's copy. English on every route except the
+  // /zh-hk download pages, which render this layout inside a
+  // `DownloadCopyProvider` — that bar is their primary tap target on a phone,
+  // so it has to speak the page's language even though the rest of the site
+  // chrome (navbar, footer, legal drawers) stays English.
+  const t = useDownloadCopy();
   // Direct store link for the market that owns this route + the visitor's
   // device, so the mobile floating CTA jumps straight to the right listing
   // (iOS → App Store, Android → Play) instead of opening the chooser.
@@ -710,7 +717,7 @@ export default function DefaultLayout({
               target="_blank"
             >
               <StoreGlyph className="h-5 w-5 shrink-0" />
-              <span>Start your free trial</span>
+              <span>{t.startTrial}</span>
             </a>
           ) : (
             // App-less market (SE/NL): no trial to offer — opens the chooser.
@@ -727,7 +734,7 @@ export default function DefaultLayout({
           )}
           <p className="pointer-events-none mt-2 text-center text-xs text-foreground/55">
             {directAppUrl
-              ? "Free for 7 days, cancel any time. On iOS and Android."
+              ? t.floatingTrialNote
               : "Start your 7-day free trial."}
           </p>
         </div>

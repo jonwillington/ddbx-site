@@ -3,12 +3,8 @@ import type { DevicePlatform } from "@/lib/use-device-platform";
 import { AndroidGlyph } from "@/components/android-glyph";
 import { AppleGlyph } from "@/components/apple-glyph";
 import { storeTargetsForMarket } from "@/lib/app-store";
+import { useDownloadCopy } from "@/lib/download/copy";
 import { useDevicePlatform } from "@/lib/use-device-platform";
-
-const LABEL = {
-  ios: "Download on the App Store",
-  android: "Get it on Google Play",
-} as const;
 
 /** A single filled "download the app" button for the visitor's platform:
  *  Google Play on Android, the App Store on iOS and desktop (where there's no
@@ -40,6 +36,10 @@ export function StoreButtons({
 }) {
   const detected = useDevicePlatform();
   const platform = forcedPlatform ?? detected;
+  // Apple's and Google's own badge wording for the reader's language. English
+  // everywhere except the /zh-hk download pages, which are the only routes that
+  // provide a non-default copy context.
+  const { storeButton } = useDownloadCopy();
   // `storeTargetsForMarket` returns [App Store] on iOS/desktop and [Play] on
   // Android (with the UK app as the Android fallback), so the first entry is
   // always the single store this visitor should see.
@@ -62,7 +62,7 @@ export function StoreButtons({
         ) : (
           <AppleGlyph className={glyphClassName} />
         )}
-        {LABEL[target.store]}
+        {storeButton[target.store]}
       </a>
     </div>
   );

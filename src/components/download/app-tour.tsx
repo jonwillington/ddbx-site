@@ -43,6 +43,7 @@ import {
   type AppPlatform,
   type ShotSlot,
 } from "@/lib/app-screenshots";
+import { useDownloadCopy } from "@/lib/download/copy";
 
 export interface TourBeat {
   slot: ShotSlot;
@@ -101,6 +102,8 @@ function BeatVisual({
    *  handsets either side of it. Unset falls back to a screen-shaped box. */
   shotHeight?: string;
 }) {
+  const t = useDownloadCopy();
+
   if (beat.slot === "alert") {
     // The alert is not a device and must not wear a device's silhouette: a
     // notification floating in a phone-tall empty box read as a layout error,
@@ -131,7 +134,7 @@ function BeatVisual({
         style={shotWidth ? { width: shotWidth } : undefined}
       >
         <DeviceFrame
-          alt={`ddbx ${SLOT_LABEL[beat.slot]} screen on ${platform === "ios" ? "iPhone" : "Android"}`}
+          alt={t.screenAlt(SLOT_LABEL[beat.slot], platform)}
           platform={platform}
           slot={beat.slot}
           src={appShotSrc(marketId, platform, beat.slot)}
@@ -296,6 +299,7 @@ function MobileTour({
   platform: AppPlatform;
   tick: number;
 }) {
+  const t = useDownloadCopy();
   // Which beat the track has settled nearest to, for the counter below. The
   // scrollbar is hidden and the next-slide peek is the only other signal that
   // this row moves sideways — the counter is the explicit one, and it's the
@@ -365,9 +369,7 @@ function MobileTour({
             <p className="mt-1.5 text-[14px] leading-[1.55] text-foreground/65">
               {b.body}
             </p>
-            <span className="sr-only">
-              Beat {i + 1} of {beats.length}
-            </span>
+            <span className="sr-only">{t.beatOf(i + 1, beats.length)}</span>
           </div>
         ))}
       </div>

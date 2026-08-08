@@ -59,6 +59,28 @@ export const HOST_DEFAULT_MARKET = {
   "www.ddbx.eu": "se",
 };
 
+// ---- Language editions ----------------------------------------------------
+//
+// The site is English everywhere except one family: /zh-hk/download{,/ios,
+// /android}, a Traditional Chinese edition of the UK install pages written for
+// a Hong Kong audience. The prefix is the only language selector — there is no
+// Accept-Language negotiation, so every URL is stable for crawlers and
+// shareable by the reader.
+//
+// The mirror of this lives in src/lib/download/copy.tsx (the page's own
+// dictionary and its `ZH_HK_PREFIX`). Change the prefix and you change it in
+// three places: here, there, and the routes in src/App.tsx.
+
+export const ZH_HK_PREFIX = "/zh-hk";
+
+export const isZhHkPath = (path) =>
+  path === ZH_HK_PREFIX || String(path).startsWith(`${ZH_HK_PREFIX}/`);
+
+/** BCP 47 tag for `<html lang>`. */
+export function langForPath(pathname) {
+  return isZhHkPath(String(pathname ?? "/")) ? "zh-HK" : "en-GB";
+}
+
 /** Route prefix each non-root market is mounted at, for the fallback match. */
 const MARKET_ROUTES = {
   us: "/us",
@@ -170,6 +192,11 @@ export function marketIdForPath(pathname, hostname) {
   const path = String(pathname ?? "/");
   const host = normaliseHost(hostname);
 
+  // The Traditional Chinese install pages sell the UK app, wherever they're
+  // served from. Before the host default deliberately: on ddbx.us the fallback
+  // would resolve them to the US market, and there is no Chinese US edition —
+  // the page would render English copy inside a zh-HK document.
+  if (isZhHkPath(path)) return "uk";
   if (path.startsWith("/us-preview")) return "us";
   if (path.startsWith("/se-preview") || path.startsWith("/eu")) return "se";
   if (path.startsWith("/nl-preview")) return "nl";
@@ -517,6 +544,19 @@ export function seoForPath(pathname, hostname) {
         `${tickerFromCompanyPath(path)} — ${id === "us" ? "insider trading" : "director dealings"}`,
       );
     if (isDownloadPath(path)) {
+      // Traditional Chinese edition (Hong Kong). UK app only — see
+      // marketIdForPath, which pins these paths to the UK market on every host.
+      if (isZhHkPath(path)) {
+        // "下載 App" rather than "下載 ddbx App": brandTitle already prefixes
+        // the brand, and the Chinese title is long enough without saying it
+        // twice. Latin runs keep a space either side, as Hong Kong house
+        // typography does — 「iPhone 版」, not 「iPhone版」.
+        const on = deviceNoun ? `${deviceNoun} 版 ` : "";
+
+        return brandTitle(
+          `下載 ${on}App — 追蹤英國董事增持自己公司股份 · 免費試用 7 天`,
+        );
+      }
       const on = deviceNoun ? ` for ${deviceNoun}` : "";
 
       return brandTitle(
@@ -574,6 +614,16 @@ export function seoForPath(pathname, hostname) {
     if (isBrokerIndexPath(path))
       return "Compare the UK’s main trading and investing platforms side by side — fees, ISAs, SIPPs, fractional shares and FSCS protection.";
     if (isDownloadPath(path)) {
+      if (isZhHkPath(path)) {
+        const zhApp =
+          deviceNoun === "Android"
+            ? "Android 版 ddbx"
+            : deviceNoun === "iPhone"
+              ? "iPhone 版 ddbx"
+              : "ddbx App";
+
+        return `看看哪些英國上市公司的董事，正在買入自己公司的股份 — 附買入之後的實時表現追蹤。在 ${zhApp} 上開始 7 天免費試用。`;
+      }
       const app =
         deviceNoun === "Android"
           ? "the ddbx Android app"
@@ -674,6 +724,40 @@ export function canonicalUrlFor(pathname, hostname) {
   if (learnEntry) return canonicalUrlForEntry(learnEntry);
 
   return `https://${marketHost}${canonicalPath}`;
+}
+
+/** `rel=alternate hreflang` pairs for a route, or an empty array where the
+ *  route has only one language edition.
+ *
+ *  Without these the English and Chinese install pages are two URLs carrying
+ *  the same offer, and a search engine has to guess whether they're duplicates
+ *  competing for one slot or genuine alternates. Each page declares the pair
+ *  AND itself (the reflexive tag is required — a set of hreflang annotations
+ *  that doesn't include the page it's on is ignored wholesale), plus
+ *  `x-default` pointing at English as the fallback for everyone else.
+ *
+ *  Only the UK install pages are bilingual, so this returns nothing anywhere
+ *  else — including /us/download, which has no Chinese edition. */
+export function alternatesFor(pathname, hostname) {
+  const path = String(pathname ?? "/");
+
+  if (!isDownloadPath(path)) return [];
+  if (!isProductionHost(normaliseHost(hostname))) return [];
+  // Only the UK install pages are bilingual. This has to be a MARKET check and
+  // not a path check: on ddbx.us the bare /download is the US page, and
+  // announcing a Chinese alternate for it would point Hong Kong searchers at a
+  // page selling a different app.
+  if (marketIdForPath(path, hostname) !== "uk") return [];
+
+  const enPath = isZhHkPath(path) ? path.slice(ZH_HK_PREFIX.length) : path;
+  const en = `https://ddbx.uk${enPath}`;
+  const zh = `https://ddbx.uk${ZH_HK_PREFIX}${enPath}`;
+
+  return [
+    { hreflang: "en-GB", href: en },
+    { hreflang: "zh-HK", href: zh },
+    { hreflang: "x-default", href: en },
+  ];
 }
 
 /** Whether a route may be indexed at all. Non-production hosts are excluded

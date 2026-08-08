@@ -11,6 +11,7 @@
  */
 import { Reveal } from "./reveal";
 
+import { useDownloadCopy } from "@/lib/download/copy";
 import {
   annualPerMonth,
   annualSavingPct,
@@ -46,6 +47,7 @@ export function PricingCard({
   storeLabel: string;
 }) {
   const saving = annualSavingPct(pricing);
+  const t = useDownloadCopy();
 
   return (
     // Left-set, not centred: the section header above it is left-set now, and
@@ -54,31 +56,29 @@ export function PricingCard({
       <div className="overflow-hidden rounded-3xl border border-hairline bg-white/70 shadow-sm dark:border-border/60 dark:bg-surface-secondary/40">
         <div className="border-b border-hairline bg-sheet px-6 py-5 text-center dark:border-border/50 dark:bg-surface-secondary/30">
           <p className="text-lg font-semibold">
-            Free for {pricing.trialDays} days
+            {t.freeForDays(pricing.trialDays)}
           </p>
-          <p className="mt-1 text-sm text-foreground/55">
-            Full access. Cancel any time before it ends and you pay nothing.
-          </p>
+          <p className="mt-1 text-sm text-foreground/55">{t.fullAccessNote}</p>
         </div>
 
         <div className="grid divide-y divide-hairline dark:divide-border/50 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           <div className="px-6 py-6 text-center">
             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-              Monthly
+              {t.monthly}
             </p>
             <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
               {formatPrice(pricing, pricing.monthly)}
             </p>
-            <p className="mt-1 text-sm text-foreground/50">per month</p>
+            <p className="mt-1 text-sm text-foreground/50">{t.perMonth}</p>
           </div>
           <div className="px-6 py-6 text-center">
             {/* Inline with the tier label, not floated into the corner — as an
                 absolute pill it collided with the centred "Annual". */}
             <p className="flex items-center justify-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-              Annual
+              {t.annual}
               {saving > 0 ? (
                 <span className="rounded-full bg-positive/12 px-2 py-0.5 text-[10px] tabular-nums text-positive">
-                  Save {saving}%
+                  {t.savePct(saving)}
                 </span>
               ) : null}
             </p>
@@ -86,15 +86,14 @@ export function PricingCard({
               {formatPrice(pricing, annualPerMonth(pricing))}
             </p>
             <p className="mt-1 text-sm tabular-nums text-foreground/50">
-              per month, billed {formatPrice(pricing, pricing.annual)} yearly
+              {t.perMonthBilledYearly(formatPrice(pricing, pricing.annual))}
             </p>
           </div>
         </div>
       </div>
 
       <p className="mt-4 text-center text-xs leading-relaxed text-foreground/40">
-        Billed through {storeLabel}. Prices shown in {pricing.code} and may vary
-        by territory — your store shows the exact amount before you confirm.
+        {t.billedThrough(storeLabel, pricing.code)}
       </p>
     </Reveal>
   );
@@ -111,12 +110,14 @@ export function PricingCard({
  *  The list is exhaustive on purpose — a visitor scanning for the one feature
  *  they came for should find it here rather than guess whether it's included. */
 export function IncludedList({ benefits }: { benefits: string[] }) {
+  const t = useDownloadCopy();
+
   if (benefits.length === 0) return null;
 
   return (
     <Reveal delay={90}>
       <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-        Everything included
+        {t.everythingIncluded}
       </p>
       <ul className="mt-5 space-y-3.5">
         {benefits.map((b) => (

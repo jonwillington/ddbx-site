@@ -81,6 +81,13 @@ const ROUTES_BY_HOST = {
     // Same rule as /developers above: cross-market page, canonicalises to
     // ddbx.uk, so it rides this host alone rather than joining COMMON_ROUTES.
     "/status",
+    // Traditional Chinese edition of the install pages (Hong Kong). NOT a
+    // COMMON_ROUTE: they sell the UK app and canonicalise to ddbx.uk on every
+    // host, so listing them under ddbx.us would contradict their own
+    // rel=canonical — the same rule /developers and /status follow above.
+    "/zh-hk/download",
+    "/zh-hk/download/ios",
+    "/zh-hk/download/android",
   ],
   "ddbx.us": [
     "/",

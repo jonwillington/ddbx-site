@@ -22,16 +22,8 @@ import type { AppPlatform } from "@/lib/app-screenshots";
 import { BUTTON_RADIUS } from "@/components/button";
 import { StoreButtons } from "@/components/store-buttons";
 import { IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
+import { useDownloadCopy } from "@/lib/download/copy";
 import { annualPerMonth, formatPrice, PRICING } from "@/lib/pricing";
-
-/** Onward paths out of the landing page. It has none today short of the navbar
- *  — a reader who isn't ready to install has to leave rather than browse. */
-const ONWARD: [label: string, href: string][] = [
-  ["Companies", "/companies"],
-  ["Sectors", "/sectors"],
-  ["Biggest buys", "/biggest-buys"],
-  ["Glossary", "/learn"],
-];
 
 export function DownloadRail({
   marketId,
@@ -47,7 +39,20 @@ export function DownloadRail({
   platform: AppPlatform;
 }) {
   const pricing = PRICING[marketId];
+  const t = useDownloadCopy();
   const latestFilings = marketId === "us" ? "/us" : "/";
+  // Onward paths out of the landing page. It has none today short of the
+  // navbar — a reader who isn't ready to install has to leave rather than
+  // browse. The destinations themselves are English-only pages, so these are
+  // translated labels on English content: a Chinese reader who follows one
+  // knows what they clicked, which is better than a dead end in the rail.
+  const onward: [label: string, href: string][] = [
+    [t.railLinks.latestFilings, latestFilings],
+    [t.railLinks.companies, "/companies"],
+    [t.railLinks.sectors, "/sectors"],
+    [t.railLinks.biggestBuys, "/biggest-buys"],
+    [t.railLinks.glossary, "/learn"],
+  ];
 
   return (
     <aside className="fixed bottom-0 right-0 top-0 z-20 hidden w-80 flex-col border-l border-hairline bg-sheet dark:border-separator dark:bg-surface lg:flex">
@@ -67,18 +72,20 @@ export function DownloadRail({
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         <div className="rounded-xl border border-hairline bg-background/40 p-4 dark:border-separator">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
-            Free for {pricing.trialDays} days
+            {t.railFreeForDays(pricing.trialDays)}
           </p>
           <p className="mt-2 text-[22px] font-semibold leading-none tracking-[-0.02em] text-foreground">
             {formatPrice(pricing, annualPerMonth(pricing))}
             <span className="text-[13px] font-normal text-foreground/55">
               {" "}
-              / month
+              {t.railPerMonth}
             </span>
           </p>
           <p className="mt-1.5 text-xs leading-[1.6] text-foreground/55">
-            Billed {formatPrice(pricing, pricing.annual)} yearly, or{" "}
-            {formatPrice(pricing, pricing.monthly)} a month. Cancel any time.
+            {t.railBilled(
+              formatPrice(pricing, pricing.annual),
+              formatPrice(pricing, pricing.monthly),
+            )}
           </p>
 
           <StoreButtons
@@ -92,18 +99,16 @@ export function DownloadRail({
         </div>
 
         <ul className="mt-4 space-y-0.5">
-          {[["Latest filings", latestFilings] as const, ...ONWARD].map(
-            ([label, href]) => (
-              <li key={href}>
-                <a
-                  className="block rounded-lg px-2 py-2 text-[13px] font-medium text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.05]"
-                  href={href}
-                >
-                  {label}
-                </a>
-              </li>
-            ),
-          )}
+          {onward.map(([label, href]) => (
+            <li key={href}>
+              <a
+                className="block rounded-lg px-2 py-2 text-[13px] font-medium text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.05]"
+                href={href}
+              >
+                {label}
+              </a>
+            </li>
+          ))}
         </ul>
       </div>
     </aside>

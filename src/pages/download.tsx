@@ -17,11 +17,20 @@
 // falls back to a styled placeholder (see @/lib/app-screenshots and
 // `DeviceFrame`), so dropping PNGs into public/app-shots/ lights it up with no
 // code change.
-import type { ReactNode } from "react";
-import type { TourBeat } from "@/components/download/app-tour";
-import type { FaqItem } from "@/components/download/download-faq";
+//
+// LOCALES. The same component serves /download (English) and /zh-hk/download
+// (Traditional Chinese, UK app only). Every string on the page comes from
+// @/lib/download/copy — market copy via `landingCopy`, page furniture via the
+// `DownloadCopyProvider` the child components read. The provider wraps
+// DefaultLayout rather than sitting inside it, so the layout's floating mobile
+// install bar — this page's primary tap target on a phone — is localised too.
 import type { Stat } from "@/components/download/stat-band";
 import type { AppPlatform } from "@/lib/app-screenshots";
+import type {
+  DownloadLocale,
+  LandingCopy,
+  StatNouns,
+} from "@/lib/download/copy";
 import type { Analysis, Dealing, UsDealing, UsReporter } from "@/types/ddbx";
 
 import { useEffect, useMemo, useState } from "react";
@@ -59,8 +68,17 @@ import {
   storeUrlForMarketId,
 } from "@/lib/app-store";
 import { stripTickerSuffix } from "@/lib/display-name";
+import {
+  altLocalePath,
+  CHROME,
+  DownloadCopyProvider,
+  hasLocale,
+  landingCopy,
+  localeForPath,
+  useDownloadCopy,
+} from "@/lib/download/copy";
 import { marketForPath } from "@/lib/markets/registry";
-import { formatPrice, PRICING } from "@/lib/pricing";
+import { PRICING } from "@/lib/pricing";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 
 type MarketId = "uk" | "us";
@@ -88,33 +106,34 @@ const WINNERS_SHOWN = 6;
  *  fortnight doesn't make the numbers look thin. */
 const STATS_WINDOW_DAYS = 90;
 
-const gbp0 = new Intl.NumberFormat("en-GB", {
-  style: "currency",
-  currency: "GBP",
-  maximumFractionDigits: 0,
-});
+/** Whole-pound / whole-dollar money, in the reader's locale. Built per load
+ *  rather than at module scope because the locale is a property of the route
+ *  now, not of the bundle. */
+function moneyFormatter(lang: string, currency: "GBP" | "USD") {
+  return new Intl.NumberFormat(lang, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  });
+}
 
-const usd0 = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-
-/** Fixed to UTC: the wire dates are calendar days, not instants, so a US
- *  visitor's negative offset would otherwise render them a day early. */
-const asOfFmt = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-/** `2026-07-24` -> `24 Jul 2026`. Falls back to the raw string rather than
- *  printing "Invalid Date" if the wire ever hands us something else. */
-function formatAsOf(iso: string): string {
+/** `2026-07-24` -> `24 Jul 2026` / `2026年7月24日`. Falls back to the raw
+ *  string rather than printing "Invalid Date" if the wire ever hands us
+ *  something else.
+ *
+ *  Fixed to UTC: the wire dates are calendar days, not instants, so a reader
+ *  west of London would otherwise see them a day early. */
+function formatAsOf(iso: string, lang: string): string {
   const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
 
-  return Number.isNaN(d.getTime()) ? iso : asOfFmt.format(d);
+  if (Number.isNaN(d.getTime())) return iso;
+
+  return new Intl.DateTimeFormat(lang, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(d);
 }
 
 /** Ratings that count as "we flagged this" — everything above `routine`.
@@ -229,11 +248,7 @@ function feedStats<T>(
     getTicker: (x: T) => string;
     getAnalysis: (x: T) => Analysis | null | undefined;
   },
-  nouns: {
-    filings: { k: string; label: string };
-    companies: { k: string; label: string };
-    signal: { k: string; label: string };
-  },
+  nouns: StatNouns,
 ): Stat[] {
   const since30 = isoDaysAgo(30);
   const last30 = items.filter((x) => cfg.getDisclosedDate(x) >= since30);
@@ -254,11 +269,19 @@ interface MarketData {
   stats: Stat[];
 }
 
-async function loadUk(want: number): Promise<MarketData> {
+/** What a loader needs from the locale: the market's own prose (stat nouns,
+ *  the winner card's "bought" sentence) and the tag its numbers format under. */
+interface LoadCtx {
+  copy: LandingCopy;
+  lang: string;
+}
+
+async function loadUk(want: number, ctx: LoadCtx): Promise<MarketData> {
   const dealings = await api.dealingsWindow(
     isoDaysAgo(STATS_WINDOW_DAYS),
     1000,
   );
+  const gbp0 = moneyFormatter(ctx.lang, "GBP");
 
   return {
     winners: pickWinners<Dealing>(
@@ -278,9 +301,10 @@ async function loadUk(want: number): Promise<MarketData> {
           asOf: d.live_performance?.as_of,
           buyerName: d.director.name,
           buyerRole: d.director.role || undefined,
-          metaLine: `Bought ${gbp0.format(d.value_gbp)} of shares at £${(
-            d.price_pence / 100
-          ).toFixed(2)}`,
+          metaLine: ctx.copy.boughtShares(
+            gbp0.format(d.value_gbp),
+            `£${(d.price_pence / 100).toFixed(2)}`,
+          ),
           tradeDate: d.trade_date,
         }),
       },
@@ -293,17 +317,7 @@ async function loadUk(want: number): Promise<MarketData> {
         getTicker: (d) => d.ticker,
         getAnalysis: (d) => d.analysis,
       },
-      {
-        filings: {
-          k: "Disclosures",
-          label: "director disclosures read in the last 30 days",
-        },
-        companies: {
-          k: "Coverage",
-          label: `UK companies covered in the last ${STATS_WINDOW_DAYS} days`,
-        },
-        signal: { k: "Signal", label: "flagged as worth a second look" },
-      },
+      ctx.copy.statNouns(STATS_WINDOW_DAYS),
     ),
   };
 }
@@ -318,15 +332,22 @@ function usRoleLabel(r: UsReporter): string | undefined {
   return undefined;
 }
 
-function usMetaLine(d: UsDealing): string {
+/** The US market has no non-English edition (see lib/download/copy), so the
+ *  share-count fallback below stays an English sentence rather than earning a
+ *  slot in `LandingCopy` that only one locale would ever fill. */
+function usMetaLine(
+  d: UsDealing,
+  copy: LandingCopy,
+  usd0: Intl.NumberFormat,
+): string {
   if (d.value != null && d.price != null) {
-    return `Bought ${usd0.format(d.value)} of stock at $${d.price.toFixed(2)}`;
+    return copy.boughtShares(usd0.format(d.value), `$${d.price.toFixed(2)}`);
   }
 
   return `Bought ${d.shares.toLocaleString("en-US")} shares`;
 }
 
-async function loadUs(want: number): Promise<MarketData> {
+async function loadUs(want: number, ctx: LoadCtx): Promise<MarketData> {
   const { dealings } = await api.usDealings({
     view: "all",
     since: isoDaysAgo(STATS_WINDOW_DAYS),
@@ -338,6 +359,7 @@ async function loadUs(want: number): Promise<MarketData> {
     // the same via dealingsWindow.
     limit: 1000,
   });
+  const usd0 = moneyFormatter(ctx.lang, "USD");
 
   return {
     winners: pickWinners<UsDealing>(
@@ -358,7 +380,7 @@ async function loadUs(want: number): Promise<MarketData> {
           asOf: d.live_performance?.as_of,
           buyerName: d.reporter.name,
           buyerRole: usRoleLabel(d.reporter),
-          metaLine: usMetaLine(d),
+          metaLine: usMetaLine(d, ctx.copy, usd0),
           tradeDate: d.trade_date,
         }),
       },
@@ -371,17 +393,7 @@ async function loadUs(want: number): Promise<MarketData> {
         getTicker: (d) => d.ticker,
         getAnalysis: (d) => d.analysis,
       },
-      {
-        filings: {
-          k: "Filings",
-          label: "Form 4 filings read in the last 30 days",
-        },
-        companies: {
-          k: "Coverage",
-          label: `US companies covered in the last ${STATS_WINDOW_DAYS} days`,
-        },
-        signal: { k: "Signal", label: "flagged as worth a second look" },
-      },
+      ctx.copy.statNouns(STATS_WINDOW_DAYS),
     ),
   };
 }
@@ -558,6 +570,7 @@ function WinnerCard({
 }) {
   const { ticker, company, returnPct, asOf, buyerName, buyerRole, metaLine } =
     winner;
+  const t = useDownloadCopy();
 
   // h-full on both the wrapper and the card: <Reveal> is the grid item, so
   // without it the card stops at its own content height and the "View analysis"
@@ -578,7 +591,7 @@ function WinnerCard({
               <CountUp decimals={1} prefix="+" suffix="%" value={returnPct} />
             </p>
             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-              since the buy
+              {t.sinceTheBuy}
             </p>
           </div>
         </div>
@@ -599,14 +612,14 @@ function WinnerCard({
             <p className="mt-2 flex items-center gap-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/40">
               <span className="flex items-center gap-1.5">
                 <span aria-hidden className="h-px w-3.5 bg-foreground/30" />
-                Before
+                {t.legendBefore}
               </span>
               <span className="flex items-center gap-1.5">
                 <span
                   aria-hidden
                   className="h-[2px] w-3.5 rounded-full bg-positive"
                 />
-                After the buy
+                {t.legendAfter}
               </span>
             </p>
           ) : null}
@@ -621,7 +634,7 @@ function WinnerCard({
         <p className="mt-1 text-sm text-foreground/55">{metaLine}</p>
         {asOf ? (
           <p className="mt-2 text-[11px] text-foreground/40">
-            Prices as of {formatAsOf(asOf)}
+            {t.pricesAsOf(formatAsOf(asOf, t.lang))}
           </p>
         ) : null}
 
@@ -638,7 +651,7 @@ function WinnerCard({
             rel="noopener noreferrer"
             target="_blank"
           >
-            View analysis
+            {t.viewAnalysis}
             <span aria-hidden>→</span>
           </a>
         </div>
@@ -651,270 +664,33 @@ function WinnerCard({
 // Per-market config
 // ---------------------------------------------------------------------------
 
-interface LandingConfig {
+/** A market's page: its prose (from the locale dictionary) plus the three
+ *  things that are structural rather than editorial. */
+interface LandingConfig extends LandingCopy {
   marketId: MarketId;
   gaPrefix: string;
-  heroHeadline: ReactNode;
-  heroSub: ReactNode;
-  proofKicker: string;
-  winnersHeading: ReactNode;
-  winnersSub: string;
-  winnersCtaSub: string;
-  tourHeading: string;
-  tourSub: string;
-  beats: TourBeat[];
-  /** The full contents of the subscription, listed under the price. */
-  benefits: string[];
-  sourceLine: string;
-  finalSub: string;
-  /** "director" / "insider" — used in the returns disclaimer. */
-  buyerNoun: string;
-  load: (want: number) => Promise<MarketData>;
+  load: (want: number, ctx: LoadCtx) => Promise<MarketData>;
 }
 
-const CONFIG: Record<MarketId, LandingConfig> = {
-  uk: {
-    marketId: "uk",
-    gaPrefix: "LP",
-    heroHeadline: (
-      <>The people who run Britain’s companies just bought their own shares.</>
-    ),
-    heroSub: (
-      <>
-        When a director puts their own money into the business they run, it’s
-        worth a look. ddbx tracks every UK director share purchase — and shows
-        you how they’ve done.
-      </>
-    ),
-    proofKicker: "Last 30 days",
-    winnersHeading: <>Directors bought these. Here’s how they’ve done.</>,
-    winnersSub:
-      "Real, recent open-market purchases by UK directors — and the share-price move since they bought. Every one of them was in the app the day it filed.",
-    winnersCtaSub: `See every director buy as it happens — free for ${PRICING.uk.trialDays} days.`,
-    tourHeading: "One filing, followed.",
-    tourSub:
-      "A director buys. Here is everything that happens next — from the second it hits the wire to what the shares had done months later.",
-    beats: [
-      {
-        slot: "alert",
-        timestamp: "07:01",
-        kicker: "The alert",
-        title: "It lands the moment the filing does.",
-        body: "A director discloses a purchase and your phone buzzes — usually within minutes of the RNS, not the next morning. No inbox to check, no feed to trawl.",
-      },
-      {
-        slot: "analysis",
-        timestamp: "07:02",
-        kicker: "The read",
-        title: "Somebody has already read it for you.",
-        body: "Every purchase is decoded: who bought, how senior they are, how much of their own money went in, and whether the price they paid looks like conviction or paperwork.",
-      },
-      {
-        slot: "balance",
-        timestamp: "07:03",
-        kicker: "Both sides",
-        title: "The case against, next to the case for.",
-        body: "Every rated buy is argued both ways — what makes it interesting, and what should give you pause — each point expandable down to the filing it came from. Nothing here is trying to talk you into a trade.",
-      },
-      {
-        slot: "cluster",
-        timestamp: "Days 3–9",
-        kicker: "The pattern",
-        title: "One buy is a data point. Six is a pattern.",
-        body: "When several directors buy the same company inside a few weeks, ddbx groups them — every purchase plotted on the price chart, the average they paid, and what the shares have done since.",
-      },
-      {
-        slot: "performance",
-        timestamp: "Today",
-        kicker: "The score",
-        title: "See whether it actually worked.",
-        body: "Live price tracking from the trade date onward, so you can tell whose buying has been worth following — and whose hasn’t.",
-      },
-      {
-        slot: "recap",
-        timestamp: "Every morning",
-        kicker: "The recap",
-        title: "The whole day, written up by the time you wake.",
-        body: "One piece each morning on what actually mattered: the clusters, the standout names, the totals, and why the biggest buy of the day was or wasn’t the interesting one.",
-      },
-      {
-        slot: "today",
-        timestamp: "Every day",
-        kicker: "The desk",
-        title: "The whole market on one screen.",
-        body: "Every UK director purchase of the day, ranked and stripped of the noise. Placings, vestings and option exercises are pulled out, so what’s left is people choosing to buy.",
-      },
-    ],
-    benefits: [
-      "Push alerts within minutes of every director disclosure, not the next morning",
-      "Written analysis on every rated buy — the case for it and the case against",
-      "Cluster detection: several directors in the same company, grouped and plotted on the price chart",
-      "Live performance tracking from the trade date, so you can see whose buying is worth following",
-      "A daily recap of the whole UK market, written for you before the open",
-      "Follow any company or director, and get told when the price moves after a buy you’re watching",
-      "Placings, vestings and option exercises stripped out, so what’s left is people choosing to buy",
-      "Every London-listed director dealing, back to the day we started — searchable",
-      "No ads, no upsells, and your data is never resold",
-    ],
-    sourceLine:
-      "Sourced from primary UK regulatory disclosures (RNS) as they publish — never scraped from a third-party summary.",
-    finalSub: `Every UK director buy, decoded and tracked from the day it files. Try it free for ${PRICING.uk.trialDays} days.`,
-    buyerNoun: "director",
-    load: loadUk,
-  },
-  us: {
-    marketId: "us",
-    gaPrefix: "LP US",
-    heroHeadline: <>America’s company insiders just bought their own stock.</>,
-    heroSub: (
-      <>
-        When the people who run a business buy its stock with their own money,
-        it’s worth a look. ddbx tracks every US insider purchase — and shows you
-        how they’ve done.
-      </>
-    ),
-    proofKicker: "Last 30 days",
-    winnersHeading: <>Insiders bought these. Here’s how they’ve done.</>,
-    winnersSub:
-      "Real, recent open-market purchases by US insiders — and the share-price move since they bought. Every one of them was in the app the day it filed.",
-    winnersCtaSub: `See every insider buy as it happens — free for ${PRICING.us.trialDays} days.`,
-    tourHeading: "One filing, followed.",
-    tourSub:
-      "A director buys. Here is everything that happens next — from the second it hits the wire to what the shares had done months later.",
-    beats: [
-      {
-        slot: "alert",
-        timestamp: "07:01",
-        kicker: "The alert",
-        title: "It lands the moment the Form 4 does.",
-        body: "An insider files with the SEC and your phone buzzes — usually within minutes of it hitting EDGAR. No filters to build, no filing feed to babysit.",
-      },
-      {
-        slot: "analysis",
-        timestamp: "07:02",
-        kicker: "The read",
-        title: "Somebody has already read it for you.",
-        body: "Every purchase is decoded: CEO or 10% holder, how much of their own money went in, and whether it was a real open-market buy or a 10b5-1 plan running on autopilot.",
-      },
-      {
-        slot: "balance",
-        timestamp: "07:03",
-        kicker: "Both sides",
-        title: "The case against, next to the case for.",
-        body: "Every rated buy is argued both ways — what makes it interesting, and what should give you pause — each point expandable down to the filing it came from. Nothing here is trying to talk you into a trade.",
-      },
-      {
-        slot: "cluster",
-        timestamp: "Days 3–9",
-        kicker: "The pattern",
-        title: "One buy is a data point. Six is a pattern.",
-        body: "When several insiders buy the same company inside a few weeks, ddbx groups them — every purchase plotted on the price chart, the average they paid, and what the stock has done since.",
-      },
-      {
-        slot: "performance",
-        timestamp: "Today",
-        kicker: "The score",
-        title: "See whether it actually worked.",
-        body: "Live price tracking from the trade date onward, so you can tell whose buying has been worth following — and whose hasn’t.",
-      },
-      {
-        slot: "recap",
-        timestamp: "Every morning",
-        kicker: "The recap",
-        title: "The whole day, written up before the open.",
-        body: "One piece each morning on what actually mattered: the clusters, the standout names, the totals, and why the biggest buy of the day was or wasn’t the interesting one.",
-      },
-      {
-        slot: "today",
-        timestamp: "Every day",
-        kicker: "The desk",
-        title: "The whole market on one screen.",
-        body: "Every US insider purchase of the day, ranked and stripped of the noise. Grants, vestings and option exercises are pulled out, so what’s left is people choosing to buy.",
-      },
-    ],
-    benefits: [
-      "Push alerts within minutes of the Form 4 hitting EDGAR, not the next morning",
-      "Written analysis on every rated buy — the case for it and the case against",
-      "Cluster detection: several insiders in the same company, grouped and plotted on the price chart",
-      "Live performance tracking from the trade date, so you can see whose buying is worth following",
-      "A daily recap of the whole US market, written for you before the open",
-      "Follow any company or insider, and get told when the price moves after a buy you’re watching",
-      "Grants, vestings and 10b5-1 autopilot stripped out, so what’s left is people choosing to buy",
-      "Congressional trading disclosed under the STOCK Act, alongside the corporate insiders",
-      "No ads, no upsells, and your data is never resold",
-    ],
-    sourceLine:
-      "Sourced from SEC EDGAR Form 4 filings as they publish — never scraped from a third-party summary.",
-    finalSub: `Every US insider buy, decoded and tracked from the day it files. Try it free for ${PRICING.us.trialDays} days.`,
-    buyerNoun: "insider",
-    load: loadUs,
-  },
+/** Everything about a market that is NOT copy. Kept apart from the dictionary
+ *  so adding a language never means restating which loader a market uses. */
+const MARKET_SHELL: Record<
+  MarketId,
+  {
+    gaPrefix: string;
+    load: (want: number, ctx: LoadCtx) => Promise<MarketData>;
+  }
+> = {
+  uk: { gaPrefix: "LP", load: loadUk },
+  us: { gaPrefix: "LP US", load: loadUs },
 };
 
-/** The install objections, answered next to the CTA. `otherPlatform` links the
- *  sibling landing page so a visitor on the wrong page isn't stranded. */
-function faqItems(
-  cfg: LandingConfig,
-  platform: AppPlatform,
-  otherPath: string,
-): FaqItem[] {
-  const p = PRICING[cfg.marketId];
-  const other = platform === "ios" ? "Android" : "iPhone";
-
-  return [
-    {
-      q: "Is this financial advice?",
-      a: (
-        <>
-          No. ddbx tells you what {cfg.buyerNoun}s have disclosed and what has
-          happened to the share price since — it never tells you what to buy.
-          Insider buying is one input among many, and capital is at risk.
-        </>
-      ),
-    },
-    {
-      q: "Where does the data come from?",
-      a: <>{cfg.sourceLine}</>,
-    },
-    {
-      q: `What happens when the ${p.trialDays}-day trial ends?`,
-      a: (
-        <>
-          You’re asked to subscribe — {formatPrice(p, p.monthly)} a month, or{" "}
-          {formatPrice(p, p.annual)} for the year. Cancel any time before the
-          trial ends in your {STORE_LABEL[platform]} subscription settings and
-          you won’t be charged.
-        </>
-      ),
-    },
-    {
-      q: `Is there ${other === "iPhone" ? "an iPhone" : "an Android"} version?`,
-      a: (
-        <>
-          Yes —{" "}
-          <a
-            className="font-medium underline underline-offset-2"
-            href={otherPath}
-          >
-            see the {other} page
-          </a>
-          . Your subscription is per store, so start the trial on the device you
-          actually read on.
-        </>
-      ),
-    },
-    {
-      q: "Which markets does it cover?",
-      a: (
-        <>
-          The UK app covers every London-listed director dealing; the US app
-          covers SEC Form 4 insider filings and congressional trades. They’re
-          separate apps — this page is for the{" "}
-          {cfg.marketId === "uk" ? "UK" : "US"} one.
-        </>
-      ),
-    },
-  ];
+function configFor(locale: DownloadLocale, market: MarketId): LandingConfig {
+  return {
+    marketId: market,
+    ...MARKET_SHELL[market],
+    ...landingCopy(locale, market),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -935,7 +711,22 @@ export default function DownloadPage({
   // on any host). A fixed per-route prop would show UK content on the US host.
   const { pathname } = useLocation();
   const market: MarketId = marketForPath(pathname).id === "us" ? "us" : "uk";
-  const cfg = CONFIG[market];
+  // The /zh-hk prefix is the only thing that selects a language — never an
+  // Accept-Language sniff, which would make the English URL non-deterministic
+  // for crawlers and give the reader no link to share. `hasLocale` is the guard
+  // for the one case the routes can't prevent: ddbx.us resolves every path to
+  // the US market, and there is no Chinese US edition, so a Chinese route
+  // reached on that host falls back to English rather than rendering English
+  // prose inside a zh-HK document.
+  const requested = localeForPath(pathname);
+  const locale: DownloadLocale = hasLocale(requested, market)
+    ? requested
+    : "en";
+  const t = CHROME[locale];
+  // Memoised because the fetch effect below keys on it: `configFor` builds a
+  // fresh object every call, so an unmemoised value would re-run the load on
+  // every render, forever.
+  const cfg = useMemo(() => configFor(locale, market), [locale, market]);
   const detected = useDevicePlatform();
   const platform: AppPlatform = forcedPlatform ?? detected ?? "ios";
   const pricing = PRICING[market];
@@ -958,8 +749,28 @@ export default function DownloadPage({
     appStoreUrlForMarketId(market) ??
     APP_STORE_URLS.uk;
 
-  const prefix = market === "us" ? "/us" : "";
+  // The sibling-platform page keeps the reader's language: an /zh-hk visitor
+  // told "there's an Android version" must not be dropped onto the English one.
+  const prefix = `${locale === "zh-HK" ? "/zh-hk" : ""}${market === "us" ? "/us" : ""}`;
   const otherPath = `${prefix}/download/${platform === "ios" ? "android" : "ios"}`;
+  // The same page in the other language, platform preserved. Null for US,
+  // which has no Chinese edition — the link is simply not rendered there.
+  const altPath = altLocalePath(pathname, market);
+
+  // `<html lang>` for client-side navigations. functions/_middleware.js already
+  // stamps the right value on the served shell, but a React-Router move from
+  // /download to /zh-hk/download never touches the document — leaving a page of
+  // Chinese declared as English to screen readers and to translation prompts.
+  useEffect(() => {
+    const root = document.documentElement;
+    const previous = root.lang;
+
+    root.lang = t.lang;
+
+    return () => {
+      root.lang = previous;
+    };
+  }, [t.lang]);
 
   const [data, setData] = useState<MarketData | null>(null);
 
@@ -971,7 +782,10 @@ export default function DownloadPage({
       try {
         // One feed fetch powers the winners shortlist, the stat band and the
         // hero's live count; only the price histories are extra requests.
-        const loaded = await cfg.load(WINNERS_SHORTLIST);
+        const loaded = await cfg.load(WINNERS_SHORTLIST, {
+          copy: cfg,
+          lang: t.lang,
+        });
 
         if (!live) return;
 
@@ -1037,205 +851,226 @@ export default function DownloadPage({
     return () => {
       live = false;
     };
-  }, [cfg]);
+  }, [cfg, t.lang]);
 
   return (
-    // drawerRight reserves lg:mr-80 for the fixed install rail — the same
-    // pairing every other page in the section uses. The FULL_BLEED bands below
-    // stay correct inside it: the band's centre lands on the narrowed column's
-    // centre, its left overhang is clipped by the layout root and its right
-    // runs under the rail (see /company/:key, which does the same).
-    <DefaultLayout drawerRight>
-      <DownloadRail
-        gaLabel={cfg.gaPrefix}
-        marketId={cfg.marketId}
-        platform={platform}
-      />
+    // The provider wraps DefaultLayout rather than sitting inside it: the
+    // layout renders the floating mobile install bar, which is the one tappable
+    // CTA on a phone and has to speak the page's language.
+    <DownloadCopyProvider value={t}>
+      {/* drawerRight reserves lg:mr-80 for the fixed install rail — the same
+          pairing every other page in the section uses. The FULL_BLEED bands
+          below stay correct inside it: the band's centre lands on the narrowed
+          column's centre, its left overhang is clipped by the layout root and
+          its right runs under the rail (see /company/:key, which does the
+          same). */}
+      <DefaultLayout drawerRight>
+        <DownloadRail
+          gaLabel={cfg.gaPrefix}
+          marketId={cfg.marketId}
+          platform={platform}
+        />
 
-      <DownloadHero
-        gaLabel={cfg.gaPrefix}
-        headline={cfg.heroHeadline}
-        marketId={cfg.marketId}
-        platform={platform}
-        storeHref={storeHref}
-        sub={cfg.heroSub}
-        trialDays={pricing.trialDays}
-        unavailableSlot={
-          <StoreUnavailable
-            alternatives={[
-              {
-                label: "ddbx US on iPhone",
-                href: APP_STORE_URLS.us,
-                gaLabel: "US Android → US iOS",
-              },
-              {
-                label: "ddbx UK on Google Play",
-                href: PLAY_STORE_URLS.uk,
-                gaLabel: "US Android → UK Play",
-              },
-            ]}
-            message="The US app is still in Play internal testing — it isn’t on the Google Play store yet. Two things you can install today:"
-          />
-        }
-      />
+        <DownloadHero
+          altLocale={
+            altPath
+              ? {
+                  href: altPath,
+                  label: t.altLocaleLabel,
+                  // The label is written in the language it links TO, so the
+                  // tag is the OTHER locale's, not this page's.
+                  lang: CHROME[locale === "zh-HK" ? "en" : "zh-HK"].lang,
+                }
+              : undefined
+          }
+          gaLabel={cfg.gaPrefix}
+          headline={cfg.heroHeadline}
+          marketId={cfg.marketId}
+          platform={platform}
+          storeHref={storeHref}
+          sub={cfg.heroSub}
+          trialDays={pricing.trialDays}
+          unavailableSlot={
+            <StoreUnavailable
+              alternatives={[
+                {
+                  label: t.storeUnavailableAlts.us,
+                  href: APP_STORE_URLS.us,
+                  gaLabel: "US Android → US iOS",
+                },
+                {
+                  label: t.storeUnavailableAlts.uk,
+                  href: PLAY_STORE_URLS.uk,
+                  gaLabel: "US Android → UK Play",
+                },
+              ]}
+              message={t.storeUnavailable}
+            />
+          }
+        />
 
-      {data && data.stats.length > 0 ? (
-        <StatBand sourceLine={cfg.sourceLine} stats={data.stats} />
-      ) : null}
+        {data && data.stats.length > 0 ? (
+          <StatBand sourceLine={cfg.sourceLine} stats={data.stats} />
+        ) : null}
 
-      <AppTour
-        beats={cfg.beats}
-        heading={cfg.tourHeading}
-        index={1}
-        kicker="The app"
-        marketId={cfg.marketId}
-        platform={platform}
-        sub={cfg.tourSub}
-        total={4}
-      />
-
-      {/* ---- Winners wall ----
-           Full-bleed: the cream band is the page changing surface under you,
-           not a card sitting on it. */}
-      <section
-        className={`${FULL_BLEED} border-y border-hairline bg-sheet dark:border-border/50 dark:bg-surface-secondary/20`}
-      >
-        <div className={SECTION}>
-          <SectionHeader
-            index={2}
-            kicker={cfg.proofKicker}
-            sub={cfg.winnersSub}
-            title={cfg.winnersHeading}
-            total={4}
-          />
-
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {data === null
-              ? Array.from({ length: 6 }, (_, i) => (
-                  <div
-                    key={i}
-                    className="h-[280px] animate-pulse rounded-3xl border border-hairline bg-white/40 dark:border-border/60 dark:bg-surface-secondary/30"
-                  />
-                ))
-              : data.winners.map((w, i) => (
-                  <WinnerCard
-                    key={w.id}
-                    appUrl={cardAppUrl}
-                    delay={(i % 3) * 90}
-                    gaPrefix={cfg.gaPrefix}
-                    winner={w}
-                  />
-                ))}
-          </div>
-
-          {available && data && data.winners.length > 0 ? (
-            <Reveal className="mt-12 flex flex-col items-center gap-2.5">
-              <StoreButtons
-                buttonClassName={`inline-flex items-center justify-center gap-2.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-7 py-3.5 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
-                gaEvent="cta_download_lp"
-                gaLabel={`${cfg.gaPrefix} winners`}
-                glyphClassName="h-[17px] w-[17px] shrink-0"
-                marketId={cfg.marketId}
-                platform={platform}
-              />
-              <p className="text-sm text-foreground/55">{cfg.winnersCtaSub}</p>
-            </Reveal>
-          ) : null}
-        </div>
-      </section>
-
-      {/* ---- Price + objections ----
-           Two columns from lg: the card on the left, what it buys on the
-           right. Stacked, the card was a narrow ribbon down the left of an
-           otherwise empty screen with a nine-item list trailing off it. */}
-      <section className={SECTION}>
-        <SectionHeader
-          index={3}
-          kicker="The price"
-          sub="One subscription, both the alerts and the analysis. No tiers, no add-ons, nothing held back for a higher plan."
-          title="What it costs"
+        <AppTour
+          beats={cfg.beats}
+          heading={cfg.tourHeading}
+          index={1}
+          kicker={t.tourKicker}
+          marketId={cfg.marketId}
+          platform={platform}
+          sub={cfg.tourSub}
           total={4}
         />
 
-        <div className="mt-10 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
-          <PricingCard pricing={pricing} storeLabel={STORE_LABEL[platform]} />
-          <IncludedList benefits={cfg.benefits} />
-        </div>
+        {/* ---- Winners wall ----
+             Full-bleed: the cream band is the page changing surface under you,
+             not a card sitting on it. */}
+        <section
+          className={`${FULL_BLEED} border-y border-hairline bg-sheet dark:border-border/50 dark:bg-surface-secondary/20`}
+        >
+          <div className={SECTION}>
+            <SectionHeader
+              index={2}
+              kicker={cfg.proofKicker}
+              sub={cfg.winnersSub}
+              title={cfg.winnersHeading}
+              total={4}
+            />
 
-        {/* Answers, not a wall — kept to a readable measure rather than run out
-            to the full two-column width above it. */}
-        <div className="mt-16 max-w-3xl">
-          <DownloadFaq items={faqItems(cfg, platform, otherPath)} />
-        </div>
-      </section>
+            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {data === null
+                ? Array.from({ length: 6 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="h-[280px] animate-pulse rounded-3xl border border-hairline bg-white/40 dark:border-border/60 dark:bg-surface-secondary/30"
+                    />
+                  ))
+                : data.winners.map((w, i) => (
+                    <WinnerCard
+                      key={w.id}
+                      appUrl={cardAppUrl}
+                      delay={(i % 3) * 90}
+                      gaPrefix={cfg.gaPrefix}
+                      winner={w}
+                    />
+                  ))}
+            </div>
 
-      {/* ---- Final CTA ---- */}
-      <section
-        className={`${FULL_BLEED} bg-ink text-white dark:bg-[oklch(17%_0.02_55)]`}
-      >
-        <div className={SECTION}>
+            {available && data && data.winners.length > 0 ? (
+              <Reveal className="mt-12 flex flex-col items-center gap-2.5">
+                <StoreButtons
+                  buttonClassName={`inline-flex items-center justify-center gap-2.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-7 py-3.5 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
+                  gaEvent="cta_download_lp"
+                  gaLabel={`${cfg.gaPrefix} winners`}
+                  glyphClassName="h-[17px] w-[17px] shrink-0"
+                  marketId={cfg.marketId}
+                  platform={platform}
+                />
+                <p className="text-sm text-foreground/55">
+                  {cfg.winnersCtaSub(pricing.trialDays)}
+                </p>
+              </Reveal>
+            ) : null}
+          </div>
+        </section>
+
+        {/* ---- Price + objections ----
+             Two columns from lg: the card on the left, what it buys on the
+             right. Stacked, the card was a narrow ribbon down the left of an
+             otherwise empty screen with a nine-item list trailing off it. */}
+        <section className={SECTION}>
           <SectionHeader
-            align="center"
-            index={4}
-            kicker="Get the app"
-            sub={cfg.finalSub}
-            title={
-              <>
-                A {cfg.buyerNoun} buys tomorrow morning. You’ll know within
-                minutes.
-              </>
-            }
-            tone="dark"
+            index={3}
+            kicker={t.priceKicker}
+            sub={t.priceSub}
+            title={t.priceTitle}
             total={4}
           />
 
-          <Reveal delay={120}>
-            {/* One column, not a row. The badge block and the QR block have no
-                shared baseline and no matching height, so side by side they
-                read as two things that failed to line up. Centred: this is the
-                page's last word and there is nothing beside it to align to. */}
-            <div className="mt-10 flex flex-col items-center gap-8">
-              {available ? (
-                <div className="flex flex-col items-center gap-3">
-                  <a
-                    aria-label={`Get ddbx on the ${STORE_LABEL[platform]}`}
-                    className="dl-lift inline-block"
-                    data-ga-event="cta_download_lp"
-                    data-ga-label={`${cfg.gaPrefix} footer · ${platform}`}
-                    href={storeHref}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    <StoreBadgeImg size="lg" store={platform} />
-                  </a>
-                  <p className="text-sm text-white/55">
-                    Free for {pricing.trialDays} days, cancel any time.
-                  </p>
-                </div>
-              ) : null}
+          <div className="mt-10 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+            <PricingCard pricing={pricing} storeLabel={STORE_LABEL[platform]} />
+            <IncludedList benefits={cfg.benefits} />
+          </div>
 
-              {/* Desktop only: nothing on this page is tappable-to-install on a
-                  laptop, and nobody retypes a URL on their phone. */}
-              {available && detected === null ? (
-                <div className="hidden sm:block">
-                  <QrInstall
-                    caption={`Scan to open ddbx on the ${STORE_LABEL[platform]}`}
-                    captionClassName="text-white/55"
-                    url={storeHref!}
-                  />
-                </div>
-              ) : null}
-            </div>
-          </Reveal>
+          {/* Answers, not a wall — kept to a readable measure rather than run
+              out to the full two-column width above it. */}
+          <div className="mt-16 max-w-3xl">
+            <DownloadFaq
+              items={t.faq({
+                market,
+                buyerNoun: cfg.buyerNoun,
+                sourceLine: cfg.sourceLine,
+                pricing,
+                platform,
+                otherPath,
+              })}
+            />
+          </div>
+        </section>
 
-          <p className="mx-auto mt-14 max-w-[64ch] text-center text-xs leading-relaxed text-white/35">
-            Returns shown are the share-price change since each {cfg.buyerNoun}
-            ’s purchase, as of the latest cached close. Past performance is not
-            a reliable indicator of future results. ddbx is information, not
-            financial advice — capital is at risk.
-          </p>
-        </div>
-      </section>
-    </DefaultLayout>
+        {/* ---- Final CTA ---- */}
+        <section
+          className={`${FULL_BLEED} bg-ink text-white dark:bg-[oklch(17%_0.02_55)]`}
+        >
+          <div className={SECTION}>
+            <SectionHeader
+              align="center"
+              index={4}
+              kicker={t.getAppKicker}
+              sub={cfg.finalSub(pricing.trialDays)}
+              title={t.finalTitle(cfg.buyerNoun)}
+              tone="dark"
+              total={4}
+            />
+
+            <Reveal delay={120}>
+              {/* One column, not a row. The badge block and the QR block have
+                  no shared baseline and no matching height, so side by side
+                  they read as two things that failed to line up. Centred: this
+                  is the page's last word and there is nothing beside it to
+                  align to. */}
+              <div className="mt-10 flex flex-col items-center gap-8">
+                {available ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <a
+                      aria-label={t.getOnStore(STORE_LABEL[platform])}
+                      className="dl-lift inline-block"
+                      data-ga-event="cta_download_lp"
+                      data-ga-label={`${cfg.gaPrefix} footer · ${platform}`}
+                      href={storeHref}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      <StoreBadgeImg size="lg" store={platform} />
+                    </a>
+                    <p className="text-sm text-white/55">
+                      {t.freeForDaysCancel(pricing.trialDays)}
+                    </p>
+                  </div>
+                ) : null}
+
+                {/* Desktop only: nothing on this page is tappable-to-install
+                    on a laptop, and nobody retypes a URL on their phone. */}
+                {available && detected === null ? (
+                  <div className="hidden sm:block">
+                    <QrInstall
+                      caption={t.scanToOpen(STORE_LABEL[platform])}
+                      captionClassName="text-white/55"
+                      url={storeHref!}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </Reveal>
+
+            <p className="mx-auto mt-14 max-w-[64ch] text-center text-xs leading-relaxed text-white/35">
+              {t.returnsDisclaimer(cfg.buyerNoun)}
+            </p>
+          </div>
+        </section>
+      </DefaultLayout>
+    </DownloadCopyProvider>
   );
 }

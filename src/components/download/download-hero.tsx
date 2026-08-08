@@ -30,6 +30,7 @@ import {
 } from "@/components/market/hero-deal-radar";
 import { HeroNotificationStack } from "@/components/market/hero-notification-stack";
 import { STORE_LABEL, type AppPlatform } from "@/lib/app-screenshots";
+import { useDownloadCopy } from "@/lib/download/copy";
 
 export function DownloadHero({
   marketId,
@@ -42,6 +43,9 @@ export function DownloadHero({
   /** Rendered instead of the store badge when the app isn't installable on this
    *  platform yet (US on Google Play). */
   unavailableSlot,
+  /** The same page in the other language. Omitted where there is no
+   *  counterpart — the US pages have no Chinese edition. */
+  altLocale,
 }: {
   marketId: string;
   platform: AppPlatform;
@@ -51,8 +55,10 @@ export function DownloadHero({
   gaLabel: string;
   trialDays: number;
   unavailableSlot?: ReactNode;
+  altLocale?: { href: string; label: string; lang: string };
 }) {
   const radar = useDealRadar(marketId, true);
+  const t = useDownloadCopy();
 
   return (
     <header className="relative flex min-h-[62svh] flex-col lg:min-h-[600px]">
@@ -133,7 +139,7 @@ export function DownloadHero({
             <span
               className={`${chip("lg")} bg-brand-brown/10 text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan`}
             >
-              {trialDays}-day free trial · Cancel any time
+              {t.trialChip(trialDays)}
             </span>
           </div>
 
@@ -151,7 +157,7 @@ export function DownloadHero({
                 bar falls back to a different app, and that needs explaining. */}
             {storeHref ? (
               <a
-                aria-label={`Get ddbx on the ${STORE_LABEL[platform]}`}
+                aria-label={t.getOnStore(STORE_LABEL[platform])}
                 className="dl-lift hidden md:inline-block"
                 data-ga-event="cta_download_lp"
                 data-ga-label={`${gaLabel} hero · ${platform}`}
@@ -164,6 +170,27 @@ export function DownloadHero({
             ) : (
               unavailableSlot
             )}
+
+            {/* The language switch. Deliberately a quiet text link under the
+                CTA rather than a navbar control: it exists so a Hong Kong
+                reader who lands on the English page (an ad, a shared link) can
+                find their own, and so the two editions declare each other —
+                but it must never compete with the install button above it.
+                `hreflang` and `lang` so a crawler reads it as an alternate and
+                a screen reader switches voice for the label, which is written
+                in the language it links to. */}
+            {altLocale ? (
+              <a
+                className="mt-1 text-sm font-medium text-foreground/50 underline underline-offset-4 transition-colors hover:text-foreground/80"
+                data-ga-event="cta_download_locale"
+                data-ga-label={`${gaLabel} hero · ${altLocale.label}`}
+                href={altLocale.href}
+                hrefLang={altLocale.lang}
+                lang={altLocale.lang}
+              >
+                {altLocale.label}
+              </a>
+            ) : null}
           </div>
         </div>
 

@@ -18,9 +18,11 @@
 // functions/t/[id].js, so we leave those untouched.
 
 import {
+  alternatesFor,
   canonicalUrlFor,
   isForeignResearchPath,
   isIndexable,
+  langForPath,
   seoForPath,
 } from "../shared/seo.js";
 
@@ -124,10 +126,23 @@ export async function onRequest(context) {
   // the canonical is always the bare path.
   const canonical = canonicalUrlFor(url.pathname, host);
   const indexable = isIndexable(url.pathname, host);
+  // The Traditional Chinese install pages are the site's only non-English
+  // route family. index.html is hard-coded lang="en", which on those pages
+  // tells a screen reader to read Chinese with an English voice and tells the
+  // browser to offer to translate a page that is already in the reader's
+  // language. The SPA re-asserts this on client-side navigations (see
+  // pages/download.tsx) — this pass is what a crawler and a first paint see.
+  const lang = langForPath(url.pathname);
+  const alternates = alternatesFor(url.pathname, host);
 
   const setImage = setContent(image);
 
   return new HTMLRewriter()
+    .on("html", {
+      element(el) {
+        el.setAttribute("lang", lang);
+      },
+    })
     .on("title", {
       element(el) {
         el.setInnerContent(text(title), { html: true });
@@ -153,6 +168,12 @@ export async function onRequest(context) {
 
         if (canonical) {
           tags.push(`<link rel="canonical" href="${attr(canonical)}">`);
+        }
+        // Empty everywhere except the bilingual UK install pages.
+        for (const alt of alternates) {
+          tags.push(
+            `<link rel="alternate" hreflang="${attr(alt.hreflang)}" href="${attr(alt.href)}">`,
+          );
         }
         if (!indexable) {
           tags.push(`<meta name="robots" content="noindex, follow">`);
