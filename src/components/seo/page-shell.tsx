@@ -46,6 +46,7 @@ export interface ShellCta {
 }
 
 export function SeoPageShell({
+  hero,
   back,
   eyebrow,
   crumbs,
@@ -59,6 +60,22 @@ export function SeoPageShell({
   skeleton,
   children,
 }: {
+  /** An object that comes BEFORE the page's own furniture — above the back
+   *  link, the crumbs and the eyebrow.
+   *
+   *  Deliberately narrow in intent, and empty on every page in the family bar
+   *  one. The share route (/t/{id}) is the only surface here that a stranger
+   *  lands on cold from outside the site, and it has one job above the fold
+   *  that the ordering below cannot serve: show the notification. Everything
+   *  the shell normally opens with — crumbs, family stamp, h1, standfirst —
+   *  is orientation for a reader who already knows where they are, and on a
+   *  phone it pushed that object 400px down the page.
+   *
+   *  It is not a general "put anything at the top" hatch. A page that wants
+   *  its content noticed sooner should shorten its standfirst; this exists for
+   *  the case where the first object is the argument and the prose is the
+   *  footnote. */
+  hero?: ReactNode;
   /** Optional return control, rendered above the crumbs. Distinct from them:
    *  crumbs are the site's structure ("Companies / Hercules / this filing") and
    *  are always true, whereas back is the reader's own history and is only
@@ -96,13 +113,15 @@ export function SeoPageShell({
         width === "article" ? "max-w-[860px]" : ""
       }`}
     >
-      {back ? <div className="pt-2">{back}</div> : null}
+      {hero ? <div className="pt-2">{hero}</div> : null}
+
+      {back ? <div className={hero ? "mt-8" : "pt-2"}>{back}</div> : null}
 
       {crumbs && crumbs.length > 0 ? (
         <nav
           aria-label="Breadcrumb"
           className={`text-[11px] leading-[1.5] text-foreground/50 ${
-            back ? "mt-2" : "pt-2"
+            back ? "mt-2" : hero ? "mt-8" : "pt-2"
           }`}
         >
           {crumbs.map((c, i) => (
@@ -125,7 +144,11 @@ export function SeoPageShell({
 
       <p
         className={`font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan ${
-          (crumbs && crumbs.length > 0) || back ? "mt-4" : "pt-2"
+          (crumbs && crumbs.length > 0) || back
+            ? "mt-4"
+            : hero
+              ? "mt-8"
+              : "pt-2"
         }`}
       >
         {eyebrow}

@@ -83,7 +83,10 @@ import {
   VerdictBand,
 } from "@/components/filing/filing-ui";
 import { ClusterPanel } from "@/components/filing/cluster-panel";
-import { ShareArrival } from "@/components/filing/share-arrival";
+import {
+  ShareArrivalAsk,
+  ShareArrivalCard,
+} from "@/components/filing/share-arrival";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoPageShell } from "@/components/seo/page-shell";
@@ -241,6 +244,11 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
           screenshotSlot: "analysis",
         }}
         eyebrow={share ? "Shared filing" : "Disclosure"}
+        // The notification, above the crumbs and the h1 — the share route's
+        // one job above the fold. Only once the row has arrived: an empty
+        // card slot that later pushes the whole document down is the loading
+        // behaviour the shell exists to prevent.
+        hero={share && deal ? <ShareArrivalCard deal={deal} /> : undefined}
         loading={status === "loading"}
         skeleton={
           <>
@@ -288,7 +296,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                 landed on and what it has to do with the app; someone who
                 arrived at /dealings/{id} from a search result came for the
                 filing and gets it first. */}
-            {share ? <ShareArrival deal={deal} /> : null}
+            {share ? <ShareArrivalAsk deal={deal} /> : null}
 
             <VerdictBand deal={deal} />
 
