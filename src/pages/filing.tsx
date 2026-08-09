@@ -29,6 +29,32 @@
  *  header before adding anything from `analysis`: the thesis, the evidence
  *  detail and the risks stay in the app, and showing a crawler more than a
  *  visitor is cloaking rather than a clever workaround.
+ *
+ *  ---------------------------------------------------------------------------
+ *  Two routes, one page: `share`
+ *  ---------------------------------------------------------------------------
+ *
+ *  /t/{id} renders this same component with `share`. That route is the link a
+ *  tweet points at and the Universal Link iOS intercepts, so it reaches two
+ *  audiences the canonical URL never does: unfurl crawlers, and people with no
+ *  app on a phone who have never heard of us.
+ *
+ *  It used to be a separate 458-line hand-written HTML page in
+ *  functions/t/[id].js that never booted the SPA — which meant no navbar, no
+ *  dark mode, no market switcher, no floating install bar, no broker rail, no
+ *  links to anything else on the site, and a card-in-a-box layout that shared
+ *  no design language with the product it was selling. Every improvement made
+ *  to the filing page for a year landed on /dealings/{id} and none of it
+ *  reached the URL that actually receives cold traffic.
+ *
+ *  So the two are one component now, and `share` only ADDS: the arrival hero
+ *  (the filing as the push notification it would have been), and a directory
+ *  section pointing at the rest of the site. It changes nothing about what the
+ *  page publishes except `analysis.summary`, which appears on the share route
+ *  alone — see the note at that block in components/filing/share-arrival.tsx
+ *  for why, and why it is an attributed excerpt rather than the standfirst.
+ *  The share route canonicalises to /dealings/{id}, so the two are never
+ *  competing documents.
  */
 import type { Dealing } from "@/types/ddbx";
 
@@ -57,6 +83,7 @@ import {
   VerdictBand,
 } from "@/components/filing/filing-ui";
 import { ClusterPanel } from "@/components/filing/cluster-panel";
+import { ShareArrival } from "@/components/filing/share-arrival";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoPageShell } from "@/components/seo/page-shell";
@@ -78,7 +105,7 @@ const R = {
   label: "text-[12px] text-foreground/45",
 };
 
-export default function FilingPage() {
+export default function FilingPage({ share = false }: { share?: boolean }) {
   const { id } = useParams<{ id: string }>();
   const [deal, setDeal] = useState<Dealing | null>(null);
   // "missing" and "failed" are different pages: an outage must not render as
@@ -208,12 +235,12 @@ export default function FilingPage() {
         ]}
         cta={{
           body: "This page is one filing. The app is the running feed: every disclosure the day it files, already rated, with the written case attached and an alert when the price moves after a buy you’re following.",
-          gaLabel: `Filing · ${id ?? ""}`,
+          gaLabel: `${share ? "Share" : "Filing"} · ${id ?? ""}`,
           headline: "Every filing, the day it files.",
           marketId: "uk",
           screenshotSlot: "analysis",
         }}
-        eyebrow="Disclosure"
+        eyebrow={share ? "Shared filing" : "Disclosure"}
         loading={status === "loading"}
         skeleton={
           <>
@@ -255,6 +282,13 @@ export default function FilingPage() {
                 </Link>
               ) : null}
             </div>
+
+            {/* Above the verdict on the share route, and only there. Someone
+                who followed a link needs to know within one screen what they
+                landed on and what it has to do with the app; someone who
+                arrived at /dealings/{id} from a search result came for the
+                filing and gets it first. */}
+            {share ? <ShareArrival deal={deal} /> : null}
 
             <VerdictBand deal={deal} />
 
@@ -382,10 +416,10 @@ export default function FilingPage() {
                 />
                 <Row label="Shares" value={shares(deal.shares)} />
                 <Row label="Price paid" value={sharePrice(deal)} />
-                <Row
-                  label="Consideration"
-                  value={money(deal.value_gbp, deal.currency)}
-                />
+                {/* GBP, not `deal.currency` — see the note on `sharePrice` in
+                    shared/filings.js. `value_gbp` is the FX-converted canonical
+                    figure; `currency` describes the original RNS. */}
+                <Row label="Consideration" value={money(deal.value_gbp)} />
                 <Row label="Traded" value={deal.trade_date} />
                 <Row label="Disclosed" value={deal.disclosed_date} />
                 <Row
@@ -450,6 +484,75 @@ export default function FilingPage() {
                 ]}
               />
             </SeoSection>
+
+            {/* Share-route only. "Read next" above is contextual — this
+                company, this sector, this method — and it is the right list
+                for a reader who arrived on the filing deliberately.
+                A reader who arrived from a tweet has no idea the rest of this
+                exists, and the single most common thing they do next is
+                leave. So the share route gets the site's front door as well:
+                every standing surface, named by what it answers rather than
+                by its route. */}
+            {share ? (
+              <SeoSection
+                aside="A filing is the smallest thing here. These are the standing surfaces it sits inside."
+                title="The rest of ddbx"
+              >
+                <RelatedCards
+                  cols={2}
+                  items={[
+                    {
+                      to: "/",
+                      title: "Today’s disclosures",
+                      description:
+                        "The live feed: everything UK insiders have filed, newest first.",
+                    },
+                    {
+                      to: "/companies",
+                      title: "Every company",
+                      description:
+                        "Each UK issuer with disclosed insider buying, and the filings behind it.",
+                    },
+                    {
+                      to: "/weekly",
+                      title: "This week in filings",
+                      description:
+                        "What insiders bought week by week, written up each Monday.",
+                    },
+                    {
+                      to: "/reports",
+                      title: "The monthly reviews",
+                      description:
+                        "Five purchases a month, revisited weeks later, with what the price did next.",
+                    },
+                    {
+                      to: "/sectors",
+                      title: "Insider buying by sector",
+                      description:
+                        "Which parts of the market insiders are buying into, and how those buys have done.",
+                    },
+                    {
+                      to: "/compare",
+                      title: "Where to actually buy shares",
+                      description:
+                        "UK trading platforms compared on cost, with the fees stated rather than summarised.",
+                    },
+                    {
+                      to: "/learn",
+                      title: "The vocabulary",
+                      description:
+                        "PDMR, RNS, closed periods: what the terms in a filing mean, in plain words.",
+                    },
+                    {
+                      to: "/api",
+                      title: "The data, as an API",
+                      description:
+                        "The same disclosures and ratings this page is built from, over HTTP.",
+                    },
+                  ]}
+                />
+              </SeoSection>
+            ) : null}
           </>
         ) : null}
       </SeoPageShell>

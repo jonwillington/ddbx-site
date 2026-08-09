@@ -20,36 +20,55 @@ const RULE = "border-hairline dark:border-separator";
 
 /** "in 12 days" / "open now" / "closed". A declaration's whole shape is where
  *  it sits relative to its window, so that is what leads the row. */
-function windowState(p: MarketPlan, today: string): { label: string; tone: string } {
-  if (p.isWithdrawn) return { label: "Withdrawn", tone: "text-foreground/45 line-through" };
-  if (!p.windowStart) return { label: "Window not stated", tone: "text-foreground/45" };
+function windowState(
+  p: MarketPlan,
+  today: string,
+): { label: string; tone: string } {
+  if (p.isWithdrawn)
+    return { label: "Withdrawn", tone: "text-foreground/45 line-through" };
+  if (!p.windowStart)
+    return { label: "Window not stated", tone: "text-foreground/45" };
   if (today < p.windowStart) {
     const days = daysBetween(today, p.windowStart);
+
     return {
-      label: days === 0 ? "Opens today" : `Opens in ${days} day${days === 1 ? "" : "s"}`,
+      label:
+        days === 0
+          ? "Opens today"
+          : `Opens in ${days} day${days === 1 ? "" : "s"}`,
       tone: "text-foreground",
     };
   }
   if (p.windowEnd && today <= p.windowEnd) {
-    return { label: "Window open now", tone: "text-emerald-600 dark:text-emerald-400" };
+    return {
+      label: "Window open now",
+      tone: "text-emerald-600 dark:text-emerald-400",
+    };
   }
+
   return { label: "Window closed", tone: "text-foreground/45" };
 }
 
 function daysBetween(a: string, b: string): number {
   const ms = Date.parse(fmtIso(b)) - Date.parse(fmtIso(a));
+
   return Math.max(0, Math.round(ms / 86400000));
 }
 
 /** Accepts YYYYMMDD (as filed) or YYYY-MM-DD. */
 function fmtIso(d: string): string {
-  return /^\d{8}$/.test(d) ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}` : d;
+  return /^\d{8}$/.test(d)
+    ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`
+    : d;
 }
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
+
   return new Date(fmtIso(d)).toLocaleDateString("en-GB", {
-    day: "numeric", month: "short", year: "numeric",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 }
 
@@ -72,10 +91,18 @@ export function MarketPlans({
 
   useEffect(() => {
     let live = true;
+
     fetchPlans()
-      .then((d) => { if (live) setData(d); })
-      .catch(() => { if (live) setFailed(true); });
-    return () => { live = false; };
+      .then((d) => {
+        if (live) setData(d);
+      })
+      .catch(() => {
+        if (live) setFailed(true);
+      });
+
+    return () => {
+      live = false;
+    };
   }, [fetchPlans]);
 
   // A market whose declarations fail to load should lose the section, not the
@@ -97,12 +124,17 @@ export function MarketPlans({
       ) : null}
 
       {data?.notice ? (
-        <div className={`mt-4 rounded-xl border ${RULE} bg-sheet px-4 py-3.5 dark:bg-surface`}>
+        <div
+          className={`mt-4 rounded-xl border ${RULE} bg-sheet px-4 py-3.5 dark:bg-surface`}
+        >
           <h3 className="text-[14px] font-semibold leading-[1.35] text-foreground">
             {data.notice.headline}
           </h3>
           {data.notice.body.split("\n\n").map((para) => (
-            <p key={para.slice(0, 24)} className="mt-2 text-[13.5px] leading-[1.6] text-foreground/65">
+            <p
+              key={para.slice(0, 24)}
+              className="mt-2 text-[13.5px] leading-[1.6] text-foreground/65"
+            >
               {para}
             </p>
           ))}
@@ -126,13 +158,19 @@ export function MarketPlans({
       <ul className="mt-4 space-y-2">
         {plans.map((p) => {
           const w = windowState(p, today);
+
           return (
-            <li key={p.key} className={`rounded-xl border ${RULE} bg-sheet px-4 py-3.5 dark:bg-surface`}>
+            <li
+              key={p.key}
+              className={`rounded-xl border ${RULE} bg-sheet px-4 py-3.5 dark:bg-surface`}
+            >
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <span className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
                   {p.company}
                 </span>
-                <span className={`text-[13px] font-medium ${w.tone}`}>{w.label}</span>
+                <span className={`text-[13px] font-medium ${w.tone}`}>
+                  {w.label}
+                </span>
               </div>
 
               <p className="mt-1 text-[13.5px] leading-[1.55] text-foreground/70">
@@ -144,22 +182,37 @@ export function MarketPlans({
                 <Field label="Declared" value={fmtDate(p.filedDate)} />
                 <Field
                   label="Window"
-                  value={p.windowStart ? `${fmtDate(p.windowStart)} – ${fmtDate(p.windowEnd)}` : "—"}
+                  value={
+                    p.windowStart
+                      ? `${fmtDate(p.windowStart)} – ${fmtDate(p.windowEnd)}`
+                      : "—"
+                  }
                 />
                 <Field
                   label="Intends to buy"
-                  value={p.plannedValue != null ? formatValue(p.plannedValue) : "—"}
+                  value={
+                    p.plannedValue != null ? formatValue(p.plannedValue) : "—"
+                  }
                 />
                 <Field
                   label="Of the company"
-                  value={p.plannedPercent != null ? `${p.plannedPercent}%` : "—"}
+                  value={
+                    p.plannedPercent != null ? `${p.plannedPercent}%` : "—"
+                  }
                 />
               </dl>
 
               {p.purposeLabel ? (
-                <p className="mt-3 text-[13px] leading-[1.5] text-foreground/60" title={p.purposeHint ?? undefined}>
-                  <span className="font-medium text-foreground/75">{p.purposeLabel}</span>
-                  {p.purposeRaw ? <span className="opacity-60"> · {p.purposeRaw}</span> : null}
+                <p
+                  className="mt-3 text-[13px] leading-[1.5] text-foreground/60"
+                  title={p.purposeHint ?? undefined}
+                >
+                  <span className="font-medium text-foreground/75">
+                    {p.purposeLabel}
+                  </span>
+                  {p.purposeRaw ? (
+                    <span className="opacity-60"> · {p.purposeRaw}</span>
+                  ) : null}
                 </p>
               ) : null}
             </li>
@@ -173,7 +226,9 @@ export function MarketPlans({
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[11.5px] uppercase tracking-[0.04em] text-foreground/45">{label}</dt>
+      <dt className="text-[11.5px] uppercase tracking-[0.04em] text-foreground/45">
+        {label}
+      </dt>
       <dd className="mt-0.5 text-foreground/85">{value}</dd>
     </div>
   );

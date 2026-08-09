@@ -20,6 +20,7 @@ import type { HeroDeal } from "./hero-deal-data";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { CompanyLogo } from "@/components/company-logo";
+import { NotificationCard } from "@/components/notification-card";
 
 /** Default cadence for surfaces that drive the stack on their own clock.
  *  Matches the hero radar's, so every stack on the site advances at the same
@@ -166,19 +167,18 @@ export function HeroNotificationStack({
                       opacity 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
                       width 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
         }
+        /* Chrome (radius, padding, fill, border, shadow) lives in
+           components/notification-card.tsx as inline styles — the front card is
+           that component, and the share-arrival hero on /t/{id} renders the same
+           one. What stays here is only what the STACK owns: the height clamp it
+           animates, and the fill for the contentless rims behind, which are
+           plain divs rather than notifications. The values below are identical
+           to the component's, so the rims match the front exactly. */
         .hns-card {
           width: 100%;
           border-radius: 22px;
-          padding: 14px 17px 15px;
           max-height: 140px;
           overflow: hidden;
-          color: #fff;
-          text-align: left;
-          /* A quiet prop, not the hero of the column — the App Store CTA below
-             is the focus. Warm-shifted dark (same temperature family as the
-             dark panel tone) so the card sits in the cream/bronze frame
-             instead of reading as cool slate; near-opaque so the textured map
-             never bleeds through. */
           background: rgba(72, 66, 59, 0.96);
           -webkit-backdrop-filter: blur(20px) saturate(150%);
           backdrop-filter: blur(20px) saturate(150%);
@@ -209,22 +209,6 @@ export function HeroNotificationStack({
         @keyframes hns-enter {
           0%   { transform: translateY(-14px); opacity: 0; }
           100% { transform: translateY(0); opacity: 1; }
-        }
-        .hns-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .hns-icon { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
-        .hns-app { font-size: 13px; font-weight: 600; letter-spacing: 0.01em; color: rgba(255, 255, 255, 0.66); }
-        .hns-time { margin-left: auto; font-size: 12px; color: rgba(255, 255, 255, 0.42); }
-        .hns-body { font-size: 14.5px; line-height: 1.34; color: rgba(255, 255, 255, 0.9); }
-        .hns-lead { font-weight: 600; color: #fff; }
-        /* The attention tag ("BREAKING", "JUST IN") — a warm-gold small-caps
-           accent instead of the old bell emoji, so the alert cue reads
-           editorial rather than cartoon. */
-        .hns-tag {
-          margin-right: 6px;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          color: #eec584;
         }
         @media (prefers-reduced-motion: reduce) {
           .hns-item, .hns-stack, .hns-card { transition: none; }
@@ -265,17 +249,14 @@ export function HeroNotificationStack({
                 // Cards behind: bare rims, no content — quiet backdrop.
                 <div aria-hidden className="hns-card" />
               ) : (
-                <div className="hns-card">
-                  <div className="hns-head">
-                    <img alt="" className="hns-icon" src={deal.icon} />
-                    <span className="hns-app">{deal.app}</span>
-                    <span className="hns-time">now</span>
-                  </div>
-                  <div className="hns-body">
-                    <span className="hns-tag">{deal.tag}</span>
-                    <span className="hns-lead">{deal.lead}</span>. {deal.body}
-                  </div>
-                </div>
+                <NotificationCard
+                  app={deal.app}
+                  body={deal.body}
+                  className="hns-card"
+                  icon={deal.icon}
+                  lead={deal.lead}
+                  tag={deal.tag}
+                />
               )}
             </div>
           );

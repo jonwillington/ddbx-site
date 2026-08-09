@@ -32,7 +32,9 @@ export declare function money(value: number, currency?: string): string;
 export declare function sharePrice(d: Dealing): string;
 export declare function shares(n: number): string;
 export declare function disclosureLagDays(d: Dealing): number | null;
-export declare function signedPct(pct: number | null | undefined): string | null;
+export declare function signedPct(
+  pct: number | null | undefined,
+): string | null;
 
 export declare function filingLeadSentence(d: Dealing): string;
 export declare function outcomeSentence(d: Dealing): string | null;

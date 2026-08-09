@@ -339,7 +339,17 @@ const isWeeklyIndexPath = (path) => path === "/weekly";
  *  shared/weeks.js so a mid-week date never resolves. */
 const weekFromSeoPath = (path) => weekFromPath(path);
 
-const isFilingPath = (path) => /^\/dealings\/[A-Za-z0-9_-]{4,64}$/.test(path);
+/** One filing, at either of its two addresses.
+ *
+ *  /dealings/{id} is the canonical page; /t/{id} is the share link a tweet
+ *  points at, rendering the same React page in share mode and canonicalising
+ *  to the first (functions/t/[id].js). Both are matched here because this is
+ *  the SPA's client-side FALLBACK title — the Function replaces the head with
+ *  the company and the consideration, but it cannot run on a client-side
+ *  navigation, and a share link that resolves to the generic home title is the
+ *  one place a reader would notice. */
+const isFilingPath = (path) =>
+  /^\/(?:dealings|t)\/[A-Za-z0-9_-]{4,64}$/.test(path);
 
 const isCongressMembersIndexPath = (path) => path === "/congress/members";
 

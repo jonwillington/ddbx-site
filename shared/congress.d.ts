@@ -26,10 +26,7 @@ export declare const CONGRESS_SOURCE: string;
 export declare function memberSlug(name: string, bioguide: string): string;
 export declare function bioguideFromSlug(slug: string): string | null;
 export declare function memberPath(slug: string): string;
-export declare function memberPathFor(m: {
-  name: string;
-  id: string;
-}): string;
+export declare function memberPathFor(m: { name: string; id: string }): string;
 
 export declare function committeeSlug(committee: string): string;
 export declare function committeePath(slug: string): string;
@@ -65,9 +62,7 @@ export declare function committeeLeadSentence(
 export declare function listSentence(items: string[]): string;
 
 export declare function memberMeetsBar(m: GovMemberSummary | null): boolean;
-export declare function committeeMeetsBar(
-  members: GovMemberSummary[],
-): boolean;
+export declare function committeeMeetsBar(members: GovMemberSummary[]): boolean;
 export declare function membersOnCommittee(
   members: GovMemberSummary[],
   committee: string,

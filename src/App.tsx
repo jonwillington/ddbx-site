@@ -61,6 +61,12 @@ function App() {
         {/* One disclosure, one permanent URL. Was the UK dashboard, which
             meant every shared filing link landed on the same generic page. */}
         <Route element={<FilingPage />} path="/dealings/:id" />
+        {/* The shared-trade link a tweet points at, and the Universal Link iOS
+            intercepts before the request leaves the device (see
+            public/.well-known/apple-app-site-association). Same filing page in
+            share mode, canonicalised to /dealings/:id by functions/t/[id].js.
+            The URL shape is fixed: tweets carrying it are already published. */}
+        <Route element={<FilingPage share />} path="/t/:id" />
         <Route element={<MarketHomePage />} path="/contact" />
         <Route element={<MarketHomePage />} path="/privacy" />
         <Route element={<MarketHomePage />} path="/cookies" />

@@ -41,7 +41,9 @@ export const KRX_SESSION = {
 
 /** YYYYMMDD as filed → YYYY-MM-DD, which is what the shell expects. */
 const iso = (d: string | null): string =>
-  d && /^\d{8}$/.test(d) ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}` : (d ?? "");
+  d && /^\d{8}$/.test(d)
+    ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`
+    : (d ?? "");
 
 /** Company names are Hangul in the filing; DART publishes an English name for
  *  every listed issuer and it is joined server-side. Fall back to the Korean
@@ -58,7 +60,8 @@ function toPlan(w: KrPlanWire): MarketPlan {
     company: displayName(w.company_en, w.company),
     insiderName: displayName(w.reporter_name_en, w.reporter_name),
     insiderRole: w.position && w.position !== "-" ? w.position : undefined,
-    holderStatus: w.major_holder && w.major_holder !== "-" ? w.major_holder : undefined,
+    holderStatus:
+      w.major_holder && w.major_holder !== "-" ? w.major_holder : undefined,
     filedDate: iso(w.filed_date),
     windowStart: w.window_start ? iso(w.window_start) : null,
     windowEnd: w.window_end ? iso(w.window_end) : null,
@@ -101,6 +104,7 @@ function toDealing(w: KrDealingWire): MarketDealing<KrDealingWire> {
 
 async function fetchPlans(): Promise<PlansPayload> {
   const r = await api.krPlans({ limit: 60 });
+
   return {
     plans: (r.plans ?? []).map(toPlan),
     notice: r.notice && {
@@ -123,6 +127,7 @@ async function fetchDealings(): Promise<{
 }> {
   const r = await api.krDealings({ limit: 60, minKrw: MIN_KRW });
   const dealings = (r.dealings ?? []).map(toDealing);
+
   return {
     dealings,
     stats: {
@@ -153,7 +158,10 @@ function KrDetailBody({ dealing }: { dealing: MarketDealing<KrDealingWire> }) {
 
   return (
     <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
-      <DetailPair label="Shares" value={Math.abs(w.shares_change).toLocaleString("en-GB")} />
+      <DetailPair
+        label="Shares"
+        value={Math.abs(w.shares_change).toLocaleString("en-GB")}
+      />
       <DetailPair
         label="Price paid"
         value={w.price_krw != null ? won.format(w.price_krw) : "—"}
@@ -176,7 +184,9 @@ function DetailPair({ label, value }: { label: string; value: string }) {
 }
 
 const won = new Intl.NumberFormat("en-GB", {
-  style: "currency", currency: "KRW", maximumFractionDigits: 0,
+  style: "currency",
+  currency: "KRW",
+  maximumFractionDigits: 0,
 });
 
 export const KoreaMarket: MarketConfig<KrDealingWire> = {
@@ -197,9 +207,11 @@ export const KoreaMarket: MarketConfig<KrDealingWire> = {
     formatPrice: (n) => won.format(n),
     formatValue: (n) => won.format(n),
     formatValueCompact: (n) =>
-      n >= 1e9 ? `₩${(n / 1e9).toFixed(1)}bn`
-      : n >= 1e6 ? `₩${(n / 1e6).toFixed(0)}m`
-      : won.format(n),
+      n >= 1e9
+        ? `₩${(n / 1e9).toFixed(1)}bn`
+        : n >= 1e6
+          ? `₩${(n / 1e6).toFixed(0)}m`
+          : won.format(n),
     quoteToValue: 1,
     valueColumnClass: "w-28",
   },

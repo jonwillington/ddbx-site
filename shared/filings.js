@@ -107,17 +107,31 @@ export function money(value, currency = "GBP") {
   return `${sym}${Math.round(v).toLocaleString("en-GB")}`;
 }
 
-/** Share price in the market's quoting convention.
+/** Share price, in pence.
  *
- *  UK equities quote in pence and `price_pence` is native minor units, so a US
- *  row's "pence" is really cents. Dividing by 100 and printing a currency
- *  symbol is right for both; printing "p" is right only for GBP. */
+ *  ALWAYS pence, and `d.currency` is deliberately not consulted — which is the
+ *  opposite of what this function used to do, so the reasoning is worth having
+ *  written down.
+ *
+ *  `currency` on a UK-pipeline row is the currency of the DISCLOSURE, not of
+ *  the numbers beside it. An LSE-listed company can file its PDMR notification
+ *  in USD or EUR (dollar reporters, overseas ADRs cross-listed in London), and
+ *  when it does the worker keeps the raw figure in `price_native` and
+ *  FX-converts to GBP for `price_pence` and `value_gbp` — both documented in
+ *  ddbx-data worker/db/types.ts as "canonical GBP-equivalent".
+ *
+ *  Branching on `currency` therefore took a GBP number and printed a dollar
+ *  sign in front of it: Jardine Matheson's 4687.76p came out as "$46.88", and
+ *  its £107,818 purchase as "$108k". 28 of the last 400 UK rows disclose in a
+ *  foreign currency, so this was roughly one filing page in fourteen stating a
+ *  price that was wrong by an exchange rate and a factor of a hundred.
+ *
+ *  The US pipeline does not reach here. It has its own row type (`UsDealing`,
+ *  with `value` and `currency: "USD"`) and no per-row detail route, and this
+ *  family is UK-only for exactly that reason. If a US filing page ever lands,
+ *  it needs its own formatter rather than a branch inside this one. */
 export function sharePrice(d) {
-  const minor = Number(d?.price_pence) || 0;
-
-  if (d?.currency === "GBP") return `${minor.toFixed(2)}p`;
-
-  return `${SYMBOL[d?.currency] ?? ""}${(minor / 100).toFixed(2)}`;
+  return `${(Number(d?.price_pence) || 0).toFixed(2)}p`;
 }
 
 export const shares = (n) => Number(n ?? 0).toLocaleString("en-GB");
@@ -170,7 +184,7 @@ export function filingLeadSentence(d) {
         ? ` on ${d.trade_date}, disclosed the same day`
         : ` on ${d.trade_date}, disclosed ${lag} ${lag === 1 ? "day" : "days"} later`;
 
-  return `${name}${role} bought ${shares(d?.shares)} shares in ${company} for ${money(d?.value_gbp, d?.currency)}${lagBit}.`;
+  return `${name}${role} bought ${shares(d?.shares)} shares in ${company} for ${money(d?.value_gbp)}${lagBit}.`;
 }
 
 /** The performance sentence, or null when nothing has been marked yet.
@@ -244,7 +258,7 @@ export function checkContext(d) {
     role: d?.director?.role || undefined,
     company: cleanName(d?.company) || d?.ticker || "the company",
     price: d?.price_pence ? sharePrice(d) : null,
-    value: money(d?.value_gbp, d?.currency),
+    value: money(d?.value_gbp),
   };
 }
 

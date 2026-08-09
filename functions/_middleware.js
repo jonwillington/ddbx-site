@@ -14,8 +14,10 @@
 //     (ddbx.uk/us and ddbx.us/ are the same page)
 //   - robots noindex on preview/local hosts and the handful of utility routes
 //
-// Per-trade share links (/t/{id}) render their own full <head> in
-// functions/t/[id].js, so we leave those untouched.
+// Per-trade share links (/t/{id}) own their head rewrite in
+// functions/t/[id].js — per-deal unfurl meta and a canonical pointing at
+// /dealings/{id} — so we leave those untouched. Listed with the other
+// pre-render routes below.
 
 import {
   alternatesFor,

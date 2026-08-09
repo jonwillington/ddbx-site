@@ -139,7 +139,7 @@ export function VerdictBand({ deal }: { deal: Dealing }) {
       <div className="p-5 sm:p-6">
         <p className={LABEL}>The purchase</p>
         <p className="mt-3 text-[36px] font-semibold leading-none tracking-[-0.028em] tabular-nums text-foreground sm:text-[44px]">
-          {money(deal.value_gbp, deal.currency)}
+          {money(deal.value_gbp)}
         </p>
         <p className="mt-3 text-[13.5px] leading-[1.6] text-foreground/60">
           {fmtShares(deal.shares)} shares at {sharePrice(deal)}

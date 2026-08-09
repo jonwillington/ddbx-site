@@ -468,8 +468,8 @@ export default function HowItWorksPage() {
 
             <p className="mt-5 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
               Because the threshold is a share of the company rather than a cash
-              amount, the people who file are mostly controlling shareholders and
-              large holders, not rank-and-file managers. That makes it a
+              amount, the people who file are mostly controlling shareholders
+              and large holders, not rank-and-file managers. That makes it a
               different population from the director buys on the other market
               pages, and it is worth reading it as one.
             </p>
