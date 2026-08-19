@@ -24,31 +24,58 @@ import { useMediaQuery } from "@/lib/use-media-query";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { GatedAnalysisShape } from "@/components/discretion/gated-analysis-shape";
 
-/** Warm-tint notice bracketing the freebie article: the reader is told
- *  they're spending today's one free analysis, with the app as the way to
- *  read the rest. Rendered twice — top of the article and again after the
- *  body — so the nudge is there both on open and at read-out. */
-function FreeAnalysisNotice({
+/** Warm-tint notice bracketing the article, in one of two modes.
+ *
+ *  `freebie` — discretion on. The reader is told they're spending today's one
+ *  free analysis, with the app as the way to read the rest. Rendered twice,
+ *  top and bottom, because scarcity is the argument and it works on open as
+ *  well as at read-out.
+ *
+ *  `open` — discretion off. Nothing is being spent and nothing is withheld, so
+ *  there is no scarcity to state and a notice above the article would interrupt
+ *  a read for no reason. Bottom only, and the ask changes with it: not "the app
+ *  has the rest" (it doesn't — the reader just had all of it) but the two
+ *  things a website genuinely cannot do, which are reaching you the day a
+ *  filing lands and following it afterwards. Overstating this is how a CTA
+ *  starts reading as a lie to anyone who checks. */
+function AppNotice({
   appHref,
   position,
+  mode,
 }: {
   appHref: string;
   position: "top" | "bottom";
+  mode: "freebie" | "open";
 }) {
+  const copy =
+    mode === "freebie"
+      ? {
+          title: "You're using your one free analysis for today",
+          body: "The app has every analysis, every day.",
+          ga: "cta_freebie_download",
+          label: `Freebie notice download (${position})`,
+        }
+      : {
+          title: "Get the next one the day it files",
+          body: "You've read this one in full. The app pushes each new rated buy as it's disclosed, and tells you when the price moves after it.",
+          ga: "cta_open_analysis_download",
+          label: `Open analysis download (${position})`,
+        };
+
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-[#d8d0c6] bg-[#f4eee6] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/[0.04]">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-brand-brown dark:text-[#c9b49f]">
-          You're using your one free analysis for today
+          {copy.title}
         </p>
         <p className="mt-0.5 text-xs leading-relaxed text-[#7a634b] dark:text-brand-tan">
-          The app has every analysis, every day.
+          {copy.body}
         </p>
       </div>
       <a
         className={`${BUTTON_RADIUS} ${BUTTON_FILLED} inline-flex shrink-0 items-center justify-center px-4 py-2.5 text-sm font-semibold transition-colors`}
-        data-ga-event="cta_freebie_download"
-        data-ga-label={`Freebie notice download (${position})`}
+        data-ga-event={copy.ga}
+        data-ga-label={copy.label}
         href={appHref}
         rel="noopener noreferrer"
         target="_blank"
@@ -110,8 +137,8 @@ export function MarketDetailDrawer<W>({
     allDealings?: MarketDealing<W>[];
   }>;
   AnalysisOverlay?: ComponentType<{ dealing?: MarketDealing<W> }>;
-  /** App Store listing for the current market. When set and the reader is
-   *  spending their daily freebie, FreeAnalysisNotice brackets the article. */
+  /** App Store listing for the current market. When set, `AppNotice` brackets
+   *  the article on the freebie and closes it out when gating is off. */
   appHref?: string;
   /** Mirror of the row prop — when false, the header + body logo bubbles
    *  are suppressed. Wired from MarketConfig.enableLogos. Default true. */
@@ -225,8 +252,19 @@ export function MarketDetailDrawer<W>({
     gating?.enabled === true && !!active && !gating.hasFullAccess(active.id);
   const BodyComponent = gated && DummyDetailBody ? DummyDetailBody : DetailBody;
   // The unlocked view IS the daily freebie whenever gating is live — tell the
-  // reader so, at the top and again at the foot of the article.
-  const showFreebieNotice = gating?.enabled === true && !gated && !!appHref;
+  // reader so, at the top and again at the foot of the article. With gating
+  // off there is no freebie to spend, but the drawer is still where someone
+  // finishes reading an analysis, which makes it the best-earned ask on the
+  // site: `open` mode keeps the foot of the article working.
+  const noticeMode: "freebie" | "open" | null = !appHref
+    ? null
+    : gating?.enabled === true
+      ? gated
+        ? null
+        : "freebie"
+      : "open";
+  const showTopNotice = noticeMode === "freebie";
+  const showBottomNotice = noticeMode !== null;
   const leadWithBody = !!active && !active.rating;
 
   const rawTicker = active?.ticker || "—";
@@ -360,8 +398,12 @@ export function MarketDetailDrawer<W>({
                       ref={contentRef}
                       className="px-5 pb-5 pt-1 md:px-8 md:pb-8 md:pt-2 space-y-6"
                     >
-                      {showFreebieNotice && (
-                        <FreeAnalysisNotice appHref={appHref!} position="top" />
+                      {showTopNotice && (
+                        <AppNotice
+                          appHref={appHref!}
+                          mode="freebie"
+                          position="top"
+                        />
                       )}
 
                       {/* Company on top, the person who made the buy beneath,
@@ -557,9 +599,10 @@ export function MarketDetailDrawer<W>({
                         />
                       )}
 
-                      {showFreebieNotice && (
-                        <FreeAnalysisNotice
+                      {showBottomNotice && (
+                        <AppNotice
                           appHref={appHref!}
+                          mode={noticeMode!}
                           position="bottom"
                         />
                       )}

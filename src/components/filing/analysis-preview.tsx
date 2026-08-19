@@ -45,8 +45,11 @@ import {
 } from "@heroicons/react/20/solid";
 
 import { AnalysisUnlockModal } from "@/components/discretion/analysis-unlock-modal";
-import { BUTTON_RADIUS } from "@/components/button";
+import { StoreGlyph } from "@/components/store-glyph";
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { DISCRETION_ENABLED } from "@/lib/discretion";
+import { appHrefForMarket } from "@/lib/app-store";
+import { useDevicePlatform } from "@/lib/use-device-platform";
 
 const CARD =
   "rounded-3xl border border-hairline bg-white/70 dark:border-border/60 dark:bg-surface-secondary/40";
@@ -89,11 +92,15 @@ function OpenCase({
   deal,
   shape,
   summary,
+  marketId,
 }: {
   deal: Dealing;
   shape: AnalysisShape;
   summary?: string | null;
+  marketId: string;
 }) {
+  const platform = useDevicePlatform();
+  const appHref = appHrefForMarket(marketId, platform);
   const analysis = deal.analysis;
   const thesis = analysis?.thesis_points ?? [];
   const risks = analysis?.key_risks ?? [];
@@ -225,6 +232,44 @@ function OpenCase({
             : "Written with a stated confidence"}
           {shape.window ? `, over a ${shape.window} catalyst window` : ""}.
         </p>
+
+        {/* The ask, at read-out.
+            The page still terminates with `AppCtaBand`, and two filled asks in
+            one document is how a page starts reading as a funnel — so this one
+            is deliberately the quieter object: a hairline rule and a single
+            button, not a second dark slab. It earns its place by position
+            rather than weight. Someone who has just read a full written case
+            is the most qualified reader this page produces, and the band is
+            several sections below them.
+
+            What it claims matters more than usual here, because the gated
+            version's argument ("the rest is in the app") is now false — they
+            have just had all of it. The honest remainder is timing and
+            follow-up: the app reaches you the day a filing lands, which no
+            page a reader has to remember to visit can do. */}
+        <div className="mt-6 border-t border-hairline pt-5 dark:border-border/60">
+          <p className="text-[14.5px] font-semibold leading-[1.35] text-foreground">
+            Get the next one the day it files.
+          </p>
+          <p className="mt-1 text-[13.5px] leading-[1.55] text-foreground/60">
+            This filing is already public record. The app pushes each new rated
+            buy as it’s disclosed, with the written case attached.
+          </p>
+          <a
+            className={`mt-4 inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3 text-sm font-semibold transition-colors`}
+            data-ga-event="cta_open_case_download"
+            data-ga-label={`Open case download · ${deal.id}`}
+            href={appHref}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <StoreGlyph className="h-4 w-4 shrink-0" />
+            Download the app
+          </a>
+          <p className="mt-2 text-[11.5px] text-foreground/45">
+            Free for 7 days, cancel any time.
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -251,7 +296,14 @@ export function AnalysisPreview({
   // Discretion off means off everywhere, including here. The gate below is the
   // product posture, not a property of the page — see src/lib/discretion.ts.
   if (!DISCRETION_ENABLED) {
-    return <OpenCase deal={deal} shape={shape} summary={summary} />;
+    return (
+      <OpenCase
+        deal={deal}
+        marketId={marketId}
+        shape={shape}
+        summary={summary}
+      />
+    );
   }
 
   const openGate = (headline: string | null) => {
