@@ -1,9 +1,8 @@
 # SEO round three: derived hubs, and the data-side items behind them
 
 **Date**: 2026-08-19
-**Status**: Tier 2 built, verified and pushed (§0.0). Tier 3: §3.4 built
-(§3.4a); §3.1/§3.3 blocked on a dirty ddbx-data tree (§3.0); §3.2 blocked on a
-business decision (§5)
+**Status**: Tier 2 and most of Tier 3 shipped. §3.1 built and deployed, §3.4
+built, §3.3 still open, §3.2 blocked on a business decision (§5)
 **Scope**: `ddbx-site`, plus three optional `ddbx-data` follow-ups (§3)
 
 Follows `2026-07-26-seo-expansion-plan.md` (nine families) and
@@ -271,9 +270,9 @@ asserting a classification it has not shown.
 Cross-repo, so under the coordination rules in `~/CLAUDE.md`. All three are
 **additive**: no wire-format change, no consumer breakage.
 
-### 3.0 Why §3.1 and §3.3 did not get built
+### 3.0 The ddbx-data tree, and how it was cleared
 
-`ddbx-data` is on `feat/fallers-feed` with **327 lines of uncommitted work**
+`ddbx-data` was on `feat/fallers-feed` with **327 lines of uncommitted work**
 across five files — `worker/index.ts`, `worker/llm/prompts.ts`,
 `monthly-summary.ts`, `social-tweet-copy.ts` and 213 lines in
 `trade-og-image.ts`, plus an untracked `investigations/2026-08-04-uk-size-gate.md`.
@@ -284,10 +283,44 @@ time. Worse, both §3.1 and §3.3 need `worker/index.ts`, which is one of the
 dirty files — so the change cannot even be committed separately from the WIP
 it would sit on top of.
 
-Nothing in `ddbx-data` was touched. Commit or stash that work and both items
-are short.
+**Resolved 2026-08-19.** That work is now committed and pushed in three
+commits — the size-gate pre-registration on its own, the OG-card and
+monthly-prose work as authored, and then §3.1. `npm run typecheck` passes.
+`npm run deploy` shipped all of it, so the OG-card redesign and the monthly
+prompt change are live alongside the API field.
 
-### 3.1 Bulk company stats → cap-band hubs
+§3.3 (the aggregate endpoint) is still open — the `before` cursor covers the
+1,000-row cap today and every board discloses truncation, so it is a
+performance item rather than a correctness one.
+
+### 3.1 Bulk company stats → cap-band hubs — BUILT AND LIVE
+
+`/api/companies` now carries `sector_normalized`, `market_cap` and
+`stats_currency`, all additive and nullable (cache key bumped to v3). Coverage
+on live D1: UK 462 rows with sector on 462 and cap on 433; US 348 rows with
+sector on 347 and cap on 337.
+
+On the site: `/market-cap` plus `/market-cap/{large,mid,small}`, on both hosts
+— 8 URLs, from **one** call each rather than a thousand dealing rows.
+Thresholds are the conventional £/$10bn and £/$2bn lines, market-relative and
+printed on every page rather than applied quietly.
+
+**The unit trap, which is why this needed a module.** `stats_currency`
+describes the PRICE QUOTE, not the cap. 422 of the 433 capped UK issuers report
+`GBp` — prices in pence — while the cap beside it is already in POUNDS. Anglo
+American arrives as 41,048,702,976 GBp, meaning £41bn; dividing by 100 to
+"convert pence" is wrong by two orders of magnitude in the direction that looks
+plausible. Verified against Anglo American, Aberdeen, Shoe Zone and Hargreaves
+Services before any threshold was written. And the currency is not always the
+market's: 10 UK issuers report in EUR or USD, so they are left unbanded and the
+page says so rather than an exchange rate being invented.
+
+One honest seam: these pages count from the company index, which has no
+filer-role join, so a US purchase by a 10% holder is included here and excluded
+from the boards. Republic Services is the visible case. The methodology says so;
+closing it properly is a ddbx-data change.
+
+### 3.1b The original §3.1 note
 
 One additive endpoint returning `(key, market_cap, currency)` per company, or
 `market_cap` added to `/api/companies` alongside the `sector_normalized` field
@@ -406,9 +439,12 @@ Small, real, none blocking the push.
 ## 5. Open questions
 
 1. **US brokers** (§3.2) — commit editorially, or leave `ddbx.us` non-commercial?
+   The only Tier 3 item still untouched.
 2. **The 368 company pages** (§3.4) — enrich, noindex, or knowingly keep. Third
    time of asking.
-3. **Cap-band thresholds** (§3.1) — per-market, and who sets them.
+3. **Cap-band thresholds** (§3.1) — shipped at the conventional £/$10bn and
+   £/$2bn lines and printed on every page. Change them in `shared/cap-bands.js`
+   if you'd rather they sat elsewhere.
 4. **Search Console.** Still not connected. Fifteen families in, the honest
    answer to "which of these works" is still nobody knows, and every
    prioritisation in this document would be sharper with a month of data.

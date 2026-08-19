@@ -8,6 +8,7 @@ import AccountDeletionPage from "@/pages/account-deletion";
 import ApiPage from "@/pages/api";
 import BestPerformingBuysPage from "@/pages/best-performing-buys";
 import BiggestBuysPage from "@/pages/biggest-buys";
+import MarketCapBandPage, { MarketCapIndexPage } from "@/pages/market-cap";
 import MostActiveCompaniesPage from "@/pages/most-active-companies";
 import RolePage, { RolesIndexPage } from "@/pages/roles";
 import ClusterBuysPage from "@/pages/cluster-buys";
@@ -214,6 +215,8 @@ function App() {
           element={<MostActiveCompaniesPage />}
           path="/most-active-companies"
         />
+        <Route element={<MarketCapIndexPage />} path="/market-cap" />
+        <Route element={<MarketCapBandPage />} path="/market-cap/:band" />
         <Route element={<RolesIndexPage />} path="/roles" />
         <Route element={<RolePage />} path="/roles/:slug" />
         <Route element={<SectorsPage />} path="/sectors" />

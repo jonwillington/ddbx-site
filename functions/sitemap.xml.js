@@ -56,6 +56,11 @@ import {
   MIN_FILINGS as MIN_ROLE_FILINGS,
 } from "../shared/roles.js";
 import {
+  bandMeetsBar,
+  bandPath,
+  bandRollup,
+} from "../shared/cap-bands.js";
+import {
   sectorMeetsBar,
   sectorPath,
   sectorRollup,
@@ -270,6 +275,37 @@ async function boardEntries(host) {
     }
 
     return paths;
+  } catch {
+    return [];
+  }
+}
+
+/** Size bands that clear the company bar for a host.
+ *
+ *  Reads /api/companies, which is the one call the whole family makes — no
+ *  dealings window. Same bar the pages and the pre-render apply, so a band is
+ *  never advertised here and noindexed there. */
+async function capBandEntries(host) {
+  const market = COMPANY_MARKET_BY_HOST[host];
+
+  if (!market) return [];
+  try {
+    const res = await fetch(`${API_BASE}/companies?market=${market}`, {
+      headers: { accept: "application/json" },
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
+    });
+
+    if (!res.ok) return [];
+    const body = await res.json();
+    const rollup = bandRollup(body.companies ?? [], market);
+    const bands = rollup.bands.filter(bandMeetsBar);
+
+    if (bands.length === 0) return [];
+
+    return ["/market-cap", ...bands.map((b) => bandPath(b.band.slug))];
   } catch {
     return [];
   }
@@ -573,6 +609,7 @@ export async function onRequestGet(context) {
 
   if (reports.length > 0) paths.push("/reports", ...reports);
   paths.push(...(await boardEntries(host)));
+  paths.push(...(await capBandEntries(host)));
   paths.push(...(await sectorEntries(host)));
   paths.push(...(await congressEntries(host)));
   paths.push(...(await filingEntries(host)));

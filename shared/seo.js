@@ -24,6 +24,7 @@ import { comparisonBySlug } from "./broker-comparisons.js";
 import { monthLabel, reportPath, slugToMonth } from "./months.js";
 import { canonicalUrlForEntry, entryBySlug } from "./glossary.js";
 import { yearBounds } from "./leaderboard.js";
+import { bandBySlug } from "./cap-bands.js";
 import { roleBySlug } from "./roles.js";
 import { sectorBySlug } from "./sectors.js";
 import { weekFromPath, weekLabel } from "./weeks.js";
@@ -166,6 +167,7 @@ const UK_US_ONLY_PREFIXES = [
   "/most-active-companies",
   "/cluster-buys",
   "/roles",
+  "/market-cap",
   "/companies",
   "/reports",
   // /how-it-works describes six checks, four ratings and a written analysis.
@@ -320,6 +322,15 @@ const isActivityBoardPath = (path) => path === "/most-active-companies";
 const isClusterBoardPath = (path) => path === "/cluster-buys";
 
 const isRolesIndexPath = (path) => path === "/roles";
+
+const isMarketCapIndexPath = (path) => path === "/market-cap";
+
+/** "/market-cap/large" -> the band entry, or null. Bands are market-blind —
+ *  only their thresholds differ — so unlike roleFromPath this takes no market. */
+const bandFromPath = (path) =>
+  path.startsWith("/market-cap/")
+    ? bandBySlug(decodeURIComponent(path.slice("/market-cap/".length)))
+    : null;
 
 /** "/roles/chief-executive" -> the role entry, or null.
  *
@@ -494,6 +505,7 @@ export function seoForPath(pathname, hostname) {
   const sector = sectorFromPath(path);
   const leaderboard = leaderboardFromPath(path);
   const role = roleFromPath(path, id);
+  const capBand = bandFromPath(path);
   const learnEntry = learnEntryFromPath(path);
   const weekStart = weekFromSeoPath(path);
   const congressMember = congressMemberNameFromPath(path);
@@ -555,6 +567,12 @@ export function seoForPath(pathname, hostname) {
       );
     if (isRolesIndexPath(path))
       return brandTitle(`${market.label} insider buying by role`);
+    if (capBand)
+      return brandTitle(
+        `${capBand.plural} where ${market.label} insiders are buying`,
+      );
+    if (isMarketCapIndexPath(path))
+      return brandTitle(`${market.label} insider buying by company size`);
     if (learnEntry) return brandTitle(learnEntry.title);
     if (isLearnIndexPath(path))
       return brandTitle("Understanding insider dealing");
@@ -655,6 +673,10 @@ export function seoForPath(pathname, hostname) {
       return `Where several ${market.label} insiders bought the same company within a fortnight of each other — who bought, how much, and how the shares have done since.`;
     if (role)
       return `What ${market.label} ${role.noun} have been buying in their own companies over the last twelve months: which companies, how much, and how those purchases have performed against the market.`;
+    if (capBand)
+      return `Which ${capBand.label.toLowerCase()} ${market.label} companies insiders have been buying over the last twelve months, how much they spent, and where the band's line is drawn.`;
+    if (isMarketCapIndexPath(path))
+      return `${market.label} insider buying split by company size — large, mid and small-cap — with what was bought in each and the thresholds the split uses.`;
     if (isRolesIndexPath(path))
       return `${market.label} insider buying split by the job the buyer filed under — chief executives, finance directors and the rest of the board, and how each group's purchases have performed.`;
     if (learnEntry) return learnEntry.description;
