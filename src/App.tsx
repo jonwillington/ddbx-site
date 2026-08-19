@@ -6,7 +6,11 @@ import { DocumentTitle } from "@/components/document-title";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import AccountDeletionPage from "@/pages/account-deletion";
 import ApiPage from "@/pages/api";
+import BestPerformingBuysPage from "@/pages/best-performing-buys";
 import BiggestBuysPage from "@/pages/biggest-buys";
+import MostActiveCompaniesPage from "@/pages/most-active-companies";
+import RolePage, { RolesIndexPage } from "@/pages/roles";
+import ClusterBuysPage from "@/pages/cluster-buys";
 import BrokerCategoryPage from "@/pages/broker-category";
 import BrokerComparisonPage from "@/pages/broker-comparison";
 import BrokerDetailPage from "@/pages/broker-detail";
@@ -201,6 +205,17 @@ function App() {
         <Route element={<LearnEntryPage />} path="/learn/:slug" />
         <Route element={<BiggestBuysPage />} path="/biggest-buys" />
         <Route element={<BiggestBuysPage />} path="/biggest-buys/:year" />
+        <Route
+          element={<BestPerformingBuysPage />}
+          path="/best-performing-buys"
+        />
+        <Route element={<ClusterBuysPage />} path="/cluster-buys" />
+        <Route
+          element={<MostActiveCompaniesPage />}
+          path="/most-active-companies"
+        />
+        <Route element={<RolesIndexPage />} path="/roles" />
+        <Route element={<RolePage />} path="/roles/:slug" />
         <Route element={<SectorsPage />} path="/sectors" />
         <Route element={<SectorPage />} path="/sectors/:slug" />
       </Routes>

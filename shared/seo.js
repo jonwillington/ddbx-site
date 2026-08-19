@@ -24,6 +24,7 @@ import { comparisonBySlug } from "./broker-comparisons.js";
 import { monthLabel, reportPath, slugToMonth } from "./months.js";
 import { canonicalUrlForEntry, entryBySlug } from "./glossary.js";
 import { yearBounds } from "./leaderboard.js";
+import { roleBySlug } from "./roles.js";
 import { sectorBySlug } from "./sectors.js";
 import { weekFromPath, weekLabel } from "./weeks.js";
 
@@ -156,6 +157,15 @@ export function isProductionHost(hostname) {
 const UK_US_ONLY_PREFIXES = [
   "/sectors",
   "/biggest-buys",
+  // The three derived boards and the role hubs, for exactly the same reason as
+  // /biggest-buys above: all four rank the UK and US feeds, and SE/NL carry no
+  // value field and no performance data to rank. /roles additionally publishes
+  // two buckets — chair and non-executive director — that describe UK board
+  // structure specifically. See shared/roles.js.
+  "/best-performing-buys",
+  "/most-active-companies",
+  "/cluster-buys",
+  "/roles",
   "/companies",
   "/reports",
   // /how-it-works describes six checks, four ratings and a written analysis.
@@ -300,6 +310,29 @@ const leaderboardFromPath = (path) => {
   if (!match) return null;
 
   return yearBounds(match[1]) ? { year: match[1] } : null;
+};
+
+/** The three derived boards. Single fixed paths — unlike /biggest-buys these
+ *  have no year archive, because each is a rolling twelve-month view whose
+ *  archive would need a year of history none of them has yet. */
+const isPerformanceBoardPath = (path) => path === "/best-performing-buys";
+const isActivityBoardPath = (path) => path === "/most-active-companies";
+const isClusterBoardPath = (path) => path === "/cluster-buys";
+
+const isRolesIndexPath = (path) => path === "/roles";
+
+/** "/roles/chief-executive" -> the role entry, or null.
+ *
+ *  Resolved against the market's own bucket list rather than the full one:
+ *  /roles/chair is a real page on ddbx.uk and not a page at all on ddbx.us, so
+ *  the title branch must not claim it there. */
+const roleFromPath = (path, marketId) => {
+  if (!path.startsWith("/roles/")) return null;
+  const entry = roleBySlug(decodeURIComponent(path.slice("/roles/".length)));
+  // roles.js keys markets as "UK"/"US"; seoForPath works in lowercase ids.
+  const market = String(marketId ?? "").toUpperCase();
+
+  return entry && entry.markets.includes(market) ? entry : null;
 };
 
 const isHowItWorksPath = (path) => path === "/how-it-works";
@@ -460,6 +493,7 @@ export function seoForPath(pathname, hostname) {
   const reportMonth = reportSlugFromPath(path);
   const sector = sectorFromPath(path);
   const leaderboard = leaderboardFromPath(path);
+  const role = roleFromPath(path, id);
   const learnEntry = learnEntryFromPath(path);
   const weekStart = weekFromSeoPath(path);
   const congressMember = congressMemberNameFromPath(path);
@@ -502,6 +536,25 @@ export function seoForPath(pathname, hostname) {
       return brandTitle(
         `The biggest ${market.label} insider buys ${period}`,
       );
+    if (isPerformanceBoardPath(path))
+      return brandTitle(
+        `The best-performing ${market.label} insider buys of the last year`,
+      );
+    if (isActivityBoardPath(path))
+      return brandTitle(
+        `${market.label} companies with the most insider buying`,
+      );
+    if (isClusterBoardPath(path))
+      return brandTitle(
+        `Cluster buying — where several ${market.label} insiders bought at once`,
+      );
+    // Before the index branch: /roles/chair must not be claimed by /roles.
+    if (role)
+      return brandTitle(
+        `${role.plural} buying their own shares (${market.label})`,
+      );
+    if (isRolesIndexPath(path))
+      return brandTitle(`${market.label} insider buying by role`);
     if (learnEntry) return brandTitle(learnEntry.title);
     if (isLearnIndexPath(path))
       return brandTitle("Understanding insider dealing");
@@ -594,6 +647,16 @@ export function seoForPath(pathname, hostname) {
       return `Which ${market.label} ${sector.label.toLowerCase()} companies insiders have been buying over the last twelve months — volume, value, breadth and how those buys have performed against the market since disclosure.`;
     if (leaderboard)
       return `The largest open-market share purchases ${market.label} insiders made in their own companies ${period}, ranked by value, with how each has performed against the market since it was disclosed.`;
+    if (isPerformanceBoardPath(path))
+      return `Which ${market.label} insider purchases have actually worked — ranked by how far each has beaten the market since it was disclosed, not by how far the share price rose.`;
+    if (isActivityBoardPath(path))
+      return `The ${market.label} companies whose insiders bought most often over the last twelve months, with how many different people were buying and what they spent between them.`;
+    if (isClusterBoardPath(path))
+      return `Where several ${market.label} insiders bought the same company within a fortnight of each other — who bought, how much, and how the shares have done since.`;
+    if (role)
+      return `What ${market.label} ${role.noun} have been buying in their own companies over the last twelve months: which companies, how much, and how those purchases have performed against the market.`;
+    if (isRolesIndexPath(path))
+      return `${market.label} insider buying split by the job the buyer filed under — chief executives, finance directors and the rest of the board, and how each group's purchases have performed.`;
     if (learnEntry) return learnEntry.description;
     if (isHowItWorksPath(path))
       return id === "us"

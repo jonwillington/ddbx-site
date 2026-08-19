@@ -112,6 +112,40 @@ export const congressIndexCta = {
   body: "This directory is the record to date. The app watches the House Clerk and Senate feeds directly, so a new disclosure reaches you without you checking anything.",
 };
 
+/** Best-performing buys. The ask is deliberately the opposite of the page's
+ *  subject: everything ranked here is already priced in, so the promise is
+ *  about the next one rather than about repeating these. */
+export const performanceBoardCta = {
+  headline: "These already happened. The next ones haven’t.",
+  body: "A purchase needs months on the clock before it can appear on a board like this. The app tells you the day one files, which is the only point at which the information is worth anything.",
+};
+
+/** Most-active companies. */
+export const activityBoardCta = {
+  headline: "Watch a company and hear about every buy in it.",
+  body: "This board is a twelve-month count. In the app you can follow any of these companies and get each new disclosure as it files, with the rating attached.",
+};
+
+/** Cluster buying — the one board whose subject is a live signal rather than a
+ *  retrospective, so the ask names the mechanism. */
+export const clusterBoardCta = {
+  headline: "Clusters are only useful while they’re forming.",
+  body: "The app marks a cluster the moment the second insider files, not once it’s finished and sitting on a leaderboard. That is usually weeks earlier than a page like this can show it.",
+};
+
+/** Role hubs — index or a single role. */
+export function roleCta(plural?: string): {
+  headline: string;
+  body: string;
+} {
+  return {
+    headline: plural
+      ? `Know when ${plural.toLowerCase()} buy, the day they file.`
+      : "Know who’s buying, the day they file.",
+    body: "This page is the last twelve months. The app pushes each new disclosure as it lands, with the buyer’s role and the six checks already applied.",
+  };
+}
+
 /** Broker guides — deliberately quiet (`media: "none"`): these pages already
  *  carry an affiliate ask, and a phone screenshot next to a "visit broker"
  *  button is two competing asks in one viewport. */

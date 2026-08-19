@@ -45,6 +45,17 @@ import {
 import { reportPath } from "../shared/months.js";
 import { fetchDealingsWindow } from "../shared/dealings-feed.js";
 import {
+  rankByAlpha,
+  rankClusters,
+  rankCompanies,
+} from "../shared/boards.js";
+import {
+  inRole,
+  rolePath,
+  rolesForMarket,
+  MIN_FILINGS as MIN_ROLE_FILINGS,
+} from "../shared/roles.js";
+import {
   sectorMeetsBar,
   sectorPath,
   sectorRollup,
@@ -206,6 +217,64 @@ async function reportEntries(host) {
  *  paged window — the page and its pre-render apply, so a sector is never
  *  advertised here and withheld there. When the window can't be fully covered
  *  we emit nothing rather than a half-computed set. */
+/** The three derived boards and the role hubs.
+ *
+ *  ONE fetch for all four, not four. They rank the same twelve-month window and
+ *  differ only in how they group it, so a fetch each would pull the same
+ *  thousand rows four times to answer four questions about them.
+ *
+ *  Each family applies its own bar, and the bar is the one its pre-render
+ *  applies — a board is never advertised here and then noindexed there. The
+ *  role hubs additionally resolve against the market's own bucket list, because
+ *  /roles/chair exists on ddbx.uk and does not exist on ddbx.us. */
+async function boardEntries(host) {
+  const market = COMPANY_MARKET_BY_HOST[host];
+
+  if (!market) return [];
+  try {
+    const { dealings, complete } = await fetchDealingsWindow({
+      apiBase: API_BASE,
+      market,
+      since: windowStart(new Date()),
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
+    });
+
+    // A partial window can only under-count, and every bar below is a minimum.
+    // Emitting a half-computed set risks advertising a board the pre-render
+    // will decline to index.
+    if (!complete) return [];
+
+    const paths = [];
+
+    if (rankByAlpha(dealings, market).rows.length > 0) {
+      paths.push("/best-performing-buys");
+    }
+    if (rankCompanies(dealings, market).rows.length > 0) {
+      paths.push("/most-active-companies");
+    }
+    if (rankClusters(dealings, market).rows.length > 0) {
+      paths.push("/cluster-buys");
+    }
+
+    const roles = rolesForMarket(market).filter(
+      (role) =>
+        dealings.filter((d) => inRole(d, market, role.slug)).length >=
+        MIN_ROLE_FILINGS,
+    );
+
+    if (roles.length > 0) {
+      paths.push("/roles", ...roles.map((role) => rolePath(role.slug)));
+    }
+
+    return paths;
+  } catch {
+    return [];
+  }
+}
+
 async function sectorEntries(host) {
   const market = COMPANY_MARKET_BY_HOST[host];
 
@@ -503,6 +572,7 @@ export async function onRequestGet(context) {
   const reports = await reportEntries(host);
 
   if (reports.length > 0) paths.push("/reports", ...reports);
+  paths.push(...(await boardEntries(host)));
   paths.push(...(await sectorEntries(host)));
   paths.push(...(await congressEntries(host)));
   paths.push(...(await filingEntries(host)));

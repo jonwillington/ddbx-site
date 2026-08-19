@@ -59,6 +59,7 @@ export const BOARD_EARLIEST_YEAR = TRACKING_SINCE_YEAR;
  *  really is what the feed promises rather than a re-derivation. */
 export function isEligibleBuy(d, market) {
   if (!d) return false;
+  if (!isInsiderFiler(d, market)) return false;
   if (market === "US") {
     return (
       d.transaction_code === "P" &&
@@ -69,6 +70,43 @@ export function isEligibleBuy(d, market) {
   }
 
   return d.is_open_market_buy === true && d.tx_type === "buy";
+}
+
+/** Whether the filer is an insider, as opposed to a large outside holder.
+ *
+ *  US ONLY in effect, and it changes the answer materially. Form 4 is filed by
+ *  officers, directors AND anyone holding 10% of a class, and the last group is
+ *  routinely an institution rather than a person running the business. All
+ *  twelve Republic Services purchases in a 300-row August 2026 sample — $155m,
+ *  the second-largest filing count in it — are Cascade Investment L.L.C., a 10%
+ *  holder with no officer post and no board seat. On a page about what
+ *  management is doing with its own money that is an investment vehicle
+ *  rebalancing, and it was taking second place.
+ *
+ *  Only filers whose ONLY role is `ten_percent_owner` are excluded. A director
+ *  who also crosses 10% is still a director.
+ *
+ *  The UK feed has no equivalent and needs none: it carries PDMR disclosures
+ *  only, and a large outside holding is a TR-1 under a separate regime that is
+ *  not in this feed. So this returns true for UK rather than approximating a
+ *  distinction the data does not draw.
+ *
+ *  DELIBERATELY INSIDE isEligibleBuy rather than beside it. Every surface that
+ *  asks "is this an insider purchase" — /biggest-buys, the four derived boards,
+ *  the live examples on the glossary entries — has to get the same answer, or
+ *  the same filing is an insider buy on one page and not on another. It was
+ *  added on 2026-08-19; before that the Cascade purchases were eligible for
+ *  /biggest-buys. See investigations/2026-08-19-seo-round-three.md §0.5. */
+export function isInsiderFiler(d, market) {
+  if (market !== "US") return true;
+  const roles = d?.reporter?.roles;
+
+  // An older row, or one whose roles didn't parse, is given the benefit of the
+  // doubt: silently dropping filings over a missing field would shrink the
+  // board for a reason no reader could see.
+  if (!Array.isArray(roles) || roles.length === 0) return true;
+
+  return !roles.every((r) => r === "ten_percent_owner");
 }
 
 /** Value in the market's own currency. UK rows carry `value_gbp`, US `value`. */
@@ -151,6 +189,7 @@ export function rankBuys(dealings, market, limit = TOP_N) {
 export const METHODOLOGY = [
   "Only open-market purchases count. Share allotments, vesting, option exercises and placings are disclosed the same way but aren't purchases at a market price, and they are frequently the largest disclosures — so including them would put a share award at the top of a page about buying.",
   "UK rows must be classified as open-market buys by comparing the filed price against that day's close. Rows we can't price yet are left out rather than assumed innocent. US rows come from a feed already restricted to Form 4 transaction code P, excluding derivatives and amendments.",
+  "Only purchases by insiders count. A US Form 4 is also filed by anyone holding 10% of a company, which is usually an investment vehicle rather than someone running the business, and those filings are among the largest there are. Where a filer holds no officer post and no board seat, the purchase is left out; where they hold one as well as the stake, it counts.",
   "Each purchase is listed individually. Several insiders buying the same company on the same day appear as separate rows — that's several disclosures, not one large one. Where a purchase forms part of a cluster, it's marked.",
   "No more than three purchases from any single company appear on a board. One issuer filing the largest handful of the year would otherwise fill it and answer nothing; where entries are held back, the count is shown.",
   "Values are in the market's own currency and are never converted, so no exchange rate is involved.",

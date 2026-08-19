@@ -104,6 +104,11 @@ export async function onRequest(context) {
     /^\/sectors\/[^/]+$/.test(url.pathname) ||
     url.pathname === "/biggest-buys" ||
     url.pathname.startsWith("/biggest-buys/") ||
+    url.pathname === "/best-performing-buys" ||
+    url.pathname === "/most-active-companies" ||
+    url.pathname === "/cluster-buys" ||
+    url.pathname === "/roles" ||
+    /^\/roles\/[^/]+$/.test(url.pathname) ||
     url.pathname === "/learn" ||
     /^\/learn\/[^/]+$/.test(url.pathname) ||
     // The Congress directory. NOT a bare /congress/ prefix: /congress itself is

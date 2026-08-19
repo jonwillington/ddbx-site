@@ -18,6 +18,12 @@ export declare function isEligibleBuy(
   d: Buy | null | undefined,
   market: LeaderboardMarket,
 ): boolean;
+/** False only for a US filer whose sole Form 4 role is `ten_percent_owner`.
+ *  Applied inside isEligibleBuy, so every surface agrees. */
+export declare function isInsiderFiler(
+  d: Buy | null | undefined,
+  market: LeaderboardMarket,
+): boolean;
 export declare function buyValue(d: Buy | null | undefined): number;
 export declare function buyPerson(d: Buy | null | undefined): string | null;
 /** Ratio (0.012 = +1.2%), or null when unmeasured. */
