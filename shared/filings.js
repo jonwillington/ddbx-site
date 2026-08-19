@@ -285,35 +285,51 @@ export function analysisShape(d) {
     risks: a.key_risks?.length ?? 0,
     window: a.catalyst_window ?? null,
     confidence: a.confidence == null ? null : Math.round(a.confidence * 100),
-    sources: citedSources(d).length,
+    sources: new Set(
+      evidenceHeadlines(d)
+        .map((e) => e.url)
+        .filter(Boolean),
+    ).size,
   };
 }
 
-/** Cited sources, deduplicated, with our written detail stripped.
+/** The for/against case, as headlines only.
  *
- *  Headline and label only. The `detail` field is the analysis; the URL is a
- *  third party's page and the headline is a description of it, which is the
- *  part it is fair to publish and useful to a reader either way. */
-export function citedSources(d) {
-  const all = [
-    ...(d?.analysis?.evidence_for ?? []),
-    ...(d?.analysis?.evidence_against ?? []),
+ *  THE HEADLINES WERE ALREADY PUBLIC. This replaces `citedSources`, which
+ *  published `e.headline` as the link text of every sourced evidence point
+ *  from the day the family shipped, so listing them here discloses nothing
+ *  new — it stops the page saying the same thing in three places. The section
+ *  used to carry an abstract count ("four pieces of evidence for, three
+ *  against"), a collapsed list of the same points as source links, and, on the
+ *  share route, a written summary of the argument all three were describing.
+ *
+ *  What stays behind the gate is unchanged and is the part that is the
+ *  product: `detail` on every point, `thesis_points`, `key_risks` and (on
+ *  /dealings) `summary`. A headline states WHAT the analysis found; the detail
+ *  is the finding. Publishing the first has always been the deal — it is what
+ *  makes the page worth citing — and the second never has been.
+ *
+ *  `url` is optional here where `citedSources` required it, so the list is no
+ *  longer silently short: a point with no retrieved source still belongs in
+ *  what was argued, it just has no outbound link. Those are legacy rows; new
+ *  analyses enforce a URL at write time. */
+export function evidenceHeadlines(d) {
+  const take = (points, direction) =>
+    (points ?? [])
+      .filter((e) => e?.headline)
+      .map((e) => ({
+        direction,
+        headline: e.headline,
+        label: e.source_label || null,
+        url: e.source_url || null,
+      }));
+
+  return [
+    ...take(d?.analysis?.evidence_for, "for"),
+    ...take(d?.analysis?.evidence_against, "against"),
   ];
-  const seen = new Set();
-  const out = [];
-
-  for (const e of all) {
-    if (!e?.source_url || seen.has(e.source_url)) continue;
-    seen.add(e.source_url);
-    out.push({
-      headline: e.headline,
-      label: e.source_label,
-      url: e.source_url,
-    });
-  }
-
-  return out;
 }
+
 
 /** "Hercules Plc (HERC)" -> "Hercules Plc". Mirrors cleanCompanyName in
  *  src/lib/company.ts; duplicated rather than imported because that module is

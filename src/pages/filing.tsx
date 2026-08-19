@@ -19,8 +19,8 @@
  *     we found here. This is the method demonstrated on a real filing rather
  *     than described in the abstract, which is why it sits on this page rather
  *     than being a link to /how-it-works.
- *  4. `AssessmentPanel` — what the written analysis contains, in counts, with
- *     the sources it drew on. The ask.
+ *  4. `AnalysisPreview` — the findings themselves, for and against, each with
+ *     its source and each gated on click. The ask.
  *
  *  The reference table comes last, because it is the part a reader consults
  *  rather than reads.
@@ -63,7 +63,7 @@ import { Link, useParams } from "react-router-dom";
 
 import {
   analysisShape,
-  citedSources,
+  evidenceHeadlines,
   clusterSentence,
   cleanName,
   disclosureLagDays,
@@ -77,16 +77,14 @@ import {
 import { sectorByLabel, sectorPath } from "../../shared/sectors.js";
 
 import {
-  AssessmentPanel,
   ContextCards,
   RatingChecks,
   VerdictBand,
 } from "@/components/filing/filing-ui";
+import { AnalysisPreview } from "@/components/filing/analysis-preview";
+import { DISCRETION_ENABLED } from "@/lib/discretion";
 import { ClusterPanel } from "@/components/filing/cluster-panel";
-import {
-  ShareArrivalAsk,
-  ShareArrivalCard,
-} from "@/components/filing/share-arrival";
+import { ShareArrivalCard } from "@/components/filing/share-arrival";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoPageShell } from "@/components/seo/page-shell";
@@ -144,7 +142,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
     };
   }, [id]);
 
-  const sources = useMemo(() => (deal ? citedSources(deal) : []), [deal]);
+  const evidence = useMemo(() => (deal ? evidenceHeadlines(deal) : []), [deal]);
   const shape = useMemo(() => (deal ? analysisShape(deal) : null), [deal]);
 
   const context = useMemo(() => {
@@ -257,7 +255,13 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
             <SeoSkeleton rows={6} variant="ruled-list" />
           </>
         }
-        standfirst={deal ? filingLeadSentence(deal) : undefined}
+        // No standfirst on the share route. `filingLeadSentence` and the
+        // notification card directly above it are the same sentence twice
+        // ("bought £113k on 6 Aug" / "bought 50,000 shares … for £113k on
+        // 2026-08-06"), 200px apart, and the card says it better. The share
+        // count and the disclosure lag it also carried are both in the verdict
+        // band and the record grid below.
+        standfirst={share || !deal ? undefined : filingLeadSentence(deal)}
         standfirstSize="lede"
         title={
           deal ? (
@@ -296,8 +300,6 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                 landed on and what it has to do with the app; someone who
                 arrived at /dealings/{id} from a search result came for the
                 filing and gets it first. */}
-            {share ? <ShareArrivalAsk deal={deal} /> : null}
-
             <VerdictBand deal={deal} />
 
             {/* The chart carries its own period switcher and crosshair, so it
@@ -375,15 +377,24 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
 
             {analysed && shape ? (
               <SeoSection
-                aside="What the written assessment covers, and what it drew on."
+                aside={
+                  DISCRETION_ENABLED
+                    ? "Every finding the assessment reached, for and against, with the source behind each. The reasoning under them is in the app."
+                    : "The whole assessment: the thesis, every finding for and against with the source behind each, and the risks weighed against them."
+                }
                 index={4}
-                title="The case, in full"
+                title="What the analysis found"
                 total={total}
               >
-                <AssessmentPanel
-                  rating={deal.analysis?.rating ?? "significant"}
+                <AnalysisPreview
+                  deal={deal}
+                  evidence={evidence}
                   shape={shape}
-                  sources={sources}
+                  // The summary is published on the share route only — unless
+                  // discretion is off, in which case nothing here is withheld.
+                  summary={
+                    share || !DISCRETION_ENABLED ? deal.analysis?.summary : null
+                  }
                 />
               </SeoSection>
             ) : null}

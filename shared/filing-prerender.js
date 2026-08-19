@@ -20,11 +20,11 @@ import {
   analysisShape,
   awaitingOutcome,
   checkContext,
-  citedSources,
   cleanName,
   clusterSentence,
   disclosureLagDays,
   FILING_NOTICE,
+  evidenceHeadlines,
   filingLeadSentence,
   money,
   outcomeSentence,
@@ -43,11 +43,35 @@ export const displayTicker = (t) => String(t ?? "").replace(/\.L$/i, "");
  *
  *  React replaces all of it the moment it mounts; this exists so a crawler
  *  without JS, and a visitor on a slow connection, read the same facts. */
+/** One side of the case, as a list of findings with their citations.
+ *
+ *  Mirrors what `AnalysisPreview` renders for a visitor. Parity is the point:
+ *  the headlines and the source links are what both audiences get, and the
+ *  `detail` under each stays in the app for both. A crawler reading the
+ *  reasoning while a visitor reads a lock would be cloaking. */
+function side(evidence, direction, heading) {
+  const rows = evidence.filter((e) => e.direction === direction);
+
+  if (!rows.length) return "";
+
+  return `<h3 style="font-size:13px;margin:20px 0 6px;color:#6b6154">${esc(heading)}</h3>
+  <ul style="font-size:14px;line-height:1.6;color:#5a4d3a;max-width:66ch;padding-left:18px">${rows
+    .map(
+      (e) =>
+        `<li style="margin:0 0 6px">${esc(e.headline)}${
+          e.label
+            ? ` — ${e.url ? `<a href="${esc(e.url)}" rel="nofollow noopener">${esc(e.label)}</a>` : esc(e.label)}`
+            : ""
+        }</li>`,
+    )
+    .join("")}</ul>`;
+}
+
 export function filingPrerender(d, host) {
   const name = cleanName(d.company) || displayTicker(d.ticker);
   const lag = disclosureLagDays(d);
   const sector = d.sector_normalized ? sectorByLabel(d.sector_normalized) : null;
-  const sources = citedSources(d);
+  const evidence = evidenceHeadlines(d);
 
   const context = [clusterSentence(d), styleSentence(d)].filter(Boolean);
 
@@ -108,22 +132,10 @@ export function filingPrerender(d, host) {
   <table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${checklist}</tbody></table>`
       : ""
   }
+  ${evidence.length ? `<h2 style="font-size:15px;margin:32px 0 8px">What the analysis found</h2>${side(evidence, "for", "The case for")}${side(evidence, "against", "The case against")}` : ""}
   ${
     shape
-      ? `<h2 style="font-size:15px;margin:32px 0 8px">The case, in full</h2>
-  <p style="font-size:14px;line-height:1.6;color:#5a4d3a;max-width:62ch">The written case for and against this buy runs to ${shape.thesis} ${shape.thesis === 1 ? "point" : "points"}, ${shape.for} ${shape.for === 1 ? "piece" : "pieces"} of evidence for and ${shape.against} against, and ${shape.risks} key ${shape.risks === 1 ? "risk" : "risks"}${shape.confidence != null ? `, written with ${shape.confidence}% stated confidence` : ""}${shape.window ? ` over a ${esc(shape.window)} catalyst window` : ""}. It is in the app.</p>`
-      : ""
-  }
-
-  ${
-    sources.length
-      ? `<h2 style="font-size:15px;margin:32px 0 8px">Sources used</h2>
-  <ul style="font-size:14px;line-height:1.6;padding-left:18px">${sources
-    .map(
-      (s) =>
-        `<li style="margin:0 0 6px"><a href="${esc(s.url)}" rel="nofollow noopener">${esc(s.headline)}</a> — ${esc(s.label)}</li>`,
-    )
-    .join("")}</ul>`
+      ? `<p style="font-size:14px;line-height:1.6;color:#5a4d3a;max-width:62ch">The app adds the ${shape.thesis}-point thesis behind this rating${shape.risks > 0 ? `, the ${shape.risks} key ${shape.risks === 1 ? "risk" : "risks"} weighed against it` : ""}, and the detail under every line above.${shape.confidence != null ? ` Written with ${shape.confidence}% stated confidence` : ""}${shape.window ? ` over a ${esc(shape.window)} catalyst window` : ""}.</p>`
       : ""
   }
 

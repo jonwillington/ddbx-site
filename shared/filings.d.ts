@@ -4,12 +4,6 @@
 import type { Dealing } from "../src/types/ddbx";
 import type { CheckContext } from "./methodology";
 
-export interface CitedSource {
-  headline: string;
-  label: string;
-  url: string;
-}
-
 export declare const FILING_NOTICE: string;
 export interface AnalysisShape {
   thesis: number;
@@ -40,6 +34,15 @@ export declare function filingLeadSentence(d: Dealing): string;
 export declare function outcomeSentence(d: Dealing): string | null;
 export declare function clusterSentence(d: Dealing): string | null;
 export declare function styleSentence(d: Dealing): string | null;
-export declare function citedSources(d: Dealing): CitedSource[];
+export interface EvidenceHeadline {
+  direction: "for" | "against";
+  headline: string;
+  /** Citation text, or null on a point with no retrieved source. */
+  label: string | null;
+  url: string | null;
+}
+
+export declare function evidenceHeadlines(d: Dealing): EvidenceHeadline[];
+
 export declare function cleanName(name: string): string;
 export declare function awaitingOutcome(d: Dealing): boolean;

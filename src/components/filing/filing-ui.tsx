@@ -32,15 +32,11 @@
  *  sets out.
  */
 import type { Dealing, RatingChecklist } from "@/types/ddbx";
-import type { AnalysisShape, CitedSource } from "../../../shared/filings";
 
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowTopRightOnSquareIcon,
   CheckIcon,
   ChevronDownIcon,
-  LockClosedIcon,
   XMarkIcon,
 } from "@heroicons/react/20/solid";
 import {
@@ -51,16 +47,6 @@ import {
   ScaleIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
-// Solid, for the assessment panel only. The check rows below use the outline
-// set at 1.6 stroke as a quiet affordance beside a link; the four counts in the
-// panel are the offer itself and outline glyphs at that scale read as unfilled
-// placeholders rather than marks.
-import {
-  ExclamationTriangleIcon,
-  ListBulletIcon,
-  MinusCircleIcon,
-  PlusCircleIcon,
-} from "@heroicons/react/24/solid";
 
 import { CHECKS } from "../../../shared/methodology.js";
 import {
@@ -72,7 +58,6 @@ import {
   signedPct,
 } from "../../../shared/filings.js";
 
-import { BUTTON_RADIUS } from "@/components/button";
 import { MeterBar } from "@/components/seo/meter-bar";
 
 const RULE = "border-hairline dark:border-separator";
@@ -324,187 +309,6 @@ export function RatingChecks({
           );
         })}
       </div>
-    </div>
-  );
-}
-
-/* ─── The ask ────────────────────────────────────────────────────────────── */
-
-/** What the written assessment contains, and where to read it.
- *
- *  Counts, not content. See this file's header and shared/filings.js for the
- *  boundary; the short version is that "six points for, three against" is a
- *  claim about the analysis rather than the analysis, and it converts better
- *  than the grey sentence it replaced precisely because it is specific.
- *
- *  Deliberately NOT a second dark slab. The shell already terminates the page
- *  with `AppCtaBand`, and the site's grammar is one contrasting object per page
- *  — two filled asks in one document is how a page starts reading as a funnel.
- *  This one is a bordered panel with a quiet link. */
-export function AssessmentPanel({
-  shape,
-  sources,
-  rating,
-}: {
-  shape: AnalysisShape;
-  sources: CitedSource[];
-  rating: string;
-}) {
-  const [open, setOpen] = useState(false);
-  // Icon + figure + label, not a ruled two-column list of numbers. These four
-  // counts ARE the offer, and setting them as a spec table made the panel read
-  // as a footnote about the analysis rather than a description of it. Same
-  // 24/outline set and 1.4 stroke as the check cards above, so the two sections
-  // read as one system.
-  // Coloured semantically, not decoratively. These four are not four of the
-  // same thing: evidence FOR and evidence AGAINST are the two halves of the
-  // argument and the site already owns a colour for each direction
-  // (--positive / --negative), and the risks are the warning. Rendering them
-  // in one uniform brown made the panel read as a spec table where the
-  // interesting fact — that the assessment argues both ways — was invisible.
-  const items = [
-    {
-      n: shape.thesis,
-      Icon: ListBulletIcon,
-      well: "bg-brand-brown/[0.06] dark:bg-brand-tan/[0.08]",
-      ink: "text-brand-brown dark:text-brand-tan",
-      one: "point in the thesis",
-      many: "points in the thesis",
-    },
-    {
-      n: shape.for,
-      Icon: PlusCircleIcon,
-      well: "bg-positive/[0.08]",
-      ink: "text-positive",
-      one: "piece of evidence for",
-      many: "pieces of evidence for",
-    },
-    {
-      n: shape.against,
-      Icon: MinusCircleIcon,
-      well: "bg-negative/[0.08]",
-      ink: "text-negative",
-      one: "piece against",
-      many: "pieces against",
-    },
-    {
-      n: shape.risks,
-      Icon: ExclamationTriangleIcon,
-      well: "bg-brand-amber/[0.22] dark:bg-brand-amber/[0.12]",
-      ink: "text-brand-brown dark:text-brand-amber",
-      one: "key risk",
-      many: "key risks",
-    },
-  ].filter((i) => i.n > 0);
-
-  return (
-    <div className={`mt-4 overflow-hidden ${CARD}`}>
-      <div className="p-5 sm:p-6">
-        <p className={`flex items-center gap-2 ${LABEL}`}>
-          <LockClosedIcon aria-hidden className="h-3.5 w-3.5" />
-          In the app
-        </p>
-        <p className="mt-3 max-w-[24ch] text-balance text-[22px] font-semibold leading-[1.2] tracking-[-0.022em] text-foreground sm:text-[26px]">
-          The written case for and against this buy, rated {rating}.
-        </p>
-
-        {/* STACKED, NOT A ROW OF FOUR.
-            As a 4-across strip each count got a quarter of the column, which
-            capped the figure at 32px and squeezed its label onto three lines —
-            so the panel's whole argument ("this much was written, and it argues
-            both ways") was the smallest type in the section. One row each gives
-            the figure the full measure, lets the label sit beside it as a
-            sentence rather than under it as a caption, and puts a lock at the
-            end of every line: the eyebrow says "in the app" once, but each of
-            these four is individually behind it, and a reader who lands
-            mid-panel should not have to infer that. */}
-        <ul className="mt-6 space-y-2">
-          {items.map((i) => (
-            <li
-              key={i.many}
-              className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 sm:gap-5 sm:px-5 ${i.well}`}
-            >
-              <span className={`shrink-0 ${i.ink}`}>
-                <i.Icon aria-hidden className="h-8 w-8 sm:h-9 sm:w-9" />
-              </span>
-              <p
-                className={`w-[2.5ch] shrink-0 text-right text-[34px] font-semibold leading-none tabular-nums tracking-[-0.025em] sm:text-[40px] ${i.ink}`}
-              >
-                {i.n}
-              </p>
-              <p className="min-w-0 flex-1 text-[15px] leading-[1.35] text-foreground/75 sm:text-[16.5px]">
-                {i.n === 1 ? i.one : i.many}
-              </p>
-              <LockClosedIcon
-                aria-hidden
-                className="h-4 w-4 shrink-0 text-foreground/30"
-              />
-              <span className="sr-only">In the app</span>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mt-4 text-[13px] leading-[1.6] text-foreground/55">
-          {shape.confidence != null
-            ? `Written with ${shape.confidence}% stated confidence`
-            : "Written with a stated confidence"}
-          {shape.window ? `, over a ${shape.window} catalyst window` : ""}
-          {shape.sources > 0
-            ? `, drawn from ${shape.sources} named ${shape.sources === 1 ? "source" : "sources"}.`
-            : "."}
-        </p>
-
-        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
-          <Link
-            className={`${BUTTON_RADIUS} bg-foreground/[0.06] px-4 py-2 text-[13.5px] font-medium text-foreground transition-colors hover:bg-foreground/[0.1]`}
-            data-ga-event="cta_filing_assessment"
-            data-ga-label="Filing assessment panel"
-            to="/download"
-          >
-            Read it in the app
-          </Link>
-          {sources.length > 0 ? (
-            <button
-              className="text-[13px] text-foreground/50 underline-offset-4 hover:text-foreground hover:underline"
-              type="button"
-              onClick={() => setOpen((v) => !v)}
-            >
-              {open ? "Hide sources" : `See the ${sources.length} sources`}
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* The sources are third-party URLs, so they are publishable in full and
-          worth publishing: they are the visible evidence that the assessment
-          behind the lock was researched rather than generated from the filing
-          alone. Collapsed because seven link rows would otherwise outweigh the
-          panel they are supporting. */}
-      {open && sources.length > 0 ? (
-        <ul className={`border-t ${RULE}`}>
-          {sources.map((s) => (
-            <li key={s.url} className={`border-b ${RULE} px-5 py-3 sm:px-6`}>
-              <a
-                className="group flex items-start gap-2 text-[13.5px] leading-[1.55] text-foreground/80 hover:text-foreground"
-                href={s.url}
-                rel="nofollow noopener noreferrer"
-                target="_blank"
-              >
-                <span className="min-w-0">
-                  {s.headline}
-                  <span className="mt-0.5 block text-[12px] text-foreground/45">
-                    {s.label}
-                  </span>
-                </span>
-                <ArrowTopRightOnSquareIcon
-                  aria-hidden
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/30 group-hover:text-foreground/60"
-                />
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : null}
     </div>
   );
 }
