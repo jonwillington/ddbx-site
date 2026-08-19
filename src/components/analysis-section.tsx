@@ -7,8 +7,28 @@ import { RatingChecklistView } from "@/components/rating-checklist-view";
 /** Shared analysis block rendered inside every market's DetailBody. UK and
  *  US used to keep their own copies of this; the only divergence was that
  *  US wrapped it in a bordered card. The lighter UK look wins — the drawer
- *  is already a card. */
-export function AnalysisSection({ analysis }: { analysis: Analysis }) {
+ *  is already a card.
+ *
+ *  Also the analysis block on the per-filing pages when discretion is off, so
+ *  the two surfaces reading the same document read the same way. That page
+ *  built its own version first and the result was two designs for one thing:
+ *  flat rows against the drawer's collapsible tone-tinted plates, "The case
+ *  for" against "Why this is interesting". A reader who has used the app and
+ *  then lands on a filing page from search should recognise what they're
+ *  looking at.
+ *
+ *  `showChecklist` is the one thing that page turns off, and not for style:
+ *  it already devotes a numbered section to the six checks with the
+ *  methodology copy and what was found for this filing, which is strictly
+ *  more than the compact view here. Rendering both put the same six ticks on
+ *  the page twice. */
+export function AnalysisSection({
+  analysis,
+  showChecklist = true,
+}: {
+  analysis: Analysis;
+  showChecklist?: boolean;
+}) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -25,7 +45,7 @@ export function AnalysisSection({ analysis }: { analysis: Analysis }) {
         </p>
       )}
 
-      {analysis.checklist && (
+      {showChecklist && analysis.checklist && (
         <RatingChecklistView checklist={analysis.checklist} />
       )}
 

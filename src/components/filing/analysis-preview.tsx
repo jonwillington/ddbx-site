@@ -1,4 +1,12 @@
-/** What the analysis found, and where the rest of it is.
+/** What the analysis found — gated, or in full.
+ *
+ *  Two renderers behind one component, chosen by `DISCRETION_ENABLED`. With the
+ *  gate on, `AnalysisPreview` below: headlines as locks, counts for what stays
+ *  in the app. With it off, `OpenCase`, which hands the whole analysis to the
+ *  drawer's own `AnalysisSection` so the two surfaces agree.
+ *
+ *  Everything from here to `OpenCase` is the reasoning behind the GATED
+ *  version, which is the one with a design problem to solve.
  *
  *  ---------------------------------------------------------------------------
  *  What this replaced, and why
@@ -35,7 +43,7 @@
  *  click. The lock icon on every row is the affordance, and the gate quotes the
  *  line back before it asks.
  */
-import type { Dealing, EvidencePoint } from "@/types/ddbx";
+import type { Analysis, Dealing } from "@/types/ddbx";
 import type { AnalysisShape, EvidenceHeadline } from "../../../shared/filings";
 
 import { useState } from "react";
@@ -45,6 +53,7 @@ import {
 } from "@heroicons/react/20/solid";
 
 import { AnalysisUnlockModal } from "@/components/discretion/analysis-unlock-modal";
+import { AnalysisSection } from "@/components/analysis-section";
 import { StoreGlyph } from "@/components/store-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { DISCRETION_ENABLED } from "@/lib/discretion";
@@ -75,12 +84,21 @@ const SIDE = {
 
 /* ─── Discretion off ─────────────────────────────────────────────────────── */
 
-/** The same section with nothing withheld.
+/** The same section with nothing withheld — and rendered by the same
+ *  components the drawer uses.
  *
  *  When discretion mode is off the site is not selling the app, so this stops
- *  describing the analysis and prints it: the thesis, every finding with the
- *  sentence that explains it, and the risks weighed against them. Same order,
- *  same source links, no locks and no gate.
+ *  describing the analysis and prints it. The first version of this printed it
+ *  in a layout invented here: flat rows, "The case for" / "The case against",
+ *  a numbered thesis. That produced two designs for one document — the drawer
+ *  had collapsible tone-tinted evidence plates under "Why this is interesting"
+ *  / "Why it might not be", and someone who reads an analysis in the app and
+ *  then lands on a filing page from search met an unfamiliar object saying the
+ *  same thing. `AnalysisSection` is now shared by both.
+ *
+ *  The checklist is the one part suppressed, because the page already gives the
+ *  six checks a numbered section of their own with the methodology copy and
+ *  what was found for this filing. See `AnalysisSection`.
  *
  *  One asymmetry to know about: the pre-rendered HTML
  *  (`shared/filing-prerender.js`) always carries the gated shape, because it
@@ -89,149 +107,21 @@ const SIDE = {
  *  JS-executing crawler gets this version, nobody is served a different page by
  *  identity — but it does mean the open case only appears after hydration. */
 function OpenCase({
-  deal,
-  shape,
-  summary,
+  analysis,
+  dealId,
   marketId,
 }: {
-  deal: Dealing;
-  shape: AnalysisShape;
-  summary?: string | null;
+  analysis: Analysis;
+  dealId: string;
   marketId: string;
 }) {
   const platform = useDevicePlatform();
   const appHref = appHrefForMarket(marketId, platform);
-  const analysis = deal.analysis;
-  const thesis = analysis?.thesis_points ?? [];
-  const risks = analysis?.key_risks ?? [];
-  const rating = analysis?.rating ?? "significant";
-
-  const sides = (
-    [
-      ["for", analysis?.evidence_for],
-      ["against", analysis?.evidence_against],
-    ] as const
-  )
-    .map(([d, rows]) => ({
-      d,
-      rows: (rows ?? []).filter((e): e is EvidencePoint => !!e?.headline),
-    }))
-    .filter((s) => s.rows.length > 0);
 
   return (
     <div className={`mt-4 overflow-hidden ${CARD}`}>
       <div className="p-5 sm:p-6">
-        <p className={LABEL}>The written case</p>
-        <p className="mt-3 max-w-[26ch] text-balance text-[22px] font-semibold leading-[1.2] tracking-[-0.022em] text-foreground sm:text-[26px]">
-          The case for and against this buy, rated {rating}.
-        </p>
-
-        {summary ? (
-          <figure className="mt-5">
-            <figcaption className={LABEL}>In one line</figcaption>
-            <blockquote className="mt-2 border-l-2 border-brand-brown/30 pl-4 text-[15.5px] leading-[1.55] text-foreground/85 dark:border-brand-tan/30">
-              {summary}
-            </blockquote>
-          </figure>
-        ) : null}
-
-        {/* The thesis first: it is the spine the evidence hangs off, and
-            reading the findings before the argument they support inverts the
-            document. */}
-        {thesis.length > 0 ? (
-          <div className="mt-6">
-            <p className={LABEL}>The thesis</p>
-            <ol className="mt-2.5 space-y-3">
-              {thesis.map((point, i) => (
-                <li key={point} className="flex gap-3">
-                  <span className="mt-[3px] shrink-0 font-mono text-[11px] font-semibold tabular-nums text-foreground/35">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="text-[14.5px] leading-[1.55] text-foreground/85">
-                    {point}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        ) : null}
-
-        {sides.map(({ d, rows }) => (
-          <div key={d} className="mt-6">
-            <p className={`flex items-center gap-2.5 ${LABEL} ${SIDE[d].ink}`}>
-              <span
-                aria-hidden
-                className={`h-px w-6 shrink-0 ${SIDE[d].rule}`}
-              />
-              {SIDE[d].heading}
-            </p>
-
-            <ul className="mt-2.5 space-y-2.5">
-              {rows.map((e) => (
-                <li
-                  key={`${d}-${e.headline}`}
-                  className={`${BUTTON_RADIUS} bg-foreground/[0.035] px-4 py-3 dark:bg-white/[0.04]`}
-                >
-                  <p className="text-[14.5px] font-medium leading-[1.45] text-foreground">
-                    {e.headline}
-                  </p>
-                  {e.detail ? (
-                    <p className="mt-1.5 text-[14px] leading-[1.55] text-foreground/70">
-                      {e.detail}
-                    </p>
-                  ) : null}
-                  {e.source_label ? (
-                    <p className="mt-2 text-[12px] leading-[1.5] text-foreground/45">
-                      {e.source_url ? (
-                        <a
-                          className="inline-flex items-center gap-1 underline-offset-4 hover:text-foreground/70 hover:underline"
-                          href={e.source_url}
-                          rel="nofollow noopener noreferrer"
-                          target="_blank"
-                        >
-                          {e.source_label}
-                          <ArrowTopRightOnSquareIcon
-                            aria-hidden
-                            className="h-3 w-3 shrink-0"
-                          />
-                        </a>
-                      ) : (
-                        e.source_label
-                      )}
-                    </p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-
-        {risks.length > 0 ? (
-          <div className="mt-6">
-            <p className={LABEL}>The key risks</p>
-            <ul className="mt-2.5 space-y-2">
-              {risks.map((risk) => (
-                <li
-                  key={risk}
-                  className="flex gap-3 text-[14.5px] leading-[1.55] text-foreground/85"
-                >
-                  <span
-                    aria-hidden
-                    className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
-                  />
-                  {risk}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        <p className="mt-6 text-[13px] leading-[1.6] text-foreground/45">
-          {shape.confidence != null
-            ? `Written with ${shape.confidence}% stated confidence`
-            : "Written with a stated confidence"}
-          {shape.window ? `, over a ${shape.window} catalyst window` : ""}.
-        </p>
+        <AnalysisSection analysis={analysis} showChecklist={false} />
 
         {/* The ask, at read-out.
             The page still terminates with `AppCtaBand`, and two filled asks in
@@ -247,7 +137,7 @@ function OpenCase({
             have just had all of it. The honest remainder is timing and
             follow-up: the app reaches you the day a filing lands, which no
             page a reader has to remember to visit can do. */}
-        <div className="mt-6 border-t border-hairline pt-5 dark:border-border/60">
+        <div className="mt-8 border-t border-hairline pt-5 dark:border-border/60">
           <p className="text-[14.5px] font-semibold leading-[1.35] text-foreground">
             Get the next one the day it files.
           </p>
@@ -258,7 +148,7 @@ function OpenCase({
           <a
             className={`mt-4 inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3 text-sm font-semibold transition-colors`}
             data-ga-event="cta_open_case_download"
-            data-ga-label={`Open case download · ${deal.id}`}
+            data-ga-label={`Open case download · ${dealId}`}
             href={appHref}
             rel="noopener noreferrer"
             target="_blank"
@@ -295,14 +185,14 @@ export function AnalysisPreview({
 
   // Discretion off means off everywhere, including here. The gate below is the
   // product posture, not a property of the page — see src/lib/discretion.ts.
-  if (!DISCRETION_ENABLED) {
+  //
+  // `summary` is ignored on this path: `AnalysisSection` reads it off the
+  // analysis itself, and the share-route-only rule it encodes exists to keep
+  // the summary out of a GATED page. With the gate open there is nothing for
+  // it to protect.
+  if (!DISCRETION_ENABLED && deal.analysis) {
     return (
-      <OpenCase
-        deal={deal}
-        marketId={marketId}
-        shape={shape}
-        summary={summary}
-      />
+      <OpenCase analysis={deal.analysis} dealId={deal.id} marketId={marketId} />
     );
   }
 
