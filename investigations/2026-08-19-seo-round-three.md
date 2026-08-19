@@ -1,8 +1,9 @@
 # SEO round three: derived hubs, and the data-side items behind them
 
 **Date**: 2026-08-19
-**Status**: Tier 2 built, verified and pushed (§0.0). Tier 3 in progress —
-§3.1 next; §3.2 blocked on a business decision (§5)
+**Status**: Tier 2 built, verified and pushed (§0.0). Tier 3: §3.4 built
+(§3.4a); §3.1/§3.3 blocked on a dirty ddbx-data tree (§3.0); §3.2 blocked on a
+business decision (§5)
 **Scope**: `ddbx-site`, plus three optional `ddbx-data` follow-ups (§3)
 
 Follows `2026-07-26-seo-expansion-plan.md` (nine families) and
@@ -270,6 +271,22 @@ asserting a classification it has not shown.
 Cross-repo, so under the coordination rules in `~/CLAUDE.md`. All three are
 **additive**: no wire-format change, no consumer breakage.
 
+### 3.0 Why §3.1 and §3.3 did not get built
+
+`ddbx-data` is on `feat/fallers-feed` with **327 lines of uncommitted work**
+across five files — `worker/index.ts`, `worker/llm/prompts.ts`,
+`monthly-summary.ts`, `social-tweet-copy.ts` and 213 lines in
+`trade-og-image.ts`, plus an untracked `investigations/2026-08-04-uk-size-gate.md`.
+
+`npm run deploy` ships the working tree, not a commit, and there is no staging.
+Deploying to add one endpoint would push all of that to production at the same
+time. Worse, both §3.1 and §3.3 need `worker/index.ts`, which is one of the
+dirty files — so the change cannot even be committed separately from the WIP
+it would sit on top of.
+
+Nothing in `ddbx-data` was touched. Commit or stash that work and both items
+are short.
+
 ### 3.1 Bulk company stats → cap-band hubs
 
 One additive endpoint returning `(key, market_cap, currency)` per company, or
@@ -314,6 +331,35 @@ and glossary anchors would turn them into real pages. `market_cap` and
 
 Recommendation unchanged from 2026-08-02: **enrich, do not noindex.** Still not
 a call to take unilaterally.
+
+### 3.4a What was built instead — company context
+
+`shared/company-context.js`, rendered by both `src/pages/company.tsx` and
+`functions/company/[key].js`. Every thin page now carries an **In context**
+section: how the buying was spread over time, which sector the issuer's own
+filings put it in, where it ranks in that sector's disclosed buying, six peers,
+and links into the boards. All of it computed from the twelve-month window the
+sector hubs already read, so it needed no `ddbx-data` change.
+
+The section is dropped wholesale when nothing is computable, and the cadence
+line is omitted for a single filing rather than printing "1 purchase over 0
+days".
+
+Three things the build had to get right, each caught by running it:
+
+- **Peers are the issuers NEAREST in the ranking, not the sector's biggest.**
+  Top-six peers would have stamped one identical list across all 155 UK
+  industrials pages — the enrichment meant to fix thin content reproducing it.
+  Neighbours give 155 issuers 155 distinct lists, verified.
+- **A sentence that claimed a reason it could not know.** The unranked case
+  read "peers have seen disclosed buying more recently", which put Republic
+  Services under that sentence on a page listing 39 purchases: all 39 are its
+  10% holder, excluded by `isEligibleBuy` but still counted in the API summary
+  the tiles render. Now it states the sector fact and claims no link.
+- **US pages ranked nothing and listed themselves as a peer.** Rows group by
+  `issuer_cik`, the company page is keyed on the ticker, so the self-match never
+  fired. Fixed by matching both: US went from 0 ranked to 120 of 130, and
+  self-references from many to zero across both markets.
 
 ### 3.5 Index membership — specced, deprioritised
 

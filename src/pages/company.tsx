@@ -6,6 +6,14 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 import { filingPath } from "../../shared/filings.js";
+import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
+import { sectorPath, windowStart } from "../../shared/sectors.js";
+import {
+  cadence,
+  cadenceSentence,
+  sectorStanding,
+  standingSentence,
+} from "../../shared/company-context.js";
 
 import { BrokerVisitLink } from "@/components/brokers/broker-ui";
 import {
@@ -28,9 +36,14 @@ import { Skeleton } from "@/components/skeleton";
 import { StoreButtons } from "@/components/store-buttons";
 import { BUTTON_RADIUS } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
-import { api } from "@/lib/api";
+import { api, API_BASE } from "@/lib/api";
 import { isAffiliateLink } from "@/lib/brokers";
-import { cleanCompanyName, displayTicker, slugToKey } from "@/lib/company";
+import {
+  cleanCompanyName,
+  companyPath,
+  displayTicker,
+  slugToKey,
+} from "@/lib/company";
 import { localeFor, moneyShort, SYMBOL } from "@/lib/company-format";
 import { marketForPath } from "@/lib/markets/registry";
 
@@ -239,6 +252,45 @@ function companyFaq(name: string, market: string) {
 }
 
 /** Heading-left / content-right section — the review's one layout unit. */
+/** The twelve-month window the sector hubs and the boards read, used here to
+ *  place this issuer among its sector peers.
+ *
+ *  A SECOND fetch on the company page, which needs justifying. It is the same
+ *  edge-cached object every sector hub and board already pulls, so it costs one
+ *  cached response shared across all 368 company pages rather than one per
+ *  page. And it is what makes a single-filing page say something: the context
+ *  section is the answer to the thin-content exposure both previous plans
+ *  logged and neither resolved.
+ *
+ *  Failure is silent by design — `null` drops the section. A company page must
+ *  not break because a context block could not load. */
+function useSectorWindow(market: "UK" | "US") {
+  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(null);
+
+  useEffect(() => {
+    let live = true;
+
+    fetchDealingsWindow({
+      apiBase: API_BASE,
+      market,
+      since: windowStart(new Date()),
+      until: null,
+    })
+      .then((r: { dealings: Array<Dealing | UsDealing> }) => {
+        if (live) setRows(r.dealings);
+      })
+      .catch(() => {
+        if (live) setRows([]);
+      });
+
+    return () => {
+      live = false;
+    };
+  }, [market]);
+
+  return rows;
+}
+
 function Section({
   id,
   label,
@@ -290,6 +342,7 @@ export default function CompanyPage() {
   const priceSeries = useCompanyPriceBars(
     slug ? slugToKey(slug, market) : null,
   );
+  const sectorWindow = useSectorWindow(market);
 
   useEffect(() => {
     if (!slug) return;
@@ -358,6 +411,10 @@ export default function CompanyPage() {
   const name = cleanCompanyName(data.company);
   const ticker = displayTicker(data.key);
   const { summary } = data;
+  // Both null until the window lands, and both stay null when there is nothing
+  // computable — the section is dropped rather than rendered empty.
+  const standing = sectorStanding(data.deals, sectorWindow, market, data.key);
+  const cadenceLine = cadenceSentence(cadence(summary), market);
   const noun = market === "UK" ? "director dealings" : "insider trading";
   const people =
     market === "UK"
@@ -541,6 +598,88 @@ export default function CompanyPage() {
                 className="my-8 lg:hidden"
                 company={name}
               />
+
+              {/* CONTEXT — the section that makes a one-filing page a page.
+                  Placed straight after the record, because it exists to make
+                  that record legible: a single purchase means little until you
+                  know it happened in a sector where forty other companies also
+                  saw buying, and which of them are nearest. Every field is
+                  nullable and the block is dropped wholesale when there is
+                  nothing computable, rather than printing a placeholder. */}
+              {(standing || cadenceLine) && (
+                <Section
+                  aside="Measured over the last twelve months of disclosed buying, on the same window the sector pages use."
+                  id="context"
+                  label="In context"
+                >
+                  {cadenceLine && (
+                    <p className={`max-w-[42em] ${C.prose}`}>{cadenceLine}</p>
+                  )}
+                  {standing && (
+                    <p
+                      className={`max-w-[42em] ${C.prose} ${cadenceLine ? "mt-3" : ""}`}
+                    >
+                      {name} is classed as{" "}
+                      <Link
+                        className="underline underline-offset-4"
+                        to={sectorPath(standing.sector.slug)}
+                      >
+                        {standing.sector.label.toLowerCase()}
+                      </Link>
+                      . {standingSentence(standing, market)}
+                    </p>
+                  )}
+                  {standing && standing.peers.length > 0 && (
+                    <>
+                      <p className={`mt-5 ${C.note}`}>
+                        {standing.rank == null
+                          ? "The most active companies in the sector"
+                          : "Companies with a comparable amount of disclosed buying"}
+                      </p>
+                      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
+                        {standing.peers.map((peer) => (
+                          <li key={peer.key}>
+                            <Link
+                              className="text-[13.5px] text-foreground/75 underline-offset-4 hover:underline"
+                              to={companyPath(peer.ticker)}
+                            >
+                              {cleanCompanyName(peer.company) ||
+                                displayTicker(peer.ticker)}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                  {/* Onward into the boards this issuer's filings feed. Real
+                      internal links rather than a nav block: the sitemap was
+                      doing this work and internal links should be. */}
+                  <p className={`mt-5 ${C.note}`}>
+                    See also{" "}
+                    <Link
+                      className="underline underline-offset-4"
+                      to="/biggest-buys"
+                    >
+                      the biggest buys
+                    </Link>
+                    ,{" "}
+                    <Link
+                      className="underline underline-offset-4"
+                      to="/cluster-buys"
+                    >
+                      cluster buying
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      className="underline underline-offset-4"
+                      to="/most-active-companies"
+                    >
+                      the most-active companies
+                    </Link>
+                    .
+                  </p>
+                </Section>
+              )}
 
               {data.stats?.description && (
                 <Section id="about" label={`About ${name}`}>

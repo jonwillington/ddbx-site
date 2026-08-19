@@ -32,6 +32,14 @@ import {
   renderInto,
 } from "../../shared/prerender.js";
 import { brandTitle } from "../../shared/seo.js";
+import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
+import { sectorPath, windowStart } from "../../shared/sectors.js";
+import {
+  cadence,
+  cadenceSentence,
+  sectorStanding,
+  standingSentence,
+} from "../../shared/company-context.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -222,7 +230,59 @@ function faq(name, market) {
 
 /** Semantic pre-render. No classes — React owns the real presentation; these
  *  inline styles only keep the sub-second pre-hydration view legible. */
-function prerender(d) {
+/** Sector standing, peers and cadence.
+ *
+ *  The same facts src/pages/company.tsx renders, from the same module, because
+ *  a crawler reading a different peer list from the visitor is a page arguing
+ *  with itself. Returns "" whenever there is nothing computable — the section
+ *  is dropped rather than printed empty, which is the rule the rest of the
+ *  static pages follow. */
+function contextBlock(d, standing, name) {
+  const { market } = d;
+  const cadenceLine = cadenceSentence(cadence(d.summary), market);
+
+  if (!standing && !cadenceLine) return "";
+
+  const marketHome = market === "US" ? "https://ddbx.us" : "https://ddbx.uk";
+  const parts = [];
+
+  if (cadenceLine) {
+    parts.push(
+      `<p style="font-size:14px;line-height:1.65;color:#4a4034;max-width:62ch">${esc(cadenceLine)}</p>`,
+    );
+  }
+
+  if (standing) {
+    parts.push(
+      `<p style="font-size:14px;line-height:1.65;color:#4a4034;max-width:62ch">${esc(name)} is classed as <a href="${esc(marketHome)}${esc(sectorPath(standing.sector.slug))}">${esc(standing.sector.label.toLowerCase())}</a>. ${esc(standingSentence(standing, market))}</p>`,
+    );
+
+    if (standing.peers.length > 0) {
+      const label =
+        standing.rank == null
+          ? "The most active companies in the sector"
+          : "Companies with a comparable amount of disclosed buying";
+      const links = standing.peers
+        .map(
+          (peer) =>
+            `<a href="${esc(marketHome)}/company/${esc(displayTicker(peer.ticker).toLowerCase())}">${esc(cleanCompany(peer.company) || displayTicker(peer.ticker))}</a>`,
+        )
+        .join(" · ");
+
+      parts.push(
+        `<p style="font-size:13px;color:#6b6154;margin-top:14px">${esc(label)}: ${links}</p>`,
+      );
+    }
+  }
+
+  parts.push(
+    `<p style="font-size:13px;color:#6b6154;margin-top:14px">See also <a href="${esc(marketHome)}/biggest-buys">the biggest buys</a>, <a href="${esc(marketHome)}/cluster-buys">cluster buying</a> and <a href="${esc(marketHome)}/most-active-companies">the most-active companies</a>.</p>`,
+  );
+
+  return `<h2 style="font-size:15px;margin:32px 0 10px">In context</h2>${parts.join("")}`;
+}
+
+function prerender(d, standing) {
   const { market } = d;
   const name = cleanCompany(d.company);
   const ticker = displayTicker(d.key);
@@ -262,6 +322,7 @@ function prerender(d) {
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(leadSentence(d))}</p>
   <h2 style="font-size:15px;margin:32px 0 10px">${market === "UK" ? "Director" : "Insider"} buys</h2>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${rows}</tbody></table>
+  ${contextBlock(d, standing, name)}
   ${d.stats?.description ? `<h2 style="font-size:15px;margin:32px 0 10px">About ${esc(name)}</h2><p style="font-size:14px;line-height:1.65;color:#4a4034">${esc(d.stats.description)}</p>` : ""}
   ${news ? `<h2 style="font-size:15px;margin:32px 0 10px">Recent news</h2><ul style="font-size:14px;line-height:1.8">${news}</ul>` : ""}
   <h2 style="font-size:15px;margin:32px 0 10px">Common questions</h2>
@@ -289,6 +350,29 @@ export async function onRequestGet(context) {
   // out of the index rather than leaving a bare shell to be crawled.
   if (!data) return noindex(shell);
 
+  // The twelve-month window, for the context block. Edge-cached under the same
+  // key every sector hub and board uses, so across 368 company pages this is
+  // one cached object rather than 368 fetches. Failure costs the section, not
+  // the page — hence the catch rather than a guard.
+  let windowDeals = null;
+
+  try {
+    ({ dealings: windowDeals } = await fetchDealingsWindow({
+      apiBase: API_BASE,
+      market,
+      since: windowStart(new Date()),
+      until: null,
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 1800, "400-499": 60, "500-599": 0 },
+      },
+    }));
+  } catch {
+    windowDeals = null;
+  }
+
+  const standing = sectorStanding(data.deals, windowDeals, market, data.key);
+
   const name = cleanCompany(data.company);
   const ticker = displayTicker(data.key);
   const canonical = `https://${host}/company/${encodeURIComponent(String(params.key ?? "").toLowerCase())}`;
@@ -306,6 +390,6 @@ export async function onRequestGet(context) {
       { name: "Companies", item: `https://${host}/companies` },
       { name, item: canonical },
     ],
-    body: prerender(data),
+    body: prerender(data, standing),
   });
 }
