@@ -75,18 +75,34 @@ export function footerGroups(pathname: string, hostname?: string): NavGroup[] {
   }));
 
   // Research links stay on the reader's own market — someone on ddbx.us wants
-  // US companies, not UK ones.
+  // US companies, not UK ones — EXCEPT on ddbx.eu.
+  //
+  // Every path in this group is in UK_US_ONLY_PREFIXES (shared/seo.js): SE and
+  // NL carry no company pages, no sector rollups and no value field to rank, so
+  // the middleware 301s all of them to ddbx.uk. The footer was linking them to
+  // `home` regardless, which meant four links on ddbx.eu each advertised a URL
+  // that immediately redirects — precisely what this module's header says it
+  // exists to avoid. Same UK pin the "How it works" link below already applies,
+  // and for the same reason.
+  const researchHref = (path: string) =>
+    home.id === "se" || home.id === "nl"
+      ? ukHref(path, hostname)
+      : marketHref(home, path, hostname);
+
+  // Ordered hubs-then-boards: the four ways into the whole corpus, then the
+  // four rankings over it, then the archive. Longer than it was, and still
+  // navigation rather than a dump — this is the site's primary content axis and
+  // every entry is a hub or a standing ranking, not a leaf.
   const research: NavLink[] = [
-    {
-      label: "All companies",
-      href: marketHref(home, "/companies", hostname),
-    },
-    { label: "By sector", href: marketHref(home, "/sectors", hostname) },
-    {
-      label: "Biggest buys",
-      href: marketHref(home, "/biggest-buys", hostname),
-    },
-    { label: "Monthly reports", href: marketHref(home, "/reports", hostname) },
+    { label: "All companies", href: researchHref("/companies") },
+    { label: "By sector", href: researchHref("/sectors") },
+    { label: "By size", href: researchHref("/market-cap") },
+    { label: "By role", href: researchHref("/roles") },
+    { label: "Biggest buys", href: researchHref("/biggest-buys") },
+    { label: "Best performing", href: researchHref("/best-performing-buys") },
+    { label: "Cluster buying", href: researchHref("/cluster-buys") },
+    { label: "Most active", href: researchHref("/most-active-companies") },
+    { label: "Monthly reports", href: researchHref("/reports") },
   ];
 
   const platforms: NavLink[] = [
