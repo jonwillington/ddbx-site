@@ -123,11 +123,19 @@ app remains the canonical surface. One flag governs every gating surface
 **Toggle precedence** (highest wins):
 1. URL: `?discretion=on|off|reset` — `reset` clears the override, the rest stick via localStorage. Lets you flip the live site from any browser without a redeploy.
 2. localStorage: `ddbx.discretion.override` (written by the URL param).
-3. Env: `VITE_DISCRETION_MODE` in `.env.production` (currently `on`).
+3. Env: `VITE_DISCRETION_MODE` in `.env.production`.
 
-Default is `on`, and the production build ships with the env set to `on` —
-so the gated teaser is the default experience for every visitor. Set the
-env to `off` (or use `?discretion=off` per-browser) to get the full UX.
+The code default is `on`, but **production currently ships `off`** — set that
+way deliberately on 2026-08-19 for a trial period (commit `22daf82`; revert
+that commit alone to put the gate back). So the full unblurred UX is what
+every visitor gets today. A browser that ever loaded `?discretion=on` still
+has the gate pinned in localStorage until `?discretion=reset`, which is the
+usual explanation for "the gate is still there".
+
+Not every surface reads the flag automatically — the per-filing pages were
+gated unconditionally until `AnalysisPreview` was wired up. When adding a
+gating surface, key it on `DISCRETION_ENABLED` and check the others with
+`rg DISCRETION_ENABLED src`.
 
 - **Drawer cap**: the **first** deal opened today shows full analysis; subsequent drawers render dummy text (`src/components/discretion/dummy-analysis.ts`) under a CSS blur with a CTA overlay. Position card and price chart stay unblurred.
 - **Performance contributors**: list past the first few names blurs to nudge installs.
