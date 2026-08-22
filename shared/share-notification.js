@@ -17,7 +17,8 @@
 // produced. A notification that mentions triage or a model is describing the
 // system rather than the trade.
 
-import { cleanName, money } from "./filings.js";
+import { cleanName } from "./filings.js";
+import { filingFamily } from "./filing-family.js";
 
 /** Ratings, in the order a reader should care. Legacy aliases included: rows
  *  analysed before the rename still carry the old vocabulary and a share link
@@ -71,20 +72,29 @@ const bare = (t) => String(t ?? "").replace(/\.L$/i, "");
  *  both the cluster and the check count ran to four. The cluster wins where
  *  there is one: breadth is the rarer fact, and the check count is a click
  *  away on the same page. */
-export function shareNotification(d) {
+export function shareNotification(d, market = "UK") {
   if (!d) return null;
+  // The formatter family owns everything market-dependent here: which field
+  // holds the consideration, which currency describes it, and where the
+  // insider's name and role live (`director` on a UK row, `reporter` on a US
+  // one). It also pins the currency rather than reading `d.currency` — on a
+  // UK-pipeline row `value_gbp` is the canonical GBP-equivalent (FX-converted
+  // at the trade-date rate) while `currency` is the currency of the ORIGINAL
+  // RNS, and passing the second to describe the first prints "$108k" for a
+  // £107,818 buy.
+  const fam = filingFamily(market);
 
   const name = cleanName(d.company) || bare(d.ticker) || "A company";
   const ticker = bare(d.ticker);
-  const insider = d.director?.name || "An insider";
-  const role = d.director?.role ? `, ${d.director.role},` : "";
-  // GBP, always, and deliberately not `d.currency`. On a UK-pipeline row
-  // `value_gbp` is the canonical GBP-equivalent (FX-converted at the trade-date
-  // rate) while `currency` is the currency of the ORIGINAL RNS — a dollar
-  // reporter cross-listed in London files in USD. Passing the second to
-  // describe the first prints "$108k" for a £107,818 buy.
-  const amount = money(d.value_gbp);
-  const verb = d.tx_type === "sell" ? "sold" : "bought";
+  const who = fam.insider(d);
+  const insider = who.name || "An insider";
+  const role = who.role ? `, ${who.role},` : "";
+  const amount = fam.money(fam.value(d));
+  // UK rows carry `tx_type`; US rows say the same thing with
+  // `acquired_disposed`, since a Form 4 "D" can be a sale, a gift or a
+  // disposition to the issuer.
+  const verb =
+    d.tx_type === "sell" || d.acquired_disposed === "D" ? "sold" : "bought";
 
   const sentences = [
     `${insider}${role} ${verb} ${amount} on ${shortDate(d.trade_date)}.`,
@@ -113,8 +123,8 @@ export function shareNotification(d) {
 }
 
 /** The same notification as one flat line, for an og:description. */
-export function shareNotificationLine(d) {
-  const n = shareNotification(d);
+export function shareNotificationLine(d, market = "UK") {
+  const n = shareNotification(d, market);
 
   return n ? `${n.lead}. ${n.body}` : null;
 }

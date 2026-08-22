@@ -31,7 +31,7 @@
  *  it for one audience and not the other — breaks the rule shared/filings.js
  *  sets out.
  */
-import type { Dealing, RatingChecklist } from "@/types/ddbx";
+import type { Dealing, RatingChecklist, UsDealing } from "@/types/ddbx";
 
 import { Link } from "react-router-dom";
 import {
@@ -50,13 +50,11 @@ import {
 
 import { CHECKS } from "../../../shared/methodology.js";
 import {
-  checkContext,
   disclosureLagDays,
-  money,
-  sharePrice,
   shares as fmtShares,
   signedPct,
 } from "../../../shared/filings.js";
+import { filingFamily } from "../../../shared/filing-family.js";
 
 import { MeterBar } from "@/components/seo/meter-bar";
 
@@ -109,7 +107,14 @@ const LABEL =
  *  The outcome half has three states and says which it is in words, because
  *  "no return yet" and "we hold no mark" are different, and a dash for both
  *  tells the reader neither. */
-export function VerdictBand({ deal }: { deal: Dealing }) {
+export function VerdictBand({
+  deal,
+  market = "UK",
+}: {
+  deal: Dealing | UsDealing;
+  market?: string;
+}) {
+  const fam = filingFamily(market);
   const lp = deal.live_performance;
   const lag = disclosureLagDays(deal);
   const ret = lp?.return_pct_disclosed ?? null;
@@ -124,10 +129,11 @@ export function VerdictBand({ deal }: { deal: Dealing }) {
       <div className="p-5 sm:p-6">
         <p className={LABEL}>The purchase</p>
         <p className="mt-3 text-[36px] font-semibold leading-none tracking-[-0.028em] tabular-nums text-foreground sm:text-[44px]">
-          {money(deal.value_gbp)}
+          {fam.money(fam.value(deal))}
         </p>
         <p className="mt-3 text-[13.5px] leading-[1.6] text-foreground/60">
-          {fmtShares(deal.shares)} shares at {sharePrice(deal)}
+          {fmtShares(deal.shares)} shares
+          {fam.sharePrice(deal) ? ` at ${fam.sharePrice(deal)}` : ""}
           {lag == null
             ? ""
             : lag === 0
@@ -199,11 +205,13 @@ export function VerdictBand({ deal }: { deal: Dealing }) {
 export function RatingChecks({
   checklist,
   deal,
+  market = "UK",
 }: {
   checklist: RatingChecklist;
-  deal: Dealing;
+  deal: Dealing | UsDealing;
+  market?: string;
 }) {
-  const ctx = checkContext(deal);
+  const ctx = filingFamily(market).checkContext(deal);
   const met = CHECKS.filter((c) => checklist[c.key]).length;
 
   return (

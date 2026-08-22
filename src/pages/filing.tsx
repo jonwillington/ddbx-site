@@ -55,8 +55,32 @@
  *  for why, and why it is an attributed excerpt rather than the standfirst.
  *  The share route canonicalises to /dealings/{id}, so the two are never
  *  competing documents.
+ *
+ *  ---------------------------------------------------------------------------
+ *  Two markets, one page: `market`
+ *  ---------------------------------------------------------------------------
+ *
+ *  Added 2026-08-22. /us/dealings/{id} and /us/t/{id} render this same
+ *  component against a `UsDealing`. The US half existed as data long before it
+ *  had a page — the wire type already carried `analysis` in the identical shape
+ *  UK rows use, precisely so "the same renderers apply on the frontend" — but
+ *  /us/t/{id} was a bare redirect to the App Store, so a shared US trade had
+ *  nowhere to land and the reply-radar work had no per-trade link to send
+ *  anyone to.
+ *
+ *  Everything market-dependent goes through `filingFamily(market)`
+ *  (shared/filing-family.js): which field holds the consideration, how a share
+ *  price is written, where the insider's name and role live, what to call the
+ *  transaction. Everything else is market-blind because the wire shapes are
+ *  genuinely the same on both sides — `analysis`, `cluster`, `buy_style` and
+ *  `live_performance` are one contract, so `analysisShape`, `evidenceHeadlines`,
+ *  `clusterSentence` and the rest are called directly on either row type.
+ *
+ *  Do NOT add `market === "us"` branches in this file. If a new fact differs by
+ *  market it belongs in the family, where adding it forces both implementations
+ *  at once — which is what stops a US page quietly rendering a UK sentence.
  */
-import type { Dealing } from "@/types/ddbx";
+import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -68,12 +92,10 @@ import {
   cleanName,
   disclosureLagDays,
   FILING_NOTICE,
-  filingLeadSentence,
   filingMeetsBar,
-  money,
-  sharePrice,
   shares,
 } from "../../shared/filings.js";
+import { filingFamily } from "../../shared/filing-family.js";
 import { sectorByLabel, sectorPath } from "../../shared/sectors.js";
 
 import {
@@ -99,6 +121,7 @@ import { TickerPill } from "@/components/ticker-pill";
 import { api } from "@/lib/api";
 import { companyPath, displayTicker } from "@/lib/company";
 import { UkMarket } from "@/lib/markets/uk";
+import { UsMarket } from "@/lib/markets/us";
 
 const RULE = "border-hairline dark:border-separator";
 const R = {
@@ -106,9 +129,17 @@ const R = {
   label: "text-[12px] text-foreground/45",
 };
 
-export default function FilingPage({ share = false }: { share?: boolean }) {
+export default function FilingPage({
+  share = false,
+  market = "UK",
+}: {
+  share?: boolean;
+  market?: "UK" | "US";
+}) {
   const { id } = useParams<{ id: string }>();
-  const [deal, setDeal] = useState<Dealing | null>(null);
+  const fam = filingFamily(market);
+  const us = market === "US";
+  const [deal, setDeal] = useState<Dealing | UsDealing | null>(null);
   // "missing" and "failed" are different pages: an outage must not render as
   // "this filing does not exist".
   const [status, setStatus] = useState<"loading" | "ok" | "missing" | "failed">(
@@ -125,8 +156,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
     let live = true;
 
     setStatus("loading");
-    api
-      .dealing(id)
+    (us ? api.usDealing(id) : api.dealing(id))
       .then((d) => {
         if (!live) return;
         setDeal(d);
@@ -140,7 +170,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
     return () => {
       live = false;
     };
-  }, [id]);
+  }, [id, us]);
 
   const evidence = useMemo(() => (deal ? evidenceHeadlines(deal) : []), [deal]);
   const shape = useMemo(() => (deal ? analysisShape(deal) : null), [deal]);
@@ -172,7 +202,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
   if (status === "missing" || status === "failed") {
     return (
       <DefaultLayout drawerRight>
-        <SeoRail marketId="uk" placement="filing_rail" />
+        <SeoRail marketId={fam.marketId} placement="filing_rail" />
         <SeoPageShell
           crumbs={[{ label: "Filings" }, { label: "Not found" }]}
           eyebrow="Disclosure"
@@ -217,6 +247,9 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
     ? sectorByLabel(deal.sector_normalized)
     : null;
   const analysed = filingMeetsBar(deal);
+  // Only read inside the `deal ?` block below, but computed alongside the other
+  // derived values so the record grid stays a flat list of rows.
+  const insider = deal ? fam.insider(deal) : { name: "", role: null };
   const name = deal
     ? cleanName(deal.company) || displayTicker(deal.ticker)
     : "Filing";
@@ -227,7 +260,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
 
   return (
     <DefaultLayout drawerRight>
-      <SeoRail marketId="uk" placement="filing_rail" />
+      <SeoRail marketId={fam.marketId} placement="filing_rail" />
       <SeoPageShell
         crumbs={[
           { label: "Companies", to: "/companies" },
@@ -238,7 +271,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
           body: "This page is one filing. The app is the running feed: every disclosure the day it files, already rated, with the written case attached and an alert when the price moves after a buy you’re following.",
           gaLabel: `${share ? "Share" : "Filing"} · ${id ?? ""}`,
           headline: "Every filing, the day it files.",
-          marketId: "uk",
+          marketId: fam.marketId,
           screenshotSlot: "analysis",
         }}
         eyebrow={share ? "Shared filing" : "Disclosure"}
@@ -246,7 +279,11 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
         // one job above the fold. Only once the row has arrived: an empty
         // card slot that later pushes the whole document down is the loading
         // behaviour the shell exists to prevent.
-        hero={share && deal ? <ShareArrivalCard deal={deal} /> : undefined}
+        hero={
+          share && deal ? (
+            <ShareArrivalCard deal={deal} marketId={fam.marketId} />
+          ) : undefined
+        }
         loading={status === "loading"}
         skeleton={
           <>
@@ -261,7 +298,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
         // 2026-08-06"), 200px apart, and the card says it better. The share
         // count and the disclosure lag it also carried are both in the verdict
         // band and the record grid below.
-        standfirst={share || !deal ? undefined : filingLeadSentence(deal)}
+        standfirst={share || !deal ? undefined : fam.leadSentence(deal)}
         standfirstSize="lede"
         title={
           deal ? (
@@ -300,7 +337,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                 landed on and what it has to do with the app; someone who
                 arrived at /dealings/{id} from a search result came for the
                 filing and gets it first. */}
-            <VerdictBand deal={deal} />
+            <VerdictBand deal={deal} market={market} />
 
             {/* The chart carries its own period switcher and crosshair, so it
                 is the one genuinely interactive object on an otherwise static
@@ -316,8 +353,16 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                 <MiniPriceChart
                   detailed
                   disclosedDate={deal.disclosed_date}
-                  entryPrice={deal.price_pence}
-                  fmt={UkMarket.priceFormat}
+                  // UK prices are pence, US are dollars — each market's own
+                  // unit, matched to the formatter on the next line. Reading
+                  // the wrong one draws the entry level two orders of
+                  // magnitude off the series.
+                  entryPrice={
+                    (us
+                      ? (deal as UsDealing).price
+                      : (deal as Dealing).price_pence) ?? 0
+                  }
+                  fmt={us ? UsMarket.priceFormat : UkMarket.priceFormat}
                   muted={deal.is_open_market_buy === false}
                   tickerForApi={deal.ticker}
                   tickerForDisplay={displayTicker(deal.ticker)}
@@ -346,6 +391,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                 <ClusterPanel
                   deal={deal}
                   fallback={clusterSentence(deal) ?? ""}
+                  market={market}
                 />
                 <ContextCards items={context} />
               </SeoSection>
@@ -371,7 +417,11 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                 title={`Why this was rated ${deal.analysis.rating}`}
                 total={total}
               >
-                <RatingChecks checklist={deal.analysis.checklist} deal={deal} />
+                <RatingChecks
+                  checklist={deal.analysis.checklist}
+                  deal={deal}
+                  market={market}
+                />
               </SeoSection>
             ) : null}
 
@@ -389,6 +439,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                 <AnalysisPreview
                   deal={deal}
                   evidence={evidence}
+                  marketId={fam.marketId}
                   shape={shape}
                   // The summary is published on the share route only — unless
                   // discretion is off, in which case nothing here is withheld.
@@ -420,8 +471,8 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
               <dl
                 className={`mt-4 grid gap-x-8 border-t ${RULE} sm:grid-cols-2`}
               >
-                <Row label="Insider" value={deal.director.name} />
-                <Row label="Role" value={deal.director.role} />
+                <Row label="Insider" value={insider.name} />
+                <Row label="Role" value={insider.role ?? "—"} />
                 <Row
                   label="Company"
                   value={
@@ -434,11 +485,22 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                   }
                 />
                 <Row label="Shares" value={shares(deal.shares)} />
-                <Row label="Price paid" value={sharePrice(deal)} />
-                {/* GBP, not `deal.currency` — see the note on `sharePrice` in
-                    shared/filings.js. `value_gbp` is the FX-converted canonical
-                    figure; `currency` describes the original RNS. */}
-                <Row label="Consideration" value={money(deal.value_gbp)} />
+                {/* A US leg can be footnote-priced rather than stating a price
+                    (distributions, complex transactions), where a UK row always
+                    carries one. An em dash is the honest cell; a fabricated
+                    $0.00 is not. */}
+                <Row label="Price paid" value={fam.sharePrice(deal) ?? "—"} />
+                {/* Currency is pinned by the family, never read from
+                    `deal.currency` — see the note on `sharePrice` in
+                    shared/filings.js. On a UK row `value_gbp` is the
+                    FX-converted canonical figure while `currency` describes the
+                    original RNS. */}
+                <Row
+                  label="Consideration"
+                  value={
+                    fam.value(deal) == null ? "—" : fam.money(fam.value(deal))
+                  }
+                />
                 <Row label="Traded" value={deal.trade_date} />
                 <Row label="Disclosed" value={deal.disclosed_date} />
                 <Row
@@ -451,16 +513,7 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                         : `${lag} ${lag === 1 ? "day" : "days"}`
                   }
                 />
-                <Row
-                  label="Transaction"
-                  value={
-                    deal.is_open_market_buy
-                      ? "Open-market purchase"
-                      : deal.tx_type === "buy"
-                        ? "Purchase"
-                        : "Disposal"
-                  }
-                />
+                <Row label="Transaction" value={fam.transactionLabel(deal)} />
               </dl>
             </SeoSection>
 
@@ -523,14 +576,12 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                     {
                       to: "/",
                       title: "Today’s disclosures",
-                      description:
-                        "The live feed: everything UK insiders have filed, newest first.",
+                      description: `The live feed: everything ${us ? "US" : "UK"} insiders have filed, newest first.`,
                     },
                     {
                       to: "/companies",
                       title: "Every company",
-                      description:
-                        "Each UK issuer with disclosed insider buying, and the filings behind it.",
+                      description: `Each ${us ? "US" : "UK"} issuer with disclosed insider buying, and the filings behind it.`,
                     },
                     {
                       to: "/weekly",
@@ -553,14 +604,14 @@ export default function FilingPage({ share = false }: { share?: boolean }) {
                     {
                       to: "/compare",
                       title: "Where to actually buy shares",
-                      description:
-                        "UK trading platforms compared on cost, with the fees stated rather than summarised.",
+                      description: `${us ? "US" : "UK"} trading platforms compared on cost, with the fees stated rather than summarised.`,
                     },
                     {
                       to: "/learn",
                       title: "The vocabulary",
-                      description:
-                        "PDMR, RNS, closed periods: what the terms in a filing mean, in plain words.",
+                      description: us
+                        ? "Form 4, 10b5-1, Section 16: what the terms in a filing mean, in plain words."
+                        : "PDMR, RNS, closed periods: what the terms in a filing mean, in plain words.",
                     },
                     {
                       to: "/api",

@@ -19,19 +19,16 @@
 import {
   analysisShape,
   awaitingOutcome,
-  checkContext,
   cleanName,
   clusterSentence,
   disclosureLagDays,
   FILING_NOTICE,
   evidenceHeadlines,
-  filingLeadSentence,
-  money,
   outcomeSentence,
-  sharePrice,
   shares,
   styleSentence,
 } from "./filings.js";
+import { filingFamily } from "./filing-family.js";
 import { CHECKS } from "./methodology.js";
 import { sectorByLabel, sectorPath } from "./sectors.js";
 import { esc, page } from "./prerender.js";
@@ -67,7 +64,11 @@ function side(evidence, direction, heading) {
     .join("")}</ul>`;
 }
 
-export function filingPrerender(d, host) {
+export function filingPrerender(d, host, market = "UK") {
+  // Everything market-dependent goes through the family, so the US pre-render
+  // and the US React page state the same facts in the same words. See
+  // shared/filing-family.js.
+  const fam = filingFamily(market);
   const name = cleanName(d.company) || displayTicker(d.ticker);
   const lag = disclosureLagDays(d);
   const sector = d.sector_normalized ? sectorByLabel(d.sector_normalized) : null;
@@ -79,7 +80,7 @@ export function filingPrerender(d, host) {
   // question, the verdict, and — where it passed — what we found for THIS
   // filing. Parity is not optional here: a crawler reading six bare labels
   // while a visitor reads six explanations is two different pages.
-  const ctx = checkContext(d);
+  const ctx = fam.checkContext(d);
   const checklist = d.analysis?.checklist
     ? CHECKS.map((c) => {
         const ok = !!d.analysis.checklist[c.key];
@@ -102,13 +103,13 @@ export function filingPrerender(d, host) {
       "We don’t hold a price mark for this filing yet, so there is no return to report.");
 
   return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(name)} — insider purchase disclosed ${esc(d.disclosed_date)}</h1>
-  <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(filingLeadSentence(d))}</p>
-  <p style="font-size:14px;color:#6b6154">${esc(money(d.value_gbp))} · ${esc(shares(d.shares))} shares at ${esc(sharePrice(d))}${lag == null ? "" : ` · disclosed ${lag === 0 ? "the same day" : `${lag} ${lag === 1 ? "day" : "days"} later`}`}${d.analysis?.rating ? ` · rated ${esc(d.analysis.rating)}` : ""}</p>
+  <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(fam.leadSentence(d))}</p>
+  <p style="font-size:14px;color:#6b6154">${fam.value(d) == null ? "" : `${esc(fam.money(fam.value(d)))} · `}${esc(shares(d.shares))} shares${fam.sharePrice(d) ? ` at ${esc(fam.sharePrice(d))}` : ""}${lag == null ? "" : ` · disclosed ${lag === 0 ? "the same day" : `${lag} ${lag === 1 ? "day" : "days"} later`}`}${d.analysis?.rating ? ` · rated ${esc(d.analysis.rating)}` : ""}</p>
 
   <h2 style="font-size:15px;margin:32px 0 10px">What was bought</h2>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>
-    <tr><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">Insider</td><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(d.director?.name ?? "")}</td></tr>
-    <tr><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">Role</td><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(d.director?.role ?? "")}</td></tr>
+    <tr><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">Insider</td><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(fam.insider(d).name ?? "")}</td></tr>
+    <tr><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">Role</td><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(fam.insider(d).role ?? "")}</td></tr>
     <tr><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">Company</td><td style="padding:8px 12px;border-bottom:1px solid #ece1cf"><a href="https://${esc(host)}/company/${esc(displayTicker(d.ticker).toLowerCase())}">${esc(name)}</a></td></tr>
     <tr><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">Traded</td><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(d.trade_date)}</td></tr>
     <tr><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">Disclosed</td><td style="padding:8px 12px;border-bottom:1px solid #ece1cf">${esc(d.disclosed_date)}</td></tr>

@@ -385,6 +385,16 @@ export const api = {
       `/us-dealings${suffix}`,
     );
   },
+  /** One US filing leg by id — the US counterpart of `dealing`. The id is the
+   *  per-leg Form 4 key (`f4-{accession}-{table}-{row}`), so a tranche-split
+   *  purchase has one id per leg and each resolves; the analysis blob is per
+   *  filing+code+reporter group and is duplicated across a group's legs.
+   *
+   *  Resolves rows the curated feed hides (`is_open_market_buy === false`):
+   *  a direct link to a specific filing must render that filing and mark it,
+   *  not 404 in a way that reads as missing data. See ddbx-data
+   *  /api/us-dealings/:id. */
+  usDealing: (id: string) => get<UsDealing>(`/us-dealings/${id}`),
   /** Trump Media (DJT) insider Form 4 feed — all transaction types (grants,
    *  sales, buys), newest disclosure first. Same UsDealing wire shape as
    *  usDealings, but no view mask / rating / triage (the DJT vertical is a raw

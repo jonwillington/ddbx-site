@@ -37,7 +37,7 @@
  *  `ShareArrivalAsk` keeps the written excerpt and the store button, and stays
  *  in the body where a reader who has been convinced by the card arrives next.
  */
-import type { Dealing } from "@/types/ddbx";
+import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import {
   shareNotification,
@@ -63,10 +63,10 @@ export function ShareArrivalCard({
   deal,
   marketId = "uk",
 }: {
-  deal: Dealing;
+  deal: Dealing | UsDealing;
   marketId?: "uk" | "us";
 }) {
-  const note = shareNotification(deal);
+  const note = shareNotification(deal, marketId);
 
   if (!note) return null;
   const app = APP[marketId];
@@ -110,7 +110,7 @@ export function ShareArrivalAsk({
   deal,
   marketId = "uk",
 }: {
-  deal: Dealing;
+  deal: Dealing | UsDealing;
   marketId?: "uk" | "us";
 }) {
   return (

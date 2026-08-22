@@ -1,7 +1,7 @@
 // Types for shared/share-notification.js. See shared/seo.d.ts for why the
 // module is plain ESM with its types declared alongside.
 
-import type { Dealing } from "../src/types/ddbx";
+import type { AnyFiling } from "./filings";
 
 export interface ShareNotification {
   /** Small-caps attention tag, from the rating. "NEW FILING" when unrated. */
@@ -16,9 +16,11 @@ export interface ShareNotification {
 export declare function shortDate(iso: string | null | undefined): string;
 
 export declare function shareNotification(
-  d: Dealing | null | undefined,
+  d: AnyFiling | null | undefined,
+  market?: string,
 ): ShareNotification | null;
 
 export declare function shareNotificationLine(
-  d: Dealing | null | undefined,
+  d: AnyFiling | null | undefined,
+  market?: string,
 ): string | null;

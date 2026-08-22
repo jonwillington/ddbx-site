@@ -43,7 +43,7 @@
  *  click. The lock icon on every row is the affordance, and the gate quotes the
  *  line back before it asks.
  */
-import type { Analysis, Dealing } from "@/types/ddbx";
+import type { Analysis, Dealing, UsDealing } from "@/types/ddbx";
 import type { AnalysisShape, EvidenceHeadline } from "../../../shared/filings";
 
 import { useState } from "react";
@@ -174,7 +174,7 @@ export function AnalysisPreview({
   summary,
   marketId = "uk",
 }: {
-  deal: Dealing;
+  deal: Dealing | UsDealing;
   shape: AnalysisShape;
   evidence: EvidenceHeadline[];
   summary?: string | null;

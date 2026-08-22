@@ -94,6 +94,10 @@ export async function onRequest(context) {
   // ignored, which is worse than having none.
   if (
     url.pathname.startsWith("/t/") ||
+    // The US filing pair, added 2026-08-22 — both own their whole <head>, same
+    // as their UK counterparts two lines up and below.
+    url.pathname.startsWith("/us/t/") ||
+    /^\/us\/dealings\/[^/]+$/.test(url.pathname) ||
     url.pathname.startsWith("/company/") ||
     url.pathname === "/companies" ||
     url.pathname.startsWith("/brokers/best-for/") ||

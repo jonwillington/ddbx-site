@@ -72,6 +72,15 @@ function App() {
             share mode, canonicalised to /dealings/:id by functions/t/[id].js.
             The URL shape is fixed: tweets carrying it are already published. */}
         <Route element={<FilingPage share />} path="/t/:id" />
+        {/* The US half of the same two routes, added 2026-08-22. /us/t/:id was
+            a bare UA-sniffing redirect to the App Store until now, so a shared
+            US trade had nowhere to land — see the `market` note in
+            pages/filing.tsx. Prefixed rather than served off the bare paths:
+            ddbx.uk and ddbx.us are one bundle and /dealings/:id is already the
+            UK id space, and a URL that means different things on different
+            hosts is not a contract worth having. */}
+        <Route element={<FilingPage market="US" />} path="/us/dealings/:id" />
+        <Route element={<FilingPage share market="US" />} path="/us/t/:id" />
         <Route element={<MarketHomePage />} path="/contact" />
         <Route element={<MarketHomePage />} path="/privacy" />
         <Route element={<MarketHomePage />} path="/cookies" />

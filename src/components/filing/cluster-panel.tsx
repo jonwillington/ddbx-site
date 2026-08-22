@@ -15,13 +15,14 @@
  *  rather than showing an empty frame — the caller renders the cluster's
  *  one-line summary either way, which is also what the pre-render emits.
  */
-import type { Dealing } from "@/types/ddbx";
+import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRightIcon, CheckIcon } from "@heroicons/react/20/solid";
 
-import { cleanName, filingPath, money } from "../../../shared/filings.js";
+import { cleanName } from "../../../shared/filings.js";
+import { filingFamily } from "../../../shared/filing-family.js";
 
 import { CalendarDayChip, chipParts } from "@/components/calendar-day-chip";
 import { api } from "@/lib/api";
@@ -63,17 +64,18 @@ export function ClusterPanel({
   fallback,
   market = "UK",
 }: {
-  deal: Dealing;
+  deal: Dealing | UsDealing;
   /** Rendered instead of the drawing when the co-buyers cannot be loaded, so
    *  the section is never empty and the cluster is always stated exactly once
    *  somewhere on the page. */
   fallback: string;
   market?: string;
 }) {
-  // Typed as UK rows: this panel only renders on /dealings/:id, which is a UK
-  // pipeline route (see functions/dealings/[id].js). A US filing page would
-  // need the reporter shape too, and gets it when that route lands.
-  const [deals, setDeals] = useState<Dealing[] | null>(null);
+  // Both markets now. `market` picks the formatter family AND the company
+  // bundle, so the peer rows read `reporter`/`value` on a US row and
+  // `director`/`value_gbp` on a UK one without this component knowing which.
+  const fam = filingFamily(market);
+  const [deals, setDeals] = useState<Array<Dealing | UsDealing> | null>(null);
 
   const windowDays = deal.cluster?.window_days ?? 14;
 
@@ -82,7 +84,7 @@ export function ClusterPanel({
 
     api
       .companyPage(market, deal.ticker)
-      .then((r) => live && setDeals(r.deals as Dealing[]))
+      .then((r) => live && setDeals(r.deals))
       .catch(() => live && setDeals([]));
 
     return () => {
@@ -95,14 +97,18 @@ export function ClusterPanel({
 
     return deals
       .filter((d) => inWindow(d.trade_date, deal.trade_date, windowDays))
-      .map((d) => ({
-        id: d.id,
-        name: d.director?.name ?? "Insider",
-        role: d.director?.role ?? "",
-        date: d.trade_date,
-        value: Number(d.value_gbp ?? 0),
-        isThis: d.id === deal.id,
-      }))
+      .map((d) => {
+        const who = fam.insider(d);
+
+        return {
+          id: d.id,
+          name: who.name || "Insider",
+          role: who.role ?? "",
+          date: d.trade_date,
+          value: Number(fam.value(d) ?? 0),
+          isThis: d.id === deal.id,
+        };
+      })
       .sort((a, b) => b.value - a.value);
   }, [deals, deal.id, deal.trade_date, windowDays]);
 
@@ -191,9 +197,7 @@ export function ClusterPanel({
                 title={
                   has
                     ? d.buys
-                        .map(
-                          (b) => `${b.name}, ${money(b.value, deal.currency)}`,
-                        )
+                        .map((b) => `${b.name}, ${fam.money(b.value)}`)
                         .join("\n")
                     : undefined
                 }
@@ -322,7 +326,7 @@ export function ClusterPanel({
                   p.isThis ? "text-foreground" : "text-foreground/80"
                 }`}
               >
-                {money(p.value, deal.currency)}
+                {fam.money(p.value)}
               </span>
 
               {/* A fixed slot either way, so the figures stay in one column
@@ -345,7 +349,7 @@ export function ClusterPanel({
               ) : (
                 <Link
                   className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-3 outline-none transition-colors hover:bg-foreground/[0.03] focus-visible:ring-2 focus-visible:ring-brand-brown/40"
-                  to={filingPath(p.id)}
+                  to={fam.path(p.id)}
                 >
                   {body}
                 </Link>
@@ -369,7 +373,7 @@ export function ClusterPanel({
           figure still lives in the section aside, which is the one place it is
           authoritative. */}
       <p className="mt-3 text-[13px] leading-[1.6] text-foreground/55">
-        {money(total, deal.currency)} across {peers.length}{" "}
+        {fam.money(total)} across {peers.length}{" "}
         {peers.length === 1 ? "disclosed purchase" : "disclosed purchases"} at{" "}
         {cleanName(deal.company)}, within {windowDays} days either side of this
         one.
