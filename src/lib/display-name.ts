@@ -125,6 +125,13 @@ function recaseWord(word: string): string {
     return word.toUpperCase();
   }
 
+  // A shouted token mixing letters and digits is a brand or a symbol, never an
+  // English word: KRM22, V3TC, MAB1. Title-casing gives "Krm22", which reads as
+  // a typo. Mirrors recaseWord in ddbx-data worker/lib/display-name.ts.
+  if (/[0-9]/.test(core) && /[A-Z]/.test(core) && word === word.toUpperCase()) {
+    return word;
+  }
+
   return titleCaseWord(word);
 }
 
