@@ -84,6 +84,45 @@ const tradeCardImage = (id) =>
 const CARD_W = "1200";
 const CARD_H = "630";
 
+/** `?nocard=1` — the same page, served without the unfurl.
+ *
+ *  Our own X threads post the card as an uploaded PNG on the main tweet and
+ *  then reply with the six-point check written out as ✅/❌ lines plus this
+ *  link. The link's unfurl is the per-trade OG art, which draws those same six
+ *  rows — so the thread carried two large images making one point, and the
+ *  reply read as a duplicate of the post above it. The tweets we send now
+ *  append this param and the reply is text plus a plain link.
+ *
+ *  Scoped to the parameter on purpose. A trade link shared by anyone else, in
+ *  a DM, a Slack, an iMessage, is untouched and still unfurls into the card —
+ *  that unfurl is the pitch to a reader who has never heard of us, and the
+ *  reason this Function exists. This variant is only OUR link, in OUR thread,
+ *  where the pitch is already on screen.
+ *
+ *  Card meta comes off wholesale rather than just the image: X falls back to
+ *  Open Graph when twitter:card is absent, so leaving og:title/og:description
+ *  behind risks a text-only card instead of no card. `noindex` goes on because
+ *  the param is a distinct URL to a crawler and the bare /t/{id} (canonical:
+ *  /dealings/{id}) is the copy that should be indexed. */
+const NO_CARD_PARAM = "nocard";
+
+function withoutUnfurl(res) {
+  return new HTMLRewriter()
+    .on('meta[property^="og:"], meta[name^="twitter:"]', {
+      element(el) {
+        el.remove();
+      },
+    })
+    .on("head", {
+      element(el) {
+        el.append('<meta name="robots" content="noindex, follow">', {
+          html: true,
+        });
+      },
+    })
+    .transform(res);
+}
+
 const VERBS = { buy: "bought", sell: "sold" };
 
 /** The unfurl title. Facts only, and the same shape the standalone page used,
@@ -109,6 +148,10 @@ export async function onRequestGet(context) {
   const { params, request } = context;
   const url = new URL(request.url);
   const id = String(params.id ?? "");
+  // Our own tweets ask for the page without its card (see NO_CARD_PARAM). It
+  // also covers the dead ends below: the shell's own og:image would otherwise
+  // unfurl the site wordmark on a link we posted as bare text.
+  const noCard = url.searchParams.get(NO_CARD_PARAM) === "1";
 
   // The SPA shell. React boots from this and takes over whatever we inject.
   const shell = await context.next();
@@ -117,7 +160,9 @@ export async function onRequestGet(context) {
   // pre-render, and robots.txt disallows them anyway.
   if (!isProductionHost(url.hostname)) return shell;
   // Validate the shape before spending an API call on it.
-  if (!/^[A-Za-z0-9_-]{4,64}$/.test(id)) return noindex(shell);
+  if (!/^[A-Za-z0-9_-]{4,64}$/.test(id)) {
+    return noCard ? withoutUnfurl(shell) : noindex(shell);
+  }
 
   const d = await fetchJson(
     `${API_BASE}/dealings/${encodeURIComponent(id)}`,
@@ -129,7 +174,7 @@ export async function onRequestGet(context) {
   // share link is not crawled as a bare shell. The crawler still gets the
   // site's default OG, so the unfurl degrades to brand art rather than
   // breaking.
-  if (!d?.id) return noindex(shell);
+  if (!d?.id) return noCard ? withoutUnfurl(shell) : noindex(shell);
 
   const canonical = `https://${OWNING_HOST}/dealings/${encodeURIComponent(d.id)}`;
   const name = cleanName(d.company) || displayTicker(d.ticker);
@@ -155,6 +200,10 @@ export async function onRequestGet(context) {
     ],
     body: filingPrerender(d, OWNING_HOST),
   });
+
+  // The pre-render above still ran, so a human landing on a no-card link gets
+  // the same document — only the unfurl meta comes off.
+  if (noCard) return withoutUnfurl(rendered);
 
   // The image tags, which the shared head rewrite doesn't own, plus the smart
   // banner. These are REWRITES rather than appends: index.html already ships a
