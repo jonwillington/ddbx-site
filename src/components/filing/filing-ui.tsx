@@ -33,7 +33,6 @@
  */
 import type { Dealing, RatingChecklist, UsDealing } from "@/types/ddbx";
 
-import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import {
   CheckIcon,
@@ -221,7 +220,6 @@ export function RatingChecks({
 }) {
   const fam = filingFamily(market);
   const ctx = fam.checkContext(deal);
-  const marketId: string = fam.marketId;
   const met = CHECKS.filter((c) => checklist[c.key]).length;
 
   return (
@@ -249,15 +247,14 @@ export function RatingChecks({
           screens of scrolling — the same hierarchy, at a density someone can
           actually read through. Desktop is unchanged. */}
       <div className="mt-5 space-y-2 sm:mt-6 sm:space-y-3">
-        {CHECKS.map((c, i) => {
+        {CHECKS.map((c) => {
           const ok = Boolean(checklist[c.key]);
           const Icon = CHECK_ICON[c.key];
 
           return (
-            <Fragment key={c.key}>
-              <div className={`${CARD} p-4 sm:p-6`}>
-                <div className="flex items-start gap-3 sm:gap-5">
-                  {/* SOLID, IN FULL COLOUR, BOTH WAYS.
+            <div key={c.key} className={`${CARD} p-4 sm:p-6`}>
+              <div className="flex items-start gap-3 sm:gap-5">
+                {/* SOLID, IN FULL COLOUR, BOTH WAYS.
                     A pass/fail verdict rendered as a 12%-tint disc with a
                     hairline glyph inside it is a verdict you have to look for,
                     and a miss rendered in grey reads as "not assessed" rather
@@ -265,78 +262,69 @@ export function RatingChecks({
                     green circle or a filled red one (WhatWeLookForView), which
                     is the treatment a reader can take in from across the room.
                     Same here: filled disc, knocked-out glyph, red for a miss. */}
-                  <span
-                    aria-hidden
-                    className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white shadow-sm sm:h-12 sm:w-12 ${
-                      ok ? "bg-positive" : "bg-negative"
-                    }`}
-                  >
-                    {ok ? (
-                      <CheckIcon
-                        className="h-5 w-5 sm:h-8 sm:w-8"
-                        strokeWidth={2}
-                      />
-                    ) : (
-                      <XMarkIcon
-                        className="h-5 w-5 sm:h-8 sm:w-8"
-                        strokeWidth={2}
-                      />
-                    )}
-                  </span>
+                <span
+                  aria-hidden
+                  className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white shadow-sm sm:h-12 sm:w-12 ${
+                    ok ? "bg-positive" : "bg-negative"
+                  }`}
+                >
+                  {ok ? (
+                    <CheckIcon
+                      className="h-5 w-5 sm:h-8 sm:w-8"
+                      strokeWidth={2}
+                    />
+                  ) : (
+                    <XMarkIcon
+                      className="h-5 w-5 sm:h-8 sm:w-8"
+                      strokeWidth={2}
+                    />
+                  )}
+                </span>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <h3 className="text-[16px] font-semibold leading-snug tracking-[-0.015em] text-foreground sm:text-[21px]">
-                        {c.question}
-                      </h3>
-                      <span
-                        className={`shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] ${
-                          ok ? "text-positive" : "text-negative"
-                        }`}
-                      >
-                        {ok ? "Met" : "Not met"}
-                      </span>
-                    </div>
-
-                    <p
-                      className={`mt-1.5 max-w-[62ch] text-[14px] leading-[1.55] sm:mt-2 sm:text-[15px] sm:leading-[1.6] ${
-                        ok ? "text-foreground/80" : "text-foreground/55"
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <h3 className="text-[16px] font-semibold leading-snug tracking-[-0.015em] text-foreground sm:text-[21px]">
+                      {c.question}
+                    </h3>
+                    <span
+                      className={`shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                        ok ? "text-positive" : "text-negative"
                       }`}
                     >
-                      {ok ? c.passLine(ctx) : c.body}
-                    </p>
-
-                    <details className="group mt-2 sm:mt-3">
-                      <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-[12.5px] text-foreground/45 transition-colors hover:text-foreground/75 [&::-webkit-details-marker]:hidden">
-                        {Icon ? (
-                          <Icon
-                            aria-hidden
-                            className="h-4 w-4 text-brand-brown dark:text-brand-tan"
-                            strokeWidth={1.6}
-                          />
-                        ) : null}
-                        Why this check matters
-                        <ChevronDownIcon
-                          aria-hidden
-                          className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
-                        />
-                      </summary>
-                      <p className="mt-2.5 max-w-[62ch] text-[13.5px] leading-[1.65] text-foreground/55">
-                        {c.detail}
-                      </p>
-                    </details>
+                      {ok ? "Met" : "Not met"}
+                    </span>
                   </div>
+
+                  <p
+                    className={`mt-1.5 max-w-[62ch] text-[14px] leading-[1.55] sm:mt-2 sm:text-[15px] sm:leading-[1.6] ${
+                      ok ? "text-foreground/80" : "text-foreground/55"
+                    }`}
+                  >
+                    {ok ? c.passLine(ctx) : c.body}
+                  </p>
+
+                  <details className="group mt-2 sm:mt-3">
+                    <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-[12.5px] text-foreground/45 transition-colors hover:text-foreground/75 [&::-webkit-details-marker]:hidden">
+                      {Icon ? (
+                        <Icon
+                          aria-hidden
+                          className="h-4 w-4 text-brand-brown dark:text-brand-tan"
+                          strokeWidth={1.6}
+                        />
+                      ) : null}
+                      Why this check matters
+                      <ChevronDownIcon
+                        aria-hidden
+                        className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
+                      />
+                    </summary>
+                    <p className="mt-2.5 max-w-[62ch] text-[13.5px] leading-[1.65] text-foreground/55">
+                      {c.detail}
+                    </p>
+                  </details>
                 </div>
               </div>
-              {/* The ask, every second check. A reader who is still going at
-                check four has understood the method and is the most likely
-                person on the page to install; one quiet line is the whole
-                intervention, repeated rather than escalated. Not after the
-                last check — the page's own closing CTA is directly below it. */}
-              {i % 2 === 1 && i < CHECKS.length - 1 ? (
-                <TrialNudge marketId={marketId} />
-              ) : null}
-            </Fragment>
+            </div>
           );
         })}
       </div>
@@ -344,15 +332,19 @@ export function RatingChecks({
   );
 }
 
-/** One line between the checks: what they would be buying, what it costs.
+/** One line between the page's sections: what they would be buying, what it
+ *  costs. Threaded by the filing page between its numbered sections — not
+ *  inside any of them: repeated between the checks it read as a third of the
+ *  checklist, and a reader mid-argument was being interrupted rather than
+ *  offered.
  *
- *  Deliberately not a card — the checks either side are the cards, and a third
- *  one would read as a seventh check. A rule, a sentence and a link.
+ *  Deliberately not a card — the sections either side carry the cards. A
+ *  rule, a sentence and a link.
  *
  *  The price is read from `PRICING`, which is the only place on the public web
  *  that states one (mirrored by hand from App Store Connect). Never hard-code
  *  a figure here. */
-function TrialNudge({ marketId }: { marketId: string }) {
+export function TrialNudge({ marketId }: { marketId: string }) {
   const p = PRICING[marketId === "us" ? "us" : "uk"];
 
   return (
@@ -360,7 +352,8 @@ function TrialNudge({ marketId }: { marketId: string }) {
       className={`border-y ${RULE} px-1 py-3 text-[13px] leading-[1.6] text-foreground/55`}
     >
       Don&rsquo;t miss the next director deal. {p.trialDays} days free, then{" "}
-      {formatPrice(p, p.annual)} for the year.{" "}
+      {formatPrice(p, p.annual)} for the year
+      {p.promotional ? ", a limited-time price" : ""}.{" "}
       <Link
         className="font-semibold text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
         data-ga-event="cta_filing_check_nudge"

@@ -101,6 +101,7 @@ import { sectorByLabel, sectorPath } from "../../shared/sectors.js";
 import {
   ContextCards,
   RatingChecks,
+  TrialNudge,
   VerdictBand,
 } from "@/components/filing/filing-ui";
 import { AnalysisPreview } from "@/components/filing/analysis-preview";
@@ -400,90 +401,108 @@ export default function FilingPage({
               </p>
             </SeoSection>
 
+            {/* The ask, threaded between the numbered sections rather than
+                inside any of them — every section after the first opens with
+                the same quiet line, so the reader meets it at each natural
+                pause in the argument, never mid-checklist. */}
             {context.length > 0 || hasCluster ? (
-              <SeoSection
-                aside={
-                  hasCluster
-                    ? `A ${deal.cluster?.tier} cluster: ${deal.cluster?.count} insiders bought inside a ${deal.cluster?.window_days}-day window. Breadth is a signal one purchase on its own cannot give you.`
-                    : "What else was happening around this purchase."
-                }
-                index={sectionNo("context")}
-                title={hasCluster ? "They were not the only one" : "Context"}
-                total={total}
-              >
-                {/* The cluster, drawn from the issuer's own filings, above the
+              <>
+                <TrialNudge marketId={fam.marketId} />
+                <SeoSection
+                  aside={
+                    hasCluster
+                      ? `A ${deal.cluster?.tier} cluster: ${deal.cluster?.count} insiders bought inside a ${deal.cluster?.window_days}-day window. Breadth is a signal one purchase on its own cannot give you.`
+                      : "What else was happening around this purchase."
+                  }
+                  index={sectionNo("context")}
+                  title={hasCluster ? "They were not the only one" : "Context"}
+                  total={total}
+                >
+                  {/* The cluster, drawn from the issuer's own filings, above the
                     summary cards. It renders null when the co-buyers cannot be
                     loaded, so the cards below are always the floor. */}
-                <ClusterPanel
-                  deal={deal}
-                  fallback={clusterSentence(deal) ?? ""}
-                  market={market}
-                />
-                <ContextCards items={context} />
-              </SeoSection>
+                  <ClusterPanel
+                    deal={deal}
+                    fallback={clusterSentence(deal) ?? ""}
+                    market={market}
+                  />
+                  <ContextCards items={context} />
+                </SeoSection>
+              </>
             ) : null}
 
             {screenedOut ? (
-              <SeoSection
-                aside="Every disclosure is screened before anything is written about it. This one was not taken further, and this is the reason it was given at the time."
-                index={sectionNo("screened")}
-                title="Why there is no analysis of this one"
-                total={total}
-              >
-                <p className={`mt-4 max-w-[62ch] ${R.body}`}>
-                  {deal.triage?.reason}
-                </p>
-                <p className={`mt-4 max-w-[62ch] ${R.body}`}>
-                  That is a judgement made on the day it filed, on what was
-                  known then — not a view on the company, and not a prediction.
-                  The price since is the chart above, and it is why this filing
-                  can appear among the best performers with nothing written
-                  about it.
-                </p>
-              </SeoSection>
+              <>
+                <TrialNudge marketId={fam.marketId} />
+                <SeoSection
+                  aside="Every disclosure is screened before anything is written about it. This one was not taken further, and this is the reason it was given at the time."
+                  index={sectionNo("screened")}
+                  title="Why there is no analysis of this one"
+                  total={total}
+                >
+                  <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+                    {deal.triage?.reason}
+                  </p>
+                  <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+                    That is a judgement made on the day it filed, on what was
+                    known then, not a view on the company, and not a prediction.
+                    The price since is the chart above, and it is why this
+                    filing can appear among the best performers with nothing
+                    written about it.
+                  </p>
+                </SeoSection>
+              </>
             ) : null}
 
             {analysed && deal.analysis?.checklist ? (
-              <SeoSection
-                aside="The same six checks every purchase is scored against, answered for this one."
-                index={sectionNo("checks")}
-                title={`Why this was rated ${deal.analysis.rating}`}
-                total={total}
-              >
-                <RatingChecks
-                  checklist={deal.analysis.checklist}
-                  deal={deal}
-                  market={market}
-                />
-              </SeoSection>
+              <>
+                <TrialNudge marketId={fam.marketId} />
+                <SeoSection
+                  aside="The same six checks every purchase is scored against, answered for this one."
+                  index={sectionNo("checks")}
+                  title={`Why this was rated ${deal.analysis.rating}`}
+                  total={total}
+                >
+                  <RatingChecks
+                    checklist={deal.analysis.checklist}
+                    deal={deal}
+                    market={market}
+                  />
+                </SeoSection>
+              </>
             ) : null}
 
             {analysed && shape ? (
-              <SeoSection
-                aside={
-                  DISCRETION_ENABLED
-                    ? "Every finding the assessment reached, for and against, with the source behind each. The reasoning under them is in the app."
-                    : "The whole assessment: the thesis, every finding for and against with the source behind each, and the risks weighed against them."
-                }
-                index={sectionNo("analysis")}
-                title="What the analysis found"
-                total={total}
-              >
-                <AnalysisPreview
-                  deal={deal}
-                  evidence={evidence}
-                  marketId={fam.marketId}
-                  shape={shape}
-                  // The summary is published on the share route only — unless
-                  // discretion is off, in which case nothing here is withheld.
-                  summary={
-                    share || !DISCRETION_ENABLED ? deal.analysis?.summary : null
+              <>
+                <TrialNudge marketId={fam.marketId} />
+                <SeoSection
+                  aside={
+                    DISCRETION_ENABLED
+                      ? "Every finding the assessment reached, for and against, with the source behind each. The reasoning under them is in the app."
+                      : "The whole assessment: the thesis, every finding for and against with the source behind each, and the risks weighed against them."
                   }
-                />
-              </SeoSection>
+                  index={sectionNo("analysis")}
+                  title="What the analysis found"
+                  total={total}
+                >
+                  <AnalysisPreview
+                    deal={deal}
+                    evidence={evidence}
+                    marketId={fam.marketId}
+                    shape={shape}
+                    // The summary is published on the share route only — unless
+                    // discretion is off, in which case nothing here is withheld.
+                    summary={
+                      share || !DISCRETION_ENABLED
+                        ? deal.analysis?.summary
+                        : null
+                    }
+                  />
+                </SeoSection>
+              </>
             ) : null}
 
-            {/* Reference, not narrative — so it sits below the argument and
+            {/* Reference, not narrative, so it sits below the argument and
                 outside the numbered run. */}
             <SeoSection
               aside="The filing, as it was disclosed."
@@ -590,7 +609,7 @@ export default function FilingPage({
               />
             </SeoSection>
 
-            {/* Share-route only. "Read next" above is contextual — this
+            {/* Share-route only. "Read next" above is contextual, this
                 company, this sector, this method — and it is the right list
                 for a reader who arrived on the filing deliberately.
                 A reader who arrived from a tweet has no idea the rest of this
