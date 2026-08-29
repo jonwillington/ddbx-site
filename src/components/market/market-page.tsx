@@ -61,6 +61,7 @@ import {
   weekendBetween,
 } from "./market-utils";
 
+import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
 import { BrokerReviewsPromo } from "@/components/brokers/broker-reviews-promo";
 import { Skeleton } from "@/components/skeleton";
 import { CollapsedDayTeaser } from "@/components/discretion/collapsed-day-teaser";
@@ -1230,7 +1231,6 @@ export function MarketPage<W>({
           subhead={config.heroSubhead}
           todayCount={todayDealings.length}
           todaySignalCount={todaySignalCount}
-          onExplain={() => setExplainerOpen(true)}
           onViewReport={
             config.id !== "uk" && latestRecapMonth
               ? () => openRecap(latestRecapMonth)
@@ -1898,6 +1898,26 @@ export function MarketPage<W>({
             failed={channelFetchFailed}
           />
         )}
+
+        {/* Methodology, after the proof instead of before it. As a hero pill it
+            sat between "what this is" and the first real filing, interrupting
+            the one scan a cold visitor makes; and it asked them to read about
+            the screen before they had seen anything it caught. Down here the
+            question is one they might actually have. */}
+        <div className="flex flex-col items-center gap-2 border-t border-separator pt-6 text-center">
+          <p className="text-sm text-foreground/60">
+            Every filing is scored against the same six-point check.
+          </p>
+          <button
+            className={`${BUTTON_RADIUS} ${BUTTON_GHOST} px-5 py-2.5 text-sm font-semibold`}
+            data-ga-event="cta_footer_open_explainer"
+            data-ga-label="What are we looking for"
+            type="button"
+            onClick={() => setExplainerOpen(true)}
+          >
+            What are we looking for?
+          </button>
+        </div>
       </section>
 
       <MarketChannel

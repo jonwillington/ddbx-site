@@ -429,10 +429,15 @@ export const UkMarket: MarketConfig<Dealing> = {
   // visitor can scan what this is in one glance. Bullet 4 carries the offer
   // detail the retired eyebrow chip used to hold (MarketHero drops the chip
   // whenever bullets are present).
+  //
+  // Kept to one phone line each — every bullet wrapped to two, which turned a
+  // four-item scan into an eight-line paragraph with ticks in it. The qualifier
+  // each one lost ("so the signal stands out from the noise", "on every buy")
+  // was restating the bullet it hung off.
   heroBullets: [
-    <>Every UK director share purchase, the moment it&rsquo;s filed</>,
-    <>Each one screened and rated, so the signal stands out from the noise</>,
-    <>Performance tracked against the FTSE All-Share on every buy</>,
+    <>Every UK director buy, the day it&rsquo;s filed</>,
+    <>Each one screened and rated</>,
+    <>Tracked against the FTSE All-Share</>,
     <>Free for 7 days, cancel any time</>,
   ],
   faq: buildMarketFaq({

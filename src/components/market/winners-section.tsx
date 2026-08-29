@@ -1,8 +1,13 @@
 // Winners tab for the mobile homepage list. Where the chronological feed
 // answers "what filed?", this answers the question a cold visitor actually
-// has: "does following these people work?" — as plain sentences. "Jane Doe,
-// CFO at Eurocell, bought £21k and is up +18.4% in 34 days." Each card links
-// to the filing's own page; an interstitial midway makes the app ask.
+// has: "does following these people work?" Each card links to the filing's own
+// page; an interstitial midway makes the app ask.
+//
+// Cards are LABELLED FIELDS, not sentences. The sentence form ("Jane Doe, CFO
+// at Eurocell, bought £21k and is up +18.4% in 34 days.") wrapped to three
+// lines on a phone and buried the number that does the persuading in the
+// middle of the third one. Someone who just landed should be able to read the
+// company, the move and the size without reading a clause.
 //
 // Data comes from the 90-day channel window (channelDealings), not the page's
 // ~1-month dealings fetch — winners need time to season, and a card claiming
@@ -74,8 +79,7 @@ export function WinnersSection<W>({
           Best of the last 90 days
         </p>
         <p className="text-sm leading-relaxed text-foreground/60">
-          Every one of these was public the moment it was filed. ddbx flagged
-          them the same day, early enough to act on.
+          Real buys by company directors, flagged the day they filed.
         </p>
       </header>
 
@@ -155,8 +159,7 @@ export function WinnersSection<W>({
       {winners.length > 0 && (
         <div className="flex flex-col items-center gap-1.5 px-1 pt-1 text-center">
           <p className="text-sm text-foreground/60">
-            That&rsquo;s the last 90 days. Every deal, rated, in the app as it
-            files.
+            Every new filing, rated, in the app as it lands.
           </p>
           <a
             className="text-sm font-semibold text-brand-brown hover:underline dark:text-brand-tan"
@@ -181,8 +184,9 @@ export function WinnersSection<W>({
   );
 }
 
-/** One winner as a flowing sentence. The sentence degrades rather than
- *  invents: no role → "X at Company"; no value → "bought shares". */
+/** One winner as labelled fields. Reading order is company → return → who →
+ *  size/age, because that is the order the questions arrive in. Degrades
+ *  rather than invents: no role → just the name; no value → "Shares". */
 function WinnerCard({
   winner: w,
   href,
@@ -195,12 +199,7 @@ function WinnerCard({
   showPayoff: boolean;
 }) {
   const bought =
-    w.value != null && w.value > 0
-      ? `bought ${formatValue(w.value)}`
-      : "bought shares";
-  const who = w.insiderRole
-    ? `${w.insiderName}, ${w.insiderRole} at ${w.company},`
-    : `${w.insiderName} at ${w.company}`;
+    w.value != null && w.value > 0 ? formatValue(w.value) : "Shares";
 
   return (
     <Link
@@ -212,13 +211,40 @@ function WinnerCard({
       <span className="flex items-start gap-3">
         <CompanyLogo size={38} ticker={w.ticker} />
         <span className="min-w-0 flex-1">
-          <span className="block text-[15px] leading-snug text-foreground/85">
-            {who} {bought} and is up{" "}
-            <span className="font-semibold tabular-nums text-positive">
+          {/* The two things worth a glance, on one line and at opposite ends:
+              what it is, and what it did. */}
+          <span className="flex items-baseline justify-between gap-3">
+            <span className="min-w-0 truncate text-[15px] font-semibold leading-snug text-foreground">
+              {w.company}
+            </span>
+            <span className="shrink-0 text-[15px] font-bold tabular-nums text-positive">
               {formatSignedPct(w.returnPct)}
-            </span>{" "}
-            in {w.daysHeld} {w.daysHeld === 1 ? "day" : "days"}.
+            </span>
           </span>
+
+          {/* Who bought. Secondary: it qualifies the buy, it isn't the hook. */}
+          <span className="mt-0.5 block truncate text-[13px] leading-snug text-foreground/60">
+            {w.insiderName}
+            {w.insiderRole ? ` · ${w.insiderRole}` : ""}
+          </span>
+
+          {/* Size and age as labelled pairs, so neither number has to be
+              inferred from a preposition. */}
+          <span className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] leading-snug">
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-muted">Bought</span>
+              <span className="font-semibold tabular-nums text-foreground/85">
+                {bought}
+              </span>
+            </span>
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-muted">Since</span>
+              <span className="font-semibold tabular-nums text-foreground/85">
+                {w.daysHeld} {w.daysHeld === 1 ? "day" : "days"}
+              </span>
+            </span>
+          </span>
+
           {showPayoff && (
             <span className="mt-2 flex items-baseline gap-1 border-t border-positive/15 pt-1.5 text-[10.5px] tabular-nums text-muted">
               {formatValue(STAKE)} at disclosure →
