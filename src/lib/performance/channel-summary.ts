@@ -340,6 +340,10 @@ export interface WinnerDealing {
   daysHeld: number;
   /** ISO `YYYY-MM-DD` disclosure date. */
   disclosedDate: string;
+  /** Whether a written analysis exists for this filing. Winners are chosen on
+   *  price alone, and the biggest movers are often rows the triage pass
+   *  skipped — so a card can't promise "read the analysis" without checking. */
+  analysed: boolean;
 }
 
 /** Winners for the homepage tab: windowed buys with a positive live return,
@@ -385,6 +389,7 @@ export function buildWinners(
       returnPct: returnOf(d)!,
       daysHeld,
       disclosedDate,
+      analysed: d.rating != null,
     });
     if (out.length >= limit) break;
   }

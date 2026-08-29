@@ -253,10 +253,15 @@ export default function FilingPage({
   const name = deal
     ? cleanName(deal.company) || displayTicker(deal.ticker)
     : "Filing";
+  // Filings that didn't clear the screen carry no written analysis, but they
+  // do carry the reason they were passed over — and a reader who followed a
+  // "+121% since disclosure" card is owed that rather than a page that simply
+  // stops after the record.
+  const screenedOut = !analysed && !!deal?.triage?.reason;
   // Numbered run over the sections that make the argument. The reference table
   // and "read next" sit outside it — a counter on an appendix suggests it is
   // part of the read.
-  const total = analysed ? 4 : 2;
+  const total = analysed ? 4 : screenedOut ? 3 : 2;
 
   return (
     <DefaultLayout drawerRight>
@@ -409,6 +414,26 @@ export default function FilingPage({
                 </p>
               </SeoSection>
             )}
+
+            {screenedOut ? (
+              <SeoSection
+                aside="Every disclosure is screened before anything is written about it. This one was not taken further, and this is the reason it was given at the time."
+                index={3}
+                title="Why there is no analysis of this one"
+                total={total}
+              >
+                <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+                  {deal.triage?.reason}
+                </p>
+                <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+                  That is a judgement made on the day it filed, on what was
+                  known then — not a view on the company, and not a prediction.
+                  The price since is the chart above, and it is why this filing
+                  can appear among the best performers with nothing written
+                  about it.
+                </p>
+              </SeoSection>
+            ) : null}
 
             {analysed && deal.analysis?.checklist ? (
               <SeoSection

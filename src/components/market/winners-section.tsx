@@ -260,8 +260,11 @@ function WinnerCard({
             )}
           </span>
 
+          {/* Honest label: winners are ranked on price, and the biggest
+              movers are often filings the screen passed over, whose page
+              carries the record and the reason but no written analysis. */}
           <span className="mt-1.5 inline-flex items-center gap-0.5 text-[13px] font-semibold text-brand-brown group-hover:underline dark:text-brand-tan">
-            Read the analysis
+            {w.analysed ? "Read the analysis" : "See the filing"}
             <ChevronRightIcon className="h-4 w-4" />
           </span>
         </span>
