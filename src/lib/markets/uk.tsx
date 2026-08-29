@@ -417,11 +417,14 @@ export const UkMarket: MarketConfig<Dealing> = {
   // /dealings/:id resolves.
   filingHref: (d) => (d.id ? filingPath(d.id) : null),
   title: "UK director dealings (preview)",
+  // Two lines: the promise first, the offer as a tinted second line beneath it
+  // — the old single-line version wrapped mid-clause on a phone
+  // ("7 days free. Every / UK insider deal.").
   heroHeadline: (
     <>
-      7 days free.{" "}
-      <span className="text-brand-brown dark:text-brand-tan">
-        Every UK insider deal.
+      Every UK insider deal.
+      <span className="block text-brand-brown dark:text-brand-tan">
+        7 days free.
       </span>
     </>
   ),

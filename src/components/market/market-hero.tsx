@@ -221,7 +221,7 @@ export function MarketHero({
             >
               <CheckIcon
                 aria-hidden
-                className="mt-0.5 h-4 w-4 shrink-0 text-brand-brown dark:text-brand-tan"
+                className="mt-0.5 h-4 w-4 shrink-0 text-positive"
               />
               <span>{b}</span>
             </li>
@@ -309,7 +309,7 @@ export function MarketHero({
 
   return (
     <header
-      className={`relative -mt-4 md:mt-0 min-h-[58svh] flex flex-col animate-content-in ${
+      className={`relative -mt-4 md:mt-0 md:min-h-[58svh] flex flex-col animate-content-in ${
         appShowcase
           ? hasRightDrawer
             ? "xl:min-h-[560px]"
@@ -611,7 +611,7 @@ export function MarketHero({
 
       <div
         className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 ${
-          hasTopNotice ? "pt-16 pb-6" : "py-6"
+          hasTopNotice ? "pt-16 pb-3 md:pb-6" : "py-3 md:py-6"
         }`}
       >
         {appShowcase ? (
@@ -648,7 +648,7 @@ export function MarketHero({
                 bar handles installs; from md up (where that bar is hidden) the
                 download CTA below stands in. */}
             <div
-              className={`m-auto flex ${centeredHide} flex-col items-center gap-7 text-center`}
+              className={`m-auto flex ${centeredHide} flex-col items-center gap-5 md:gap-7 text-center`}
             >
               {/* No logo on mobile — the stack is centred on its own. */}
               <div className="w-full max-w-[330px]">
