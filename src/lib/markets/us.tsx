@@ -594,11 +594,20 @@ export function UsDetailBody({
       )}
 
       {group.leg_count > 1 && (
-        <DisclosureSection count={group.leg_count} title="Fills">
+        // The API now folds a filing's price-band rows into one row per
+        // trading day, so a "leg" here is a day's buying rather than a
+        // tranche. Count the underlying fills so the header still says how
+        // many times the order touched the market, and render each day's
+        // price as the average it now is, with the ladder behind it.
+        <DisclosureSection
+          count={group.legs.reduce((n, leg) => n + (leg.leg_count ?? 1), 0)}
+          title="Fills"
+        >
           <table className="w-full text-sm">
             <thead className="text-xs text-muted">
               <tr>
-                <th className="text-left font-normal pb-1">Shares</th>
+                <th className="text-left font-normal pb-1">Traded</th>
+                <th className="text-right font-normal pb-1">Shares</th>
                 <th className="text-right font-normal pb-1">Price</th>
                 <th className="text-right font-normal pb-1">Value</th>
               </tr>
@@ -609,9 +618,25 @@ export function UsDetailBody({
                   key={leg.id}
                   className="border-t border-black/[0.04] dark:border-white/[0.06]"
                 >
-                  <td className="py-1">{leg.shares.toLocaleString()}</td>
+                  <td className="py-1">{leg.trade_date}</td>
                   <td className="py-1 text-right">
-                    {leg.price == null ? "—" : `$${leg.price}`}
+                    {leg.shares.toLocaleString()}
+                  </td>
+                  <td className="py-1 text-right">
+                    {leg.price == null ? (
+                      "—"
+                    ) : leg.price_low != null && leg.price_high != null ? (
+                      <>
+                        ~${leg.price.toFixed(2)}
+                        <span className="text-muted">
+                          {" "}
+                          (${leg.price_low.toFixed(2)}–$
+                          {leg.price_high.toFixed(2)})
+                        </span>
+                      </>
+                    ) : (
+                      `$${leg.price}`
+                    )}
                   </td>
                   <td className="py-1 text-right">{fmtUsd(leg.value)}</td>
                 </tr>

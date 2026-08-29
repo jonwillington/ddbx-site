@@ -1299,10 +1299,38 @@ export interface UsDealing {
   acquired_disposed: "A" | "D";
   shares: number;
   /** Decimal USD majors. `null` when the filing footnotes the price
-   *  (common for distributions and complex transactions). `0` for grants. */
+   *  (common for distributions and complex transactions). `0` for grants.
+   *  On a collapsed row (`leg_count > 1`) this is the share-weighted average
+   *  across the legs — the same arithmetic the SEC already applies one level
+   *  down, inside a single leg's own price band. */
   price: number | null;
-  /** shares × price. `null` when price is `null`. */
+  /** shares × price. `null` when price is `null`. Summed across the legs on a
+   *  collapsed row. */
   value: number | null;
+
+  /** How many Form 4 transaction rows collapsed into this one.
+   *
+   *  A broker working one order reports it as several rows, each a
+   *  weighted-average price band, and the filing's own footnotes say so
+   *  ("executed in multiple trades at prices ranging from $216.2450 to
+   *  $217.2400"). Those bands are execution mechanics, not decisions: the read
+   *  API sums them into one logical trade per
+   *  (filing, code, reporter, trade_date) so clients render one card instead
+   *  of N near-duplicate ones. `1` (or absent) means a single leg.
+   *
+   *  `id` is the lowest-numbered leg's — deterministic and the same whichever
+   *  view asked, so a collapsed row has one identity across the whole API. It
+   *  is not necessarily an id the uncollapsed feed ever showed (the lowest leg
+   *  may be a small one the view's value floor filtered out). Links made
+   *  before the collapse still resolve regardless: GET /api/us-dealings/:id
+   *  expands ANY leg of a group to the whole group. */
+  leg_count?: number;
+  /** Lowest / highest leg price on a collapsed row, USD majors. The spread is
+   *  what the legs carry that the average doesn't: it says the order was
+   *  worked across the session rather than filled at one touch. Absent when
+   *  `leg_count` is 1, or when every leg was footnote-priced. */
+  price_low?: number | null;
+  price_high?: number | null;
   /** Close-of-day price (USD majors) on `disclosed_date`, or nearest prior
    *  trading day. Sourced from the cached `prices` table at read time —
    *  nullable when bars aren't cached for the disclosure window. Anchors
