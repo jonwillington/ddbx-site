@@ -47,6 +47,7 @@ import { type SparkBar } from "./market-row-spark";
 import { MarketChannel } from "./market-channel";
 import { MarketFaq } from "./market-faq";
 import { MarketPlans } from "./market-plans";
+import { WinnersSection } from "./winners-section";
 import {
   bucketByMonth,
   buildUniversalFilters,
@@ -135,6 +136,13 @@ export function MarketPage<W>({
 }) {
   const [view, setView] = useState<string>(config.defaultView);
   const [viewMode, setViewMode] = useState<MarketViewMode>("chronological");
+  /** Mobile-only list tab. Markets that opt in via config.mobileWinners land
+   *  on Winners (sentence cards from the channel window); the chronological
+   *  feed is one tap away. Desktop ignores this — its view switch is the
+   *  filter bar's viewMode above. */
+  const [mobileTab, setMobileTab] = useState<"winners" | "chronological">(
+    config.mobileWinners ? "winners" : "chronological",
+  );
   const [search, setSearch] = useState("");
   const [dealings, setDealings] = useState<MarketDealing<W>[]>([]);
   const [stats, setStats] = useState<MarketStats | null>(null);
@@ -1211,6 +1219,7 @@ export function MarketPage<W>({
             renders via <BetaTag/> in App.tsx so it persists across route
             changes instead of remounting with each MarketHero. */}
         <MarketHero
+          bullets={config.heroBullets}
           hasRightDrawer={hasNewsSource || supportsChannelPerf}
           hasTopNotice={!!config.topNotice}
           headline={config.heroHeadline}
@@ -1263,12 +1272,6 @@ export function MarketPage<W>({
           </div>
         )}
 
-        {/* Mobile-only UK broker teaser. The broker comparison lives in the
-            fixed right rail on desktop (hidden on phones), so surface a compact
-            promo before the filings grid to route mobile readers to /compare.
-            UK only — the directory is a UK trading-platform comparison. */}
-        {config.id === "uk" && <BrokerReviewsPromo className="md:hidden" />}
-
         {/* Mobile-only channel. The fixed right rail is hidden on phones, so
             Performance + News would otherwise be invisible there — surface the
             same tabbed channel inline before the filings grid. */}
@@ -1290,7 +1293,13 @@ export function MarketPage<W>({
             in — month header bar, then the darker well with date-chip rail +
             white day cards — so nothing jumps when the rows paint. */}
         {loading && filteredDealings.length === 0 && (
-          <div className="bg-sheet dark:bg-surface rounded-xl overflow-hidden animate-content-in">
+          <div
+            className={`bg-sheet dark:bg-surface rounded-xl overflow-hidden animate-content-in ${
+              config.mobileWinners && mobileTab === "winners"
+                ? "hidden md:block"
+                : ""
+            }`}
+          >
             <div className="flex items-center justify-between px-6 py-5">
               <div className="flex items-center gap-3">
                 <CalendarDaysIcon className="w-5 h-5 shrink-0 text-muted/40" />
@@ -1371,6 +1380,41 @@ export function MarketPage<W>({
               ref={filterBarRef}
               className="sticky top-[64px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
             >
+              {/* Mobile list tabs — Winners (sentence cards from the channel
+                window) vs the chronological feed. Rides inside the sticky
+                wrapper so it inherits stickiness and the measured
+                filterBarHeight keeps month-header offsets aligned. */}
+              {config.mobileWinners && (
+                <div
+                  className="flex justify-center px-4 py-2.5 md:hidden"
+                  role="tablist"
+                >
+                  <div className="inline-flex rounded-full border border-separator bg-surface/40 p-1">
+                    {(
+                      [
+                        { id: "winners", label: "Winners" },
+                        { id: "chronological", label: "Chronological" },
+                      ] as const
+                    ).map((t) => (
+                      <button
+                        key={t.id}
+                        aria-selected={mobileTab === t.id}
+                        className={`text-sm px-4 py-1.5 rounded-full transition-colors font-medium ${
+                          mobileTab === t.id
+                            ? "bg-brand-brown/15 text-[#3d2b1a] dark:text-brand-tan"
+                            : "text-muted hover:text-foreground"
+                        }`}
+                        data-ga-event="cta_home_list_tab"
+                        data-ga-label={t.label}
+                        role="tab"
+                        onClick={() => setMobileTab(t.id)}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Search + filters are hidden on mobile — the wrapper stays so the
                 table keeps its rounded top edge and the -mt-6 tuck anchor. */}
               <div className="hidden md:block">
@@ -1408,7 +1452,29 @@ export function MarketPage<W>({
             </div>
           )}
 
-          {emptyState}
+          {/* Winners tab body — mobile only. Fed by the 90-day channel window
+              (the page fetch only reaches ~a month), so it renders
+              independently of the chronological list's loading state. */}
+          {config.mobileWinners && mobileTab === "winners" && (
+            <div className="animate-content-in md:hidden">
+              <WinnersSection
+                appHref={channelAppHref}
+                dealHref={channelDealHref}
+                dealings={channelDealings}
+                failed={channelFetchFailed}
+                formatValue={config.priceFormat.formatValue}
+                onShowChronological={() => setMobileTab("chronological")}
+              />
+            </div>
+          )}
+
+          {/* The winners tab carries its own empty state, so the page-level
+              one stays desktop-only while winners is active. */}
+          {config.mobileWinners && mobileTab === "winners" ? (
+            <div className="hidden md:block">{emptyState}</div>
+          ) : (
+            emptyState
+          )}
 
           {/* By-gain view */}
           {filteredDealings.length > 0 && viewMode === "by-gain" && (
@@ -1450,9 +1516,17 @@ export function MarketPage<W>({
             </div>
           )}
 
-          {/* Chronological / month + day buckets */}
+          {/* Chronological / month + day buckets. Stays mounted (just hidden)
+              while the mobile Winners tab is active so switching back costs
+              no refetch or scroll jank; desktop always sees it. */}
           {filteredDealings.length > 0 && viewMode === "chronological" && (
-            <div className="space-y-6 animate-content-in -mt-6 -mx-4 md:-mx-6">
+            <div
+              className={`space-y-6 animate-content-in -mt-6 -mx-4 md:-mx-6 ${
+                config.mobileWinners && mobileTab === "winners"
+                  ? "hidden md:block"
+                  : ""
+              }`}
+            >
               {monthBuckets.map((month, monthIdx) => {
                 // Older months gate behind the app while discretion is on:
                 // the header stays (the archive's depth is the point) but a
@@ -1804,6 +1878,26 @@ export function MarketPage<W>({
         ) : null}
 
         <MarketFaq items={config.faq} />
+
+        {/* Mobile-only UK broker teaser — relocated from under the hero: the
+            comparison directory is a monetising detour, not the first thing a
+            cold visitor needs. Desktop keeps its in-table bar + right rail. */}
+        {config.id === "uk" && (
+          <BrokerReviewsPromo
+            className="md:hidden"
+            gaLabel="market_post_faq_mobile"
+          />
+        )}
+
+        {/* Company focus — cluster spotlights + top performers, computed from
+            the already-loaded channel window. Config slot so the shell stays
+            market-agnostic. */}
+        {config.HomeSpotlights && (
+          <config.HomeSpotlights
+            dealings={channelDealings}
+            failed={channelFetchFailed}
+          />
+        )}
       </section>
 
       <MarketChannel

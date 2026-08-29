@@ -23,6 +23,8 @@
  *  of popping when the user navigates to a beta market. */
 import type { ReactNode } from "react";
 
+import { CheckIcon } from "@heroicons/react/20/solid";
+
 import { HeroDealMapLayer, useDealRadar } from "./hero-deal-radar";
 import { HeroNotificationStack } from "./hero-notification-stack";
 
@@ -88,6 +90,7 @@ export function MarketHero({
   marketLabel,
   headline,
   subhead,
+  bullets,
   hasTopNotice = false,
   hasRightDrawer = false,
   primaryCtaHref,
@@ -111,6 +114,10 @@ export function MarketHero({
    *  promoted into the main `<h1>` so mobile and desktop both show the updated
    *  action-oriented message. */
   subhead?: ReactNode;
+  /** Checkmark bullets rendered in place of the subhead paragraph. Their
+   *  presence also drops the trial eyebrow chip — the offer is expected to
+   *  carry in the headline/bullets themselves (see MarketConfig.heroBullets). */
+  bullets?: ReactNode[];
   /** When the market carries a beta/advisory notice, the floating <BetaTag/>
    *  sits at the top of the hero. Desktop has room to spare; on the compact
    *  mobile hero the badge would land on the headline, so we reserve top
@@ -185,8 +192,9 @@ export function MarketHero({
     <div className="space-y-3 md:space-y-5">
       {/* Trial promo eyebrow — the offer, called out where the eye lands
           first instead of buried under the App Store button. Chip-system
-          capsule in the brand brown; app markets only (no trial elsewhere). */}
-      {appShowcase && (
+          capsule in the brand brown; app markets only (no trial elsewhere).
+          Markets that moved the offer into the headline/bullets drop it. */}
+      {appShowcase && !bullets && (
         <div className={`flex ${ctaJustify}`}>
           <span
             className={`${chip("lg")} bg-brand-brown/10 text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan`}
@@ -204,12 +212,29 @@ export function MarketHero({
       >
         {resolvedHeadline}
       </h1>
-      {displaySubhead && (
-        <p
-          className={`${headlineAlign} max-w-[480px] text-balance text-base leading-relaxed text-foreground/60`}
-        >
-          {displaySubhead}
-        </p>
+      {bullets ? (
+        <ul className={`${headlineAlign} max-w-[480px] space-y-2 text-left`}>
+          {bullets.map((b, i) => (
+            <li
+              key={i}
+              className="flex items-start gap-2.5 text-[15px] leading-snug text-foreground/70"
+            >
+              <CheckIcon
+                aria-hidden
+                className="mt-0.5 h-4 w-4 shrink-0 text-brand-brown dark:text-brand-tan"
+              />
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        displaySubhead && (
+          <p
+            className={`${headlineAlign} max-w-[480px] text-balance text-base leading-relaxed text-foreground/60`}
+          >
+            {displaySubhead}
+          </p>
+        )
       )}
     </div>
   );

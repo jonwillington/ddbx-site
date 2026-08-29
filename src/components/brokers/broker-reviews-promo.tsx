@@ -17,6 +17,7 @@ export function BrokerReviewsPromo({
   brokers: provided,
   className,
   variant = "card",
+  gaLabel,
 }: {
   /** Pass an already-loaded list to skip the fetch; omit to self-load. */
   brokers?: BrokerOffer[] | null;
@@ -24,6 +25,9 @@ export function BrokerReviewsPromo({
   /** "card" = the tall stacked teaser. "bar" = a thin single-line strip for
    *  slotting into the deals table. */
   variant?: "card" | "bar";
+  /** Placement slug for GA (card variant). Defaults to the historical
+   *  hero-adjacent slot label. */
+  gaLabel?: string;
 }) {
   const [fetched, setFetched] = useState<BrokerOffer[] | null>(null);
   // The "View all" button slides + fades up as the card scrolls into view.
@@ -126,7 +130,7 @@ export function BrokerReviewsPromo({
     <a
       className={`group block overflow-hidden rounded-2xl border border-hairline bg-sheet p-5 shadow-[0_1px_2px_rgba(90,65,40,0.03)] transition-colors dark:border-separator dark:bg-surface ${className ?? ""}`}
       data-ga-event="cta_broker_reviews"
-      data-ga-label="market_today_mobile"
+      data-ga-label={gaLabel ?? "market_today_mobile"}
       href="/compare"
       rel="noopener"
       target="_blank"

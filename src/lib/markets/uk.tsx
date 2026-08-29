@@ -26,6 +26,7 @@ import { AnalysisSection } from "@/components/analysis-section";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { MiniPriceChart } from "@/components/mini-price-chart";
+import { UkHomeSpotlights } from "@/components/market/uk-home-spotlights";
 import {
   BenchmarkVerdict,
   PositionCard,
@@ -418,12 +419,22 @@ export const UkMarket: MarketConfig<Dealing> = {
   title: "UK director dealings (preview)",
   heroHeadline: (
     <>
-      Start following the{" "}
-      <span className="text-brand-brown dark:text-brand-tan">money</span>.
+      7 days free.{" "}
+      <span className="text-brand-brown dark:text-brand-tan">
+        Every UK insider deal.
+      </span>
     </>
   ),
-  heroSubhead:
-    "Every open-market share purchase by a UK company director, screened and rated the moment it's filed — so you're early to the ones that matter, not reading about them in the news.",
+  // The old subhead paragraph, rewritten as checkmark bullets so a phone
+  // visitor can scan what this is in one glance. Bullet 4 carries the offer
+  // detail the retired eyebrow chip used to hold (MarketHero drops the chip
+  // whenever bullets are present).
+  heroBullets: [
+    <>Every UK director share purchase, the moment it&rsquo;s filed</>,
+    <>Each one screened and rated, so the signal stands out from the noise</>,
+    <>Performance tracked against the FTSE All-Share on every buy</>,
+    <>Free for 7 days, cancel any time</>,
+  ],
   faq: buildMarketFaq({
     insiderTerm: "UK company director",
     filingPhrase: "with the LSE",
@@ -535,6 +546,13 @@ export const UkMarket: MarketConfig<Dealing> = {
       .map(toMarketDealing);
   },
   channelBenchmarkLabel: "FTSE All-Share",
+  // Mobile list opens on the Winners tab (sentence cards from the channel
+  // window); the chronological feed is the second tab. Mobile only — the
+  // desktop filter bar and views are untouched.
+  mobileWinners: true,
+  // Post-FAQ "company focus" section — cluster spotlights + top-performing
+  // companies computed from the same channel window (no extra fetch).
+  HomeSpotlights: UkHomeSpotlights,
   DummyDetailBody: UkDummyDetailBody,
   AnalysisOverlay: UkAnalysisOverlay,
   renderEmptyState: () => <>No UK disclosures stored yet.</>,

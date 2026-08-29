@@ -78,7 +78,7 @@ export const CHANNEL_WINDOW_DAYS = 90;
 /** iOS `minDaysHeldForBest`: a buy younger than this can't headline the top
  *  performers — day-old spikes aren't a track record. Relaxes when no pick is
  *  old enough, exactly like the app. */
-const MIN_DAYS_HELD_FOR_TOP = 7;
+export const MIN_DAYS_HELD_FOR_TOP = 7;
 
 /** ISO `YYYY-MM-DD` for the day `days` ago (inclusive window lower bound). */
 function isoDaysAgo(days: number): string {
@@ -321,6 +321,75 @@ export function buildChannelPerformance(
     sectors,
     styles,
   };
+}
+
+/** One row of the homepage Winners tab — everything the sentence card states.
+ *  Distinct from ChannelContributor: winners name the person and the stake,
+ *  because the card is a sentence about a director, not a ticker strip. */
+export interface WinnerDealing {
+  id: string;
+  ticker: string;
+  company: string;
+  insiderName: string;
+  insiderRole?: string;
+  /** Trade value in the market's major currency unit. null when unpriced. */
+  value: number | null;
+  /** Since-disclosure return as a ratio (0.12 = +12%). Always > 0 here. */
+  returnPct: number;
+  /** Whole days since disclosure, clamped to ≥ 1. */
+  daysHeld: number;
+  /** ISO `YYYY-MM-DD` disclosure date. */
+  disclosedDate: string;
+}
+
+/** Winners for the homepage tab: windowed buys with a positive live return,
+ *  one per ticker, best first. Same seasoning rule as the contributors strip —
+ *  a buy younger than MIN_DAYS_HELD_FOR_TOP can't make the list unless nothing
+ *  older qualifies. Rows without a live return never qualify, so the list can
+ *  only state figures it actually has. */
+export function buildWinners(
+  dealings: MarketDealing[],
+  limit = 8,
+): WinnerDealing[] {
+  const cutoff = isoDaysAgo(CHANNEL_WINDOW_DAYS);
+  const winners = dealings.filter((d) => {
+    const r = returnOf(d);
+
+    return r != null && r > 0 && d.disclosedDate.slice(0, 10) >= cutoff;
+  });
+  const ageCutoff = isoDaysAgo(MIN_DAYS_HELD_FOR_TOP);
+  const seasoned = winners.filter(
+    (d) => d.disclosedDate.slice(0, 10) <= ageCutoff,
+  );
+  const pool = seasoned.length > 0 ? seasoned : winners;
+  const todayMs = Date.parse(new Date().toISOString().slice(0, 10));
+  const seenTickers = new Set<string>();
+  const out: WinnerDealing[] = [];
+
+  for (const d of [...pool].sort((a, b) => returnOf(b)! - returnOf(a)!)) {
+    if (seenTickers.has(d.ticker)) continue;
+    seenTickers.add(d.ticker);
+    const disclosedDate = d.disclosedDate.slice(0, 10);
+    const daysHeld = Math.max(
+      1,
+      Math.floor((todayMs - Date.parse(disclosedDate)) / 86_400_000),
+    );
+
+    out.push({
+      id: d.id,
+      ticker: d.ticker,
+      company: d.company,
+      insiderName: d.insiderName,
+      insiderRole: d.insiderRole,
+      value: d.value,
+      returnPct: returnOf(d)!,
+      daysHeld,
+      disclosedDate,
+    });
+    if (out.length >= limit) break;
+  }
+
+  return out;
 }
 
 /** True when there's enough signal to bother showing the Performance tab. */

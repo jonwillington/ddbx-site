@@ -366,6 +366,21 @@ export interface MarketConfig<W = unknown> {
   /** One-line hero subhead for first-time visitors — what the product does
    *  for this market. Rendered under the headline on md+ viewports only. */
   heroSubhead?: ReactNode;
+  /** Scannable checkmark bullets rendered under the hero headline in place of
+   *  the subhead paragraph. When present they also suppress the trial eyebrow
+   *  chip — the offer is expected to live in the headline/bullets instead. */
+  heroBullets?: ReactNode[];
+  /** When true, the mobile list opens on a Winners tab (sentence cards built
+   *  from the channel window) with the chronological feed one tap away.
+   *  Requires `fetchChannelDealings` — winners need the 90-day window. */
+  mobileWinners?: boolean;
+  /** Optional post-FAQ spotlight section (cluster buys, top companies) fed by
+   *  the already-loaded channel window. Kept as a component slot so the shell
+   *  stays free of per-market branches. */
+  HomeSpotlights?: ComponentType<{
+    dealings: MarketDealing<W>[] | null;
+    failed: boolean;
+  }>;
   /** Optional objection-handling FAQ rendered at the foot of the market page,
    *  above the footer. Doubles as the page's no-guarantee surface — the
    *  "is this advice?" / "do you promise returns?" answers live here. Build
