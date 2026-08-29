@@ -33,7 +33,9 @@ export interface AnalysisShape {
 export declare function checkContext(d: Dealing): CheckContext;
 export declare function analysisShape(d: AnyFiling): AnalysisShape | null;
 
-export declare function filingMeetsBar(d: AnyFiling | null | undefined): boolean;
+export declare function filingMeetsBar(
+  d: AnyFiling | null | undefined,
+): boolean;
 export declare function filingPath(id: string): string;
 export declare function filingIdFromPath(path: string): string | null;
 

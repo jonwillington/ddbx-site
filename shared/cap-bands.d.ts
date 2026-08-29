@@ -52,7 +52,9 @@ export declare const MIN_COMPANIES: number;
 export declare const TOP_COMPANIES: number;
 export declare const METHODOLOGY: string[];
 
-export declare function bandBySlug(slug: string | null | undefined): Band | null;
+export declare function bandBySlug(
+  slug: string | null | undefined,
+): Band | null;
 export declare function bandPath(slug?: string | null): string;
 /** Null for a missing cap and for a cap in another currency — both are "we
  *  don't know", not "small". */

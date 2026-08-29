@@ -27,4 +27,6 @@ export interface FilingFamily {
 }
 
 /** Anything not explicitly "US" resolves to the UK family. */
-export declare function filingFamily(market: string | null | undefined): FilingFamily;
+export declare function filingFamily(
+  market: string | null | undefined,
+): FilingFamily;
