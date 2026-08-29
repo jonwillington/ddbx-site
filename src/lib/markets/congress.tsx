@@ -307,7 +307,7 @@ function DisclosureGapCallout({
               {fmtSignedPct(gap, "pp")}
             </span>{" "}
             of that move happened in the {lagDays} days between the trade and
-            its public disclosure — before anyone could act on it.
+            its public disclosure, before anyone could act on it.
           </span>
         </div>
       )}
@@ -675,7 +675,7 @@ function CongressDetailBody({
             </div>
             <p className="mt-1 text-xs text-muted">
               Members often disclose many trades in one report. This buy was 1
-              of {filingSize} positions filed together — here&apos;s the read on
+              of {filingSize} positions filed together. Here&apos;s the read on
               the whole batch.
             </p>
           </div>
@@ -813,7 +813,7 @@ const isGovSignal = (d: MarketDealing<GovDealing>): boolean =>
  * This body replaces it. */
 function CongressExplainer() {
   const meta: { label: string; value: string }[] = [
-    { label: "Source", value: "US House Clerk + Senate eFD — STOCK Act PTRs" },
+    { label: "Source", value: "US House Clerk + Senate eFD. STOCK Act PTRs" },
     {
       label: "Who files",
       value: "Representatives & Senators, their spouses & dependents",
@@ -825,7 +825,7 @@ function CongressExplainer() {
   const criteria: { title: string; body: string }[] = [
     {
       title: "Committee jurisdiction",
-      body: "The member sits on a committee that oversees the company’s industry — an Armed Services member buying a defense contractor, say. The clearest reason a trade is worth a second look.",
+      body: "The member sits on a committee that oversees the company’s industry, an Armed Services member buying a defense contractor, say. The clearest reason a trade is worth a second look.",
     },
     {
       title: "Notable size",
@@ -833,7 +833,7 @@ function CongressExplainer() {
     },
     {
       title: "Leverage (options)",
-      body: "An options purchase rather than plain stock — a higher-conviction, higher-risk bet on the same name.",
+      body: "An options purchase rather than plain stock, a higher-conviction, higher-risk bet on the same name.",
     },
     {
       title: "Cluster",
@@ -842,7 +842,7 @@ function CongressExplainer() {
   ];
 
   const caveats: string[] = [
-    "It’s a flag, not an accusation. A committee overlap shows a trade worth seeing — it doesn’t prove anything about how the decision was made.",
+    "It’s a flag, not an accusation. A committee overlap shows a trade worth seeing. It doesn’t prove anything about how the decision was made.",
     "The trade may not be the member’s own. Spouses and dependents file under the same name.",
     "The picture is approximate and late. Amounts are bands, and disclosure can trail the trade by weeks.",
   ];
@@ -852,7 +852,7 @@ function CongressExplainer() {
       <p className="text-[15px] leading-relaxed text-foreground/90">
         Members of Congress write the laws and sit on the committees that
         oversee whole industries. When one buys stock in a company their own
-        committee regulates — or places an unusually large or leveraged bet —
+        committee regulates, or places an unusually large or leveraged bet,
         that’s worth seeing. The STOCK Act forces them to disclose it; we
         surface the trades that stand out.
       </p>
@@ -861,8 +861,8 @@ function CongressExplainer() {
         <h3 className="text-sm font-semibold">How we read it</h3>
         <p className="text-sm leading-relaxed text-foreground/70">
           We take the Periodic Transaction Reports (PTRs) filed with the US
-          House Clerk and the Senate eFD system, keep the purchases — sales and
-          non-trades are dropped — and standardise every filing here.
+          House Clerk and the Senate eFD system, keep the purchases, sales and
+          non-trades are dropped, and standardise every filing here.
         </p>
         <dl className="overflow-hidden rounded-xl border border-black/[0.06] divide-y divide-black/[0.06] dark:border-white/[0.08] dark:divide-white/[0.08]">
           {meta.map((m) => (
@@ -886,7 +886,7 @@ function CongressExplainer() {
         <p className="text-sm leading-relaxed text-foreground/70">
           A member of Congress isn’t betting on a business they run, so we don’t
           score conviction or seniority the way we do for company insiders.
-          Instead a buy is flagged when at least one of these is true — and the
+          Instead a buy is flagged when at least one of these is true, and the
           more it hits, the higher it rates (significant, noteworthy, or minor):
         </p>
         <ol className="space-y-3">
@@ -953,7 +953,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   ),
   // US-market copy uses US English.
   heroSubhead:
-    "Follow the money. Every US Congress STOCK Act purchase, rated as it lands — so you see it as it's filed, not when it's news.",
+    "Follow the money. Every US Congress STOCK Act purchase, rated as it lands, so you see it as it's filed, not when it's news.",
   faq: buildMarketFaq({
     insiderTerm: "member of Congress",
     filingPhrase: "in a STOCK Act report",
@@ -962,9 +962,9 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   description: (
     <>
       US Congress <strong className="text-foreground/75">STOCK Act</strong>{" "}
-      Periodic Transaction Reports — what Representatives and Senators (and
-      their spouses) are buying. Official House Clerk and Senate eFD filings,
-      parsed and triaged automatically.{" "}
+      Periodic Transaction Reports, what Representatives and Senators (and their
+      spouses) are buying. Official House Clerk and Senate eFD filings, parsed
+      and triaged automatically.{" "}
       <strong className="text-foreground/75">Signal</strong> = trades with a
       committee-jurisdiction edge, a cross-member cluster, or that are notable
       by size/leverage (large bets, options).{" "}
@@ -977,7 +977,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
   timelineTitle:
     "Members of Congress traded these companies with their own money",
   locale: "en-US",
-  topNotice: "US Congress is an early preview — no manual curation yet.",
+  topNotice: "US Congress is an early preview, no manual curation yet.",
   priceFormat: USD_FORMAT,
   normalizeLivePrice: (close_pence) => close_pence / 100,
   // PTRs disclose dollar ranges, not an exact fill, and land weeks late — so
@@ -997,11 +997,11 @@ export const CongressMarket: MarketConfig<GovDealing> = {
     company:
       "The company and the member of Congress (or their spouse) who bought it.",
     value:
-      "Disclosed amount band — the STOCK Act reports ranges, not exact figures.",
+      "Disclosed amount band, the STOCK Act reports ranges, not exact figures.",
     trend:
       "Number of buys in this row, plus the stock's 1-year price trend (trade date marked).",
     performance:
-      "Stock return since the trade — or alpha vs the S&P 500 when that view is selected.",
+      "Stock return since the trade, or alpha vs the S&P 500 when that view is selected.",
     action:
       "Signal rating from committee-jurisdiction overlap, trade size, and cross-member clustering.",
   },
@@ -1052,7 +1052,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
       label: "Asset",
       question: "Stock or options?",
       description:
-        "Options purchases are leveraged, higher-conviction bets — surface them on their own.",
+        "Options purchases are leveraged, higher-conviction bets, surface them on their own.",
       defaultValue: "all",
       options: [
         { id: "all", label: "All buys" },
@@ -1098,7 +1098,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
       label: "Net worth",
       question: "How wealthy is the member?",
       description:
-        "Estimated net worth — a $250k buy means more from a $3M member than a $300M one. Unassessed members are excluded from the bands.",
+        "Estimated net worth, a $250k buy means more from a $3M member than a $300M one. Unassessed members are excluded from the bands.",
       defaultValue: "all",
       options: [
         { id: "all", label: "Any" },
@@ -1170,7 +1170,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
     "Third-party headlines (CNBC, MarketWatch, Yahoo Finance, Seeking Alpha); opens in a new tab.",
   renderEmptyState: () => (
     <>
-      No congressional buys stored yet — the ingest cron fills this every few
+      No congressional buys stored yet, the ingest cron fills this every few
       hours.
     </>
   ),

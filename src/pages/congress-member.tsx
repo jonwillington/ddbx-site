@@ -185,7 +185,7 @@ export default function CongressMemberPage() {
           eyebrow="Congress member"
           standfirst={
             status === "missing"
-              ? "We publish a page for every member with a filing on record. That isn’t one of them — either they haven’t filed a purchase in the period we hold, or the address is wrong."
+              ? "We publish a page for every member with a filing on record. That isn’t one of them, either they haven’t filed a purchase in the period we hold, or the address is wrong."
               : "We couldn’t load this member’s filings just now. That’s a fault at our end rather than an empty record."
           }
           title={
@@ -335,8 +335,8 @@ export default function CongressMemberPage() {
               />
               <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
                 “Since disclosure” is the return from the closing price on the
-                day the filing was published — the first price a reader could
-                have paid — marked to the latest cached close, not live. Past
+                day the filing was published, the first price a reader could
+                have paid, marked to the latest cached close, not live. Past
                 performance is not a reliable indicator of future results.
               </p>
             </SeoSection>

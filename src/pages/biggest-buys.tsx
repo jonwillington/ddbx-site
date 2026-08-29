@@ -364,7 +364,7 @@ export default function BiggestBuysPage() {
         {ranked.length === 0 && !complete ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the board just now. It’s a network problem rather
-            than an empty period — try a refresh in a moment.
+            than an empty period. Try a refresh in a moment.
           </p>
         ) : ranked.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
@@ -478,7 +478,7 @@ export default function BiggestBuysPage() {
           <ul className="space-y-2.5">
             {[
               ...METHODOLOGY,
-              "The bar under each row is drawn relative to the largest purchase on this board, not to any fixed scale — it shows how far ahead the leader is, not how large a buy is in absolute terms.",
+              "The bar under each row is drawn relative to the largest purchase on this board, not to any fixed scale. It shows how far ahead the leader is, not how large a buy is in absolute terms.",
             ].map((line: string) => (
               <li key={line} className={`flex gap-2.5 ${R.body}`}>
                 <span

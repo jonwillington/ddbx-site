@@ -161,7 +161,7 @@ export function MarketFiltersSheet({
 
             {showStrength && heroFilters && onHeroFilterChange && (
               <Accordion
-                description="Narrow to one rating tier — significant, noteworthy, or minor."
+                description="Narrow to one rating tier: significant, noteworthy, or minor."
                 open={open.has("strength")}
                 title="Which conviction strength?"
                 value={strengthLabel}

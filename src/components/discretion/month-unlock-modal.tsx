@@ -28,8 +28,8 @@ export function MonthUnlockModal({
   const title = `${monthLabel} is in the app`;
   const message =
     count != null
-      ? `Check out all ${count} trades from ${monthLabel.split(" ")[0]} in the app — every deal, what each director paid, and our analysis of the buys that cleared checks.`
-      : `Check out every ${monthLabel.split(" ")[0]} trade in the app — every deal, what each director paid, and our analysis of the buys that cleared checks.`;
+      ? `Check out all ${count} trades from ${monthLabel.split(" ")[0]} in the app, every deal, what each director paid, and our analysis of the buys that cleared checks.`
+      : `Check out every ${monthLabel.split(" ")[0]} trade in the app, every deal, what each director paid, and our analysis of the buys that cleared checks.`;
 
   return (
     <UnlockModal

@@ -43,7 +43,7 @@ export function MarketChartModeToggle({
             onChange={(axis) => onChange({ ...mode, axis })}
           />
           <p className="text-[12px] leading-snug text-muted">
-            Raw is the stock&apos;s own move. vs {benchmarkLabel} is alpha — the
+            Raw is the stock&apos;s own move. vs {benchmarkLabel} is alpha, the
             move minus the index, so you see whether the pick actually beat the
             market.
           </p>
@@ -60,7 +60,7 @@ export function MarketChartModeToggle({
           />
           <p className="text-[12px] leading-snug text-muted">
             From trade counts from the day the member traded. From disclosure
-            counts from when it became public — often weeks later, after the
+            counts from when it became public, often weeks later, after the
             early move.
           </p>
         </div>

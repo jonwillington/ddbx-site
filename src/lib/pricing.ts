@@ -20,12 +20,32 @@ export interface MarketPricing {
   monthly: number;
   annual: number;
   trialDays: number;
+  /** True when the figures above are a limited-time promotion rather than the
+   *  standing price. Every surface that states a number checks this and says
+   *  so — a promotional price presented as the permanent one is the kind of
+   *  thing a reader finds out at the checkout sheet, which is exactly where
+   *  trust is lost. Clear it when the promotion ends and the copy follows. */
+  promotional?: boolean;
 }
 
 export const PRICING: Record<"uk" | "us", MarketPricing> = {
-  uk: { symbol: "£", code: "GBP", monthly: 9.99, annual: 39.99, trialDays: 7 },
+  // UK is on a limited-time promotion from 2026-08-29: £0.99/month or £4.99
+  // for the year, after the 7-day trial. Confirm against App Store Connect
+  // before changing either number.
+  uk: {
+    symbol: "£",
+    code: "GBP",
+    monthly: 0.99,
+    annual: 4.99,
+    trialDays: 7,
+    promotional: true,
+  },
   us: { symbol: "$", code: "USD", monthly: 9.99, annual: 39.99, trialDays: 7 },
 };
+
+/** The standing phrase for promotional pricing. One string so the site cannot
+ *  describe the same promotion three ways. */
+export const PROMO_NOTE = "Limited-time price";
 
 /** The annual plan expressed as a per-month figure — the number that makes the
  *  annual tier obviously the better deal without any "save X%" mental maths. */

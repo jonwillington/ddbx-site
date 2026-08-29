@@ -212,7 +212,7 @@ export default function BrokerCategoryPage() {
             <PageSection
               aside={
                 <p className={`${R.label} leading-[1.6]`}>
-                  Every platform here carries our “{badge}” badge — that is what
+                  Every platform here carries our “{badge}” badge. That is what
                   makes it eligible. The order is editorial.
                 </p>
               }

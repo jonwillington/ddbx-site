@@ -55,6 +55,16 @@ export function PricingCard({
     <Reveal className="max-w-lg">
       <div className="overflow-hidden rounded-3xl border border-hairline bg-white/70 shadow-sm dark:border-border/60 dark:bg-surface-secondary/40">
         <div className="border-b border-hairline bg-sheet px-6 py-5 text-center dark:border-border/50 dark:bg-surface-secondary/30">
+          {/* A promotion has to say it is one, in the same object as the
+              numbers it applies to. Left implicit, a visitor who comes back
+              after it ends reads the higher price as a bait-and-switch. */}
+          {pricing.promotional ? (
+            <p className="mb-2 flex justify-center">
+              <span className="rounded-full bg-brand-brown/10 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan">
+                {t.limitedTime}
+              </span>
+            </p>
+          ) : null}
           <p className="text-lg font-semibold">
             {t.freeForDays(pricing.trialDays)}
           </p>

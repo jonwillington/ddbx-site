@@ -408,7 +408,7 @@ export function MarketExplainerExperience({
                     <p className="mt-1 text-sm leading-relaxed text-[#f3ecdf]/90">
                       {checkPassed
                         ? check.passLine(ctx)
-                        : "This one didn't clear the check — and that costs it."}
+                        : "This one didn't clear the check, and that costs it."}
                     </p>
                   </div>
                 </div>
@@ -524,7 +524,7 @@ function IntroScene({
       </h2>
       <p className="mx-auto mt-4 max-w-md text-balance text-[15px] leading-relaxed text-[#f3ecdf]/65">
         {ctx
-          ? "Most filings are noise. We run every one through six checks — watch this one go through."
+          ? "Most filings are noise. We run every one through six checks. Watch this one go through."
           : "We run every filing through six checks before it earns a place on the list. Here's what we look for."}
       </p>
       <div className="mt-9">
@@ -574,7 +574,7 @@ function FinaleScene({
         </p>
       )}
       <p className="mx-auto mt-6 max-w-md text-balance text-sm leading-relaxed text-[#f3ecdf]/45">
-        Built for {copy.regionName} — we read {copy.regulatorFullName} on{" "}
+        Built for {copy.regionName}. We read {copy.regulatorFullName} on{" "}
         {copy.exchangeFullName}, filed by the people local rules call{" "}
         {copy.insiderTermPlural}. The checklist isn&apos;t fixed: as we see
         which buys go on to perform, the checks get sharper.

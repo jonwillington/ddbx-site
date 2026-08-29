@@ -132,13 +132,13 @@ export default function HowItWorksPage() {
       <SeoPageShell
         cta={{
           headline: "You've read the method. Watch it run.",
-          body: `The checks above are applied to every ${copy.insiderTerm} purchase disclosed on ${copy.exchangeShortName}, the day it files. The app is where the results land — rated, with the reasoning attached, before the story reaches anyone else.`,
+          body: `The checks above are applied to every ${copy.insiderTerm} purchase disclosed on ${copy.exchangeShortName}, the day it files. The app is where the results land, rated, with the reasoning attached, before the story reaches anyone else.`,
           gaLabel: "How it works",
           marketId: appMarketId,
           screenshotSlot: "analysis",
         }}
         eyebrow={EYEBROW}
-        standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is what we do with them — how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks behind that rating actually test, how much we have put through it, and where the method stops. Every figure below is counted from the database rather than written into the page.`}
+        standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is what we do with them, how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks behind that rating actually test, how much we have put through it, and where the method stops. Every figure below is counted from the database rather than written into the page.`}
         standfirstSize="lede"
         title={`How we rate ${
           copy.insiderTerm === "director" ? "a director’s" : "an insider’s"
@@ -153,7 +153,7 @@ export default function HowItWorksPage() {
           buys shares with their own money, at the price anyone else could have
           paid, that is worth a look. The difficulty is that the same disclosure
           regime that surfaces those purchases also surfaces the grants, the
-          vestings and the option exercises they are buried in — so the work is
+          vestings and the option exercises they are buried in, so the work is
           almost entirely in the sorting.
         </p>
 
@@ -268,7 +268,7 @@ export default function HowItWorksPage() {
         >
           <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
             Each check is a yes or no. They are not weighted against each other
-            and there is no score to average — a purchase clears them or it
+            and there is no score to average, a purchase clears them or it
             doesn’t, and the count of what it cleared is published on the filing
             itself, so you can see which ones it missed rather than taking the
             rating on trust.
@@ -346,7 +346,7 @@ export default function HowItWorksPage() {
             they do gets the vocabulary wrong before it gets anything else
             wrong. In {copy.regionName} that means reading{" "}
             {copy.regulatorFullName}, filed by the people local rules call{" "}
-            {copy.insiderTermPlural} — in their own format, standardised here,
+            {copy.insiderTermPlural}, in their own format, standardised here,
             and never a third party’s summary of them.
           </p>
 
@@ -391,7 +391,7 @@ export default function HowItWorksPage() {
           <p className="mt-5 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
             Both legs of every one of those returns are market closes off the
             same price series, entry and exit, rather than the price the insider
-            filed — a ratio of two closes is unit-free, which removes an entire
+            filed, a ratio of two closes is unit-free, which removes an entire
             class of error around splits, currency and depositary ratios. Each
             is stored beside its benchmark over the identical window, so what we
             keep is the difference against the market rather than the raw
@@ -555,7 +555,7 @@ const LIMITS: { title: string; body: string }[] = [
   },
   {
     title: "We only see what gets disclosed",
-    body: "The pipeline reads filings. An insider who buys through a structure that doesn’t require disclosure, or a market that files late, is invisible to it — and a disclosure can arrive days after the trade it describes.",
+    body: "The pipeline reads filings. An insider who buys through a structure that doesn’t require disclosure, or a market that files late, is invisible to it, and a disclosure can arrive days after the trade it describes.",
   },
   {
     title: "The record behind it is still short",
@@ -563,7 +563,7 @@ const LIMITS: { title: string; body: string }[] = [
   },
   {
     title: "The checklist moves",
-    body: "As the record builds, what each check looks for gets adjusted, which means a filing’s rating can change after publication. That is deliberate — a fixed checklist would be easier to describe and worse at its job.",
+    body: "As the record builds, what each check looks for gets adjusted, which means a filing’s rating can change after publication. That is deliberate, a fixed checklist would be easier to describe and worse at its job.",
   },
 ];
 

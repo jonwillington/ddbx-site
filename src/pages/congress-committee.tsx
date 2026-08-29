@@ -151,7 +151,7 @@ export default function CongressCommitteePage() {
           standfirst={
             failed
               ? "We couldn’t load the committee list just now. That’s a fault at our end."
-              : "We publish a page for each committee whose sector jurisdiction we map — eleven House committees. That isn’t one of them."
+              : "We publish a page for each committee whose sector jurisdiction we map, eleven House committees. That isn’t one of them."
           }
           title={
             failed

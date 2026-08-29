@@ -196,7 +196,7 @@ function CitedSection({
 function Unavailable() {
   return (
     <div className="text-center py-10 text-sm text-muted">
-      Summary not available yet — the team writes one after each market close.
+      Summary not available yet. The team writes one after each market close.
     </div>
   );
 }

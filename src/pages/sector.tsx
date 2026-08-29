@@ -184,7 +184,7 @@ export default function SectorPage() {
             { label: "Not found" },
           ]}
           eyebrow="Sector hub"
-          standfirst="We normalise every filing into eleven sectors, and that isn’t one of them — the name may have changed. All eleven are below."
+          standfirst="We normalise every filing into eleven sectors, and that isn’t one of them, the name may have changed. All eleven are below."
           title="We don’t track that sector"
         >
           <SeoSection
@@ -263,7 +263,7 @@ export default function SectorPage() {
         standfirstSize="lede"
         title={
           <>
-            {sector.label} — {market.label} insider buying
+            {sector.label}, {market.label} insider buying
           </>
         }
       >
@@ -273,12 +273,12 @@ export default function SectorPage() {
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the filings just now, so there are no figures to
             show for {sector.label.toLowerCase()}. That’s a fault at our end
-            rather than a quiet twelve months — try again shortly.
+            rather than a quiet twelve months. Try again shortly.
           </p>
         ) : !publishable ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             Fewer than {MIN_BUYS} disclosed purchases in this sector over the
-            last twelve months — not enough to draw anything from.{" "}
+            last twelve months, not enough to draw anything from.{" "}
             <Link className="underline underline-offset-4" to="/sectors">
               See the sectors that are active
             </Link>
@@ -298,8 +298,8 @@ export default function SectorPage() {
 
             <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
               Rolling twelve months. Median alpha is the middle buy’s return
-              against the market, measured from the disclosure-day close — the
-              first price a reader could have paid — not from the insider’s own
+              against the market, measured from the disclosure-day close, the
+              first price a reader could have paid, not from the insider’s own
               entry.
             </p>
 

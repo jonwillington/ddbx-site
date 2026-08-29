@@ -237,7 +237,7 @@ export function CompanyPriceChart({
       y: yAt(closes[i]),
       date: d.trade_date,
       label: `${market === "UK" ? "Director" : "Insider"} buy, ${fmtDay(d.trade_date, market)}${
-        rating ? ` — rated ${rating}` : ""
+        rating ? `, rated ${rating}` : ""
       }`,
       ink,
       ring,

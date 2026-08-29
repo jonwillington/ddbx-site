@@ -142,7 +142,7 @@ export function RolesIndexPage() {
         {buckets.length === 0 && !complete ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the filings just now. It’s a network problem rather
-            than an empty period — try a refresh in a moment.
+            than an empty period. Try a refresh in a moment.
           </p>
         ) : buckets.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
@@ -295,7 +295,7 @@ export default function RolePage() {
           standfirst={
             <>
               {role
-                ? `We publish that group for the UK only — a Form 4 officer title has no equivalent of it.`
+                ? `We publish that group for the UK only, a Form 4 officer title has no equivalent of it.`
                 : `We don’t publish a page for that role.`}{" "}
               Here are the ones we do publish for {market.label}.
             </>
@@ -364,7 +364,7 @@ export default function RolePage() {
         {shown.length === 0 && !complete ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the filings just now. It’s a network problem rather
-            than an empty period — try a refresh in a moment.
+            than an empty period. Try a refresh in a moment.
           </p>
         ) : shown.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>

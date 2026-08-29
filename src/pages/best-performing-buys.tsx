@@ -142,7 +142,7 @@ export default function BestPerformingBuysPage() {
         standfirst={
           <>
             The purchases {market.noun} made in their own companies that have
-            since beaten the market by the widest margin — measured as{" "}
+            since beaten the market by the widest margin, measured as{" "}
             <Link
               className="underline decoration-foreground/25 underline-offset-4 transition-colors hover:decoration-foreground/60"
               to="/learn/what-a-director-buy-signals"
@@ -160,7 +160,7 @@ export default function BestPerformingBuysPage() {
         {ranked.length === 0 && !complete ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the board just now. It’s a network problem rather
-            than an empty period — try a refresh in a moment.
+            than an empty period. Try a refresh in a moment.
           </p>
         ) : ranked.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>

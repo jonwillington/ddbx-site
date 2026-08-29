@@ -261,7 +261,7 @@ function UkDetailPosition({ dealing }: { dealing: MarketDealing<Dealing> }) {
             className="w-5 h-5 shrink-0 text-blue-700 dark:text-blue-400 mt-0.5"
           />
           <p className="text-sm leading-relaxed text-blue-950/90 dark:text-blue-100/90">
-            Non-market trade — the entry price reflects an award or scheme, not
+            Non-market trade, the entry price reflects an award or scheme, not
             shares bought at market value, so the return below isn’t a
             like-for-like gain.
           </p>
@@ -452,7 +452,7 @@ export const UkMarket: MarketConfig<Dealing> = {
   holidays: UK_BANK_HOLIDAYS_SOURCE,
   description: (
     <>
-      LSE RNS-filed director purchases, screened by Opus into{" "}
+      LSE RNS-filed director purchases, screened into{" "}
       <strong className="text-foreground/75">Significant</strong>{" "}
       (high-conviction signals) and{" "}
       <strong className="text-foreground/75">Noteworthy</strong> (worth a look).{" "}
@@ -481,8 +481,8 @@ export const UkMarket: MarketConfig<Dealing> = {
     trend:
       "Number of buys in this row, plus the share price's 1-year trend (trade date marked).",
     performance:
-      "Share-price return since the trade — or alpha vs the FTSE All-Share when 'vs FTSE' is selected.",
-    action: "Our analyst rating: significant, noteworthy, or skipped.",
+      "Share-price return since the trade, or alpha vs the FTSE All-Share when 'vs FTSE' is selected.",
+    action: "The rating this buy earned: significant, noteworthy, or skipped.",
   },
   formatTickerDisplay: (ticker) => ticker.replace(/\.L$/, ""),
   isRowMuted: (d) => !d.rating || !d.isPurchase,

@@ -138,7 +138,7 @@ export default function ReportsPage() {
         loading={months === null}
         notice={<TrackingNotice />}
         skeleton={<ArchiveSkeleton />}
-        standfirst="A report every month: what insiders bought, what it was worth, which sectors they concentrated in, and how the previous month’s featured buys have actually performed since — including the ones that didn’t work."
+        standfirst="A report every month: what insiders bought, what it was worth, which sectors they concentrated in, and how the previous month’s featured buys have actually performed since, including the ones that didn’t work."
         title={`${label} reports`}
       >
         {sorted.length === 0 ? (

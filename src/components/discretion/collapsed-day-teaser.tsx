@@ -256,7 +256,7 @@ export function CollapsedDayTeaser<W>({
     </span>
   );
 
-  const ariaLabel = `${deals.length} ${deals.length === 1 ? "filing" : "filings"} recorded on this day — view in the app`;
+  const ariaLabel = `${deals.length} ${deals.length === 1 ? "filing" : "filings"} recorded on this day, view in the app`;
   const rowClass =
     "group flex w-full items-center gap-4 px-4 py-5 text-left transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]";
 

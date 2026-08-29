@@ -462,7 +462,7 @@ export default function ApiPage() {
   return (
     <DefaultLayout>
       {/* `isolate` scopes the atmosphere's negative z-index to this page —
-          see PageAtmosphere for why it can't just be a fixed layer. */}
+          See PageAtmosphere for why it can't just be a fixed layer. */}
       <div className="relative isolate">
         <PageAtmosphere />
 

@@ -157,7 +157,7 @@ export function MarketCapIndexPage() {
         {shown.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the company index just now. It’s a network problem
-            rather than an empty market — try a refresh in a moment.
+            rather than an empty market. Try a refresh in a moment.
           </p>
         ) : (
           <>
@@ -306,12 +306,12 @@ export default function MarketCapBandPage() {
         {!row || row.count === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the company index just now. It’s a network problem
-            rather than an empty band — try a refresh in a moment.
+            rather than an empty band. Try a refresh in a moment.
           </p>
         ) : row.count < MIN_COMPANIES ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             Only {row.count} {row.count === 1 ? "company" : "companies"} in this
-            band have disclosed buying at the moment — too few to rank. Try{" "}
+            band have disclosed buying at the moment, too few to rank. Try{" "}
             <Link className="underline underline-offset-4" to="/market-cap">
               the other bands
             </Link>

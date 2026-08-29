@@ -210,7 +210,7 @@ export default function LearnEntryPage() {
         />
         <SeoPageShell
           eyebrow={EYEBROW}
-          standfirst="That explainer doesn’t exist — it may have been renamed. Everything we’ve written is below."
+          standfirst="That explainer doesn’t exist. It may have been renamed. Everything we’ve written is below."
           title="We haven’t written that one"
         >
           <EntryList entries={fallbackEntries} />

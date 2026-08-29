@@ -153,6 +153,8 @@ export interface ChromeCopy {
   monthly: string;
   annual: string;
   savePct: (pct: number) => string;
+  /** Badge on a price that is a promotion rather than the standing rate. */
+  limitedTime: string;
   perMonth: string;
   perMonthBilledYearly: (annual: string) => string;
   billedThrough: (store: string, code: string) => string;
@@ -167,6 +169,8 @@ export interface ChromeCopy {
   railFreeForDays: (days: number) => string;
   railPerMonth: string;
   railBilled: (annual: string, monthly: string) => string;
+  /** Appended under the rail price when the figures are a promotion. */
+  railPromo: string;
   railLinks: {
     latestFilings: string;
     companies: string;
@@ -201,7 +205,7 @@ export const EN_CHROME: ChromeCopy = {
   getOnStore: (store) => `Get ddbx on the ${store}`,
   altLocaleLabel: "繁體中文",
   storeUnavailable:
-    "The US app is still in Play internal testing — it isn’t on the Google Play store yet. Two things you can install today:",
+    "The US app is still in Play internal testing. It isn’t on the Google Play store yet. Two things you can install today:",
   storeUnavailableAlts: {
     us: "ddbx US on iPhone",
     uk: "ddbx UK on Google Play",
@@ -225,10 +229,11 @@ export const EN_CHROME: ChromeCopy = {
   monthly: "Monthly",
   annual: "Annual",
   savePct: (pct) => `Save ${pct}%`,
+  limitedTime: "Limited time",
   perMonth: "per month",
   perMonthBilledYearly: (annual) => `per month, billed ${annual} yearly`,
   billedThrough: (store, code) =>
-    `Billed through ${store}. Prices shown in ${code} and may vary by territory — your store shows the exact amount before you confirm.`,
+    `Billed through ${store}. Prices shown in ${code} and may vary by territory. Your store shows the exact amount before you confirm.`,
   everythingIncluded: "Everything included",
   getAppKicker: "Get the app",
   finalTitle: (noun) => (
@@ -237,11 +242,12 @@ export const EN_CHROME: ChromeCopy = {
   freeForDaysCancel: (d) => `Free for ${d} days, cancel any time.`,
   scanToOpen: (store) => `Scan to open ddbx on the ${store}`,
   returnsDisclaimer: (noun) =>
-    `Returns shown are the share-price change since each ${noun}’s purchase, as of the latest cached close. Past performance is not a reliable indicator of future results. ddbx is information, not financial advice — capital is at risk.`,
+    `Returns shown are the share-price change since each ${noun}’s purchase, as of the latest cached close. Past performance is not a reliable indicator of future results. ddbx is information, not financial advice. Capital is at risk.`,
   railFreeForDays: (d) => `Free for ${d} days`,
   railPerMonth: "/ month",
   railBilled: (annual, monthly) =>
     `Billed ${annual} yearly, or ${monthly} a month. Cancel any time.`,
+  railPromo: "Limited-time price.",
   railLinks: {
     latestFilings: "Latest filings",
     companies: "Companies",
@@ -264,7 +270,7 @@ export const EN_CHROME: ChromeCopy = {
         a: (
           <>
             No. ddbx tells you what {buyerNoun}s have disclosed and what has
-            happened to the share price since — it never tells you what to buy.
+            happened to the share price since. It never tells you what to buy.
             Insider buying is one input among many, and capital is at risk.
           </>
         ),
@@ -274,9 +280,12 @@ export const EN_CHROME: ChromeCopy = {
         q: `What happens when the ${pricing.trialDays}-day trial ends?`,
         a: (
           <>
-            You’re asked to subscribe — {formatPrice(pricing, pricing.monthly)}{" "}
-            a month, or {formatPrice(pricing, pricing.annual)} for the year.
-            Cancel any time before the trial ends in your{" "}
+            You’re asked to subscribe, {formatPrice(pricing, pricing.monthly)} a
+            month, or {formatPrice(pricing, pricing.annual)} for the year
+            {pricing.promotional
+              ? ", both limited-time promotional prices"
+              : ""}
+            . Cancel any time before the trial ends in your{" "}
             {STORE_LABEL[platform]} subscription settings and you won’t be
             charged.
           </>
@@ -286,7 +295,7 @@ export const EN_CHROME: ChromeCopy = {
         q: `Is there ${other === "iPhone" ? "an iPhone" : "an Android"} version?`,
         a: (
           <>
-            Yes —{" "}
+            Yes,{" "}
             <a
               className="font-medium underline underline-offset-2"
               href={otherPath}
@@ -304,7 +313,7 @@ export const EN_CHROME: ChromeCopy = {
           <>
             The UK app covers every London-listed director dealing; the US app
             covers SEC Form 4 insider filings and congressional trades. They’re
-            separate apps — this page is for the {market === "uk" ? "UK" : "US"}{" "}
+            separate apps. This page is for the {market === "uk" ? "UK" : "US"}{" "}
             one.
           </>
         ),
@@ -349,21 +358,23 @@ export const ZH_HK_CHROME: ChromeCopy = {
   monthly: "月付",
   annual: "年付",
   savePct: (pct) => `慳 ${pct}%`,
+  limitedTime: "限時優惠",
   perMonth: "每月",
   perMonthBilledYearly: (annual) => `每月計，按年收取 ${annual}`,
   billedThrough: (store, code) =>
-    `經 ${store} 收費。價格以 ${code} 顯示，各地區或有不同 — 確認付款前，商店會顯示實際金額。`,
+    `經 ${store} 收費。價格以 ${code} 顯示，各地區或有不同，確認付款前，商店會顯示實際金額。`,
   everythingIncluded: "全部包含",
   getAppKicker: "下載 App",
   finalTitle: (noun) => <>明早有{noun}買入。幾分鐘內你就會知道。</>,
   freeForDaysCancel: (d) => `免費試用 ${d} 天，隨時取消。`,
   scanToOpen: (store) => `掃描二維碼，在 ${store} 開啟 ddbx`,
   returnsDisclaimer: (noun) =>
-    `所示回報為每位${noun}買入後的股價變化，以最近一次快取收市價計算。過往表現並非未來業績的可靠指標。ddbx 提供的是資訊，並非投資建議 — 投資涉及風險，本金可能虧損。`,
+    `所示回報為每位${noun}買入後的股價變化，以最近一次快取收市價計算。過往表現並非未來業績的可靠指標。ddbx 提供的是資訊，並非投資建議，投資涉及風險，本金可能虧損。`,
   railFreeForDays: (d) => `免費試用 ${d} 天`,
   railPerMonth: "／月",
   railBilled: (annual, monthly) =>
     `按年收取 ${annual}，或每月 ${monthly}。隨時取消。`,
+  railPromo: "限時優惠價。",
   railLinks: {
     latestFilings: "最新披露",
     companies: "公司",
@@ -388,7 +399,7 @@ export const ZH_HK_CHROME: ChromeCopy = {
         a: (
           <>
             不算。ddbx 只告訴你{buyerNoun}
-            披露咗甚麼，以及此後股價的變化 —
+            披露咗甚麼，以及此後股價的變化，
             它從不告訴你應該買甚麼。內部人士買入只是眾多參考之一，投資涉及風險，本金可能虧損。
           </>
         ),
@@ -401,7 +412,7 @@ export const ZH_HK_CHROME: ChromeCopy = {
         q: "App 介面是中文嗎？",
         a: (
           <>
-            不是。App 的介面、每日回顧和每一宗買入分析目前都只有英文 —
+            不是。App 的介面、每日回顧和每一宗買入分析目前都只有英文，
             中文的是這一頁，不是 App
             本身。用語跟英國監管披露一致，所以如果你平時讀開英文財經資訊，應該不難上手；但訂閱之前，請先確認這一點。
           </>
@@ -412,11 +423,10 @@ export const ZH_HK_CHROME: ChromeCopy = {
         q: `${pricing.trialDays} 天試用期完結之後會點？`,
         a: (
           <>
-            系統會邀請你訂閱 — 每月 {formatPrice(pricing, pricing.monthly)}
-            ，或全年 {formatPrice(
-              pricing,
-              pricing.annual,
-            )}。在試用期結束前，於 {STORE_LABEL[platform]}{" "}
+            系統會邀請你訂閱，每月 {formatPrice(pricing, pricing.monthly)}
+            ，或全年 {formatPrice(pricing, pricing.annual)}
+            {pricing.promotional ? "（限時優惠價）" : ""}
+            。在試用期結束前，於 {STORE_LABEL[platform]}{" "}
             的訂閱設定中取消，就不會扣費。
           </>
         ),
@@ -425,7 +435,7 @@ export const ZH_HK_CHROME: ChromeCopy = {
         q: `有${other === "iPhone" ? " iPhone " : " Android "}版嗎？`,
         a: (
           <>
-            有 —{" "}
+            有，{" "}
             <a
               className="font-medium underline underline-offset-2"
               href={otherPath}
@@ -441,7 +451,7 @@ export const ZH_HK_CHROME: ChromeCopy = {
         a: (
           <>
             英國版 App 覆蓋每一宗倫敦上市公司的董事交易；美國版 App
-            覆蓋美國證交會 Form 4 內部人士申報及國會議員交易。兩者是獨立的 App —
+            覆蓋美國證交會 Form 4 內部人士申報及國會議員交易。兩者是獨立的 App，
             此頁介紹的是英國版，而美國版並沒有中文頁面。
           </>
         ),
@@ -466,26 +476,26 @@ const EN_UK: LandingCopy = {
   heroSub: (
     <>
       When a director puts their own money into the business they run, it’s
-      worth a look. ddbx tracks every UK director share purchase — and shows you
+      worth a look. ddbx tracks every UK director share purchase, and shows you
       how they’ve done.
     </>
   ),
   proofKicker: "Last 30 days",
   winnersHeading: <>Directors bought these. Here’s how they’ve done.</>,
   winnersSub:
-    "Real, recent open-market purchases by UK directors — and the share-price move since they bought. Every one of them was in the app the day it filed.",
+    "Real, recent open-market purchases by UK directors, and the share-price move since they bought. Every one of them was in the app the day it filed.",
   winnersCtaSub: (d) =>
-    `See every director buy as it happens — free for ${d} days.`,
+    `See every director buy as it happens, free for ${d} days.`,
   tourHeading: "One filing, followed.",
   tourSub:
-    "A director buys. Here is everything that happens next — from the second it hits the wire to what the shares had done months later.",
+    "A director buys. Here is everything that happens next, from the second it hits the wire to what the shares had done months later.",
   beats: [
     {
       slot: "alert",
       timestamp: "07:01",
       kicker: "The alert",
       title: "It lands the moment the filing does.",
-      body: "A director discloses a purchase and your phone buzzes — usually within minutes of the RNS, not the next morning. No inbox to check, no feed to trawl.",
+      body: "A director discloses a purchase and your phone buzzes, usually within minutes of the RNS, not the next morning. No inbox to check, no feed to trawl.",
     },
     {
       slot: "analysis",
@@ -499,21 +509,21 @@ const EN_UK: LandingCopy = {
       timestamp: "07:03",
       kicker: "Both sides",
       title: "The case against, next to the case for.",
-      body: "Every rated buy is argued both ways — what makes it interesting, and what should give you pause — each point expandable down to the filing it came from. Nothing here is trying to talk you into a trade.",
+      body: "Every rated buy is argued both ways (what makes it interesting, and what should give you pause), each point expandable down to the filing it came from. Nothing here is trying to talk you into a trade.",
     },
     {
       slot: "cluster",
       timestamp: "Days 3–9",
       kicker: "The pattern",
       title: "One buy is a data point. Six is a pattern.",
-      body: "When several directors buy the same company inside a few weeks, ddbx groups them — every purchase plotted on the price chart, the average they paid, and what the shares have done since.",
+      body: "When several directors buy the same company inside a few weeks, ddbx groups them, every purchase plotted on the price chart, the average they paid, and what the shares have done since.",
     },
     {
       slot: "performance",
       timestamp: "Today",
       kicker: "The score",
       title: "See whether it actually worked.",
-      body: "Live price tracking from the trade date onward, so you can tell whose buying has been worth following — and whose hasn’t.",
+      body: "Live price tracking from the trade date onward, so you can tell whose buying has been worth following, and whose hasn’t.",
     },
     {
       slot: "recap",
@@ -532,17 +542,17 @@ const EN_UK: LandingCopy = {
   ],
   benefits: [
     "Push alerts within minutes of every director disclosure, not the next morning",
-    "Written analysis on every rated buy — the case for it and the case against",
+    "Written analysis on every rated buy, the case for it and the case against",
     "Cluster detection: several directors in the same company, grouped and plotted on the price chart",
     "Live performance tracking from the trade date, so you can see whose buying is worth following",
     "A daily recap of the whole UK market, written for you before the open",
     "Follow any company or director, and get told when the price moves after a buy you’re watching",
     "Placings, vestings and option exercises stripped out, so what’s left is people choosing to buy",
-    "Every London-listed director dealing, back to the day we started — searchable",
+    "Every London-listed director dealing, back to the day we started, searchable",
     "No ads, no upsells, and your data is never resold",
   ],
   sourceLine:
-    "Sourced from primary UK regulatory disclosures (RNS) as they publish — never scraped from a third-party summary.",
+    "Sourced from primary UK regulatory disclosures (RNS) as they publish, never scraped from a third-party summary.",
   finalSub: (d) =>
     `Every UK director buy, decoded and tracked from the day it files. Try it free for ${d} days.`,
   buyerNoun: "director",
@@ -565,26 +575,26 @@ const EN_US: LandingCopy = {
   heroSub: (
     <>
       When the people who run a business buy its stock with their own money,
-      it’s worth a look. ddbx tracks every US insider purchase — and shows you
+      it’s worth a look. ddbx tracks every US insider purchase, and shows you
       how they’ve done.
     </>
   ),
   proofKicker: "Last 30 days",
   winnersHeading: <>Insiders bought these. Here’s how they’ve done.</>,
   winnersSub:
-    "Real, recent open-market purchases by US insiders — and the share-price move since they bought. Every one of them was in the app the day it filed.",
+    "Real, recent open-market purchases by US insiders, and the share-price move since they bought. Every one of them was in the app the day it filed.",
   winnersCtaSub: (d) =>
-    `See every insider buy as it happens — free for ${d} days.`,
+    `See every insider buy as it happens, free for ${d} days.`,
   tourHeading: "One filing, followed.",
   tourSub:
-    "A director buys. Here is everything that happens next — from the second it hits the wire to what the shares had done months later.",
+    "A director buys. Here is everything that happens next, from the second it hits the wire to what the shares had done months later.",
   beats: [
     {
       slot: "alert",
       timestamp: "07:01",
       kicker: "The alert",
       title: "It lands the moment the Form 4 does.",
-      body: "An insider files with the SEC and your phone buzzes — usually within minutes of it hitting EDGAR. No filters to build, no filing feed to babysit.",
+      body: "An insider files with the SEC and your phone buzzes, usually within minutes of it hitting EDGAR. No filters to build, no filing feed to babysit.",
     },
     {
       slot: "analysis",
@@ -598,21 +608,21 @@ const EN_US: LandingCopy = {
       timestamp: "07:03",
       kicker: "Both sides",
       title: "The case against, next to the case for.",
-      body: "Every rated buy is argued both ways — what makes it interesting, and what should give you pause — each point expandable down to the filing it came from. Nothing here is trying to talk you into a trade.",
+      body: "Every rated buy is argued both ways (what makes it interesting, and what should give you pause), each point expandable down to the filing it came from. Nothing here is trying to talk you into a trade.",
     },
     {
       slot: "cluster",
       timestamp: "Days 3–9",
       kicker: "The pattern",
       title: "One buy is a data point. Six is a pattern.",
-      body: "When several insiders buy the same company inside a few weeks, ddbx groups them — every purchase plotted on the price chart, the average they paid, and what the stock has done since.",
+      body: "When several insiders buy the same company inside a few weeks, ddbx groups them, every purchase plotted on the price chart, the average they paid, and what the stock has done since.",
     },
     {
       slot: "performance",
       timestamp: "Today",
       kicker: "The score",
       title: "See whether it actually worked.",
-      body: "Live price tracking from the trade date onward, so you can tell whose buying has been worth following — and whose hasn’t.",
+      body: "Live price tracking from the trade date onward, so you can tell whose buying has been worth following, and whose hasn’t.",
     },
     {
       slot: "recap",
@@ -631,7 +641,7 @@ const EN_US: LandingCopy = {
   ],
   benefits: [
     "Push alerts within minutes of the Form 4 hitting EDGAR, not the next morning",
-    "Written analysis on every rated buy — the case for it and the case against",
+    "Written analysis on every rated buy, the case for it and the case against",
     "Cluster detection: several insiders in the same company, grouped and plotted on the price chart",
     "Live performance tracking from the trade date, so you can see whose buying is worth following",
     "A daily recap of the whole US market, written for you before the open",
@@ -641,7 +651,7 @@ const EN_US: LandingCopy = {
     "No ads, no upsells, and your data is never resold",
   ],
   sourceLine:
-    "Sourced from SEC EDGAR Form 4 filings as they publish — never scraped from a third-party summary.",
+    "Sourced from SEC EDGAR Form 4 filings as they publish, never scraped from a third-party summary.",
   finalSub: (d) =>
     `Every US insider buy, decoded and tracked from the day it files. Try it free for ${d} days.`,
   buyerNoun: "insider",
@@ -668,17 +678,17 @@ const ZH_HK_UK: LandingCopy = {
   winnersHeading: <>董事買入了這些。看看他們的成績。</>,
   winnersSub:
     "全部是英國董事近期在場內的真實買盤，以及他們買入之後的股價變化。每一宗在披露當日就已經在 App 內。",
-  winnersCtaSub: (d) => `每一宗董事增持，即時掌握 — 免費試用 ${d} 天。`,
+  winnersCtaSub: (d) => `每一宗董事增持，即時掌握，免費試用 ${d} 天。`,
   tourHeading: "一宗披露，跟到底。",
   tourSub:
-    "一位董事買入。以下是接下來發生的每一件事 — 由消息上線那一秒，到幾個月後股價的去向。",
+    "一位董事買入。以下是接下來發生的每一件事，由消息上線那一秒，到幾個月後股價的去向。",
   beats: [
     {
       slot: "alert",
       timestamp: "07:01",
       kicker: "即時通知",
       title: "披露一出，通知同時到。",
-      body: "董事披露買入，你的手機隨即震動 — 通常在 RNS 公佈後幾分鐘內，而不是第二天早上。不用查郵箱，也不用翻資訊流。",
+      body: "董事披露買入，你的手機隨即震動，通常在 RNS 公佈後幾分鐘內，而不是第二天早上。不用查郵箱，也不用翻資訊流。",
     },
     {
       slot: "analysis",
@@ -692,14 +702,14 @@ const ZH_HK_UK: LandingCopy = {
       timestamp: "07:03",
       kicker: "正反兩面",
       title: "看好的理由，旁邊就是看淡的理由。",
-      body: "每一宗獲評級的買入都會正反並陳 — 值得留意的地方，以及應該審慎的地方 — 每一點都可以展開，一直追溯到原始披露文件。這裡沒有任何內容是想說服你入市。",
+      body: "每一宗獲評級的買入都會正反並陳，值得留意的地方，以及應該審慎的地方，每一點都可以展開，一直追溯到原始披露文件。這裡沒有任何內容是想說服你入市。",
     },
     {
       slot: "cluster",
       timestamp: "第 3–9 天",
       kicker: "形態",
       title: "一宗是數據，六宗是形態。",
-      body: "當多位董事在數星期內買入同一間公司，ddbx 會把它們歸為一組 — 每一宗買入都標在股價圖上，連同平均買入價，以及此後股價的表現。",
+      body: "當多位董事在數星期內買入同一間公司，ddbx 會把它們歸為一組，每一宗買入都標在股價圖上，連同平均買入價，以及此後股價的表現。",
     },
     {
       slot: "performance",
@@ -725,7 +735,7 @@ const ZH_HK_UK: LandingCopy = {
   ],
   benefits: [
     "每一宗董事披露後數分鐘內推送通知，而不是第二天早上",
-    "每一宗獲評級的買入都有文字分析 — 看好的理由，以及看淡的理由",
+    "每一宗獲評級的買入都有文字分析，看好的理由，以及看淡的理由",
     "密集買入偵測：同一間公司多位董事買入，自動歸組並標示在股價圖上",
     "由成交日起計的實時表現追蹤，讓你看清誰的買盤值得跟",
     "每日一篇英國市場全景回顧，開市前為你寫好",

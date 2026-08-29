@@ -150,8 +150,8 @@ export default function SectorsPage() {
           // below still render, so the reader has somewhere to go.
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the filings just now, so there’s no breakdown to
-            show. That’s a fault at our end rather than a quiet twelve months —
-            try again shortly.
+            show. That’s a fault at our end rather than a quiet twelve months.
+            Try again shortly.
           </p>
         ) : publishable.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
@@ -257,7 +257,7 @@ export default function SectorsPage() {
                 to: "/learn",
                 title: "Glossary",
                 description:
-                  "What the filings mean — closed periods, clusters, open-market buys.",
+                  "What the filings mean, closed periods, clusters, open-market buys.",
               },
             ]}
           />

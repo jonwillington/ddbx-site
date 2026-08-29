@@ -77,20 +77,20 @@ export const columnLabel = (id: ColumnId): string => COLUMNS[id] ?? id;
  *  wherever it appears. */
 export const COLUMN_HELP: Record<ColumnId, string> = {
   platformFee:
-    "The recurring account/platform charge — a flat monthly fee, an annual percentage of your investments, or free.",
+    "The recurring account/platform charge, a flat monthly fee, an annual percentage of your investments, or free.",
   ukDealing:
     "Commission to buy or sell a UK share. “Free” means commission-free dealing.",
   usDealing: "Commission to buy or sell a US share.",
   fx: "Currency-conversion fee charged on trades in non-GBP shares (e.g. US stocks).",
-  isa: "Offers a Stocks & Shares ISA — invest tax-free up to the annual allowance.",
-  sipp: "Offers a SIPP — a self-invested personal pension you choose your own holdings in.",
-  lisa: "Offers a Lifetime ISA — for a first home or retirement, with a government bonus.",
+  isa: "Offers a Stocks & Shares ISA, invest tax-free up to the annual allowance.",
+  sipp: "Offers a SIPP, a self-invested personal pension you choose your own holdings in.",
+  lisa: "Offers a Lifetime ISA, for a first home or retirement, with a government bonus.",
   funds:
     "Lets you hold funds (OEICs and unit trusts), not just shares and ETFs.",
   investmentTrusts:
-    "Lets you hold investment trusts — closed-ended funds listed on the exchange.",
+    "Lets you hold investment trusts, closed-ended funds listed on the exchange.",
   fractional:
-    "Lets you buy fractional shares — a slice of a share, so you can invest small amounts.",
+    "Lets you buy fractional shares, a slice of a share, so you can invest small amounts.",
   usShares: "Lets you buy shares listed on the US exchanges.",
 };
 

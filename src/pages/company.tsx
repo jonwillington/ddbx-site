@@ -197,7 +197,7 @@ function companyFaq(name: string, market: string) {
       question: `Where does this ${name} data come from?`,
       answer: (
         <>
-          Every row is a public regulatory disclosure — {filing} — collected
+          Every row is a public regulatory disclosure, {filing}, collected
           within minutes of being published. We don&rsquo;t take company
           submissions and we don&rsquo;t edit the numbers; the only thing we add
           is the rating and the reasoning behind it.
@@ -209,7 +209,7 @@ function companyFaq(name: string, market: string) {
       answer: (
         <>
           Sometimes. A {insider} buying with their own money is one of the few
-          honest signals in the market, but plenty of purchases are routine —
+          honest signals in the market, but plenty of purchases are routine,
           small top-ups, scheme allocations, or a well-paid executive rounding
           out a holding. That&rsquo;s what our six-point check is for: it
           separates the conviction buys from the housekeeping, and shows you
@@ -231,7 +231,7 @@ function companyFaq(name: string, market: string) {
       question: "Can I get alerted when someone buys?",
       answer: (
         <>
-          Yes — that&rsquo;s what the app is for. Follow {name} and you&rsquo;ll
+          Yes, that&rsquo;s what the app is for. Follow {name} and you&rsquo;ll
           get a push the moment a {insider} files, with the full analysis
           attached, plus alerts if the price moves after a buy you&rsquo;re
           following.
@@ -693,7 +693,7 @@ export default function CompanyPage() {
 
               {market === "US" && data.gov.length > 0 && (
                 <Section
-                  aside="Disclosed under the STOCK Act — members report a range, not an exact figure."
+                  aside="Disclosed under the STOCK Act, members report a range, not an exact figure."
                   id="congress"
                   label="Congress"
                 >
@@ -1033,7 +1033,7 @@ function CompanyPanel({
               Every filing, the day it files
             </p>
             <p className="mt-2 text-[12px] leading-[1.6] text-foreground/55">
-              The site shows a slice. The app is the whole record — every
+              The site shows a slice. The app is the whole record, every
               disclosure, every rating, searchable back to the start.
             </p>
             <StoreButtons

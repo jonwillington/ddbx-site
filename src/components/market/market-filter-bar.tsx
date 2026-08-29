@@ -27,7 +27,7 @@ export const SIGNAL_FILTER_OPTIONS: FilterSelectOption[] = [
   {
     id: "signal",
     label: "Signal",
-    description: "Trades the analyst surfaced — high-conviction, non-routine.",
+    description: "Trades the analyst surfaced, high-conviction, non-routine.",
   },
   {
     id: "all",

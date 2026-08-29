@@ -128,7 +128,7 @@ export function WeeklyIndexPage() {
         {failed ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the archive just now. That’s a fault at our end
-            rather than an empty record — try again shortly.
+            rather than an empty record. Try again shortly.
           </p>
         ) : rows.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
@@ -257,7 +257,7 @@ export default function WeeklyWeekPage() {
           eyebrow="Weekly digest"
           standfirst={
             status === "missing"
-              ? "We publish a digest for each week with enough disclosed buying to describe. That week either had none, or the address is wrong — the weeks we do publish are in the archive."
+              ? "We publish a digest for each week with enough disclosed buying to describe. That week either had none, or the address is wrong, the weeks we do publish are in the archive."
               : "We couldn’t load this week just now. That’s a fault at our end rather than a quiet week."
           }
           title={

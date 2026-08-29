@@ -60,7 +60,7 @@ export const RATING_SCALE: { rating: string; meaning: string }[] = [
   {
     rating: "significant",
     meaning:
-      "All six checks clear. The top of the scale, and deliberately hard to reach — a buy that misses even one is capped below this.",
+      "All six checks clear. The top of the scale, and deliberately hard to reach, a buy that misses even one is capped below this.",
   },
   {
     rating: "noteworthy",
@@ -75,7 +75,7 @@ export const RATING_SCALE: { rating: string; meaning: string }[] = [
   {
     rating: "routine",
     meaning:
-      "Disclosed, but not informative — the housekeeping that makes up most of what gets filed.",
+      "Disclosed, but not informative, the housekeeping that makes up most of what gets filed.",
   },
 ];
 
@@ -102,7 +102,7 @@ export const PIPELINE: PipelineStage[] = [
     id: "watch",
     label: "Watch",
     title: "Every disclosure, read from the primary source",
-    body: "We read the regulator’s own feed — the exchange announcement or the filing itself — never a third-party summary of it. The pipeline runs every fifteen minutes through the trading day, so a new disclosure reaches the site within minutes of being published rather than the next morning.",
+    body: "We read the regulator’s own feed, the exchange announcement or the filing itself, never a third-party summary of it. The pipeline runs every fifteen minutes through the trading day, so a new disclosure reaches the site within minutes of being published rather than the next morning.",
     meta: "Every 15 minutes",
   },
   {
@@ -123,7 +123,7 @@ export const PIPELINE: PipelineStage[] = [
     id: "analyse",
     label: "Analyse",
     title: "Read the survivors against the record",
-    body: "What is left gets the long read: recent company news, the filing history, what the insider has done before, and the case against the buy alongside the case for it. Every piece of evidence has to carry a working link to its source or it is dropped — an unsourced claim never reaches the page.",
+    body: "What is left gets the long read: recent company news, the filing history, what the insider has done before, and the case against the buy alongside the case for it. Every piece of evidence has to carry a working link to its source or it is dropped, an unsourced claim never reaches the page.",
     meta: "For and against",
   },
   {

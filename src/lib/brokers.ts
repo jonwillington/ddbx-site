@@ -195,11 +195,11 @@ export function compareToField(
 
 /** Prominent top-of-page affiliate disclosure (must not be footer-only). */
 export const BROKER_DISCLOSURE =
-  "Ad — we may earn a commission if you open an account through links on this page. It doesn’t affect what you pay, or how we rank platforms.";
+  "Ad. We may earn a commission if you open an account through links on this page. It doesn’t affect what you pay, or how we rank platforms.";
 
 /** Capital-at-risk + not-advice + tax + status lines shown near the grid. */
 export const BROKER_DISCLAIMERS = [
-  "Information only, not financial advice. We don’t recommend any specific provider — consider taking regulated advice before investing.",
+  "Information only, not financial advice. We don’t recommend any specific provider. Consider taking regulated advice before investing.",
   "Capital at risk. The value of investments can go down as well as up and you may get back less than you invest.",
   "Tax treatment depends on your individual circumstances and ISA/SIPP rules may change in the future.",
   "ddbx is not FCA-authorised and provides no regulated advice or arranging service. Listed providers are responsible for their own regulatory status.",
@@ -207,4 +207,4 @@ export const BROKER_DISCLAIMERS = [
 
 /** How rankings are determined — supports "fair, clear, not misleading". */
 export const BROKER_METHODOLOGY =
-  "How we rank: platforms are ordered editorially on fees, account range, features and FSCS protection — not on commission. Listings are commercial (see disclosure above). Figures are checked against providers’ official pages; always confirm the current terms on the provider’s site before opening an account.";
+  "How we rank: platforms are ordered editorially on fees, account range, features and FSCS protection, not on commission. Listings are commercial (see disclosure above). Figures are checked against providers’ official pages; always confirm the current terms on the provider’s site before opening an account.";

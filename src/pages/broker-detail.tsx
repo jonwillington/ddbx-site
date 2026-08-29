@@ -809,7 +809,7 @@ function PlatformSection({ broker: b }: { broker: BrokerOffer }) {
                         aria-label="No"
                         className="text-[14px] leading-none text-foreground/30"
                       >
-                        —
+                        ,
                       </span>
                     )}
                   </li>

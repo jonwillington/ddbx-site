@@ -174,15 +174,14 @@ export default function ClusterBuysPage() {
         }
         title={
           <>
-            Cluster buying — where several {market.label} insiders bought at
-            once
+            Cluster buying, where several {market.label} insiders bought at once
           </>
         }
       >
         {ranked.length === 0 && !complete ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the board just now. It’s a network problem rather
-            than an empty period — try a refresh in a moment.
+            than an empty period. Try a refresh in a moment.
           </p>
         ) : ranked.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
@@ -242,7 +241,7 @@ export default function ClusterBuysPage() {
                   <>
                     {soft} further {soft === 1 ? "episode" : "episodes"} met
                     only the softer thirty-day tier and{" "}
-                    {soft === 1 ? "is" : "are"} not listed — two people buying a
+                    {soft === 1 ? "is" : "are"} not listed, two people buying a
                     month apart is common enough that ranking it would be
                     ranking coincidence.
                   </>

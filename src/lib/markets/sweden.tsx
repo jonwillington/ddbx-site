@@ -514,7 +514,7 @@ function SwedenDetailBody({ dealing }: { dealing: MarketDealing<EuRowGroup> }) {
               {d.reporter.filing_entity}
             </p>
             <p className="mt-1 text-xs text-muted">
-              (FI: Anmälningsskyldig — the legal entity that filed on behalf of
+              (FI: Anmälningsskyldig, the legal entity that filed on behalf of
               the PDMR)
             </p>
           </DisclosureSection>
@@ -580,7 +580,7 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   id: "se",
   title: "Sweden director dealings (preview)",
   heroSubhead:
-    "Follow the money. Every Swedish insider purchase, rated as it lands — so you see it as it's filed, not when it's news.",
+    "Follow the money. Every Swedish insider purchase, rated as it lands, so you see it as it's filed, not when it's news.",
   faq: buildMarketFaq({
     insiderTerm: "Swedish insider",
     filingPhrase: "to Finansinspektionen",
@@ -590,14 +590,14 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
   holidays: SE_EXCHANGE_HOLIDAYS,
   description: (
     <>
-      Finansinspektionen <em>Insynsregister</em> — Sweden&apos;s MAR Article 19
+      Finansinspektionen <em>Insynsregister</em>. Sweden&apos;s MAR Article 19
       register of trades by PDMRs (Persons Discharging Managerial
-      Responsibilities) and their close associates. Hourly ingest from FI, with
-      Opus deep analysis now rolling out — rated buys carry a{" "}
+      Responsibilities) and their close associates. Updated hourly from FI, with
+      deep analysis now rolling out. Rated buys carry a{" "}
       <strong className="text-foreground/75">Significant</strong> or{" "}
       <strong className="text-foreground/75">Noteworthy</strong> badge.{" "}
       <strong className="text-foreground/75">Signal</strong> = direct PDMR
-      acquisitions outside any share programme, plus anything Opus has rated.{" "}
+      acquisitions outside any share programme, plus anything we have rated.{" "}
       <strong className="text-foreground/75">All filings</strong> includes
       disposals, grants, pledges and closely-associated (PCA) filings.
     </>
@@ -695,8 +695,8 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
 
     return (
       <>
-        No Swedish dealings stored yet. The hourly cron fills this at :20 past
-        each hour ({total} total today).
+        No Swedish dealings yet. This page fills as new filings arrive from FI (
+        {total} total today).
       </>
     );
   },

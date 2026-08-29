@@ -662,7 +662,7 @@ function ContributorExplainer({
               </span>{" "}
               A director or insider at {row.company} disclosed buying shares
               with their own money. This is what the share price has done from
-              the day that purchase was disclosed to the latest close we hold —
+              the day that purchase was disclosed to the latest close we hold,
               nothing has been bought or sold by ddbx, and nobody is holding a
               position.
             </p>
@@ -673,7 +673,7 @@ function ContributorExplainer({
               It&rsquo;s among the strongest performers of every disclosed buy
               in the last {CHANNEL_WINDOW_DAYS} days. It&rsquo;s a winner chosen
               after the fact, so read it as evidence that insider buying is
-              worth watching — not as a prediction about this company.
+              worth watching, not as a prediction about this company.
             </p>
             <p>
               Past performance is not a reliable indicator of future results.
@@ -689,7 +689,7 @@ function ContributorExplainer({
             rel="noopener noreferrer"
             target="_blank"
           >
-            Get the app — every buy as it files
+            Get the app. Every buy as it files
           </a>
           <p className="mt-2 text-center text-[11px] text-muted">
             Free for 7 days, cancel any time.

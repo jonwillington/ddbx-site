@@ -112,7 +112,7 @@ export function BrokerReviewsPromo({
             Read reviews of UK trading platforms
           </h3>
           <p className="mt-0.5 truncate text-sm text-foreground/55">
-            Fees, ISAs and sign-up offers — independently ranked.
+            Fees, ISAs and sign-up offers, independently ranked.
           </p>
         </div>
 
@@ -142,7 +142,7 @@ export function BrokerReviewsPromo({
         Read reviews of UK trading platforms
       </h3>
       <p className="mt-1 text-sm text-foreground/55">
-        Fees, ISAs and sign-up offers — independently ranked.
+        Fees, ISAs and sign-up offers, independently ranked.
       </p>
 
       <div className="mt-4 flex items-center">

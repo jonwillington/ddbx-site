@@ -231,7 +231,7 @@ export default function ReportPage() {
 
             {summary.report_card && (
               <SeoSection
-                aside="Last month’s featured buys, re-marked — misses included."
+                aside="Last month’s featured buys, re-marked, misses included."
                 title={`How ${monthLabel(summary.report_card.graded_month)}’s picks did`}
               >
                 <ReportCard card={summary.report_card} />
@@ -404,7 +404,7 @@ function ReportCard({
               )}
               {item.return_now == null ? (
                 <span className="font-mono text-[13px] tabular-nums text-foreground/45">
-                  —
+                  ,
                 </span>
               ) : (
                 <DeltaBadge value={item.return_now * 100} />

@@ -135,7 +135,7 @@ export function Tick({ value }: { value: boolean | null | undefined }) {
   if (value === false)
     return (
       <span aria-label="No" className="text-foreground/30">
-        —
+        ,
       </span>
     );
 
@@ -269,7 +269,7 @@ export function BrokerVisitLink({
       {affiliate && (
         <span
           className="text-[10px] font-normal opacity-60"
-          title="Affiliate link — we may earn a commission"
+          title="Affiliate link. We may earn a commission"
         >
           Ad
         </span>
@@ -310,8 +310,8 @@ export function BrokerDisclosure({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="font-semibold text-foreground/80">Ad</span> —{" "}
-      {BROKER_DISCLOSURE.replace(/^Ad — /, "")}
+      <span className="font-semibold text-foreground/80">Ad</span>.{" "}
+      {BROKER_DISCLOSURE.replace(/^Ad\. /, "")}
     </div>
   );
 }

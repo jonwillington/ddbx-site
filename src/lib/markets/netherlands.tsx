@@ -66,7 +66,7 @@ export const NL_EXCHANGE_HOLIDAYS: HolidaySource = {
     "2027-01-01": "Nieuwjaarsdag",
     "2027-03-26": "Goede Vrijdag",
     "2027-03-29": "Tweede Paasdag",
-    "2027-12-24": "Kerstavond (halve dag — niet gemodelleerd)",
+    "2027-12-24": "Kerstavond (halve dag, niet gemodelleerd)",
     "2027-12-27": "Tweede Kerstdag (waarn.)",
   },
 };
@@ -426,7 +426,7 @@ function NetherlandsDetailBody({
               {d.reporter.filing_entity}
             </p>
             <p className="mt-1 text-xs text-muted">
-              (AFM: nauwgelieerdaan — the PDMR on whose behalf this filing was
+              (AFM: nauwgelieerdaan, the PDMR on whose behalf this filing was
               made)
             </p>
           </DisclosureSection>
@@ -491,7 +491,7 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   id: "nl",
   title: "Netherlands director dealings (preview)",
   heroSubhead:
-    "Follow the money. Every Dutch insider purchase, rated as it lands — so you see it as it's filed, not when it's news.",
+    "Follow the money. Every Dutch insider purchase, rated as it lands, so you see it as it's filed, not when it's news.",
   faq: buildMarketFaq({
     insiderTerm: "Dutch insider",
     filingPhrase: "to the AFM",
@@ -501,15 +501,16 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   holidays: NL_EXCHANGE_HOLIDAYS,
   description: (
     <>
-      AFM <em>Register meldingen leidinggevenden MAR 19</em> — the Dutch MAR
+      AFM <em>Register meldingen leidinggevenden MAR 19</em>, the Dutch MAR
       Article 19 register of trades by PDMRs (Persons Discharging Managerial
-      Responsibilities) and their close associates. Hourly ingest from AFM;
-      Haiku triage and Opus deep analysis run on the candidate pool, so rated
-      buys carry a <strong className="text-foreground/75">Significant</strong>{" "}
-      or <strong className="text-foreground/75">Noteworthy</strong> badge.{" "}
+      Responsibilities) and their close associates. Updated hourly from AFM,
+      with every candidate screened and the strongest given a deep read, so
+      rated buys carry a{" "}
+      <strong className="text-foreground/75">Significant</strong> or{" "}
+      <strong className="text-foreground/75">Noteworthy</strong> badge.{" "}
       <strong className="text-foreground/75">Signal</strong> = direct PDMR
       acquisitions of common shares (Gewoon aandeel) outside any share
-      programme, plus anything Opus has rated.{" "}
+      programme, plus anything we have rated.{" "}
       <strong className="text-foreground/75">All filings</strong> includes
       disposals, derivatives (Restricted share rights, Opties), and
       closely-associated (PCA) filings.
@@ -539,7 +540,7 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
     company: "The company and the PDMR (insider) who dealt in its shares.",
     value: "Approximate value of the transaction in EUR.",
     performance:
-      "Share-price return since the trade — or alpha vs the AEX when that view is selected.",
+      "Share-price return since the trade, or alpha vs the AEX when that view is selected.",
   },
   formatTickerDisplay: (ticker) => ticker,
   isRowMuted: (d) => !isEuSignal(d),
@@ -601,8 +602,8 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
 
     return (
       <>
-        No Dutch dealings stored yet. The hourly cron fills this at :20 past
-        each hour ({total} total today).
+        No Dutch dealings yet. This page fills as new filings arrive from AFM (
+        {total} total today).
       </>
     );
   },

@@ -41,9 +41,9 @@ const DEFAULT_COLUMN_HELP: Record<MarketColumnKey, string> = {
   company: "The company traded and the insider who traded it.",
   value: "Approximate size of the purchase.",
   trend:
-    "Quantity — the number of buys folded into this row — alongside the share price's recent trend.",
+    "Quantity (the number of buys folded into this row), alongside the share price's recent trend.",
   performance:
-    "Price change since the trade — or the return vs the market benchmark when that view is selected.",
+    "Price change since the trade, or the return vs the market benchmark when that view is selected.",
   action: "Our signal rating for this trade.",
 };
 

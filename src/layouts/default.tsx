@@ -193,7 +193,7 @@ function PrivacyContent() {
         processing of network-level data. We use Google Analytics 4 for
         aggregate usage statistics; it sets an analytics cookie when you arrive.
         Accepting the cookie banner additionally loads the X (Twitter) Ads
-        conversion pixel (to measure ad-driven installs) — see the Cookie Policy
+        conversion pixel (to measure ad-driven installs). See the Cookie Policy
         for details.
       </p>
 
@@ -238,12 +238,12 @@ function CookieContent() {
       </p>
       <ul className="list-disc pl-5 space-y-1">
         <li>
-          <strong>Cloudflare security cookies</strong> — set by our hosting
+          <strong>Cloudflare security cookies</strong>, set by our hosting
           provider to identify trusted traffic and protect against malicious
           visitors.
         </li>
         <li>
-          <strong>Local preferences</strong> — small <code>localStorage</code>{" "}
+          <strong>Local preferences</strong>, small <code>localStorage</code>{" "}
           entries remembering things like your selected theme, market, and which
           deal cards you have opened today. These never leave your browser.
         </li>
@@ -253,8 +253,8 @@ function CookieContent() {
       <p>These are set when you arrive, before you interact with the banner.</p>
       <ul className="list-disc pl-5 space-y-1">
         <li>
-          <strong>Google Analytics 4</strong> — aggregate usage statistics
-          (which pages are viewed, roughly where visitors come from). It sets an
+          <strong>Google Analytics 4</strong>, aggregate usage statistics (which
+          pages are viewed, roughly where visitors come from). It sets an
           analytics cookie so repeat visits from the same browser are counted
           once rather than as new people each time. We do not send it your name,
           email, or anything you type into the site, and Google&apos;s
@@ -270,7 +270,7 @@ function CookieContent() {
       </p>
       <ul className="list-disc pl-5 space-y-1">
         <li>
-          <strong>X (Twitter) conversion pixel</strong> — measures whether
+          <strong>X (Twitter) conversion pixel</strong>, measures whether
           visitors arriving from X ads go on to install the app or sign up.
           Loaded from <code>static.ads-twitter.com</code>.
         </li>
@@ -761,7 +761,7 @@ export default function DefaultLayout({
         // unexplained "Coming soon" reads as broken rather than honest.
         subtitle={
           appsOpen === "android"
-            ? "Get it on Google Play — the UK app is live today."
+            ? "Get it on Google Play. The UK app is live today."
             : "Get the app for your market."
         }
         title="Download the ddbx app"

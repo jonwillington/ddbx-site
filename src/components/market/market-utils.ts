@@ -269,7 +269,7 @@ export function buildUniversalFilters<W>(
       label: "Industry",
       question: "Which industries?",
       description:
-        "Filter to one or more sectors — pick several to compare. None selected shows every industry.",
+        "Filter to one or more sectors. Pick several to compare. None selected shows every industry.",
       kind: "multiselect",
       options: sectors.map((s) => ({ id: s, label: s })),
       defaultValue: "",
@@ -284,7 +284,7 @@ export function buildUniversalFilters<W>(
       label: "Clusters",
       question: "Clustered buys only?",
       description:
-        "Show only names that 2+ insiders bought in a tight window — a shared read rather than a lone trade.",
+        "Show only names that 2+ insiders bought in a tight window, a shared read rather than a lone trade.",
       options: [
         { id: "all", label: "All trades" },
         { id: "only", label: "Clustered only" },
@@ -300,7 +300,7 @@ export function buildUniversalFilters<W>(
       label: "Trade size",
       question: "How big a trade?",
       description:
-        "Filter by the disclosed amount — useful for surfacing the big, high-conviction positions.",
+        "Filter by the disclosed amount, useful for surfacing the big, high-conviction positions.",
       options: [
         { id: "all", label: "Any size" },
         { id: "50000", label: `≥ ${formatMoney(50_000)}` },

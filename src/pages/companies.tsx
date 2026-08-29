@@ -166,7 +166,7 @@ export default function CompaniesPage() {
   // the whole page down. Same sentence either way, the count appended once
   // it's a fact.
   const standfirst = failed
-    ? "We couldn’t load the index just now. It’s a network hiccup rather than an empty market — try a refresh in a moment."
+    ? "We couldn’t load the index just now. It’s a network hiccup rather than an empty market. Try a refresh in a moment."
     : companies
       ? `${companies.length} companies whose ${insiders} have bought shares, with the filings, ratings and company stats for each.`
       : `Companies whose ${insiders} have bought shares, with the filings, ratings and company stats for each.`;
@@ -239,8 +239,8 @@ export default function CompaniesPage() {
 
             {groups.length === 0 && query.trim() ? (
               <p className="mt-10 text-[14px] leading-[1.65] text-foreground/70">
-                No company matches “{query.trim()}”. Try the ticker instead —
-                the index is named as each issuer files.
+                No company matches “{query.trim()}”. Try the ticker instead, the
+                index is named as each issuer files.
               </p>
             ) : null}
 

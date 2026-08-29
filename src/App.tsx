@@ -58,7 +58,7 @@ function App() {
         {/* The archive. The same reports as real, permanently-addressed pages —
             the modal above had no URL of its own to link to or index. */}
         {/* Weekly digests. /weekly is the ARCHIVE INDEX, not "this week" —
-            see shared/weeks.js for why there is no undated week page. */}
+            See shared/weeks.js for why there is no undated week page. */}
         <Route element={<WeeklyIndexPage />} path="/weekly" />
         <Route element={<WeeklyWeekPage />} path="/weekly/:week" />
         <Route element={<ReportsPage />} path="/reports" />

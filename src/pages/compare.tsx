@@ -247,7 +247,7 @@ export default function ComparePage() {
           </h1>
           <p className="mt-4 max-w-[62ch] text-[16.5px] leading-[1.6] tracking-[-0.006em] text-foreground/85">
             Every UK investing platform we hold on file, with what each one
-            charges to hold your money, to trade, and to convert currency —
+            charges to hold your money, to trade, and to convert currency,
             filterable by the accounts you actually need.
           </p>
         </header>
@@ -360,7 +360,7 @@ export default function ComparePage() {
                   </ColHeader>
                 </div>
                 <div className={`w-36 shrink-0 px-3 py-2 ${COL}`}>
-                  <ColHeader help="The recurring account/platform charge — a flat monthly fee, an annual percentage of your investments, or free.">
+                  <ColHeader help="The recurring account/platform charge, a flat monthly fee, an annual percentage of your investments, or free.">
                     Platform fee
                   </ColHeader>
                 </div>
@@ -375,22 +375,22 @@ export default function ComparePage() {
                   </ColHeader>
                 </div>
                 <div className={`w-16 shrink-0 px-2 py-2 text-center ${COL}`}>
-                  <ColHeader help="Offers a Stocks & Shares ISA — invest tax-free up to the annual allowance.">
+                  <ColHeader help="Offers a Stocks & Shares ISA, invest tax-free up to the annual allowance.">
                     ISA
                   </ColHeader>
                 </div>
                 <div className={`w-16 shrink-0 px-2 py-2 text-center ${COL}`}>
-                  <ColHeader help="Offers a SIPP — a self-invested personal pension you choose your own holdings in.">
+                  <ColHeader help="Offers a SIPP, a self-invested personal pension you choose your own holdings in.">
                     SIPP
                   </ColHeader>
                 </div>
                 <div className={`w-20 shrink-0 px-2 py-2 text-center ${COL}`}>
-                  <ColHeader help="Lets you buy fractional shares — a slice of a share, so you can invest small amounts.">
+                  <ColHeader help="Lets you buy fractional shares, a slice of a share, so you can invest small amounts.">
                     Frac.
                   </ColHeader>
                 </div>
                 <div className={`w-16 shrink-0 px-2 py-2 text-center ${COL}`}>
-                  <ColHeader help="Covered by the FSCS — up to £85,000 protected if the provider fails.">
+                  <ColHeader help="Covered by the FSCS, up to £85,000 protected if the provider fails.">
                     FSCS
                   </ColHeader>
                 </div>

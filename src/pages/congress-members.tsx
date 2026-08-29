@@ -114,7 +114,7 @@ export default function CongressMembersPage() {
         {failed ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the directory just now. That’s a fault at our end
-            rather than an empty register — try again shortly.
+            rather than an empty register. Try again shortly.
           </p>
         ) : (
           <>

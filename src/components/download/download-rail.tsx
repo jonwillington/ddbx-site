@@ -86,6 +86,14 @@ export function DownloadRail({
               formatPrice(pricing, pricing.annual),
               formatPrice(pricing, pricing.monthly),
             )}
+            {pricing.promotional ? (
+              <>
+                {" "}
+                <span className="font-semibold text-brand-brown dark:text-brand-tan">
+                  {t.railPromo}
+                </span>
+              </>
+            ) : null}
           </p>
 
           <StoreButtons

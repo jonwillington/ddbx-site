@@ -44,8 +44,8 @@ export function BuyStyleChip({
   const style = STYLES[buyStyle.kind];
   const tooltip =
     buyStyle.kind === "contrarian"
-      ? `Bought into weakness — ${pct(buyStyle.drawdown_from_high_pct)} below the recent ${buyStyle.window_days}-day high.`
-      : `Bought into strength — near a rising high, up ${pct(buyStyle.trailing_return_pct)} over ${buyStyle.window_days} days.`;
+      ? `Bought into weakness, ${pct(buyStyle.drawdown_from_high_pct)} below the recent ${buyStyle.window_days}-day high.`
+      : `Bought into strength, near a rising high, up ${pct(buyStyle.trailing_return_pct)} over ${buyStyle.window_days} days.`;
 
   return (
     <Tooltip className={clsx("inline-flex", className)} content={tooltip}>

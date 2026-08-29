@@ -134,7 +134,7 @@ export const EXIT_RULES: Record<PerformanceExitRule, ExitRuleInfo> = {
   hold_forever: {
     displayName: "Hold forever",
     longName: "Hold forever",
-    description: "Never exit — mark-to-market today.",
+    description: "Never exit, mark-to-market today.",
     horizonDays: null,
   },
 };

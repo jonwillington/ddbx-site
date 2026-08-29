@@ -24,7 +24,7 @@ import { API_BASE } from "@/lib/api";
 export function EuWaitlistOverlay({
   marketId,
   ticker,
-  body = "There's no ddbx app for this market yet. The EU app is on the way — register and we'll email you the day it ships.",
+  body = "There's no ddbx app for this market yet. The EU app is on the way. Register and we'll email you the day it ships.",
 }: {
   /** Waitlist market tag stored with the registration ("nl", "se"). */
   marketId: string;

@@ -101,7 +101,7 @@ export default function CongressCommitteesPage() {
         {failed ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the committee list just now. That’s a fault at our
-            end rather than an empty register — try again shortly.
+            end rather than an empty register. Try again shortly.
           </p>
         ) : (
           <>

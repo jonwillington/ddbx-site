@@ -464,7 +464,7 @@ function CrossoverCallout({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
       <p className={`mt-2 max-w-[58ch] ${R.body}`}>
         Below that balance {crossover.cheaperBelow.name}’s percentage charge
         costs less; above it, {crossover.cheaperAbove.name}’s flat monthly fee
-        does, and the gap widens as the pot grows. Platform charges only —
+        does, and the gap widens as the pot grows. Platform charges only,
         dealing commission and FX depend on how often you trade rather than on
         what you hold.
       </p>

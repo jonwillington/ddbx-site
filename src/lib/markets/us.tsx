@@ -519,7 +519,7 @@ export function UsDetailBody({
             value={
               row.direct_indirect === "D"
                 ? "Direct"
-                : `Indirect${row.nature_of_ownership ? ` — ${row.nature_of_ownership}` : ""}`
+                : `Indirect${row.nature_of_ownership ? `, ${row.nature_of_ownership}` : ""}`
             }
           />
           <DetailField
@@ -709,7 +709,7 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
     </>
   ),
   heroSubhead:
-    "Every open-market stock purchase a US insider files on Form 4, screened and rated the moment it lands — so you're early to the ones that matter, not reading about them in the news.",
+    "Every open-market stock purchase a US insider files on Form 4, screened and rated the moment it lands, so you're early to the ones that matter, not reading about them in the news.",
   faq: buildMarketFaq({
     insiderTerm: "US insider",
     filingPhrase: "on a Form 4",
@@ -719,15 +719,14 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   holidays: US_EXCHANGE_HOLIDAYS,
   description: (
     <>
-      SEC EDGAR Form 4 ingest — half-hourly cron writes into D1, then a Claude
-      Haiku triage pass classifies each filing.{" "}
-      <strong className="text-foreground/75">Signal</strong> = the curated
-      shortlist (open-market buy + Haiku verdict of <em>maybe</em> or{" "}
+      Every purchase a US insider files on Form 4 with the SEC, screened as it
+      lands. <strong className="text-foreground/75">Signal</strong> = the
+      curated shortlist (an open-market buy rated <em>maybe</em> or{" "}
       <em>promising</em>).{" "}
       <strong className="text-foreground/75">Interesting</strong> = the
-      mechanical filter only — open-market direct buys ≥ $50k, outside any
-      10b5-1 plan. <strong className="text-foreground/75">All filings</strong>{" "}
-      shows everything for spot-checking the noise.
+      mechanical filter only, open-market direct buys ≥ $50k, outside any 10b5-1
+      plan. <strong className="text-foreground/75">All filings</strong> shows
+      everything for spot-checking the noise.
     </>
   ),
   marketLabel: "US",
@@ -746,15 +745,15 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   benchmarkLabel: SPY_LABEL,
   columnHelp: {
     disclosed:
-      "Date the Form 4 was filed with the SEC — insiders must file within 2 business days of the trade.",
+      "Date the Form 4 was filed with the SEC, insiders must file within 2 business days of the trade.",
     ticker: "US exchange ticker symbol.",
     company:
-      "The issuer and the insider — officer, director, or 10% owner — who bought.",
+      "The issuer and the insider, officer, director, or 10% owner, who bought.",
     value: "Total value of the open-market purchase in USD.",
     trend: "The stock's 1-year price trend, with the trade date marked.",
     performance:
-      "Stock return since the trade — or alpha vs the S&P 500 when that view is selected.",
-    action: "Triage verdict and analyst rating for the filing.",
+      "Stock return since the trade, or alpha vs the S&P 500 when that view is selected.",
+    action: "How this filing was screened, and the rating it earned.",
   },
   // Form 4 leg counts and same-day cluster counts sat in the trend column as a
   // bare number, so a row with no price history showed a lone "2" where its
@@ -850,8 +849,8 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
     if (view === "signal") {
       return (
         <>
-          No signal-grade trades yet — Haiku triage hasn&apos;t surfaced
-          anything <em>maybe</em> or <em>promising</em>.{" "}
+          No signal-grade trades yet. Nothing has been rated <em>maybe</em> or{" "}
+          <em>promising</em>.{" "}
           <button
             className="text-foreground/70 underline underline-offset-2 hover:text-foreground"
             onClick={() => setView("interesting")}
@@ -877,8 +876,8 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
 
     return (
       <>
-        No US dealings stored yet — the half-hourly cron will populate this page
-        once SEC EDGAR returns its next batch.
+        No US dealings yet. This page fills as new Form 4 filings arrive from
+        the SEC.
       </>
     );
   },

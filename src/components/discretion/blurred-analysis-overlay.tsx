@@ -5,7 +5,7 @@ import { CompanyLogo } from "@/components/company-logo";
 import { PRICING, formatPrice } from "@/lib/pricing";
 
 const DEFAULT_BENEFITS = [
-  "Full breakdown on every director deal — thesis, evidence, risks",
+  "Full breakdown on every director deal, thesis, evidence, risks",
   "Real-time alerts the moment a director buys",
   // Market-neutral: this overlay serves the US and EU gates too, where
   // "across the FTSE" would be the wrong index.
@@ -42,7 +42,9 @@ export function BlurredAnalysisOverlay({
   const pricing = PRICING[marketId === "us" ? "us" : "uk"];
   const resolvedFootnote =
     footnote ??
-    `Free for ${pricing.trialDays} days, then ${formatPrice(pricing, pricing.monthly)}/month. Cancel any time.`;
+    `Free for ${pricing.trialDays} days, then ${formatPrice(pricing, pricing.monthly)}/month${
+      pricing.promotional ? " while the promotion runs" : ""
+    }. Cancel any time.`;
 
   return (
     // Just the card — the caller positions it (the gated drawer centers it in

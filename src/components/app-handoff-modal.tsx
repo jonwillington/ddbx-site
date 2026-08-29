@@ -126,7 +126,9 @@ export function AppHandoffModal({
         />
         <p className="mt-3 text-[11px] text-muted/70">
           Free for {pricing.trialDays} days, then{" "}
-          {formatPrice(pricing, pricing.monthly)}/month. Cancel any time.
+          {formatPrice(pricing, pricing.monthly)}/month
+          {pricing.promotional ? " while the promotion runs" : ""}. Cancel any
+          time.
         </p>
       </div>
     </div>,

@@ -61,7 +61,7 @@ export const DjtMarket: MarketConfig<UsRowGroup> = {
   title: "Trump Media insiders",
   heroHeadline: "Every Trump Media insider trade.",
   heroSubhead:
-    "Every Form 4 a Trump Media & Technology Group (DJT) insider files with the SEC — the board, the officers, and the Trump family — the moment it lands. Grants, sales, and open-market buys, unscreened.",
+    "Every Form 4 a Trump Media & Technology Group (DJT) insider files with the SEC, the board, the officers, and the Trump family, the moment it lands. Grants, sales, and open-market buys, unscreened.",
   faq: buildMarketFaq({
     insiderTerm: "Trump Media insider",
     filingPhrase: "on a Form 4",
@@ -73,7 +73,7 @@ export const DjtMarket: MarketConfig<UsRowGroup> = {
       <strong className="text-foreground/75">
         Trump Media &amp; Technology Group Corp.
       </strong>{" "}
-      (Nasdaq: DJT, issuer CIK 1849635). This is the raw insider record —{" "}
+      (Nasdaq: DJT, issuer CIK 1849635). This is the raw insider record,{" "}
       <strong className="text-foreground/75">every transaction type</strong>:
       stock grants, option exercises, tax-withholding dispositions, sales, and
       open-market purchases, newest disclosure first. Unlike the US Form 4
@@ -92,14 +92,14 @@ export const DjtMarket: MarketConfig<UsRowGroup> = {
   benchmarkLabel: UsMarket.benchmarkLabel,
   columnHelp: {
     disclosed:
-      "Date the Form 4 was filed with the SEC — insiders must file within 2 business days of the trade.",
+      "Date the Form 4 was filed with the SEC, insiders must file within 2 business days of the trade.",
     ticker: "US exchange ticker symbol (DJT common, DJTWW warrants).",
-    company: "The Trump Media insider — officer, director, or 10% owner.",
+    company: "The Trump Media insider, officer, director, or 10% owner.",
     value: "Value of the transaction in USD (grants show at $0).",
     trend:
       "Number of legs in this filing, plus the stock's 1-year price trend (trade date marked).",
     performance:
-      "Stock return since the trade — or alpha vs the S&P 500 when that view is selected.",
+      "Stock return since the trade, or alpha vs the S&P 500 when that view is selected.",
     action: "What kind of transaction this Form 4 reports.",
   },
   // No rating/triage axis — one flat "All" view of the raw feed.
@@ -137,8 +137,8 @@ export const DjtMarket: MarketConfig<UsRowGroup> = {
   DetailPosition: UsDetailPosition,
   renderEmptyState: () => (
     <>
-      No Trump Media insider filings stored yet — the ingest will populate this
-      page once it runs against SEC EDGAR.
+      No Trump Media insider filings yet. This page fills as new filings arrive
+      from the SEC.
     </>
   ),
 };

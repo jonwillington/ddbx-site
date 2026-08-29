@@ -271,7 +271,7 @@ export function BrokerAside({
 
               <BrokerDisclosure />
               <p className="text-[11px] leading-4 text-foreground/45">
-                Ranked editorially on fees, features and FSCS protection — not
+                Ranked editorially on fees, features and FSCS protection, not
                 commission. Capital at risk; always confirm current terms on the
                 provider’s site.
               </p>

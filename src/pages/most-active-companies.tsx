@@ -132,7 +132,7 @@ export default function MostActiveCompaniesPage() {
         standfirst={
           <>
             The companies whose own {market.noun} bought most often over the
-            last twelve months — with how many different people were buying,
+            last twelve months, with how many different people were buying,
             because one person buying twelve times and twelve people buying once
             are the same number and not the same signal.
           </>
@@ -142,7 +142,7 @@ export default function MostActiveCompaniesPage() {
         {ranked.length === 0 && !complete ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the board just now. It’s a network problem rather
-            than an empty period — try a refresh in a moment.
+            than an empty period. Try a refresh in a moment.
           </p>
         ) : ranked.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>

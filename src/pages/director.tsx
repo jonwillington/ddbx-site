@@ -570,8 +570,8 @@ export default function DirectorPage() {
                 </p>
                 <p>
                   Insiders cannot trade during a{" "}
-                  <strong className="font-semibold">closed period</strong> — the
-                  weeks before results — so the timing of a purchase carries
+                  <strong className="font-semibold">closed period</strong>, the
+                  weeks before results, so the timing of a purchase carries
                   information of its own. That is one of six checks every
                   disclosure is scored against.
                 </p>

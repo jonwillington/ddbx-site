@@ -117,7 +117,7 @@ function AppPromoAside({
               twice reads as templating. The band sells the live feed; this
               card sells completeness. */}
           <p className="mt-2 text-xs leading-[1.6] text-foreground/55">
-            The site shows a slice. The app is the whole record — every
+            The site shows a slice. The app is the whole record, every
             disclosure, every rating, searchable back to the start.
           </p>
 
