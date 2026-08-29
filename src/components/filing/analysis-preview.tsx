@@ -121,7 +121,11 @@ function OpenCase({
   return (
     <div className={`mt-4 overflow-hidden ${CARD}`}>
       <div className="p-5 sm:p-6">
-        <AnalysisSection analysis={analysis} showChecklist={false} />
+        <AnalysisSection
+          analysis={analysis}
+          showChecklist={false}
+          showRationale={false}
+        />
 
         {/* The ask, at read-out.
             The page still terminates with `AppCtaBand`, and two filled asks in

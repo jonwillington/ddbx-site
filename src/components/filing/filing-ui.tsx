@@ -237,92 +237,90 @@ export function RatingChecks({
       </div>
       <MeterBar className="mt-2" max={CHECKS.length} value={met} />
 
-      {/* Stacked, one per row, with the verdict as the dominant object.
-          The two-column grid read as a set of tiles to scan; these are six
-          findings to be read in order, and the answer to each — met or not —
-          is the thing a reader is looking for. So the tick is a filled disc at
-          the head of the row rather than a chip in a corner.
-          Sized down on the phone (32px disc, 16px question, 14px finding, 16px
-          padding) after six full-screen cards turned six findings into six
-          screens of scrolling — the same hierarchy, at a density someone can
-          actually read through. Desktop is unchanged. */}
-      <div className="mt-5 space-y-2 sm:mt-6 sm:space-y-3">
-        {CHECKS.map((c) => {
+      {/* ONE CARD, SIX RULED ROWS — not six cards.
+          These are six findings to be read in order, and the answer to each —
+          met or not — is the thing a reader is looking for, so the verdict
+          stays a filled disc at the head of the row: green tick or red cross,
+          knocked-out glyph, the treatment the app's WhatWeLookForView uses and
+          a reader can take in from across the room. A grey or tinted disc
+          reads as "not assessed" rather than "failed".
+          What went is the card-per-check. Six separate cards at phone width
+          ran to five screens for one section, and the repeating frame (card,
+          disc, chip, toggle, six times) drowned the one thing that varies:
+          what we found. A single card with hairline rules carries the same
+          hierarchy at half the scroll, and the "Met" chip went with it — a
+          green tick beside the word Met said the verdict twice, so only a miss
+          gets a written tag now. */}
+      <div className={`mt-5 overflow-hidden sm:mt-6 ${CARD}`}>
+        {CHECKS.map((c, i) => {
           const ok = Boolean(checklist[c.key]);
           const Icon = CHECK_ICON[c.key];
 
           return (
-            <div key={c.key} className={`${CARD} p-4 sm:p-6`}>
-              <div className="flex items-start gap-3 sm:gap-5">
-                {/* SOLID, IN FULL COLOUR, BOTH WAYS.
-                    A pass/fail verdict rendered as a 12%-tint disc with a
-                    hairline glyph inside it is a verdict you have to look for,
-                    and a miss rendered in grey reads as "not assessed" rather
-                    than "failed". The app answers each check with a filled
-                    green circle or a filled red one (WhatWeLookForView), which
-                    is the treatment a reader can take in from across the room.
-                    Same here: filled disc, knocked-out glyph, red for a miss. */}
-                <span
-                  aria-hidden
-                  className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white shadow-sm sm:h-12 sm:w-12 ${
-                    ok ? "bg-positive" : "bg-negative"
+            <div
+              key={c.key}
+              className={`flex items-start gap-3 p-4 sm:gap-4 sm:p-5 ${
+                i > 0 ? `border-t ${RULE}` : ""
+              }`}
+            >
+              <span
+                aria-hidden
+                className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white shadow-sm sm:h-7 sm:w-7 ${
+                  ok ? "bg-positive" : "bg-negative"
+                }`}
+              >
+                {ok ? (
+                  <CheckIcon
+                    className="h-4 w-4 sm:h-5 sm:w-5"
+                    strokeWidth={2}
+                  />
+                ) : (
+                  <XMarkIcon
+                    className="h-4 w-4 sm:h-5 sm:w-5"
+                    strokeWidth={2}
+                  />
+                )}
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <h3 className="text-[15px] font-semibold leading-snug tracking-[-0.015em] text-foreground sm:text-[16.5px]">
+                    {c.question}
+                  </h3>
+                  {ok ? null : (
+                    <span className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-negative">
+                      Not met
+                    </span>
+                  )}
+                </div>
+
+                <p
+                  className={`mt-1 max-w-[62ch] text-[13.5px] leading-[1.55] sm:text-[14px] ${
+                    ok ? "text-foreground/75" : "text-foreground/55"
                   }`}
                 >
-                  {ok ? (
-                    <CheckIcon
-                      className="h-5 w-5 sm:h-8 sm:w-8"
-                      strokeWidth={2}
-                    />
-                  ) : (
-                    <XMarkIcon
-                      className="h-5 w-5 sm:h-8 sm:w-8"
-                      strokeWidth={2}
-                    />
-                  )}
-                </span>
+                  {ok ? c.passLine(ctx) : c.body}
+                </p>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <h3 className="text-[16px] font-semibold leading-snug tracking-[-0.015em] text-foreground sm:text-[21px]">
-                      {c.question}
-                    </h3>
-                    <span
-                      className={`shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] ${
-                        ok ? "text-positive" : "text-negative"
-                      }`}
-                    >
-                      {ok ? "Met" : "Not met"}
-                    </span>
-                  </div>
-
-                  <p
-                    className={`mt-1.5 max-w-[62ch] text-[14px] leading-[1.55] sm:mt-2 sm:text-[15px] sm:leading-[1.6] ${
-                      ok ? "text-foreground/80" : "text-foreground/55"
-                    }`}
-                  >
-                    {ok ? c.passLine(ctx) : c.body}
-                  </p>
-
-                  <details className="group mt-2 sm:mt-3">
-                    <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-[12.5px] text-foreground/45 transition-colors hover:text-foreground/75 [&::-webkit-details-marker]:hidden">
-                      {Icon ? (
-                        <Icon
-                          aria-hidden
-                          className="h-4 w-4 text-brand-brown dark:text-brand-tan"
-                          strokeWidth={1.6}
-                        />
-                      ) : null}
-                      Why this check matters
-                      <ChevronDownIcon
+                <details className="group mt-1.5 sm:mt-2">
+                  <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-[12.5px] text-foreground/45 transition-colors hover:text-foreground/75 [&::-webkit-details-marker]:hidden">
+                    {Icon ? (
+                      <Icon
                         aria-hidden
-                        className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
+                        className="h-4 w-4 text-brand-brown dark:text-brand-tan"
+                        strokeWidth={1.6}
                       />
-                    </summary>
-                    <p className="mt-2.5 max-w-[62ch] text-[13.5px] leading-[1.65] text-foreground/55">
-                      {c.detail}
-                    </p>
-                  </details>
-                </div>
+                    ) : null}
+                    Why this check matters
+                    <ChevronDownIcon
+                      aria-hidden
+                      className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
+                    />
+                  </summary>
+                  <p className="mt-2.5 max-w-[62ch] text-[13.5px] leading-[1.65] text-foreground/55">
+                    {c.detail}
+                  </p>
+                </details>
               </div>
             </div>
           );
@@ -341,19 +339,30 @@ export function RatingChecks({
  *  Deliberately not a card — the sections either side carry the cards. A
  *  rule, a sentence and a link.
  *
+ *  `lead` is the sentence before the terms, and each slot on the page passes
+ *  its own: the same line verbatim three times down one document read as a
+ *  banner rotation, not a reminder. What never varies is the tail — the trial
+ *  length and the price — because that is the fact the reader is being
+ *  reminded of, and it should sound identical every time it appears.
+ *
  *  The price is read from `PRICING`, which is the only place on the public web
  *  that states one (mirrored by hand from App Store Connect). Never hard-code
  *  a figure here. */
-export function TrialNudge({ marketId }: { marketId: string }) {
+export function TrialNudge({
+  marketId,
+  lead = "Don’t miss the next director deal.",
+}: {
+  marketId: string;
+  lead?: string;
+}) {
   const p = PRICING[marketId === "us" ? "us" : "uk"];
 
   return (
     <p
       className={`border-y ${RULE} px-1 py-3 text-[13px] leading-[1.6] text-foreground/55`}
     >
-      Don&rsquo;t miss the next director deal. {p.trialDays} days free, then{" "}
-      {formatPrice(p, p.annual)} for the year
-      {p.promotional ? ", a limited-time price" : ""}.{" "}
+      {lead} {p.trialDays} days free, then {formatPrice(p, p.annual)} for the
+      year{p.promotional ? ", a limited-time price" : ""}.{" "}
       <Link
         className="font-semibold text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
         data-ga-event="cta_filing_check_nudge"

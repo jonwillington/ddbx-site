@@ -17,17 +17,21 @@ import { RatingChecklistView } from "@/components/rating-checklist-view";
  *  then lands on a filing page from search should recognise what they're
  *  looking at.
  *
- *  `showChecklist` is the one thing that page turns off, and not for style:
- *  it already devotes a numbered section to the six checks with the
- *  methodology copy and what was found for this filing, which is strictly
- *  more than the compact view here. Rendering both put the same six ticks on
- *  the page twice. */
+ *  `showChecklist` and `showRationale` are the two things that page turns
+ *  off, and not for style: it already devotes a numbered section to the six
+ *  checks with the methodology copy and what was found for this filing, which
+ *  is strictly more than the compact view here. Rendering both put the same
+ *  six ticks on the page twice — and the rationale paragraph ("all six
+ *  checklist items pass…") is a prose restatement of that same section,
+ *  arriving two screens after it. */
 export function AnalysisSection({
   analysis,
   showChecklist = true,
+  showRationale = true,
 }: {
   analysis: Analysis;
   showChecklist?: boolean;
+  showRationale?: boolean;
 }) {
   return (
     <div className="space-y-6">
@@ -86,7 +90,7 @@ export function AnalysisSection({
         </div>
       )}
 
-      {analysis.rating_rationale && (
+      {showRationale && analysis.rating_rationale && (
         <p className="text-xs italic text-muted leading-relaxed border-t border-black/[0.06] dark:border-white/[0.08] pt-3">
           {analysis.rating_rationale}
         </p>

@@ -278,6 +278,42 @@ export default function FilingPage({
   const sectionNo = (key: string) => numbered.indexOf(key) + 1;
   const total = numbered.length;
 
+  // The first nudge's lead, computed rather than stock: most readers arrive
+  // from a tweet or a search result days after the fact, and "you are N days
+  // behind" is the one true sentence that makes the app's timing argument on
+  // their own filing. Falls back to the plain claim inside the first two days,
+  // when the count would undercut itself.
+  const daysSince = deal
+    ? Math.max(
+        0,
+        Math.round(
+          (Date.now() - Date.parse(`${deal.disclosed_date}T00:00:00Z`)) /
+            86_400_000,
+        ),
+      )
+    : 0;
+  const lagLead =
+    daysSince >= 2
+      ? `You’re reading this ${daysSince} days after it was disclosed. App readers had it that day.`
+      : "App readers get every filing the day it’s disclosed, as an alert.";
+  // One lead per slot, themed to the section it precedes — except the first
+  // nudge to render, which always carries the lag line above, because it is
+  // the strongest sentence the page has and every variant of the page (with
+  // or without a cluster, screened or rated) should open its asking with it.
+  const themedLead: Record<string, string> = {
+    context: hasCluster
+      ? "When another insider joins a cluster like this, the app flags the new buy as it lands."
+      : "The app reads this context on every buy, the day it arrives.",
+    screened:
+      "Filings that clear this screen arrive in the app written up in full.",
+    checks:
+      "Every buy in the app has been through these six checks before you see it.",
+    analysis:
+      "A written case like this travels with every rated buy in the app.",
+  };
+  const nudgeLead = (key: string) =>
+    numbered.indexOf(key) === 1 ? lagLead : themedLead[key];
+
   return (
     <DefaultLayout drawerRight>
       <SeoRail marketId={fam.marketId} placement="filing_rail" />
@@ -402,12 +438,17 @@ export default function FilingPage({
             </SeoSection>
 
             {/* The ask, threaded between the numbered sections rather than
-                inside any of them — every section after the first opens with
-                the same quiet line, so the reader meets it at each natural
-                pause in the argument, never mid-checklist. */}
+                inside any of them, so the reader meets it at each natural
+                pause in the argument, never mid-checklist. Each slot carries
+                its own lead — the same sentence three times down one page
+                stopped reading as a reminder and started reading as an ad
+                unit — but every one ends on the identical trial terms. */}
             {context.length > 0 || hasCluster ? (
               <>
-                <TrialNudge marketId={fam.marketId} />
+                <TrialNudge
+                  lead={nudgeLead("context")}
+                  marketId={fam.marketId}
+                />
                 <SeoSection
                   aside={
                     hasCluster
@@ -433,7 +474,10 @@ export default function FilingPage({
 
             {screenedOut ? (
               <>
-                <TrialNudge marketId={fam.marketId} />
+                <TrialNudge
+                  lead={nudgeLead("screened")}
+                  marketId={fam.marketId}
+                />
                 <SeoSection
                   aside="Every disclosure is screened before anything is written about it. This one was not taken further, and this is the reason it was given at the time."
                   index={sectionNo("screened")}
@@ -456,7 +500,10 @@ export default function FilingPage({
 
             {analysed && deal.analysis?.checklist ? (
               <>
-                <TrialNudge marketId={fam.marketId} />
+                <TrialNudge
+                  lead={nudgeLead("checks")}
+                  marketId={fam.marketId}
+                />
                 <SeoSection
                   aside="The same six checks every purchase is scored against, answered for this one."
                   index={sectionNo("checks")}
@@ -474,7 +521,10 @@ export default function FilingPage({
 
             {analysed && shape ? (
               <>
-                <TrialNudge marketId={fam.marketId} />
+                <TrialNudge
+                  lead={nudgeLead("analysis")}
+                  marketId={fam.marketId}
+                />
                 <SeoSection
                   aside={
                     DISCRETION_ENABLED
@@ -519,9 +569,15 @@ export default function FilingPage({
                   Two columns, not three: there are ten fields, so two divides
                   evenly and every row of the grid is full. Three would leave a
                   single cell on the last row with its rule running a third of
-                  the way across, which reads as a table that failed to finish. */}
+                  the way across, which reads as a table that failed to finish.
+
+                  Two up on the phone as well. Every value here is short (a
+                  name, a date, a figure), and ten full-width rows put 700px of
+                  reference between the argument and "Read next" on the screen
+                  where scroll is dearest. Long values wrap inside their own
+                  cell — Row sets break-words for exactly this. */}
               <dl
-                className={`mt-4 grid gap-x-8 border-t ${RULE} sm:grid-cols-2`}
+                className={`mt-4 grid grid-cols-2 gap-x-6 border-t ${RULE} sm:gap-x-8`}
               >
                 <Row label="Insider" value={insider.name} />
                 <Row label="Role" value={insider.role ?? "—"} />
@@ -614,9 +670,13 @@ export default function FilingPage({
                 for a reader who arrived on the filing deliberately.
                 A reader who arrived from a tweet has no idea the rest of this
                 exists, and the single most common thing they do next is
-                leave. So the share route gets the site's front door as well:
-                every standing surface, named by what it answers rather than
-                by its route. */}
+                leave. So the share route also gets a front door — but four
+                doors, not eight. The full sitemap sat here once and, stacked
+                on "Read next", made twelve link cards between the last content
+                and the terminal ask: the strongest CTA on the page buried two
+                screens deep in navigation. The footer already carries every
+                surface; this section carries the four a cold reader might
+                actually want next. */}
             {share ? (
               <SeoSection
                 aside="A filing is the smallest thing here. These are the standing surfaces it sits inside."
@@ -631,27 +691,10 @@ export default function FilingPage({
                       description: `The live feed: everything ${us ? "US" : "UK"} insiders have filed, newest first.`,
                     },
                     {
-                      to: "/companies",
-                      title: "Every company",
-                      description: `Each ${us ? "US" : "UK"} issuer with disclosed insider buying, and the filings behind it.`,
-                    },
-                    {
                       to: "/weekly",
                       title: "This week in filings",
                       description:
                         "What insiders bought week by week, written up each Monday.",
-                    },
-                    {
-                      to: "/reports",
-                      title: "The monthly reviews",
-                      description:
-                        "Five purchases a month, revisited weeks later, with what the price did next.",
-                    },
-                    {
-                      to: "/sectors",
-                      title: "Insider buying by sector",
-                      description:
-                        "Which parts of the market insiders are buying into, and how those buys have done.",
                     },
                     {
                       to: "/compare",
@@ -664,12 +707,6 @@ export default function FilingPage({
                       description: us
                         ? "Form 4, 10b5-1, Section 16: what the terms in a filing mean, in plain words."
                         : "PDMR, RNS, closed periods: what the terms in a filing mean, in plain words.",
-                    },
-                    {
-                      to: "/api",
-                      title: "The data, as an API",
-                      description:
-                        "The same disclosures and ratings this page is built from, over HTTP.",
                     },
                   ]}
                 />

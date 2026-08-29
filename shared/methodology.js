@@ -29,7 +29,7 @@ export const CHECKS = [
       "This is the check that does the most work, because it throws away the most. A vesting, a scheme release, a placing and an option exercise all appear on the wire as an insider acquiring shares, and none of them means the insider chose to buy at today’s price. Only a purchase made with their own money, at the price anyone else could have paid, tells you anything about what they think the shares are worth.",
     passLine: (c) =>
       c.price
-        ? `${c.name} paid ${c.price} a share on the open market — ${c.value} of their own money.`
+        ? `${c.name} paid ${c.price} a share on the open market, ${c.value} of their own money.`
         : `${c.name} put ${c.value} of their own money in on the open market.`,
   },
   {
@@ -38,10 +38,10 @@ export const CHECKS = [
     question: "Was it a senior insider?",
     body: "The buyer is a CEO, CFO, or a board member close to the business, not a junior name on the register.",
     detail:
-      "Disclosure rules catch a wide net — company secretaries, divisional managers, and in some markets the people closely associated with them. They file the same form as the chief executive. The check asks whether this particular buyer is close enough to the business to be acting on something more than the share price, which usually means the board and the finance function.",
+      "Disclosure rules catch a wide net: company secretaries, divisional managers, and in some markets the people closely associated with them. They file the same form as the chief executive. The check asks whether this particular buyer is close enough to the business to be acting on something more than the share price, which usually means the board and the finance function.",
     passLine: (c) =>
       c.role
-        ? `${c.name} is ${c.role} at ${c.company} — close enough to see the whole picture.`
+        ? `${c.name} is ${c.role} at ${c.company}, close enough to see the whole picture.`
         : `${c.name} is a senior insider at ${c.company}.`,
   },
   {
@@ -59,9 +59,9 @@ export const CHECKS = [
     question: "Was the timing their own call?",
     body: "Nothing mechanical explains the timing: no dividend reinvestment, no pre-arranged trading plan, no contractual or tax deadline.",
     detail:
-      "A trade that was going to happen anyway carries no information. Pre-arranged plans — a 10b5-1 in the US, a savings scheme in the UK — set the date months in advance, and a shareholding requirement written into a contract forces the buy regardless of what the insider thinks. The check looks for anything that would have produced this purchase on this day without a decision behind it.",
+      "A trade that was going to happen anyway carries no information. Pre-arranged plans (a 10b5-1 in the US, a savings scheme in the UK) set the date months in advance, and a shareholding requirement written into a contract forces the buy regardless of what the insider thinks. The check looks for anything that would have produced this purchase on this day without a decision behind it.",
     passLine: () =>
-      "Nothing mechanical explains the timing — no plan, no scheme, no deadline forcing it.",
+      "Nothing mechanical explains the timing: no plan, no scheme, no deadline forcing it.",
   },
   {
     key: "supporting_context_found",
@@ -69,7 +69,7 @@ export const CHECKS = [
     question: "Does the context hold up?",
     body: "Either there is news that makes the timing make sense, or nothing public argues against it. A buy in a quiet period can be the strongest kind.",
     detail:
-      "This is not a demand for a catalyst. It asks whether the public record is consistent with the purchase — recent results, guidance, sector news, the share price’s own history. A buy the week after a well-received set of results reads differently from one made into a profit warning, and a buy with no news at all around it is often the most interesting of the three.",
+      "This is not a demand for a catalyst. It asks whether the public record is consistent with the purchase: recent results, guidance, sector news, the share price’s own history. A buy the week after a well-received set of results reads differently from one made into a profit warning, and a buy with no news at all around it is often the most interesting of the three.",
     passLine: (c) =>
       `The timing holds up against everything public about ${c.company}.`,
   },
@@ -79,7 +79,7 @@ export const CHECKS = [
     question: "Is the picture otherwise clean?",
     body: "Nothing serious points the other way: no other insiders selling at the same time, no open investigation, no sign the business is still getting worse.",
     detail:
-      "One insider buying while three sell is not a signal, it is a disagreement. The check sweeps for the things that would undercut the buy whatever its own merits — concurrent disposals by colleagues, a regulatory investigation, an accounting problem, a business still deteriorating on its own numbers.",
+      "One insider buying while three sell is not a signal, it is a disagreement. The check sweeps for the things that would undercut the buy whatever its own merits: concurrent disposals by colleagues, a regulatory investigation, an accounting problem, a business still deteriorating on its own numbers.",
     passLine: () =>
       "No insiders selling against it, no open investigation, nothing pointing the other way.",
   },
