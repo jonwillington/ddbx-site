@@ -1289,57 +1289,6 @@ export function MarketPage<W>({
           variant="inline"
         />
 
-        {/* Loading skeleton mirrors the chronological layout the data lands
-            in — month header bar, then the darker well with date-chip rail +
-            white day cards — so nothing jumps when the rows paint. */}
-        {loading && filteredDealings.length === 0 && (
-          <div
-            className={`bg-sheet dark:bg-surface rounded-xl overflow-hidden animate-content-in ${
-              config.mobileWinners && mobileTab === "winners"
-                ? "hidden md:block"
-                : ""
-            }`}
-          >
-            <div className="flex items-center justify-between px-6 py-5">
-              <div className="flex items-center gap-3">
-                <CalendarDaysIcon className="w-5 h-5 shrink-0 text-muted/40" />
-                <Skeleton className="h-6 w-36 rounded" />
-              </div>
-              <Skeleton className="h-3 w-24 rounded" />
-            </div>
-            <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
-              {[3, 2].map((rowCount, dayIdx) => (
-                <div
-                  key={dayIdx}
-                  className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:items-start xl:gap-3"
-                >
-                  {/* Date chip — rail on xl, inline strip below. */}
-                  <div className="hidden xl:block pt-2">
-                    <Skeleton className="h-12 w-10 rounded-lg" />
-                  </div>
-                  <div className="mb-2 flex items-center gap-3 px-1 xl:hidden">
-                    <Skeleton className="h-10 w-9 rounded-lg" />
-                    <Skeleton className="h-3 w-10 rounded" />
-                    <span
-                      aria-hidden
-                      className="h-px flex-1 bg-foreground/10"
-                    />
-                  </div>
-                  <div className="rounded-xl overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-black/[0.06] dark:divide-separator">
-                    {Array.from({ length: rowCount }).map((_, i) => (
-                      <MarketRowSkeleton
-                        key={i}
-                        hideDate
-                        valueColumnClass={config.priceFormat.valueColumnClass}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* THE FILTER BAR AND THE LIST IT FILTERS, IN ONE BOX.
             A sticky element sticks for as long as its PARENT is on screen, and
             this one's parent was the whole page section — so once the reader
@@ -1375,7 +1324,10 @@ export function MarketPage<W>({
             />
           ) : null}
 
-          {dealings.length > 0 && (
+          {/* Rendered while loading too: when it only appeared with the first
+              row, the tabs and filter bar dropped in late and shoved the list
+              down the page. */}
+          {(dealings.length > 0 || loading) && (
             <div
               ref={filterBarRef}
               className="sticky top-[64px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
@@ -1448,6 +1400,59 @@ export function MarketPage<W>({
                   onSignalFilterChange={setSignalFilter}
                   onViewMode={setViewMode}
                 />
+              </div>
+            </div>
+          )}
+
+          {/* Loading skeleton mirrors the chronological layout the data lands
+              in — month header bar, then the darker well with date-chip rail +
+              white day cards — so nothing jumps when the rows paint. It sits
+              inside the sticky-bar wrapper, tucked under the bar the same way
+              the real list is, because the bar renders while loading too. */}
+          {loading && filteredDealings.length === 0 && (
+            <div
+              className={`bg-sheet dark:bg-surface rounded-b-xl overflow-hidden animate-content-in -mt-6 -mx-4 md:-mx-6 ${
+                config.mobileWinners && mobileTab === "winners"
+                  ? "hidden md:block"
+                  : ""
+              }`}
+            >
+              <div className="flex items-center justify-between px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <CalendarDaysIcon className="w-5 h-5 shrink-0 text-muted/40" />
+                  <Skeleton className="h-6 w-36 rounded" />
+                </div>
+                <Skeleton className="h-3 w-24 rounded" />
+              </div>
+              <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
+                {[3, 2].map((rowCount, dayIdx) => (
+                  <div
+                    key={dayIdx}
+                    className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:items-start xl:gap-3"
+                  >
+                    {/* Date chip — rail on xl, inline strip below. */}
+                    <div className="hidden xl:block pt-2">
+                      <Skeleton className="h-12 w-10 rounded-lg" />
+                    </div>
+                    <div className="mb-2 flex items-center gap-3 px-1 xl:hidden">
+                      <Skeleton className="h-10 w-9 rounded-lg" />
+                      <Skeleton className="h-3 w-10 rounded" />
+                      <span
+                        aria-hidden
+                        className="h-px flex-1 bg-foreground/10"
+                      />
+                    </div>
+                    <div className="rounded-xl overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-black/[0.06] dark:divide-separator">
+                      {Array.from({ length: rowCount }).map((_, i) => (
+                        <MarketRowSkeleton
+                          key={i}
+                          hideDate
+                          valueColumnClass={config.priceFormat.valueColumnClass}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
