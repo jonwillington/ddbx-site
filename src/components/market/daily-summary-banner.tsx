@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { AppDrawer } from "@/components/app-drawer";
 import { CompanyLogo } from "@/components/company-logo";
 import { api, type DailySummaryResponse } from "@/lib/api";
-import { normalisedDisplayName } from "@/lib/display-name";
+import { displayCompany, normalisedDisplayName } from "@/lib/display-name";
 
 interface SheetProps {
   date: string | null;
@@ -178,7 +178,7 @@ function CitedSection({
             <CompanyLogo size={28} ticker={deal.ticker} />
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold truncate">
-                {normalisedDisplayName(deal.company)}
+                {displayCompany(deal.company, deal.ticker)}
               </div>
               <div className="text-xs text-muted truncate">
                 {deal.ticker.replace(/\.L$/, "")} ·{" "}

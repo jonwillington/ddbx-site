@@ -19,7 +19,7 @@ import { InformationCircleIcon as InformationCircleOutlineIcon } from "@heroicon
 
 import { filingPath } from "../../../shared/filings.js";
 
-import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
+import { displayCompany, normalisedDisplayName } from "@/lib/display-name";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { buildMarketFaq } from "@/lib/markets/faq";
 import { AnalysisSection } from "@/components/analysis-section";
@@ -99,7 +99,7 @@ export function toMarketDealing(d: Dealing): MarketDealing<Dealing> {
     key: d.id,
     id: d.id,
     ticker: d.ticker,
-    company: stripTickerSuffix(normalisedDisplayName(d.company), d.ticker),
+    company: displayCompany(d.company, d.ticker),
     insiderName: normalisedDisplayName(d.director.name),
     insiderRole: d.director.role,
     disclosedDate: d.disclosed_date || d.trade_date,

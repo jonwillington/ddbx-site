@@ -36,7 +36,7 @@ import { MiniPriceChart } from "@/components/mini-price-chart";
 import { PositionCard, type PriceFormat } from "@/components/position-card";
 import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
-import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
+import { displayCompany, normalisedDisplayName } from "@/lib/display-name";
 import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { useDiscretion } from "@/lib/discretion";
 
@@ -287,7 +287,7 @@ export function toMarketDealing(group: UsRowGroup): MarketDealing<UsRowGroup> {
     key: group.key,
     id: group.key,
     ticker: row.ticker,
-    company: stripTickerSuffix(normalisedDisplayName(row.company), row.ticker),
+    company: displayCompany(row.company, row.ticker),
     insiderName: normalisedDisplayName(reporter.name),
     insiderRole: reporter.role,
     disclosedDate: row.disclosed_date,

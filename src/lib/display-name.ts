@@ -145,3 +145,123 @@ function titleCaseWord(word: string): string {
       (_, sep: string, ch: string) => sep + ch.toUpperCase(),
     );
 }
+
+// ── Trailing bookkeeping the scrape sources append to a legal name ──────────
+// Ports of the canonical regexes in ddbx-data `worker/lib/display-name.ts`
+// (mirrored again in iOS `DisplayName.swift`), in the same order. None of it
+// means anything to a reader: "AOTI, Inc. (DI) (Regs, Cat 3)" is a listing
+// clerk's note, and it was eating a whole card line on the homepage.
+
+// Instrument / regulatory tokens. Sources mix a bare form ("Boku, Inc (DI)
+// Reg S Cat 3/144A") with a parenthesised one ("Tinybuild Inc. (DI) (Reg S /
+// 144A)"), so a trailing RUN of either is stripped. `Cat` requires a digit so
+// a share class like "Cat A" survives.
+const PAREN_TOKEN = String.raw`(?:C?DI|Reg\.?\s*S|Rule\s*144A|144A|Cat(?:egory)?\.?\s*\d+)`;
+// "DI" is excluded from the bare form so a legitimate trailing word "DI" is
+// only stripped when it's actually bracketed.
+const BARE_TOKEN = String.raw`(?:Reg\.?\s*S|Rule\s*144A|144A|Cat(?:egory)?\.?\s*\d+)`;
+// Inside a bracketed group the sources separate tokens with spaces, slashes
+// *or* commas — the LSE feed emits "(DI) (Regs, Cat 3)" as readily as "(Reg S
+// / 144A)". The comma is allowed only inside the brackets: a comma between
+// bare units would put "Cat 3" within reach of a name ending in a comma'd
+// clause.
+const SUFFIX_UNIT = `(?:\\(\\s*${PAREN_TOKEN}(?:[\\s/,;]+${PAREN_TOKEN})*\\s*\\)|${BARE_TOKEN})`;
+const INSTRUMENT_SUFFIX_RUN = new RegExp(
+  `(?:[\\s/]*${SUFFIX_UNIT})+\\s*$`,
+  "i",
+);
+
+// Share-class tails: "Twentyfour Income Fund Limited Ord Red", "… Ord Shs".
+// Requires the "Ord"/"Ordinary" head so an ordinary word is never eaten.
+const SHARE_CLASS_TAIL =
+  /\s+Ord(?:inary)?(?:\s+(?:Red|Redeem(?:able)?|Shs|Shares|NPV|Npv|Stock))*\s*$/i;
+
+// "No Par Value" is a share-class marker, never part of a legal name, and the
+// feed appends it bare as well as after an "Ord" head.
+const BARE_NPV_TAIL = /\s+NPV\s*$/i;
+
+// Trailing listing / registration qualifiers: "(Singapore Reg)", "(Regd)".
+// Deliberately narrow — the bracket must carry a registration or share-class
+// word and stay short — so a real trailing bracket like "(Holdings)" survives.
+const LISTING_PARENTHETICAL =
+  /\s*\((?=[^)]{0,24}\))[^)]*\b(?:reg|regd|registered|shs|shares|npv)\b[^)]*\)\s*$/i;
+
+// The RNS feed moves a leading definite article to the end of the legal name
+// ("Berkeley Group Holdings (The)"). Reads as a typo in a headline.
+const TRAILING_ARTICLE = /\s*\(\s*the\s*\)\s*$/i;
+
+const STATE_MARKER = /\s*\/[A-Z]{2}\/?\s*$/g;
+
+/// Strip the trailing bookkeeping run. Names stack these ("… Ord Red
+/// (Singapore Reg)") and removing one tail exposes the next, so this runs to a
+/// fixed point. A pass that would empty the string is discarded — a name that
+/// is *only* bookkeeping is a data problem, and showing it beats showing
+/// nothing.
+export function stripInstrumentSuffixes(name: string): string {
+  let out = name.trim();
+
+  for (;;) {
+    const before = out;
+
+    out = out
+      .replace(INSTRUMENT_SUFFIX_RUN, "")
+      .replace(LISTING_PARENTHETICAL, "")
+      .replace(TRAILING_ARTICLE, "")
+      .replace(SHARE_CLASS_TAIL, "")
+      .replace(BARE_NPV_TAIL, "")
+      .trim();
+    if (out === before || out === "") break;
+  }
+
+  return out || name.trim();
+}
+
+/// A wire company name as a reader should see it: state-of-incorporation
+/// marker, trailing ticker bracket, instrument/regulatory suffix run and
+/// share-class tail removed, then re-cased.
+///
+///   "Hercules Plc (HERC)"                    -> "Hercules Plc"
+///   "AOTI, INC. (DI) (Regs, Cat 3) (AOTI)"   -> "Aoti, Inc."
+///   "Columbia Financial, Inc./MD/"           -> "Columbia Financial, Inc."
+///   "Berkeley Group Holdings (The)"          -> "Berkeley Group Holdings"
+///   "IMI" + ticker "IMI.L"                   -> "IMI"
+///
+/// Order matters and mirrors the canonical: the ticker bracket goes before the
+/// suffix run (it would otherwise anchor the run away from the end), and
+/// re-casing comes last so it sees the cleaned name rather than counting the
+/// suffix's lower-case letters against the shouting test.
+export function displayCompany(
+  company: string,
+  ticker?: string | null,
+): string {
+  const original = company.trim();
+  let name = original.replace(STATE_MARKER, "").trim();
+
+  if (ticker) name = stripTickerSuffix(name, ticker);
+  name = stripInstrumentSuffixes(name);
+
+  // An issuer whose whole name IS its ticker is an initialism the market knows
+  // in capitals — IMI, GSK, KRM22 — and title-casing gives "Imi" / "Gsk".
+  if (isTickerLikeName(name, ticker)) return name;
+
+  return normalisedDisplayName(name) || original;
+}
+
+/// True when `name` is a single shouted token matching the ticker root.
+function isTickerLikeName(name: string, ticker?: string | null): boolean {
+  if (!ticker) return false;
+  const trimmed = name.trim();
+
+  if (!trimmed || /\s/.test(trimmed)) return false;
+  const core = trimmed.replace(/[^A-Za-z0-9]/g, "");
+
+  if (!core || core !== core.toUpperCase() || !/[A-Z]/.test(core)) return false;
+  const root = ticker
+    .replace(/\.[A-Za-z]+$/, "")
+    .replace(/[^A-Za-z0-9]/g, "")
+    .toUpperCase();
+
+  if (root.length < 2) return false;
+
+  return core === root || core.startsWith(root) || root.startsWith(core);
+}

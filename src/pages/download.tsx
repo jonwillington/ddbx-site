@@ -67,7 +67,7 @@ import {
   playStoreUrlForMarketId,
   storeUrlForMarketId,
 } from "@/lib/app-store";
-import { stripTickerSuffix } from "@/lib/display-name";
+import { displayCompany } from "@/lib/display-name";
 import {
   altLocalePath,
   CHROME,
@@ -296,7 +296,7 @@ async function loadUk(want: number, ctx: LoadCtx): Promise<MarketData> {
         toWinner: (d) => ({
           id: d.id,
           ticker: d.ticker,
-          company: stripTickerSuffix(d.company, d.ticker),
+          company: displayCompany(d.company, d.ticker),
           returnPct: d.live_performance!.return_pct_trade as number,
           asOf: d.live_performance?.as_of,
           buyerName: d.director.name,

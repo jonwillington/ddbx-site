@@ -3,11 +3,12 @@
 // has: "does following these people work?" Each card links to the filing's own
 // page; an interstitial midway makes the app ask.
 //
-// Cards are LABELLED FIELDS, not sentences. The sentence form ("Jane Doe, CFO
-// at Eurocell, bought £21k and is up +18.4% in 34 days.") wrapped to three
-// lines on a phone and buried the number that does the persuading in the
-// middle of the third one. Someone who just landed should be able to read the
-// company, the move and the size without reading a clause.
+// Cards are a HEADLINE PLUS A SENTENCE. The scannable part — company, and the
+// return in green at the opposite end — stays on one line, so the move is
+// readable at a glance. Under it the card spells out in plain words what the
+// director did and what it came to, because a first-time visitor does not know
+// what "disclosure" means, and "Bought £29,848 · Since 71 days" made them
+// assemble the meaning themselves.
 //
 // Data comes from the 90-day channel window (channelDealings), not the page's
 // ~1-month dealings fetch — winners need time to season, and a card claiming
@@ -35,9 +36,9 @@ import {
 import { CompanyLogo } from "@/components/company-logo";
 import { Skeleton } from "@/components/skeleton";
 
-/** iOS-style payoff stake for the top card — "£1,000 at disclosure → £X
- *  today". Matches the channel's HeroContributorCard so the two surfaces
- *  can't disagree. */
+/** Illustration stake for a card whose trade value the wire didn't carry —
+ *  "£1,000 put in alongside them would be worth £X today". Same figure as the
+ *  channel's HeroContributorCard, so the two surfaces can't disagree. */
 const STAKE = 1000;
 
 /** Interstitial position: the app ask lands after this many winner cards. */
@@ -79,7 +80,8 @@ export function WinnersSection<W>({
           Best of the last 90 days
         </p>
         <p className="text-sm leading-relaxed text-foreground/60">
-          Real buys by company directors, flagged the day they filed.
+          Directors buying shares in the company they run, with their own money.
+          Here is how those buys have done since.
         </p>
       </header>
 
@@ -141,7 +143,6 @@ export function WinnersSection<W>({
               <WinnerCard
                 formatValue={formatValue}
                 href={dealHref(w.id)}
-                showPayoff={i === 0}
                 winner={w}
               />
               {/* App ask after the proof has landed — mid-list when there's a
@@ -184,22 +185,27 @@ export function WinnersSection<W>({
   );
 }
 
-/** One winner as labelled fields. Reading order is company → return → who →
- *  size/age, because that is the order the questions arrive in. Degrades
- *  rather than invents: no role → just the name; no value → "Shares". */
+/** One winner, in sentences a first-time visitor can read without knowing
+ *  what a disclosure is. The labelled-field version ("Bought £29,848   Since
+ *  71 days") was compact but it asked the reader to assemble the meaning
+ *  themselves, and "Since 71 days" isn't English. The card now says what
+ *  happened and what it was worth, in that order.
+ *
+ *  Degrades rather than invents: with no trade value it can't state a stake or
+ *  what the stake became, so it falls back to the fixed £1,000 illustration —
+ *  which is a hypothetical and says so — and it never prints a role it
+ *  doesn't have. */
 function WinnerCard({
   winner: w,
   href,
   formatValue,
-  showPayoff,
 }: {
   winner: WinnerDealing;
   href: string;
   formatValue: (n: number) => string;
-  showPayoff: boolean;
 }) {
-  const bought =
-    w.value != null && w.value > 0 ? formatValue(w.value) : "Shares";
+  const value = w.value != null && w.value > 0 ? w.value : null;
+  const days = `${w.daysHeld} ${w.daysHeld === 1 ? "day" : "days"} ago`;
 
   return (
     <Link
@@ -228,31 +234,32 @@ function WinnerCard({
             {w.insiderRole ? ` · ${w.insiderRole}` : ""}
           </span>
 
-          {/* Size and age as labelled pairs, so neither number has to be
-              inferred from a preposition. */}
-          <span className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] leading-snug">
-            <span className="flex items-baseline gap-1.5">
-              <span className="text-muted">Bought</span>
-              <span className="font-semibold tabular-nums text-foreground/85">
-                {bought}
-              </span>
-            </span>
-            <span className="flex items-baseline gap-1.5">
-              <span className="text-muted">Since</span>
-              <span className="font-semibold tabular-nums text-foreground/85">
-                {w.daysHeld} {w.daysHeld === 1 ? "day" : "days"}
-              </span>
-            </span>
+          {/* The whole story, in two short sentences. */}
+          <span className="mt-2 block text-[13px] leading-relaxed text-foreground/75">
+            {value != null ? (
+              <>
+                Bought{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {formatValue(value)}
+                </span>{" "}
+                of shares in their own company {days}. That stake is worth{" "}
+                <span className="font-semibold tabular-nums text-positive">
+                  {formatValue(value * (1 + w.returnPct))}
+                </span>{" "}
+                today.
+              </>
+            ) : (
+              <>
+                Bought shares in their own company {days}. {formatValue(STAKE)}{" "}
+                put in alongside them would be worth{" "}
+                <span className="font-semibold tabular-nums text-positive">
+                  {formatValue(STAKE * (1 + w.returnPct))}
+                </span>{" "}
+                today.
+              </>
+            )}
           </span>
 
-          {showPayoff && (
-            <span className="mt-2 flex items-baseline gap-1 border-t border-positive/15 pt-1.5 text-[10.5px] tabular-nums text-muted">
-              {formatValue(STAKE)} at disclosure →
-              <span className="font-semibold text-foreground">
-                {formatValue(STAKE * (1 + w.returnPct))} today
-              </span>
-            </span>
-          )}
           <span className="mt-1.5 inline-flex items-center gap-0.5 text-[13px] font-semibold text-brand-brown group-hover:underline dark:text-brand-tan">
             Read the analysis
             <ChevronRightIcon className="h-4 w-4" />

@@ -26,7 +26,7 @@ import type { EuDealing } from "@/types/ddbx";
 import { defaultRatingHeroFilters, isSignalDealing } from "@/lib/markets/types";
 import { buildMarketFaq } from "@/lib/markets/faq";
 import { api } from "@/lib/api";
-import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
+import { displayCompany, normalisedDisplayName } from "@/lib/display-name";
 import { AnalysisSection } from "@/components/analysis-section";
 import { EuWaitlistOverlay } from "@/components/discretion/eu-waitlist-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
@@ -312,10 +312,7 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     // (12-char SE0… codes) made the grid look broken (verified visually
     // 2026-05-20).
     ticker: d.ticker ?? "",
-    company: stripTickerSuffix(
-      normalisedDisplayName(d.company),
-      d.ticker ?? "",
-    ),
+    company: displayCompany(d.company, d.ticker ?? ""),
     insiderName: normalisedDisplayName(d.reporter.name),
     insiderRole: translateRole(d.reporter.role),
     disclosedDate: g.disclosed_date,

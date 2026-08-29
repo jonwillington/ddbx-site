@@ -33,7 +33,7 @@ import { EuWaitlistOverlay } from "@/components/discretion/eu-waitlist-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
-import { normalisedDisplayName, stripTickerSuffix } from "@/lib/display-name";
+import { displayCompany, normalisedDisplayName } from "@/lib/display-name";
 import { DisclosureSection } from "@/components/disclosure-section";
 import { DetailField } from "@/components/market/detail-field";
 import { PriceFormat } from "@/components/position-card";
@@ -237,10 +237,7 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
     // AFM ISINs resolve to .AS Yahoo tickers via the same isin_tickers
     // cache as Sweden. Empty fallback keeps MarketRow's "—" treatment.
     ticker: d.ticker ?? "",
-    company: stripTickerSuffix(
-      normalisedDisplayName(d.company),
-      d.ticker ?? "",
-    ),
+    company: displayCompany(d.company, d.ticker ?? ""),
     insiderName: normalisedDisplayName(d.reporter.name),
     insiderRole: translateRole(d.reporter.role),
     disclosedDate: g.disclosed_date,
