@@ -650,8 +650,10 @@ export function MarketHero({
             <div
               className={`m-auto flex ${centeredHide} flex-col items-center gap-5 md:gap-7 text-center`}
             >
-              {/* No logo on mobile — the stack is centred on its own. */}
-              <div className="w-full max-w-[330px]">
+              {/* No logo on mobile — the stack is centred on its own. The cap
+                  is above a phone's content width, so the card runs the full
+                  column and only bounds itself on a tablet. */}
+              <div className="w-full max-w-[400px]">
                 <HeroNotificationStack deals={radar.deals} tick={radar.tick} />
               </div>
               {headlineBlock}
