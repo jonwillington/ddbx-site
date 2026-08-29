@@ -261,7 +261,21 @@ export default function FilingPage({
   // Numbered run over the sections that make the argument. The reference table
   // and "read next" sit outside it — a counter on an appendix suggests it is
   // part of the read.
-  const total = analysed ? 4 : screenedOut ? 3 : 2;
+  //
+  // Built from the sections that will actually render, rather than counted by
+  // hand: a filing with no cluster and no context used to get a Context
+  // section whose entire content was a sentence saying there was nothing to
+  // put in it, kept only so the numbering added up. Nothing to say is a
+  // reason to say nothing — the run renumbers itself instead.
+  const numbered = [
+    "price",
+    ...(context.length > 0 || hasCluster ? ["context"] : []),
+    ...(screenedOut ? ["screened"] : []),
+    ...(analysed && deal?.analysis?.checklist ? ["checks"] : []),
+    ...(analysed && shape ? ["analysis"] : []),
+  ];
+  const sectionNo = (key: string) => numbered.indexOf(key) + 1;
+  const total = numbered.length;
 
   return (
     <DefaultLayout drawerRight>
@@ -349,8 +363,11 @@ export default function FilingPage({
                 document. Markers on both the trade and the disclosure make the
                 lag visible instead of merely stated. */}
             <SeoSection
-              aside="Trade and disclosure are marked, with the price paid and the disclosure-day close drawn as levels. Drag or hover to scrub."
-              index={1}
+              // Three lines of preamble on a phone before the reader reached
+              // the chart, one of them an instruction they will discover by
+              // touching it.
+              aside="Both the trade and the disclosure are marked, with the price paid drawn as a level."
+              index={sectionNo("price")}
               title="The price around the buy"
               total={total}
             >
@@ -374,7 +391,11 @@ export default function FilingPage({
                   tradeDate={deal.trade_date}
                 />
               </div>
-              <p className={`mt-4 max-w-[62ch] ${R.label} leading-[1.6]`}>
+              {/* Standing note, set as the small print it is rather than as
+                  five lines of body copy between the chart and the argument. */}
+              <p
+                className={`mt-4 max-w-[62ch] text-[11px] leading-[1.55] text-muted`}
+              >
                 {FILING_NOTICE}
               </p>
             </SeoSection>
@@ -386,7 +407,7 @@ export default function FilingPage({
                     ? `A ${deal.cluster?.tier} cluster: ${deal.cluster?.count} insiders bought inside a ${deal.cluster?.window_days}-day window. Breadth is a signal one purchase on its own cannot give you.`
                     : "What else was happening around this purchase."
                 }
-                index={2}
+                index={sectionNo("context")}
                 title={hasCluster ? "They were not the only one" : "Context"}
                 total={total}
               >
@@ -400,25 +421,12 @@ export default function FilingPage({
                 />
                 <ContextCards items={context} />
               </SeoSection>
-            ) : (
-              <SeoSection
-                aside="What else was happening around this purchase."
-                index={2}
-                title="Context"
-                total={total}
-              >
-                <p className={`mt-4 max-w-[62ch] ${R.body}`}>
-                  No other insiders bought this company inside the cluster
-                  window, and there isn’t enough price history to classify what
-                  this one was buying into.
-                </p>
-              </SeoSection>
-            )}
+            ) : null}
 
             {screenedOut ? (
               <SeoSection
                 aside="Every disclosure is screened before anything is written about it. This one was not taken further, and this is the reason it was given at the time."
-                index={3}
+                index={sectionNo("screened")}
                 title="Why there is no analysis of this one"
                 total={total}
               >
@@ -438,7 +446,7 @@ export default function FilingPage({
             {analysed && deal.analysis?.checklist ? (
               <SeoSection
                 aside="The same six checks every purchase is scored against, answered for this one."
-                index={3}
+                index={sectionNo("checks")}
                 title={`Why this was rated ${deal.analysis.rating}`}
                 total={total}
               >
@@ -457,7 +465,7 @@ export default function FilingPage({
                     ? "Every finding the assessment reached, for and against, with the source behind each. The reasoning under them is in the app."
                     : "The whole assessment: the thesis, every finding for and against with the source behind each, and the risks weighed against them."
                 }
-                index={4}
+                index={sectionNo("analysis")}
                 title="What the analysis found"
                 total={total}
               >
