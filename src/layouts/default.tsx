@@ -717,7 +717,13 @@ export default function DefaultLayout({
       >
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-t from-[#f5f0e8]/85 via-[#f5f0e8]/40 to-transparent dark:from-background/85 dark:via-background/40 backdrop-blur-md [mask-image:linear-gradient(to_top,black_55%,transparent)]"
+          // Literal hex on both sides, not `dark:from-background`. This scrim
+          // is the fixed element covering the bottom viewport edge, which is
+          // what iOS 26 Safari samples to tint the bottom toolbar — and it was
+          // the one half of that sample still resolving an oklch custom
+          // property, so it disagreed with the body underneath it. #231811 is
+          // --background resolved; keep it in step with THEME_COLOR.
+          className="absolute inset-0 bg-gradient-to-t from-[#f5f0e8]/85 via-[#f5f0e8]/40 to-transparent dark:from-[#231811]/85 dark:via-[#231811]/40 backdrop-blur-md [mask-image:linear-gradient(to_top,black_55%,transparent)]"
         />
         <div className="relative px-4 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {directAppUrl ? (

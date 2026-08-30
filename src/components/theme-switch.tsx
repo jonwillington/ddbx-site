@@ -1,23 +1,28 @@
 import { FC, useState, useEffect, useCallback } from "react";
 import { SunIcon, MoonIcon } from "@heroicons/react/24/solid";
 
-import { syncThemeColorMeta } from "@/lib/theme";
+import { applyTheme } from "@/lib/theme";
 
 export interface ThemeSwitchProps {
   className?: string;
 }
 
-/** THEME_COLOR and syncThemeColorMeta now live in `@/lib/theme` — `/api` pins
- *  itself dark and has to repaint Safari's chrome the same way, and a second
- *  copy of those hex values would drift. See that module for the Safari
- *  gotchas the sync works around. */
+/** The palette primitives live in `@/lib/theme` — `/api` pins itself dark and
+ *  has to paint Safari's chrome the same way, and a second copy of those hex
+ *  values would drift. See that module for the Safari gotchas.
+ *
+ *  This component flips the theme through `applyTheme` and does none of the
+ *  work itself. It used to toggle the `.dark` class inline and then call
+ *  `syncThemeColorMeta` — i.e. two of applyTheme's three steps, open-coded.
+ *  When a third step was added (painting the explicit hex on html/body, which
+ *  is what iOS 26 actually samples for the bottom toolbar) the pinned routes
+ *  got it and the site-wide switch silently did not. One entry point now. */
 
 export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
-    const root = document.documentElement;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const url = new URL(window.location.href);
     const urlTheme = url.searchParams.get("theme");
@@ -40,8 +45,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
       const next = saved ?? (mq.matches ? "dark" : "light");
 
       setTheme(next);
-      root.classList.toggle("dark", next === "dark");
-      syncThemeColorMeta(next);
+      applyTheme(next);
     };
 
     resolve();
@@ -61,8 +65,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({ className }) => {
 
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
-    syncThemeColorMeta(newTheme);
+    applyTheme(newTheme);
   }, [theme]);
 
   if (!isMounted) return <div className="w-6 h-6" />;

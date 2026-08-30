@@ -23,6 +23,12 @@ import type { MarketDealing } from "@/lib/markets/types";
 import { Link } from "react-router-dom";
 import { ChevronRightIcon } from "@heroicons/react/20/solid";
 
+import { dealsForMarket } from "./hero-deal-data";
+import {
+  HeroNotificationStack,
+  useNotificationTick,
+} from "./hero-notification-stack";
+
 import {
   buildWinners,
   type WinnerDealing,
@@ -54,6 +60,7 @@ export function WinnersSection<W>({
   formatValue,
   dealHref,
   appHref,
+  marketId,
   onShowChronological,
 }: {
   /** The channel window rows — null while the fetch is in flight. */
@@ -66,6 +73,9 @@ export function WinnersSection<W>({
   dealHref: (id: string) => string;
   /** Store link (or /download fallback) for the app CTAs. */
   appHref: string;
+  /** Picks the market's own example alerts for the interstitial's
+   *  notification stack, so a US reader isn't shown LSE tickers. */
+  marketId?: string;
   /** Switches the mobile list to the chronological tab — the fallback
    *  affordance when there are no winners to show. */
   onShowChronological: () => void;
@@ -150,36 +160,11 @@ export function WinnersSection<W>({
               {(winners.length > INTERSTITIAL_AFTER
                 ? i === INTERSTITIAL_AFTER - 1
                 : i === winners.length - 1) && (
-                <AppInterstitial appHref={appHref} />
+                <AppInterstitial appHref={appHref} marketId={marketId} />
               )}
             </li>
           ))}
         </ul>
-      )}
-
-      {winners.length > 0 && (
-        <div className="flex flex-col items-center gap-1.5 px-1 pt-1 text-center">
-          <p className="text-sm text-foreground/60">
-            Every new filing, rated, in the app as it lands.
-          </p>
-          <a
-            className="text-sm font-semibold text-brand-brown hover:underline dark:text-brand-tan"
-            data-ga-event="cta_winners_footer_app"
-            data-ga-label="winners_footer"
-            href={appHref}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Get the app free
-          </a>
-        </div>
-      )}
-
-      {!loading && (
-        <p className="px-1 text-[10px] leading-relaxed text-muted">
-          Share-price change since disclosure. Winners chosen after the fact.
-          Not financial advice; capital is at risk.
-        </p>
       )}
     </section>
   );
@@ -274,19 +259,42 @@ function WinnerCard({
 }
 
 /** The mid-list app ask. These cards are winners with hindsight; the app is
- *  how you see the next one at the start. */
-function AppInterstitial({ appHref }: { appHref: string }) {
+ *  how you see the next one at the start.
+ *
+ *  The claim this card makes — "the app sends every new filing the moment it
+ *  lands" — is a claim about an alert, and a paragraph is a weak way to make
+ *  it. The live notification stack (the same object the homepage hero and the
+ *  share funnel use) shows the alert instead of describing it, which is why
+ *  this card is given more room than the winner cards around it rather than
+ *  matching them. Under prefers-reduced-motion `useNotificationTick` freezes
+ *  and the stack rests on a single static card, which is still the proof. */
+function AppInterstitial({
+  appHref,
+  marketId,
+}: {
+  appHref: string;
+  marketId?: string;
+}) {
+  const tick = useNotificationTick(true);
+
   return (
-    <div className={`${CARD_CLASS} px-4 py-4 text-center`}>
-      <p className="text-[15px] font-semibold text-foreground">
+    <div className={`${CARD_CLASS} px-5 py-6 text-center`}>
+      <p className="text-[17px] font-semibold leading-snug text-foreground">
         Every deal is in the ddbx app
       </p>
-      <p className="mt-1 text-sm leading-relaxed text-foreground/60">
+      <p className="mx-auto mt-1.5 max-w-[34ch] text-sm leading-relaxed text-foreground/60">
         These are the winners with hindsight. The app sends every new filing the
         moment it lands, so you see the next one at the start.
       </p>
+
+      {/* Capped and centred: the stack sizes to its column, and full-bleed
+          inside the card it would out-scale the winner cards it sits between. */}
+      <div className="mx-auto mt-4 w-full max-w-[320px]">
+        <HeroNotificationStack deals={dealsForMarket(marketId)} tick={tick} />
+      </div>
+
       <a
-        className={`mt-3 inline-flex items-center justify-center ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-2.5 text-sm font-semibold shadow-md`}
+        className={`mt-5 inline-flex items-center justify-center ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-[15px] font-semibold shadow-md`}
         data-ga-event="cta_winners_app_interstitial"
         data-ga-label="winners_after_3"
         href={appHref}
@@ -295,6 +303,9 @@ function AppInterstitial({ appHref }: { appHref: string }) {
       >
         Get the app free
       </a>
+      <p className="mt-2 text-xs text-foreground/50">
+        Free for 7 days, cancel any time.
+      </p>
     </div>
   );
 }

@@ -54,9 +54,7 @@ import {
   computeRowMetric,
   groupByCompany,
   groupByPerson,
-  latestPricesAsOf,
   livePerfValue,
-  shortDate,
   todayKeyIso,
   weekendBetween,
 } from "./market-utils";
@@ -756,14 +754,6 @@ export function MarketPage<W>({
     count: number | null;
   } | null>(null);
 
-  // Freshness of the server-precomputed return badges — the latest close date
-  // across the loaded dealings' live-performance snapshots. Surfaced as a
-  // "Prices as of …" footer caption.
-  const pricesAsOf = useMemo(
-    () => latestPricesAsOf(filteredDealings),
-    [filteredDealings],
-  );
-
   // First dated day-group that actually has analysed ("Significant") rows.
   // The one-time intro strip rides on top of this day's rows — the first
   // place the badges appear without context. Skipped-only days don't count.
@@ -1354,7 +1344,14 @@ export function MarketPage<W>({
           {(dealings.length > 0 || loading) && (
             <div
               ref={filterBarRef}
-              className="sticky top-[64px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
+              // Parks clear of the floating navbar rather than under it. The
+              // bar's sticky wrapper (layouts/default.tsx) is `top-0 px-3 pt-3
+              // md:pt-4` around an `h-14` header, so the capsule's bottom edge
+              // is at 68px on mobile and 72px from md up. The old flat 64px
+              // was ABOVE both, which is why the Winners/Chronological toggle
+              // read as tucked under the glass with no gap. These offsets add
+              // a deliberate breath below the capsule instead.
+              className="sticky top-[78px] md:top-[84px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
             >
               {/* Mobile list tabs — Winners (sentence cards from the channel
                 window) vs the chronological feed. Rides inside the sticky
@@ -1362,7 +1359,7 @@ export function MarketPage<W>({
                 filterBarHeight keeps month-header offsets aligned. */}
               {config.mobileWinners && (
                 <div
-                  className="flex justify-center px-4 py-2.5 md:hidden"
+                  className="flex justify-center px-4 pb-2.5 pt-3.5 md:hidden"
                   role="tablist"
                 >
                   <div className="inline-flex rounded-full border border-separator bg-surface/40 p-1">
@@ -1492,6 +1489,7 @@ export function MarketPage<W>({
                 dealings={channelDealings}
                 failed={channelFetchFailed}
                 formatValue={config.priceFormat.formatValue}
+                marketId={config.id}
                 onShowChronological={() => setMobileTab("chronological")}
               />
             </div>
@@ -1887,12 +1885,6 @@ export function MarketPage<W>({
         </div>
         {/* ^ end of the filter bar's stick range. Anything below this line
             scrolls with the bar released. */}
-
-        {pricesAsOf && (
-          <div className="text-center text-[11px] text-muted/70">
-            Prices as of {shortDate(pricesAsOf, config.locale)}
-          </div>
-        )}
 
         {config.plans && !config.plans.leads ? (
           <MarketPlans

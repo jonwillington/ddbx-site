@@ -7,23 +7,30 @@
       // the saved choice if there is one, else follow the OS preference.
       // Mirrors the resolution in src/components/theme-switch.tsx.
       //
-      // Also seed the theme-color meta here so the browser chrome (iOS status
-      // bar + Safari bottom toolbar) is the right tone from the very first
-      // frame. We can't read --background yet (stylesheets haven't parsed), so
-      // the hex is hardcoded to the resolved --background per theme; once React
-      // mounts, theme-switch.tsx re-syncs it to the exact computed value. There
-      // is no static <meta name="theme-color"> in <head> — this is the sole
-      // source so theme-switch.tsx's single-node remove/re-insert stays valid.
+      // Also seed the browser chrome here so it is the right tone from the very
+      // first frame. Two surfaces, because two generations of iOS read
+      // different ones: the theme-color meta (older iOS + Android Chrome) and
+      // the root element's own background (iOS 26, which ignores the meta and
+      // samples the page). We can't read --background yet — stylesheets haven't
+      // parsed — so the hex is hardcoded, and it MUST equal THEME_COLOR in
+      // src/lib/theme.ts, which re-applies both once React mounts. When those
+      // two drifted apart the status bar and the bottom toolbar ended up
+      // painting different colours from different sources.
+      //
+      // There is no static <meta name="theme-color"> in <head> — this is the
+      // sole source, so theme.ts's single-node remove/re-insert stays valid.
       (function () {
         try {
           var saved = localStorage.getItem("theme");
           var dark = saved
             ? saved === "dark"
             : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var hex = dark ? "#231811" : "#f5f0e8";
           document.documentElement.classList.toggle("dark", dark);
+          document.documentElement.style.backgroundColor = hex;
           var meta = document.createElement("meta");
           meta.name = "theme-color";
-          meta.content = dark ? "#170d06" : "#f5f0e8";
+          meta.content = hex;
           document.head.appendChild(meta);
         } catch (e) {}
       })();

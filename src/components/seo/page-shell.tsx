@@ -26,12 +26,15 @@
 import type { ReactNode } from "react";
 import type { ShotSlot } from "@/lib/app-screenshots";
 
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { AppCtaBand, type CtaMedia } from "@/components/seo/app-cta-band";
 
 export interface ShellCrumb {
-  label: string;
+  /** Usually a string; a loading page may pass a small <Skeleton /> so the
+   *  trail never states a placeholder word while the record is in flight. */
+  label: ReactNode;
   /** Omit on the last crumb — it renders as plain text with aria-current. */
   to?: string;
 }
@@ -107,6 +110,43 @@ export function SeoPageShell({
   skeleton?: ReactNode;
   children: ReactNode;
 }) {
+  // The skeleton outlives `loading` by the length of its fade so the two can
+  // overlap. Without this the swap is a cut: skeleton unmounts, content mounts
+  // mid-fade, and the reader gets an empty frame between them.
+  const [holdSkeleton, setHoldSkeleton] = useState(loading);
+
+  useEffect(() => {
+    if (loading) {
+      setHoldSkeleton(true);
+
+      return;
+    }
+    if (!holdSkeleton) return;
+    // Matches .animate-skeleton-out in globals.css.
+    const t = window.setTimeout(() => setHoldSkeleton(false), 260);
+
+    return () => window.clearTimeout(t);
+  }, [loading, holdSkeleton]);
+
+  const handoff = loading || holdSkeleton;
+
+  const body = (
+    <>
+      {children}
+
+      {cta ? (
+        <AppCtaBand
+          body={cta.body}
+          gaLabel={cta.gaLabel}
+          headline={cta.headline}
+          marketId={cta.marketId}
+          media={cta.media}
+          screenshotSlot={cta.screenshotSlot}
+        />
+      ) : null}
+    </>
+  );
+
   return (
     <div
       className={`mx-auto w-full pb-16 ${
@@ -181,23 +221,26 @@ export function SeoPageShell({
         </div>
       ) : null}
 
-      {loading ? (
-        (skeleton ?? null)
+      {handoff ? (
+        /* Cross-fade, not a cut. Both halves occupy the SAME grid cell, so the
+           arriving document fades up through the departing skeleton instead of
+           the skeleton being yanked away to leave a blank frame for a beat.
+           The cell is only occupied by both for the length of
+           .animate-skeleton-out; after that the skeleton unmounts and the
+           branch below takes over. */
+        <div className="grid [&>*]:col-start-1 [&>*]:row-start-1">
+          {loading ? null : <div className="animate-content-in">{body}</div>}
+          <div
+            aria-hidden
+            className={
+              loading ? "" : "animate-skeleton-out pointer-events-none"
+            }
+          >
+            {skeleton ?? null}
+          </div>
+        </div>
       ) : (
-        <>
-          {children}
-
-          {cta ? (
-            <AppCtaBand
-              body={cta.body}
-              gaLabel={cta.gaLabel}
-              headline={cta.headline}
-              marketId={cta.marketId}
-              media={cta.media}
-              screenshotSlot={cta.screenshotSlot}
-            />
-          ) : null}
-        </>
+        body
       )}
     </div>
   );

@@ -31,6 +31,7 @@
  *  it for one audience and not the other — breaks the rule shared/filings.js
  *  sets out.
  */
+import type { ReactNode } from "react";
 import type { Dealing, RatingChecklist, UsDealing } from "@/types/ddbx";
 
 import { Link } from "react-router-dom";
@@ -385,7 +386,9 @@ export function TrialNudge({
 export function ContextCards({
   items,
 }: {
-  items: { label: string; value: string; body: string }[];
+  /** `value` is a ReactNode so a card can carry a direction glyph beside its
+   *  figure (the buy-style arrow) without this component knowing about it. */
+  items: { label: string; value: ReactNode; body: string }[];
 }) {
   if (items.length === 0) return null;
 

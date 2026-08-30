@@ -6,19 +6,28 @@
  *  a "Related" list of three plain links and the site footer. The page has
  *  nowhere to send them, which means the traffic it earns is spent.
  *
- *  This is the ask. It is deliberately the same object as the company page's
- *  `CompanyAppPitch` band — full-bleed, dark, amber mono kicker, white
- *  headline, one store button — because that band is already the best-designed
- *  conversion surface on the site and a second visual language for "install the
- *  app" would just be a second thing to maintain. What is NOT shared is the
- *  per-company machinery (the live notification stack, the screen roller):
- *  those need a company's disclosures, and these pages don't have one.
+ *  This is the ask, and it is deliberately the same object as the company
+ *  page's `CompanyAppPitch` — dark, amber mono kicker, white headline, one
+ *  store button — because that band is the best-designed conversion surface on
+ *  the site and a second visual language for "install the app" would just be a
+ *  second thing to maintain. What is NOT shared is the per-company machinery
+ *  (the live notification stack, the screen roller): those need a company's
+ *  disclosures, and these pages don't have one.
  *
- *  Why a dark band rather than another cream section: everything above it is
+ *  Why a dark panel rather than another cream section: everything above it is
  *  the record — cream sheets on a cream page. The one block whose job is to
  *  sell rather than inform has to change surface, or it scrolls past as one
- *  more section. Same reasoning as `CompanyAppPitch`, same colours, so the two
- *  read as one recurring object across the site.
+ *  more section.
+ *
+ *  CONTAINED, NOT FULL-BLEED. This ran edge-to-edge until now, which is what
+ *  `CompanyAppPitch` itself used to do and stopped doing: a section that blows
+ *  through the column all its neighbours respect is the opposite of what the
+ *  design language asks for (investigations/2026-08-30-design-language.md,
+ *  tenet 1), and on the SEO pages — which carry the fixed right rail — the
+ *  dark stripe stopped dead against the rail's border. Held inside the column
+ *  as one rounded object it reads as a card the page hands you rather than a
+ *  band painted across it, and the two conversion surfaces are one recurring
+ *  object again instead of two that merely share colours.
  *
  *  Placement rule: after the last content section, BEFORE any methodology or
  *  small-print footnote. Small print reads as the caption of the whole page and
@@ -34,7 +43,6 @@ import { DeviceFrame } from "@/components/download/device-frame";
 import { QrInstall } from "@/components/download/qr-install";
 import { StoreButtons } from "@/components/store-buttons";
 import { BUTTON_RADIUS } from "@/components/button";
-import { FULL_BLEED } from "@/components/full-bleed";
 import { storeUrlForMarketId } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import { appShotSrc, SLOT_LABEL, type ShotSlot } from "@/lib/app-screenshots";
@@ -81,13 +89,13 @@ export function AppCtaBand({
 
   return (
     <section
-      className={`${FULL_BLEED} mt-16 bg-ink text-white dark:bg-[oklch(17%_0.02_55)] ${className}`}
+      className={`mt-16 overflow-hidden rounded-[28px] bg-ink text-white dark:bg-[oklch(17%_0.02_55)] ${className}`}
     >
-      <div className="mx-auto max-w-[1280px] px-4 py-14 md:px-6 md:py-20">
+      <div className="px-6 py-14 sm:px-10 md:px-14 md:py-16">
         <div
           className={
             hasMedia
-              ? "grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-16"
+              ? "grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:gap-16"
               : ""
           }
         >
@@ -95,7 +103,11 @@ export function AppCtaBand({
             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
               {kicker}
             </p>
-            <p className="mt-3 text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
+            {/* Sized for a contained panel, not a full-bleed band: the old
+                40px was set against the page's full width and reads as a
+                headline shouting in a small room once the panel is held
+                inside the column. Same scale as CompanyAppPitch's h2. */}
+            <p className="mt-3 text-balance text-[30px] font-semibold leading-[1.05] tracking-[-0.028em] sm:text-[38px] lg:text-[42px]">
               {headline}
             </p>
             <p className="mt-4 max-w-[36em] text-[16px] leading-[1.6] text-white/65">
@@ -118,16 +130,24 @@ export function AppCtaBand({
           </div>
 
           {showShot ? (
-            // Desktop only: on mobile the stacked column would put a 240px
-            // device frame BELOW the store buttons — a screenshot of the app
-            // under the button that installs it, pushing the fold for nothing.
-            <div className="hidden w-full max-w-[240px] lg:block">
-              <DeviceFrame
-                alt={`ddbx ${SLOT_LABEL[screenshotSlot]} screen`}
-                platform={framePlatform}
-                slot={screenshotSlot}
-                src={appShotSrc(marketId, framePlatform, screenshotSlot)}
-              />
+            // Contained-not-blended: the shot sits in its own rounded hairline
+            // panel over a darker ground, the same window-cut-into-the-band
+            // treatment CompanyAppPitch uses, rather than a bare device frame
+            // floating on the fill.
+            //
+            // Desktop only, unchanged: on mobile the stacked column would put
+            // the device frame BELOW the store buttons — a screenshot of the
+            // app under the button that installs it, pushing the fold for
+            // nothing.
+            <div className="hidden overflow-hidden rounded-3xl border border-white/[0.09] bg-black/20 px-8 py-10 lg:block">
+              <div className="mx-auto w-full max-w-[220px]">
+                <DeviceFrame
+                  alt={`ddbx ${SLOT_LABEL[screenshotSlot]} screen`}
+                  platform={framePlatform}
+                  slot={screenshotSlot}
+                  src={appShotSrc(marketId, framePlatform, screenshotSlot)}
+                />
+              </div>
             </div>
           ) : null}
 

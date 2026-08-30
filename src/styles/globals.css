@@ -101,14 +101,22 @@ body {
      status bar + bottom toolbar from the background-color of the body (or of a
      fixed/sticky element at the edge). Our page colour lived only on an inner
      shell div, so the chrome sampled an unthemed body. Paint the themed colour
-     on the body itself — matching the shell — so both toolbars track the page
-     and re-tint on the light/dark toggle (the class flip is a CSS recalc Safari
-     re-samples). The theme-color meta is kept for older iOS + Android Chrome. */
+     on the body itself — matching the shell — so both toolbars track the page.
+     The theme-color meta is kept for older iOS + Android Chrome.
+
+     These are the FIRST-PAINT defaults only. src/lib/theme.ts re-states the
+     same values as inline hex on <html> and <body> on every flip: the class
+     recalc alone left the bottom toolbar stuck on whatever it sampled at load,
+     and an explicit mutation on the sampled element is what shifts it. Literal
+     hex on both sides, matching THEME_COLOR — the dark side used to read
+     `var(--background)` here, and an oklch value resolved through a custom
+     property is exactly what the chrome sampler fails to re-read. Keep these
+     three places in step: THEME_COLOR, the index.html seed, and this rule. */
   background-color: #f5f0e8;
 }
 
 .dark body {
-  background-color: var(--background);
+  background-color: #231811;  /* = oklch(22% 0.022 55), i.e. --background */
 }
 
 /* Selection carries the brand instead of the UA's stock blue, which is the one
@@ -186,19 +194,57 @@ body {
   --separator:          oklch(34%   0.022 55);  /* dividers                */
 }
 
+/* Skeletons.
+   The pulse rides on the fill's ALPHA, not on `opacity`. That leaves `opacity`
+   free for the entrance and the cross-fade out (see .animate-skeleton-out and
+   SeoPageShell), and it reads as a tint breathing rather than the whole block
+   ghosting in and out.
+
+   Timing: the old 1.6s cycle swinging 1 -> 0.55 read as a flicker, especially
+   on pages that resolve in well under a second. 2.6s with a shallower swing is
+   a slower, more controlled breath. The 140ms entrance delay is the other half
+   of the fix — a response that lands inside it never paints a skeleton at all,
+   and the real cure for "it flashes" is not drawing it for a wait the reader
+   would never have noticed. */
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
+  0%, 100% { background-color: rgb(0 0 0 / 0.075); }
+  50%      { background-color: rgb(0 0 0 / 0.032); }
+}
+
+/* Dark needs its own set: keyframes carry literal colours, and a custom
+   property animated across them would need @property to interpolate. */
+@keyframes skeleton-pulse-dark {
+  0%, 100% { background-color: rgb(255 255 255 / 0.085); }
+  50%      { background-color: rgb(255 255 255 / 0.035); }
+}
+
+@keyframes skeleton-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .skeleton {
-  background-color: rgb(0 0 0 / 0.06);
+  background-color: rgb(0 0 0 / 0.075);
   border-radius: 0.375rem;
-  animation: skeleton-pulse 1.6s ease-in-out infinite;
+  animation:
+    skeleton-in 300ms ease-out 140ms both,
+    skeleton-pulse 2.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) 140ms infinite;
 }
 
 .dark .skeleton {
-  background-color: rgb(255 255 255 / 0.07);
+  background-color: rgb(255 255 255 / 0.085);
+  animation:
+    skeleton-in 300ms ease-out 140ms both,
+    skeleton-pulse-dark 2.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) 140ms infinite;
+}
+
+/* The delayed entrance stays — it suppresses the flash, which is not motion
+   for its own sake — but the breathing stops. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .dark .skeleton {
+    animation: skeleton-in 300ms ease-out 140ms both;
+  }
 }
 
 @keyframes content-fade-in {
@@ -243,8 +289,20 @@ body {
   to { opacity: 0; }
 }
 
+/* The outgoing half of the skeleton -> content cross-fade. Stacked in the same
+   grid cell as the arriving content by SeoPageShell, so the two overlap
+   instead of the skeleton being cut away to a blank frame. Slightly longer
+   than it needs to be so it is still fading under the content's own entrance
+   (.animate-content-in, 320ms) rather than finishing before it. */
 .animate-skeleton-out {
-  animation: skeleton-fade-out 200ms ease-out both;
+  animation: skeleton-fade-out 260ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-skeleton-out {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 /* Scroll-reveal for the download landing pages. The class is applied always;
