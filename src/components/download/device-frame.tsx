@@ -76,12 +76,12 @@ export function DeviceFrame({
   // Then immediately re-check whether the image is ALREADY decoded. A cached
   // image can finish loading before React attaches `onLoad`, in which case the
   // event never fires and the frame sits on its placeholder forever with the
-  // real screenshot sitting in cache. That is not a rare race here: the company
-  // page's screen roller calls `useAvailableShots`, which probes every src with
-  // `new Image()` before rendering — so by the time these <img>s mount, every
-  // one of them is guaranteed to be cached and guaranteed to lose the race.
-  // That is why the roller rendered seven "iPhone screenshot" placeholders on
-  // ddbx.uk/company/* while the PNGs were committed, deployed, and serving 200.
+  // real screenshot sitting in cache. That is not a rare race: anything that
+  // probes a src with `new Image()` before rendering (`useAvailableShots`)
+  // guarantees these <img>s mount already cached, and so guarantees they lose
+  // the race. The company page's screen roller did exactly that, and rendered
+  // seven "iPhone screenshot" placeholders on ddbx.uk/company/* while the PNGs
+  // were committed, deployed, and serving 200.
   useEffect(() => {
     const img = imgRef.current;
 

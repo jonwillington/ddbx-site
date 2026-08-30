@@ -3,122 +3,44 @@
  *  A company page is an SEO landing surface: most of its traffic arrives cold
  *  from a search for one ticker, reads the table, and leaves. Everything above
  *  this answers their question. This is the only part of the page whose job is
- *  to make them want the app — so it doesn't argue in the abstract, it shows
- *  the alert they'd have got for THIS company, using THIS company's real
- *  disclosed buys as the notification copy.
+ *  to make them want the app.
  *
- *  Two beats:
- *    1. the promise, and the live alert it would have sent for THIS company —
- *       the claim on the left, the animated evidence on the right;
- *    2. a screenshot roller — what it looks like once you're in.
+ *  One beat, not three. It carried a live notification stack rebuilt from this
+ *  company's own disclosures AND an auto-scrolling roller of seven app screens
+ *  underneath it — two moving things and a device rail, all selling the same
+ *  install, in a band a cold reader gives one glance. Every screen in the
+ *  roller went past too small to read, and the alert stack repeated the
+ *  disclosures the table further up the page already lists.
  *
- *  There used to be a third: the company's buys rendered as the app lists
- *  them, sat where the alert now is. It was the same disclosures the table
- *  further up the page already carries, so the block held two inventories of
- *  one company side by side and pushed the only animated thing on the page
- *  into a corner beneath the CTA. The alert has the column to itself now.
- *
- *  Motion respects prefers-reduced-motion throughout: the alert stops
- *  advancing, the roller stops scrolling.
+ *  What is here now is the shape the rest of the site is being revamped to
+ *  (investigations/2026-08-30-design-language.md): a dominant headline on
+ *  clean ground, and one contained visual in a rounded hairline panel. The
+ *  product shot does the showing; the headline does the asking.
  */
-import type { HeroDeal } from "@/components/market/hero-deal-data";
 import type { Dealing, UsDealing } from "@/types/ddbx";
 
-import { useMemo } from "react";
-
-import { DeviceFrame } from "@/components/download/device-frame";
-import {
-  HeroNotificationStack,
-  useNotificationTick,
-} from "@/components/market/hero-notification-stack";
 import { StoreButtons } from "@/components/store-buttons";
 import { BUTTON_RADIUS } from "@/components/button";
 import { FULL_BLEED } from "@/components/full-bleed";
-import { appShotSrc, SHOT_SLOTS } from "@/lib/app-screenshots";
-import { moneyShort } from "@/lib/company-format";
-import { useAvailableShots } from "@/lib/use-app-shots";
-import { useDevicePlatform } from "@/lib/use-device-platform";
-
-const isUk = (d: Dealing | UsDealing): d is Dealing => "value_gbp" in d;
-
-const nameOf = (d: Dealing | UsDealing) =>
-  isUk(d)
-    ? (d.director?.name ?? "A director")
-    : (d.reporter?.name ?? "An insider");
-
-function roleOf(d: Dealing | UsDealing): string {
-  if (isUk(d)) return d.director?.role ?? "";
-  const r = d.reporter;
-
-  if (!r) return "";
-  if (r.officer_title) return r.officer_title;
-
-  return (r.roles ?? [])
-    .map((x) => (x === "ten_percent_owner" ? "10% owner" : x))
-    .join(", ");
-}
-
-const valueOf = (d: Dealing | UsDealing) => (isUk(d) ? d.value_gbp : d.value);
-
-/** The ratings that mean "this one was analysed" — the product's definition of
- *  a signal. Anything else on a row is an unrated disclosure. */
-const RATED = new Set(["significant", "noteworthy", "minor"]);
 
 export function CompanyAppPitch({
   company,
-  tickerKey,
   ticker,
   deals,
   market,
-  currency,
 }: {
   company: string;
-  /** Storage key, for the logo. */
-  tickerKey: string;
   /** Display ticker, no exchange suffix. */
   ticker: string;
   deals: Array<Dealing | UsDealing>;
   market: string;
-  currency: string;
 }) {
-  const platform = useDevicePlatform() ?? "ios";
   const marketId = market === "UK" ? "uk" : "us";
 
-  // The alert copy IS this company's disclosure history. Newest first, capped
-  // at four: the stack only ever shows one card plus rims, and a longer loop
-  // takes too long to come back round to the buy the visitor just read about.
-  const alerts: HeroDeal[] = useMemo(() => {
-    const recent = [...deals]
-      .sort((a, b) => (a.trade_date < b.trade_date ? 1 : -1))
-      .slice(0, 4);
-
-    return recent.map((d, i) => ({
-      id: d.id ?? `${tickerKey}-${i}`,
-      ticker: tickerKey,
-      icon: `/ios-app-icon-${marketId}.png`,
-      app: `ddbx.${marketId}`,
-      // Signal ≡ a rated row, whatever the strength: significant, noteworthy
-      // and minor are all things the six-point check wrote up. Tagging only
-      // "significant" as SIGNAL contradicted the product's own definition and
-      // marked two thirds of our own analysis as unremarkable.
-      tag: RATED.has(d.analysis?.rating ?? "") ? "SIGNAL" : "JUST IN",
-      lead: `${ticker} · ${company}`,
-      body: `${nameOf(d)}${roleOf(d) ? ` (${roleOf(d)})` : ""} bought ${moneyShort(
-        valueOf(d),
-        currency,
-      )} of shares.`,
-      // The map never renders here, but HeroDeal requires the geo fields.
-      city: "",
-      lng: 0,
-      lat: 0,
-    }));
-  }, [deals, tickerKey, ticker, company, currency, marketId]);
-
-  const tick = useNotificationTick(alerts.length > 1);
-
-  // Nothing to show an alert about — a company page with no disclosures
-  // shouldn't fake one.
-  if (alerts.length === 0) return null;
+  // A company page with no disclosures has nothing to promise alerts about,
+  // so it doesn't ask. Same guard as before, read off the deals directly now
+  // that the band doesn't rebuild them into alert copy.
+  if (deals.length === 0) return null;
 
   return (
     // A dark band, not another cream one. Everything above this is the record
@@ -130,27 +52,29 @@ export function CompanyAppPitch({
       className={`${FULL_BLEED} mt-16 bg-ink text-white dark:bg-[oklch(17%_0.02_55)]`}
     >
       <div className="mx-auto max-w-[1280px] px-4 py-14 md:px-6 md:py-20">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
-          {/* ---- Left: the promise ---- */}
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          {/* ---- Left: the ask, at poster size ----
+              The headline is the loudest thing in the band on purpose. It used
+              to sit at 40px beside an animating phone card, which meant the
+              claim was the quiet half of its own pitch. */}
           <div>
             {/* 0.16em, the family kicker spec — `tracking-wider` is 0.05em and
                 made this the one loose-tracked eyebrow on the site. */}
             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
               The app
             </p>
-            <h2 className="mt-3 text-balance text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[40px]">
+            <h2 className="mt-5 max-w-[13ch] text-balance text-[40px] font-semibold leading-[1.0] tracking-[-0.03em] sm:text-[54px] lg:text-[62px] xl:text-[68px]">
               The next {company} buy lands on your phone.
             </h2>
-            <p className="mt-4 max-w-[36em] text-[16px] leading-[1.6] text-white/65">
+            <p className="mt-6 max-w-[34em] text-[16px] leading-[1.6] text-white/60">
               Follow {ticker} and your phone buzzes the moment{" "}
               {market === "UK"
                 ? "a director files with the LSE"
                 : "an insider files a Form 4"}{" "}
-              — with the rating, the full thesis and the price history already
-              attached. No inbox to check, no filing feed to babysit.
+              — rating, thesis and price history already attached.
             </p>
 
-            <div className="mt-8 flex flex-col items-start gap-2.5">
+            <div className="mt-9 flex flex-col items-start gap-2.5">
               {/* Light fill: BUTTON_FILLED is near-black, which is the band. */}
               <StoreButtons
                 buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
@@ -166,92 +90,26 @@ export function CompanyAppPitch({
             </div>
           </div>
 
-          {/* ---- Right: the live alert ----
-              This used to be a static list of the same buys the table above
-              already shows, with the animation tucked under the CTA on the
-              left. Two inventories of one company's disclosures, side by side,
-              and the only moving thing on the page relegated to a footnote
-              beneath a button. The alert takes the column now: it's the thing
-              being sold, it's the thing they don't already have, and nothing
-              is competing with it for the same glance. */}
-          <div className="mx-auto w-full max-w-[420px] lg:mx-0 lg:max-w-none">
-            <HeroNotificationStack deals={alerts} tick={tick} />
+          {/* ---- Right: one contained visual ----
+              Contained-not-blended: a rounded hairline panel, no scrim and no
+              fade into the band. The shot's own ground is the same near-black
+              brown as the band, so the panel reads as a window cut into it
+              rather than a card floating on it. `object-cover` at a fixed
+              aspect keeps the handset centred at every width; intrinsic
+              width/height so the row doesn't reflow when it decodes. */}
+          <div className="overflow-hidden rounded-3xl border border-white/[0.09] bg-black/20">
+            <img
+              alt={`The ddbx ${marketId.toUpperCase()} app showing the week's insider buys`}
+              className="aspect-[4/3] h-full w-full object-cover lg:aspect-[5/4]"
+              decoding="async"
+              height={1356}
+              loading="lazy"
+              src="/download-app.jpg"
+              width={1600}
+            />
           </div>
         </div>
-
-        {/* ---- The roller ---- */}
-        <ScreenRoller marketId={marketId} platform={platform} />
       </div>
     </section>
-  );
-}
-
-/** Auto-scrolling row of app screens.
- *
- *  The track holds the slot list TWICE and translates by exactly -50%, so the
- *  loop is seamless — at the end of the animation the second copy sits exactly
- *  where the first started. Duplicating in markup rather than cloning in JS
- *  keeps it a pure CSS animation, which the compositor runs off the main
- *  thread. `aria-hidden` on the whole strip: it's decorative, and a screen
- *  reader announcing ten identical "Analysis screen" images is noise.
- *
- *  Only screens we actually have are rolled. `DeviceFrame`'s placeholder earns
- *  its place in the tour, where a beat has a slot whether or not it's been
- *  captured — here it was a card reading "Lock screen · iPhone screenshot"
- *  gliding past in a rail of real app screens, which is an admission, not a
- *  product shot. */
-function ScreenRoller({
-  marketId,
-  platform,
-}: {
-  marketId: string;
-  platform: "ios" | "android";
-}) {
-  const available = useAvailableShots(marketId, platform, SHOT_SLOTS);
-
-  // Nothing yet (still probing) or nothing at all for this market/platform —
-  // either way the rail has no content, so it doesn't reserve space for any.
-  if (!available || available.length === 0) return null;
-
-  const slots = [...available, ...available];
-
-  return (
-    <div aria-hidden className="mt-16">
-      <style>{`
-        @keyframes cap-roll {
-          from { transform: translate3d(0, 0, 0); }
-          to   { transform: translate3d(-50%, 0, 0); }
-        }
-        .cap-roller {
-          -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-          mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-        }
-        .cap-track {
-          display: flex;
-          width: max-content;
-          gap: 1.25rem;
-          will-change: transform;
-          animation: cap-roll 46s linear infinite;
-        }
-        .cap-roller:hover .cap-track { animation-play-state: paused; }
-        @media (prefers-reduced-motion: reduce) {
-          .cap-track { animation: none; }
-        }
-      `}</style>
-      <div className="cap-roller overflow-hidden">
-        <div className="cap-track">
-          {slots.map((slot, i) => (
-            <div key={`${slot}-${i}`} className="w-[168px] shrink-0">
-              <DeviceFrame
-                alt=""
-                platform={platform}
-                slot={slot}
-                src={appShotSrc(marketId, platform, slot)}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }

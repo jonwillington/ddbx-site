@@ -773,11 +773,9 @@ export default function CompanyPage() {
             reads fine as the last thing on the page. */}
         <CompanyAppPitch
           company={name}
-          currency={summary.currency ?? (market === "UK" ? "GBP" : "USD")}
           deals={data.deals}
           market={market}
           ticker={ticker}
-          tickerKey={data.key}
         />
 
         <MoreCompanies currentKey={data.key} market={market} />
