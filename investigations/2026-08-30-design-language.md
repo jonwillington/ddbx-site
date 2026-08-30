@@ -52,17 +52,19 @@ full-width hairline rows, and the iOS app's Performance clusters strip
 ## Reference implementation
 
 - `src/components/market/market-hero.tsx` — the two-layer app-market hero:
-  message column on the page ground over `.hero-ambient`, showcase panel
-  beside it. Non-app markets (NL/SE) intentionally keep the old lit-stage
-  hero until they get their own proof object.
-- `src/components/market/hero-deal-showcase.tsx` — the contained
-  "instrument": glass company queue on top (active ringed in the beacon
-  colour), notification stack over a pure-CSS radar motif (concentric
-  rings + blips), badge avatar off. It briefly held the MapLibre basemap;
-  contained at panel size the map read as grey street noise and its queue
-  rings rendered oval, so the map was dropped site-wide (2026-08-30) along
-  with the maplibre-gl dependency. Don't reintroduce a map unless it can
-  be the *whole* object at a size where geography is legible.
+  message column left, the live notification stack right — bare, big,
+  badge avatar on, exactly the object mobile leads with. NO container
+  around the stack: three same-day passes (full-bleed MapLibre basemap
+  behind a scrim; the map contained in a panel; a dark radar panel with a
+  logo-queue selector) each proved that every frame put around the stack
+  competes with it. The maplibre-gl dependency went with the map. Don't
+  reintroduce a map unless it can be the *whole* object at a size where
+  geography is legible, and don't re-wrap the stack.
+- `HeroLiveGradient` (in `market-hero.tsx`) — the header's motion: four
+  warm gradient phase layers cross-fading on the notification clock, so
+  the light morphs as each alert lands. This is the one sanctioned
+  *animated* atmosphere, and only because it's synced to a live proof
+  object's clock; anywhere without such a clock, atmosphere stays static.
 - `src/components/navbar.tsx` + `src/layouts/default.tsx` — the floating
   glass bar and the sticky wrapper that gives it its inset.
 
@@ -79,7 +81,8 @@ sweep, and the SEO shell components in `src/components/seo/*`.
       stretched to match an unrelated sibling?
 - [ ] Selling lists: converted to full-width hairline rows (tenet 3)?
 - [ ] Background: flat page colour, or at most one masked sub-perceptual
-      wash. No stacked atmosphere layers.
+      wash. No stacked atmosphere layers. Animated only when synced to a
+      live proof object's clock (see `HeroLiveGradient`).
 - [ ] Chrome that floats uses the glass recipe (translucent fill +
       blur + saturate + hairline + soft shadow), not a new material.
 
@@ -88,6 +91,7 @@ sweep, and the SEO shell components in `src/components/seo/*`.
 - Litebox-style row treatment for the hero bullets and the "what we check"
   lists (tenet 3 has no built component yet — build it once, in
   `src/components/`, when the first list converts).
-- Non-app market heroes (NL/SE) still on the lit stage.
 - The wider page sweep (download pages, how-it-works, SEO pages) against
-  the checklist above.
+  the checklist above. The download hero has lost its basemap + scrim but
+  still frames its stage; NL/SE heroes now sit on the shared gradient
+  (resting, since their clock never ticks).
