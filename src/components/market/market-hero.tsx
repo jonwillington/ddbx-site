@@ -53,14 +53,22 @@ function HeroLiveGradient({ tick }: { tick: number }) {
   return (
     <div
       aria-hidden
-      className="hlg pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      className="hlg pointer-events-none absolute -top-28 bottom-0 left-1/2 z-0 w-screen -translate-x-1/2 overflow-hidden"
     >
       <style>{`
+        /* Full-bleed: the wash belongs to the PAGE, not the content column —
+           the w-screen break-out spans the viewport (the layout's
+           overflow-x-clip absorbs the overspill) and the -top extension runs
+           it up behind the floating glass navbar, whose blur picks the
+           moving colour up. The mask fades the layer in from the viewport
+           top and out before the hero's bottom edge, so it never presents a
+           horizontal seam; the phases' own radial falloff handles the
+           sides. */
         .hlg {
-          -webkit-mask-image: radial-gradient(ellipse 92% 92% at 50% 48%,
-            black 30%, transparent 96%);
-          mask-image: radial-gradient(ellipse 92% 92% at 50% 48%,
-            black 30%, transparent 96%);
+          -webkit-mask-image: linear-gradient(to bottom,
+            transparent 0%, black 18%, black 78%, transparent 100%);
+          mask-image: linear-gradient(to bottom,
+            transparent 0%, black 18%, black 78%, transparent 100%);
         }
         .hlg-layer {
           position: absolute; inset: -12%;
@@ -105,6 +113,30 @@ function HeroLiveGradient({ tick }: { tick: number }) {
         @media (prefers-reduced-motion: reduce) {
           .hlg-layer { animation: none; transition: none; }
         }
+
+        /* Arrival ripple — a one-shot double ring that expands from behind
+           the notification stack as each card lands (the element re-mounts
+           per tick, so the animation plays once and rests). The alert
+           visibly arrives somewhere, without wrapping the stack in a
+           container. */
+        .hero-ping-ring {
+          position: absolute; width: 240px; height: 240px;
+          border-radius: 50%;
+          border: 1.5px solid rgba(139, 96, 64, 0.4);
+          opacity: 0; transform: scale(0.35);
+          will-change: opacity, transform;
+          animation: hero-ping 1.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        }
+        .hero-ping-ring-2 { animation-delay: 0.28s; }
+        :is(.dark) .hero-ping-ring { border-color: rgba(238, 197, 132, 0.32); }
+        @keyframes hero-ping {
+          0%   { opacity: 0;    transform: scale(0.35); }
+          12%  { opacity: 0.5; }
+          100% { opacity: 0;    transform: scale(2.15); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .hero-ping-ring { display: none; }
+        }
       `}</style>
       {[0, 1, 2, 3].map((i) => (
         <div
@@ -113,6 +145,22 @@ function HeroLiveGradient({ tick }: { tick: number }) {
         />
       ))}
     </div>
+  );
+}
+
+/** The arrival ripple, centred behind whatever it's placed in (the stack
+ *  column). Keyed by tick so it re-mounts and replays once per landing;
+ *  its CSS lives in HeroLiveGradient's sheet, which always renders first. */
+function NotificationPing({ tick }: { tick: number }) {
+  return (
+    <span
+      key={tick}
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
+    >
+      <span className="hero-ping-ring" />
+      <span className="hero-ping-ring hero-ping-ring-2" />
+    </span>
   );
 }
 
@@ -402,12 +450,12 @@ export function MarketHero({
         {appShowcase ? (
           <>
             {/* Desktop: message column (left) beside the live notification
-                stack (right) — the same bare object mobile leads with, just
-                bigger. No panel, no frame: the stack IS the visual. The
-                scale-up is a transform so the type grows with the card and
-                the stack's internal geometry (rims, measured heights) is
-                untouched. Two-column only once there's room (lg, or xl when
-                a drawer is present). */}
+                stack (right) — the same bare object mobile leads with. No
+                panel, no frame: the stack IS the visual, held at a real
+                notification's width so the proportions read as an actual
+                iOS banner, with the arrival ripple expanding behind it as
+                each card lands. Two-column only once there's room (lg, or
+                xl when a drawer is present). */}
             <div
               className={`m-auto ${twoColShow} w-full max-w-6xl items-center gap-12 xl:gap-16`}
             >
@@ -418,8 +466,9 @@ export function MarketHero({
                   {proofLine}
                 </div>
               </div>
-              <div className="w-[460px] shrink-0 xl:w-[500px]">
-                <div className="origin-center lg:scale-[1.08] xl:scale-[1.14]">
+              <div className="relative w-[380px] shrink-0">
+                <NotificationPing tick={radar.tick} />
+                <div className="relative">
                   <HeroNotificationStack
                     deals={radar.deals}
                     tick={radar.tick}
@@ -439,8 +488,14 @@ export function MarketHero({
               {/* No logo on mobile — the stack is centred on its own. The cap
                   is above a phone's content width, so the card runs the full
                   column and only bounds itself on a tablet. */}
-              <div className="w-full max-w-[400px]">
-                <HeroNotificationStack deals={radar.deals} tick={radar.tick} />
+              <div className="relative w-full max-w-[400px]">
+                <NotificationPing tick={radar.tick} />
+                <div className="relative">
+                  <HeroNotificationStack
+                    deals={radar.deals}
+                    tick={radar.tick}
+                  />
+                </div>
               </div>
               {headlineBlock}
               <div className="hidden md:block">

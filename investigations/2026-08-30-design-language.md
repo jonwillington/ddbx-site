@@ -62,9 +62,14 @@ full-width hairline rows, and the iOS app's Performance clusters strip
   geography is legible, and don't re-wrap the stack.
 - `HeroLiveGradient` (in `market-hero.tsx`) — the header's motion: four
   warm gradient phase layers cross-fading on the notification clock, so
-  the light morphs as each alert lands. This is the one sanctioned
-  *animated* atmosphere, and only because it's synced to a live proof
-  object's clock; anywhere without such a clock, atmosphere stays static.
+  the light morphs as each alert lands. It is a PAGE layer (w-screen
+  break-out, running up behind the glass navbar), not a fill of the
+  content column. This is the one sanctioned *animated* atmosphere, and
+  only because it's synced to a live proof object's clock; anywhere
+  without such a clock, atmosphere stays static.
+- `NotificationPing` (same file) — the arrival ripple: a one-shot double
+  ring expanding from behind the stack as each card lands. Held at a real
+  notification's width (~380px), the stack + ripple is the whole visual.
 - `src/components/navbar.tsx` + `src/layouts/default.tsx` — the floating
   glass bar and the sticky wrapper that gives it its inset.
 
