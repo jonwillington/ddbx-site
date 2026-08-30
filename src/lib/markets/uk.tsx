@@ -36,6 +36,7 @@ import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
 import { UK_BANK_HOLIDAYS_SOURCE } from "@/lib/bank-holidays";
 import { useDashboardMetricMode } from "@/lib/dashboard-metric-mode";
+import { PRICING, PROMO_NOTE, formatPrice } from "@/lib/pricing";
 import { isSuggestedDealing } from "@/lib/dealing-classify";
 import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { useDiscretion } from "@/lib/discretion";
@@ -429,9 +430,14 @@ export const UkMarket: MarketConfig<Dealing> = {
     </>
   ),
   // The old subhead paragraph, rewritten as checkmark bullets so a phone
-  // visitor can scan what this is in one glance. Bullet 4 carries the offer
-  // detail the retired eyebrow chip used to hold (MarketHero drops the chip
-  // whenever bullets are present).
+  // visitor can scan what this is in one glance. Bullet 4 is the price:
+  // "Free for 7 days" merely restated the headline's second line, and the
+  // one thing the offer stack was missing was what it costs after the trial.
+  // The figure comes from PRICING so the hero can never disagree with the
+  // download pages, and the promo qualifier renders only while the price is
+  // promotional (see MarketPricing.promotional — a limited-time number
+  // presented as the standing one is how trust is lost at the checkout
+  // sheet).
   //
   // Kept to one phone line each — every bullet wrapped to two, which turned a
   // four-item scan into an eight-line paragraph with ticks in it. The qualifier
@@ -441,7 +447,18 @@ export const UkMarket: MarketConfig<Dealing> = {
     <>Every UK director buy, the day it&rsquo;s filed</>,
     <>Each one screened and rated</>,
     <>Tracked against the FTSE All-Share</>,
-    <>Free for 7 days, cancel any time</>,
+    <>
+      Then{" "}
+      <strong className="font-semibold text-foreground/90">
+        {formatPrice(PRICING.uk, PRICING.uk.annual)} for a year
+      </strong>
+      {PRICING.uk.promotional && (
+        <span className="text-brand-brown dark:text-brand-tan">
+          {" "}
+          · {PROMO_NOTE.toLowerCase()}
+        </span>
+      )}
+    </>,
   ],
   faq: buildMarketFaq({
     insiderTerm: "UK company director",

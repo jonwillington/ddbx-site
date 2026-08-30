@@ -75,6 +75,7 @@ import {
 import { MonthUnlockModal } from "@/components/discretion/month-unlock-modal";
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
 import { appHrefForMarket, appStoreUrlForMarketId } from "@/lib/app-store";
+import { companyPath, displayTicker } from "@/lib/company";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import { buildChannelPerformance } from "@/lib/performance/channel-summary";
 import { isSignalDealing } from "@/lib/markets/types";
@@ -680,6 +681,28 @@ export function MarketPage<W>({
     return todayDealings.filter((d) => isSignal(d)).length;
   }, [todayDealings, config.isSignal]);
 
+  // Today's tickers for the hero's proof row — deduped in disclosure order,
+  // linked to their company pages where the market has them (UK/US only;
+  // Congress tickers have no /company route).
+  const todayTickers = useMemo(() => {
+    const hasCompanyPages = config.id === "uk" || config.id === "us";
+    const format = config.formatTickerDisplay ?? displayTicker;
+    const seen = new Set<string>();
+    const out: { ticker: string; label: string; href: string | null }[] = [];
+
+    for (const d of todayDealings) {
+      if (!d.ticker || seen.has(d.ticker)) continue;
+      seen.add(d.ticker);
+      out.push({
+        ticker: d.ticker,
+        label: format(d.ticker),
+        href: hasCompanyPages ? companyPath(d.ticker) : null,
+      });
+    }
+
+    return out;
+  }, [todayDealings, config.id, config.formatTickerDisplay]);
+
   const stockCurrent = useCallback(
     (ticker: string): number | undefined => {
       const raw = prices[ticker];
@@ -1231,6 +1254,7 @@ export function MarketPage<W>({
           subhead={config.heroSubhead}
           todayCount={todayDealings.length}
           todaySignalCount={todaySignalCount}
+          todayTickers={todayTickers}
           onViewReport={
             config.id !== "uk" && latestRecapMonth
               ? () => openRecap(latestRecapMonth)

@@ -16,7 +16,10 @@
  *  heading. Under it: an optional one-line subhead for first-time visitors,
  *  the CTA row, and a live "N filings so far today" line fed by the same
  *  dealings the page has already loaded — the hero asks the question, the
- *  live line proves we're answering it.
+ *  live line proves we're answering it. In the desktop card the line gets a
+ *  hairline-topped footer of its own with today's tickers as chips, and its
+ *  green dot pulses once per radar landing, so the message half visibly
+ *  belongs to the same clock as the demo half.
  *
  *  Fixed `min-h` keeps the hero the same height on every market — the
  *  optional beta notice is rendered absolutely at the top so it doesn't push
@@ -25,6 +28,7 @@
 import type { ReactNode } from "react";
 
 import { CheckIcon } from "@heroicons/react/20/solid";
+import { Link } from "react-router-dom";
 
 import { useDealRadar } from "./hero-deal-radar";
 import { HeroNotificationStack } from "./hero-notification-stack";
@@ -140,6 +144,21 @@ function HeroLiveGradient({ tick }: { tick: number }) {
         }
         @media (prefers-reduced-motion: reduce) {
           .hero-ping-ring { display: none; }
+        }
+
+        /* The proof dot's landing pulse — one shot per radar tick (the
+           element is keyed by tick, so it re-mounts and plays once). It's the
+           message half's share of the arrival: the demo lands an alert, and
+           the "live" dot under the CTAs answers it, so the hairline split
+           reads as one instrument rather than two columns. Markets whose
+           clock never ticks keep the continuous ping instead. */
+        .hero-dot-pulse {
+          opacity: 0;
+          animation: hero-dot-pulse 1.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        }
+        @keyframes hero-dot-pulse {
+          0%   { opacity: 0.6; transform: scale(1); }
+          100% { opacity: 0;   transform: scale(3.4); }
         }
 
         /* Showcase panel. Sized by CONTAINER width: every app market reserves
@@ -270,6 +289,13 @@ const FILLED_CTA = `inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FIL
  *  into the hero's cream wash and read as a disabled chip. */
 const GHOST_CTA = `inline-flex items-center ${BUTTON_RADIUS} ${BUTTON_GHOST} border border-ink/[0.18] dark:border-white/20 px-6 py-3 text-base font-semibold backdrop-blur-sm transition-colors`;
 
+/** How many of today's tickers show as chips before the row folds to "+N". */
+const MAX_TICKER_CHIPS = 6;
+
+/** One of today's tickers, as a mono capsule under the proof line. */
+const TICKER_CHIP =
+  "inline-flex items-center rounded-full border border-ink/[0.12] px-2.5 py-1 font-mono text-[11px] font-medium tracking-wide text-foreground/60 dark:border-white/15";
+
 export function MarketHero({
   marketId,
   marketLabel,
@@ -284,6 +310,7 @@ export function MarketHero({
   reportLabel,
   todayCount = 0,
   todaySignalCount = 0,
+  todayTickers = [],
 }: {
   /** Market identifier — selects the app icon and sample disclosures for the
    *  desktop notification showcase (UK vs US). */
@@ -331,6 +358,11 @@ export function MarketHero({
   /** How many of today's filings are above routine (rated or triaged as
    *  promising/maybe). */
   todaySignalCount?: number;
+  /** Today's distinct tickers in disclosure order — rendered as mono chips
+   *  under the proof line in the desktop card, so "N filings so far today"
+   *  is a claim with names attached. `href` links to the company page where
+   *  the market has one (UK/US), null renders a plain chip. */
+  todayTickers?: { ticker: string; label: string; href: string | null }[];
 }) {
   const resolvedHeadline = headline ?? subhead ?? (
     <>
@@ -502,7 +534,17 @@ export function MarketHero({
       className={`hidden animate-content-in items-center gap-2 text-sm text-foreground/55 md:flex ${ctaJustify}`}
     >
       <span aria-hidden className="relative flex h-2 w-2">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22a06b] opacity-50 motion-reduce:hidden" />
+        {/* Once the radar clock is running, the dot pulses once per landing
+            (keyed by tick) instead of pinging on its own loop — the left
+            half's visible answer to each alert arriving on the right. */}
+        {radar.landed ? (
+          <span
+            key={radar.tick}
+            className="hero-dot-pulse absolute inline-flex h-full w-full rounded-full bg-[#22a06b] motion-reduce:hidden"
+          />
+        ) : (
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22a06b] opacity-50 motion-reduce:hidden" />
+        )}
         <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22a06b]" />
       </span>
       {todayCount > 0 ? (
@@ -519,6 +561,36 @@ export function MarketHero({
         <>Live · watching today&rsquo;s filings as they land</>
       )}
     </p>
+  );
+
+  // Today's names, under the count that claims them — "14 filings so far
+  // today" is a stronger line with the tickers attached, and it changes
+  // daily, so a returning visitor sees movement without a demo playing.
+  // Desktop card only: the mobile hero hands today's state to the Today card
+  // directly below it.
+  const tickerChips = todayTickers.length > 0 && (
+    <div className="hidden flex-wrap items-center gap-1.5 md:flex">
+      {todayTickers.slice(0, MAX_TICKER_CHIPS).map((t) =>
+        t.href ? (
+          <Link
+            key={t.ticker}
+            className={`${TICKER_CHIP} transition-colors hover:border-ink/30 hover:text-foreground dark:hover:border-white/35`}
+            to={t.href}
+          >
+            {t.label}
+          </Link>
+        ) : (
+          <span key={t.ticker} className={TICKER_CHIP}>
+            {t.label}
+          </span>
+        ),
+      )}
+      {todayTickers.length > MAX_TICKER_CHIPS && (
+        <span className="px-1 font-mono text-[11px] font-medium text-foreground/45">
+          +{todayTickers.length - MAX_TICKER_CHIPS} more
+        </span>
+      )}
+    </div>
   );
 
   return (
@@ -577,7 +649,13 @@ export function MarketHero({
                   <div className="flex max-w-[560px] flex-col gap-6 text-left">
                     {headlineBlock}
                     {ctaRowDesktop}
-                    {proofLine}
+                    {/* The card's live footer: proof line plus today's names,
+                        seated under a hairline so it reads as the card's own
+                        ticker strip rather than a stray caption. */}
+                    <div className="flex flex-col gap-3 border-t border-hairline pt-5 dark:border-white/10">
+                      {proofLine}
+                      {tickerChips}
+                    </div>
                   </div>
                 </div>
                 <div className="hero-card-demo">

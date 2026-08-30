@@ -25,9 +25,15 @@
  *    never state one we don't have. Every number the reader actually reads is
  *    in the notification body, where it's a disclosed amount. This is the one
  *    chart on the site that skips the hover layer, and that's why.
- *  - **No return stated.** The line continues past the buy in a muted stroke
- *    so the reader sees what followed, with nothing claimed about it. A
- *    percentage here would be a performance claim on a hand-picked example.
+ *
+ *  The ONE figure it does state is the since-figure in the legend: the move
+ *  from the alert point to the end of the drawn window, computed from the
+ *  series itself and rounded to a whole percent. The series are authored from
+ *  the real filings, so the figure is exactly as real as the shape — and
+ *  because it's derived from the same points the line is drawn from, the
+ *  number and the picture cannot disagree. It lands only after the muted
+ *  continuation has finished drawing: the chart shows what followed first,
+ *  then says it.
  *
  *  Colour carries one meaning only: the buy-style caption borrows the exact
  *  blue/emerald `BuyStyleChip` uses, so "contrarian" reads the same here as
@@ -46,13 +52,13 @@ import { useId, useLayoutEffect, useRef, useState } from "react";
 import { alertIndexOf } from "./hero-deal-data";
 import { DRAW_MS, POST_MS } from "./hero-deal-radar";
 
-/** Inset from the measured plot box, in px. Top and bottom keep the marker
- *  and the line's extremes off the grid's edge; the bottom is deeper when
- *  there are "Traded"/"Filed" labels to seat under the plot. */
+/** Inset from the measured plot box, in px. Top keeps the marker and the
+ *  line's extremes off the grid's edge; the bottom seats the event labels
+ *  under the plot — "The buy" on ordinary filings, "Traded"/"Filed" on
+ *  Congress ones — so every chart is self-captioned at the point itself. */
 const INSET_X = 3;
 const INSET_T = 12;
-const INSET_B_PLAIN = 10;
-const INSET_B_LABELLED = 24;
+const INSET_B = 24;
 
 /** Minimum span the y-axis covers, in rebased points. Without it a quiet
  *  series fills the same vertical space as a violent one, and every deal
@@ -120,7 +126,6 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
   // markers and the distance between them is the point. Everywhere else the
   // trade and the disclosure are the same moment on this scale.
   const twoMarkers = deal.filedIndex !== undefined;
-  const insetB = twoMarkers ? INSET_B_LABELLED : INSET_B_PLAIN;
 
   const plotRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState(DEFAULT_BOX);
@@ -144,11 +149,21 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
   }, []);
 
   const { w, h } = box;
-  const pts = layout(deal.series, w, h, insetB);
+  const pts = layout(deal.series, w, h, INSET_B);
   const alertIdx = alertIndexOf(deal);
   const alertPt = pts[alertIdx];
   const buyPt = pts[deal.buyIndex];
-  const floor = h - insetB;
+  const floor = h - INSET_B;
+
+  // The since-figure: the move from the alert to the end of the window, i.e.
+  // the muted continuation the reader is looking at, as a number. Derived
+  // from the drawn series and floored toward zero so the chart never claims
+  // more than it shows.
+  const sincePct = Math.trunc(
+    ((deal.series[deal.series.length - 1] - deal.series[alertIdx]) /
+      deal.series[alertIdx]) *
+      100,
+  );
 
   const pre = pathFrom(pts.slice(0, alertIdx + 1));
   const post = pathFrom(pts.slice(alertIdx));
@@ -238,6 +253,11 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
           animation: hpc-fade 360ms ease-out var(--hpc-buy-delay) forwards;
         }
         .hpc-fade-alert { animation-delay: var(--hpc-draw); }
+        /* The since-figure waits for the muted continuation to finish
+           drawing — show what followed, then say it. */
+        .hpc-fade-since {
+          animation-delay: calc(var(--hpc-draw) + var(--hpc-post));
+        }
         @keyframes hpc-fade { to { opacity: 1; } }
 
         @media (prefers-reduced-motion: reduce) {
@@ -363,6 +383,24 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
             strokeWidth="2"
           />
 
+          {/* Ordinary filings caption the marker at the point itself, the way
+              Congress charts label "Traded"/"Filed" — the moment the panel
+              exists to show shouldn't need a legend lookup. Clamped so a buy
+              near the window's edge keeps its label on the plot. */}
+          {!twoMarkers && (
+            <text
+              className="hpc-fade hpc-fade-alert"
+              fill="currentColor"
+              fontSize="9"
+              opacity="0.5"
+              textAnchor="middle"
+              x={Math.min(Math.max(buyPt.x, 18), w - 18)}
+              y={floor + 20}
+            >
+              The buy
+            </text>
+          )}
+
           {twoMarkers && (
             <>
               <line
@@ -413,17 +451,12 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
         </svg>
       </div>
 
-      {/* Legend. The chart has no axis and no values, so the one thing worth
-          saying in words is what its two marks mean. */}
+      {/* Legend. The markers are captioned on the plot itself, so all that's
+          left to explain is the muted continuation — and the since-figure
+          says what it added up to. The figure is the payoff of the whole
+          demo (the alert was worth acting on), so it's the one thing here
+          allowed a colour. */}
       <div className="mt-2 flex items-center gap-3.5 text-[9.5px] font-medium uppercase tracking-wider text-foreground/40">
-        <span className="flex items-center gap-1.5">
-          <span
-            aria-hidden
-            className="h-[7px] w-[7px] rounded-full"
-            style={{ background: "var(--hpc-line)" }}
-          />
-          {twoMarkers ? "Trade, then filing" : "The buy"}
-        </span>
         <span className="flex items-center gap-1.5">
           <span
             aria-hidden
@@ -432,6 +465,16 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
           />
           Since
         </span>
+        {sincePct !== 0 && (
+          <span
+            className={`hpc-fade hpc-fade-since ml-auto font-mono text-[10.5px] font-semibold tracking-wide ${
+              sincePct > 0 ? "text-positive" : "text-foreground/50"
+            }`}
+          >
+            {sincePct > 0 ? "+" : ""}
+            {sincePct}%
+          </span>
+        )}
       </div>
     </figure>
   );
