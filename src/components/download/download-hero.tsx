@@ -1,12 +1,12 @@
 /** Landing-page hero.
  *
- *  The old one was a headline over a single static radial gradient — visibly
- *  weaker than the market pages we send people *from*. This one is built on the
- *  same lit stage the market hero uses: the live deal-radar map behind a framed
- *  panel and a wash from the left so the headline stays legible over it.
- *  `HeroDealMapLayer` and `useDealRadar` are imported directly rather than
- *  re-implemented, so the map is literally the same instrument, driven by the
- *  same clock.
+ *  A framed stage (same geometry as the market pages, so arriving here from
+ *  one feels like the same room) with the live notification stack as the
+ *  right column. The stage used to run the deal-radar basemap behind a left
+ *  scrim; the map went site-wide on 2026-08-30 (contained it read as street
+ *  noise, and a visual that needs a scrim is fighting its text — see
+ *  investigations/2026-08-30-design-language.md), so the stage is now a
+ *  quiet tonal panel and `useDealRadar` supplies only the clock + deals.
  *
  *  The right column is the live notification stack and nothing else — no
  *  handset, no app screenshot behind it. It briefly had both; the device was a
@@ -24,10 +24,7 @@ import type { ReactNode } from "react";
 import { StoreBadgeImg } from "@/components/app-store-badge";
 import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
 import { chip } from "@/components/chip";
-import {
-  HeroDealMapLayer,
-  useDealRadar,
-} from "@/components/market/hero-deal-radar";
+import { useDealRadar } from "@/components/market/hero-deal-radar";
 import { HeroNotificationStack } from "@/components/market/hero-notification-stack";
 import { STORE_LABEL, type AppPlatform } from "@/lib/app-screenshots";
 import { useDownloadCopy } from "@/lib/download/copy";
@@ -67,24 +64,6 @@ export function DownloadHero({
           0%, 100% { transform: translateY(0); }
           50%      { transform: translateY(-10px); }
         }
-        /* Wash entering from the left edge, gone by the time it reaches the
-           device — keeps the headline legible over the panning basemap and
-           melts the map's left edge into the stage. Themed to the panel base,
-           not the page: the frame only exists from md up. */
-        .dlh-scrim {
-          background: linear-gradient(to right,
-            #f1ede6 0%,
-            rgba(241, 237, 230, 0.97) 16%,
-            rgba(241, 237, 230, 0.5) 38%,
-            transparent 58%);
-        }
-        :is(.dark) .dlh-scrim {
-          background: linear-gradient(to right,
-            oklch(19% 0.022 55) 0%,
-            oklch(19% 0.022 55 / 0.97) 16%,
-            oklch(19% 0.022 55 / 0.5) 38%,
-            transparent 58%);
-        }
         .dlh-float { animation: dlh-float 7s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) {
           .dlh-float { animation: none !important; }
@@ -98,16 +77,6 @@ export function DownloadHero({
         aria-hidden
         className="pointer-events-none absolute inset-y-0 left-1/2 z-0 w-screen -translate-x-1/2 overflow-hidden md:left-0 md:right-0 md:w-auto md:translate-x-0 md:rounded-3xl md:border md:border-black/[0.08] md:bg-[#f1ede6] dark:md:border-white/[0.08] dark:md:bg-[oklch(19%_0.022_55)]"
       >
-        <div className="absolute inset-0 z-0 hidden md:block">
-          <HeroDealMapLayer
-            activeIndex={radar.activeIndex}
-            deals={radar.deals}
-            isDark={radar.isDark}
-            mapConfig={radar.mapConfig}
-          />
-        </div>
-        <div className="dlh-scrim absolute inset-0 z-[5] hidden md:block" />
-
         {/* Mobile edge dissolves — no frame there, so the stage has to melt
             into the navbar above and the page below. */}
         <div className="absolute inset-x-0 top-0 z-[6] h-20 bg-gradient-to-b from-[#f5f0e8] to-transparent dark:from-background md:hidden" />

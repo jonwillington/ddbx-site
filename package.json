@@ -19,7 +19,6 @@
     "clsx": "2.1.1",
     "country-flag-icons": "^1.6.17",
     "lightweight-charts": "^5.2.0",
-    "maplibre-gl": "^4.7.1",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

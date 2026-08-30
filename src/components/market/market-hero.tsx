@@ -5,10 +5,10 @@
  *  (headline, bullets, CTAs, live proof line) sits directly on the page
  *  ground, over nothing but one very subtle warm ambient gradient — no
  *  scrim, no spotlight, nothing the text has to compete with. The PROOF
- *  layer is `HeroDealShowcase`: the deal-radar map contained in a rounded
- *  hairline-bordered panel beside the message, with the company queue on top
- *  and the live notification stack docked at its foot. The panel's frame is
- *  the edge — no fades melting it into the page.
+ *  layer is `HeroDealShowcase`: a contained rounded hairline-bordered panel
+ *  beside the message — company queue on top, live notification stack over a
+ *  CSS radar motif. The panel's frame is the edge — no fades melting it into
+ *  the page.
  *
  *  Non-app markets (NL/SE) keep the original centred layout on the lit
  *  atmospheric stage: warm spotlight, silver shimmer, disclosure pulses,
@@ -176,8 +176,8 @@ export function MarketHero({
    *  original centred layout. Mobile is centred on every market — the showcase
    *  panel is desktop-only. */
   const appShowcase = !!primaryCtaHref;
-  // Shared deal-radar clock — drives the full-bleed background map and the
-  // foreground notification stack from one source so they stay in lockstep.
+  // Shared deal-radar clock — drives the showcase panel's queue and the
+  // notification stack from one source so they stay in lockstep.
   const radar = useDealRadar(marketId, appShowcase);
   // The two-column showcase needs more room when a right drawer is present, so
   // it switches on at `xl` then; otherwise `lg`. Alignment + visibility classes

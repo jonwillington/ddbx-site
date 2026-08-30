@@ -56,9 +56,13 @@ full-width hairline rows, and the iOS app's Performance clusters strip
   beside it. Non-app markets (NL/SE) intentionally keep the old lit-stage
   hero until they get their own proof object.
 - `src/components/market/hero-deal-showcase.tsx` — the contained
-  "instrument": map in a rounded hairline frame, glass company queue on
-  top (active ringed in the beacon colour), notification stack docked at
-  the foot with its badge avatar off.
+  "instrument": glass company queue on top (active ringed in the beacon
+  colour), notification stack over a pure-CSS radar motif (concentric
+  rings + blips), badge avatar off. It briefly held the MapLibre basemap;
+  contained at panel size the map read as grey street noise and its queue
+  rings rendered oval, so the map was dropped site-wide (2026-08-30) along
+  with the maplibre-gl dependency. Don't reintroduce a map unless it can
+  be the *whole* object at a size where geography is legible.
 - `src/components/navbar.tsx` + `src/layouts/default.tsx` — the floating
   glass bar and the sticky wrapper that gives it its inset.
 

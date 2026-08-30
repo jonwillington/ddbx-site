@@ -1,6 +1,6 @@
 /** iOS-style notification stack for the hero "deal radar". Driven by the shared
- *  `tick` clock so the front card is always the deal the map is beaconing — the
- *  two read as one live feed.
+ *  `tick` clock so the front card is always the deal the showcase queue is
+ *  highlighting — the two read as one live feed.
  *
  *  Layout (everything on one centre axis, so it aligns with the App Store button
  *  below it):
@@ -12,7 +12,7 @@
  *      re-mounts (and replays its pop) as each new notification lands.
  *
  *  Motion is CSS transitions between discrete slots (so it can't drift out of
- *  sync with the map) plus a short enter animation on the freshly-mounted front
+ *  sync with the queue) plus a short enter animation on the freshly-mounted front
  *  card and its avatar; respects prefers-reduced-motion (everything rests
  *  static). Rebuilt from the original screenshot in markup — no bitmap. */
 import type { HeroDeal } from "./hero-deal-data";
@@ -28,8 +28,8 @@ import { NotificationCard } from "@/components/notification-card";
 const TICK_MS = 4200;
 
 /** Standalone clock for a stack that ISN'T paired with the hero deal radar.
- *  `useDealRadar` also owns a map camera, which most callers have no use for —
- *  this is just the monotonic counter the stack needs. Frozen under
+ *  `useDealRadar` also selects the per-market deals, which some callers supply
+ *  themselves — this is just the monotonic counter the stack needs. Frozen under
  *  prefers-reduced-motion, where the stack rests on a single card. */
 export function useNotificationTick(enabled: boolean): number {
   const [tick, setTick] = useState(0);
@@ -92,8 +92,8 @@ export function HeroNotificationStack({
   tick: number;
   /** The half-in / half-out company avatar over the front card's top edge.
    *  Defaults on; the hero showcase panel turns it off because its logo queue
-   *  along the top of the map already names the active company — rendering the
-   *  same logo twice in one panel reads as a glitch, not emphasis. */
+   *  along the top already names the active company — rendering the same logo
+   *  twice in one panel reads as a glitch, not emphasis. */
   badge?: boolean;
 }) {
   const n = deals.length;
