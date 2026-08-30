@@ -35,7 +35,7 @@ export const DRAW_MS = 1150;
 export const POST_MS = 850;
 /** Beat two, part two: the notification holds still, to be read. The sample
  *  disclosures are the hero's sales pitch, and unread copy is wasted copy. */
-export const HOLD_MS = 600000;
+export const HOLD_MS = 4200;
 export const CYCLE_MS = DRAW_MS + POST_MS + HOLD_MS;
 
 const prefersReducedMotion = () =>

@@ -147,71 +147,89 @@ function HeroLiveGradient({ tick }: { tick: number }) {
            amounts of hero depending on the market, and a viewport breakpoint
            here would be guessing. */
         .hero-showcase { container-type: inline-size; }
-        .hero-panel {
-          /* Published so the chart can ring its markers in the panel's own
-             fill — a marker then reads as punched out of the line rather
-             than outlined on top of it. */
-          --hero-panel-fill: var(--color-sheet);
+        /* ONE card for the whole desktop hero, split left/right by a
+           hairline — not a message floating on the page beside a separate
+           panel. The two halves are one exhibit (here's the claim, here's the
+           proof) and reading as two unrelated objects undersold both.
+
+           Translucent over the tick-synced gradient rather than opaque: the
+           backdrop is the notification clock made visible, and a solid card
+           across the whole hero would have hidden the only thing keeping the
+           header alive. Same recipe as the floating navbar. */
+        .hero-card {
           display: flex;
-          flex-direction: column;
-          /* Clips the arrival ripple to the panel. Unclipped it would expand
-             to ~645px and wash across the message column. */
+          align-items: stretch;
+          width: 100%;
+          border-radius: 28px;
+          /* Clips the arrival ripple. Unclipped it expands to ~645px and
+             washes across the message half. */
           overflow: hidden;
-          width: 664px;
-          /* Outer radius sits clear of the nested chart card's 16px so the
-             two curves read as concentric rather than as one fat edge. */
-          border-radius: 26px;
-          padding: 16px;
-          /* The panel takes its height from the message column beside it. The
-             floor stops a market with a short message (US, two headline
-             lines) collapsing the chart into a letterbox. */
-          min-height: 400px;
           border: 1px solid var(--color-hairline);
-          background: var(--hero-panel-fill);
-          box-shadow: 0 18px 44px -28px rgba(90, 65, 40, 0.45),
+          background: color-mix(in srgb, var(--color-sheet) 80%, transparent);
+          -webkit-backdrop-filter: blur(14px) saturate(150%);
+          backdrop-filter: blur(14px) saturate(150%);
+          box-shadow: 0 26px 64px -36px rgba(90, 65, 40, 0.5),
                       0 1px 2px rgba(90, 65, 40, 0.03);
         }
-        /* Dark mode runs the panel DARKER than the page rather than lighter.
-           The site's usual raised-sheet fill (--surface, 26L) lands within a
-           few points of the notification card's own 29L and the card
-           disappears into its own frame. Recessed, the panel reads as the
-           screen the alert arrives on, and the card floats clear of it. */
-        :is(.dark) .hero-panel {
-          --hero-panel-fill: oklch(18.5% 0.018 55);
+        /* Dark runs the card DARKER than the page rather than lighter. The
+           site's usual raised-sheet fill (--surface, 26L) lands within a few
+           points of the notification card's own 29L and the alert disappears
+           into its own frame. Recessed, the demo half reads as the screen the
+           alert arrives on. */
+        :is(.dark) .hero-card {
           border-color: rgba(255, 255, 255, 0.08);
-          box-shadow: 0 20px 50px -28px rgba(0, 0, 0, 0.8);
+          background: color-mix(in oklab, oklch(19.5% 0.02 55) 88%, transparent);
+          box-shadow: 0 28px 68px -36px rgba(0, 0, 0, 0.85);
         }
-        .hero-panel-body { flex: 1; min-height: 0; }
-        .hero-chart-col { width: 284px; }
-        /* A market with a long headline (Congress wraps to four lines) would
-           otherwise stretch the plot into a tower. Past this the card stops
-           growing and centres in the panel instead. */
-        .hero-chart-col > * { max-height: 460px; }
+        .hero-card-msg {
+          display: flex;
+          flex: 1;
+          min-width: 0;
+          align-items: center;
+          padding: 40px 44px;
+        }
+        .hero-card-demo {
+          display: flex;
+          flex: none;
+          flex-direction: column;
+          justify-content: center;
+          gap: 8px;
+          width: 516px;
+          padding: 28px;
+          border-left: 1px solid var(--color-hairline);
+        }
+        :is(.dark) .hero-card-demo {
+          border-left-color: rgba(255, 255, 255, 0.07);
+        }
+        /* Landscape, and fixed. A price series wants to be wider than it is
+           tall; letting this grow was what turned the demo half into a tower. */
+        .hero-chart-col { height: 208px; }
+        /* Both nested objects run the demo half's full inner width, inset
+           evenly the way a nested card should be — an alert narrower than the
+           chart beneath it read as a centring accident rather than as two
+           parts of one instrument. The column is sized so that width is also a
+           believable iOS banner (~460px); wider and the notification stops
+           reading as a banner and starts reading as a toolbar. */
+        .hero-alert-col { width: 100%; }
 
-        /* Steps are sized so the MESSAGE never drops below ~400px. The
-           headline is the page's <h1> at 64px, and a market with long words
-           in it (Congress) starts stacking into five lines the moment the
-           panel takes more than its share. The panel is the supporting act:
-           when the two compete for the same pixels, the message wins. */
-        @container (max-width: 1103px) {
-          .hero-panel { width: 580px; padding: 14px; }
-          .hero-chart-col { width: 236px; }
+        /* Steps keep the MESSAGE half above ~400px. The headline is the page's
+           <h1> at 64px, and a market with long words in it (Congress) starts
+           stacking into five lines the moment the demo half takes more than
+           its share. The demo is the supporting act: when the two compete for
+           the same pixels, the message wins. Sized by CONTAINER width, because
+           every app market reserves the 320px news rail and one viewport width
+           therefore means two different amounts of hero. */
+        @container (max-width: 963px) {
+          .hero-card-msg { padding: 32px 34px; }
+          .hero-card-demo { width: 452px; padding: 22px; }
+          .hero-chart-col { height: 176px; }
         }
-        /* Not enough hero for two objects. Rather than cramp them, the chart
-           and the frame around it both go, and the stack is the bare card it
-           was before — the same thing mobile shows. */
-        @container (max-width: 1019px) {
-          .hero-panel,
-          :is(.dark) .hero-panel {
-            width: 400px;
-            padding: 0;
-            border: 0;
-            background: none;
-            box-shadow: none;
-          }
+        /* Not enough hero for both. The chart goes rather than cramping, and
+           the demo half is the alert alone. */
+        @container (max-width: 879px) {
+          .hero-card-msg { padding: 28px 30px; }
+          .hero-card-demo { width: 384px; padding: 20px; }
           .hero-chart-col { display: none; }
-          .hero-panel-body { gap: 0; }
-          .hero-panel { min-height: 0; }
         }
       `}</style>
       {[0, 1, 2, 3].map((i) => (
@@ -232,7 +250,7 @@ function NotificationPing({ tick }: { tick: number }) {
     <span
       key={tick}
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 top-0 z-0 flex h-[220px] items-center justify-center"
+      className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
     >
       <span className="hero-ping-ring" />
       <span className="hero-ping-ring hero-ping-ring-2" />
@@ -552,29 +570,22 @@ export function MarketHero({
                 hero the chart and the frame drop out entirely rather than
                 cramping, and the stack is bare again. */}
             <div
-              className={`hero-showcase m-auto ${twoColShow} w-full max-w-6xl items-stretch gap-10`}
+              className={`hero-showcase m-auto ${twoColShow} w-full max-w-6xl`}
             >
-              <div className="flex min-w-0 flex-1 items-center">
-                <div className="flex max-w-[560px] flex-col gap-6 text-left">
-                  {headlineBlock}
-                  {ctaRowDesktop}
-                  {proofLine}
-                </div>
-              </div>
-              <div className="hero-panel shrink-0">
-                <div className="hero-panel-body flex items-stretch gap-5">
-                  <div className="hero-chart-col shrink-0">
-                    <HeroPriceChart
-                      key={radar.cycle}
-                      deal={radar.deals[radar.chartIndex]}
-                    />
+              <div className="hero-card">
+                <div className="hero-card-msg">
+                  <div className="flex max-w-[560px] flex-col gap-6 text-left">
+                    {headlineBlock}
+                    {ctaRowDesktop}
+                    {proofLine}
                   </div>
-                  {/* The alert arrives at the TOP of its column, not centred
-                      in it. The panel now stretches to the message column, and
-                      a notification hovering in the middle of that height read
-                      as an object with nothing holding it up; landing at the
-                      top is also where a real one arrives, which makes the
-                      space beneath it the rest of the screen rather than a gap.
+                </div>
+                <div className="hero-card-demo">
+                  {/* Alert on top, chart beneath — stacked, not side by side.
+                      Side by side gave the chart a portrait box and left the
+                      alert floating in a half-empty column beside it. Stacked,
+                      the chart gets the landscape aspect a price series wants
+                      and the alert sits at a believable notification width.
 
                       The alert is put AWAY while the next price draws, rather
                       than being replaced with a placeholder. Two earlier passes
@@ -587,7 +598,7 @@ export function MarketHero({
                       so the front card is still measured and nothing reflows
                       when it comes back. */}
                   <div
-                    className={`relative flex min-w-0 flex-1 items-start transition-opacity duration-500 ${
+                    className={`hero-alert-col relative shrink-0 transition-opacity duration-500 ${
                       radar.pending ? "opacity-0" : "opacity-100"
                     }`}
                   >
@@ -595,6 +606,16 @@ export function MarketHero({
                     <HeroNotificationStack
                       deals={radar.deals}
                       tick={Math.max(radar.tick, 0)}
+                    />
+                  </div>
+                  {/* Positioned and lifted: the arrival ripple lives in the
+                      alert column above, which is a positioned element, so by
+                      default its rings painted over this card. The chart is the
+                      thing being read — the ripple washes behind it. */}
+                  <div className="hero-chart-col relative z-10">
+                    <HeroPriceChart
+                      key={radar.cycle}
+                      deal={radar.deals[radar.chartIndex]}
                     />
                   </div>
                 </div>
