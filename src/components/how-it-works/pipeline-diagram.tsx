@@ -17,6 +17,12 @@
  *     attrition percentages and a drawn 4%-survives would be a number the
  *     reader is entitled to hold us to.
  *
+ *     Stops CAN carry a counted figure via `counts` — /how-it-works passes
+ *     live totals from /api/coverage, which are real counts rather than
+ *     invented attrition. A stop with no honest count (triage survivors
+ *     aren't counted anywhere) gets null and stays a bare label; the widths
+ *     stay illustrative either way and the caption keeps saying so.
+ *
  *  2. The stages. Numbered nodes on a rail, each with its own one-line meta.
  *     Horizontal on desktop where the left-to-right reading gives the flow for
  *     free; a vertical rail below `sm` where six columns would be six words
@@ -37,7 +43,16 @@ import { FUNNEL_STOPS, PIPELINE } from "@/lib/methodology";
  *  slightly shallower taper. */
 const FUNNEL_WIDTHS = [100, 60, 34, 20];
 
-export function PipelineDiagram() {
+export function PipelineDiagram({
+  counts,
+  caption,
+}: {
+  /** Optional counted figure per FUNNEL_STOPS entry ("25,457", "≥ 16,904");
+   *  null leaves that stop as a bare label. */
+  counts?: (string | null)[];
+  /** Provenance line under the funnel. Defaults to the width disclaimer. */
+  caption?: string;
+} = {}) {
   return (
     <figure className="mt-6">
       <style>{`
@@ -85,13 +100,16 @@ export function PipelineDiagram() {
                   }`}
                 >
                   {stop}
+                  {counts?.[i] ? (
+                    <span className="tabular-nums"> · {counts[i]}</span>
+                  ) : null}
                 </span>
               </div>
             </div>
           ))}
         </div>
         <p className="mt-2.5 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/35">
-          Widths illustrative
+          {caption ?? "Widths illustrative"}
         </p>
       </div>
 

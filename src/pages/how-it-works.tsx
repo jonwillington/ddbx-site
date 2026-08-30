@@ -16,6 +16,23 @@
  *  Both read from src/lib/methodology.ts, so they cannot drift.
  *
  *  ---------------------------------------------------------------------------
+ *  Shown, not described
+ *  ---------------------------------------------------------------------------
+ *
+ *  The first shipped version was seven sections of near-identical prose — the
+ *  checks section alone was eighteen consecutive abstract paragraphs — while
+ *  the walkthrough it was flattened from *demonstrates* the method on a real
+ *  filing. This version puts that trick back, at document scale: one real
+ *  filing (the "specimen", src/lib/methodology-examples.ts) is introduced
+ *  after the thesis and threaded through the page — each check narrates its
+ *  verdict on it via the check's own `passLine`, paired with a real filing
+ *  that FAILED that check; each rating carries a linked real example; and the
+ *  measured section fetches two of those filings live and shows their actual
+ *  alpha. The long "why this check earns its place" paragraphs survive intact
+ *  but collapsed behind <details>, so the visible page is the argument and
+ *  the depth is a click away rather than a wall.
+ *
+ *  ---------------------------------------------------------------------------
  *  Ownership
  *  ---------------------------------------------------------------------------
  *
@@ -29,14 +46,15 @@
  */
 import type { GlossaryEntry } from "../../shared/glossary";
 import type { Rating } from "@/types/ddbx";
+import type { ReactNode } from "react";
 
 import { useMemo } from "react";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { Link } from "react-router-dom";
 
 import { entryBySlug, learnPath, ownerForHost } from "../../shared/glossary.js";
 
 import {
-  CoverageTiles,
   FeedGrid,
   OutcomeCoverage,
 } from "@/components/how-it-works/coverage-panel";
@@ -44,13 +62,19 @@ import {
   PipelineDiagram,
   StepNode,
 } from "@/components/how-it-works/pipeline-diagram";
+import {
+  CheckInPractice,
+  RatingExampleLine,
+  SpecimenCard,
+  TrackedExamples,
+} from "@/components/how-it-works/worked-examples";
 import { RatingBadge } from "@/components/rating-badge";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoSection } from "@/components/seo/section";
 import DefaultLayout from "@/layouts/default";
-import { approx, count, useCoverage } from "@/lib/coverage";
+import { approx, count, monthLabel, useCoverage } from "@/lib/coverage";
 import { marketCopyFor } from "@/lib/markets/market-copy";
 import { marketForPath } from "@/lib/markets/registry";
 import {
@@ -59,17 +83,23 @@ import {
   PIPELINE,
   RATING_SCALE,
 } from "@/lib/methodology";
+import { examplesFor } from "@/lib/methodology-examples";
 
 const EYEBROW = "Methodology";
 const RULE = "border-hairline dark:border-separator";
 const DIVIDE = "divide-black/[0.06] dark:divide-white/[0.08]";
 
 /** The numbered run, in reading order. Kept as data because it drives two
- *  things that have to agree: the contents strip at the top and the `NN / 07`
+ *  things that have to agree: the contents strip at the top and the `NN / 06`
  *  counter on each section rule. Hand-numbering those was how the page would
- *  eventually end up with two section fives. */
+ *  eventually end up with two section fives.
+ *
+ *  The old standalone "What we’ve read" section dissolved when the funnel
+ *  learned to carry the real counts: its headline figures live on the funnel
+ *  bands now, its feed grid moved to "The sources" (which is what it was
+ *  about), and its price-history sentence moved to "What we can measure"
+ *  (which is what it limits). */
 const CONTENTS = [
-  { id: "coverage", label: "What we’ve read" },
   { id: "pipeline", label: "The pipeline" },
   { id: "checks", label: "The checks" },
   { id: "ratings", label: "The ratings" },
@@ -113,6 +143,29 @@ export default function HowItWorksPage() {
   // fallback is a dated measurement, so there is nothing to wait for.
   const { data: coverage, source } = useCoverage();
 
+  // The curated real filings (specimen, per-check counter-examples, rating
+  // examples, tracked pair). Null outside UK/US — every example surface
+  // below gates on it, so the page still composes for unrated markets.
+  const examples = examplesFor(market.id);
+
+  // Funnel annotations: real counts where an honest one exists, nothing
+  // where it doesn't. The open-market figure is a floor (rows a classifier
+  // has CONFIRMED were bought on the market), and triage survivors aren't
+  // counted anywhere, so that stop stays a bare label.
+  const openMarketFloor = coverage.markets.reduce(
+    (sum, m) => (m.open_market_buys != null ? sum + m.open_market_buys : sum),
+    0,
+  );
+  const funnelCounts = [
+    count(coverage.totals.disclosures),
+    openMarketFloor > 0 ? `≥ ${count(openMarketFloor)}` : null,
+    null,
+    count(coverage.totals.analyses),
+  ];
+  const funnelCaption = `${
+    source === "snapshot" ? "Stored counts from" : "Counted"
+  } ${monthLabel(coverage.generated_at)} · open-market figure is a floor · widths illustrative`;
+
   const related = useMemo(() => {
     const owner = ownerForHost(hostname ?? "");
 
@@ -138,7 +191,7 @@ export default function HowItWorksPage() {
           screenshotSlot: "analysis",
         }}
         eyebrow={EYEBROW}
-        standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is what we do with them, how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks behind that rating actually test, how much we have put through it, and where the method stops. Every figure below is counted from the database rather than written into the page.`}
+        standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is what we do with them: how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks behind that rating actually test, and where the method stops. The counts are live from the database${examples ? ", and the method is shown on real filings, each one named and linked so you can check it" : ""}.`}
         standfirstSize="lede"
         title={`How we rate ${
           copy.insiderTerm === "director" ? "a director’s" : "an insider’s"
@@ -156,6 +209,11 @@ export default function HowItWorksPage() {
           vestings and the option exercises they are buried in, so the work is
           almost entirely in the sorting.
         </p>
+
+        {/* The specimen — one real filing the reader meets before the
+            machinery, then follows through it. Introduced here so every
+            "this filing" below already means something. */}
+        {examples ? <SpecimenCard specimen={examples.specimen} /> : null}
 
         {/* The contents strip. Every one of these sections has carried an `id`
             and a scroll margin since the page shipped and nothing has ever
@@ -187,73 +245,46 @@ export default function HowItWorksPage() {
         </nav>
 
         <SeoSection
-          aside="Counted from the database, not written into the page."
-          id="coverage"
-          index={stepOf("coverage")}
-          title="What we’ve read so far"
-          total={CONTENTS.length}
-        >
-          <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            A method is only worth what it has been applied to, so here is the
-            size of the thing. Five disclosure feeds, each read in its own
-            format: {count(coverage.totals.disclosures)} disclosure records,{" "}
-            {count(coverage.totals.triage_decisions)} first-pass sorting
-            decisions, of which {count(coverage.totals.triage_llm)} were made by
-            a model and the rest by fixed rules, and{" "}
-            {count(coverage.totals.analyses)} full written analyses. The price
-            history behind every chart and every return on the site runs to{" "}
-            {count(coverage.prices.observations)} daily closes across{" "}
-            {count(coverage.prices.tickers)} tickers, back to{" "}
-            {coverage.prices.first_date?.slice(0, 4) ?? "2016"}.
-          </p>
-
-          <CoverageTiles data={coverage} source={source} />
-          <FeedGrid data={coverage} />
-
-          <p className="mt-7 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            The feeds are not equivalent and the grid is laid out so you can see
-            that rather than take our word for it. A US, Swedish or Dutch row is
-            a single transaction line from a filing that may hold several; a
-            congressional row is an amount band rather than a price, sorted by
-            fixed rules rather than by a model. The open-market count on each
-            card is a floor: it counts the rows a classifier has confirmed were
-            bought on the market, so the remainder is “not confirmed” rather
-            than “not a buy”.
-          </p>
-        </SeoSection>
-
-        <SeoSection
-          aside="Filing to rating, in six stages."
+          aside="Filing to rating, in six stages, at its real size."
           id="pipeline"
           index={stepOf("pipeline")}
           title="What happens to a disclosure"
           total={CONTENTS.length}
         >
-          <PipelineDiagram />
+          <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+            Five disclosure feeds, each read in its own format, every fifteen
+            minutes through the trading day. The funnel is counted from the live
+            database rather than written into the page: of the{" "}
+            {count(coverage.totals.triage_decisions)} sorting decisions taken so
+            far, {count(coverage.totals.triage_llm)} were made by a model and
+            the rest by fixed rules.
+          </p>
 
-          {/* The diagram numbers its stages in badges; the prose underneath
-              used to number them again in a different visual language, inline
-              in the heading, which read as two unrelated lists about the same
-              six things. Same badge, ruled rows, one sequence. */}
+          <PipelineDiagram caption={funnelCaption} counts={funnelCounts} />
+
+          {/* One sequence, stated once. The rail above carries each stage's
+              label and meta; these rows carry the titles, with the two
+              sentences of how collapsed behind each one — the section used to
+              say all of this twice in two visual languages, and the second
+              telling is what made it a wall. */}
           <ol className={`mt-9 border-t ${RULE}`}>
             {PIPELINE.map((stage, i) => (
-              <li key={stage.id} className={`border-b ${RULE} py-5`}>
-                <div className="flex gap-4">
-                  <StepNode index={i} />
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <h3 className="text-[16px] font-semibold leading-[1.35] tracking-[-0.015em] text-foreground">
-                        {stage.title}
-                      </h3>
-                      <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-brand-brown dark:text-brand-tan">
-                        {stage.meta}
-                      </p>
-                    </div>
-                    <p className="mt-2.5 max-w-[62ch] text-[15px] leading-[1.7] text-foreground/80">
-                      {stage.body}
-                    </p>
-                  </div>
-                </div>
+              <li key={stage.id} className={`border-b ${RULE}`}>
+                <details className="group">
+                  <summary className="flex cursor-pointer list-none items-center gap-4 py-4 [&::-webkit-details-marker]:hidden">
+                    <StepNode index={i} />
+                    <h3 className="min-w-0 flex-1 text-[15.5px] font-semibold leading-[1.35] tracking-[-0.015em] text-foreground">
+                      {stage.title}
+                    </h3>
+                    <ChevronDownIcon
+                      aria-hidden
+                      className="h-4 w-4 shrink-0 text-foreground/35 transition-transform group-open:rotate-180"
+                    />
+                  </summary>
+                  <p className="max-w-[62ch] pb-5 pl-10 text-[14.5px] leading-[1.7] text-foreground/75">
+                    {stage.body}
+                  </p>
+                </details>
               </li>
             ))}
           </ol>
@@ -272,6 +303,9 @@ export default function HowItWorksPage() {
             doesn’t, and the count of what it cleared is published on the filing
             itself, so you can see which ones it missed rather than taking the
             rating on trust.
+            {examples
+              ? " Under each one: how the worked example above cleared it, and a real filing that didn’t."
+              : null}
           </p>
 
           <ol className={`mt-6 border-t ${RULE}`}>
@@ -281,7 +315,7 @@ export default function HowItWorksPage() {
                   <span className="mt-0.5">
                     <StepNode index={i} />
                   </span>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h3 className="text-[16px] font-semibold leading-[1.35] tracking-[-0.015em] text-foreground">
                       {check.question}
                     </h3>
@@ -291,9 +325,30 @@ export default function HowItWorksPage() {
                     <p className="mt-3 max-w-[62ch] text-[15px] leading-[1.7] text-foreground/85">
                       {check.body}
                     </p>
-                    <p className="mt-2.5 max-w-[62ch] text-[14px] leading-[1.7] text-foreground/60">
-                      {check.detail}
-                    </p>
+
+                    {/* The check demonstrated: the specimen's verdict via the
+                        check's own passLine — the same machinery the
+                        walkthrough uses — against a real filing that failed
+                        it. Contrast is the strongest form of each check. */}
+                    {examples ? (
+                      <CheckInPractice
+                        check={check}
+                        counter={examples.counters[check.key]}
+                        specimen={examples.specimen}
+                      />
+                    ) : null}
+
+                    {/* The long why, intact but folded. It was the visible
+                        paragraph that made this section eighteen paragraphs
+                        deep; the reader who wants it is one click away. */}
+                    <Disclosure
+                      className="mt-3 max-w-[62ch]"
+                      label="Why this check earns its place"
+                    >
+                      <p className="text-[14px] leading-[1.7] text-foreground/65">
+                        {check.detail}
+                      </p>
+                    </Disclosure>
                   </div>
                 </div>
               </li>
@@ -312,21 +367,28 @@ export default function HowItWorksPage() {
               the four objects a reader will meet on every filing in the app,
               and a page that describes them in a different visual language
               than the product uses has made the reader learn them twice. The
-              taper in size and fill is itself part of the explanation. */}
+              taper in size and fill is itself part of the explanation — and
+              under each meaning, a real filing that earned that badge, so the
+              scale is four linked examples rather than four definitions. */}
           <dl className={`border-t ${RULE}`}>
-            {RATING_SCALE.map((r) => (
-              <div
-                key={r.rating}
-                className={`grid gap-x-6 gap-y-2 border-b ${RULE} py-4 sm:grid-cols-[9rem_minmax(0,1fr)]`}
-              >
-                <dt className="flex items-start">
-                  <RatingBadge rating={r.rating as Rating} />
-                </dt>
-                <dd className="max-w-[58ch] text-[14.5px] leading-[1.65] text-foreground/80">
-                  {r.meaning}
-                </dd>
-              </div>
-            ))}
+            {RATING_SCALE.map((r) => {
+              const example = examples?.ratings[r.rating as Rating];
+
+              return (
+                <div
+                  key={r.rating}
+                  className={`grid gap-x-6 gap-y-2 border-b ${RULE} py-4 sm:grid-cols-[9rem_minmax(0,1fr)]`}
+                >
+                  <dt className="flex items-start">
+                    <RatingBadge rating={r.rating as Rating} />
+                  </dt>
+                  <dd className="max-w-[58ch] text-[14.5px] leading-[1.65] text-foreground/80">
+                    {r.meaning}
+                    {example ? <RatingExampleLine example={example} /> : null}
+                  </dd>
+                </div>
+              );
+            })}
           </dl>
         </SeoSection>
 
@@ -368,6 +430,22 @@ export default function HowItWorksPage() {
               value="Every 15 minutes, through the trading day"
             />
           </dl>
+
+          {/* The wider corpus, feed by feed. This grid lived in its own
+              "What we've read" section; it is really a statement about
+              sources — five feeds, five formats, five start dates — so it
+              lives with them now. */}
+          <p className="mt-8 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+            And it is not one feed but five. They are not equivalent, and the
+            grid below is laid out so you can see that rather than take our word
+            for it: a US, Swedish or Dutch row is a single transaction line from
+            a filing that may hold several, and a congressional row is an amount
+            band sorted by fixed rules rather than by a model. The open-market
+            count on each card is a floor, counting only the rows a classifier
+            has confirmed were bought on the market.
+          </p>
+
+          <FeedGrid data={coverage} />
         </SeoSection>
 
         <SeoSection
@@ -382,29 +460,35 @@ export default function HowItWorksPage() {
             against the index, which is the only way a rating ever gets checked
             rather than argued about. It runs on the two rated markets, the
             United Kingdom and the United States, and has measured{" "}
-            {count(coverage.outcomes.events)} buys between them. The count thins
+            {count(coverage.outcomes.events)} buys between them, on a price
+            history of {count(coverage.prices.observations)} daily closes across{" "}
+            {count(coverage.prices.tickers)} tickers, back to{" "}
+            {coverage.prices.first_date?.slice(0, 4) ?? "2016"}. The count thins
             out fast as the horizon lengthens:
           </p>
 
           <OutcomeCoverage data={coverage} />
 
-          <p className="mt-5 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            Both legs of every one of those returns are market closes off the
-            same price series, entry and exit, rather than the price the insider
-            filed, a ratio of two closes is unit-free, which removes an entire
-            class of error around splits, currency and depositary ratios. Each
-            is stored beside its benchmark over the identical window, so what we
-            keep is the difference against the market rather than the raw
-            direction. Rows that look wrong are flagged and kept, never dropped,
-            because quietly discarding the ugly ones biases a sample in exactly
-            the direction that flatters us.
-          </p>
+          {/* Two of those measurements, at their live values — the tracked
+              pair from methodology-examples, one of them the specimen. The
+              component owns its own intro line and vanishes whole if the
+              live figures don't come back, so no sentence is left promising
+              cards that aren't there. */}
+          {examples ? (
+            <TrackedExamples examples={examples} marketId={market.id} />
+          ) : null}
 
-          <p className="mt-4 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            Read the shape of that table honestly and it says the thirty-day
-            evidence is real and the one-year evidence barely exists yet. That
-            is the whole reason performance figures elsewhere on the site are
-            described as a small sample rather than as a track record.
+          <p className="mt-7 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+            Both legs of every return are market closes off the same price
+            series, entry and exit, stored beside the benchmark over the
+            identical window, so what we keep is the difference against the
+            market rather than the raw direction. Rows that look wrong are
+            flagged and kept, never dropped, because quietly discarding the ugly
+            ones biases a sample in exactly the direction that flatters us. And
+            read honestly, the table above says the thirty-day evidence is real
+            and the one-year evidence barely exists yet: that is the whole
+            reason performance figures on this site are described as a small
+            sample rather than as a track record.
           </p>
 
           {/* Rendered only when the research database answered. The `research`
@@ -566,6 +650,33 @@ const LIMITS: { title: string; body: string }[] = [
     body: "As the record builds, what each check looks for gets adjusted, which means a filing’s rating can change after publication. That is deliberate, a fixed checklist would be easier to describe and worse at its job.",
   },
 ];
+
+/** A folded paragraph: native <details>, so it costs no state, prints open
+ *  where user agents choose to, and keeps its content in the DOM for the
+ *  crawler pre-render. Used for the depth this page used to show all of —
+ *  the fold is the point, not the content's demotion. */
+function Disclosure({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <details className={`group ${className ?? ""}`}>
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-foreground/55 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+        <ChevronDownIcon
+          aria-hidden
+          className="h-3.5 w-3.5 shrink-0 -rotate-90 transition-transform group-open:rotate-0"
+        />
+        {label}
+      </summary>
+      <div className="mt-2.5">{children}</div>
+    </details>
+  );
+}
 
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
