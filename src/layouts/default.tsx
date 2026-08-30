@@ -506,6 +506,20 @@ export default function DefaultLayout({
           detaches from the viewport edges and page content scrolls beneath it
           through the gutters) and the Navbar itself is the glass capsule. */}
       <div className="sticky top-0 z-40 px-3 pt-3 md:px-6 md:pt-4">
+        {/* The bar floats, so the inset above it is a window onto the page —
+            rows slid through that 12/16px slot and were read as a stripe of
+            chopped content pinned to the top of the screen. Cap the slot with
+            the page ground so content ends at a clean edge and the capsule
+            reads as sitting on the page rather than on its own offcuts.
+
+            Flat page colour with a crisp edge, NOT a gradient fade: a fade
+            here would be exactly the dissolve tenet 1 rules out. It stops at
+            the capsule's top edge, so what passes UNDER the bar still shows
+            through the glass — the blur keeps something to work on. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-3 bg-[#f5f0e8] dark:bg-background md:h-4"
+        />
         <Navbar />
         {ticker && (
           <div className="mx-auto mt-2 max-w-[1280px] rounded-xl border border-black/[0.07] bg-[#f5f0e8]/60 backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60">
