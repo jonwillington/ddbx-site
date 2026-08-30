@@ -84,11 +84,17 @@ const RENDERED = SLOTS.length;
 export function HeroNotificationStack({
   deals,
   tick,
+  badge = true,
 }: {
   deals: HeroDeal[];
   /** Monotonic advance counter from the shared radar clock. The front card is
    *  `deals[tick % deals.length]`; each increment promotes a new front. */
   tick: number;
+  /** The half-in / half-out company avatar over the front card's top edge.
+   *  Defaults on; the hero showcase panel turns it off because its logo queue
+   *  along the top of the map already names the active company — rendering the
+   *  same logo twice in one panel reads as a glitch, not emphasis. */
+  badge?: boolean;
 }) {
   const n = deals.length;
   const frontDeal = deals[((tick % n) + n) % n];
@@ -129,6 +135,7 @@ export function HeroNotificationStack({
       aria-label={`Example ${deals[0].app} deal notifications`}
       className="hns relative w-full"
       role="img"
+      style={badge ? undefined : { paddingTop: 0 }}
     >
       <style>{`
         /* Reserve space above the stack for the half of the badge avatar that
@@ -220,12 +227,14 @@ export function HeroNotificationStack({
       {/* Badge avatar for the front deal — half-in / half-out over the card's
           top edge; keyed by tick so it re-mounts and replays its enter
           animation on every advance. */}
-      <CompanyLogo
-        key={tick}
-        className="hns-avatar"
-        size={56}
-        ticker={frontDeal.ticker}
-      />
+      {badge && (
+        <CompanyLogo
+          key={tick}
+          className="hns-avatar"
+          size={56}
+          ticker={frontDeal.ticker}
+        />
+      )}
 
       <div className="hns-stack" style={{ height: frontH + STACK_TAIL }}>
         {cards.map(({ cardTick, offset, deal }) => {

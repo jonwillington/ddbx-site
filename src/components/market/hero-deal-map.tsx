@@ -78,9 +78,17 @@ export default function HeroDealMap({
       center: mapConfig.center,
       zoom: mapConfig.zoom,
       interactive: false, // cinematic showcase, never user-driven
-      attributionControl: { compact: true },
+      attributionControl: false,
       fadeDuration: 200,
     });
+
+    // Required CARTO/OSM credit, pinned top-right: the showcase panel docks
+    // the notification stack across the bottom, which would bury the default
+    // bottom-right placement.
+    map.addControl(
+      new maplibregl.AttributionControl({ compact: true }),
+      "top-right",
+    );
 
     mapRef.current = map;
 
@@ -156,7 +164,7 @@ export default function HeroDealMap({
            beacon markers are DOM overlays, so they keep their warm colour. */
         .hdm-wrap .maplibregl-canvas { filter: grayscale(1) contrast(1.02); }
         .hdm-wrap .maplibregl-ctrl-attrib { font-size: 9px; opacity: 0.55; }
-        .hdm-wrap .maplibregl-ctrl-bottom-right { z-index: 1; }
+        .hdm-wrap .maplibregl-ctrl-top-right { z-index: 1; }
 
         /* Beacon pin — a warm core dot, ripple rings only on the active one. */
         .hdm-pin { position: relative; width: 16px; height: 16px; }

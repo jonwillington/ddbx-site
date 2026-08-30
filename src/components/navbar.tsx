@@ -116,8 +116,14 @@ export const Navbar = () => {
   const showNav = navItems.length > 1;
 
   return (
-    <nav className="w-full border-b border-separator bg-[#f5f0e8]/90 dark:bg-background/70 backdrop-blur-lg">
-      <header className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-3 px-4 md:gap-4 md:px-6">
+    /* Floating glass bar — a detached rounded capsule over the page rather
+       than a full-width band ruled off from it (the layout gives it inset on
+       every side; content scrolls beneath through the gutters). Translucent
+       fill + heavy blur with a saturation boost so what passes underneath
+       reads as material, not mud; hairline border and a soft warm shadow do
+       the separating the old border-b did. */
+    <nav className="mx-auto max-w-[1280px] rounded-2xl border border-black/[0.07] bg-[#f5f0e8]/60 shadow-[0_12px_32px_-20px_rgba(90,65,40,0.45)] backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60 dark:shadow-[0_12px_32px_-20px_rgba(0,0,0,0.7)]">
+      <header className="flex h-14 items-center justify-between gap-3 px-4 md:gap-4 md:px-5">
         <div className="flex items-center gap-6">
           <a className="shrink-0" href={dashboardHref}>
             <img

@@ -84,6 +84,18 @@ Enforcement lives in `src/components/seo/*` (`SeoPageShell`, `SeoSection`,
 `StatTiles`, `RelatedCards`, `SeoSkeleton`) plus `BackLink` — compose those
 rather than reimplementing them.
 
+## Design language — read before restyling any surface
+
+`investigations/2026-08-30-design-language.md` is the visual grammar the
+site is being revamped against (the static-page rules doc governs page
+anatomy; this governs treatment). Four tenets: contained-not-blended
+(visuals in rounded hairline panels, no scrims/fades), floating glass
+chrome (the navbar recipe), full-width hairline rows for selling lists,
+and type on clean ground with at most one masked sub-perceptual wash.
+Reference implementation: the app-market hero
+(`src/components/market/market-hero.tsx` + `hero-deal-showcase.tsx`) and
+the floating navbar.
+
 ## UI patterns
 
 - **Close/dismiss ("X") buttons**: ALWAYS use `CloseButton` from

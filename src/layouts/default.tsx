@@ -502,13 +502,14 @@ export default function DefaultLayout({
       >
         Skip to content
       </a>
-      <div className="sticky top-0 z-40">
+      {/* The navbar floats: the sticky wrapper carries the inset (so the bar
+          detaches from the viewport edges and page content scrolls beneath it
+          through the gutters) and the Navbar itself is the glass capsule. */}
+      <div className="sticky top-0 z-40 px-3 pt-3 md:px-6 md:pt-4">
         <Navbar />
         {ticker && (
-          <div className="w-full border-b border-separator/50 bg-[#f5f0e8]/90 dark:bg-background/80 backdrop-blur-lg">
-            <div className="mx-auto max-w-[1280px] px-4 md:px-6 flex items-stretch">
-              {ticker}
-            </div>
+          <div className="mx-auto mt-2 max-w-[1280px] rounded-xl border border-black/[0.07] bg-[#f5f0e8]/60 backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60">
+            <div className="flex items-stretch px-4 md:px-5">{ticker}</div>
           </div>
         )}
       </div>

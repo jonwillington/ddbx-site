@@ -1,10 +1,18 @@
-/** Shared hero section. The market question as a headline above a layered
- *  atmospheric backdrop: bright warm spotlight at the headline, cool silver
- *  fall-off at the corners, slow-breathing pulse so the light reads as alive,
- *  and disclosure pulses — soft double-ripple blips scattered around the
- *  sides, like filings landing on a quiet radar. The bottom dissolves into
- *  the page colour without a hard rectangular band. All CSS-only; respects
- *  prefers-reduced-motion.
+/** Shared hero section. Two species, per the house rule "contained, not
+ *  blended":
+ *
+ *  App markets (UK/US/Congress) — two clean layers. The MESSAGE layer
+ *  (headline, bullets, CTAs, live proof line) sits directly on the page
+ *  ground, over nothing but one very subtle warm ambient gradient — no
+ *  scrim, no spotlight, nothing the text has to compete with. The PROOF
+ *  layer is `HeroDealShowcase`: the deal-radar map contained in a rounded
+ *  hairline-bordered panel beside the message, with the company queue on top
+ *  and the live notification stack docked at its foot. The panel's frame is
+ *  the edge — no fades melting it into the page.
+ *
+ *  Non-app markets (NL/SE) keep the original centred layout on the lit
+ *  atmospheric stage: warm spotlight, silver shimmer, disclosure pulses,
+ *  vignette. All CSS-only; respects prefers-reduced-motion.
  *
  *  The headline is the page's <h1> — market pages render no other top-level
  *  heading. Under it: an optional one-line subhead for first-time visitors,
@@ -12,20 +20,20 @@
  *  dealings the page has already loaded — the hero asks the question, the
  *  live line proves we're answering it.
  *
- *  Layout: on mobile the backdrop uses the `w-screen left-1/2
+ *  Non-app stage layout: on mobile the backdrop uses the `w-screen left-1/2
  *  -translate-x-1/2` break-out trick to span the viewport edge-to-edge. From
  *  `md` up it instead stays inside the content column as a framed, rounded
  *  panel — a lit stage clipped by a hairline border, one tonal step darker
- *  than the page, so the section has a defined shape instead of dissolving
- *  into the cream on every side. Fixed `min-h` keeps the hero the same
- *  height on every market — the optional beta notice is rendered absolutely
- *  at the top so it doesn't push the headline around, and slides in instead
- *  of popping when the user navigates to a beta market. */
+ *  than the page. Fixed `min-h` keeps the hero the same height on every
+ *  market — the optional beta notice is rendered absolutely at the top so it
+ *  doesn't push the headline around, and slides in instead of popping when
+ *  the user navigates to a beta market. */
 import type { ReactNode } from "react";
 
 import { CheckIcon } from "@heroicons/react/20/solid";
 
-import { HeroDealMapLayer, useDealRadar } from "./hero-deal-radar";
+import { HeroDealShowcase } from "./hero-deal-showcase";
+import { useDealRadar } from "./hero-deal-radar";
 import { HeroNotificationStack } from "./hero-notification-stack";
 
 import {
@@ -269,6 +277,43 @@ export function MarketHero({
     </div>
   );
 
+  // Two-column desktop CTA row: the App Store button leads, sized to its
+  // content like any other button — it belongs to the message column, not to
+  // the showcase panel, so it no longer inherits the notification stack's
+  // width. The explainer stays the ghost beside it.
+  const ctaRowDesktop = (
+    <div className={`flex flex-wrap items-center gap-3 ${ctaJustify}`}>
+      <StoreButtons
+        buttonClassName={FILLED_CTA}
+        gaEvent="cta_hero_download_app"
+        gaLabel="Hero desktop download"
+        marketId={marketId ?? "uk"}
+      />
+      {onExplain && (
+        <button
+          className={GHOST_CTA}
+          data-ga-event="cta_hero_open_explainer"
+          data-ga-label="What are we looking for"
+          type="button"
+          onClick={onExplain}
+        >
+          What are we looking for?
+        </button>
+      )}
+      {onViewReport && (
+        <button
+          className={GHOST_CTA}
+          data-ga-event="cta_hero_view_report"
+          data-ga-label={`View ${reportLabel ?? "latest"} report`}
+          type="button"
+          onClick={onViewReport}
+        >
+          View {reportLabel} Report
+        </button>
+      )}
+    </div>
+  );
+
   // Live proof line — the headline asks the question, this shows we're
   // answering it today. Counts arrive with the page's dealings fetch; on app
   // markets the line never disappears (a live "watching" state stands in while
@@ -297,14 +342,6 @@ export function MarketHero({
         <>Live · watching today&rsquo;s filings as they land</>
       )}
     </p>
-  );
-
-  // The live notification stack — front card with a badge avatar over its top
-  // edge, thin iOS-style rims behind.
-  const notifRow = (
-    <div className="min-w-0">
-      <HeroNotificationStack deals={radar.deals} tick={radar.tick} />
-    </div>
   );
 
   return (
@@ -362,50 +399,37 @@ export function MarketHero({
               rgba(120, 100, 80, 0.05) 80%,
               rgba(80, 65, 50, 0.10) 100%);
         }
-        /* A general wash that enters from the frame's left edge and fades out
-           past the headline, so the text stays legible over the panning
-           basemap and the map's left edge dissolves into the stage. Themed to
-           the framed panel's base tone (a step darker than the page), not the
-           page itself — the scrim only renders md+ where the frame exists.
-           Kept near-neutral: the old #eee6d8 sepia read as a faded brown
-           wash over the whole stage. */
-        .hero-left-scrim {
-          background: linear-gradient(to right,
-            #f1ede6 0%,
-            rgba(241, 237, 230, 0.97) 14%,
-            rgba(241, 237, 230, 0.55) 34%,
-            transparent 54%);
-        }
-        :is(.dark) .hero-left-scrim {
-          background: linear-gradient(to right,
-            oklch(19% 0.022 55) 0%,
-            oklch(19% 0.022 55 / 0.97) 14%,
-            oklch(19% 0.022 55 / 0.55) 34%,
-            transparent 54%);
-        }
-        /* App-market spotlight — the left scrim alone left the headline half of
-           the frame one flat tone (the scrim colour IS the panel base). This
-           pool of warm light, anchored where the headline sits, breaks the
-           flatness and gives the text a lit stage without costing legibility.
-           Painted after the scrim so it lands on top of it. */
-        .hero-spotlight-app {
-          position: absolute; inset: 0;
+        /* App-market atmosphere — the ONLY layer behind the message column. A
+           barely-there pool of the brand warmth top-left (where the headline
+           sits) answered by an even fainter one bottom-right, so the cream
+           isn't dead flat but nothing competes with the text or the panel.
+           Static on purpose: the life in this hero belongs to the showcase
+           panel. */
+        .hero-ambient {
           background:
-            radial-gradient(ellipse 46% 58% at 24% 40%,
-              rgba(255, 248, 232, 0.9) 0%,
-              rgba(255, 248, 232, 0.5) 30%,
-              rgba(255, 249, 235, 0.14) 55%,
-              transparent 72%);
-          will-change: opacity, transform;
-          animation: hero-spotlight-breathe 9s ease-in-out infinite;
+            radial-gradient(ellipse 50% 55% at 24% 32%,
+              rgba(196, 168, 130, 0.13) 0%,
+              rgba(196, 168, 130, 0.05) 45%,
+              transparent 72%),
+            radial-gradient(ellipse 45% 50% at 82% 78%,
+              rgba(139, 96, 64, 0.06) 0%,
+              transparent 65%);
+          /* Fade the layer out before it reaches its own bounding box — the
+             wash must never present an edge (an edge is a seam against the
+             page, and seams are exactly what this hero removed). */
+          -webkit-mask-image: radial-gradient(ellipse 90% 90% at 50% 48%,
+            black 30%, transparent 95%);
+          mask-image: radial-gradient(ellipse 90% 90% at 50% 48%,
+            black 30%, transparent 95%);
         }
-        :is(.dark) .hero-spotlight-app {
+        :is(.dark) .hero-ambient {
           background:
-            radial-gradient(ellipse 46% 58% at 24% 40%,
-              rgba(196, 168, 130, 0.16) 0%,
-              rgba(196, 168, 130, 0.08) 30%,
-              rgba(196, 168, 130, 0.03) 55%,
-              transparent 72%);
+            radial-gradient(ellipse 50% 55% at 24% 32%,
+              rgba(196, 168, 130, 0.07) 0%,
+              transparent 68%),
+            radial-gradient(ellipse 45% 50% at 82% 78%,
+              rgba(238, 197, 132, 0.03) 0%,
+              transparent 62%);
         }
         :is(.dark) .hero-spotlight {
           background:
@@ -472,73 +496,36 @@ export function MarketHero({
           100% { opacity: 0;    transform: scale(5.2); }
         }
         @media (prefers-reduced-motion: reduce) {
-          .hero-spotlight, .hero-spotlight-app, .hero-shimmer { animation: none !important; }
+          .hero-spotlight, .hero-shimmer { animation: none !important; }
           .hero-pulse { animation: none !important; opacity: 0.22; }
           .hero-pulse-ring { display: none; }
         }
       `}</style>
 
-      {/* Atmospheric backdrop. Now on every breakpoint — the tall mobile hero
-          leans on it to feel like a lit stage. Order matters: warm floor sits
-          behind so the shimmer + spotlight feel like they're cast on a
-          surface; the vignette goes last so light falls off toward the
-          corners. This wrapper is position:static so its absolute children
-          still anchor to the <header> and keep their z-order relative to the
-          headline. */}
-      {/* Backdrop stage. Mobile breaks out to the full viewport width via the
-          left-1/2 / -translate-x-1/2 trick; from md up it becomes a framed
-          panel inside the content column — rounded, hairline-bordered, one
-          tonal step darker than the page — so the stage reads as a defined
-          instrument rather than a lit region of the page. Its own
-          overflow-hidden clips the map + disclosure pulses either way. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen overflow-hidden z-0 md:left-0 md:right-0 md:w-auto md:translate-x-0 md:rounded-3xl md:border md:border-black/[0.08] md:bg-[#f1ede6] dark:md:border-white/[0.08] dark:md:bg-[oklch(19%_0.022_55)]"
-      >
-        {/* Deal-radar map — the hero's living background on app markets
-            (desktop). The atmospheric fades + vignette below blend its edges
-            into the navbar and page. */}
-        {appShowcase && (
-          <>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 z-0 hidden md:block"
-            >
-              <HeroDealMapLayer
-                activeIndex={radar.activeIndex}
-                deals={radar.deals}
-                isDark={radar.isDark}
-                mapConfig={radar.mapConfig}
-              />
-            </div>
-            {/* General wash entering from the far (left) edge of the screen,
-              fading out past the headline — keeps the text legible and melts
-              the map's left edge into the page. */}
-            <div
-              aria-hidden
-              className="hero-left-scrim pointer-events-none absolute inset-0 z-[5] hidden md:block"
-            />
-            {/* Warm pool of light over the headline column — see
-              .hero-spotlight-app above. Same z as the scrim; DOM order puts it
-              on top. */}
-            <div
-              aria-hidden
-              className="hero-spotlight-app pointer-events-none absolute inset-0 z-[5] hidden md:block"
-            />
-          </>
-        )}
-
-        <div aria-hidden className="block">
+      {/* Backdrop. App markets get one very subtle ambient gradient on the
+          page ground and nothing else — the message column sits on clean
+          space, and the contained showcase panel carries all the life. Non-app
+          markets keep the lit atmospheric stage: mobile breaks out to the full
+          viewport width via the left-1/2 / -translate-x-1/2 trick; from md up
+          it becomes a framed panel inside the content column — rounded,
+          hairline-bordered, one tonal step darker than the page. Either
+          wrapper is aria-hidden decoration anchored to the <header>. */}
+      {appShowcase ? (
+        <div
+          aria-hidden
+          className="hero-ambient pointer-events-none absolute inset-0 z-0"
+        />
+      ) : (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-screen overflow-hidden z-0 md:left-0 md:right-0 md:w-auto md:translate-x-0 md:rounded-3xl md:border md:border-black/[0.08] md:bg-[#f1ede6] dark:md:border-white/[0.08] dark:md:bg-[oklch(19%_0.022_55)]"
+        >
+          {/* Order matters: warm floor sits behind so the shimmer + spotlight
+              feel like they're cast on a surface; the vignette goes last so
+              light falls off toward the corners. */}
           <div aria-hidden className="hero-warm-floor z-0" />
-          {/* Spotlight + shimmer light the stage on non-app markets. App markets
-            drop the animated backdrop entirely: desktop has the live map, and
-            mobile leads with the notification scroller instead. */}
-          {!appShowcase && (
-            <>
-              <div aria-hidden className="hero-shimmer z-0" />
-              <div aria-hidden className="hero-spotlight z-0" />
-            </>
-          )}
+          <div aria-hidden className="hero-shimmer z-0" />
+          <div aria-hidden className="hero-spotlight z-0" />
           <div
             aria-hidden
             className="hero-vignette z-[1] pointer-events-none"
@@ -569,45 +556,41 @@ export function MarketHero({
 
           {/* Disclosure pulses — kept clear of the centre column (~40-60%)
             where the headline sits, and of the bottom fade. Sizes and
-            delays vary so no two blips read as twins. On the app-market
-            desktop the map's own beacon replaces these, so they're dropped
-            there (mobile still gets them — no map on phones). */}
-          {!appShowcase &&
-            PULSE_POINTS.map((p) => (
-              <span
-                key={`d-${p.left}-${p.top}`}
-                className="hero-pulse z-[2] hidden md:block"
-                style={{
-                  left: p.left,
-                  top: p.top,
-                  width: p.size,
-                  height: p.size,
-                  animationDelay: `${p.delay}s`,
-                }}
-              >
-                <span className="hero-pulse-ring" />
-                <span className="hero-pulse-ring hero-pulse-ring-2" />
-              </span>
-            ))}
-          {!appShowcase &&
-            MOBILE_PULSE_POINTS.map((p) => (
-              <span
-                key={`m-${p.left}-${p.top}`}
-                className="hero-pulse z-[2] md:hidden"
-                style={{
-                  left: p.left,
-                  top: p.top,
-                  width: p.size,
-                  height: p.size,
-                  animationDelay: `${p.delay}s`,
-                }}
-              >
-                <span className="hero-pulse-ring" />
-                <span className="hero-pulse-ring hero-pulse-ring-2" />
-              </span>
-            ))}
+            delays vary so no two blips read as twins. */}
+          {PULSE_POINTS.map((p) => (
+            <span
+              key={`d-${p.left}-${p.top}`}
+              className="hero-pulse z-[2] hidden md:block"
+              style={{
+                left: p.left,
+                top: p.top,
+                width: p.size,
+                height: p.size,
+                animationDelay: `${p.delay}s`,
+              }}
+            >
+              <span className="hero-pulse-ring" />
+              <span className="hero-pulse-ring hero-pulse-ring-2" />
+            </span>
+          ))}
+          {MOBILE_PULSE_POINTS.map((p) => (
+            <span
+              key={`m-${p.left}-${p.top}`}
+              className="hero-pulse z-[2] md:hidden"
+              style={{
+                left: p.left,
+                top: p.top,
+                width: p.size,
+                height: p.size,
+                animationDelay: `${p.delay}s`,
+              }}
+            >
+              <span className="hero-pulse-ring" />
+              <span className="hero-pulse-ring hero-pulse-ring-2" />
+            </span>
+          ))}
         </div>
-      </div>
+      )}
 
       <div
         className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 ${
@@ -616,29 +599,23 @@ export function MarketHero({
       >
         {appShowcase ? (
           <>
-            {/* Desktop: headline (left) + live notification stack (right) float
-                over the full-bleed map. The left-edge wash (above) keeps the
-                headline legible; the stack offers the App Store link. Two-column
+            {/* Desktop: message column (left) on clean page ground beside the
+                contained showcase panel (right) — two layers that never
+                overlap, so neither needs a scrim. The store CTA lives in the
+                message column's button row, sized to its content. Two-column
                 only once there's room (lg, or xl when a drawer is present). */}
             <div
-              className={`m-auto ${twoColShow} w-full max-w-6xl items-center gap-10`}
+              className={`m-auto ${twoColShow} w-full max-w-6xl items-center gap-10 xl:gap-14`}
             >
               <div className="flex-1">
-                <div className="flex max-w-[520px] flex-col gap-6 text-left">
+                <div className="flex max-w-[560px] flex-col gap-6 text-left">
                   {headlineBlock}
-                  {ctaRow}
+                  {ctaRowDesktop}
                   {proofLine}
                 </div>
               </div>
-              <div className="w-[440px] shrink-0">
-                {notifRow}
-                <StoreButtons
-                  buttonClassName={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
-                  className="mt-7"
-                  gaEvent="cta_hero_download_app"
-                  gaLabel="Hero desktop download"
-                  marketId={marketId ?? "uk"}
-                />
+              <div className="w-[440px] shrink-0 xl:w-[480px]">
+                <HeroDealShowcase radar={radar} />
               </div>
             </div>
 
