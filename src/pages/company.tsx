@@ -774,6 +774,7 @@ export default function CompanyPage() {
         <CompanyAppPitch
           company={name}
           deals={data.deals}
+          logoKey={data.key}
           market={market}
           ticker={ticker}
         />

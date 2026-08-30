@@ -19,19 +19,22 @@
  */
 import type { Dealing, UsDealing } from "@/types/ddbx";
 
+import { CompanyLogo } from "@/components/company-logo";
 import { StoreButtons } from "@/components/store-buttons";
-import { IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
 import { BUTTON_RADIUS } from "@/components/button";
 
 export function CompanyAppPitch({
   company,
   ticker,
+  logoKey,
   deals,
   market,
 }: {
   company: string;
   /** Display ticker, no exchange suffix. */
   ticker: string;
+  /** Exchange-qualified storage key — what the logo proxy is keyed on. */
+  logoKey: string;
   deals: Array<Dealing | UsDealing>;
   market: string;
 }) {
@@ -66,29 +69,26 @@ export function CompanyAppPitch({
               for a full-bleed band, and once the section was contained to the
               column that was a headline shouting inside a small room. */}
           <div>
-            {/* The brand lockup, in the eyebrow's slot: the market's actual
-                App Store icon and the wordmark. It replaces a "The app"
-                kicker, which was doing the same job in words while the panel
-                sold an icon the reader had never been shown — and the store
-                button 300px below is the first place the product was named.
-                The market tag keeps the 0.16em family kicker spec so the row
-                still reads as an eyebrow rather than a header.
+            {/* THIS COMPANY'S LOCKUP, NOT OURS.
+                The eyebrow slot held the market's App Store icon and the ddbx
+                wordmark — our badge, at the top of the one block on the page
+                that is entirely about the company being viewed. The panel
+                already
+                names the product twice below (the store button and the shot),
+                so the brand was stated a third time in the loudest
+                available slot while the thing the reader actually searched
+                for went unshown.
 
-                `invert`, not `dark:invert`: the wordmark is ink-on-transparent
-                and this panel is dark in BOTH themes. */}
-            <div className="flex items-center gap-3.5">
-              <img
-                alt=""
-                className="h-9 w-9 rounded-[9px] ring-1 ring-white/15"
-                height={36}
-                src={IOS_APP_LOGO_BY_MARKET[marketId]}
-                width={36}
-              />
-              <img
-                alt="ddbx"
-                className="h-[18px] w-auto invert"
-                src="/logo.svg"
-              />
+                So: the company's own mark, its ticker, its market. It reads
+                as "here is your company, followed" rather than "here is our
+                app". The mono kicker spec is the house eyebrow, so the row
+                still sits as an eyebrow rather than a header. Deliberately no
+                company NAME here — the headline says it 6px below. */}
+            <div className="flex items-center gap-3">
+              <CompanyLogo size={40} ticker={logoKey} />
+              <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.14em] text-white">
+                {ticker}
+              </span>
               <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
                 {marketId.toUpperCase()}
               </span>
