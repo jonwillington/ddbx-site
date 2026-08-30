@@ -20,8 +20,8 @@
 import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { StoreButtons } from "@/components/store-buttons";
+import { IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
 import { BUTTON_RADIUS } from "@/components/button";
-import { FULL_BLEED } from "@/components/full-bleed";
 
 export function CompanyAppPitch({
   company,
@@ -43,27 +43,57 @@ export function CompanyAppPitch({
   if (deals.length === 0) return null;
 
   return (
-    // A dark band, not another cream one. Everything above this is the record
+    // A dark panel, not another cream one. Everything above this is the record
     // — cream sheets on a cream page — and the one block whose job is to sell
     // rather than inform was rendered in the same surface as all of it, so it
     // scrolled past as one more section. The change of surface IS the signal
     // that the page has stopped reporting and started asking.
-    <section
-      className={`${FULL_BLEED} mt-16 bg-ink text-white dark:bg-[oklch(17%_0.02_55)]`}
-    >
-      <div className="mx-auto max-w-[1280px] px-4 py-14 md:px-6 md:py-20">
+    //
+    // Contained, not full-bleed. It ran edge-to-edge until now, which on a
+    // page carrying the fixed right rail meant a dark band that stopped dead
+    // against the rail's border — and a section that blows through the column
+    // its neighbours respect is the opposite of what the design language asks
+    // for. Held inside the column as one rounded object, it reads as a card
+    // the page hands you rather than a stripe painted across it.
+    <section className="mt-16 overflow-hidden rounded-[28px] bg-ink text-white dark:bg-[oklch(17%_0.02_55)]">
+      <div className="px-6 py-14 sm:px-10 md:px-14 md:py-16">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          {/* ---- Left: the ask, at poster size ----
-              The headline is the loudest thing in the band on purpose. It used
-              to sit at 40px beside an animating phone card, which meant the
-              claim was the quiet half of its own pitch. */}
+          {/* ---- Left: the ask ----
+              The headline is the loudest thing in the panel on purpose — it
+              used to sit level with the body copy beside an animating phone
+              card, which made the claim the quiet half of its own pitch. It
+              is NOT at poster scale though: the first pass ran to 68px, sized
+              for a full-bleed band, and once the section was contained to the
+              column that was a headline shouting inside a small room. */}
           <div>
-            {/* 0.16em, the family kicker spec — `tracking-wider` is 0.05em and
-                made this the one loose-tracked eyebrow on the site. */}
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
-              The app
-            </p>
-            <h2 className="mt-5 max-w-[13ch] text-balance text-[40px] font-semibold leading-[1.0] tracking-[-0.03em] sm:text-[54px] lg:text-[62px] xl:text-[68px]">
+            {/* The brand lockup, in the eyebrow's slot: the market's actual
+                App Store icon and the wordmark. It replaces a "The app"
+                kicker, which was doing the same job in words while the panel
+                sold an icon the reader had never been shown — and the store
+                button 300px below is the first place the product was named.
+                The market tag keeps the 0.16em family kicker spec so the row
+                still reads as an eyebrow rather than a header.
+
+                `invert`, not `dark:invert`: the wordmark is ink-on-transparent
+                and this panel is dark in BOTH themes. */}
+            <div className="flex items-center gap-3.5">
+              <img
+                alt=""
+                className="h-9 w-9 rounded-[9px] ring-1 ring-white/15"
+                height={36}
+                src={IOS_APP_LOGO_BY_MARKET[marketId]}
+                width={36}
+              />
+              <img
+                alt="ddbx"
+                className="h-[18px] w-auto invert"
+                src="/logo.svg"
+              />
+              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
+                {marketId.toUpperCase()}
+              </span>
+            </div>
+            <h2 className="mt-6 max-w-[15ch] text-balance text-[32px] font-semibold leading-[1.05] tracking-[-0.028em] sm:text-[40px] lg:text-[44px] xl:text-[48px]">
               The next {company} buy lands on your phone.
             </h2>
             <p className="mt-6 max-w-[34em] text-[16px] leading-[1.6] text-white/60">
@@ -75,7 +105,7 @@ export function CompanyAppPitch({
             </p>
 
             <div className="mt-9 flex flex-col items-start gap-2.5">
-              {/* Light fill: BUTTON_FILLED is near-black, which is the band. */}
+              {/* Light fill: BUTTON_FILLED is near-black, which is the panel. */}
               <StoreButtons
                 buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
                 className="items-start"

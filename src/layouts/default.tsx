@@ -527,10 +527,10 @@ export default function DefaultLayout({
           a bordered box inside the content column, sitting on a soft warm wash.
           The box's own edge and shadow do the separating the old full-width
           `border-t` did. FooterTrail covers this whole <footer> rather than a
-          strip under the box, so the padding here is what gives the wash room
-          to ramp up — above the box, beside it on wide viewports, and below.
-          Trim it much further and the glow turns into a visible band. */}
-      <footer className="relative w-full pt-24 pb-[160px] md:pt-32 md:pb-[220px]">
+          strip under the box, so the padding here is what the wash ramps
+          across. The band field this replaced needed a lot of it to be read
+          as a composition; a wash only needs enough not to end in an edge. */}
+      <footer className="relative w-full pt-14 pb-10 md:pt-20 md:pb-14">
         <FooterTrail />
         <div className="relative mx-auto w-full max-w-[1280px] px-4 md:px-6">
           <div className="rounded-2xl border border-hairline bg-sheet px-5 py-8 md:px-8 md:py-10 shadow-[0_18px_44px_-28px_rgba(90,65,40,0.45),0_1px_2px_rgba(90,65,40,0.03)] text-[10px] leading-4 text-foreground/40 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)]">

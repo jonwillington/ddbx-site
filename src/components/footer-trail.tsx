@@ -15,7 +15,9 @@
  *    immediately looks like a blob.
  *  - **Percentage sizing, not px.** Unlike the band field this replaced, the
  *    shape has no internal geometry to keep square with anything, so it can
- *    scale with the footer's very variable height and stay in proportion.
+ *    scale with the footer's very variable height and stay in proportion. It's
+ *    sized well over 100% because the footer is short — at 100% the visible
+ *    arc collapses to a sliver.
  *  - **Keep the alpha low and the stops far apart.** The moment there's a
  *    visible edge anywhere in the ramp it stops being a wash. If you want it
  *    stronger, raise the centre alpha before you tighten the stops.
@@ -33,13 +35,13 @@ export function FooterTrail() {
           overflow: hidden;
           pointer-events: none;
           background-image:
-            radial-gradient(120% 86% at 50% 118%, rgba(186,155,113,0.30) 0%, rgba(186,155,113,0.13) 38%, rgba(186,155,113,0.04) 62%, transparent 80%),
-            radial-gradient(58% 52% at 50% 112%, rgba(214,188,150,0.24) 0%, rgba(214,188,150,0.06) 55%, transparent 78%);
+            radial-gradient(150% 135% at 50% 122%, rgba(186,155,113,0.30) 0%, rgba(186,155,113,0.13) 38%, rgba(186,155,113,0.04) 62%, transparent 80%),
+            radial-gradient(72% 85% at 50% 116%, rgba(214,188,150,0.24) 0%, rgba(214,188,150,0.06) 55%, transparent 78%);
         }
         :is(.dark) .footer-trail {
           background-image:
-            radial-gradient(120% 86% at 50% 118%, rgba(255,214,158,0.10) 0%, rgba(255,214,158,0.045) 38%, rgba(255,214,158,0.015) 62%, transparent 80%),
-            radial-gradient(58% 52% at 50% 112%, rgba(255,226,180,0.07) 0%, rgba(255,226,180,0.02) 55%, transparent 78%);
+            radial-gradient(150% 135% at 50% 122%, rgba(255,214,158,0.10) 0%, rgba(255,214,158,0.045) 38%, rgba(255,214,158,0.015) 62%, transparent 80%),
+            radial-gradient(72% 85% at 50% 116%, rgba(255,226,180,0.07) 0%, rgba(255,226,180,0.02) 55%, transparent 78%);
         }
       `}</style>
     </div>
