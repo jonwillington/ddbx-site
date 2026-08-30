@@ -209,23 +209,31 @@ export function MoreCompanies({
 
   return (
     <section className="mt-16">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <h2 className="text-[17px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground">
+      {/* THE HEADING OUTRANKS THE CARDS.
+          It ran at the 17px in-sheet section spec, which is the size for a
+          heading sitting INSIDE the record's sheet with body copy under it.
+          Out here it introduces eight cards whose own figures are set at
+          18px+, so the label of the group was the smallest strong thing in
+          the group — everything landed on one level and the eye had nowhere
+          to start. Set at the page-foot scale it reads as a new chapter after
+          the dark band, and the cards read as its contents. */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1.5">
+        <h2 className="text-[24px] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground sm:text-[28px]">
           {subject} at other companies
         </h2>
         <Link
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground/70 underline-offset-4 hover:underline"
+          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-foreground/70 underline-offset-4 hover:underline"
           to="/companies"
         >
           Browse every company
-          <ArrowRightIcon className="h-3.5 w-3.5" />
+          <ArrowRightIcon className="h-4 w-4" />
         </Link>
       </div>
 
       {/* Two up on mobile, not eight stacked full-width cards: this sits below
           the record AND below the app band, and a 600px column of onward links
           is a wall nobody scrolls to the end of. */}
-      <ul className="mt-5 grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <ul className="mt-6 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         {/* Card shells while the index loads. Without them a 2×4 grid of cards
             appeared below the dark band and shoved the FAQ down the page —
             the one shift on this route that lands after the reader has already
@@ -234,15 +242,15 @@ export function MoreCompanies({
         {loading
           ? Array.from({ length: SHOWN }, (_, i) => (
               <li key={i}>
-                <div className="flex h-full flex-col rounded-xl border border-hairline bg-sheet px-3.5 py-3 dark:border-white/[0.07] dark:bg-surface">
+                <div className="flex h-full flex-col rounded-xl border border-hairline bg-sheet px-4 py-3.5 dark:border-white/[0.07] dark:bg-surface">
                   <span className="flex items-start gap-2.5">
-                    <Skeleton circle className="shrink-0" h={28} w={28} />
+                    <Skeleton circle className="shrink-0" h={30} w={30} />
                     <span className="min-w-0 flex-1">
-                      <Skeleton className="h-[13px] w-full" />
-                      <Skeleton className="mt-1.5 h-[13px] w-3/5" />
+                      <Skeleton className="h-[15px] w-full" />
+                      <Skeleton className="mt-1.5 h-[15px] w-3/5" />
                     </span>
                   </span>
-                  <Skeleton className="mt-2.5 h-[21px] w-20" />
+                  <Skeleton className="mt-3 h-[25px] w-20" />
                   <Skeleton className="mt-2 h-4 w-24" />
                 </div>
               </li>
@@ -269,13 +277,18 @@ export function MoreCompanies({
           return (
             <li key={c.key}>
               <Link
-                className="group flex h-full flex-col rounded-xl border border-hairline bg-sheet px-3.5 py-3 transition-colors hover:border-brand-brown/25 hover:bg-white dark:border-white/[0.07] dark:bg-surface dark:hover:border-white/15 dark:hover:bg-surface-secondary"
+                className="group flex h-full flex-col rounded-xl border border-hairline bg-sheet px-4 py-3.5 transition-colors hover:border-brand-brown/25 hover:bg-white dark:border-white/[0.07] dark:bg-surface dark:hover:border-white/15 dark:hover:bg-surface-secondary"
                 to={companyPath(c.key)}
               >
                 <span className="flex items-start gap-2.5">
-                  <CompanyLogo className="shrink-0" size={28} ticker={c.key} />
+                  <CompanyLogo className="shrink-0" size={30} ticker={c.key} />
+                  {/* The company IS the link — set as the card's own title,
+                      not as a caption over the figure. At 13.5px medium it
+                      was lighter than the "across 16 buys" line's sibling
+                      metadata and the name of the place you were about to go
+                      read as an annotation on a number. */}
                   <span
-                    className="line-clamp-2 min-w-0 flex-1 text-[13.5px] font-medium leading-snug text-foreground"
+                    className="line-clamp-2 min-w-0 flex-1 text-[15px] font-semibold leading-[1.3] tracking-[-0.012em] text-foreground"
                     title={cleanCompanyName(c.company)}
                   >
                     {cleanCompanyName(c.company)}
@@ -294,7 +307,7 @@ export function MoreCompanies({
                     to their own holdings. So it is set larger, with a rising
                     arrow in front of it, and the count moves to the line below
                     where it says what the figure is spread across. */}
-                <span className="mt-2.5 flex items-baseline justify-between gap-2">
+                <span className="mt-3 flex items-baseline justify-between gap-2">
                   <span className="flex min-w-0 items-baseline gap-1">
                     {hasValue ? (
                       <ArrowTrendingUpIcon
@@ -303,7 +316,7 @@ export function MoreCompanies({
                         strokeWidth={2.2}
                       />
                     ) : null}
-                    <span className="truncate text-[18px] font-semibold tabular-nums tracking-[-0.015em] text-foreground">
+                    <span className="truncate text-[21px] font-semibold tabular-nums tracking-[-0.02em] text-foreground">
                       {hasValue
                         ? moneyShort(
                             valueOf(c),
@@ -325,7 +338,7 @@ export function MoreCompanies({
                   ) : null}
                 </span>
 
-                <span className="mt-2 flex items-center gap-2 text-[11.5px] leading-4 text-foreground/50">
+                <span className="mt-2 flex items-center gap-2 text-[11.5px] leading-4 text-foreground/45">
                   <TickerPill ticker={displayTicker(c.key)} />
                   {secondary ? (
                     <span className="truncate">{secondary}</span>
