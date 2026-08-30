@@ -242,7 +242,6 @@ export default function CongressMemberPage() {
                 gaLabel: `Congress member · ${member.id}`,
                 headline: congressMemberCta(member.name).headline,
                 marketId: "us",
-                screenshotSlot: "analysis",
               }
             : false
         }

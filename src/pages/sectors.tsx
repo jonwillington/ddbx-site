@@ -107,7 +107,6 @@ export default function SectorsPage() {
           gaLabel: "Sectors index",
           headline: sectorCta().headline,
           marketId: market.id === "US" ? "us" : "uk",
-          screenshotSlot: "analysis",
         }}
         eyebrow="Sector hub"
         loading={rows === null}

@@ -132,7 +132,6 @@ export default function ReportsPage() {
           gaLabel: "Reports archive",
           headline: reportsCta.headline,
           marketId,
-          screenshotSlot: "recap",
         }}
         eyebrow="Monthly report"
         loading={months === null}

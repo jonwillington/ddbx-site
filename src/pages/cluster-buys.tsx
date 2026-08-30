@@ -131,7 +131,6 @@ export default function ClusterBuysPage() {
           gaLabel: "Cluster buys",
           headline: clusterBoardCta.headline,
           marketId,
-          screenshotSlot: "cluster",
         }}
         eyebrow="Leaderboard"
         loading={rows === null}

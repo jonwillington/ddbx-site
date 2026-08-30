@@ -112,7 +112,6 @@ export function WeeklyIndexPage() {
           gaLabel: "Weekly index",
           headline: CTA.headline,
           marketId: market.id === "US" ? "us" : "uk",
-          screenshotSlot: "analysis",
         }}
         eyebrow="Weekly digest"
         loading={weeks === null}
@@ -315,7 +314,6 @@ export default function WeeklyWeekPage() {
           gaLabel: `Weekly · ${week ?? ""}`,
           headline: CTA.headline,
           marketId: market.id === "US" ? "us" : "uk",
-          screenshotSlot: "analysis",
         }}
         eyebrow="Weekly digest"
         loading={status === "loading"}

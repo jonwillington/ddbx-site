@@ -529,7 +529,6 @@ export default function FilingPage({
           gaLabel: `${share ? "Share" : "Filing"} · ${id ?? ""}`,
           headline: "Every filing, the day it files.",
           marketId: fam.marketId,
-          screenshotSlot: "analysis",
         }}
         eyebrow={share ? "Shared filing" : "Disclosure"}
         // The notification, above the crumbs and the h1 — the share route's

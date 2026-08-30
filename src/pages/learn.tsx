@@ -179,7 +179,6 @@ export function LearnIndexPage() {
           ...learnIndexCta,
           gaLabel: "Learn · index",
           marketId: ctaMarketId,
-          screenshotSlot: "today",
         }}
         eyebrow={EYEBROW}
         standfirst="What the filings mean, which disclosures are actually purchases, and how much a director buying their own shares really tells you."
@@ -251,7 +250,6 @@ export default function LearnEntryPage() {
           // The UK app has no Form 4 data, so /learn/form-4 offers the US app
           // whichever domain served it.
           marketId: entry.owner === "us" ? "us" : "uk",
-          screenshotSlot: entry.ctaSlot ?? "analysis",
         }}
         eyebrow={EYEBROW}
         notice={

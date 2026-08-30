@@ -113,7 +113,6 @@ export function RolesIndexPage() {
           gaLabel: "Roles index",
           headline: cta.headline,
           marketId,
-          screenshotSlot: "today",
         }}
         eyebrow="By role"
         loading={rows === null}
@@ -327,7 +326,6 @@ export default function RolePage() {
           gaLabel: `Role · ${entry.label}`,
           headline: cta.headline,
           marketId,
-          screenshotSlot: "analysis",
         }}
         eyebrow="By role"
         loading={rows === null}

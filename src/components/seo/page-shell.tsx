@@ -24,7 +24,6 @@
  *  shell owns everything inside the content column.
  */
 import type { ReactNode } from "react";
-import type { ShotSlot } from "@/lib/app-screenshots";
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -45,7 +44,6 @@ export interface ShellCta {
   gaLabel: string;
   marketId: "uk" | "us";
   media?: CtaMedia;
-  screenshotSlot?: ShotSlot;
 }
 
 export function SeoPageShell({
@@ -130,9 +128,16 @@ export function SeoPageShell({
 
   const handoff = loading || holdSkeleton;
 
+  // The article measure applies to the DOCUMENT — furniture, standfirst,
+  // sections — not to the terminal band. The band is a conversion surface,
+  // not prose: held to the 860px measure it read as one more boxed section,
+  // so it spans the full column the rail leaves free while everything above
+  // it keeps the reading width.
+  const measure = width === "article" ? "mx-auto w-full max-w-[860px]" : "";
+
   const body = (
     <>
-      {children}
+      <div className={measure}>{children}</div>
 
       {cta ? (
         <AppCtaBand
@@ -141,21 +146,17 @@ export function SeoPageShell({
           headline={cta.headline}
           marketId={cta.marketId}
           media={cta.media}
-          screenshotSlot={cta.screenshotSlot}
         />
       ) : null}
     </>
   );
 
   return (
-    <div
-      className={`mx-auto w-full pb-16 ${
-        width === "article" ? "max-w-[860px]" : ""
-      }`}
-    >
-      {hero ? <div className="pt-2">{hero}</div> : null}
+    <div className="w-full pb-16">
+      <div className={measure}>
+        {hero ? <div className="pt-2">{hero}</div> : null}
 
-      {back ? <div className={hero ? "mt-8" : "pt-2"}>{back}</div> : null}
+        {back ? <div className={hero ? "mt-8" : "pt-2"}>{back}</div> : null}
 
       {crumbs && crumbs.length > 0 ? (
         <nav
@@ -215,11 +216,12 @@ export function SeoPageShell({
         </p>
       ) : null}
 
-      {notice ? (
-        <div className={width === "wide" ? "mt-3" : "mt-3 max-w-[62ch]"}>
-          {notice}
-        </div>
-      ) : null}
+        {notice ? (
+          <div className={width === "wide" ? "mt-3" : "mt-3 max-w-[62ch]"}>
+            {notice}
+          </div>
+        ) : null}
+      </div>
 
       {handoff ? (
         /* Cross-fade, not a cut. Both halves occupy the SAME grid cell, so the
@@ -236,7 +238,7 @@ export function SeoPageShell({
               loading ? "" : "animate-skeleton-out pointer-events-none"
             }
           >
-            {skeleton ?? null}
+            <div className={measure}>{skeleton ?? null}</div>
           </div>
         </div>
       ) : (

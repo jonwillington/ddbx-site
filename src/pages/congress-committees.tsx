@@ -89,7 +89,6 @@ export default function CongressCommitteesPage() {
           gaLabel: "Congress committees index",
           headline: congressIndexCta.headline,
           marketId: "us",
-          screenshotSlot: "analysis",
         }}
         eyebrow="Congress directory"
         loading={lanes === null}

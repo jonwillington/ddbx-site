@@ -127,7 +127,6 @@ export function MarketCapIndexPage() {
           gaLabel: "Market cap index",
           headline: cta.headline,
           marketId,
-          screenshotSlot: "today",
         }}
         eyebrow="By size"
         loading={companies === null}
@@ -275,7 +274,6 @@ export default function MarketCapBandPage() {
           gaLabel: `Market cap · ${band.label}`,
           headline: cta.headline,
           marketId,
-          screenshotSlot: "today",
         }}
         eyebrow="By size"
         loading={companies === null}

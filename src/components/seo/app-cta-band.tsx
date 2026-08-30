@@ -39,13 +39,11 @@
  */
 import type { ReactNode } from "react";
 
-import { DeviceFrame } from "@/components/download/device-frame";
 import { QrInstall } from "@/components/download/qr-install";
 import { StoreButtons } from "@/components/store-buttons";
 import { BUTTON_RADIUS } from "@/components/button";
 import { storeUrlForMarketId } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
-import { appShotSrc, SLOT_LABEL, type ShotSlot } from "@/lib/app-screenshots";
 
 export type CtaMedia = "screenshot" | "qr" | "none";
 
@@ -56,7 +54,6 @@ export function AppCtaBand({
   gaLabel,
   marketId,
   media = "screenshot",
-  screenshotSlot = "analysis",
   className = "",
 }: {
   kicker?: string;
@@ -69,12 +66,6 @@ export function AppCtaBand({
    *  broker guides, where an affiliate CTA is already competing for the click
    *  and a phone next to it is two asks in one band. */
   media?: CtaMedia;
-  /** Defaults to `analysis`, deliberately NOT `today`: the today captures are
-   *  whatever state the simulator was in, and the current ones were taken at a
-   *  weekend — so "Follow these insiders in real time" rendered next to a
-   *  "Markets closed for the weekend" empty state. Pick a slot whose screen
-   *  always has content in it. */
-  screenshotSlot?: ShotSlot;
   className?: string;
 }) {
   const platform = useDevicePlatform();
@@ -83,7 +74,6 @@ export function AppCtaBand({
   // store button below is the path, so the column simply isn't rendered.
   const showQr =
     media === "qr" && !!qrUrl && platform !== "ios" && platform !== "android";
-  const framePlatform = platform === "android" ? "android" : "ios";
   const showShot = media === "screenshot";
   const hasMedia = showQr || showShot;
 
@@ -95,7 +85,7 @@ export function AppCtaBand({
         <div
           className={
             hasMedia
-              ? "grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:gap-16"
+              ? "grid items-center gap-12 lg:grid-cols-2 lg:gap-16"
               : ""
           }
         >
@@ -130,24 +120,26 @@ export function AppCtaBand({
           </div>
 
           {showShot ? (
-            // Contained-not-blended: the shot sits in its own rounded hairline
-            // panel over a darker ground, the same window-cut-into-the-band
-            // treatment CompanyAppPitch uses, rather than a bare device frame
-            // floating on the fill.
+            // The same product photo CompanyAppPitch leads with, in the same
+            // window-cut-into-the-band treatment: a rounded hairline panel,
+            // no scrim, the shot's own near-black ground reading as part of
+            // the band. It replaced the framed simulator capture so the two
+            // conversion surfaces show one photo rather than two vintages of
+            // the app.
             //
             // Desktop only, unchanged: on mobile the stacked column would put
-            // the device frame BELOW the store buttons — a screenshot of the
-            // app under the button that installs it, pushing the fold for
-            // nothing.
-            <div className="hidden overflow-hidden rounded-3xl border border-white/[0.09] bg-black/20 px-8 py-10 lg:block">
-              <div className="mx-auto w-full max-w-[220px]">
-                <DeviceFrame
-                  alt={`ddbx ${SLOT_LABEL[screenshotSlot]} screen`}
-                  platform={framePlatform}
-                  slot={screenshotSlot}
-                  src={appShotSrc(marketId, framePlatform, screenshotSlot)}
-                />
-              </div>
+            // the photo BELOW the store buttons — a picture of the app under
+            // the button that installs it, pushing the fold for nothing.
+            <div className="hidden overflow-hidden rounded-3xl border border-white/[0.09] bg-black/20 lg:block">
+              <img
+                alt={`The ddbx ${marketId.toUpperCase()} app showing the week's insider buys`}
+                className="aspect-[5/4] h-full w-full object-cover"
+                decoding="async"
+                height={1356}
+                loading="lazy"
+                src="/download-app.jpg"
+                width={1600}
+              />
             </div>
           ) : null}
 

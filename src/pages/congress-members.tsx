@@ -97,7 +97,6 @@ export default function CongressMembersPage() {
           gaLabel: "Congress members index",
           headline: congressIndexCta.headline,
           marketId: "us",
-          screenshotSlot: "analysis",
         }}
         eyebrow="Congress directory"
         loading={members === null}

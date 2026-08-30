@@ -102,7 +102,6 @@ export default function MostActiveCompaniesPage() {
           gaLabel: "Most-active companies",
           headline: activityBoardCta.headline,
           marketId,
-          screenshotSlot: "today",
         }}
         eyebrow="Leaderboard"
         loading={rows === null}

@@ -112,7 +112,6 @@ export default function BestPerformingBuysPage() {
           gaLabel: "Best-performing buys",
           headline: performanceBoardCta.headline,
           marketId,
-          screenshotSlot: "performance",
         }}
         eyebrow="Leaderboard"
         loading={rows === null}

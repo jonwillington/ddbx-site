@@ -159,7 +159,6 @@ export default function ReportPage() {
             gaLabel: "Monthly report",
             headline: reportsCta.headline,
             marketId,
-            screenshotSlot: "recap",
           }}
           eyebrow="Monthly report"
           standfirst={
@@ -201,7 +200,6 @@ export default function ReportPage() {
           gaLabel: "Monthly report",
           headline: reportsCta.headline,
           marketId,
-          screenshotSlot: "recap",
         }}
         eyebrow="Monthly report"
         loading={!summary}

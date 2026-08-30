@@ -306,7 +306,6 @@ export default function BiggestBuysPage() {
           gaLabel: year ? `Biggest buys · ${year}` : "Biggest buys",
           headline: cta.headline,
           marketId,
-          screenshotSlot: "cluster",
         }}
         eyebrow="Leaderboard"
         loading={rows === null}

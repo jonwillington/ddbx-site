@@ -199,7 +199,6 @@ export default function CongressCommitteePage() {
           gaLabel: `Congress committee · ${slug ?? ""}`,
           headline: congressIndexCta.headline,
           marketId: "us",
-          screenshotSlot: "analysis",
         }}
         eyebrow="Committee"
         loading={lanes === null}

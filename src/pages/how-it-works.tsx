@@ -188,7 +188,6 @@ export default function HowItWorksPage() {
           body: `The checks above are applied to every ${copy.insiderTerm} purchase disclosed on ${copy.exchangeShortName}, the day it files. The app is where the results land, rated, with the reasoning attached, before the story reaches anyone else.`,
           gaLabel: "How it works",
           marketId: appMarketId,
-          screenshotSlot: "analysis",
         }}
         eyebrow={EYEBROW}
         standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is what we do with them: how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks behind that rating actually test, and where the method stops. The counts are live from the database${examples ? ", and the method is shown on real filings, each one named and linked so you can check it" : ""}.`}

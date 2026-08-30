@@ -1344,14 +1344,14 @@ export function MarketPage<W>({
           {(dealings.length > 0 || loading) && (
             <div
               ref={filterBarRef}
-              // Parks clear of the floating navbar rather than under it. The
-              // bar's sticky wrapper (layouts/default.tsx) is `top-0 px-3 pt-3
+              // Seats flush against the floating navbar's capsule. The bar's
+              // sticky wrapper (layouts/default.tsx) is `top-0 px-3 pt-3
               // md:pt-4` around an `h-14` header, so the capsule's bottom edge
-              // is at 68px on mobile and 72px from md up. The old flat 64px
-              // was ABOVE both, which is why the Winners/Chronological toggle
-              // read as tucked under the glass with no gap. These offsets add
-              // a deliberate breath below the capsule instead.
-              className="sticky top-[78px] md:top-[84px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
+              // is at 68px on mobile and 72px from md up — and these offsets
+              // match it exactly. The earlier 78/84px "breath" left a strip of
+              // ground between capsule and bar that the list's rows scrolled
+              // visibly through.
+              className="sticky top-[68px] md:top-[72px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
             >
               {/* Mobile list tabs — Winners (sentence cards from the channel
                 window) vs the chronological feed. Rides inside the sticky

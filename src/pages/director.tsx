@@ -322,7 +322,6 @@ export default function DirectorPage() {
           gaLabel: `Director · ${id ?? ""}`,
           headline: "Every filing, the day it files.",
           marketId,
-          screenshotSlot: "analysis",
         }}
         eyebrow="Insider"
         loading={!d}
