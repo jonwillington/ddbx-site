@@ -120,7 +120,7 @@ function HeroLiveGradient({ tick }: { tick: number }) {
            visibly arrives somewhere, without wrapping the stack in a
            container. */
         .hero-ping-ring {
-          position: absolute; width: 240px; height: 240px;
+          position: absolute; width: 300px; height: 300px;
           border-radius: 50%;
           border: 1.5px solid rgba(139, 96, 64, 0.4);
           opacity: 0; transform: scale(0.35);
@@ -466,9 +466,14 @@ export function MarketHero({
                   {proofLine}
                 </div>
               </div>
-              <div className="relative w-[380px] shrink-0">
+              {/* The stack renders at a real banner's 380px — its true
+                  geometry — then scales up as ONE object, so type, radius,
+                  avatar and rims keep exact notification proportions while
+                  taking the space the wide hero affords. The column is sized
+                  to the scaled result so it never crowds the message. */}
+              <div className="relative w-[460px] shrink-0 xl:w-[540px]">
                 <NotificationPing tick={radar.tick} />
-                <div className="relative">
+                <div className="relative mx-auto w-[380px] origin-center scale-[1.2] xl:scale-[1.4]">
                   <HeroNotificationStack
                     deals={radar.deals}
                     tick={radar.tick}
