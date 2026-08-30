@@ -6,13 +6,12 @@
 @theme {
   --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   /* Eyebrows, chip labels, tickers and figures (see components/chip.ts).
-     Space Mono is the drawn face — a deliberate, slightly typewriterish
-     voice rather than whatever mono the OS happens to ship, so the labels
-     read the same on every device instead of shifting between SF Mono and
-     Consolas. It carries 400 and 700 only: `font-semibold` call-sites
-     resolve up to 700, which is the intended label weight anyway. The
+     Geist Mono is the drawn face — a single deliberate voice rather than
+     whatever mono the OS happens to ship, so the labels read the same on
+     every device instead of shifting between SF Mono and Consolas. It's a
+     variable face (100–900), so `font-semibold` renders a true 600. The
      system stack stays behind it as the swap fallback. */
-  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
     Consolas, "Liberation Mono", monospace;
   /* bg-content1 shim — light mode: surface white; dark mode: warm dark surface via var() cascade */
   --color-content1: var(--content1, var(--surface));
