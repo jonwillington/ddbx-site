@@ -28,9 +28,18 @@
  *  verdict on it via the check's own `passLine`, paired with a real filing
  *  that FAILED that check; each rating carries a linked real example; and the
  *  measured section fetches two of those filings live and shows their actual
- *  alpha. The long "why this check earns its place" paragraphs survive intact
- *  but collapsed behind <details>, so the visible page is the argument and
- *  the depth is a click away rather than a wall.
+ *  alpha.
+ *
+ *  The second pass (2026-08-31) applied the design language
+ *  (investigations/2026-08-30-design-language.md) to what was still reading
+ *  as documentation. The checks are the page's argument, so they get tenet
+ *  3's treatment — full-width RowList rows, the question set LARGE, the body
+ *  as the quiet description — with the worked examples and the long "why"
+ *  folded behind one <details> per row. The thesis lost its grey panel
+ *  (panels are for proof objects, not for the message layer) and gained the
+ *  type scale instead. Everywhere else, the sentence that explains how the
+ *  page was built moved out of the visible page: the reader wants the method,
+ *  not the methodology of describing the method.
  *
  *  ---------------------------------------------------------------------------
  *  Ownership
@@ -69,6 +78,7 @@ import {
   TrackedExamples,
 } from "@/components/how-it-works/worked-examples";
 import { RatingBadge } from "@/components/rating-badge";
+import { Row, RowList } from "@/components/row-list";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
@@ -190,23 +200,29 @@ export default function HowItWorksPage() {
           marketId: appMarketId,
         }}
         eyebrow={EYEBROW}
-        standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is what we do with them: how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks behind that rating actually test, and where the method stops. The counts are live from the database${examples ? ", and the method is shown on real filings, each one named and linked so you can check it" : ""}.`}
+        standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks actually test, and where the method stops${examples ? ", shown on real filings you can check" : ""}.`}
         standfirstSize="lede"
         title={`How we rate ${
           copy.insiderTerm === "director" ? "a director’s" : "an insider’s"
         } share purchase`}
       >
-        {/* The thesis, before the machinery. A reader who wants one paragraph
-            gets it here and can stop. */}
-        <p className="mt-6 rounded-2xl border border-hairline bg-sheet px-5 py-4 text-[15px] leading-[1.6] text-foreground/85 dark:border-white/[0.07] dark:bg-surface">
+        {/* The thesis, before the machinery — set large, on clean ground.
+            It shipped as a 15px paragraph in a grey panel, which filed the
+            page's one idea as a sidebar note; the design language's tenet 4
+            (type does the work) and its corollary (panels are for proof
+            objects, and the specimen card below IS one) both point the same
+            way. A reader who wants one idea gets it here and can stop. */}
+        <p className="mt-10 max-w-[30ch] text-balance text-[22px] font-semibold leading-[1.25] tracking-[-0.022em] text-foreground sm:text-[27px]">
           {copy.insiderTermPlural.charAt(0).toUpperCase() +
             copy.insiderTermPlural.slice(1)}{" "}
           know their companies better than the market does. When one of them
-          buys shares with their own money, at the price anyone else could have
-          paid, that is worth a look. The difficulty is that the same disclosure
-          regime that surfaces those purchases also surfaces the grants, the
-          vestings and the option exercises they are buried in, so the work is
-          almost entirely in the sorting.
+          buys with their own money, that is worth a look.
+        </p>
+        <p className="mt-4 max-w-[58ch] text-[15px] leading-[1.65] text-foreground/70">
+          The difficulty is that the same disclosure regime that surfaces those
+          purchases also surfaces the grants, the vestings and the option
+          exercises they are buried in, so the work is almost entirely in the
+          sorting.
         </p>
 
         {/* The specimen — one real filing the reader meets before the
@@ -250,10 +266,13 @@ export default function HowItWorksPage() {
           title="What happens to a disclosure"
           total={CONTENTS.length}
         >
+          {/* "Counted from the live database rather than written into the
+              page" moved out of the copy: true, but it explains how the page
+              was built, and the caption under the funnel already carries the
+              provenance. */}
           <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
             Five disclosure feeds, each read in its own format, every fifteen
-            minutes through the trading day. The funnel is counted from the live
-            database rather than written into the page: of the{" "}
+            minutes through the trading day. Of the{" "}
             {count(coverage.totals.triage_decisions)} sorting decisions taken so
             far, {count(coverage.totals.triage_llm)} were made by a model and
             the rest by fixed rules.
@@ -272,7 +291,7 @@ export default function HowItWorksPage() {
                 <details className="group">
                   <summary className="flex cursor-pointer list-none items-center gap-4 py-4 [&::-webkit-details-marker]:hidden">
                     <StepNode index={i} />
-                    <h3 className="min-w-0 flex-1 text-[15.5px] font-semibold leading-[1.35] tracking-[-0.015em] text-foreground">
+                    <h3 className="min-w-0 flex-1 text-[16.5px] font-semibold leading-[1.35] tracking-[-0.018em] text-foreground">
                       {stage.title}
                     </h3>
                     <ChevronDownIcon
@@ -297,36 +316,37 @@ export default function HowItWorksPage() {
           total={CONTENTS.length}
         >
           <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            Each check is a yes or no. They are not weighted against each other
-            and there is no score to average, a purchase clears them or it
-            doesn’t, and the count of what it cleared is published on the filing
-            itself, so you can see which ones it missed rather than taking the
-            rating on trust.
-            {examples
-              ? " Under each one: how the worked example above cleared it, and a real filing that didn’t."
-              : null}
+            Each check is a yes or no. There is no score to average: a purchase
+            clears them or it doesn’t, and the count of what it cleared is
+            published on the filing itself, so you can see which ones it missed
+            rather than taking the rating on trust.
           </p>
 
-          <ol className={`mt-6 border-t ${RULE}`}>
+          {/* Tenet 3 of the design language, on the list that most deserves
+              it: the question set LARGE on the left, the plain answer quiet
+              on the right, and everything deeper — the specimen's verdict, a
+              real filing that failed, the long why — behind one fold per row.
+              The visible section is six questions a reader can take in on one
+              scroll; the earlier shape (heading, mono tag, paragraph, verdict
+              panel, second fold, six times over) was the wall this page kept
+              being accused of. */}
+          <RowList className="mt-8">
             {CHECKS.map((check, i) => (
-              <li key={check.key} className={`border-b ${RULE} py-6`}>
-                <div className="flex gap-4">
-                  <span className="mt-0.5">
-                    <StepNode index={i} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-[16px] font-semibold leading-[1.35] tracking-[-0.015em] text-foreground">
-                      {check.question}
-                    </h3>
-                    <p className="mt-1 font-mono text-[10.5px] uppercase tracking-[0.14em] text-foreground/40">
-                      {check.label}
-                    </p>
-                    <p className="mt-3 max-w-[62ch] text-[15px] leading-[1.7] text-foreground/85">
-                      {check.body}
-                    </p>
-
-                    {/* The check demonstrated: the specimen's verdict via the
-                        check's own passLine — the same machinery the
+              <Row
+                key={check.key}
+                glyph={<StepNode index={i} />}
+                kicker={check.label}
+                more={
+                  <Disclosure
+                    className="mt-4 max-w-[62ch]"
+                    label={
+                      examples
+                        ? "See it judged on real filings"
+                        : "Why this check earns its place"
+                    }
+                  >
+                    {/* The check demonstrated: the specimen's verdict via
+                        the check's own passLine — the same machinery the
                         walkthrough uses — against a real filing that failed
                         it. Contrast is the strongest form of each check. */}
                     {examples ? (
@@ -336,23 +356,19 @@ export default function HowItWorksPage() {
                         specimen={examples.specimen}
                       />
                     ) : null}
-
-                    {/* The long why, intact but folded. It was the visible
-                        paragraph that made this section eighteen paragraphs
-                        deep; the reader who wants it is one click away. */}
-                    <Disclosure
-                      className="mt-3 max-w-[62ch]"
-                      label="Why this check earns its place"
+                    <p
+                      className={`${examples ? "mt-4" : ""} text-[14px] leading-[1.7] text-foreground/65`}
                     >
-                      <p className="text-[14px] leading-[1.7] text-foreground/65">
-                        {check.detail}
-                      </p>
-                    </Disclosure>
-                  </div>
-                </div>
-              </li>
+                      {check.detail}
+                    </p>
+                  </Disclosure>
+                }
+                title={check.question}
+              >
+                {check.body}
+              </Row>
             ))}
-          </ol>
+          </RowList>
         </SeoSection>
 
         <SeoSection
@@ -376,12 +392,12 @@ export default function HowItWorksPage() {
               return (
                 <div
                   key={r.rating}
-                  className={`grid gap-x-6 gap-y-2 border-b ${RULE} py-4 sm:grid-cols-[9rem_minmax(0,1fr)]`}
+                  className={`grid gap-x-6 gap-y-2 border-b ${RULE} py-5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:py-6`}
                 >
                   <dt className="flex items-start">
                     <RatingBadge rating={r.rating as Rating} />
                   </dt>
-                  <dd className="max-w-[58ch] text-[14.5px] leading-[1.65] text-foreground/80">
+                  <dd className="max-w-[58ch] text-[15px] leading-[1.65] text-foreground/80">
                     {r.meaning}
                     {example ? <RatingExampleLine example={example} /> : null}
                   </dd>
@@ -433,16 +449,26 @@ export default function HowItWorksPage() {
           {/* The wider corpus, feed by feed. This grid lived in its own
               "What we've read" section; it is really a statement about
               sources — five feeds, five formats, five start dates — so it
-              lives with them now. */}
+              lives with them now. The caveat sentences about row semantics
+              folded: they matter, but only to the reader already studying
+              the grid, and that reader will open them. */}
           <p className="mt-8 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
             And it is not one feed but five. They are not equivalent, and the
             grid below is laid out so you can see that rather than take our word
-            for it: a US, Swedish or Dutch row is a single transaction line from
-            a filing that may hold several, and a congressional row is an amount
-            band sorted by fixed rules rather than by a model. The open-market
-            count on each card is a floor, counting only the rows a classifier
-            has confirmed were bought on the market.
+            for it.
           </p>
+          <Disclosure
+            className="mt-3 max-w-[64ch]"
+            label="How to read the grid"
+          >
+            <p className="text-[14px] leading-[1.7] text-foreground/65">
+              A US, Swedish or Dutch row is a single transaction line from a
+              filing that may hold several, and a congressional row is an amount
+              band sorted by fixed rules rather than by a model. The open-market
+              count on each card is a floor, counting only the rows a classifier
+              has confirmed were bought on the market.
+            </p>
+          </Disclosure>
 
           <FeedGrid data={coverage} />
         </SeoSection>
@@ -477,36 +503,48 @@ export default function HowItWorksPage() {
             <TrackedExamples examples={examples} marketId={market.id} />
           ) : null}
 
+          {/* The one sentence a reader must not scroll past stays visible;
+              the mechanics of the measurement fold under it. The honesty
+              claim is the argument, the price-series plumbing is the
+              appendix. */}
           <p className="mt-7 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            Both legs of every return are market closes off the same price
-            series, entry and exit, stored beside the benchmark over the
-            identical window, so what we keep is the difference against the
-            market rather than the raw direction. Rows that look wrong are
-            flagged and kept, never dropped, because quietly discarding the ugly
-            ones biases a sample in exactly the direction that flatters us. And
-            read honestly, the table above says the thirty-day evidence is real
+            Read honestly, the table above says the thirty-day evidence is real
             and the one-year evidence barely exists yet: that is the whole
             reason performance figures on this site are described as a small
             sample rather than as a track record.
           </p>
 
-          {/* Rendered only when the research database answered. The `research`
-              field is nullable precisely so this section can be absent rather
-              than claim "0 insider transactions from 0 filings", which is the
-              one thing worse than saying nothing. */}
-          {coverage.research ? (
-            <p className="mt-4 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-              The checks themselves are tuned against a much larger offline
-              panel: {approx(coverage.research.transactions)} insider
-              transactions from {approx(coverage.research.filings)} US Form 4
-              filings since {coverage.research.first_filing?.slice(0, 4)}, held
-              in a separate database and never served as content here. It is US
-              filings because that is where a corpus of this size can be had in
-              bulk; what it calibrates is the shape of the checks, which are the
-              same six in every market. A change to a check has to survive that
-              panel before it ships.
+          <Disclosure
+            className="mt-3 max-w-[64ch]"
+            label="How the measuring is done"
+          >
+            <p className="text-[14px] leading-[1.7] text-foreground/65">
+              Both legs of every return are market closes off the same price
+              series, entry and exit, stored beside the benchmark over the
+              identical window, so what we keep is the difference against the
+              market rather than the raw direction. Rows that look wrong are
+              flagged and kept, never dropped, because quietly discarding the
+              ugly ones biases a sample in exactly the direction that flatters
+              us.
             </p>
-          ) : null}
+            {/* Rendered only when the research database answered. The
+                `research` field is nullable precisely so this paragraph can
+                be absent rather than claim "0 insider transactions from 0
+                filings", which is the one thing worse than saying nothing. */}
+            {coverage.research ? (
+              <p className="mt-4 text-[14px] leading-[1.7] text-foreground/65">
+                The checks themselves are tuned against a much larger offline
+                panel: {approx(coverage.research.transactions)} insider
+                transactions from {approx(coverage.research.filings)} US Form 4
+                filings since {coverage.research.first_filing?.slice(0, 4)},
+                held in a separate database and never served as content here. It
+                is US filings because that is where a corpus of this size can be
+                had in bulk; what it calibrates is the shape of the checks,
+                which are the same six in every market. A change to a check has
+                to survive that panel before it ships.
+              </p>
+            ) : null}
+          </Disclosure>
         </SeoSection>
 
         {/* Korea only. Every other market in the product reports a purchase

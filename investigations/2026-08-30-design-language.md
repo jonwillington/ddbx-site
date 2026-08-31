@@ -93,10 +93,14 @@ sweep, and the SEO shell components in `src/components/seo/*`.
 
 ## Not done yet
 
-- Litebox-style row treatment for the hero bullets and the "what we check"
-  lists (tenet 3 has no built component yet — build it once, in
-  `src/components/`, when the first list converts).
-- The wider page sweep (download pages, how-it-works, SEO pages) against
-  the checklist above. The download hero has lost its basemap + scrim but
-  still frames its stage; NL/SE heroes now sit on the shared gradient
-  (resting, since their clock never ticks).
+- ~~Litebox-style row treatment (tenet 3 has no built component yet)~~ —
+  built 2026-08-31 as `src/components/row-list.tsx` (`RowList` + `Row`),
+  first applied to the six checks on /how-it-works. The hero bullets and
+  other selling lists still need converting to it.
+- The wider page sweep (download pages, SEO pages) against the checklist
+  above. /how-it-works done 2026-08-31: checks as tenet-3 rows with the
+  worked examples + long "why" folded, thesis out of its grey panel and
+  onto the type scale, measurement mechanics and grid caveats behind
+  <details>. The download hero has lost its basemap + scrim but still
+  frames its stage; NL/SE heroes now sit on the shared gradient (resting,
+  since their clock never ticks).
