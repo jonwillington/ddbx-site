@@ -210,12 +210,18 @@ function HeroLiveGradient({ tick }: { tick: number }) {
           align-items: center;
           padding: 40px 44px;
         }
+        /* Positioned and clipped: the arrival ripple expands from behind the
+           alert to ~645px, and without a clip here it washed across the
+           hairline into the message half. The demo half is the screen the
+           alert arrives on; the ripple stays on it. */
         .hero-card-demo {
+          position: relative;
+          overflow: hidden;
           display: flex;
           flex: none;
           flex-direction: column;
           justify-content: center;
-          gap: 8px;
+          gap: 12px;
           width: 516px;
           padding: 28px;
           border-left: 1px solid var(--color-hairline);
@@ -233,6 +239,12 @@ function HeroLiveGradient({ tick }: { tick: number }) {
            believable iOS banner (~460px); wider and the notification stops
            reading as a banner and starts reading as a toolbar. */
         .hero-alert-col { width: 100%; }
+        /* The stack reserves a tail under its rims (so the deepest rim's
+           shadow clears whatever sits beneath); here the chart sits beneath,
+           and taken at face value that tail made the stack-to-chart gap
+           twice the chart-to-bar gap. Pulled back so the three objects run
+           at one rhythm. */
+        .hero-alert-col { margin-bottom: -14px; }
 
         /* Steps keep the MESSAGE half above ~400px. The headline is the page's
            <h1> at 64px, and a market with long words in it (Congress) starts
