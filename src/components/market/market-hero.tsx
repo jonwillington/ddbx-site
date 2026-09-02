@@ -1,13 +1,15 @@
 /** Shared hero section — desktop is deliberately as simple as mobile.
  *
  *  App markets (UK/US/Congress): the message column (headline, bullets,
- *  CTAs, live proof line) on the left, and the live notification stack —
- *  bare, big, badge avatar and all, exactly the object mobile leads with —
- *  on the right. No container panel, no map, no logo queue: the earlier
- *  contained-instrument passes proved every frame put around the stack
- *  competed with it. What keeps the header alive instead is the backdrop:
- *  a soft warm gradient that morphs in time with the notification clock, so
- *  each alert landing visibly moves the light (`HeroLiveGradient`).
+ *  CTAs, live proof line) on the left, and on the right a run of success
+ *  stories — real filings ddbx surfaced, each told in three beats: the alert
+ *  lands, the chart draws what the shares did next, and the outcome stamps
+ *  in ("+135% in 107 days"). Mobile shows the same stories without the
+ *  chart: the alert, then the outcome as a line of text beneath it
+ *  (`HeroOutcomeLine`). What keeps the header alive around them is the
+ *  backdrop: a soft warm gradient that morphs in time with the notification
+ *  clock, so each alert landing visibly moves the light
+ *  (`HeroLiveGradient`).
  *
  *  Non-app markets (NL/SE) run the same message layer, centred, over the
  *  same gradient resting on its first phase (their clock never ticks).
@@ -32,6 +34,7 @@ import { Link } from "react-router-dom";
 
 import { useDealRadar } from "./hero-deal-radar";
 import { HeroNotificationStack } from "./hero-notification-stack";
+import { HeroOutcomeLine } from "./hero-outcome-line";
 import { HeroPriceChart } from "./hero-price-chart";
 
 import {
@@ -618,9 +621,10 @@ export function MarketHero({
             {/* Desktop: message column (left) beside the showcase panel
                 (right), which is the demonstration the page exists to make.
                 Inside the panel, the price the director bought into draws
-                itself left to right, and the instant the line reaches the
-                disclosure the notification lands next to it. One clock, two
-                halves of one event.
+                itself left to right; the instant the line reaches the
+                disclosure the notification lands next to it; then the line
+                draws on through what followed and the outcome stamps in
+                under it. One clock, one story per cycle.
 
                 The panel is the only frame in the hero, and it earns one by
                 holding two objects that have to read as a single instrument;
@@ -702,9 +706,12 @@ export function MarketHero({
 
             {/* Single column: notification scroller on top, then the centred
                 headline. Used on mobile and on the mid-width desktop range
-                before the two-column kicks in. On mobile the floating download
-                bar handles installs; from md up (where that bar is hidden) the
-                download CTA below stands in. */}
+                before the two-column kicks in. There is no chart here, so
+                the story's last beat is a line of text under the alert —
+                "Up 135% in 107 days since the alert" — landing on the same
+                clock. On mobile the floating download bar handles installs;
+                from md up (where that bar is hidden) the download CTA below
+                stands in. */}
             <div
               className={`m-auto flex ${centeredHide} flex-col items-center gap-5 md:gap-7 text-center`}
             >
@@ -722,6 +729,13 @@ export function MarketHero({
                     deals={radar.deals}
                     tick={Math.max(radar.tick, 0)}
                   />
+                  {radar.landed && (
+                    <HeroOutcomeLine
+                      className="-mt-3"
+                      deal={radar.deals[radar.activeIndex]}
+                      tick={radar.tick}
+                    />
+                  )}
                 </div>
               </div>
               {headlineBlock}

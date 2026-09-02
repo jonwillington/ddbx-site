@@ -1,8 +1,10 @@
 /** Shared clock for the hero "deal radar".
  *
- *  One cycle is one deal, and it has two beats rather than one. The price
- *  chart starts drawing at the top of the cycle; `DRAW_MS` later the line
- *  reaches the disclosure and the notification lands. Everything that reacts
+ *  One cycle is one success story, in three beats. The price chart starts
+ *  drawing at the top of the cycle; `DRAW_MS` later the line reaches the
+ *  disclosure and the notification lands; `POST_MS` after that the
+ *  continuation has drawn what the shares did next and the outcome stamps
+ *  in ("+135% in 107 days"); then the whole thing holds to be read. Everything that reacts
  *  to an alert arriving — the stack, the arrival ripple, the phase advance of
  *  the header gradient — hangs off `tick`, which only moves on that second
  *  beat, so the alert cannot drift away from the moment on the chart that
@@ -31,10 +33,12 @@ import { dealsForMarket, type HeroDeal } from "./hero-deal-data";
  *  the cycle, not most of the way through it. The wipe eases out, so the line
  *  snaps across and settles onto the buy rather than trundling. */
 export const DRAW_MS = 1150;
-/** Beat two, part one: the muted continuation past the buy. */
-export const POST_MS = 850;
-/** Beat two, part two: the notification holds still, to be read. The sample
- *  disclosures are the hero's sales pitch, and unread copy is wasted copy. */
+/** Beat two: the continuation past the alert — what the shares did next.
+ *  Slower than the run-up, because this is the part that sells: the line
+ *  climbing is the story, and it should be watchable, not a flick. */
+export const POST_MS = 1400;
+/** Beat three: alert and outcome hold still, to be read. The disclosures are
+ *  the hero's sales pitch, and unread copy is wasted copy. */
 export const HOLD_MS = 4200;
 export const CYCLE_MS = DRAW_MS + POST_MS + HOLD_MS;
 

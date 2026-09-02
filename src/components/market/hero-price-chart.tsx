@@ -1,11 +1,13 @@
-/** The price the director bought INTO, drawn as it happened.
+/** One success story, drawn as it happened: the price the director bought
+ *  into, the alert, and what the shares did next.
  *
- *  The hero's left half is the message; this is the right half's first
- *  object. It draws a curated price history left to right, and the instant
- *  the line reaches the disclosure the notification beside it lands — same
- *  clock, one event (see `useDealRadar`). That pairing is the whole pitch:
- *  the alert isn't a feed item, it's the moment a director stepped in at a
- *  price you can see.
+ *  The hero's left half is the message; this is the right half's proof. It
+ *  draws the real closes left to right, and the instant the line reaches the
+ *  disclosure the notification beside it lands — same clock, one event (see
+ *  `useDealRadar`). Then the continuation draws on in the positive colour,
+ *  and when it reaches the end the outcome stamps in under the plot: "+135%
+ *  in 107 days". That three-beat arc is the whole pitch — you got the alert,
+ *  this is what followed, this is what it was worth.
  *
  *  It renders as a card nested inside the showcase panel — a curved thing in
  *  a curved thing — so the chart reads as an instrument the panel is holding
@@ -49,13 +51,13 @@ import type { HeroDeal } from "./hero-deal-data";
 
 import { useId, useLayoutEffect, useRef, useState } from "react";
 
-import { alertIndexOf } from "./hero-deal-data";
+import { alertIndexOf, formatHold, outcomeOf } from "./hero-deal-data";
 import { DRAW_MS, POST_MS } from "./hero-deal-radar";
 
 /** Inset from the measured plot box, in px. Top keeps the marker and the
  *  line's extremes off the grid's edge; the bottom seats the event labels
- *  under the plot — "The buy" on ordinary filings, "Traded"/"Filed" on
- *  Congress ones — so every chart is self-captioned at the point itself. */
+ *  under the plot — "The alert" on ordinary filings, "Traded"/"Filed" on a
+ *  late Congress one — so every chart is self-captioned at the point itself. */
 const INSET_X = 3;
 const INSET_T = 12;
 const INSET_B = 24;
@@ -155,28 +157,22 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
   const buyPt = pts[deal.buyIndex];
   const floor = h - INSET_B;
 
-  // The since-figure: the move from the alert to the end of the window, i.e.
-  // the muted continuation the reader is looking at, as a number. Derived
-  // from the drawn series and floored toward zero so the chart never claims
-  // more than it shows.
-  const sincePct = Math.trunc(
-    ((deal.series[deal.series.length - 1] - deal.series[alertIdx]) /
-      deal.series[alertIdx]) *
-      100,
-  );
+  // The outcome: the continuation the reader is watching, as a number, plus
+  // how long it took. Derived from the drawn series so the stamp never
+  // claims more than the line shows.
+  const { pct, days } = outcomeOf(deal);
+  const up = pct > 0;
 
   const pre = pathFrom(pts.slice(0, alertIdx + 1));
   const post = pathFrom(pts.slice(alertIdx));
+  const lastPt = pts[pts.length - 1];
   const area = `${pre} L${alertPt.x.toFixed(2)} ${floor} L${INSET_X} ${floor} Z`;
+  const postArea = `${post} L${lastPt.x.toFixed(2)} ${floor} L${alertPt.x.toFixed(2)} ${floor} Z`;
 
   // The trade marker lands when the drawing line passes it, which is the end
   // of the draw everywhere except Congress, where it's partway through.
   const buyDelay = twoMarkers ? (DRAW_MS * deal.buyIndex) / alertIdx : DRAW_MS;
-  const caption = deal.chartLabel
-    ? { label: deal.chartLabel, tint: "text-foreground/45" }
-    : deal.buyStyle
-      ? CAPTION[deal.buyStyle]
-      : null;
+  const caption = deal.buyStyle ? CAPTION[deal.buyStyle] : null;
 
   return (
     <figure
@@ -194,6 +190,9 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
           /* Brand ink, not a directional green: the line must not pre-empt
              the outcome the copy declines to claim. */
           --hpc-line: var(--color-brand-brown);
+          /* What followed the alert. Positive only when the outcome is. */
+          --hpc-after: ${up ? "var(--color-positive)" : "var(--color-brand-brown)"};
+          --hpc-after-opacity: ${up ? 1 : 0.4};
           /* The card's own fill. Marker rings use it, so a marker sitting on
              the line reads as punched out of it rather than outlined. */
           --hpc-fill: #fffdfa;
@@ -204,6 +203,7 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
         }
         :is(.dark) .hpc {
           --hpc-line: var(--color-brand-amber);
+          --hpc-after: ${up ? "var(--color-positive)" : "var(--color-brand-amber)"};
           /* One step up from the recessed panel behind it, so the nesting
              reads as a card on a surface rather than a hole in a hole. */
           --hpc-fill: oklch(22.5% 0.021 55);
@@ -253,16 +253,30 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
           animation: hpc-fade 360ms ease-out var(--hpc-buy-delay) forwards;
         }
         .hpc-fade-alert { animation-delay: var(--hpc-draw); }
-        /* The since-figure waits for the muted continuation to finish
-           drawing — show what followed, then say it. */
-        .hpc-fade-since {
-          animation-delay: calc(var(--hpc-draw) + var(--hpc-post));
-        }
         @keyframes hpc-fade { to { opacity: 1; } }
+        /* The fill under the continuation ramps in with its wipe, for the
+           same reason the run-up's does (a hard leading edge on a filled
+           shape reads as a cut). */
+        .hpc-area-post {
+          opacity: 0;
+          animation: hpc-area var(--hpc-post) ease-in var(--hpc-draw) forwards;
+        }
+        /* The outcome stamps in the moment the continuation finishes drawing
+           — show what followed, then say it. A settle rather than a fade, so
+           it lands like the notification did. */
+        .hpc-stamp {
+          opacity: 0;
+          animation: hpc-stamp 420ms cubic-bezier(0.22, 1, 0.36, 1)
+                     calc(var(--hpc-draw) + var(--hpc-post)) forwards;
+        }
+        @keyframes hpc-stamp {
+          0%   { opacity: 0; transform: translateY(5px) scale(0.94); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
 
         @media (prefers-reduced-motion: reduce) {
           .hpc-wipe, .hpc-wipe-post { transform: scaleX(1); animation: none; }
-          .hpc-area, .hpc-pop, .hpc-fade {
+          .hpc-area, .hpc-area-post, .hpc-pop, .hpc-fade, .hpc-stamp {
             opacity: 1; transform: none; animation: none;
           }
         }
@@ -292,6 +306,18 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
             <linearGradient id={`fill${uid}`} x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="var(--hpc-line)" stopOpacity="0.2" />
               <stop offset="100%" stopColor="var(--hpc-line)" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id={`after${uid}`} x1="0" x2="0" y1="0" y2="1">
+              <stop
+                offset="0%"
+                stopColor="var(--hpc-after)"
+                stopOpacity={up ? 0.18 : 0.08}
+              />
+              <stop
+                offset="100%"
+                stopColor="var(--hpc-after)"
+                stopOpacity="0"
+              />
             </linearGradient>
             <clipPath id={`pre${uid}`}>
               <rect
@@ -332,15 +358,22 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
             })}
           </g>
 
-          {/* What happened next: same hue, turned down, no figure attached. */}
+          {/* What happened next — the story's second beat. Drawn in the
+              positive colour with its own fill when the outcome is positive,
+              muted ink when it isn't. */}
           <g clipPath={`url(#post${uid})`}>
+            <path
+              className="hpc-area-post"
+              d={postArea}
+              fill={`url(#after${uid})`}
+            />
             <path
               d={post}
               fill="none"
-              stroke="var(--hpc-line)"
+              stroke="var(--hpc-after)"
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeOpacity="0.4"
+              strokeOpacity="var(--hpc-after-opacity)"
               strokeWidth="2"
             />
           </g>
@@ -384,9 +417,9 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
           />
 
           {/* Ordinary filings caption the marker at the point itself, the way
-              Congress charts label "Traded"/"Filed" — the moment the panel
-              exists to show shouldn't need a legend lookup. Clamped so a buy
-              near the window's edge keeps its label on the plot. */}
+              late Congress charts label "Traded"/"Filed" — the moment the
+              panel exists to show shouldn't need a legend lookup. Clamped so
+              a buy near the window's edge keeps its label on the plot. */}
           {!twoMarkers && (
             <text
               className="hpc-fade hpc-fade-alert"
@@ -397,7 +430,7 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
               x={Math.min(Math.max(buyPt.x, 18), w - 18)}
               y={floor + 20}
             >
-              The buy
+              The alert
             </text>
           )}
 
@@ -451,28 +484,36 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
         </svg>
       </div>
 
-      {/* Legend. The markers are captioned on the plot itself, so all that's
-          left to explain is the muted continuation — and the since-figure
-          says what it added up to. The figure is the payoff of the whole
-          demo (the alert was worth acting on), so it's the one thing here
-          allowed a colour. */}
-      <div className="mt-2 flex items-center gap-3.5 text-[9.5px] font-medium uppercase tracking-wider text-foreground/40">
+      {/* The outcome — the story's last beat, and the one thing here allowed
+          a colour. Left, the legend for the continuation; right, what it
+          added up to and how long it took, stamped in when the line reaches
+          the end. The figure is the payoff of the whole demo (the alert was
+          worth acting on), so it is the largest type in the card. */}
+      <div className="mt-2 flex items-center gap-3 text-[9.5px] font-medium uppercase tracking-wider text-foreground/40">
         <span className="flex items-center gap-1.5">
           <span
             aria-hidden
             className="h-[2px] w-3.5 rounded-full"
-            style={{ background: "var(--hpc-line)", opacity: 0.4 }}
+            style={{
+              background: "var(--hpc-after)",
+              opacity: "var(--hpc-after-opacity)",
+            }}
           />
-          Since
+          Since the alert
         </span>
-        {sincePct !== 0 && (
-          <span
-            className={`hpc-fade hpc-fade-since ml-auto font-mono text-[10.5px] font-semibold tracking-wide ${
-              sincePct > 0 ? "text-positive" : "text-foreground/50"
-            }`}
-          >
-            {sincePct > 0 ? "+" : ""}
-            {sincePct}%
+        {pct !== 0 && (
+          <span className="hpc-stamp ml-auto flex items-baseline gap-1.5 normal-case tracking-normal">
+            <span
+              className={`font-mono text-[15px] font-semibold tabular-nums leading-none ${
+                up ? "text-positive" : "text-foreground/60"
+              }`}
+            >
+              {up ? "+" : ""}
+              {pct}%
+            </span>
+            <span className="text-[11px] font-medium text-foreground/55">
+              in {formatHold(days)}
+            </span>
           </span>
         )}
       </div>
