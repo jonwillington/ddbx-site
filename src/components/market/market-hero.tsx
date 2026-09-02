@@ -34,7 +34,7 @@ import { Link } from "react-router-dom";
 
 import { useDealRadar } from "./hero-deal-radar";
 import { HeroNotificationStack } from "./hero-notification-stack";
-import { HeroOutcomeLine } from "./hero-outcome-line";
+import { HeroOutcomeBar, HeroOutcomeLine } from "./hero-outcome-line";
 import { HeroPriceChart } from "./hero-price-chart";
 
 import {
@@ -623,8 +623,8 @@ export function MarketHero({
                 Inside the panel, the price the director bought into draws
                 itself left to right; the instant the line reaches the
                 disclosure the notification lands next to it; then the line
-                draws on through what followed and the outcome stamps in
-                under it. One clock, one story per cycle.
+                draws on through what followed and the outcome stamps in on
+                the full-width bar beneath. One clock, one story per cycle.
 
                 The panel is the only frame in the hero, and it earns one by
                 holding two objects that have to read as a single instrument;
@@ -700,6 +700,15 @@ export function MarketHero({
                       deal={radar.deals[radar.chartIndex]}
                     />
                   </div>
+                  {/* The payoff, full width under the chart: keyed with it
+                      so the pair re-mount together and the bar stamps in
+                      the moment the continuation finishes drawing. */}
+                  <div className="relative z-10">
+                    <HeroOutcomeBar
+                      key={radar.cycle}
+                      deal={radar.deals[radar.chartIndex]}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -731,7 +740,7 @@ export function MarketHero({
                   />
                   {radar.landed && (
                     <HeroOutcomeLine
-                      className="-mt-3"
+                      className="mt-3"
                       deal={radar.deals[radar.activeIndex]}
                       tick={radar.tick}
                     />

@@ -5,8 +5,8 @@
  *  draws the real closes left to right, and the instant the line reaches the
  *  disclosure the notification beside it lands — same clock, one event (see
  *  `useDealRadar`). Then the continuation draws on in the positive colour,
- *  and when it reaches the end the outcome stamps in under the plot: "+135%
- *  in 107 days". That three-beat arc is the whole pitch — you got the alert,
+ *  and when it reaches the end the outcome stamps in on the bar beneath
+ *  the card (`HeroOutcomeBar`): "+135% in 107 days". That three-beat arc is the whole pitch — you got the alert,
  *  this is what followed, this is what it was worth.
  *
  *  It renders as a card nested inside the showcase panel — a curved thing in
@@ -51,7 +51,7 @@ import type { HeroDeal } from "./hero-deal-data";
 
 import { useId, useLayoutEffect, useRef, useState } from "react";
 
-import { alertIndexOf, formatHold, outcomeOf } from "./hero-deal-data";
+import { alertIndexOf, outcomeOf } from "./hero-deal-data";
 import { DRAW_MS, POST_MS } from "./hero-deal-radar";
 
 /** Inset from the measured plot box, in px. Top keeps the marker and the
@@ -157,11 +157,9 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
   const buyPt = pts[deal.buyIndex];
   const floor = h - INSET_B;
 
-  // The outcome: the continuation the reader is watching, as a number, plus
-  // how long it took. Derived from the drawn series so the stamp never
-  // claims more than the line shows.
-  const { pct, days } = outcomeOf(deal);
-  const up = pct > 0;
+  // Whether the continuation may take the positive colour: only when the
+  // outcome the bar beneath states is itself positive.
+  const up = outcomeOf(deal).pct > 0;
 
   const pre = pathFrom(pts.slice(0, alertIdx + 1));
   const post = pathFrom(pts.slice(alertIdx));
@@ -261,22 +259,9 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
           opacity: 0;
           animation: hpc-area var(--hpc-post) ease-in var(--hpc-draw) forwards;
         }
-        /* The outcome stamps in the moment the continuation finishes drawing
-           — show what followed, then say it. A settle rather than a fade, so
-           it lands like the notification did. */
-        .hpc-stamp {
-          opacity: 0;
-          animation: hpc-stamp 420ms cubic-bezier(0.22, 1, 0.36, 1)
-                     calc(var(--hpc-draw) + var(--hpc-post)) forwards;
-        }
-        @keyframes hpc-stamp {
-          0%   { opacity: 0; transform: translateY(5px) scale(0.94); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
         @media (prefers-reduced-motion: reduce) {
           .hpc-wipe, .hpc-wipe-post { transform: scaleX(1); animation: none; }
-          .hpc-area, .hpc-area-post, .hpc-pop, .hpc-fade, .hpc-stamp {
+          .hpc-area, .hpc-area-post, .hpc-pop, .hpc-fade {
             opacity: 1; transform: none; animation: none;
           }
         }
@@ -484,38 +469,18 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
         </svg>
       </div>
 
-      {/* The outcome — the story's last beat, and the one thing here allowed
-          a colour. Left, the legend for the continuation; right, what it
-          added up to and how long it took, stamped in when the line reaches
-          the end. The figure is the payoff of the whole demo (the alert was
-          worth acting on), so it is the largest type in the card. */}
-      <div className="mt-2 flex items-center gap-3 text-[9.5px] font-medium uppercase tracking-wider text-foreground/40">
-        <span className="flex items-center gap-1.5">
-          <span
-            aria-hidden
-            className="h-[2px] w-3.5 rounded-full"
-            style={{
-              background: "var(--hpc-after)",
-              opacity: "var(--hpc-after-opacity)",
-            }}
-          />
-          Since the alert
-        </span>
-        {pct !== 0 && (
-          <span className="hpc-stamp ml-auto flex items-baseline gap-1.5 normal-case tracking-normal">
-            <span
-              className={`font-mono text-[15px] font-semibold tabular-nums leading-none ${
-                up ? "text-positive" : "text-foreground/60"
-              }`}
-            >
-              {up ? "+" : ""}
-              {pct}%
-            </span>
-            <span className="text-[11px] font-medium text-foreground/55">
-              in {formatHold(days)}
-            </span>
-          </span>
-        )}
+      {/* Legend for the continuation. The figures it adds up to live on
+          the outcome bar beneath the card, where they get the width. */}
+      <div className="mt-2 flex items-center gap-1.5 text-[9.5px] font-medium uppercase tracking-wider text-foreground/40">
+        <span
+          aria-hidden
+          className="h-[2px] w-3.5 rounded-full"
+          style={{
+            background: "var(--hpc-after)",
+            opacity: "var(--hpc-after-opacity)",
+          }}
+        />
+        Since the alert
       </div>
     </figure>
   );
