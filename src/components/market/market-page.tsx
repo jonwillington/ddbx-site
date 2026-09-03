@@ -59,6 +59,7 @@ import {
   weekendBetween,
 } from "./market-utils";
 
+import { useTabSwipe } from "@/lib/use-tab-swipe";
 import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
 import { BrokerReviewsPromo } from "@/components/brokers/broker-reviews-promo";
 import { Skeleton } from "@/components/skeleton";
@@ -141,6 +142,12 @@ export function MarketPage<W>({
    *  filter bar's viewMode above. */
   const [mobileTab, setMobileTab] = useState<"winners" | "chronological">(
     config.mobileWinners ? "winners" : "chronological",
+  );
+  /** Swipe between the two mobile panes — the pill above them reads as a
+   *  native segmented control, and those swipe. Spread onto each pane. */
+  const tabSwipe = useTabSwipe(
+    () => config.mobileWinners && setMobileTab("chronological"),
+    () => config.mobileWinners && setMobileTab("winners"),
   );
   const [search, setSearch] = useState("");
   const [dealings, setDealings] = useState<MarketDealing<W>[]>([]);
@@ -769,7 +776,15 @@ export function MarketPage<W>({
     const el = filterBarRef.current;
 
     if (!el) return;
-    const read = () => setFilterBarHeight(el.getBoundingClientRect().height);
+    // The bar is only sticky from md up (see its className). Below that it
+    // scrolls with the page, so nothing sits between the navbar capsule and
+    // a pinned month header, and the offset must not include it.
+    const read = () =>
+      setFilterBarHeight(
+        getComputedStyle(el).position === "sticky"
+          ? el.getBoundingClientRect().height
+          : 0,
+      );
 
     read();
     const ro = new ResizeObserver(read);
@@ -1305,19 +1320,30 @@ export function MarketPage<W>({
           {(dealings.length > 0 || loading) && (
             <div
               ref={filterBarRef}
-              // Seats flush against the floating navbar's capsule. The bar's
-              // sticky wrapper (layouts/default.tsx) is `top-0 px-3 pt-3
-              // md:pt-4` around an `h-14` header, so the capsule's bottom edge
-              // is at 68px on mobile and 72px from md up — and these offsets
-              // match it exactly. The earlier 78/84px "breath" left a strip of
-              // ground between capsule and bar that the list's rows scrolled
-              // visibly through.
-              className="sticky top-[68px] md:top-[72px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
+              // Sticky from md up only. Seats flush against the floating
+              // navbar's capsule: the navbar's sticky wrapper
+              // (layouts/default.tsx) is `top-0 px-3 pt-3 md:pt-4` around an
+              // `h-14` header, so the capsule's bottom edge is at 72px from
+              // md up — and this offset matches it exactly. The earlier 84px
+              // "breath" left a strip of ground between capsule and bar that
+              // the list's rows scrolled visibly through.
+              //
+              // On a phone the bar holds only the Winners/Latest tabs, and
+              // pinned under the capsule they cost the viewport a second
+              // permanent strip (with the floating trial button pinned at the
+              // foot, a third of the screen was chrome). Nobody re-toggles
+              // the pair mid-list often enough to earn that, so on mobile the
+              // bar scrolls away with the page and the month headers below
+              // pin to the capsule alone (filterBarHeight reads 0 while the
+              // bar isn't sticky).
+              className="md:sticky md:top-[72px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
             >
-              {/* Mobile list tabs — Winners (sentence cards from the channel
-                window) vs the chronological feed. Rides inside the sticky
-                wrapper so it inherits stickiness and the measured
-                filterBarHeight keeps month-header offsets aligned. */}
+              {/* Mobile list tabs — the winners rows from the 90-day channel
+                window vs the chronological feed. Labelled by what you get,
+                not by the sort: "Chronological" is a long abstract word to a
+                first-time visitor, and "Best of 90 days" lets the winners
+                pane drop its own eyebrow. GA labels keep the original names
+                so the event series stays continuous. */}
               {config.mobileWinners && (
                 <div
                   className="flex justify-center px-4 pb-2.5 pt-3.5 md:hidden"
@@ -1326,8 +1352,16 @@ export function MarketPage<W>({
                   <div className="inline-flex rounded-full border border-separator bg-surface/40 p-1">
                     {(
                       [
-                        { id: "winners", label: "Winners" },
-                        { id: "chronological", label: "Chronological" },
+                        {
+                          id: "winners",
+                          label: "Best of 90 days",
+                          gaLabel: "Winners",
+                        },
+                        {
+                          id: "chronological",
+                          label: "Latest",
+                          gaLabel: "Chronological",
+                        },
                       ] as const
                     ).map((t) => (
                       <button
@@ -1339,7 +1373,7 @@ export function MarketPage<W>({
                             : "text-muted hover:text-foreground"
                         }`}
                         data-ga-event="cta_home_list_tab"
-                        data-ga-label={t.label}
+                        data-ga-label={t.gaLabel}
                         role="tab"
                         onClick={() => setMobileTab(t.id)}
                       >
@@ -1443,7 +1477,7 @@ export function MarketPage<W>({
               (the page fetch only reaches ~a month), so it renders
               independently of the chronological list's loading state. */}
           {config.mobileWinners && mobileTab === "winners" && (
-            <div className="animate-content-in md:hidden">
+            <div className="animate-content-in md:hidden" {...tabSwipe}>
               <WinnersSection
                 appHref={channelAppHref}
                 dealHref={channelDealHref}
@@ -1514,6 +1548,7 @@ export function MarketPage<W>({
                   ? "hidden md:block"
                   : ""
               }`}
+              {...tabSwipe}
             >
               {monthBuckets.map((month, monthIdx) => {
                 // Older months gate behind the app while discretion is on:

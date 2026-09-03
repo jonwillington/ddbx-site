@@ -22,6 +22,7 @@ import { marketContactEmail, marketForPath } from "@/lib/markets/registry";
 import { footerGroups } from "@/lib/site-nav";
 import { FooterTrail } from "@/components/footer-trail";
 import { setRailPresent } from "@/lib/rail-presence";
+import { useFloatingCtaSuppressed } from "@/lib/floating-cta";
 
 /** Shared styling for the floating mobile download CTA — solid pill, rendered
  *  as an `<a>` (direct App Store link) or a `<button>` (chooser fallback). */
@@ -428,6 +429,9 @@ export default function DefaultLayout({
    *  have their own primary mobile action (e.g. the broker "Visit" bar). */
   hideMobileCta?: boolean;
 }) {
+  // A surface with its own app ask (the winners interstitial) holds the
+  // floating trial button away while it is on screen — see lib/floating-cta.
+  const floatingCtaSuppressed = useFloatingCtaSuppressed();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -713,7 +717,13 @@ export default function DefaultLayout({
        *  stays legible. Hidden from `md` up, where the footer CTA and hero
        *  suffice. */}
       <div
-        className={`pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden ${hideMobileCta ? "hidden" : ""}`}
+        className={`pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden transition-[opacity,transform,visibility] duration-300 ease-out ${hideMobileCta ? "hidden" : ""} ${
+          // Slid away, not removed: it comes back the moment the suppressing
+          // surface scrolls off, and a button that pops in is worse than one
+          // that returns. `invisible` so the slid-away button can't be tapped
+          // through the gap.
+          floatingCtaSuppressed ? "invisible translate-y-6 opacity-0" : ""
+        }`}
       >
         <div
           aria-hidden="true"

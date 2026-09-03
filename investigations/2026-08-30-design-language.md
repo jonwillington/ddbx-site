@@ -95,8 +95,9 @@ sweep, and the SEO shell components in `src/components/seo/*`.
 
 - ~~Litebox-style row treatment (tenet 3 has no built component yet)~~ —
   built 2026-08-31 as `src/components/row-list.tsx` (`RowList` + `Row`),
-  first applied to the six checks on /how-it-works. The hero bullets and
-  other selling lists still need converting to it.
+  first applied to the six checks on /how-it-works; the mobile winners list
+  on the UK home page followed on 2026-09-03 (`winners-section.tsx`, cards →
+  rows). The hero bullets and other selling lists still need converting.
 - The wider page sweep (download pages, SEO pages) against the checklist
   above. /how-it-works done 2026-08-31: checks as tenet-3 rows with the
   worked examples + long "why" folded, thesis out of its grey panel and
