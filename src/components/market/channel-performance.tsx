@@ -5,17 +5,19 @@
 // sector list and a style race — and none of them contained a sentence. A
 // reader was handed data and left to assemble the story. This one tells it:
 //
-//   1. THE STORY — one figure ("+3.5pp ahead of the FTSE All-Share") and one
-//      paragraph that names the sample, the rated slice, both returns and the
-//      hit rate, so the numbers reconcile without the reader doing the sums.
-//   2. THE PICKS — the top performer as a sentence about a person ("Rahul
-//      Dhir, Chief Executive Officer, bought £250,000 on 12 June"), the
-//      runners-up as one plate of rows with who / how much / when under each
-//      name, and the £1,000 payoff line that was the one thing the old rail
-//      already did right.
-//   3. THE EDGE — where the outperformance came from: a sentence naming the
-//      leading sectors and at most three rows, each with its sample size, so
-//      a two-buy sector can't masquerade as a trend.
+//   1. THE STORY — one figure ("+3.5pp ahead of the FTSE All-Share"), one
+//      line naming the rated slice and both returns, and the hit rate as a
+//      row. The total sits in the eyebrow so the numbers reconcile.
+//   2. THE PICKS — one plate: the top performer with who / how much / when
+//      under its name and the £1,000 payoff line (the one thing the old rail
+//      already did right), then the runners-up as rows with the same subline.
+//   3. THE EDGE — where the outperformance came from: at most three sector
+//      rows, each with its sample size, so a two-buy sector can't masquerade
+//      as a trend.
+//
+// Kept deliberately short. A first cut told the whole story in prose and the
+// rail read as a wall of text; the words that survive are the ones a figure
+// can't carry on its own — which slice, who bought, and what £1,000 became.
 //
 // Same gating model as before. The PROOF is free (the story, the edge); the
 // ACTION — which specific stocks drove it — is shown a few deep and then
@@ -225,7 +227,10 @@ function Story({
       />
       <div className="relative">
         <div className="flex items-baseline justify-between gap-3">
-          <Eyebrow>Last {CHANNEL_WINDOW_DAYS} days</Eyebrow>
+          <Eyebrow>
+            Last {CHANNEL_WINDOW_DAYS} days · {totalBuys}{" "}
+            {totalBuys === 1 ? "buy" : "buys"}
+          </Eyebrow>
           <span className="font-mono text-[10px] text-muted tabular-nums">
             {lastUpdated ? `to ${formatDay(lastUpdated, "short")}` : ""}
           </span>
@@ -254,89 +259,75 @@ function Story({
           </p>
         )}
 
-        <p className="mt-2 text-[12px] leading-relaxed text-foreground/70">
-          <StorySentence
-            benchmarkReturnPct={benchmarkReturnPct}
-            headlineUniverse={headlineUniverse}
-            index={index}
-            picksReturnPct={picksReturnPct}
-            sampleSize={sampleSize}
-            totalBuys={totalBuys}
-          />
-        </p>
+        {picksReturnPct != null && (
+          <p className="mt-1.5 text-[12px] leading-snug text-foreground/70">
+            <StorySentence
+              benchmarkReturnPct={benchmarkReturnPct}
+              headlineUniverse={headlineUniverse}
+              picksReturnPct={picksReturnPct}
+              sampleSize={sampleSize}
+              totalBuys={totalBuys}
+            />
+          </p>
+        )}
 
         {marketBeatTotal > 0 && (
-          <HitRate
-            count={marketBeatCount}
-            index={index}
-            total={marketBeatTotal}
-          />
+          <HitRate count={marketBeatCount} total={marketBeatTotal} />
         )}
       </div>
     </section>
   );
 }
 
-/** "Directors made 110 disclosed buys. The 18 our analysis rated noteworthy
- *  are up 5.6%, against +2.1% for the FTSE All-Share." Every figure it states
- *  is one the summary carries; a missing benchmark drops its clause rather
- *  than printing a dash. */
+/** One line under the figure: "The 110 rated noteworthy are up 5.6%, vs
+ *  +2.1% for the index." The total sits in the eyebrow, the index is named
+ *  beside the figure, so the sentence only has to say which slice and what
+ *  it did. A missing benchmark drops its clause rather than printing a dash. */
 function StorySentence({
   totalBuys,
   sampleSize,
   headlineUniverse,
   picksReturnPct,
   benchmarkReturnPct,
-  index,
 }: {
   totalBuys: number;
   sampleSize: number;
   headlineUniverse: ChannelPerformanceSummary["headlineUniverse"];
-  picksReturnPct: number | null;
+  picksReturnPct: number;
   benchmarkReturnPct: number | null;
-  index: string;
 }) {
-  const Strong = ({ children }: { children: React.ReactNode }) => (
-    <span className="font-semibold tabular-nums text-foreground">
-      {children}
-    </span>
-  );
-
-  const opener = (
+  const everyBuy = headlineUniverse === "every_buy" || sampleSize === totalBuys;
+  const subject = everyBuy ? (
+    <>Equal-weighted, {totalBuys === 1 ? "it is" : "they are"}</>
+  ) : (
     <>
-      Directors made <Strong>{totalBuys}</Strong> disclosed{" "}
-      {totalBuys === 1 ? "buy" : "buys"}.
+      The{" "}
+      <span className="font-semibold tabular-nums text-foreground">
+        {sampleSize}
+      </span>{" "}
+      rated {SLICE_ADJECTIVE[headlineUniverse]}{" "}
+      {sampleSize === 1 ? "is" : "are"}
     </>
   );
 
-  if (picksReturnPct == null) return opener;
-
-  const subject =
-    headlineUniverse === "every_buy" || sampleSize === totalBuys ? (
-      <>Equal-weighted, {totalBuys === 1 ? "it is" : "they are"}</>
-    ) : (
-      <>
-        The <Strong>{sampleSize}</Strong> our analysis rated{" "}
-        {SLICE_ADJECTIVE[headlineUniverse]} {sampleSize === 1 ? "is" : "are"}
-      </>
-    );
-
   return (
     <>
-      {opener} {subject}{" "}
+      {subject}{" "}
       <span
         className={`font-semibold tabular-nums ${toneClass(picksReturnPct)}`}
       >
         {upDown(picksReturnPct)}
       </span>
-      {benchmarkReturnPct != null ? (
+      {benchmarkReturnPct != null && (
         <>
-          , against <Strong>{formatSignedPct(benchmarkReturnPct)}</Strong> for
-          the {index}.
+          , vs{" "}
+          <span className="font-semibold tabular-nums text-foreground">
+            {formatSignedPct(benchmarkReturnPct)}
+          </span>{" "}
+          for the index
         </>
-      ) : (
-        <> since.</>
       )}
+      .
     </>
   );
 }
@@ -344,15 +335,7 @@ function StorySentence({
 /** The hit rate as one hairline row: caption left, share right, a thin bar
  *  under both. Colour carries meaning — green only once more than half beat
  *  the index. */
-function HitRate({
-  count,
-  total,
-  index,
-}: {
-  count: number;
-  total: number;
-  index: string;
-}) {
+function HitRate({ count, total }: { count: number; total: number }) {
   const rate = count / total;
   const good = rate >= 0.5;
 
@@ -361,7 +344,7 @@ function HitRate({
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-[11px] text-foreground/70 tabular-nums">
           <span className="font-semibold text-foreground">{count}</span> of{" "}
-          {total} beat the {index}
+          {total} beat it
         </span>
         <span
           className={`text-[13px] font-semibold leading-none tabular-nums ${good ? "text-positive" : "text-foreground/70"}`}
@@ -370,7 +353,7 @@ function HitRate({
         </span>
       </div>
       <div
-        aria-label={`${count} of ${total} buys beat the ${index}`}
+        aria-label={`${count} of ${total} buys beat the index`}
         className="mt-1.5 h-1 overflow-hidden rounded-full bg-foreground/10"
         role="img"
       >
@@ -383,10 +366,10 @@ function HitRate({
   );
 }
 
-/** Where the outperformance came from. A sentence that names the leaders,
- *  then at most three hairline rows carrying each sector's sample size, so
- *  the reader can see when a lead rests on two buys. Sectors that trailed the
- *  index aren't an edge and don't appear. */
+/** Where the outperformance came from: at most three hairline rows, each
+ *  carrying its sector's sample size so the reader can see when a lead rests
+ *  on two buys. Sectors that trailed the index aren't an edge and don't
+ *  appear. */
 function Edge({
   sectors,
   index,
@@ -400,22 +383,12 @@ function Edge({
 
   if (leaders.length === 0) return null;
 
-  const names = leaders.map((s) => s.sector);
-  const lead =
-    names.length === 1
-      ? names[0]
-      : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-
   return (
     <section className="border-t border-hairline pt-3 dark:border-border/60">
       <div className="flex items-baseline justify-between gap-3">
         <Eyebrow>Where the edge came from</Eyebrow>
         <span className="shrink-0 text-[10px] text-muted">vs {index}</span>
       </div>
-      <p className="mt-1.5 text-[12px] leading-relaxed text-foreground/70">
-        <span className="font-semibold text-foreground">{lead}</span> did the
-        heavy lifting.
-      </p>
       <ul className="mt-2 divide-y divide-hairline/80 border-y border-hairline/80 dark:divide-border/50 dark:border-border/50">
         {leaders.map((s) => (
           <li
@@ -478,7 +451,12 @@ function Picks({
       <ul
         className={`mt-2 divide-y divide-hairline/80 overflow-hidden ${CARD_CLASS} dark:divide-border/50`}
       >
-        <HeroPick formatStake={formatStake} row={hero} onOpen={setExplained} />
+        <HeroPick
+          formatStake={formatStake}
+          formatStakeCompact={formatStakeCompact}
+          row={hero}
+          onOpen={setExplained}
+        />
 
         {rest.map((row) => (
           <PickRow
@@ -520,16 +498,18 @@ function Picks({
   );
 }
 
-/** The top pick as a sentence about a person: who bought, how much, when,
- *  and what £1,000 alongside them is worth now. The list is winners-only, so
- *  the payoff never shows a loss — same guarantee the app's plate makes. */
+/** The top pick: company and return, then who / how much / when on one
+ *  line, then the £1,000 payoff. The list is winners-only, so the payoff
+ *  never shows a loss — same guarantee the app's plate makes. */
 function HeroPick({
   row,
   formatStake,
+  formatStakeCompact,
   onOpen,
 }: {
   row: ChannelContributor;
   formatStake?: (n: number) => string;
+  formatStakeCompact?: (n: number) => string;
   onOpen: (row: ChannelContributor) => void;
 }) {
   return (
@@ -558,33 +538,31 @@ function HeroPick({
           </span>
         </span>
 
-        <span className="mt-2 block text-[12px] leading-relaxed text-foreground/70">
+        {/* Who, how much, when — one line, full width so the name fits. */}
+        <span className="mt-1.5 block truncate text-[11px] leading-tight text-foreground/70 tabular-nums">
           <span className="font-semibold text-foreground">
             {row.insiderName}
           </span>
-          {roleClause(row.insiderRole)
-            ? `, ${roleClause(row.insiderRole)},`
-            : ""}{" "}
-          bought{" "}
-          {row.value != null && formatStake ? (
-            <span className="font-semibold tabular-nums text-foreground">
-              {formatStake(row.value)}
-            </span>
-          ) : (
-            "shares"
-          )}{" "}
-          on {formatDay(row.disclosedDate)}.
-          {formatStake && (
-            <>
-              {" "}
-              {formatStake(STAKE)} alongside them is{" "}
-              <span className="font-semibold tabular-nums text-positive">
-                {formatStake(STAKE * (1 + row.returnPct))}
-              </span>{" "}
-              today.
-            </>
-          )}
+          {[
+            shortRole(row.insiderRole),
+            row.value != null && formatStakeCompact
+              ? formatStakeCompact(row.value)
+              : null,
+            formatDay(row.disclosedDate, "short"),
+          ]
+            .filter(Boolean)
+            .map((part) => ` · ${part}`)
+            .join("")}
         </span>
+
+        {formatStake && (
+          <span className="mt-2 flex items-baseline gap-1 border-t border-positive/15 pt-1.5 text-[10.5px] tabular-nums text-muted">
+            {formatStake(STAKE)} at disclosure →
+            <span className="font-semibold text-foreground">
+              {formatStake(STAKE * (1 + row.returnPct))} today
+            </span>
+          </span>
+        )}
       </button>
     </li>
   );
