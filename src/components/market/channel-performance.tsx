@@ -1,22 +1,31 @@
-// Performance tab of the right-hand channel, following the iOS Performance
-// screen's story structure: a verdict-first hero ("Beating the FTSE
-// All-Share? — Yes, by X"), then winners-only top performers with a £1,000
-// payoff line, then the supporting stats. Fed by the 90-day summary in
-// `lib/performance/channel-summary`. The gating model is deliberate:
+// Performance tab of the right-hand channel.
 //
-//   • The PROOF is free — the beating-the-index verdict, the sector
-//     leaderboard, and the contrarian/momentum style race all render in full.
-//     They're the hook: "directors beat the market, here's by how much."
-//   • The ACTION is gated — which specific stocks drove it (the contributors)
-//     is teased two-deep, then blurred behind an "open the app" CTA. That's
-//     the thing worth installing for.
+// The previous version was five widgets that each answered "did the picks
+// beat the market?" — a verdict, a pair of percentages, a hit-rate bar, a
+// sector list and a style race — and none of them contained a sentence. A
+// reader was handed data and left to assemble the story. This one tells it:
 //
-// A contributor card opens an explainer modal rather than navigating: the
-// number is the hook, but a bare "+89.4%" in a 320px rail is read long before
-// it's understood, and what it actually measures (a share price, from a
+//   1. THE STORY — one figure ("+3.5pp ahead of the FTSE All-Share") and one
+//      paragraph that names the sample, the rated slice, both returns and the
+//      hit rate, so the numbers reconcile without the reader doing the sums.
+//   2. THE PICKS — the top performer as a sentence about a person ("Rahul
+//      Dhir, Chief Executive Officer, bought £250,000 on 12 June"), the
+//      runners-up as one plate of rows with who / how much / when under each
+//      name, and the £1,000 payoff line that was the one thing the old rail
+//      already did right.
+//   3. THE EDGE — where the outperformance came from: a sentence naming the
+//      leading sectors and at most three rows, each with its sample size, so
+//      a two-buy sector can't masquerade as a trend.
+//
+// Same gating model as before. The PROOF is free (the story, the edge); the
+// ACTION — which specific stocks drove it — is shown a few deep and then
+// gated behind the app. The contrarian/momentum race no longer renders here:
+// it's the full page's job, and in a 320px rail it was a fifth "vs" frame.
+//
+// A pick opens an explainer modal rather than navigating: a bare "+70.2%" is
+// read before it's understood, and what it measures (a share price, from a
 // disclosed buy, with no position held by anyone here) has to be said before
-// it can be trusted. The modal says it, then offers the app. The filing itself
-// is still one click away from inside it.
+// it can be trusted. The modal says it, then offers the app.
 
 import type {
   ChannelContributor,
@@ -38,11 +47,15 @@ interface Props {
   discretionEnabled: boolean;
   /** App Store URL for this market. */
   appHref: string;
-  /** Index the live alpha is measured against — names the verdict question.
+  /** Index the live alpha is measured against — named throughout the story.
    *  Falls back to "the market". */
   benchmarkLabel?: string;
-  /** Market-currency money formatter; enables the top pick's payoff line. */
+  /** Market-currency money formatter (major units); enables the payoff line
+   *  and the "bought £250,000" clause. */
   formatStake?: (n: number) => string;
+  /** Compact variant ("£48k") for the runners-up sublines. Falls back to
+   *  `formatStake`. */
+  formatStakeCompact?: (n: number) => string;
   /** Route for a contributor's deal detail. UK has a dedicated /dealings/:id
    *  page (the default); other markets deep-link via their own `?deal=` param
    *  so a US pick doesn't land on the UK page. */
@@ -53,27 +66,27 @@ interface Props {
  *  default ("Bought for £1,000 → now worth …"). */
 const STAKE = 1000;
 
-/** Rows that stay unblurred before the contributors CTA kicks in. Generous on
- *  purpose — recent good picks are the hook, so let more of them breathe
- *  before the app gate. */
+/** Picks that stay visible before the app gate. Generous on purpose — recent
+ *  good picks are the hook, so let them breathe before the ask. */
 const UNBLURRED = 4;
 
-/** The losing side of the picks-vs-market pair dims to this. */
-const MUTED_OPACITY = 0.45;
+/** Sectors the edge section lists. Three is what the sentence can name. */
+const MAX_EDGE_SECTORS = 3;
 
-const STYLE_LABEL: Record<
-  ChannelPerformanceSummary["styles"][number]["kind"],
+/** Honest adjective for the rated slice the headline reflects — "the 18 our
+ *  analysis rated noteworthy". `every_buy` takes a different sentence. */
+const SLICE_ADJECTIVE: Record<
+  ChannelPerformanceSummary["headlineUniverse"],
   string
 > = {
-  contrarian: "Contrarian",
-  momentum: "Momentum",
-  neutral: "Neutral",
+  every_buy: "",
+  suggested: "worth watching",
+  significant: "significant",
+  noteworthy: "noteworthy",
 };
 
-// The number on the faux row shown blurred above the contributors CTA — never
-// a real holding, so the gated picks aren't sitting in the DOM for a
-// "view source" peek. One row is enough to say "the list continues".
-const DECOY_RETURN = 0.184;
+const CARD_CLASS =
+  "rounded-2xl border border-hairline bg-white/45 shadow-[0_12px_32px_-28px_rgba(61,43,26,0.7)] dark:border-border/70 dark:bg-surface-secondary/35";
 
 function toneClass(ratio: number | null): string {
   if (ratio == null) return "text-muted";
@@ -81,27 +94,66 @@ function toneClass(ratio: number | null): string {
   return ratio >= 0 ? "text-positive" : "text-negative";
 }
 
-// Comparison-aware tint for the picks-vs-market pair: the side that's more
-// extreme in its direction stays saturated, the other dims. Mixed signs stay
-// saturated since colour alone separates them. Port of the /portfolio
-// hero-card `tint` (itself a port of iOS `heroTint`).
-function pairTone(
-  value: number | null,
-  other: number | null,
-): { className: string; muted: boolean } {
-  if (value == null || other == null) {
-    return { className: toneClass(value), muted: false };
-  }
-  const valuePos = value >= 0;
-  const otherPos = other >= 0;
-  const mutedSameDir = valuePos
-    ? value < other // both up: smaller gain dims
-    : value > other; // both down: shallower loss dims
+/** "12 June" (or "12 Jun") from an ISO `YYYY-MM-DD`, formatted in UTC so the
+ *  day never drifts. */
+function formatDay(iso: string, style: "long" | "short" = "long"): string {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: style,
+    timeZone: "UTC",
+  });
+}
 
-  return {
-    className: toneClass(value),
-    muted: valuePos === otherPos && mutedSameDir,
-  };
+/** "up 5.6%" / "down 2.1%" / "flat" — the story reads returns as words, not
+ *  signed figures, because "+5.6%" in a sentence is a table cell that got
+ *  lost. */
+function upDown(ratio: number): string {
+  const pct = Math.abs(ratio * 100).toFixed(1);
+
+  if (Math.abs(ratio) < 0.0005) return "flat";
+
+  return ratio > 0 ? `up ${pct}%` : `down ${pct}%`;
+}
+
+/** Compact role for the runners-up sublines, where "Non-Executive Director"
+ *  would eat the row. Unknown titles pass through when short, otherwise the
+ *  name is used instead. A PCA ("Person Closely Associated to Chair" — a
+ *  spouse, a family trust) is matched before "chair" so it isn't crowned. */
+const PCA_RE = /person closely associated(?:\s+(?:to|with)\s+(?:the\s+)?)?/i;
+
+const ROLE_SHORT: [RegExp, string][] = [
+  [PCA_RE, "Associate"],
+  [/chief executive|\bceo\b/i, "CEO"],
+  [/chief financial|finance director|\bcfo\b/i, "CFO"],
+  [/chief operating|\bcoo\b/i, "COO"],
+  [/chair/i, "Chair"],
+  [/non[- ]exec|\bned\b/i, "Non-exec"],
+  [/director/i, "Director"],
+];
+
+function shortRole(role?: string): string | undefined {
+  if (!role) return undefined;
+  for (const [re, short] of ROLE_SHORT) if (re.test(role)) return short;
+
+  return role.length <= 14 ? role : undefined;
+}
+
+/** The role as a clause the hero sentence can carry: "Rahul Dhir, Chief
+ *  Executive Officer, bought …". A PCA becomes "an associate of the Chair"
+ *  because the regulatory label means nothing to a reader; anything else
+ *  keeps its full title unless it's too long for a 320px rail, when the
+ *  compact form stands in or the clause is dropped. */
+function roleClause(role?: string): string | undefined {
+  if (!role) return undefined;
+  const pca = role.match(PCA_RE);
+
+  if (pca) {
+    const rest = role.slice(pca.index! + pca[0].length).trim();
+
+    return rest ? `an associate of the ${rest}` : "an associate of a director";
+  }
+
+  return role.length <= 28 ? role : shortRole(role);
 }
 
 export function ChannelPerformance({
@@ -110,326 +162,297 @@ export function ChannelPerformance({
   appHref,
   benchmarkLabel,
   formatStake,
+  formatStakeCompact,
   dealHref,
 }: Props) {
-  return (
-    <div className="px-5 lg:px-4 py-3.5 space-y-3">
-      <HeadlineAlpha benchmarkLabel={benchmarkLabel} summary={summary} />
+  const index = benchmarkLabel ?? "the market";
 
-      <Contributors
+  return (
+    <div className="px-5 lg:px-4 py-3.5 space-y-4">
+      <Story index={index} summary={summary} />
+
+      <Picks
         appHref={appHref}
         dealHref={dealHref}
         formatStake={formatStake}
+        formatStakeCompact={formatStakeCompact ?? formatStake}
         gated={discretionEnabled}
         rows={summary.contributors}
       />
 
-      <MarketBeat
-        count={summary.marketBeatCount}
-        total={summary.marketBeatTotal}
-      />
-
-      {summary.sectors.length > 0 && (
-        <SectorLeaderboard sectors={summary.sectors} />
-      )}
-
-      {summary.styles.length > 0 && <StyleRace styles={summary.styles} />}
+      <Edge index={index} sectors={summary.sectors} />
     </div>
   );
 }
 
-/** "14 Jun" from an ISO `YYYY-MM-DD`, formatted in UTC so the day never drifts.
- *  Mirrors the app's "Updated d MMM" caption. */
-function formatUpdated(iso: string): string {
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
-}
-
-/** Honest label for the slice the headline reflects — mirrors the app naming
- *  the signal it's showing rather than implying every buy. */
-const UNIVERSE_LABEL: Record<
-  ChannelPerformanceSummary["headlineUniverse"],
-  string
-> = {
-  every_buy: "Director picks",
-  suggested: "Suggested picks",
-  significant: "Significant picks",
-  noteworthy: "Noteworthy picks",
-};
-
-/** Verdict-first hero, following the iOS Analysis entry card: it leads with
- *  the answer to "Beating the {index}?" rather than two bare percentages, and
- *  the percentages become the supporting pair underneath. */
-function HeadlineAlpha({
+/** The story: one figure, one paragraph, one bar. Replaces the old verdict
+ *  card, the two-row comparison strip and the separate hit-rate panel, all
+ *  of which said "vs market" in a different voice. */
+function Story({
   summary,
-  benchmarkLabel,
+  index,
 }: {
   summary: ChannelPerformanceSummary;
-  benchmarkLabel?: string;
+  index: string;
 }) {
   const {
+    alphaPct,
     picksReturnPct,
     benchmarkReturnPct,
-    alphaPct,
+    marketBeatCount,
+    marketBeatTotal,
     lastUpdated,
+    totalBuys,
+    sampleSize,
     headlineUniverse,
   } = summary;
 
-  const picksTone = pairTone(picksReturnPct, benchmarkReturnPct);
-  const benchTone = pairTone(benchmarkReturnPct, picksReturnPct);
-
-  return (
-    <section className="relative overflow-hidden rounded-2xl border border-hairline bg-white/45 px-3.5 py-3 shadow-[0_12px_32px_-28px_rgba(61,43,26,0.7)] dark:border-border/70 dark:bg-surface-secondary/35">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-12 -top-16 h-36 w-36 rounded-full bg-positive/10 blur-2xl"
-      />
-      <div className="relative">
-        <div className="flex items-baseline justify-between gap-3">
-          <Eyebrow>90-day performance</Eyebrow>
-          <span className="font-mono text-[10px] text-muted tabular-nums">
-            {lastUpdated ? `Updated ${formatUpdated(lastUpdated)}` : ""}
-          </span>
-        </div>
-
-        <p className="mt-2 text-[11px] font-medium text-foreground/70">
-          Beating the {benchmarkLabel ?? "market"}?
-        </p>
-        {alphaPct != null && <Verdict alphaPct={alphaPct} />}
-
-        {/* The comparison as two full-width rows rather than a 2×2 grid of
-            boxes: the long universe label ("Noteworthy picks") no longer wraps
-            to a second line, the numbers share one right edge, and the whole
-            pair costs two rules instead of four walls. */}
-        <dl className="mt-2.5 divide-y divide-hairline/90 border-y border-hairline/90 dark:divide-border/60 dark:border-border/60">
-          <Stat
-            label={UNIVERSE_LABEL[headlineUniverse]}
-            muted={picksTone.muted}
-            tone={picksTone.className}
-            value={formatSignedPct(picksReturnPct)}
-          />
-          <Stat
-            label="The market"
-            muted={benchTone.muted}
-            tone={benchTone.className}
-            value={formatSignedPct(benchmarkReturnPct)}
-          />
-        </dl>
-
-        <p className="mt-1.5 text-[10px] leading-snug text-muted">
-          Equal-weight return from picks disclosed in the last{" "}
-          {CHANNEL_WINDOW_DAYS} days.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-/** The one-line answer — "Yes, by 4.1pp" — mirroring the iOS beatingVerdict
- *  copy. Near-zero alpha reads "Level with it" rather than crowning a side. */
-function Verdict({ alphaPct }: { alphaPct: number }) {
-  const pp = alphaPct * 100;
-  const level = Math.abs(pp) < 0.05;
-  const ahead = pp > 0;
-
-  const toneClass = level
+  const pp = alphaPct == null ? null : alphaPct * 100;
+  const level = pp != null && Math.abs(pp) < 0.05;
+  const ahead = pp != null && pp > 0;
+  const figureTone = level
     ? "text-foreground"
     : ahead
       ? "text-positive"
       : "text-negative";
 
   return (
-    <p
-      className={`mt-px text-[1.75rem] font-semibold leading-[1.05] tracking-[-0.03em] tabular-nums ${toneClass}`}
-    >
-      {level ? (
-        "Level with it"
-      ) : (
-        <>
-          {ahead ? "Yes" : "No"}
-          <span className="font-normal text-foreground/55 text-sm">
-            {ahead ? ", by " : ", behind by "}
+    <section className={`relative overflow-hidden px-3.5 py-3 ${CARD_CLASS}`}>
+      {/* The one permitted sub-perceptual wash. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-12 -top-16 h-36 w-36 rounded-full bg-positive/10 blur-2xl"
+      />
+      <div className="relative">
+        <div className="flex items-baseline justify-between gap-3">
+          <Eyebrow>Last {CHANNEL_WINDOW_DAYS} days</Eyebrow>
+          <span className="font-mono text-[10px] text-muted tabular-nums">
+            {lastUpdated ? `to ${formatDay(lastUpdated, "short")}` : ""}
           </span>
-          {`${Math.abs(pp).toFixed(1)}pp`}
-        </>
-      )}
-    </p>
+        </div>
+
+        {pp == null ? (
+          <p className="mt-2 text-[15px] font-semibold text-foreground">
+            Not enough data yet
+          </p>
+        ) : (
+          <p className="mt-2 flex items-baseline gap-2">
+            <span
+              className={`text-[1.85rem] font-semibold leading-none tracking-[-0.03em] tabular-nums ${figureTone}`}
+            >
+              {level
+                ? "Level"
+                : `${ahead ? "+" : "−"}${Math.abs(pp).toFixed(1)}pp`}
+            </span>
+            <span className="text-[12px] leading-tight text-foreground/60">
+              {level
+                ? `with the ${index}`
+                : ahead
+                  ? `ahead of the ${index}`
+                  : `behind the ${index}`}
+            </span>
+          </p>
+        )}
+
+        <p className="mt-2 text-[12px] leading-relaxed text-foreground/70">
+          <StorySentence
+            benchmarkReturnPct={benchmarkReturnPct}
+            headlineUniverse={headlineUniverse}
+            index={index}
+            picksReturnPct={picksReturnPct}
+            sampleSize={sampleSize}
+            totalBuys={totalBuys}
+          />
+        </p>
+
+        {marketBeatTotal > 0 && (
+          <HitRate
+            count={marketBeatCount}
+            index={index}
+            total={marketBeatTotal}
+          />
+        )}
+      </div>
+    </section>
   );
 }
 
-/** One row of the hero comparison strip: label left, figure on the shared
- *  right edge. */
-function Stat({
-  label,
-  value,
-  tone,
-  muted,
+/** "Directors made 110 disclosed buys. The 18 our analysis rated noteworthy
+ *  are up 5.6%, against +2.1% for the FTSE All-Share." Every figure it states
+ *  is one the summary carries; a missing benchmark drops its clause rather
+ *  than printing a dash. */
+function StorySentence({
+  totalBuys,
+  sampleSize,
+  headlineUniverse,
+  picksReturnPct,
+  benchmarkReturnPct,
+  index,
 }: {
-  label: string;
-  value: string;
-  tone: string;
-  muted: boolean;
+  totalBuys: number;
+  sampleSize: number;
+  headlineUniverse: ChannelPerformanceSummary["headlineUniverse"];
+  picksReturnPct: number | null;
+  benchmarkReturnPct: number | null;
+  index: string;
 }) {
+  const Strong = ({ children }: { children: React.ReactNode }) => (
+    <span className="font-semibold tabular-nums text-foreground">
+      {children}
+    </span>
+  );
+
+  const opener = (
+    <>
+      Directors made <Strong>{totalBuys}</Strong> disclosed{" "}
+      {totalBuys === 1 ? "buy" : "buys"}.
+    </>
+  );
+
+  if (picksReturnPct == null) return opener;
+
+  const subject =
+    headlineUniverse === "every_buy" || sampleSize === totalBuys ? (
+      <>Equal-weighted, {totalBuys === 1 ? "it is" : "they are"}</>
+    ) : (
+      <>
+        The <Strong>{sampleSize}</Strong> our analysis rated{" "}
+        {SLICE_ADJECTIVE[headlineUniverse]} {sampleSize === 1 ? "is" : "are"}
+      </>
+    );
+
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1.5">
-      <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
-        {label}
-      </dt>
-      <dd
-        className={`text-[15px] font-semibold leading-none tabular-nums ${tone}`}
-        style={muted ? { opacity: MUTED_OPACITY } : undefined}
+    <>
+      {opener} {subject}{" "}
+      <span
+        className={`font-semibold tabular-nums ${toneClass(picksReturnPct)}`}
       >
-        {value}
-      </dd>
-    </div>
+        {upDown(picksReturnPct)}
+      </span>
+      {benchmarkReturnPct != null ? (
+        <>
+          , against <Strong>{formatSignedPct(benchmarkReturnPct)}</Strong> for
+          the {index}.
+        </>
+      ) : (
+        <> since.</>
+      )}
+    </>
   );
 }
 
-/** Compact proportion bar — the rail can contain more than 100 buys, so a
- * literal waffle would either sprawl or imply that sampled cells are deals. */
-function MarketBeat({ count, total }: { count: number; total: number }) {
-  if (total === 0) return null;
-
+/** The hit rate as one hairline row: caption left, share right, a thin bar
+ *  under both. Colour carries meaning — green only once more than half beat
+ *  the index. */
+function HitRate({
+  count,
+  total,
+  index,
+}: {
+  count: number;
+  total: number;
+  index: string;
+}) {
   const rate = count / total;
+  const good = rate >= 0.5;
 
   return (
-    <section className="rounded-xl bg-hairline/50 px-3 py-2.5 dark:bg-surface-secondary/55">
+    <div className="mt-2.5 border-t border-hairline/90 pt-2 dark:border-border/60">
       <div className="flex items-baseline justify-between gap-3">
-        <Eyebrow>Picks that beat the market</Eyebrow>
-        <span className="text-xl font-semibold leading-none tracking-tight text-positive tabular-nums">
+        <span className="text-[11px] text-foreground/70 tabular-nums">
+          <span className="font-semibold text-foreground">{count}</span> of{" "}
+          {total} beat the {index}
+        </span>
+        <span
+          className={`text-[13px] font-semibold leading-none tabular-nums ${good ? "text-positive" : "text-foreground/70"}`}
+        >
           {Math.round(rate * 100)}%
         </span>
       </div>
       <div
-        aria-label={`${count} of ${total} buys beat the market`}
-        className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/10"
+        aria-label={`${count} of ${total} buys beat the ${index}`}
+        className="mt-1.5 h-1 overflow-hidden rounded-full bg-foreground/10"
         role="img"
       >
         <div
-          className="h-full rounded-full bg-positive dark:bg-positive/80"
+          className={`h-full rounded-full ${good ? "bg-positive dark:bg-positive/80" : "bg-foreground/40"}`}
           style={{ width: `${rate * 100}%` }}
         />
       </div>
-      <p className="mt-1.5 font-mono text-[10px] text-muted tabular-nums">
-        {count} of {total} buys
-      </p>
-    </section>
+    </div>
   );
 }
 
-/** A ranked row whose bar is the row itself — the magnitude fills the track
- *  behind the label instead of sitting on a second line under it. Halves the
- *  height of every leaderboard row, which is what buys the fifth sector. */
-function TrackRow({
-  label,
-  suffix,
-  value,
-  ratio,
-}: {
-  label: string;
-  suffix?: string;
-  value: number;
-  ratio: number;
-}) {
-  return (
-    <li className="relative overflow-hidden rounded-md bg-hairline/45 dark:bg-separator/40">
-      <div
-        aria-hidden
-        className={`absolute inset-y-0 left-0 ${value >= 0 ? "bg-positive/20" : "bg-negative/20"}`}
-        style={{ width: `${Math.max(4, ratio * 100)}%` }}
-      />
-      <div className="relative flex items-baseline justify-between gap-2 px-2 py-[3px]">
-        <span className="truncate text-[11.5px] text-foreground/85">
-          {label}
-          {suffix && (
-            <span className="ml-1 font-mono text-[9.5px] text-muted">
-              {suffix}
-            </span>
-          )}
-        </span>
-        <span
-          className={`shrink-0 text-[11.5px] font-semibold tabular-nums ${toneClass(value)}`}
-        >
-          {formatSignedPct(value)}
-        </span>
-      </div>
-    </li>
-  );
-}
-
-function SectorLeaderboard({
+/** Where the outperformance came from. A sentence that names the leaders,
+ *  then at most three hairline rows carrying each sector's sample size, so
+ *  the reader can see when a lead rests on two buys. Sectors that trailed the
+ *  index aren't an edge and don't appear. */
+function Edge({
   sectors,
+  index,
 }: {
   sectors: ChannelPerformanceSummary["sectors"];
+  index: string;
 }) {
-  const max = Math.max(...sectors.map((s) => Math.abs(s.meanAlphaPct)), 0.0001);
+  const leaders = sectors
+    .filter((s) => s.meanAlphaPct > 0)
+    .slice(0, MAX_EDGE_SECTORS);
+
+  if (leaders.length === 0) return null;
+
+  const names = leaders.map((s) => s.sector);
+  const lead =
+    names.length === 1
+      ? names[0]
+      : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 
   return (
     <section className="border-t border-hairline pt-3 dark:border-border/60">
       <div className="flex items-baseline justify-between gap-3">
-        <Eyebrow>Where picks found an edge</Eyebrow>
-        <span className="shrink-0 text-[10px] text-muted">vs market</span>
+        <Eyebrow>Where the edge came from</Eyebrow>
+        <span className="shrink-0 text-[10px] text-muted">vs {index}</span>
       </div>
-      <ul className="mt-2 space-y-1">
-        {sectors.slice(0, 5).map((s) => (
-          <TrackRow
+      <p className="mt-1.5 text-[12px] leading-relaxed text-foreground/70">
+        <span className="font-semibold text-foreground">{lead}</span> did the
+        heavy lifting.
+      </p>
+      <ul className="mt-2 divide-y divide-hairline/80 border-y border-hairline/80 dark:divide-border/50 dark:border-border/50">
+        {leaders.map((s) => (
+          <li
             key={s.sector}
-            label={s.sector}
-            ratio={Math.abs(s.meanAlphaPct) / max}
-            value={s.meanAlphaPct}
-          />
+            className="flex items-baseline justify-between gap-2 py-1.5"
+          >
+            <span className="min-w-0 truncate text-[12px] text-foreground/85">
+              {s.sector}
+              <span className="ml-1.5 font-mono text-[9.5px] text-muted tabular-nums">
+                {s.dealCount} {s.dealCount === 1 ? "buy" : "buys"}
+              </span>
+            </span>
+            <span className="shrink-0 text-[12px] font-semibold tabular-nums text-positive">
+              {formatSignedPct(s.meanAlphaPct)}
+            </span>
+          </li>
         ))}
       </ul>
     </section>
   );
 }
 
-function StyleRace({
-  styles,
-}: {
-  styles: ChannelPerformanceSummary["styles"];
-}) {
-  const max = Math.max(...styles.map((s) => Math.abs(s.meanReturnPct)), 0.0001);
-
-  return (
-    <section className="border-t border-hairline pt-3 dark:border-border/60">
-      <Eyebrow>Contrarian vs momentum</Eyebrow>
-      <ul className="mt-2 space-y-1">
-        {styles.map((s) => (
-          <TrackRow
-            key={s.kind}
-            label={STYLE_LABEL[s.kind]}
-            ratio={Math.abs(s.meanReturnPct) / max}
-            suffix={`${s.dealCount}`}
-            value={s.meanReturnPct}
-          />
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function Contributors({
+function Picks({
   rows,
   gated,
   appHref,
   formatStake,
+  formatStakeCompact,
   dealHref,
 }: {
   rows: ChannelContributor[];
   gated: boolean;
   appHref: string;
   formatStake?: (n: number) => string;
+  formatStakeCompact?: (n: number) => string;
   dealHref?: (id: string) => string;
 }) {
-  // Which row's explainer is open. A card used to navigate straight to the
-  // deal detail, which answered a question nobody had yet: a big green number
-  // in a rail is read before it's understood, and "+89.4%" with "since
-  // disclosure" over it doesn't say whose money, measured how, or over what.
-  // The modal answers that first, and puts the install where the interest is.
   const [explained, setExplained] = useState<ChannelContributor | null>(null);
 
   if (rows.length === 0) return null;
@@ -444,64 +467,47 @@ function Contributors({
       <div className="flex items-baseline justify-between gap-3">
         <Eyebrow>Best recent picks</Eyebrow>
         <span className="shrink-0 text-[10px] text-muted">
-          since disclosure
+          share price since disclosure
         </span>
       </div>
 
-      <ul className="mt-2 space-y-1.5">
-        <HeroContributorCard
-          formatStake={formatStake}
-          row={hero}
-          onOpen={setExplained}
-        />
+      {/* One plate: the top pick as its taller first row, the runners-up
+          under it, and the gate as the last row — so the list ends in a lock
+          rather than a floating button, and every return lands on one right
+          edge. */}
+      <ul
+        className={`mt-2 divide-y divide-hairline/80 overflow-hidden ${CARD_CLASS} dark:divide-border/50`}
+      >
+        <HeroPick formatStake={formatStake} row={hero} onOpen={setExplained} />
+
+        {rest.map((row) => (
+          <PickRow
+            key={row.id}
+            formatStakeCompact={formatStakeCompact}
+            row={row}
+            onOpen={setExplained}
+          />
+        ))}
+
+        {gated && hiddenCount > 0 && (
+          <li>
+            <a
+              className="group flex items-center justify-center gap-1.5 px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-brown transition-colors hover:bg-brand-brown/[0.06] dark:text-brand-tan dark:hover:bg-surface-secondary/80"
+              data-ga-event="cta_channel_see_all_picks_in_app"
+              data-ga-label={`See all ${rows.length} picks in app`}
+              href={appHref}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <LockClosedIcon className="h-3 w-3 opacity-70" />
+              <span className="whitespace-nowrap">
+                {hiddenCount} more {hiddenCount === 1 ? "pick" : "picks"} in the
+                app
+              </span>
+            </a>
+          </li>
+        )}
       </ul>
-
-      {/* The runners-up as one plate of hairline-divided rows rather than four
-          separately bordered cards: same information, ~40% of the height, and
-          every return lands on one right edge so the column can be scanned in
-          a single pass. The gate's ghost row and CTA are rows of the same
-          plate — the list ends in a lock rather than a floating button. */}
-      {(rest.length > 0 || (gated && hiddenCount > 0)) && (
-        <ul className="mt-1.5 divide-y divide-hairline/80 overflow-hidden rounded-xl border border-hairline dark:divide-border/50 dark:border-border/50">
-          {rest.map((row) => (
-            <ContributorRow key={row.id} row={row} onOpen={setExplained} />
-          ))}
-
-          {gated && hiddenCount > 0 && (
-            <li>
-              <a
-                className="group block"
-                data-ga-event="cta_channel_see_all_picks_in_app"
-                data-ga-label={`See all ${rows.length} picks in app`}
-                href={appHref}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                <span
-                  aria-hidden
-                  className="pointer-events-none flex select-none items-center gap-2.5 px-2.5 py-1.5 opacity-50"
-                  style={{
-                    filter: "blur(4px)",
-                    maskImage: "linear-gradient(to bottom, black, transparent)",
-                  }}
-                >
-                  <span className="h-[26px] w-[26px] shrink-0 rounded-full bg-foreground/10" />
-                  <span className="h-2.5 w-24 rounded bg-foreground/15" />
-                  <span className="ml-auto text-[15px] font-bold text-positive tabular-nums">
-                    {formatSignedPct(DECOY_RETURN)}
-                  </span>
-                </span>
-
-                <span className="flex items-center justify-center gap-1.5 bg-sheet/70 px-3 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-brown transition-colors group-hover:bg-brand-brown/[0.07] dark:bg-surface/70 dark:text-brand-tan dark:group-hover:bg-surface-secondary/80">
-                  <LockClosedIcon className="h-3 w-3 opacity-70" />
-                  Unlock {hiddenCount} more{" "}
-                  {hiddenCount === 1 ? "pick" : "picks"}
-                </span>
-              </a>
-            </li>
-          )}
-        </ul>
-      )}
 
       <ContributorExplainer
         appHref={appHref}
@@ -514,11 +520,10 @@ function Contributors({
   );
 }
 
-/** The top pick, kept as a lifted card — logo, company, a big bold return, and
- *  the iOS-style £1,000 payoff line ("£1,000 at disclosure → £1,894 today").
- *  The list is winners-only, so the payoff never shows a loss — same guarantee
- *  the app's plate makes by rendering only when in profit. */
-function HeroContributorCard({
+/** The top pick as a sentence about a person: who bought, how much, when,
+ *  and what £1,000 alongside them is worth now. The list is winners-only, so
+ *  the payoff never shows a loss — same guarantee the app's plate makes. */
+function HeroPick({
   row,
   formatStake,
   onOpen,
@@ -530,16 +535,16 @@ function HeroContributorCard({
   return (
     <li>
       <button
-        className="group block w-full rounded-xl border border-hairline bg-white/45 px-3 py-2.5 text-left shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] transition-colors hover:border-positive/30 hover:bg-white/70 dark:border-border/70 dark:bg-surface-secondary/35"
+        className="group block w-full px-3 py-3 text-left transition-colors hover:bg-white/60 dark:hover:bg-surface-secondary/60"
         data-ga-event="cta_channel_open_contributor_explainer"
         data-ga-label={row.ticker}
         type="button"
         onClick={() => onOpen(row)}
       >
         <span className="flex items-center gap-2.5">
-          <CompanyLogo size={38} ticker={row.ticker} />
+          <CompanyLogo size={36} ticker={row.ticker} />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
+            <span className="block truncate text-[13.5px] font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
               {row.company}
             </span>
             <span className="block font-mono text-[10px] leading-tight text-muted">
@@ -553,46 +558,80 @@ function HeroContributorCard({
           </span>
         </span>
 
-        {formatStake && (
-          <span className="mt-2 flex items-baseline gap-1 border-t border-positive/15 pt-1.5 text-[10.5px] tabular-nums text-muted">
-            {formatStake(STAKE)} at disclosure →
-            <span className="font-semibold text-foreground">
-              {formatStake(STAKE * (1 + row.returnPct))} today
-            </span>
+        <span className="mt-2 block text-[12px] leading-relaxed text-foreground/70">
+          <span className="font-semibold text-foreground">
+            {row.insiderName}
           </span>
-        )}
+          {roleClause(row.insiderRole)
+            ? `, ${roleClause(row.insiderRole)},`
+            : ""}{" "}
+          bought{" "}
+          {row.value != null && formatStake ? (
+            <span className="font-semibold tabular-nums text-foreground">
+              {formatStake(row.value)}
+            </span>
+          ) : (
+            "shares"
+          )}{" "}
+          on {formatDay(row.disclosedDate)}.
+          {formatStake && (
+            <>
+              {" "}
+              {formatStake(STAKE)} alongside them is{" "}
+              <span className="font-semibold tabular-nums text-positive">
+                {formatStake(STAKE * (1 + row.returnPct))}
+              </span>{" "}
+              today.
+            </>
+          )}
+        </span>
       </button>
     </li>
   );
 }
 
-/** A runner-up as a single line: logo, name, ticker, return. One row per pick
- *  so four of them read as a ranked column rather than four stacked boxes. */
-function ContributorRow({
+/** A runner-up: company, then who / how much / when in one muted subline,
+ *  return on the shared right edge. */
+function PickRow({
   row,
+  formatStakeCompact,
   onOpen,
 }: {
   row: ChannelContributor;
+  formatStakeCompact?: (n: number) => string;
   onOpen: (row: ChannelContributor) => void;
 }) {
+  const who = shortRole(row.insiderRole) ?? row.insiderName;
+  const subline = [
+    who,
+    row.value != null && formatStakeCompact
+      ? formatStakeCompact(row.value)
+      : null,
+    formatDay(row.disclosedDate, "short"),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <li>
       <button
-        className="group flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left transition-colors hover:bg-brand-brown/[0.05] dark:hover:bg-surface-secondary/60"
+        className="group flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-white/60 dark:hover:bg-surface-secondary/60"
         data-ga-event="cta_channel_open_contributor_explainer"
         data-ga-label={row.ticker}
         type="button"
         onClick={() => onOpen(row)}
       >
-        <CompanyLogo size={26} ticker={row.ticker} />
-        <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
-          {row.company}
-        </span>
-        <span className="shrink-0 font-mono text-[9.5px] text-muted">
-          {row.ticker}
+        <CompanyLogo size={28} ticker={row.ticker} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
+            {row.company}
+          </span>
+          <span className="mt-0.5 block truncate text-[10.5px] leading-tight text-muted tabular-nums">
+            {subline}
+          </span>
         </span>
         <span
-          className={`w-[3.5rem] shrink-0 text-right text-[15px] font-bold tabular-nums ${toneClass(row.returnPct)}`}
+          className={`shrink-0 text-[15px] font-bold tabular-nums ${toneClass(row.returnPct)}`}
         >
           {formatSignedPct(row.returnPct)}
         </span>
@@ -607,7 +646,7 @@ function ContributorRow({
  *  share-price change from a disclosed buy, not a ddbx trade and not a
  *  recommendation), say what it isn't (advice, a guarantee, a live price), and
  *  then offer the app — because the honest version of this rail's pitch is
- *  "these are the four we're showing you; the app is where the rest live". */
+ *  "these are the ones we're showing you; the app is where the rest live". */
 function ContributorExplainer({
   row,
   onClose,
@@ -640,20 +679,39 @@ function ContributorExplainer({
                 {formatSignedPct(row.returnPct)}
               </p>
               <p className="text-[11px] text-muted">
-                share price, since the buy was disclosed
+                share price since {formatDay(row.disclosedDate)}, {row.daysHeld}{" "}
+                {row.daysHeld === 1 ? "day" : "days"} ago
               </p>
             </div>
           </div>
 
-          {formatStake && (
-            <p className="mt-4 rounded-xl bg-foreground/[0.04] px-3.5 py-3 text-[13px] tabular-nums text-muted">
-              {formatStake(STAKE)} at disclosure would be{" "}
-              <span className="font-semibold text-foreground">
-                {formatStake(STAKE * (1 + row.returnPct))}
-              </span>{" "}
-              today.
-            </p>
-          )}
+          <p className="mt-4 rounded-xl bg-foreground/[0.04] px-3.5 py-3 text-[13px] leading-relaxed text-muted">
+            <span className="font-semibold text-foreground">
+              {row.insiderName}
+            </span>
+            {roleClause(row.insiderRole)
+              ? `, ${roleClause(row.insiderRole)},`
+              : ""}{" "}
+            disclosed buying{" "}
+            {row.value != null && formatStake ? (
+              <span className="font-semibold tabular-nums text-foreground">
+                {formatStake(row.value)}
+              </span>
+            ) : (
+              "shares"
+            )}{" "}
+            on {formatDay(row.disclosedDate)}.
+            {formatStake && (
+              <>
+                {" "}
+                {formatStake(STAKE)} at disclosure would be{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {formatStake(STAKE * (1 + row.returnPct))}
+                </span>{" "}
+                today.
+              </>
+            )}
+          </p>
 
           <div className="mt-5 space-y-3 text-[13px] leading-relaxed text-foreground/70">
             <p>
@@ -662,8 +720,8 @@ function ContributorExplainer({
               </span>{" "}
               A director or insider at {row.company} disclosed buying shares
               with their own money. This is what the share price has done from
-              the day that purchase was disclosed to the latest close we hold,
-              nothing has been bought or sold by ddbx, and nobody is holding a
+              the day that purchase was disclosed to the latest close we hold.
+              Nothing has been bought or sold by ddbx, and nobody is holding a
               position.
             </p>
             <p>
@@ -714,8 +772,7 @@ function ContributorExplainer({
 }
 
 /** The rail's single heading device — the house eyebrow spec at the dense-rail
- *  size. Four differently-styled section titles used to compete with the
- *  figures; one repeated label lets the numbers carry the panel. */
+ *  size. One repeated label lets the sentences and figures carry the panel. */
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <h3 className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55">

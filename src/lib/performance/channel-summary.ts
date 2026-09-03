@@ -15,11 +15,22 @@
 import type { MarketDealing } from "@/lib/markets/types";
 import type { PerformanceUniverse } from "@/lib/performance/types";
 
-/** One pick in the top-contributors strip. */
+/** One pick in the top-contributors strip. Carries who bought, how much and
+ *  when, because the rail renders each pick as a sentence about a person
+ *  ("Rahul Dhir, CEO, bought £250,000 on 12 June") rather than a ticker and a
+ *  green number — the number is read long before it's understood. */
 export interface ChannelContributor {
   id: string;
   ticker: string;
   company: string;
+  insiderName: string;
+  insiderRole?: string;
+  /** Trade value in the market's major currency unit. null when unpriced. */
+  value: number | null;
+  /** ISO `YYYY-MM-DD` disclosure date. */
+  disclosedDate: string;
+  /** Whole days since disclosure, clamped to ≥ 1. */
+  daysHeld: number;
   /** Since-disclosure return as a ratio (0.12 = +12%). */
   returnPct: number;
   /** Alpha vs the market benchmark as a ratio. null when unknown. */
@@ -43,6 +54,10 @@ export interface ChannelStyle {
 }
 
 export interface ChannelPerformanceSummary {
+  /** Every open-market buy disclosed inside the window with a live return —
+   *  the "Directors made N disclosed buys" the story opens with. ≥ sampleSize,
+   *  which counts only the rated slice the headline reflects. */
+  totalBuys: number;
   /** Number of buys that fed the headline (had a live return). */
   sampleSize: number;
   /** Mean since-disclosure return of the picks, as a ratio. null when empty. */
@@ -87,6 +102,14 @@ function isoDaysAgo(days: number): string {
   d.setDate(d.getDate() - days);
 
   return d.toISOString().slice(0, 10);
+}
+
+/** Whole days from an ISO `YYYY-MM-DD` to today, clamped to ≥ 1 so a same-day
+ *  disclosure never reads "0 days". */
+function daysSince(isoDay: string): number {
+  const todayMs = Date.parse(new Date().toISOString().slice(0, 10));
+
+  return Math.max(1, Math.floor((todayMs - Date.parse(isoDay)) / 86_400_000));
 }
 /** A sector needs at least this many buys before it earns a leaderboard row —
  *  one lucky pick shouldn't crown an industry. */
@@ -254,10 +277,17 @@ export function buildChannelPerformance(
   for (const d of [...pool].sort((a, b) => returnOf(b)! - returnOf(a)!)) {
     if (seenTickers.has(d.ticker)) continue;
     seenTickers.add(d.ticker);
+    const disclosedDate = d.disclosedDate.slice(0, 10);
+
     contributors.push({
       id: d.id,
       ticker: d.ticker,
       company: d.company,
+      insiderName: d.insiderName,
+      insiderRole: d.insiderRole,
+      value: d.value,
+      disclosedDate,
+      daysHeld: daysSince(disclosedDate),
       returnPct: returnOf(d)!,
       alphaPct: alphaOf(d),
     });
@@ -309,6 +339,7 @@ export function buildChannelPerformance(
   );
 
   return {
+    totalBuys: buys.length,
     sampleSize: headlineBuys.length,
     picksReturnPct,
     benchmarkReturnPct,
@@ -366,7 +397,6 @@ export function buildWinners(
     (d) => d.disclosedDate.slice(0, 10) <= ageCutoff,
   );
   const pool = seasoned.length > 0 ? seasoned : winners;
-  const todayMs = Date.parse(new Date().toISOString().slice(0, 10));
   const seenTickers = new Set<string>();
   const out: WinnerDealing[] = [];
 
@@ -374,10 +404,7 @@ export function buildWinners(
     if (seenTickers.has(d.ticker)) continue;
     seenTickers.add(d.ticker);
     const disclosedDate = d.disclosedDate.slice(0, 10);
-    const daysHeld = Math.max(
-      1,
-      Math.floor((todayMs - Date.parse(disclosedDate)) / 86_400_000),
-    );
+    const daysHeld = daysSince(disclosedDate);
 
     out.push({
       id: d.id,

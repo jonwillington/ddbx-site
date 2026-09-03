@@ -1255,6 +1255,7 @@ export function MarketPage<W>({
           dealHref={channelDealHref}
           discretionEnabled={channelDiscretion}
           formatStake={config.priceFormat.formatValue}
+          formatStakeCompact={config.priceFormat.formatValueCompact}
           news={hasNewsSource ? news : undefined}
           newsFooterNote={config.newsFooterNote}
           newsHeading={config.newsHeading}
@@ -1907,6 +1908,7 @@ export function MarketPage<W>({
         dealHref={channelDealHref}
         discretionEnabled={channelDiscretion}
         formatStake={config.priceFormat.formatValue}
+        formatStakeCompact={config.priceFormat.formatValueCompact}
         news={hasNewsSource ? news : undefined}
         newsFooterNote={config.newsFooterNote}
         newsHeading={config.newsHeading}
