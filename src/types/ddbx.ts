@@ -96,11 +96,13 @@ export interface MarketConfig {
      *  ddbx-ios-app/investigations/2026-06-14-analyst-data-plan.md. */
     analystTargets: boolean;
     /** Filing-activity surface: how much the market as a whole is filing,
-     *  against its own recent baseline (GET /api/filing-activity). US-only.
-     *  It rests on EDGAR's daily form index, which gives an authoritative
-     *  market-wide Form 4 count per day; the UK has no equivalent published
-     *  denominator (RNS carries no comparable daily census), so a "quiet for
-     *  the season" claim there would be unfalsifiable. */
+     *  against its own recent baseline (GET /api/filing-activity). Rests on a
+     *  day-complete census independent of our scraper: EDGAR's daily form
+     *  index (Form 4s) for the US, the FCA National Storage Mechanism's
+     *  Director/PDMR Shareholding notices for the UK (uk_filing_volume,
+     *  migration 077). The verdict thresholds are shared and live server-side
+     *  in worker/pipeline/filing-activity.ts so the clients can't drift on
+     *  what "quiet" means. */
     filingActivity: boolean;
   };
 }
@@ -135,6 +137,12 @@ export const MARKET_CONFIG: Record<Market, MarketConfig> = {
       // a reliable block; the rest (incl. the USD-ADR FTSE giants) show the
       // empty state. FX-converting those ADR targets is the next improvement.
       analystTargets: true,
+      // Data side live since 2026-09-03 (verify with ?market=UK&preview=1).
+      // Held OFF until an app build whose sheet/strip copy is market-aware is
+      // in the field: the shipped clients hardcode "US insiders" / "Form 4s",
+      // and they read this flag from the server, so flipping it early would
+      // put US wording in front of UK readers. See
+      // investigations/2026-09-03-uk-filing-activity.md §5.
       filingActivity: false,
     },
   },
