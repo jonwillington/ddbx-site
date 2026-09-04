@@ -112,7 +112,36 @@ export function bootstrapAnalytics(): void {
     analytics_storage: "granted",
   });
   window.gtag("js", new Date());
-  window.gtag("config", measurementId, { send_page_view: false });
+  // Cross-domain measurement. ddbx.uk, ddbx.us and ddbx.eu are one property
+  // with a stream each, and without the linker a reader crossing between them
+  // starts a NEW session whose source is the domain they just left. Measured
+  // 2026-09-04: 298 of 308 "Referral" sessions were ddbx.us / ddbx.uk /
+  // ddbx.eu referring each other — only about ten were genuinely external.
+  //
+  // Two costs, and the second is the expensive one. Sessions are counted
+  // twice; and the original acquisition source is destroyed at the hop, so
+  // someone arriving from X and crossing to another market is filed as a
+  // referral from ourselves. That made a self-referral artefact look like an
+  // engaged external audience for long enough to be quoted as one.
+  //
+  // The linker decorates outbound links to these hosts with _gl so the
+  // session continues. This ALSO needs the same domains listed in GA4 under
+  // Admin → Data Streams → Configure tag settings → Configure your domains;
+  // the code half alone does not suppress the self-referrals.
+  window.gtag("config", measurementId, {
+    send_page_view: false,
+    linker: {
+      domains: [
+        "ddbx.uk",
+        "www.ddbx.uk",
+        "ddbx.us",
+        "www.ddbx.us",
+        "ddbx.eu",
+        "www.ddbx.eu",
+      ],
+      accept_incoming: true,
+    },
+  });
   window.gtag("set", "user_properties", { market, host });
   bootstrapClickTracking();
   // The initial page_view is fired by DocumentTitle's mount effect (gtag is
@@ -150,12 +179,10 @@ function bootstrapClickTracking(): void {
       const eventLabel = inferEventLabel(target);
       const destination =
         target instanceof HTMLAnchorElement ? target.href : undefined;
-      const pagePath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
       window.gtag?.("event", eventName, {
         event_category: "engagement",
         event_label: eventLabel,
-        page_path: pagePath,
         click_type: target.tagName.toLowerCase(),
         destination,
       });
@@ -191,7 +218,6 @@ function bootstrapClickTracking(): void {
         window.gtag?.("event", "store_click", {
           event_category: "conversion",
           event_label: eventLabel,
-          page_path: pagePath,
           // Which CTA it came from, so the aggregate can still be split.
           source_event: eventName,
           store: destination.includes("play.google.com")

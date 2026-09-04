@@ -41,9 +41,23 @@ export function DocumentTitle() {
     setMeta("name", "twitter:card", "summary_large_image");
     setMeta("name", "twitter:site", "@ddbxuk");
 
+    // page_location ONLY — no page_path.
+    //
+    // page_path is a Universal Analytics field. GA4 derives its own page
+    // path and query string from page_location, and supplying both makes it
+    // concatenate the two query strings: /?theme=light became
+    // /?theme=light?theme=light in reporting, /?ref=producthunt became
+    // /?ref=producthunt?ref=producthunt, and every ?twclid= landing from X
+    // doubled the same way. URLs with no query string were unaffected, which
+    // is what identified the cause.
+    //
+    // The damage was worst exactly where it mattered least tolerably: the
+    // parameters that carry attribution (twclid, ref, utm_*) are the ones
+    // that made a URL doubled and therefore unreadable in landing-page
+    // reports. See investigations/2026-09-04-organic-visibility.md §4 in
+    // ddbx-data.
     window.gtag?.("event", "page_view", {
       page_title: pageTitle,
-      page_path: `${pathname}${search}${hash}`,
       page_location: pageUrl,
       host: window.location.hostname,
       market: market.id,
