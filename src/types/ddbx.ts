@@ -2051,6 +2051,35 @@ export interface GovDirectorDetail {
   dealings: GovDealing[];
 }
 
+/** One horizon of a member's fixed-horizon track record. Every episode is
+ *  measured the same way: disclosure-day close to the close `days` later,
+ *  minus the S&P 500 over the same span, counted only once matured. */
+export interface GovMemberHorizonPerformance {
+  days: 30 | 90;
+  /** Position episodes with a usable entry close (one per member+company;
+   *  top-ups within 90 days fold into the first buy). */
+  positions: number;
+  /** Of those, past the horizon with an exit close — the ones scored. */
+  matured: number;
+  /** Share of matured episodes ahead of the S&P 500. Null below the
+   *  publishing floor (`min_matured`), so a lucky pair can't top a list. */
+  hit_rate: number | null;
+  median_alpha_pct: number | null;
+  mean_alpha_pct: number | null;
+}
+
+/** A member's track record, materialised server-side (gov_member_performance).
+ *  Additive, 2026-09-04: absent for members with no scorable episode. */
+export interface GovMemberPerformance {
+  /** Latest benchmark close the figures were computed against (ISO day). */
+  as_of: string;
+  /** Matured episodes a horizon needs before its rate and medians publish. */
+  min_matured: number;
+  /** Rebalance batches are excluded — a 300-name sweep is not stock picking. */
+  excludes_rebalances: true;
+  horizons: GovMemberHorizonPerformance[];
+}
+
 /** One row of the tracked-member directory. The rollup without the filings —
  *  enough to rank, filter and describe a member in a list, and to decide
  *  whether their page clears a publishing bar, without fetching 75 details. */
@@ -2066,6 +2095,9 @@ export interface GovMemberSummary {
    *  no jurisdiction and would swamp a list. */
   committees: string[];
   stats: GovMemberStats;
+  /** Fixed-horizon track record; see GovMemberPerformance. Optional so older
+   *  consumers are untouched and a member with nothing scorable omits it. */
+  performance?: GovMemberPerformance;
 }
 
 /** GET /api/directors/usg — every member with stored filings. */
