@@ -377,3 +377,35 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-today-live-wash { animation: none; opacity: 0.7; }
 }
+
+/* ─── Empty-state illustrations (components/illustration.tsx) ─────────────
+   The app's ambient float, 3px either side of centre over 4s, and the scan
+   line's sweep: one leg per alternate iteration, so 1.4s here is the app's
+   2.8s there-and-back. `--illustration-scan` is set per image from the
+   manifest (lib/illustrations.ts) — a fraction of the frame height, which
+   is what translateY's percentage resolves against on a full-frame layer.
+   ─────────────────────────────────────────────────────────────────────── */
+@keyframes illustration-float {
+  0%, 100% { transform: translateY(-3px); }
+  50%      { transform: translateY(3px); }
+}
+
+.animate-illustration-float {
+  animation: illustration-float 4s ease-in-out infinite;
+}
+
+@keyframes illustration-scan {
+  from { transform: translateY(calc(-1 * var(--illustration-scan, 28%))); }
+  to   { transform: translateY(var(--illustration-scan, 28%)); }
+}
+
+.animate-illustration-scan {
+  animation: illustration-scan 1.4s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-illustration-float,
+  .animate-illustration-scan {
+    animation: none;
+  }
+}

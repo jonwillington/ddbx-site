@@ -39,6 +39,7 @@ import { appHrefForMarket } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import { BackLink } from "@/components/back-link";
 import { CompanyLogo } from "@/components/company-logo";
+import { Illustration } from "@/components/illustration";
 import { MarketDetailDrawer } from "@/components/market/market-detail-drawer";
 import { MarketRow, MarketRowHeader } from "@/components/market/market-row";
 import { Skeleton } from "@/components/skeleton";
@@ -424,11 +425,17 @@ export default function DirectorPage() {
                   and it was bad. What is actually true is that the clock has
                   not run yet, and we know exactly when it will have. */}
               {!record.marked ? (
-                <div className="mb-4 flex items-start gap-3 rounded-xl border border-hairline bg-white/70 px-4 py-3.5 dark:border-border/60 dark:bg-surface-secondary/40">
-                  <ClockIcon
-                    aria-hidden
-                    className="mt-px h-5 w-5 shrink-0 text-brand-brown dark:text-brand-tan"
-                    strokeWidth={1.7}
+                <div className="mb-4 flex items-center gap-4 rounded-xl border border-hairline bg-white/70 px-4 py-3.5 dark:border-border/60 dark:bg-surface-secondary/40">
+                  {/* The viewfinder over nothing — the same object the market
+                      page shows while a session waits on its first filing.
+                      Still, not sweeping: nothing on this page is live. The
+                      clock it replaces is its floor. */}
+                  <Illustration
+                    height={56}
+                    icon={ClockIcon}
+                    iconClassName="h-5 w-5 text-brand-brown dark:text-brand-tan"
+                    motion="none"
+                    scene="market-scanning"
                   />
                   <p className="text-[13.5px] leading-[1.6] text-foreground/70">
                     {dealings.length === 0 ? (

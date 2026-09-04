@@ -4,6 +4,9 @@ import type { MarketSession, MarketStatus } from "@/lib/market-status";
 import { useEffect, useState } from "react";
 import { CalendarIcon, ClockIcon } from "@heroicons/react/24/outline";
 
+import { Illustration } from "@/components/illustration";
+import { sceneForStatus, type IllustrationScene } from "@/lib/illustrations";
+import { useMediaQuery } from "@/lib/use-media-query";
 import { useExchangeHolidays } from "@/lib/bank-holidays";
 import {
   formatCloseTime,
@@ -16,6 +19,10 @@ export interface MarketStatusView {
   headline: string;
   sub: string | null;
   icon: "calendar" | "clock";
+  /** The empty-state artwork for this status, chosen from the same value
+   *  as the copy so the picture and the words always agree. `icon` is its
+   *  floor when the file is missing. */
+  scene: IllustrationScene;
   dotClass: string;
   isLive: boolean;
   /** Set on weekend/holiday closures — the whole calendar day is shut.
@@ -57,31 +64,46 @@ export function useMarketStatusView(
  *  days the live status instead rides in the Today header (see
  *  `market-today-hero.tsx`) rather than as a standalone card. */
 export function MarketAnchorPanel({ view }: { view: MarketStatusView }) {
+  // The object sits at the right end of the panel from `lg`, where the
+  // empty-day container goes two-up and the panel has a row to spare;
+  // below that it goes above the eyebrow, centred, as the app draws it.
+  // One element, reordered, rather than two rendered and one hidden — an
+  // image fetched twice for a state the reader sees once.
+  const wide = useMediaQuery("(min-width: 1024px)");
+
   return (
-    <>
-      <div className="relative flex items-center gap-2">
-        <StatusBullet
-          dotClass={view.dotClass}
-          icon={view.icon}
-          isLive={view.isLive}
-        />
-        <span
-          className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
-            view.isLive ? "text-[#2E7D32] dark:text-[#7BBE7F]" : "text-muted"
-          }`}
-        >
-          {view.eyebrow}
-        </span>
-      </div>
-      <div className="relative mt-4 flex-1 text-[28px] font-semibold leading-[1.1] tracking-[-0.035em] md:text-[34px]">
-        {view.headline}
-      </div>
-      {view.sub && (
-        <div className="relative mt-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-          {view.sub}
+    <div className="relative flex flex-1 flex-col lg:flex-row lg:items-center lg:gap-8">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center gap-2">
+          <StatusBullet
+            dotClass={view.dotClass}
+            icon={view.icon}
+            isLive={view.isLive}
+          />
+          <span
+            className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
+              view.isLive ? "text-[#2E7D32] dark:text-[#7BBE7F]" : "text-muted"
+            }`}
+          >
+            {view.eyebrow}
+          </span>
         </div>
-      )}
-    </>
+        <div className="mt-4 flex-1 text-[28px] font-semibold leading-[1.1] tracking-[-0.035em] md:text-[34px]">
+          {view.headline}
+        </div>
+        {view.sub && (
+          <div className="mt-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+            {view.sub}
+          </div>
+        )}
+      </div>
+      <Illustration
+        className="order-first mb-6 self-center lg:order-last lg:mb-0"
+        height={wide ? 140 : 98}
+        icon={view.icon === "calendar" ? CalendarIcon : ClockIcon}
+        scene={view.scene}
+      />
+    </div>
   );
 }
 
@@ -129,8 +151,11 @@ function describeStatus(
   status: MarketStatus,
   session: MarketSession,
 ): MarketStatusView {
+  const scene = sceneForStatus(status);
+
   if (status.kind === "open") {
     return {
+      scene,
       eyebrow: "Live",
       headline: "Scanning today’s market for deals",
       sub: status.earlyCloseToday
@@ -144,6 +169,7 @@ function describeStatus(
   }
   if (status.kind === "preOpen") {
     return {
+      scene,
       eyebrow: "Pre-open",
       headline: `Market opens in ${formatCountdown(status.opensInMs)}`,
       sub: `Opens at ${formatCloseTime(session.openMinute)}`,
@@ -160,6 +186,7 @@ function describeStatus(
 
   if (status.reason.kind === "holiday") {
     return {
+      scene,
       eyebrow: "Closed",
       headline: `Closed for ${status.reason.name}`,
       sub: reopens,
@@ -171,6 +198,7 @@ function describeStatus(
   }
   if (status.reason.kind === "weekend") {
     return {
+      scene,
       eyebrow: "Closed",
       headline: "Markets closed for the weekend",
       sub: reopens,
@@ -182,6 +210,7 @@ function describeStatus(
   }
 
   return {
+    scene,
     eyebrow: "Closed",
     headline: "The market has closed",
     sub: reopens,

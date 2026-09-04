@@ -158,63 +158,63 @@ export function SeoPageShell({
 
         {back ? <div className={hero ? "mt-8" : "pt-2"}>{back}</div> : null}
 
-      {crumbs && crumbs.length > 0 ? (
-        <nav
-          aria-label="Breadcrumb"
-          className={`text-[11px] leading-[1.5] text-foreground/50 ${
-            back ? "mt-2" : hero ? "mt-8" : "pt-2"
+        {crumbs && crumbs.length > 0 ? (
+          <nav
+            aria-label="Breadcrumb"
+            className={`text-[11px] leading-[1.5] text-foreground/50 ${
+              back ? "mt-2" : hero ? "mt-8" : "pt-2"
+            }`}
+          >
+            {crumbs.map((c, i) => (
+              <span key={`${c.label}-${i}`}>
+                {i > 0 ? <span className="mx-1.5 opacity-40">/</span> : null}
+                {c.to ? (
+                  <Link
+                    className="transition-colors hover:text-foreground"
+                    to={c.to}
+                  >
+                    {c.label}
+                  </Link>
+                ) : (
+                  <span aria-current="page">{c.label}</span>
+                )}
+              </span>
+            ))}
+          </nav>
+        ) : null}
+
+        <p
+          className={`font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan ${
+            (crumbs && crumbs.length > 0) || back
+              ? "mt-4"
+              : hero
+                ? "mt-8"
+                : "pt-2"
           }`}
         >
-          {crumbs.map((c, i) => (
-            <span key={`${c.label}-${i}`}>
-              {i > 0 ? <span className="mx-1.5 opacity-40">/</span> : null}
-              {c.to ? (
-                <Link
-                  className="transition-colors hover:text-foreground"
-                  to={c.to}
-                >
-                  {c.label}
-                </Link>
-              ) : (
-                <span aria-current="page">{c.label}</span>
-              )}
-            </span>
-          ))}
-        </nav>
-      ) : null}
+          {eyebrow}
+        </p>
 
-      <p
-        className={`font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan ${
-          (crumbs && crumbs.length > 0) || back
-            ? "mt-4"
-            : hero
-              ? "mt-8"
-              : "pt-2"
-        }`}
-      >
-        {eyebrow}
-      </p>
-
-      {/* Levelled off /api's hero h1 (34/44/58). Stepped to 34/44 for the
+        {/* Levelled off /api's hero h1 (34/44/58). Stepped to 34/44 for the
           860px document measure: the top rung is for a full-width marketing
           hero, not a column with a rail beside it. Supersedes the 30/38
           "guide page" species in the 2026-07-27 type conventions — the
           record-page species (28/34, company and broker detail) is unchanged. */}
-      <h1 className="mt-2 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-foreground sm:text-[44px]">
-        {title}
-      </h1>
+        <h1 className="mt-2 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-foreground sm:text-[44px]">
+          {title}
+        </h1>
 
-      {standfirst ? (
-        <p
-          className={
-            standfirstSize === "lede"
-              ? "mt-5 max-w-[58ch] text-[16.5px] leading-[1.55] tracking-[-0.006em] text-foreground/75"
-              : "mt-4 max-w-[62ch] text-[14px] leading-[1.65] text-foreground/70"
-          }
-        >
-          {standfirst}
-        </p>
-      ) : null}
+        {standfirst ? (
+          <p
+            className={
+              standfirstSize === "lede"
+                ? "mt-5 max-w-[58ch] text-[16.5px] leading-[1.55] tracking-[-0.006em] text-foreground/75"
+                : "mt-4 max-w-[62ch] text-[14px] leading-[1.65] text-foreground/70"
+            }
+          >
+            {standfirst}
+          </p>
+        ) : null}
 
         {notice ? (
           <div className={width === "wide" ? "mt-3" : "mt-3 max-w-[62ch]"}>

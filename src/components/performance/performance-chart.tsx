@@ -17,6 +17,9 @@ import type {
 } from "@/lib/performance/types";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
+
+import { Illustration } from "@/components/illustration";
 
 const STRAT_COLOR = "#5a4128"; // brand brown, matches the active-link tint
 const BENCH_COLOR = "#a1a1aa"; // muted grey
@@ -204,9 +207,15 @@ export function PerformanceChart({ result, viewMode, onScrub }: Props) {
     return (
       <div
         ref={containerRef}
-        className="flex h-[220px] items-center justify-center rounded-lg border border-separator bg-surface/40 text-sm text-muted"
+        className="flex h-[220px] flex-col items-center justify-center gap-3 rounded-lg border border-separator bg-surface/40 text-sm text-muted"
       >
-        Not enough data yet.
+        {/* Held still: the line only sweeps where a session is live. */}
+        <Illustration
+          icon={ViewfinderCircleIcon}
+          motion="none"
+          scene="market-scanning"
+        />
+        <span>Not enough data yet.</span>
       </div>
     );
   }

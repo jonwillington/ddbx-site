@@ -84,9 +84,7 @@ export function AppCtaBand({
       <div className="px-6 py-14 sm:px-10 md:px-14 md:py-16">
         <div
           className={
-            hasMedia
-              ? "grid items-center gap-12 lg:grid-cols-2 lg:gap-16"
-              : ""
+            hasMedia ? "grid items-center gap-12 lg:grid-cols-2 lg:gap-16" : ""
           }
         >
           <div>

@@ -56,31 +56,22 @@ export function syncThemeColorMeta(theme: Theme): void {
   document.head.appendChild(meta);
 }
 
-/** Paint the themed ground directly onto <html> and <body>, as a literal hex.
+/** Keep <html>'s inline background in step with the theme.
  *
- *  iOS 26 Safari ignores `theme-color` and tints BOTH toolbars by sampling the
- *  page itself: the root/body background, or a fixed element covering the
- *  relevant viewport edge. globals.css already paints the body per theme, so in
- *  principle the class flip is enough — in practice the bottom toolbar kept the
- *  colour it had at first load while the top one tracked the flip, because:
+ *  This exists because of the first-paint seed in index.html, not because of
+ *  iOS. The seed sets `documentElement.style.backgroundColor` before the
+ *  stylesheet parses, so the first frame is the right tone — and no CSS rule in
+ *  globals.css paints `html` at all. Without this the seeded value would stick
+ *  for the life of the page and the canvas would keep the colour it had at
+ *  load while the body flipped underneath it.
  *
- *  - the body's dark paint is `var(--background)`, an oklch value resolved
- *    through a custom property. Safari's chrome sampler is not the same code
- *    path as the compositor, and it does not reliably re-resolve that on a
- *    class change — an explicit inline hex on the element it samples is a
- *    direct mutation it cannot miss; and
- *  - the bottom edge is covered on mobile by the fixed download CTA's scrim
- *    (layouts/default.tsx), so `html` needs the paint too rather than relying
- *    on the body alone being what gets sampled.
- *
- *  Inline styles rather than CSS because the point is the explicit per-flip
- *  mutation. The stylesheet keeps its own rules as the first-paint default for
- *  the frames before this runs. */
-function paintChromeSurfaces(theme: Theme): void {
-  const hex = THEME_COLOR[theme];
-
-  document.documentElement.style.backgroundColor = hex;
-  document.body.style.backgroundColor = hex;
+ *  Deliberately does NOT touch <body>. iOS 26 Safari samples the body's
+ *  background for its toolbar tint and re-tints on CSS recalc — the `.dark`
+ *  class flip — but not on a direct JS style mutation. So the body's paint has
+ *  to stay CSS-driven (globals.css) to keep working; an inline override would
+ *  shadow the rule that is doing the job. */
+function syncRootBackground(theme: Theme): void {
+  document.documentElement.style.backgroundColor = THEME_COLOR[theme];
 }
 
 /** The theme the site would show right now if nothing pinned it: the user's
@@ -99,12 +90,12 @@ export function resolveAmbientTheme(): Theme {
  *  switch's job, and a pinned route must never overwrite what the visitor
  *  chose for the rest of the site.
  *
- *  Three steps, and all three are load-bearing on iOS: the class drives the
- *  palette, the explicit hex on html/body is what Safari's chrome sampler
- *  actually reads (see paintChromeSurfaces), and the meta covers older iOS and
- *  Android Chrome, which do honour it. */
+ *  The class flip is what actually repaints the page AND what iOS 26 Safari
+ *  re-samples for its toolbar tint (via `body` in globals.css). The other two
+ *  are bookkeeping: <html>'s inline seed has to be kept current, and the meta
+ *  covers older iOS and Android Chrome, which do still honour it. */
 export function applyTheme(theme: Theme): void {
   document.documentElement.classList.toggle("dark", theme === "dark");
-  paintChromeSurfaces(theme);
+  syncRootBackground(theme);
   syncThemeColorMeta(theme);
 }

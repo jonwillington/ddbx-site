@@ -229,12 +229,27 @@ export function formatCloseTime(minuteOfDay: number): string {
   return `${h}:${String(m).padStart(2, "0")}`;
 }
 
+/** How long before the open the pre-open stretch becomes a coffee rather
+ *  than a night. Same three hours as the iOS app
+ *  (`DashboardView.coffeeWindowBeforeOpen`): earlier than that the reader
+ *  is asleep, and the next open is a night away whatever the countdown
+ *  says. The empty-state artwork (`lib/illustrations.ts`) and the copy
+ *  below split on the same boundary, so the two move together. */
+export const COFFEE_WINDOW_MS = 3 * 60 * 60 * 1000;
+
 /** Contextual subtitle for "no deals yet today". Session-aware so US/SE
- *  TodayEmpty slots can reuse it. */
+ *  TodayEmpty slots can reuse it. Pass the `status` where the caller has
+ *  one: it is the same value the card picks its artwork from, so the
+ *  words and the picture agree — and it knows the small hours from the
+ *  hour before the bell, which the clock alone doesn't. */
 export function noDealsSubtitle(
   session: MarketSession = LSE,
   now: Date = new Date(),
+  status?: MarketStatus,
 ): string {
+  if (status?.kind === "preOpen" && status.opensInMs > COFFEE_WINDOW_MS)
+    return "Hours until the open. Nothing to miss yet.";
+
   const parts = tzParts(now, session.timeZone);
   const isWeekend = parts.weekday === 0 || parts.weekday === 6;
 
