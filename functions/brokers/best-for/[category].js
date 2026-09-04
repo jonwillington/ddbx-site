@@ -29,10 +29,20 @@ import {
   page,
   renderInto,
 } from "../../../shared/prerender.js";
-import { brandTitle, isProductionHost } from "../../../shared/seo.js";
+import {
+  brandTitle,
+  brokerCanonicalHost,
+  brokerMarketForHost,
+  isProductionHost,
+} from "../../../shared/seo.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
-const CANONICAL_HOST = "ddbx.uk";
+// Broker routes fold onto ddbx.uk unless the serving host's market publishes
+// its own directory, so the canonical host is per-request, not a constant. The
+// rule lives in shared/seo.js (BROKER_DIRECTORY_MARKET_IDS) and is shared with
+// canonicalUrlFor, the primary nav and the sitemap — a US page that kept the
+// old hardcoded ddbx.uk would name a URL that does not exist and ask to be
+// dropped from the index.
 
 const fmtMoney = (v) =>
   v == null ? "—" : v === 0 ? "Free" : `£${Number(v).toLocaleString("en-GB")}`;
@@ -55,13 +65,13 @@ function platformFee(fees) {
   return "—";
 }
 
-function prerender(category, brokers, brokerCount) {
+function prerender(category, brokers, brokerCount, canonicalHost) {
   const entries = brokers
     .map((b, i) => {
       const pick = category.picks[b.slug] ?? b.tagline;
 
       return `<li style="margin:0 0 18px">
-      <h3 style="font-size:16px;margin:0 0 4px"><a href="https://${CANONICAL_HOST}/brokers/${esc(b.slug)}">${i + 1}. ${esc(b.name)}</a></h3>
+      <h3 style="font-size:16px;margin:0 0 4px"><a href="https://${canonicalHost}/brokers/${esc(b.slug)}">${i + 1}. ${esc(b.name)}</a></h3>
       <p style="font-size:14px;line-height:1.6;color:#5a4d3a;margin:0 0 4px;max-width:58ch">${esc(pick)}</p>
       <p style="font-size:13px;color:#6b6154;margin:0">Platform fee ${esc(platformFee(b.fees))} · UK dealing ${esc(fmtMoney(b.fees?.trade_commission_uk_gbp))} · FX ${esc(fmtPct(b.fees?.fx_fee_pct))}</p>
     </li>`;
@@ -93,7 +103,7 @@ function prerender(category, brokers, brokerCount) {
   <ol style="list-style:none;padding:0;margin:0">${entries}</ol>
   <h2 style="font-size:15px;margin:32px 0 10px">What to look for</h2>
   <ul style="font-size:14px;line-height:1.7;color:#4a4034">${lookFor}</ul>
-  <p style="margin-top:32px;font-size:14px"><a href="https://${CANONICAL_HOST}/brokers">Compare every UK platform</a></p>`);
+  <p style="margin-top:32px;font-size:14px"><a href="https://${canonicalHost}/brokers">Compare every UK platform</a></p>`);
 }
 
 export async function onRequestGet(context) {
@@ -110,13 +120,20 @@ export async function onRequestGet(context) {
   // be repeated here. Without it a *.pages.dev build would serve an indexable
   // page canonicalising to ddbx.uk — the exact competition between preview and
   // production that isProductionHost() exists to prevent.
-  if (!isProductionHost(new URL(request.url).hostname)) return noindex(shell);
+  const hostname = new URL(request.url).hostname;
+
+  if (!isProductionHost(hostname)) return noindex(shell);
+
+  // Null market = this host publishes no directory of its own, so it is
+  // serving the directory of whichever host it canonicalises onto.
+  const canonicalHost = brokerCanonicalHost(hostname);
+  const market = brokerMarketForHost(hostname) ?? "UK";
 
   // Unknown category — let the SPA render its own not-found state, but keep
   // the URL out of the index.
   if (!category) return noindex(shell);
 
-  const data = await fetchJson(`${API_BASE}/brokers?market=UK`, 3600);
+  const data = await fetchJson(`${API_BASE}/brokers?market=${market}`, 3600);
   const all = data?.brokers ?? [];
   const ranked = brokersForCategory(category, all);
 
@@ -126,7 +143,7 @@ export async function onRequestGet(context) {
   // place and withheld in another.
   if (ranked.length < MIN_BROKERS) return noindex(shell);
 
-  const canonical = `https://${CANONICAL_HOST}${categoryPath(category.slug)}`;
+  const canonical = `https://${canonicalHost}${categoryPath(category.slug)}`;
   const title = brandTitle(category.title);
 
   return renderInto(shell, {
@@ -137,9 +154,9 @@ export async function onRequestGet(context) {
     // `crumbs`, and the review page's own nav), and structured data has to name
     // what the reader sees.
     breadcrumbs: [
-      { name: "Broker reviews", item: `https://${CANONICAL_HOST}/brokers` },
+      { name: "Broker reviews", item: `https://${canonicalHost}/brokers` },
       { name: category.h1, item: canonical },
     ],
-    body: prerender(category, ranked, all.length),
+    body: prerender(category, ranked, all.length, canonicalHost),
   });
 }

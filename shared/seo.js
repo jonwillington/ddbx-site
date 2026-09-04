@@ -61,6 +61,55 @@ export const HOST_DEFAULT_MARKET = {
   "www.ddbx.eu": "se",
 };
 
+/** Market ids that publish a broker directory.
+ *
+ *  The broker routes are the one page family whose canonical host depends on
+ *  DATA rather than on the route: a host may only own /brokers/* once there is
+ *  a dataset behind it for that market. While a market has no rows, its broker
+ *  routes fold onto ddbx.uk — that fold is correct, not a bug, because every
+ *  host would otherwise publish the same UK content under its own URLs and
+ *  compete with itself.
+ *
+ *  Adding a market here is therefore the LAST step of shipping its directory,
+ *  after /api/brokers?market=<M> serves rows. Adding it early points crawlers
+ *  at self-canonicalising pages that render another market's brokers.
+ *
+ *  This list drives three surfaces that must agree — canonical selection
+ *  (canonicalUrlFor below), the primary nav (src/components/navbar.tsx) and the
+ *  sitemap (functions/sitemap.xml.js). Keep it the only place the answer lives.
+ *  See investigations/broker-comparison/us-expansion.md §8 in ddbx-data. */
+export const BROKER_DIRECTORY_MARKET_IDS = ["uk"];
+
+/** Whether a market publishes its own broker directory. */
+export function marketPublishesBrokers(marketId) {
+  return BROKER_DIRECTORY_MARKET_IDS.includes(String(marketId ?? ""));
+}
+
+/** The host that owns broker routes for a given serving host.
+ *
+ *  Returns the serving host's own domain where its market publishes a
+ *  directory, and ddbx.uk otherwise — the fold that stops three hosts
+ *  publishing one UK dataset under three URL sets.
+ *
+ *  The Pages Functions that pre-render /brokers/best-for/* and
+ *  /brokers/compare/* build canonicals, breadcrumbs and body links by hand
+ *  rather than calling canonicalUrlFor, so without a shared helper the
+ *  publication rule would live in three files and drift between them. */
+export function brokerCanonicalHost(hostname) {
+  const id = HOST_DEFAULT_MARKET[normaliseHost(hostname)] ?? "uk";
+
+  return marketPublishesBrokers(id) ? (MARKET_HOST_BY_ID[id] ?? "ddbx.uk") : "ddbx.uk";
+}
+
+/** Wire market code ("UK", "US") whose broker directory a host serves, or null
+ *  where the host's own market publishes none — callers fall back to the
+ *  directory of whichever host they canonicalise onto. */
+export function brokerMarketForHost(hostname) {
+  const id = HOST_DEFAULT_MARKET[normaliseHost(hostname)] ?? null;
+
+  return id && marketPublishesBrokers(id) ? id.toUpperCase() : null;
+}
+
 // ---- Language editions ----------------------------------------------------
 //
 // The site is English everywhere except one family: /zh-hk/download{,/ios,
@@ -779,19 +828,29 @@ export function canonicalUrlFor(pathname, hostname) {
 
   const path = String(pathname ?? "/");
   const id = marketIdForPath(path, host);
-  // Broker reviews are UK-only editorial ("Compare UK trading platforms"), so
-  // they belong to ddbx.uk whichever domain served them.
+  // Broker routes belong to the host serving them ONLY where that market
+  // publishes its own directory. Everywhere else they are UK editorial
+  // ("Compare UK trading platforms") rendered on another domain, and folding
+  // them onto ddbx.uk is what stops three hosts competing with one dataset.
+  //
+  // Getting this wrong in the other direction is the expensive failure: a US
+  // page canonicalising to https://ddbx.uk/brokers/<slug> names a URL that
+  // does not exist, so the page asks to be dropped from the index. That is
+  // silent — it looks like a page that simply never ranked.
   const isBrokerPath =
     path === "/compare" || path === "/brokers" || path.startsWith("/brokers/");
+  const brokerPathBelongsToHost = isBrokerPath && marketPublishesBrokers(id);
   // The API page is one cross-market product rendered identically on every
   // host, so without this ddbx.uk/api, ddbx.us/api and ddbx.eu/api would be
   // three duplicates competing with each other — the same trap the glossary
   // entries below already avoid. It folds onto ddbx.uk, and only that URL is
   // in the sitemap (see functions/sitemap.xml.js).
   const marketHost =
-    isBrokerPath || isApiPath(path) || isStatusPath(path)
-      ? "ddbx.uk"
-      : (MARKET_HOST_BY_ID[id] ?? "ddbx.uk");
+    brokerPathBelongsToHost
+      ? (MARKET_HOST_BY_ID[id] ?? "ddbx.uk")
+      : isBrokerPath || isApiPath(path) || isStatusPath(path)
+        ? "ddbx.uk"
+        : (MARKET_HOST_BY_ID[id] ?? "ddbx.uk");
 
   const canonicalPath = (() => {
     // /api and /developers are the same page; fold the alias onto the canonical.

@@ -2,6 +2,8 @@ import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
+import { marketPublishesBrokers } from "../../shared/seo.js";
+
 import { StoreGlyph } from "@/components/store-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { siteConfig } from "@/config/site";
@@ -55,7 +57,12 @@ export const Navbar = () => {
   // hostname (see CompaniesPage), so it serves UK names on ddbx.uk and US ones
   // on ddbx.us. Congress and Trump Media ride the US domain, so they get it
   // too. SE/NL have no companies index yet.
-  const showBrokers = market.id === "uk";
+  // Not "is this the UK" but "does this market publish a directory": the same
+  // BROKER_DIRECTORY_MARKET_IDS that decides canonical host and sitemap
+  // membership (shared/seo.js). Linking a market's /brokers from the nav before
+  // it owns its canonical would point readers at a page that asks to be
+  // deindexed, so the three surfaces move together or not at all.
+  const showBrokers = marketPublishesBrokers(market.id);
   const showCompanies = ["uk", "us", "usg", "djt"].includes(market.id);
 
   const navItems = [

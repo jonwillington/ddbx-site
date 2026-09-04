@@ -29,10 +29,20 @@ import {
   page,
   renderInto,
 } from "../../../shared/prerender.js";
-import { brandTitle, isProductionHost } from "../../../shared/seo.js";
+import {
+  brandTitle,
+  brokerCanonicalHost,
+  brokerMarketForHost,
+  isProductionHost,
+} from "../../../shared/seo.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
-const CANONICAL_HOST = "ddbx.uk";
+// Broker routes fold onto ddbx.uk unless the serving host's market publishes
+// its own directory, so the canonical host is per-request, not a constant. The
+// rule lives in shared/seo.js (BROKER_DIRECTORY_MARKET_IDS) and is shared with
+// canonicalUrlFor, the primary nav and the sitemap — a US page that kept the
+// old hardcoded ddbx.uk would name a URL that does not exist and ask to be
+// dropped from the index.
 
 const fmtMoney = (v) =>
   v == null ? "—" : v === 0 ? "Free" : `£${Number(v).toLocaleString("en-GB")}`;
@@ -75,7 +85,7 @@ function yesNo(v) {
   return v === true ? "Yes" : v === false ? "No" : "—";
 }
 
-function prerender(comparison, a, b) {
+function prerender(comparison, a, b, canonicalHost) {
   const differing = ROWS.filter((r) => r.get(a) !== r.get(b));
   const rows = differing
     .map(
@@ -111,7 +121,7 @@ function prerender(comparison, a, b) {
   }
   <h2 style="font-size:15px;margin:32px 0 10px">Which should you pick</h2>
   <p style="font-size:15px;line-height:1.65;color:#4a4034;max-width:62ch">${esc(comparison.verdict)}</p>
-  <p style="margin-top:32px;font-size:14px"><a href="https://${CANONICAL_HOST}/brokers/${esc(a.slug)}">${esc(a.name)} review</a> · <a href="https://${CANONICAL_HOST}/brokers/${esc(b.slug)}">${esc(b.name)} review</a> · <a href="https://${CANONICAL_HOST}/brokers">Compare every UK platform</a></p>`);
+  <p style="margin-top:32px;font-size:14px"><a href="https://${canonicalHost}/brokers/${esc(a.slug)}">${esc(a.name)} review</a> · <a href="https://${canonicalHost}/brokers/${esc(b.slug)}">${esc(b.name)} review</a> · <a href="https://${canonicalHost}/brokers">Compare every UK platform</a></p>`);
 }
 
 export async function onRequestGet(context) {
@@ -124,18 +134,25 @@ export async function onRequestGet(context) {
   // See the note in functions/brokers/best-for/[category].js — this route is
   // on the middleware's skip list, so the preview-host noindex has to be
   // applied here rather than inherited.
-  if (!isProductionHost(new URL(request.url).hostname)) return noindex(shell);
+  const hostname = new URL(request.url).hostname;
+
+  if (!isProductionHost(hostname)) return noindex(shell);
+
+  // Null market = this host publishes no directory of its own, so it is
+  // serving the directory of whichever host it canonicalises onto.
+  const canonicalHost = brokerCanonicalHost(hostname);
+  const market = brokerMarketForHost(hostname) ?? "UK";
 
   if (!comparison) return noindex(shell);
 
-  const data = await fetchJson(`${API_BASE}/brokers?market=UK`, 3600);
+  const data = await fetchJson(`${API_BASE}/brokers?market=${market}`, 3600);
   const pair = brokersForComparison(comparison, data?.brokers ?? []);
 
   // One side missing means a verdict about a platform whose figures aren't on
   // the page — worse than no page.
   if (!pair) return noindex(shell);
 
-  const canonical = `https://${CANONICAL_HOST}${comparisonPath(comparison.slug)}`;
+  const canonical = `https://${canonicalHost}${comparisonPath(comparison.slug)}`;
   const title = brandTitle(`${comparison.title} — which should you pick?`);
 
   return renderInto(shell, {
@@ -145,9 +162,9 @@ export async function onRequestGet(context) {
     // Matches the crumb the hydrated page shows, not a second name for the
     // same hub — structured data has to name what the reader sees.
     breadcrumbs: [
-      { name: "Broker reviews", item: `https://${CANONICAL_HOST}/brokers` },
+      { name: "Broker reviews", item: `https://${canonicalHost}/brokers` },
       { name: comparison.title, item: canonical },
     ],
-    body: prerender(comparison, pair.a, pair.b),
+    body: prerender(comparison, pair.a, pair.b, canonicalHost),
   });
 }

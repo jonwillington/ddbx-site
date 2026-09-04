@@ -7,6 +7,12 @@ export declare const SITE_NAME: string;
 
 export declare const MARKET_HOST_BY_ID: Record<string, string>;
 export declare const HOST_DEFAULT_MARKET: Record<string, string>;
+/** Market ids that publish their own broker directory. Drives canonical
+ *  selection, the primary nav and the sitemap — see shared/seo.js. */
+export declare const BROKER_DIRECTORY_MARKET_IDS: string[];
+export declare function marketPublishesBrokers(marketId: string): boolean;
+export declare function brokerCanonicalHost(hostname: string): string;
+export declare function brokerMarketForHost(hostname: string): string | null;
 
 export interface MarketSeo {
   label: string;

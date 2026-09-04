@@ -66,7 +66,10 @@ import {
   sectorRollup,
   windowStart,
 } from "../shared/sectors.js";
-import { HOST_DEFAULT_MARKET } from "../shared/seo.js";
+import {
+  HOST_DEFAULT_MARKET,
+  marketPublishesBrokers,
+} from "../shared/seo.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -87,7 +90,11 @@ const ROUTES_BY_HOST = {
   // analysis layer for it to describe.
   "ddbx.uk": [
     "/",
-    "/brokers",
+    // NOTE: /brokers is NOT here. The broker index rides the same publication
+    // rule as the review URLs below it (BROKER_DIRECTORY_MARKET_IDS in
+    // shared/seo.js), so brokerPaths() adds it for whichever hosts publish a
+    // directory. Hardcoding it here would have listed ddbx.uk's index while a
+    // future ddbx.us index stayed invisible.
     "/developers",
     "/companies",
     "/sectors",
@@ -124,11 +131,39 @@ function apexHost(hostname) {
   return host.startsWith("www.") ? host.slice(4) : host;
 }
 
-/** Broker review slugs, for ddbx.uk only. A failure here costs us the broker
- *  URLs, not the sitemap — better a short valid document than a 500. */
-async function brokerPaths() {
+/** Wire market whose broker directory belongs on each host, mirroring
+ *  COMPANY_MARKET_BY_HOST below. A host absent here never lists broker URLs. */
+const BROKER_MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
+
+/** Per-market editorial catalogues. The UK's categories and head-to-heads are
+ *  written around ISAs, SIPPs and percentage platform fees, so they are UK
+ *  modules rather than a shared catalogue with market flags on each row — a US
+ *  entry joins as its own module here, not as a branch inside the UK one. */
+const BROKER_CATALOGUE_BY_MARKET = {
+  UK: { categories: CATEGORIES, comparisons: COMPARISONS },
+};
+
+/** Broker index, review, category and head-to-head URLs for one host.
+ *
+ *  Empty unless the host's market both publishes a directory (shared/seo.js) and
+ *  has an editorial catalogue here — the sitemap must not advertise a URL whose
+ *  rel=canonical points at another host, which is exactly what listing US
+ *  broker pages before BROKER_DIRECTORY_MARKET_IDS gains "us" would do.
+ *
+ *  A failure here costs us the broker URLs, not the sitemap — better a short
+ *  valid document than a 500. */
+async function brokerPaths(host) {
+  const market = BROKER_MARKET_BY_HOST[host];
+
+  if (!market) return [];
+  if (!marketPublishesBrokers(market.toLowerCase())) return [];
+
+  const catalogue = BROKER_CATALOGUE_BY_MARKET[market];
+
+  if (!catalogue) return [];
+
   try {
-    const res = await fetch(`${API_BASE}/brokers?market=UK`, {
+    const res = await fetch(`${API_BASE}/brokers?market=${market}`, {
       headers: { accept: "application/json" },
       // cacheTtlByStatus, not a blanket cacheTtl: `cacheEverything` with a flat
       // TTL pins whatever came back — including a 404 served during a Worker
@@ -154,17 +189,19 @@ async function brokerPaths() {
     // category can fall below the bar without a site deploy; deriving the list
     // from live data rather than hardcoding it means the sitemap stops
     // advertising it on the next request instead of the next release.
-    const categories = CATEGORIES.filter((c) =>
-      categoryMeetsBar(c, brokers),
-    ).map((c) => categoryPath(c.slug));
+    const categories = catalogue.categories
+      .filter((c) => categoryMeetsBar(c, brokers))
+      .map((c) => categoryPath(c.slug));
 
     // Likewise a head-to-head needs both platforms present — half a comparison
     // is a verdict about a platform whose figures aren't on the page.
-    const comparisons = COMPARISONS.filter((c) =>
-      brokersForComparison(c, brokers),
-    ).map((c) => comparisonPath(c.slug));
+    const comparisons = catalogue.comparisons
+      .filter((c) => brokersForComparison(c, brokers))
+      .map((c) => comparisonPath(c.slug));
 
-    return [...reviews, ...categories, ...comparisons];
+    // The index rides with the rest: if the fetch failed we list no /brokers
+    // either, rather than advertising an index for an empty directory.
+    return ["/brokers", ...reviews, ...categories, ...comparisons];
   } catch {
     return [];
   }
@@ -587,7 +624,7 @@ export async function onRequestGet(context) {
 
   const paths = [...(ROUTES_BY_HOST[host] ?? ["/"]), ...COMMON_ROUTES];
 
-  if (host === "ddbx.uk") paths.push(...(await brokerPaths()));
+  paths.push(...(await brokerPaths(host)));
   // Year leaderboards, on the two hosts that own /biggest-buys. Derived from
   // the same helper the boards' own archive links use, so a new year appears in
   // the sitemap and in the page's navigation at the same moment. Years start at
