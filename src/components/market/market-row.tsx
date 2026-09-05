@@ -44,8 +44,18 @@ const DEFAULT_COLUMN_HELP: Record<MarketColumnKey, string> = {
     "Quantity (the number of buys folded into this row), alongside the share price's recent trend.",
   performance:
     "Price change since the trade, or the return vs the market benchmark when that view is selected.",
+  comments:
+    "Readers are discussing these trades in the app. Counts shown here; the conversation lives in the app.",
   action: "Our signal rating for this trade.",
 };
+
+/** Columns a market may switch off wholesale (MarketConfig.hiddenColumns).
+ *  Passed down as a Set so a row does one lookup per cell rather than a
+ *  linear scan. `has` on an undefined set is the common case, so callers get
+ *  an empty set by default and never branch on null. */
+export type HiddenColumns = ReadonlySet<MarketColumnKey>;
+
+const NO_HIDDEN: HiddenColumns = new Set<MarketColumnKey>();
 
 /** A column header label with an info tooltip explaining what the column means
  *  for the active market. */
@@ -78,11 +88,14 @@ export function MarketRowHeader({
   inset = false,
   valueColumnClass = "w-24",
   columnHelp,
+  hiddenColumns = NO_HIDDEN,
   showLegCount = true,
 }: {
   hideDate?: boolean;
   benchmarkLabel: string;
   chartMode: ChartMode;
+  /** Columns this market doesn't render — see MarketConfig.hiddenColumns. */
+  hiddenColumns?: HiddenColumns;
   /** When true, the header columns are nudged inward by px-3 to align with
    *  the rounded day cards in the chronological view. */
   inset?: boolean;
@@ -118,22 +131,28 @@ export function MarketRowHeader({
       >
         <HeaderLabel help={help.value}>Value</HeaderLabel>
       </div>
-      <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
-        <HeaderLabel help={help.trend}>
-          {showLegCount ? "Qty / Trend" : "Trend"}
-        </HeaderLabel>
-      </div>
-      <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
-        <HeaderLabel help={help.performance}>{perfLabel}</HeaderLabel>
-      </div>
-      <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
-        <HeaderLabel help="Readers are discussing these trades in the app. Counts shown here; the conversation lives in the app.">
-          Comments
-        </HeaderLabel>
-      </div>
-      <div className="w-40 shrink-0 px-2 py-1.5 text-center">
-        <HeaderLabel help={help.action}>Action</HeaderLabel>
-      </div>
+      {!hiddenColumns.has("trend") && (
+        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <HeaderLabel help={help.trend}>
+            {showLegCount ? "Qty / Trend" : "Trend"}
+          </HeaderLabel>
+        </div>
+      )}
+      {!hiddenColumns.has("performance") && (
+        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <HeaderLabel help={help.performance}>{perfLabel}</HeaderLabel>
+        </div>
+      )}
+      {!hiddenColumns.has("comments") && (
+        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <HeaderLabel help={help.comments}>Comments</HeaderLabel>
+        </div>
+      )}
+      {!hiddenColumns.has("action") && (
+        <div className="w-40 shrink-0 px-2 py-1.5 text-center">
+          <HeaderLabel help={help.action}>Action</HeaderLabel>
+        </div>
+      )}
     </div>
   );
 }
@@ -304,9 +323,14 @@ export function MarketDaySummaryRow({
 export function MarketRowSkeleton({
   hideDate = false,
   valueColumnClass = "w-24",
+  hiddenColumns = NO_HIDDEN,
 }: {
   hideDate?: boolean;
   valueColumnClass?: string;
+  /** Must match the live table's, or the loading state promises a geometry
+   *  the arrived rows don't keep — the thing the static-page rules call a
+   *  loading state that doesn't match the arrived shape. */
+  hiddenColumns?: HiddenColumns;
 }) {
   return (
     <div className="w-full">
@@ -353,18 +377,26 @@ export function MarketRowSkeleton({
         >
           <Skeleton className="h-4 w-16 rounded" />
         </div>
-        <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-          <Skeleton className="h-3 w-16 rounded" />
-        </div>
-        <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-          <Skeleton className="h-5 w-14 rounded-full" />
-        </div>
-        <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-          <Skeleton className="h-5 w-10 rounded-md" />
-        </div>
-        <div className="w-40 shrink-0 px-2 py-2.5 flex items-center justify-center">
-          <Skeleton className="h-5 w-20 rounded-full" />
-        </div>
+        {!hiddenColumns.has("trend") && (
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+            <Skeleton className="h-3 w-16 rounded" />
+          </div>
+        )}
+        {!hiddenColumns.has("performance") && (
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+            <Skeleton className="h-5 w-14 rounded-full" />
+          </div>
+        )}
+        {!hiddenColumns.has("comments") && (
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+            <Skeleton className="h-5 w-10 rounded-md" />
+          </div>
+        )}
+        {!hiddenColumns.has("action") && (
+          <div className="w-40 shrink-0 px-2 py-2.5 flex items-center justify-center">
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -456,6 +488,9 @@ interface MarketRowProps<W> {
    *  nothing to show. */
   RowNameBadge?: ComponentType<{ dealing: MarketDealing<W> }>;
   hideDate?: boolean;
+  /** Columns this market doesn't render at all — see
+   *  MarketConfig.hiddenColumns. Must match what MarketRowHeader was given. */
+  hiddenColumns?: HiddenColumns;
   /** Suppress the insider name/role subtitle — used for child rows inside a
    *  person-grouped cluster, where every row is the same member shown on the
    *  master above. Cluster + name-badge chips still render. */
@@ -900,6 +935,7 @@ export function MarketRow<W>({
   RowActionCell,
   RowNameBadge,
   hideDate,
+  hiddenColumns = NO_HIDDEN,
   isMuted,
   formatTickerDisplay,
   locale,
@@ -956,7 +992,13 @@ export function MarketRow<W>({
     dealing.value != null ? fmt.formatValue(dealing.value) : "—";
   const compactValueLabel =
     dealing.value != null ? formatCompactValue(dealing.value, fmt) : "—";
-  const commentCount = commentCountFor(dealing);
+  // Counts are a synthetic install nudge ("N people are discussing this in
+  // the app"), so they must not appear on a market that hides the comments
+  // column — there is no app for Korea to install, and the chip would be
+  // pointing at a conversation that cannot exist.
+  const commentCount = hiddenColumns.has("comments")
+    ? 0
+    : commentCountFor(dealing);
 
   return (
     <button
@@ -982,8 +1024,15 @@ export function MarketRow<W>({
           {company}
         </span>
         <CommentCountChip count={commentCount} />
-        <span className="shrink-0 text-[15px] font-semibold tabular-nums">
-          {compactValueLabel}
+        <span className="shrink-0 text-right leading-tight">
+          <span className="block text-[15px] font-semibold tabular-nums">
+            {compactValueLabel}
+          </span>
+          {dealing.valueSecondary && (
+            <span className="block text-[10px] tabular-nums text-muted/75">
+              {dealing.valueSecondary}
+            </span>
+          )}
         </span>
       </div>
 
@@ -1033,50 +1082,63 @@ export function MarketRow<W>({
           className={`${fmt.valueColumnClass ?? "w-24"} shrink-0 px-3 py-2.5 flex flex-col items-end justify-center border-r border-black/[0.06] dark:border-white/[0.06]`}
         >
           <div className="text-sm font-semibold tabular-nums">{valueLabel}</div>
-        </div>
-        <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center gap-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
-          {showLegCount && dealing.legCount > 1 && (
-            <span className="text-[11px] font-semibold tabular-nums text-muted/70">
-              {dealing.legCount}
-            </span>
-          )}
-          <MarketRowSpark
-            bars={stockBars}
-            benchmarkBars={benchmarkBars}
-            chartMode={chartMode}
-            disclosedDate={dealing.disclosedDate}
-            tradeDate={dealing.tradeDate}
-            width={52}
-          />
-        </div>
-        <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-          {metricPct != null ? (
-            <span className="animate-content-in">
-              <DeltaBadge
-                suffix={showAlpha ? "pp" : undefined}
-                value={metricPct}
-              />
-            </span>
-          ) : noPosteriorData ? (
-            <span className="text-[11px] text-muted/60">No data yet</span>
-          ) : (
-            <span className="text-[11px] text-muted/50">—</span>
+          {dealing.valueSecondary && (
+            <div className="text-[10px] tabular-nums text-muted/75 leading-tight">
+              {dealing.valueSecondary}
+            </div>
           )}
         </div>
-        <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-          {commentCount > 0 ? (
-            <CommentCountChip count={commentCount} />
-          ) : (
-            <span className="text-[11px] text-muted/50">—</span>
-          )}
-        </div>
-        <div className="w-40 shrink-0 px-2 py-2.5 flex flex-col items-center justify-center gap-1">
-          {DISCRETION_ENABLED ? (
-            <ViewAnalysisCta />
-          ) : (
-            <RowActionCell dealing={dealing} />
-          )}
-        </div>
+        {!hiddenColumns.has("trend") && (
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center gap-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+            {showLegCount && dealing.legCount > 1 && (
+              <span className="text-[11px] font-semibold tabular-nums text-muted/70">
+                {dealing.legCount}
+              </span>
+            )}
+            <MarketRowSpark
+              bars={stockBars}
+              benchmarkBars={benchmarkBars}
+              chartMode={chartMode}
+              disclosedDate={dealing.disclosedDate}
+              tradeDate={dealing.tradeDate}
+              width={52}
+            />
+          </div>
+        )}
+        {!hiddenColumns.has("performance") && (
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+            {metricPct != null ? (
+              <span className="animate-content-in">
+                <DeltaBadge
+                  suffix={showAlpha ? "pp" : undefined}
+                  value={metricPct}
+                />
+              </span>
+            ) : noPosteriorData ? (
+              <span className="text-[11px] text-muted/60">No data yet</span>
+            ) : (
+              <span className="text-[11px] text-muted/50">—</span>
+            )}
+          </div>
+        )}
+        {!hiddenColumns.has("comments") && (
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+            {commentCount > 0 ? (
+              <CommentCountChip count={commentCount} />
+            ) : (
+              <span className="text-[11px] text-muted/50">—</span>
+            )}
+          </div>
+        )}
+        {!hiddenColumns.has("action") && (
+          <div className="w-40 shrink-0 px-2 py-2.5 flex flex-col items-center justify-center gap-1">
+            {DISCRETION_ENABLED ? (
+              <ViewAnalysisCta />
+            ) : (
+              <RowActionCell dealing={dealing} />
+            )}
+          </div>
+        )}
       </div>
     </button>
   );

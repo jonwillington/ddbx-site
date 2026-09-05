@@ -32,12 +32,14 @@ import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 export function MarketFiltersSheet({
   viewMode,
   onViewMode,
+  showViewMode = true,
   signalFilter,
   onSignalFilterChange,
   heroFilters,
   heroFilterId,
   onHeroFilterChange,
   showStrength,
+  showSignalFilter = true,
   extraFilters,
   extraFilterValues,
   onExtraFilterChange,
@@ -46,12 +48,17 @@ export function MarketFiltersSheet({
 }: {
   viewMode: MarketViewMode;
   onViewMode: (v: MarketViewMode) => void;
+  /** False on markets with no return to sort by — "By gain" there opens a
+   *  view that is empty by construction, because every row's gain is null. */
+  showViewMode?: boolean;
   signalFilter?: SignalFilterValue;
   onSignalFilterChange?: (v: SignalFilterValue) => void;
   heroFilters?: FilterSelectOption[];
   heroFilterId?: string | null;
   onHeroFilterChange?: (id: string) => void;
   showStrength: boolean;
+  /** False on markets with no rating layer — see MarketConfig. */
+  showSignalFilter?: boolean;
   extraFilters?: ExtraFilter[];
   extraFilterValues?: Record<string, string>;
   onExtraFilterChange?: (filterId: string, value: string) => void;
@@ -127,37 +134,41 @@ export function MarketFiltersSheet({
               Filters
             </Drawer.Title>
 
-            <Accordion
-              description="Order the list by disclosure date, or by the biggest gain since the trade."
-              open={open.has("view")}
-              title="What do you want to see?"
-              value={viewLabel}
-              onToggle={() => toggle("view")}
-            >
-              <Segmented
-                options={VIEW_OPTIONS}
-                value={viewMode}
-                onChange={(id) => onViewMode(id as MarketViewMode)}
-              />
-            </Accordion>
-
-            {signalFilter !== undefined && onSignalFilterChange && (
+            {showViewMode && (
               <Accordion
-                description="Signal is the curated, non-routine subset we surface. All shows every disclosed filing, routine and unrated included."
-                open={open.has("signal")}
-                title="How much should we show?"
-                value={signalLabel}
-                onToggle={() => toggle("signal")}
+                description="Order the list by disclosure date, or by the biggest gain since the trade."
+                open={open.has("view")}
+                title="What do you want to see?"
+                value={viewLabel}
+                onToggle={() => toggle("view")}
               >
                 <Segmented
-                  options={SIGNAL_FILTER_OPTIONS}
-                  value={signalFilter}
-                  onChange={(id) =>
-                    onSignalFilterChange(id as SignalFilterValue)
-                  }
+                  options={VIEW_OPTIONS}
+                  value={viewMode}
+                  onChange={(id) => onViewMode(id as MarketViewMode)}
                 />
               </Accordion>
             )}
+
+            {showSignalFilter &&
+              signalFilter !== undefined &&
+              onSignalFilterChange && (
+                <Accordion
+                  description="Signal is the curated, non-routine subset we surface. All shows every disclosed filing, routine and unrated included."
+                  open={open.has("signal")}
+                  title="How much should we show?"
+                  value={signalLabel}
+                  onToggle={() => toggle("signal")}
+                >
+                  <Segmented
+                    options={SIGNAL_FILTER_OPTIONS}
+                    value={signalFilter}
+                    onChange={(id) =>
+                      onSignalFilterChange(id as SignalFilterValue)
+                    }
+                  />
+                </Accordion>
+              )}
 
             {showStrength && heroFilters && onHeroFilterChange && (
               <Accordion

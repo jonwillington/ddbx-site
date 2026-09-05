@@ -112,6 +112,7 @@ export function MarketDetailDrawer<W>({
   insiderLabel = "Insider",
   detailFields,
   filingHref,
+  showComments = true,
 }: {
   dealing: MarketDealing<W> | null;
   /** Full in-memory dealings list — used by RecentBuysSection to surface
@@ -156,6 +157,10 @@ export function MarketDetailDrawer<W>({
    *  — null (or an absent prop) means this market has no filing route and the
    *  link is suppressed rather than rendered dead. */
   filingHref?: (dealing: MarketDealing<W>) => string | null;
+  /** False on markets that hide the comments column. The count is a synthetic
+   *  nudge toward an app, so it must not show where there is no app to
+   *  install — see src/lib/comment-counts.ts. */
+  showComments?: boolean;
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const direction = isDesktop ? "right" : "bottom";
@@ -425,10 +430,12 @@ export function MarketDetailDrawer<W>({
                             buyStyle={active.buyStyle}
                             className="shrink-0"
                           />
-                          <CommentCountChip
-                            className="shrink-0"
-                            count={commentCountFor(active)}
-                          />
+                          {showComments && (
+                            <CommentCountChip
+                              className="shrink-0"
+                              count={commentCountFor(active)}
+                            />
+                          )}
                         </div>
 
                         <div className="flex items-stretch">

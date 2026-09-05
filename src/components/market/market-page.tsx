@@ -22,7 +22,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { DailySummarySheet } from "./daily-summary-banner";
 import { MarketChartModeToggle } from "./market-chart-mode-toggle";
@@ -442,6 +442,14 @@ export function MarketPage<W>({
   // return nothing for.
   const livePricesEnabled = config.enableLivePrices !== false;
   const logosEnabled = config.enableLogos !== false;
+  // Built once so the header, the rows and the skeleton all read the same
+  // set — a skeleton with more cells than the table it precedes is a layout
+  // shift on arrival, which is the one thing the loading state exists to
+  // avoid.
+  const hiddenColumns = useMemo(
+    () => new Set(config.hiddenColumns ?? []),
+    [config.hiddenColumns],
+  );
 
   useEffect(() => {
     if (!livePricesEnabled || !config.usesGbpPerUsdFx) return;
@@ -949,14 +957,19 @@ export function MarketPage<W>({
     [dealings, selectedKey],
   );
 
-  const chartModeToggle = (
-    <MarketChartModeToggle
-      stacked
-      benchmarkLabel={config.benchmarkLabel}
-      mode={chartMode}
-      onChange={setChartMode}
-    />
-  );
+  // Raw / vs benchmark switches what the Performance column and the row
+  // sparkline show. A market that renders neither has nothing for it to
+  // change, so the control would sit in the filter bar doing nothing
+  // visible — worse than absent, because a reader will press it.
+  const chartModeToggle =
+    hiddenColumns.has("performance") && hiddenColumns.has("trend") ? null : (
+      <MarketChartModeToggle
+        stacked
+        benchmarkLabel={config.benchmarkLabel}
+        mode={chartMode}
+        onChange={setChartMode}
+      />
+    );
   const previewStatus =
     gating &&
     (() => {
@@ -1038,6 +1051,7 @@ export function MarketPage<W>({
       dealing={d}
       fmt={config.priceFormat}
       formatTickerDisplay={config.formatTickerDisplay}
+      hiddenColumns={hiddenColumns}
       hideInsider={hideInsider}
       indent={indent}
       isMuted={config.isRowMuted}
@@ -1314,6 +1328,27 @@ export function MarketPage<W>({
             />
           ) : null}
 
+          {/* Names the second list. Only markets with a leading plans section
+              set this — everywhere else the hero is the feed's heading and a
+              title here would just repeat it. Outside the loading guard
+              below on purpose: a heading that arrives with the rows reads as
+              content shifting in, and the empty state needs a label too. */}
+          {config.dealingsHeading && (
+            /* Padding, not margin: this sits inside the filter bar's
+               `space-y-6` wrapper, whose sibling rule owns margin-top and
+               would silently win over one set here. */
+            <div className="pt-4">
+              <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-foreground">
+                {config.dealingsHeading.title}
+              </h2>
+              {config.dealingsHeading.subtitle ? (
+                <p className="mt-1 text-[13.5px] leading-[1.6] text-foreground/60">
+                  {config.dealingsHeading.subtitle}
+                </p>
+              ) : null}
+            </div>
+          )}
+
           {/* Rendered while loading too: when it only appeared with the first
               row, the tabs and filter bar dropped in late and shoved the list
               down the page. */}
@@ -1404,6 +1439,8 @@ export function MarketPage<W>({
                   }))}
                   search={search}
                   searchStatus={previewStatus}
+                  showSignalFilter={config.showSignalFilter !== false}
+                  showViewMode={!hiddenColumns.has("performance")}
                   signalFilter={signalFilter}
                   trailing={chartModeToggle}
                   viewMode={viewMode}
@@ -1463,6 +1500,7 @@ export function MarketPage<W>({
                         <MarketRowSkeleton
                           key={i}
                           hideDate
+                          hiddenColumns={hiddenColumns}
                           valueColumnClass={config.priceFormat.valueColumnClass}
                         />
                       ))}
@@ -1505,6 +1543,7 @@ export function MarketPage<W>({
                 benchmarkLabel={config.benchmarkLabel}
                 chartMode={chartMode}
                 columnHelp={config.columnHelp}
+                hiddenColumns={hiddenColumns}
                 showLegCount={config.showLegCount}
                 valueColumnClass={config.priceFormat.valueColumnClass}
               />
@@ -1522,6 +1561,7 @@ export function MarketPage<W>({
                     dealing={d}
                     fmt={config.priceFormat}
                     formatTickerDisplay={config.formatTickerDisplay}
+                    hiddenColumns={hiddenColumns}
                     isMuted={config.isRowMuted}
                     locale={config.locale}
                     noPosteriorData={stockNoPosteriorData(d)}
@@ -1669,6 +1709,7 @@ export function MarketPage<W>({
                               benchmarkLabel={config.benchmarkLabel}
                               chartMode={chartMode}
                               columnHelp={config.columnHelp}
+                              hiddenColumns={hiddenColumns}
                               showLegCount={config.showLegCount}
                               valueColumnClass={
                                 config.priceFormat.valueColumnClass
@@ -1923,17 +1964,31 @@ export function MarketPage<W>({
             question is one they might actually have. */}
         <div className="flex flex-col items-center gap-2 border-t border-separator pt-6 text-center">
           <p className="text-sm text-foreground/60">
-            Every filing is scored against the same six-point check.
+            {config.methodologyBand?.line ??
+              "Every filing is scored against the same six-point check."}
           </p>
-          <button
-            className={`${BUTTON_RADIUS} ${BUTTON_GHOST} px-5 py-2.5 text-sm font-semibold`}
-            data-ga-event="cta_footer_open_explainer"
-            data-ga-label="What are we looking for"
-            type="button"
-            onClick={() => setExplainerOpen(true)}
-          >
-            What are we looking for?
-          </button>
+          {config.methodologyBand?.href ? (
+            <Link
+              className={`${BUTTON_RADIUS} ${BUTTON_GHOST} px-5 py-2.5 text-sm font-semibold`}
+              data-ga-event="cta_footer_open_explainer"
+              data-ga-label={config.methodologyBand.ctaLabel}
+              to={config.methodologyBand.href}
+            >
+              {config.methodologyBand.ctaLabel}
+            </Link>
+          ) : (
+            <button
+              className={`${BUTTON_RADIUS} ${BUTTON_GHOST} px-5 py-2.5 text-sm font-semibold`}
+              data-ga-event="cta_footer_open_explainer"
+              data-ga-label={
+                config.methodologyBand?.ctaLabel ?? "What are we looking for"
+              }
+              type="button"
+              onClick={() => setExplainerOpen(true)}
+            >
+              {config.methodologyBand?.ctaLabel ?? "What are we looking for?"}
+            </button>
+          )}
         </div>
       </section>
 
@@ -1967,6 +2022,7 @@ export function MarketPage<W>({
         gating={gating}
         insiderLabel={config.insiderLabel}
         locale={config.locale}
+        showComments={!hiddenColumns.has("comments")}
         showLogo={logosEnabled}
         onClose={() => setSelectedKey(null)}
         onSelectDealing={openDealing}
