@@ -43,6 +43,7 @@ export type MarketColumnKey =
   | "value"
   | "trend"
   | "performance"
+  | "comments"
   | "action";
 
 /** The shared row surface. One per logical card in the list — adapters do
@@ -84,6 +85,12 @@ export interface MarketDealing<W = unknown> {
   /** Trade value in the market's domestic major currency unit. null when
    *  every leg was footnote-priced. */
   value: number | null;
+  /** Pre-formatted secondary rendering of `value` in a currency the reader is
+   *  likelier to hold — "≈ £124k" under a ₩225,699,760. Pre-formatted because
+   *  only the market knows the rate and how much precision survives it; the
+   *  shell just prints it under the primary figure when present. Omit and
+   *  nothing renders. */
+  valueSecondary?: string | null;
   /** Per-share entry price in the same major-currency unit as `value`. */
   entryPrice: number | null;
   /** Total shares (sum across legs for US tranche-split filings). */
@@ -205,9 +212,15 @@ export interface MarketPlan {
   windowEnd: string | null;
   /** Days of forewarning: filedDate → windowStart. */
   noticeDays: number | null;
+  /** Listing board / venue for the issuer, when the market has the concept —
+   *  "KOSPI", "KOSDAQ". Rendered as a quiet chip beside the company name. */
+  venue?: string | null;
   /** Intended, not executed. */
   plannedShares: number | null;
   plannedValue: number | null;
+  /** Pre-formatted secondary rendering of `plannedValue` — see
+   *  MarketDealing.valueSecondary for why this arrives as a string. */
+  plannedValueSecondary?: string | null;
   /** Intended purchase as a share of the company. */
   plannedPercent: number | null;
   /** Reader-facing reading of the filer's stated reason, when one can be
@@ -388,6 +401,18 @@ export interface MarketConfig<W = unknown> {
   faq?: MarketFaqItem[];
   /** Explainer paragraph under the title. Markdown-y JSX is fine. */
   description: ReactNode;
+  /** Overrides the closing band under the FAQ.
+   *
+   *  Its default copy — "Every filing is scored against the same six-point
+   *  check", over a button that opens the six-point walkthrough — is a claim,
+   *  and it is only true on the markets that actually run the screen. Korea
+   *  ships no rating, triage or analysis of any kind, so the page was closing
+   *  by promising a product it does not have. Markets in that position supply
+   *  their own line and send the reader somewhere that exists.
+   *
+   *  `href` swaps the explainer button for a link to that path. */
+  methodologyBand?: { line: ReactNode; ctaLabel: string; href?: string };
+
   /** Optional override for the "What are we looking for?" sheet body. Markets
    *  scored by the shared six-point insider-buy checklist (UK/US/EU) leave this
    *  unset and get the default. Markets with a different signal model — Congress
@@ -451,6 +476,20 @@ export interface MarketConfig<W = unknown> {
    *  back to a generic description (see DEFAULT_COLUMN_HELP in market-row). */
   columnHelp?: Partial<Record<MarketColumnKey, string>>;
 
+  /** Columns the shared table should not render at all for this market.
+   *
+   *  A column whose data a market cannot supply is worse than absent: an
+   *  em-dash in every cell reads as a broken page rather than an
+   *  inapplicable one, and four of them side by side make the market look
+   *  like a degraded version of the others instead of its own thing. Korea
+   *  hides trend / performance (no price coverage for KRX tickers), comments
+   *  (no Korean app) and action (no rating layer).
+   *
+   *  "disclosed", "ticker", "company" and "value" are the table's spine and
+   *  are not hideable — the date column is controlled per-section by
+   *  `hideDate` instead. */
+  hiddenColumns?: MarketColumnKey[];
+
   /** Whether the trend column prefixes its sparkline with the row's leg count.
    *  Useful where a multi-leg filing genuinely reads as "N buys"; noise where
    *  the count and the spark disagree about what the column is for. US sets
@@ -458,6 +497,16 @@ export interface MarketConfig<W = unknown> {
    *  reads as a broken cell. Default true, and the header label follows:
    *  "Qty / Trend" when counting, plain "Trend" when not. */
   showLegCount?: boolean;
+
+  /** Whether the Signal / All axis is offered in the filters sheet.
+   *
+   *  "Signal" means "rows we rated", so on a market with no rating layer it
+   *  selects nothing: `isSignalDealing` tests `d.rating`, and every row on
+   *  such a market has none. Korea sets this false — the control was a way to
+   *  empty the list with no way to tell why. Markets that leave it unset are
+   *  unaffected. Note this is separate from `defaultSignalFilter`, which such
+   *  a market must ALSO set to "all" or its list starts empty. */
+  showSignalFilter?: boolean;
 
   /** View tabs to show (signal / interesting / all for US;
    *  significant / noteworthy / … for UK). */
@@ -487,6 +536,18 @@ export interface MarketConfig<W = unknown> {
   /** Advance declarations, for markets that have them. Omit and nothing
    *  changes. See MarketPlan for why these are not MarketDealings. */
   plans?: MarketPlansConfig;
+
+  /** Heading for the dealings feed itself.
+   *
+   *  On every market where the feed IS the page, the hero is its heading and
+   *  a second title would be noise — so this is unset and nothing renders.
+   *  A market with a leading plans section has two stacked lists, though, and
+   *  only the first of them was labelled: the reader met a second table with
+   *  no statement of how it differs from the one above. Set this there.
+   *
+   *  Rendered above the filter bar, so it survives the loading and empty
+   *  states — unlike `timelineTitle`, which only appears once rows exist. */
+  dealingsHeading?: { title: string; subtitle?: ReactNode };
 
   /** Optional news source. /api/news/uk for UK; nothing yet for US/EU. */
   fetchNews?: () => Promise<NewsPayload>;

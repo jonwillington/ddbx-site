@@ -50,6 +50,8 @@ export const VIEW_OPTIONS: FilterSelectOption[] = [
 export function MarketFilterBar({
   viewMode,
   onViewMode,
+  showViewMode = true,
+  showSignalFilter = true,
   search,
   onSearch,
   searchPlaceholder = "Search ticker, company, insider…",
@@ -67,6 +69,10 @@ export function MarketFilterBar({
 }: {
   viewMode: MarketViewMode;
   onViewMode: (v: MarketViewMode) => void;
+  /** Passed through to the filters sheet — see its own note. */
+  showViewMode?: boolean;
+  /** Passed through to the filters sheet — see its own note. */
+  showSignalFilter?: boolean;
   search: string;
   onSearch: (s: string) => void;
   searchPlaceholder?: string;
@@ -165,7 +171,9 @@ export function MarketFilterBar({
           extraFilters={extraFilters}
           heroFilterId={heroFilterId}
           heroFilters={heroFilters}
+          showSignalFilter={showSignalFilter}
           showStrength={showStrength}
+          showViewMode={showViewMode}
           signalFilter={signalFilter}
           trailing={trailing}
           viewMode={viewMode}

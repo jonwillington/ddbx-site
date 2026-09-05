@@ -127,19 +127,34 @@ export interface KrPlanWire {
   stock_code: string | null;
   company: string;
   company_en: string | null;
-  venue: string;
+  /** "KOSPI" | "KOSDAQ" | "KONEX". The listing board, which is the closest
+   *  thing Korea has to a size tier — a 6-digit stock code tells a non-Korean
+   *  reader nothing on its own. */
+  venue: string | null;
   reporter_name: string;
   reporter_name_en: string | null;
+  /** "Individual (domestic)", "Domestic corporation", … */
+  reporter_kind: string | null;
   major_holder: string | null;
   position: string | null;
   filed_date: string;
   window_start: string | null;
   window_end: string | null;
   notice_days: number | null;
+  /** As filed, e.g. "Acquisition in exchange(+)". */
+  direction: string | null;
   purpose: string | null;
-  purpose_reading: { label: string; hint: string } | null;
+  purpose_reading: {
+    category: string;
+    label: string;
+    hint: string;
+  } | null;
   plan_shares: number | null;
   plan_value_krw: number | null;
+  /** Server-side conversion of plan_value_krw, rounded. Present on most rows;
+   *  null when the plan states no value. Rendered alongside the won so a
+   *  reader who cannot size ₩5,000,000,000 still gets the magnitude. */
+  plan_value_gbp: number | null;
   plan_pct: number | null;
   is_withdrawal: number;
   executed_shares: number | null;
@@ -148,18 +163,41 @@ export interface KrPlanWire {
 
 export interface KrDealingWire {
   id: string;
+  rcept_no: string;
   stock_code: string | null;
   company: string;
   company_en: string | null;
+  venue: string | null;
   reporter_name: string;
   reporter_name_en: string | null;
+  reporter_kind: string | null;
+  /** Verbatim Korean job title ("회장", "대표이사"), or "-" when the filing
+   *  states none. Prefer `role.label` — this is the raw fallback. */
   position: string | null;
+  /** Server-normalised English reading of `position`. Null on the ~30% of
+   *  filings that state no title at all. `tier` buckets it ("chief", …). */
+  role: { label: string; tier: string } | null;
+  is_registered: number | null;
   reason_code: string;
+  /** English reading of reason_code, e.g. "Acquisition in exchange(+)". */
+  reason: string | null;
   trade_date: string;
   disclosed_date: string;
+  shares_before: number | null;
   shares_change: number;
   price_krw: number | null;
   value_krw: number | null;
+  /** Server-side conversion of value_krw, rounded. */
+  value_gbp: number | null;
+  /** Change in the filer's stake, in percentage points, when the filing
+   *  states a before-and-after holding. */
+  stake_change_pct: number | null;
+  /** 1 when the filed per-share price looks wrong (unit errors are common in
+   *  the source). Nothing reads it yet; typed so it isn't silently lost. */
+  price_suspect: number | null;
+  /** Set when this purchase was declared in advance under art. 173-3 — the
+   *  filing date of that declaration. See KoreaMarket for why this is a
+   *  neutral fact in the drawer and never a row-level badge. */
   plan_report_date: string | null;
 }
 
