@@ -16,6 +16,7 @@
  *  through the theme, because the panel is dark in both modes.
  */
 import type { BoardRow, Linking } from "./board-model";
+import type { ReactNode } from "react";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -266,15 +267,52 @@ function Logo({ row, r }: { row: BoardRow; r: number }) {
   );
 }
 
+function Toggle({
+  mode,
+  onChoose,
+}: {
+  mode: Mode;
+  onChoose: (m: Mode) => void;
+}) {
+  return (
+    <div className="flex rounded-full border border-white/12 bg-white/[0.06] p-0.5 backdrop-blur-md">
+      {(
+        [
+          ["size", "By amount"],
+          ["outcome", "By outcome"],
+        ] as const
+      ).map(([m, label]) => (
+        <button
+          key={m}
+          aria-pressed={mode === m}
+          className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium tracking-[-0.005em] transition-colors ${
+            mode === m
+              ? "bg-white text-[#1a140d]"
+              : "text-white/65 hover:text-white"
+          }`}
+          type="button"
+          onClick={() => onChoose(m)}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function BoardStage({
   rows,
   symbol,
   benchmark,
   locale,
   linking,
+  header,
 }: {
   /** Null while the board is loading. */
   rows: BoardRow[] | null;
+  /** The page's message layer — eyebrow, h1, standfirst, figures — set
+   *  inside the object above the chart. The toggle joins its row. */
+  header?: ReactNode;
   symbol: string;
   /** "the FTSE All-Share" / "the S&P 500". */
   benchmark: string;
@@ -300,7 +338,11 @@ export function BoardStage({
   }, [rows, reduced]);
 
   const W = Math.max(300, width);
-  const H = Math.round(Math.min(640, Math.max(460, W * 0.82)));
+  const H = Math.round(
+    header
+      ? Math.min(660, Math.max(440, W * 0.56))
+      : Math.min(640, Math.max(460, W * 0.82)),
+  );
 
   const scales = useMemo(
     () => (rows && rows.length ? outcomeScales(rows, W, H) : null),
@@ -332,7 +374,7 @@ export function BoardStage({
         .filter((r) => r.alpha != null)
         .sort((a, b) => Math.abs(b.alpha ?? 0) - Math.abs(a.alpha ?? 0)),
     ].filter((r) => r && r.alpha != null && Math.abs(r.alpha) >= 0.08);
-    const cap = W < 520 ? 3 : W < 760 ? 6 : 9;
+    const cap = W < 520 ? 3 : W < 760 ? 6 : W < 1000 ? 9 : 12;
     const boxes: Array<{ x: number; y: number; w: number; h: number }> = [];
     const overlaps = (a: { x: number; y: number; w: number; h: number }) =>
       boxes.some(
@@ -369,7 +411,7 @@ export function BoardStage({
         const y = side === "above" ? p.y - p.r - 34 : p.y - 12;
         const box = { x, y, w, h };
 
-        if (x < PAD_L - 40 || x + w > W - 4) continue;
+        if (x < PAD_L - 40 || x + w > W + 6) continue;
         if (overlaps(box)) continue;
         boxes.push(box);
         out.set(r.id, side);
@@ -394,31 +436,20 @@ export function BoardStage({
   return (
     <div
       ref={ref}
-      className="board-stage relative overflow-hidden rounded-[24px] border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)]"
+      className={`board-stage relative overflow-hidden border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)] ${header ? "rounded-[28px]" : "rounded-[24px]"}`}
     >
-      {/* Segmented control: the one piece of chrome on the object. */}
-      <div className="absolute left-4 top-4 z-10 flex rounded-full border border-white/12 bg-white/[0.06] p-0.5 backdrop-blur-md">
-        {(
-          [
-            ["size", "By amount"],
-            ["outcome", "By outcome"],
-          ] as const
-        ).map(([m, label]) => (
-          <button
-            key={m}
-            aria-pressed={mode === m}
-            className={`rounded-full px-3 py-1 text-[11.5px] font-medium tracking-[-0.005em] transition-colors ${
-              mode === m
-                ? "bg-white text-[#1a140d]"
-                : "text-white/65 hover:text-white"
-            }`}
-            type="button"
-            onClick={() => choose(m)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {header ? (
+        <div className="grid gap-x-12 gap-y-6 px-6 pt-7 sm:px-8 sm:pt-9 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
+          <div className="min-w-0">{header}</div>
+          <div className="flex lg:justify-end">
+            <Toggle mode={mode} onChoose={choose} />
+          </div>
+        </div>
+      ) : (
+        <div className="absolute left-4 top-4 z-10">
+          <Toggle mode={mode} onChoose={choose} />
+        </div>
+      )}
 
       {rows === null || !scales || !summary ? (
         <div className="animate-pulse" style={{ height: H }} />

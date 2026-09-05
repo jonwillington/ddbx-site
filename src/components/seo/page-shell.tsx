@@ -58,6 +58,7 @@ export function SeoPageShell({
   cta,
   width = "article",
   stage,
+  titleInHero = false,
   loading = false,
   skeleton,
   children,
@@ -108,6 +109,11 @@ export function SeoPageShell({
    *  right from `lg`, stacking beneath it before that. Never rendered over
    *  the title: message layer and proof layer are separate objects. */
   stage?: ReactNode;
+  /** The page's own hero carries the h1 (and eyebrow, standfirst, figures)
+   *  inside a proof object, so the shell renders `hero` and nothing of its
+   *  own header. `title` still names the page for the shell's callers; the
+   *  page must render it as the document's h1 inside `hero`. */
+  titleInHero?: boolean;
   /** While true, `skeleton` replaces children and the band is suppressed so
    *  nothing below the fold pre-renders and then jumps. */
   loading?: boolean;
@@ -194,44 +200,50 @@ export function SeoPageShell({
             </nav>
           ) : null}
 
-          <p
-            className={`font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan ${
-              (crumbs && crumbs.length > 0) || back
-                ? "mt-4"
-                : hero
-                  ? "mt-8"
-                  : "pt-2"
-            }`}
-          >
-            {eyebrow}
-          </p>
+          {titleInHero ? null : (
+            <>
+              <p
+                className={`font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan ${
+                  (crumbs && crumbs.length > 0) || back
+                    ? "mt-4"
+                    : hero
+                      ? "mt-8"
+                      : "pt-2"
+                }`}
+              >
+                {eyebrow}
+              </p>
 
-          {/* Levelled off /api's hero h1 (34/44/58). Stepped to 34/44 for the
+              {/* Levelled off /api's hero h1 (34/44/58). Stepped to 34/44 for the
           860px document measure: the top rung is for a full-width marketing
           hero, not a column with a rail beside it. Supersedes the 30/38
           "guide page" species in the 2026-07-27 type conventions — the
           record-page species (28/34, company and broker detail) is unchanged. */}
-          <h1 className="mt-2 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-foreground sm:text-[44px]">
-            {title}
-          </h1>
+              <h1 className="mt-2 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-foreground sm:text-[44px]">
+                {title}
+              </h1>
 
-          {standfirst ? (
-            <p
-              className={
-                standfirstSize === "lede"
-                  ? "mt-5 max-w-[58ch] text-[16.5px] leading-[1.55] tracking-[-0.006em] text-foreground/75"
-                  : "mt-4 max-w-[62ch] text-[14px] leading-[1.65] text-foreground/70"
-              }
-            >
-              {standfirst}
-            </p>
-          ) : null}
+              {standfirst ? (
+                <p
+                  className={
+                    standfirstSize === "lede"
+                      ? "mt-5 max-w-[58ch] text-[16.5px] leading-[1.55] tracking-[-0.006em] text-foreground/75"
+                      : "mt-4 max-w-[62ch] text-[14px] leading-[1.65] text-foreground/70"
+                  }
+                >
+                  {standfirst}
+                </p>
+              ) : null}
 
-          {notice ? (
-            <div className={width === "wide" ? "mt-3" : "mt-3 max-w-[62ch]"}>
-              {notice}
-            </div>
-          ) : null}
+              {notice ? (
+                <div
+                  className={width === "wide" ? "mt-3" : "mt-3 max-w-[62ch]"}
+                >
+                  {notice}
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
         {stage ? <div className="min-w-0 pt-2 lg:pt-6">{stage}</div> : null}
       </div>
