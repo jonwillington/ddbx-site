@@ -40,7 +40,8 @@
  *  the tail isn't noise. */
 export const TOP_N = 25;
 
-import { TRACKING_SINCE_YEAR } from "./tracking.js";
+import { TRACKING_SINCE_DATE, TRACKING_SINCE_LABEL, TRACKING_SINCE_YEAR } from "./tracking.js";
+import { formatMoney } from "./sectors.js";
 
 /** First calendar year with stored filings — the floor for the year archive
  *  and for the sitemap's year URLs. Re-exports the shared tracking floor so
@@ -240,4 +241,57 @@ export function archiveYears(earliest, today) {
   }
 
   return out;
+}
+
+/** Where a time axis for the rolling board should start: twelve months back,
+ *  or the first month we hold filings for, whichever is later. */
+export function rollingAxisStart(windowSince) {
+  return windowSince > TRACKING_SINCE_DATE ? windowSince : TRACKING_SINCE_DATE;
+}
+
+/** "of the last twelve months" only once a full year of filings exists.
+ *  Until then the honest label is "since March 2026" — the board's title and
+ *  the pre-render's <title> both take it from here so they can't disagree. */
+export function rollingPeriodLabel(today) {
+  const now = new Date(today);
+  const since = new Date(TRACKING_SINCE_DATE);
+
+  now.setUTCFullYear(now.getUTCFullYear() - 1);
+
+  return now >= since
+    ? "of the last twelve months"
+    : `since ${TRACKING_SINCE_LABEL}`;
+}
+
+/** What was paid and what it is worth, at the precision that tells them
+ *  apart. "£11m → £11m" states that nothing happened to a stake that is down
+ *  £200k; the pair gains a decimal until the labels differ, capped at two so
+ *  a genuinely level row stays short. */
+export function moneyPair(paid, worthNow, symbol) {
+  const fmt = (v, dp) => {
+    if (!(v >= 999_500)) return formatMoney(v, symbol);
+    const m = v / 1_000_000;
+    const base = m >= 9.95 ? 0 : 1;
+
+    return `${symbol}${m.toFixed(Math.min(2, base + dp))}m`;
+  };
+
+  for (let dp = 0; dp <= 2; dp++) {
+    const a = fmt(paid, dp);
+    const b = fmt(worthNow, dp);
+
+    if (a !== b || dp === 2) return [a, b];
+  }
+
+  return [fmt(paid, 2), fmt(worthNow, 2)];
+}
+
+/** Signed money change, "+£2.3m" / "−£207k", or null when there is no mark. */
+export function moneyDelta(paid, worthNow, symbol) {
+  if (worthNow == null) return null;
+  const diff = worthNow - paid;
+
+  if (Math.abs(diff) < 500) return `±${symbol}0`;
+
+  return `${diff > 0 ? "+" : "−"}${formatMoney(Math.abs(diff), symbol)}`;
 }

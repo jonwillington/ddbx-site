@@ -49,3 +49,15 @@ export declare function archiveYears(
   earliest: string | number | null | undefined,
   today: Date | string | number,
 ): number[];
+export declare function rollingAxisStart(windowSince: string): string;
+export declare function rollingPeriodLabel(today: Date | string | number): string;
+export declare function moneyPair(
+  paid: number,
+  worthNow: number,
+  symbol: string,
+): [string, string];
+export declare function moneyDelta(
+  paid: number,
+  worthNow: number | null,
+  symbol: string,
+): string | null;
