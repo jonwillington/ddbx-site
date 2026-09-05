@@ -174,10 +174,12 @@ export function formatMoney(value, symbol) {
 
   if (!isFinite(n) || n === 0) return "—";
   if (n >= 1_000_000_000) return `${symbol}${(n / 1_000_000_000).toFixed(1)}bn`;
-  if (n >= 1_000_000) {
+  // Promote at the rounding boundary, not the unit boundary: £999,600 rounds
+  // to 1000 thousand, which printed as "£1000k" on the biggest-buys board.
+  if (n >= 999_500) {
     const m = n / 1_000_000;
 
-    return `${symbol}${m >= 10 ? Math.round(m) : m.toFixed(1)}m`;
+    return `${symbol}${m >= 9.95 ? Math.round(m) : m.toFixed(1)}m`;
   }
 
   return `${symbol}${Math.round(n / 1000)}k`;

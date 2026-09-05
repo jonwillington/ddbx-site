@@ -25,6 +25,7 @@ import {
   BOARD_EARLIEST_YEAR,
   METHODOLOGY,
   TOP_N,
+  rollingPeriodLabel,
 } from "../../shared/leaderboard.js";
 import {
   esc,
@@ -142,7 +143,7 @@ function prerender(rows, suppressed, market, periodLabel, host, complete, year) 
   // internal link behind them rather than standing on the sitemap alone.
   const boards = [
     ...(year
-      ? [`<a href="https://${esc(host)}/biggest-buys">The last twelve months</a>`]
+      ? [`<a href="https://${esc(host)}/biggest-buys">The rolling board</a>`]
       : []),
     ...archiveYears(BOARD_EARLIEST_YEAR, new Date())
       .filter((y) => String(y) !== String(year))
@@ -266,7 +267,7 @@ export async function onRequestGet(context) {
   // Serve the shell untouched instead and let the next crawl settle it.
   if (rows.length === 0) return complete ? noindex(shell) : shell;
 
-  const periodLabel = year ? `in ${year}` : "of the last twelve months";
+  const periodLabel = year ? `in ${year}` : rollingPeriodLabel(new Date());
   const canonical = `https://${host}${leaderboardPath(year)}`;
   const title = brandTitle(
     `The biggest ${market} insider buys ${periodLabel}`,

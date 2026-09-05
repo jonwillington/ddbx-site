@@ -409,3 +409,49 @@ body {
     animation: none;
   }
 }
+
+/* ─── Boards: the biggest-buys stage, timeline and sparklines ─────────────
+   The stage is a dark contained panel in both themes, so its colours are
+   fixed rather than read through the theme; the dark-mode direction hues are
+   the ones that clear a near-black ground. */
+.board-stage {
+  --stage-bg: #1a140d;
+  --stage-pos: oklch(78% 0.19 145);
+  --stage-neg: oklch(64% 0.185 25);
+  background: var(--stage-bg);
+}
+.board-stage-r {
+  transition: r 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.board-panel {
+  border-radius: 20px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-sheet);
+  padding: 16px 16px 12px;
+}
+.dark .board-panel {
+  border-color: var(--separator);
+  background: rgba(255, 255, 255, 0.03);
+}
+@keyframes board-dot-in {
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.board-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: board-dot-in 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes board-spark-draw {
+  to { stroke-dashoffset: 0; }
+}
+.board-spark {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: board-spark-draw 1100ms ease-out 150ms forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-stage-r { transition: none; }
+  .board-dot { animation: none; }
+  .board-spark { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+}

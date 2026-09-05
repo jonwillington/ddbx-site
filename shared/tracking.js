@@ -13,5 +13,10 @@ export const TRACKING_SINCE_YEAR = 2026;
  *  backfill ever reaches further back. */
 export const TRACKING_SINCE_LABEL = "March 2026";
 
+/** First day of the first month with stored filings. Time axes start here
+ *  rather than twelve months back: half a chart of empty months before the
+ *  first filing reads as a quiet market, not as a young archive. */
+export const TRACKING_SINCE_DATE = "2026-03-01";
+
 /** The honesty line. Identical on every consumer on purpose. */
 export const TRACKING_NOTICE = `ddbx started recording disclosures in ${TRACKING_SINCE_LABEL}, so periods described as a full year cover only the filings since then.`;
