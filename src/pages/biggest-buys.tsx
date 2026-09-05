@@ -280,69 +280,75 @@ export default function BiggestBuysPage() {
           marketId,
         }}
         eyebrow="Leaderboard"
-        loading={rows === null}
-        notice={
-          <>
-            {/* The board's own figures, beside the stage that draws them. */}
-            {summary && hasBoard ? (
-              <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-                {[
-                  {
-                    k: "Spent",
-                    v: money(summary.total, market.symbol),
-                    tone: "",
-                  },
-                  { k: "Purchases", v: String(board!.length), tone: "" },
-                  { k: "Companies", v: String(summary.companies), tone: "" },
-                  {
-                    k: "Median alpha",
-                    v: signedPp(summary.medianAlpha),
-                    tone:
-                      summary.medianAlpha == null
-                        ? ""
-                        : summary.medianAlpha > 0
-                          ? "text-positive"
-                          : summary.medianAlpha < 0
-                            ? "text-negative"
-                            : "",
-                  },
-                ].map((f) => (
-                  <div key={f.k}>
-                    <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/50">
-                      {f.k}
-                    </dt>
-                    <dd
-                      className={`mt-1 text-[24px] font-semibold leading-none tracking-[-0.02em] ${f.tone || "text-foreground"}`}
-                    >
-                      {f.v}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            ) : null}
-            <a
-              className="mt-5 inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
-              href="#methodology"
-            >
-              Only open-market purchases count. How we rank these ↓
-            </a>
-            <TrackingNotice className="mt-2.5" />
-            {!complete && ranked.length > 0 && (
-              // Truncation is invisible unless you say so: the board still
-              // renders and still looks complete. Better a caveat than a wrong
-              // answer presented as a right one.
-              <p className={`mt-3 ${CAVEAT}`}>
-                We couldn’t load the whole period, so this ranking may be
-                missing older purchases.
-              </p>
-            )}
-          </>
-        }
-        skeleton={<SeoSkeleton rows={TOP_N} variant="ranked-board" />}
-        stage={
+        hero={
           rows === null || hasBoard ? (
             <BoardStage
               benchmark={bench.label}
+              header={
+                <>
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                    Leaderboard
+                  </p>
+                  {/* Light, not bold: the object is the emphasis, the title
+                      names it. Instrument Sans ships 400–700, so 400 at this
+                      size is the light rung. */}
+                  <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
+                    The biggest {market.label} insider buys {periodLabel}
+                  </h1>
+                  <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
+                    The largest{" "}
+                    <Link
+                      className="text-white/85 underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white/70"
+                      to="/learn/open-market-buy"
+                    >
+                      open-market purchases
+                    </Link>{" "}
+                    {market.noun} made in their own companies, ranked by what
+                    they spent, with how each has performed against the market
+                    since it was disclosed.
+                  </p>
+                  {summary && hasBoard ? (
+                    <dl className="mt-7 grid grid-cols-2 gap-x-8 gap-y-5 sm:flex sm:flex-wrap sm:gap-x-12">
+                      {[
+                        {
+                          k: "Spent",
+                          v: money(summary.total, market.symbol),
+                          tone: "",
+                        },
+                        { k: "Purchases", v: String(board!.length), tone: "" },
+                        {
+                          k: "Companies",
+                          v: String(summary.companies),
+                          tone: "",
+                        },
+                        {
+                          k: "Median alpha",
+                          v: signedPp(summary.medianAlpha),
+                          tone:
+                            summary.medianAlpha == null
+                              ? ""
+                              : summary.medianAlpha > 0
+                                ? "text-[var(--stage-pos)]"
+                                : summary.medianAlpha < 0
+                                  ? "text-[var(--stage-neg)]"
+                                  : "",
+                        },
+                      ].map((f) => (
+                        <div key={f.k}>
+                          <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/45">
+                            {f.k}
+                          </dt>
+                          <dd
+                            className={`mt-1.5 text-[26px] font-medium leading-none tracking-[-0.02em] ${f.tone || "text-white"}`}
+                          >
+                            {f.v}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
+                </>
+              }
               linking={linking}
               locale={locale}
               rows={board}
@@ -350,28 +356,45 @@ export default function BiggestBuysPage() {
             />
           ) : undefined
         }
+        loading={rows === null}
+        skeleton={<SeoSkeleton rows={TOP_N} variant="ranked-board" />}
         standfirst={
-          <>
-            The largest{" "}
-            <Link
-              className="underline decoration-foreground/25 underline-offset-4 transition-colors hover:decoration-foreground/60"
-              to="/learn/open-market-buy"
-            >
-              open-market purchases
-            </Link>{" "}
-            {market.noun} made in their own companies, ranked by what they
-            spent, with how each has performed against the market since it was
-            disclosed.
-          </>
+          hasBoard || rows === null ? undefined : (
+            <>
+              The largest open-market purchases {market.noun} made in their own
+              companies, ranked by what they spent.
+            </>
+          )
         }
-        standfirstSize="lede"
         title={
           <>
             The biggest {market.label} insider buys {periodLabel}
           </>
         }
+        titleInHero={rows === null || hasBoard}
         width="wide"
       >
+        {/* Under the stage: the rule, the tracking caveat, the truncation
+            caveat. Small print belongs outside the object. */}
+        <div className="mt-4 max-w-[62ch]">
+          <a
+            className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+            href="#methodology"
+          >
+            Only open-market purchases count. How we rank these ↓
+          </a>
+          <TrackingNotice className="mt-2" />
+          {!complete && ranked.length > 0 && (
+            // Truncation is invisible unless you say so: the board still
+            // renders and still looks complete. Better a caveat than a wrong
+            // answer presented as a right one.
+            <p className={`mt-3 ${CAVEAT}`}>
+              We couldn’t load the whole period, so this ranking may be missing
+              older purchases.
+            </p>
+          )}
+        </div>
+
         {/* An empty board and a board we couldn't fetch are the same shape and
             two different statements. Only one of them is a fact about the
             market, and stating it when the API is down tells a reader there was
