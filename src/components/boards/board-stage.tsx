@@ -374,7 +374,17 @@ export function BoardStage({
         .filter((r) => r.alpha != null)
         .sort((a, b) => Math.abs(b.alpha ?? 0) - Math.abs(a.alpha ?? 0)),
     ].filter((r) => r && r.alpha != null && Math.abs(r.alpha) >= 0.08);
-    const cap = W < 520 ? 3 : W < 760 ? 6 : W < 1000 ? 9 : 12;
+    const cap = W < 520 ? 3 : W < 760 ? 6 : W < 1000 ? 9 : 14;
+    // Full names for the three the caption talks about; everything else is
+    // named by its ticker, which is short enough to sit between neighbours.
+    const featured = new Set(
+      [rows[0], summary?.best, summary?.worst]
+        .filter((r): r is BoardRow => Boolean(r))
+        .map((r) => r.id),
+    );
+    const labelText = (r: BoardRow) =>
+      featured.has(r.id) ? r.company : r.ticker.replace(/\.[A-Z]+$/, "");
+
     const boxes: Array<{ x: number; y: number; w: number; h: number }> = [];
     const overlaps = (a: { x: number; y: number; w: number; h: number }) =>
       boxes.some(
@@ -398,7 +408,11 @@ export function BoardStage({
       const p = byId.get(r.id);
 
       if (!p) continue;
-      const w = Math.max(r.company.length, 12) * 6.6 + 4;
+      const text = labelText(r);
+      // The money line under the name ("£996k → £1.1m") is usually the wider
+      // of the two, so a ticker label is never narrower than it.
+      const w =
+        Math.max(text.length * (featured.has(r.id) ? 6.6 : 6.4), 86) + 4;
       const h = 28;
 
       for (const side of ["right", "left", "above"] as const) {
@@ -411,7 +425,7 @@ export function BoardStage({
         const y = side === "above" ? p.y - p.r - 34 : p.y - 12;
         const box = { x, y, w, h };
 
-        if (x < PAD_L - 40 || x + w > W + 6) continue;
+        if (x < PAD_L || x + w > W + 6) continue;
         if (overlaps(box)) continue;
         boxes.push(box);
         out.set(r.id, side);
@@ -421,7 +435,19 @@ export function BoardStage({
     }
 
     return out;
-  }, [mode, rows, layout, W]);
+  }, [mode, rows, layout, W, summary]);
+
+  const featuredIds = useMemo(
+    () =>
+      new Set(
+        rows && summary
+          ? [rows[0], summary.best, summary.worst]
+              .filter((r): r is BoardRow => Boolean(r))
+              .map((r) => r.id)
+          : [],
+      ),
+    [rows, summary],
+  );
 
   const active = linking.activeId;
   const zeroY = scales?.zeroY ?? 0;
@@ -454,261 +480,318 @@ export function BoardStage({
       {rows === null || !scales || !summary ? (
         <div className="animate-pulse" style={{ height: H }} />
       ) : (
-        <svg
-          aria-label={
-            mode === "size"
-              ? `${rows.length} purchases drawn to scale, ${formatMoney(summary.total, symbol)} in total`
-              : `Each purchase by amount spent and performance against ${benchmark} since disclosure`
-          }
-          className="block"
-          height={H}
-          role="img"
-          width={W}
-        >
-          {/* Outcome-only furniture, faded rather than mounted so the
+        <div className="relative">
+          <svg
+            aria-label={
+              mode === "size"
+                ? `${rows.length} purchases drawn to scale, ${formatMoney(summary.total, symbol)} in total`
+                : `Each purchase by amount spent and performance against ${benchmark} since disclosure`
+            }
+            className="block"
+            height={H}
+            role="img"
+            width={W}
+          >
+            {/* Outcome-only furniture, faded rather than mounted so the
               discs travel over it as it arrives. */}
-          <g
-            className="transition-opacity duration-700"
-            style={{ opacity: mode === "outcome" ? 1 : 0 }}
-          >
-            <rect
-              fill="var(--stage-pos)"
-              fillOpacity={0.07}
-              height={Math.max(0, zeroY - PAD_T)}
-              width={W - PAD_L - PAD_R}
-              x={PAD_L}
-              y={PAD_T}
-            />
-            <rect
-              fill="var(--stage-neg)"
-              fillOpacity={0.08}
-              height={Math.max(0, H - PAD_B - zeroY)}
-              width={W - PAD_L - PAD_R}
-              x={PAD_L}
-              y={zeroY}
-            />
-            {alphaTicks(scales.amin, scales.amax).map((a) => (
-              <g key={a}>
-                <line
-                  stroke="rgba(255,255,255,0.08)"
-                  x1={PAD_L}
-                  x2={W - PAD_R}
-                  y1={scales.y(a)}
-                  y2={scales.y(a)}
-                />
-                <text
-                  className="font-mono"
-                  fill="rgba(255,255,255,0.5)"
-                  fontSize={10.5}
-                  textAnchor="end"
-                  x={PAD_L - 10}
-                  y={scales.y(a) + 3.5}
-                >
-                  {a === 0
-                    ? "level"
-                    : `${a > 0 ? "+" : ""}${Math.round(a * 100)}pp`}
-                </text>
-              </g>
-            ))}
-            {tickValues(scales.vmin, scales.vmax).map((v) => (
-              <g key={v}>
-                <line
-                  stroke="rgba(255,255,255,0.08)"
-                  x1={scales.x(v)}
-                  x2={scales.x(v)}
-                  y1={PAD_T}
-                  y2={H - PAD_B}
-                />
-                <text
-                  className="font-mono"
-                  fill="rgba(255,255,255,0.5)"
-                  fontSize={10.5}
-                  textAnchor="middle"
-                  x={scales.x(v)}
-                  y={H - PAD_B + 18}
-                >
-                  {formatMoney(v, symbol)}
-                </text>
-              </g>
-            ))}
-            <line
-              stroke="rgba(255,255,255,0.55)"
-              strokeWidth={1.5}
-              x1={PAD_L}
-              x2={W - PAD_R}
-              y1={zeroY}
-              y2={zeroY}
-            />
-            <text
-              className="font-mono uppercase"
-              fill="var(--stage-pos)"
-              fontSize={10}
-              letterSpacing="0.12em"
-              x={PAD_L}
-              y={PAD_T - 10}
+            <g
+              className="transition-opacity duration-700"
+              style={{ opacity: mode === "outcome" ? 1 : 0 }}
             >
-              beat the market · {summary.ahead}
-            </text>
-            <text
-              className="font-mono uppercase"
-              fill="var(--stage-neg)"
-              fontSize={10}
-              letterSpacing="0.12em"
-              x={PAD_L}
-              y={H - PAD_B - 8}
-            >
-              trailed it · {summary.behind}
-            </text>
-            <text
-              className="font-mono uppercase"
-              fill="rgba(255,255,255,0.4)"
-              fontSize={10}
-              letterSpacing="0.12em"
-              textAnchor="end"
-              x={W - PAD_R}
-              y={PAD_T - 10}
-            >
-              amount spent →
-            </text>
-          </g>
-
-          {/* Stems: one per disc, from the disc to the zero line. */}
-          <g
-            className="transition-opacity duration-500"
-            style={{ opacity: mode === "outcome" ? 1 : 0 }}
-          >
-            {layout
-              .filter((p) => p.row.alpha != null)
-              .map((p) => (
-                <g
-                  key={p.row.id}
-                  className="board-stage-move"
-                  style={{ transform: `translate(${p.x}px, ${p.y}px)` }}
-                >
+              <rect
+                fill="var(--stage-pos)"
+                fillOpacity={0.07}
+                height={Math.max(0, zeroY - PAD_T)}
+                width={W - PAD_L - PAD_R}
+                x={PAD_L}
+                y={PAD_T}
+              />
+              <rect
+                fill="var(--stage-neg)"
+                fillOpacity={0.08}
+                height={Math.max(0, H - PAD_B - zeroY)}
+                width={W - PAD_L - PAD_R}
+                x={PAD_L}
+                y={zeroY}
+              />
+              {alphaTicks(scales.amin, scales.amax).map((a) => (
+                <g key={a}>
                   <line
-                    stroke={
-                      p.row.dir === "pos"
-                        ? "var(--stage-pos)"
-                        : p.row.dir === "neg"
-                          ? "var(--stage-neg)"
-                          : "rgba(255,255,255,0.35)"
-                    }
-                    strokeOpacity={active && active !== p.row.id ? 0.25 : 0.7}
-                    strokeWidth={2}
-                    y2={zeroY - p.y}
+                    stroke="rgba(255,255,255,0.08)"
+                    x1={PAD_L}
+                    x2={W - PAD_R}
+                    y1={scales.y(a)}
+                    y2={scales.y(a)}
                   />
+                  <text
+                    className="font-mono"
+                    fill="rgba(255,255,255,0.5)"
+                    fontSize={10.5}
+                    textAnchor="end"
+                    x={PAD_L - 10}
+                    y={scales.y(a) + 3.5}
+                  >
+                    {a === 0
+                      ? "level"
+                      : `${a > 0 ? "+" : ""}${Math.round(a * 100)}pp`}
+                  </text>
                 </g>
               ))}
-          </g>
+              {tickValues(scales.vmin, scales.vmax).map((v) => (
+                <g key={v}>
+                  <line
+                    stroke="rgba(255,255,255,0.08)"
+                    x1={scales.x(v)}
+                    x2={scales.x(v)}
+                    y1={PAD_T}
+                    y2={H - PAD_B}
+                  />
+                  <text
+                    className="font-mono"
+                    fill="rgba(255,255,255,0.5)"
+                    fontSize={10.5}
+                    textAnchor="middle"
+                    x={scales.x(v)}
+                    y={H - PAD_B + 18}
+                  >
+                    {formatMoney(v, symbol)}
+                  </text>
+                </g>
+              ))}
+              <line
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth={1.5}
+                x1={PAD_L}
+                x2={W - PAD_R}
+                y1={zeroY}
+                y2={zeroY}
+              />
+              <text
+                className="font-mono uppercase"
+                fill="var(--stage-pos)"
+                fontSize={10}
+                letterSpacing="0.12em"
+                x={PAD_L}
+                y={PAD_T - 10}
+              >
+                beat the market · {summary.ahead}
+              </text>
+              <text
+                className="font-mono uppercase"
+                fill="var(--stage-neg)"
+                fontSize={10}
+                letterSpacing="0.12em"
+                x={PAD_L}
+                y={H - PAD_B - 8}
+              >
+                trailed it · {summary.behind}
+              </text>
+              <text
+                className="font-mono uppercase"
+                fill="rgba(255,255,255,0.4)"
+                fontSize={10}
+                letterSpacing="0.12em"
+                textAnchor="end"
+                x={W - PAD_R}
+                y={PAD_T - 10}
+              >
+                amount spent →
+              </text>
+            </g>
 
-          {/* The discs. Position on the outer group (CSS transform, so it
+            {/* Stems: one per disc, from the disc to the zero line. */}
+            <g
+              className="transition-opacity duration-500"
+              style={{ opacity: mode === "outcome" ? 1 : 0 }}
+            >
+              {layout
+                .filter((p) => p.row.alpha != null)
+                .map((p) => (
+                  <g
+                    key={p.row.id}
+                    className="board-stage-move"
+                    style={{ transform: `translate(${p.x}px, ${p.y}px)` }}
+                  >
+                    <line
+                      stroke={
+                        p.row.dir === "pos"
+                          ? "var(--stage-pos)"
+                          : p.row.dir === "neg"
+                            ? "var(--stage-neg)"
+                            : "rgba(255,255,255,0.35)"
+                      }
+                      strokeOpacity={active && active !== p.row.id ? 0.25 : 0.7}
+                      strokeWidth={2}
+                      y2={zeroY - p.y}
+                    />
+                  </g>
+                ))}
+            </g>
+
+            {/* The discs. Position on the outer group (CSS transform, so it
               transitions), identity and hit target inside. */}
-          <g>
-            {layout.map((p) => {
-              const dim = active != null && active !== p.row.id;
-              const edge =
-                p.row.dir === "pos"
-                  ? "var(--stage-pos)"
-                  : p.row.dir === "neg"
-                    ? "var(--stage-neg)"
-                    : "rgba(255,255,255,0.35)";
-              const side = labelled.get(p.row.id) ?? "right";
-              const anchor =
-                side === "right" ? "start" : side === "left" ? "end" : "middle";
-              const lx =
-                side === "right" ? p.r + 8 : side === "left" ? -(p.r + 8) : 0;
-              const ly = side === "above" ? -(p.r + 22) : 0;
+            <g>
+              {layout.map((p) => {
+                const dim = active != null && active !== p.row.id;
+                const edge =
+                  p.row.dir === "pos"
+                    ? "var(--stage-pos)"
+                    : p.row.dir === "neg"
+                      ? "var(--stage-neg)"
+                      : "rgba(255,255,255,0.35)";
+                const side = labelled.get(p.row.id) ?? "right";
+                const anchor =
+                  side === "right"
+                    ? "start"
+                    : side === "left"
+                      ? "end"
+                      : "middle";
+                const lx =
+                  side === "right" ? p.r + 8 : side === "left" ? -(p.r + 8) : 0;
+                const ly = side === "above" ? -(p.r + 22) : 0;
 
-              return (
-                <g
-                  key={p.row.id}
-                  className="board-stage-move"
-                  style={{
-                    transform: `translate(${p.x}px, ${p.y}px)`,
-                    opacity: dim ? 0.3 : 1,
-                    transition:
-                      "transform 900ms cubic-bezier(.2,.8,.2,1), opacity 180ms",
-                  }}
-                >
-                  <circle
-                    className="board-stage-r"
-                    fill="var(--stage-bg)"
-                    r={p.r + 2.5}
-                  />
-                  <circle
-                    className="board-stage-r"
-                    fill="none"
-                    r={p.r}
-                    stroke={edge}
-                    strokeWidth={active === p.row.id ? 3 : 2}
-                  />
-                  <Logo r={p.r} row={p.row} />
-                  {labelled.has(p.row.id) ? (
-                    <g
-                      className="transition-opacity duration-500"
-                      style={{ opacity: mode === "outcome" ? 1 : 0 }}
-                    >
-                      <text
-                        fill="rgba(255,255,255,0.92)"
-                        fontSize={12}
-                        fontWeight={600}
-                        paintOrder="stroke"
-                        stroke="var(--stage-bg)"
-                        strokeLinejoin="round"
-                        strokeWidth={4}
-                        textAnchor={anchor}
-                        x={lx}
-                        y={ly - 1}
-                      >
-                        {p.row.company}
-                      </text>
-                      <text
-                        fill="rgba(255,255,255,0.6)"
-                        fontSize={11}
-                        paintOrder="stroke"
-                        stroke="var(--stage-bg)"
-                        strokeLinejoin="round"
-                        strokeWidth={4}
-                        textAnchor={anchor}
-                        x={lx}
-                        y={ly + 13}
-                      >
-                        {p.row.worthNow != null
-                          ? moneyPair(p.row.value, p.row.worthNow, symbol).join(
-                              " → ",
-                            )
-                          : formatMoney(p.row.value, symbol)}
-                      </text>
-                    </g>
-                  ) : null}
-                  <circle
-                    className="cursor-pointer"
-                    fill="transparent"
-                    r={p.r + 8}
-                    onBlur={() => {
-                      linking.setActiveId(null);
-                      setTip(null);
-                    }}
-                    onFocus={() => {
-                      linking.setActiveId(p.row.id);
-                      setTip(p.row);
-                    }}
-                    onMouseEnter={() => {
-                      linking.setActiveId(p.row.id);
-                      setTip(p.row);
-                    }}
-                    onMouseLeave={() => {
-                      linking.setActiveId(null);
-                      setTip(null);
+                return (
+                  <g
+                    key={p.row.id}
+                    className="board-stage-move"
+                    style={{
+                      transform: `translate(${p.x}px, ${p.y}px)`,
+                      opacity: dim ? 0.3 : 1,
+                      transition:
+                        "transform 900ms cubic-bezier(.2,.8,.2,1), opacity 180ms",
                     }}
                   >
-                    <title>{`${p.row.company}, ${formatMoney(p.row.value, symbol)}, ${signedPp(p.row.alpha)} vs ${benchmark}`}</title>
-                  </circle>
-                </g>
-              );
-            })}
-          </g>
-        </svg>
+                    <circle
+                      className="board-stage-r"
+                      fill="var(--stage-bg)"
+                      r={p.r + 2.5}
+                    />
+                    <circle
+                      className="board-stage-r"
+                      fill="none"
+                      r={p.r}
+                      stroke={edge}
+                      strokeWidth={active === p.row.id ? 3 : 2}
+                    />
+                    <Logo r={p.r} row={p.row} />
+                    {labelled.has(p.row.id) ? (
+                      <g
+                        className="transition-opacity duration-500"
+                        style={{ opacity: mode === "outcome" ? 1 : 0 }}
+                      >
+                        <text
+                          fill="rgba(255,255,255,0.92)"
+                          fontSize={12}
+                          fontWeight={600}
+                          paintOrder="stroke"
+                          stroke="var(--stage-bg)"
+                          strokeLinejoin="round"
+                          strokeWidth={4}
+                          textAnchor={anchor}
+                          x={lx}
+                          y={ly - 1}
+                        >
+                          {featuredIds.has(p.row.id)
+                            ? p.row.company
+                            : p.row.ticker.replace(/\.[A-Z]+$/, "")}
+                        </text>
+                        <text
+                          fill="rgba(255,255,255,0.6)"
+                          fontSize={11}
+                          paintOrder="stroke"
+                          stroke="var(--stage-bg)"
+                          strokeLinejoin="round"
+                          strokeWidth={4}
+                          textAnchor={anchor}
+                          x={lx}
+                          y={ly + 13}
+                        >
+                          {p.row.worthNow != null
+                            ? moneyPair(
+                                p.row.value,
+                                p.row.worthNow,
+                                symbol,
+                              ).join(" → ")
+                            : formatMoney(p.row.value, symbol)}
+                        </text>
+                      </g>
+                    ) : null}
+                    <circle
+                      aria-label={`${p.row.company}, ${formatMoney(p.row.value, symbol)}, ${signedPp(p.row.alpha)} vs ${benchmark}`}
+                      className="cursor-pointer"
+                      fill="transparent"
+                      r={p.r + 8}
+                      role="img"
+                      onBlur={() => {
+                        linking.setActiveId(null);
+                        setTip(null);
+                      }}
+                      onFocus={() => {
+                        linking.setActiveId(p.row.id);
+                        setTip(p.row);
+                      }}
+                      onMouseEnter={() => {
+                        linking.setActiveId(p.row.id);
+                        setTip(p.row);
+                      }}
+                      onMouseLeave={() => {
+                        linking.setActiveId(null);
+                        setTip(null);
+                      }}
+                    />
+                  </g>
+                );
+              })}
+            </g>
+          </svg>
+          {/* Tooltip, HTML over the SVG, never under the pointer. */}
+          {tip && tipPlaced ? (
+            <div
+              className="pointer-events-none absolute z-20 min-w-[190px] rounded-xl border border-white/12 bg-[#241b12]/95 px-3 py-2 text-[12px] leading-[1.45] text-white shadow-xl backdrop-blur-md"
+              style={{
+                left: Math.min(
+                  W - 210,
+                  Math.max(8, tipPlaced.x + tipPlaced.r + 12),
+                ),
+                top: Math.max(8, tipPlaced.y - 30),
+              }}
+            >
+              <div className="font-semibold">
+                {tip.company}{" "}
+                <span className="font-mono text-[10px] font-normal text-white/50">
+                  {tip.ticker.replace(/\.[A-Z]+$/, "")}
+                </span>
+              </div>
+              <div className="text-[11px] text-white/55">
+                {tip.person ?? "Undisclosed"}
+                {tip.role ? ` · ${tip.role}` : ""} ·{" "}
+                {dateLabel(tip.tradeDate, locale)}
+              </div>
+              <div className="mt-1 tabular-nums">
+                {tip.worthNow != null ? (
+                  <>
+                    {moneyPair(tip.value, tip.worthNow, symbol).join(" → ")}{" "}
+                    <span
+                      style={{
+                        color:
+                          tip.dir === "pos"
+                            ? "var(--stage-pos)"
+                            : tip.dir === "neg"
+                              ? "var(--stage-neg)"
+                              : "rgba(255,255,255,0.6)",
+                      }}
+                    >
+                      {moneyDelta(tip.value, tip.worthNow, symbol)} ·{" "}
+                      {signedPp(tip.alpha)} vs index
+                    </span>
+                  </>
+                ) : (
+                  <>{formatMoney(tip.value, symbol)} · no mark yet</>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </div>
       )}
 
       {/* Caption: the finding, in words, inside the object. */}
@@ -745,54 +828,6 @@ export function BoardStage({
               ) : null}
             </p>
           )}
-        </div>
-      ) : null}
-
-      {/* Tooltip, HTML over the SVG, never under the pointer. */}
-      {tip && tipPlaced ? (
-        <div
-          className="pointer-events-none absolute z-20 min-w-[190px] rounded-xl border border-white/12 bg-[#241b12]/95 px-3 py-2 text-[12px] leading-[1.45] text-white shadow-xl backdrop-blur-md"
-          style={{
-            left: Math.min(
-              W - 210,
-              Math.max(8, tipPlaced.x + tipPlaced.r + 12),
-            ),
-            top: Math.max(8, tipPlaced.y - 30),
-          }}
-        >
-          <div className="font-semibold">
-            {tip.company}{" "}
-            <span className="font-mono text-[10px] font-normal text-white/50">
-              {tip.ticker.replace(/\.[A-Z]+$/, "")}
-            </span>
-          </div>
-          <div className="text-[11px] text-white/55">
-            {tip.person ?? "Undisclosed"}
-            {tip.role ? ` · ${tip.role}` : ""} ·{" "}
-            {dateLabel(tip.tradeDate, locale)}
-          </div>
-          <div className="mt-1 tabular-nums">
-            {tip.worthNow != null ? (
-              <>
-                {moneyPair(tip.value, tip.worthNow, symbol).join(" → ")}{" "}
-                <span
-                  style={{
-                    color:
-                      tip.dir === "pos"
-                        ? "var(--stage-pos)"
-                        : tip.dir === "neg"
-                          ? "var(--stage-neg)"
-                          : "rgba(255,255,255,0.6)",
-                  }}
-                >
-                  {moneyDelta(tip.value, tip.worthNow, symbol)} ·{" "}
-                  {signedPp(tip.alpha)} vs index
-                </span>
-              </>
-            ) : (
-              <>{formatMoney(tip.value, symbol)} · no mark yet</>
-            )}
-          </div>
         </div>
       ) : null}
     </div>
