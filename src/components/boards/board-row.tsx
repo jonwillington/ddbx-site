@@ -57,8 +57,17 @@ const ROW_LINK =
   "group relative -mx-2 block rounded-lg px-2 py-3.5 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]";
 
 /** Column widths, in one place so a change lands on every board at once.
- *  The phone rail and logo are narrower; everything else either survives at
- *  full width or collapses into the caption.
+ *  The phone rail is narrower; everything else either survives at full
+ *  width or collapses into the caption.
+ *
+ *  The logo track is the SAME at every width, because the mark is. Every
+ *  board passes `CompanyLogo size={56}` (and /biggest-buys' turnstile is
+ *  `w-14` to match), and `CompanyLogo` sets that as an inline width, so a
+ *  narrower phone track does not get a smaller logo — it gets a 56px disc
+ *  overflowing a 40px cell, eating the column gap and landing flush against
+ *  the company name. That was the mobile row until 2026-09-06. If the phone
+ *  ever wants a smaller mark, the mark has to shrink first; the track cannot
+ *  do it on the mark's behalf.
  *
  *  Sized to their contents rather than rounded up: a fact cell holds "9 days",
  *  "12 Aug" or "£1.2bn", a money cell holds "£1.2m", and every rem spent on
@@ -67,7 +76,6 @@ const ROW_LINK =
 const TRACK = {
   railPhone: "1.75rem",
   rail: "2.5rem",
-  logoPhone: "2.5rem",
   logo: "3.5rem",
   subject: "minmax(0,1fr)",
   fact: "5rem",
@@ -151,7 +159,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
 
   const phone = tracks([
     TRACK.railPhone,
-    logo ? TRACK.logoPhone : null,
+    logo ? TRACK.logo : null,
     TRACK.subject,
     // Always the narrow tail on a phone, even for the money pair: 11.5rem of
     // a 343px screen leaves the company name nothing, and the pair already
@@ -495,7 +503,7 @@ export function BoardRow({
           ) : null}
 
           <span className="min-w-0">
-            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
               {/* Wraps to two lines rather than truncating. A company board
                   that loses the company name to make room for a fact cell has
                   got the row backwards — rule 5 puts the subject first, and
