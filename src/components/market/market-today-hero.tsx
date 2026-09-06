@@ -815,7 +815,7 @@ function MobilePinnedTodayDeck<W>({
           steals taps from the card beneath it. */}
       <div
         ref={headerRef}
-        className="pointer-events-none sticky top-[64px] z-30 -mx-4 border-b border-black/[0.07] bg-[#f5f0e8] px-4 py-3.5 dark:border-white/[0.07] dark:bg-background md:-mx-6 md:px-6"
+        className="pointer-events-none sticky top-[var(--nav-h)] z-30 -mx-4 border-b border-black/[0.07] bg-[#f5f0e8] px-4 py-3.5 dark:border-white/[0.07] dark:bg-background md:-mx-6 md:px-6"
         style={{ opacity: 0 }}
       >
         <TodayHeading dateLabel={dateLabel} />

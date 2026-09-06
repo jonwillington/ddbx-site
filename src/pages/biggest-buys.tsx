@@ -65,6 +65,7 @@ import { TickerPill } from "@/components/ticker-pill";
 import { leaderboardCta } from "@/components/seo/cta-copy";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { BoardStage } from "@/components/boards/board-stage";
+import { StageNotice } from "@/components/boards/stage-notice";
 import {
   BoardTimeline,
   timelineFinding,
@@ -347,6 +348,7 @@ export default function BiggestBuysPage() {
                       ))}
                     </dl>
                   ) : null}
+                  <StageNotice marketId={market.id} />
                 </>
               }
               linking={linking}
@@ -374,8 +376,9 @@ export default function BiggestBuysPage() {
         titleInHero={rows === null || hasBoard}
         width="wide"
       >
-        {/* Under the stage: the rule, the tracking caveat, the truncation
-            caveat. Small print belongs outside the object. */}
+        {/* Under the stage: the rule and the truncation caveat. The tracking
+            line moved into the stage header, under the figures it qualifies —
+            below a 600px object at 45% opacity it was invisible. */}
         <div className="mt-4 max-w-[62ch]">
           <a
             className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
@@ -383,7 +386,12 @@ export default function BiggestBuysPage() {
           >
             Only open-market purchases count. How we rank these ↓
           </a>
-          <TrackingNotice className="mt-2" />
+          {/* The empty and error states mount no stage, so there is no header
+              for the in-stage notice to sit in. The page still has to say how
+              far back it holds. */}
+          {rows === null || hasBoard ? null : (
+            <TrackingNotice className="mt-2" marketId={market.id} />
+          )}
           {!complete && ranked.length > 0 && (
             // Truncation is invisible unless you say so: the board still
             // renders and still looks complete. Better a caveat than a wrong

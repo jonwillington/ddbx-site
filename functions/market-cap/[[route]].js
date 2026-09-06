@@ -22,7 +22,7 @@ import {
 } from "../../shared/cap-bands.js";
 import { esc, fetchJson, noindex, page, renderInto } from "../../shared/prerender.js";
 import { brandTitle, isProductionHost } from "../../shared/seo.js";
-import { TRACKING_NOTICE } from "../../shared/tracking.js";
+import { trackingNotice } from "../../shared/tracking.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 const MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
@@ -91,7 +91,7 @@ function indexPrerender(rollup, market, host) {
   return page(`<p style="${EYEBROW}">By size</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(market)} insider buying by company size</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">The same disclosed buying, split by how big the company is. A chief executive putting ${esc(symbol)}100,000 into a ${esc(symbol)}20bn company and into a ${esc(symbol)}50m one are not the same act, and the size of the business is most of the difference.</p>
-  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(TRACKING_NOTICE)}</p>
+  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(trackingNotice(market))}</p>
   <ul style="font-size:15px;line-height:1.6;color:#4a4034;max-width:70ch">${cards}</ul>
   ${exclusions ? `<p style="font-size:13px;color:#6b6154;max-width:64ch">${esc(exclusions)}</p>` : ""}
   <h2 style="font-size:15px;margin:32px 0 10px">How the bands are drawn</h2>
@@ -131,7 +131,7 @@ function bandPrerender(row, rollup, market, host, siblings) {
   return page(`<p style="${EYEBROW}">By size</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(row.band.plural)} where ${esc(market)} insiders are buying</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(row.band.blurb)}</p>
-  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(TRACKING_NOTICE)}</p>
+  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(trackingNotice(market))}</p>
   <p style="font-size:14px;color:#4a4034;max-width:62ch">${esc(thresholdSentence(row.band, market))} ${esc(row.count)} of them have disclosed insider buying, across ${esc(row.deals)} purchases worth ${esc(money(row.value, symbol))}; the ${listed.length} with the most bought are listed.</p>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>
     <th style="text-align:left;padding:8px 12px">#</th>

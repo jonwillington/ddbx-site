@@ -12,24 +12,38 @@
  *  and one that's accurate about its own data while being misleading about the
  *  world. Same reasoning as the concentration caveat on the sector rows.
  *
- *  The year, label and sentence live in shared/tracking.js so Pages Functions
+ *  The month differs per market (the US feed started in May 2026), so pass
+ *  `marketId` wherever the page knows it; the default is the UK line. The
+ *  labels and the sentence live in shared/tracking.js so Pages Functions
  *  (sector / leaderboard / report pre-renders) can print the same words.
+ *
+ *  This is the light-ground form for document pages. Board pages put the same
+ *  sentence inside the stage header — see `StageNotice` in
+ *  src/components/boards/stage-notice.tsx.
  */
 
 export {
   TRACKING_SINCE_LABEL,
   TRACKING_SINCE_YEAR,
   TRACKING_NOTICE,
+  trackingNotice,
+  trackingSinceLabel,
 } from "../../../shared/tracking.js";
 
-import { TRACKING_NOTICE } from "../../../shared/tracking.js";
+import { trackingNotice } from "../../../shared/tracking.js";
 
-export function TrackingNotice({ className = "" }: { className?: string }) {
+export function TrackingNotice({
+  className = "",
+  marketId,
+}: {
+  className?: string;
+  marketId?: string | null;
+}) {
   return (
     <p
       className={`text-[12.5px] leading-[1.5] text-foreground/45 ${className}`}
     >
-      {TRACKING_NOTICE}
+      {trackingNotice(marketId)}
     </p>
   );
 }

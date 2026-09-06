@@ -16,7 +16,6 @@
  */
 import type { Band, IndexedCompany } from "../../shared/cap-bands";
 import type { RelatedCard } from "@/components/seo/related-cards";
-import type { Linking } from "@/components/boards/board-model";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -120,13 +119,12 @@ export function MarketCapIndexPage() {
   const marketId = market.id === "US" ? "us" : "uk";
   const locale = market.id === "US" ? "en-US" : "en-GB";
 
-  // The stage and the band cards highlight the same band: hovering a header
-  // on the ladder tints the card that band links to.
+  // The band cards' own hover tint. It used to be shared with the stage —
+  // hovering a band header on the ladder lit the card that band links to —
+  // but the ladder no longer draws band headers, and a channel whose two ends
+  // now speak different id vocabularies (company keys against band slugs)
+  // links nothing while looking as though it does.
   const [activeBand, setActiveBand] = useState<string | null>(null);
-  const linking: Linking = useMemo(
-    () => ({ activeId: activeBand, setActiveId: setActiveBand }),
-    [activeBand],
-  );
 
   const rollup = useMemo(
     () => bandRollup(companies ?? [], market.id),
@@ -135,6 +133,22 @@ export function MarketCapIndexPage() {
   const shown = rollup.bands.filter(bandMeetsBar);
   const exclusions = exclusionSentence(rollup, market.id);
   const cta = companiesCta(marketId);
+
+  // The band split, as figures. It used to be a second arrangement of the
+  // stage — the same marks gathered into strips — which drew three totals as
+  // three column depths and asked the reader to estimate them. They are
+  // numbers, so they are stated as numbers. A band with nothing bought in it
+  // is left out rather than tiled as a zero: an empty band and a band we
+  // cannot publish yet are different things, and neither is "£0".
+  const bandTiles = rollup.bands
+    .filter((row) => row.count > 0 && row.value > 0)
+    .map((row) => ({
+      label: row.band.plural,
+      value: money(row.value, market.symbol),
+    }));
+  const belowBar = rollup.bands.filter(
+    (row) => row.count > 0 && !bandMeetsBar(row),
+  );
 
   const loading = companies === null;
   const placed = useMemo(() => placedCount(rollup), [rollup]);
@@ -161,7 +175,6 @@ export function MarketCapIndexPage() {
         hero={
           staged ? (
             <MarketCapStage
-              linking={linking}
               loading={loading}
               locale={locale}
               market={market}
@@ -186,8 +199,11 @@ export function MarketCapIndexPage() {
         titleInHero={staged}
         width="wide"
       >
-        {/* The rule and the tracking caveat sit under the object rather than
-            inside it: small print belongs outside the picture it qualifies. */}
+        {/* The rule sits under the object rather than inside it: small print
+            belongs outside the picture it qualifies. The tracking caveat used
+            to sit beside it and moved into the stage header, where the reader
+            meets it before the figures it qualifies rather than 600px after
+            them. */}
         <div className="mt-4 max-w-[62ch]">
           <a
             className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
@@ -195,8 +211,31 @@ export function MarketCapIndexPage() {
           >
             Where the band lines fall, and what sits outside them ↓
           </a>
-          <TrackingNotice className="mt-2.5" />
+          {/* The no-index state mounts no stage, so there is no header for the
+              in-stage notice to sit in. The page still has to say how far back
+              it holds. */}
+          {staged ? null : (
+            <TrackingNotice className="mt-2.5" marketId={market.id} />
+          )}
         </div>
+
+        {bandTiles.length > 0 ? (
+          <StatTiles
+            className="mt-6"
+            cols={bandTiles.length >= 3 ? 3 : 2}
+            note={
+              belowBar.length > 0
+                ? belowBar
+                    .map(
+                      (row) =>
+                        `${row.band.label} has ${row.count}, below the ${MIN_COMPANIES} we publish a page from.`,
+                    )
+                    .join(" ")
+                : undefined
+            }
+            stats={bandTiles}
+          />
+        ) : null}
 
         {failed ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
@@ -356,7 +395,7 @@ export default function MarketCapBandPage() {
             >
               {thresholdSentence(band, market.id)} How that line is drawn ↓
             </a>
-            <TrackingNotice className="mt-2.5" />
+            <TrackingNotice className="mt-2.5" marketId={market.id} />
           </>
         }
         skeleton={

@@ -1,8 +1,10 @@
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
 
 import { StoreGlyph } from "@/components/store-glyph";
+import { RESEARCH_PATHS, researchNavLinks } from "@/lib/site-nav";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
@@ -15,6 +17,150 @@ import {
   marketForPath,
   marketHref,
 } from "@/lib/markets/registry";
+
+/** A masthead entry. Four of the five are a plain anchor; one is the Research
+ *  disclosure, which carries no href of its own — its `match` is what decides
+ *  whether the trigger reads as active. */
+type NavItem =
+  | {
+      kind: "link";
+      label: string;
+      href: string;
+      match: (p: string) => boolean;
+    }
+  | { kind: "research"; match: (p: string) => boolean };
+
+/** The masthead item's two states, shared by the plain links and by the
+ *  Research disclosure trigger so a <button> in the row can't drift away from
+ *  the <a>s beside it. */
+const navItemClass = (active: boolean) =>
+  clsx("text-sm transition-colors", {
+    "text-[#5a4128] dark:text-[#d8c4af] font-medium": active,
+    "text-foreground hover:text-[#5a4128]": !active,
+  });
+
+/** Research dropdown — the site's content axis, folded into one masthead item.
+ *
+ *  Modelled on the market picker's DesktopDropdown (components/market-switcher)
+ *  and sharing its panel recipe so the two menus read as one material, with
+ *  three deliberate differences:
+ *
+ *  - The trigger is a nav item, not the picker's bordered TRIGGER_CLASS pill.
+ *    Reusing that pill would make two unrelated controls read as a pair.
+ *  - Click to toggle, never hover: this list only exists from md (768px) up,
+ *    a band where touch is entirely likely and a hover menu is unusable.
+ *  - It is a disclosure, not a listbox — a <button aria-expanded> over a plain
+ *    <ul> of anchors. The picker's aria-haspopup="listbox" / role="listbox" is
+ *    a bug we are not copying: anchors are not `option`s, and a listbox whose
+ *    children are links strands a screen reader in a widget it can't operate.
+ *
+ *  The panel stays mounted and is hidden rather than unmounted. Folding
+ *  /companies in here costs it its site-wide top-level link; keeping the seven
+ *  anchors in the DOM on every page is what replaces it, and the hub-and-spoke
+ *  the pre-render Functions exist to build depends on them being there. */
+function ResearchMenu({ active }: { active: boolean }) {
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const links = researchNavLinks(location.pathname);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      // Escape from inside the panel would otherwise drop focus on a node that
+      // just went display:none, sending the next Tab back to the top of the
+      // document. (The market picker doesn't do this; it should.)
+      triggerRef.current?.focus();
+    };
+
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div
+      ref={wrapRef}
+      className="relative"
+      // Tabbing off the last link closes the panel behind you — mousedown and
+      // Escape between them never see a keyboard user leave.
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+    >
+      <button
+        ref={triggerRef}
+        aria-controls="nav-research"
+        aria-expanded={open}
+        className={clsx(navItemClass(active), "flex items-center gap-1")}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+      >
+        Research
+        <ChevronDownIcon
+          className={clsx("w-3 h-3 transition-transform", open && "rotate-180")}
+        />
+      </button>
+
+      {/* Both the attribute and the utility class: the attribute is what
+          assistive tech and the `hidden` semantics read, the class is what
+          actually paints, since a UA-stylesheet [hidden] rule loses to any
+          author `display` this panel might grow later. */}
+      <div
+        className={clsx(
+          "absolute left-0 mt-2 w-56 rounded-xl border border-separator bg-[#f5f0e8] dark:bg-background shadow-lg overflow-hidden z-50 py-1",
+          !open && "hidden",
+        )}
+        hidden={!open}
+        id="nav-research"
+      >
+        <ul>
+          {links.map((link) => {
+            const current = location.pathname === link.path;
+
+            return (
+              // The divider rides on the row rather than being its own node:
+              // a bare <div> between <li>s is invalid inside a <ul>, and the
+              // rule means "everything below here is the archive" anyway.
+              <li
+                key={link.path}
+                className={clsx(
+                  link.divider && "mt-1 border-t border-separator/60 pt-1",
+                )}
+              >
+                <a
+                  className={clsx(
+                    "flex items-center w-full px-2.5 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors",
+                    current
+                      ? "text-[#5a4128] dark:text-[#d8c4af] font-medium"
+                      : "text-foreground",
+                  )}
+                  href={link.href}
+                >
+                  {link.label}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 export const Navbar = () => {
   const location = useLocation();
@@ -58,25 +204,33 @@ export const Navbar = () => {
   const showBrokers = market.id === "uk";
   const showCompanies = ["uk", "us", "usg", "djt"].includes(market.id);
 
-  const navItems = [
+  const navItems: NavItem[] = [
     {
+      kind: "link",
       label: "Deals",
       href: dashboardHref,
       match: (p: string) => p === dashboardHref || p === "/",
     },
+    // "Companies" used to sit here as its own item; it is now the first row of
+    // the Research menu. The masthead stays at five items rather than growing
+    // to six at exactly the 768px breakpoint where the list first appears, and
+    // the whole content axis gains an entry point instead of one page having
+    // one. Same market gate as before — the dropdown appears wherever the
+    // companies index did.
     ...(showCompanies
       ? [
           {
-            label: "Companies",
-            href: "/companies",
+            kind: "research" as const,
             match: (p: string) =>
-              p === "/companies" || p.startsWith("/company/"),
+              RESEARCH_PATHS.some((x) => p === x || p.startsWith(`${x}/`)) ||
+              p.startsWith("/company/"),
           },
         ]
       : []),
     ...(showBrokers
       ? [
           {
+            kind: "link" as const,
             label: "Brokers",
             href: "/brokers",
             match: (p: string) =>
@@ -93,6 +247,7 @@ export const Navbar = () => {
     ...(market.id === "uk" || market.id === "us"
       ? [
           {
+            kind: "link" as const,
             label: "Method",
             href: "/how-it-works",
             match: (p: string) => p === "/how-it-works",
@@ -104,6 +259,7 @@ export const Navbar = () => {
     // first time: `showNav` needs more than one item, and those markets
     // previously had only "Deals".
     {
+      kind: "link",
       label: "API",
       href: "/developers",
       match: (p: string) => p === "/developers" || p === "/api",
@@ -136,20 +292,17 @@ export const Navbar = () => {
           {showNav && (
             <ul className="hidden gap-4 md:flex">
               {navItems.map((item) => {
-                const active = item.match?.(location.pathname) ?? false;
+                const active = item.match(location.pathname);
 
                 return (
-                  <li key={item.href}>
-                    <a
-                      className={clsx("text-sm transition-colors", {
-                        "text-[#5a4128] dark:text-[#d8c4af] font-medium":
-                          active,
-                        "text-foreground hover:text-[#5a4128]": !active,
-                      })}
-                      href={item.href}
-                    >
-                      {item.label}
-                    </a>
+                  <li key={item.kind === "research" ? "research" : item.href}>
+                    {item.kind === "research" ? (
+                      <ResearchMenu active={active} />
+                    ) : (
+                      <a className={navItemClass(active)} href={item.href}>
+                        {item.label}
+                      </a>
+                    )}
                   </li>
                 );
               })}

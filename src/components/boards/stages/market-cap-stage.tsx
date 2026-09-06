@@ -2,15 +2,19 @@
  *  its insiders bought.
  *
  *  The page's argument is that the three bands are lines drawn on a continuum,
- *  not three separate markets, so the stage has to show the continuum first.
- *  "By size" is the whole placed population on two log scales — market value
- *  across, value bought up — with the two band thresholds drawn as rules
- *  through it and three constant-share diagonals for scale. "By band" keeps
- *  the same size axis and lets every company fall into a strip along it, so
- *  the picture becomes one distribution with the same two rules cutting it and
- *  the bands named over their regions. Nothing is ever drawn as a share of a
- *  whole: the unplaced companies are absent from both arrangements, and a pie
- *  would quietly claim they were not.
+ *  not three separate markets, so the stage shows the continuum: the whole
+ *  placed population on two log scales — market value across, value bought up
+ *  — with the two band thresholds drawn as rules through it and three
+ *  constant-share diagonals for scale. Nothing is ever drawn as a share of a
+ *  whole: the unplaced companies are absent, and a pie would quietly claim
+ *  they were not.
+ *
+ *  ONE arrangement, since 2026-09-06. The second — "by band", the same marks
+ *  gathered into strips along the same axis — was this picture with its value
+ *  axis taken away, which is a picture that says less rather than something
+ *  else. The band totals it existed to state are figures, so they are stated
+ *  as figures: the page carries them in its stat tiles, where a reader can
+ *  read them off rather than infer them from the depth of a column.
  *
  *  Monochrome on purpose. This board has no direction to state — a market
  *  value is not a gain — and the two stage tones mean ahead and behind
@@ -21,27 +25,18 @@
  *  `stats_currency` and never divides a cap by 100; read the header of
  *  shared/cap-bands.js for why that last one is the trap.
  */
-import type {
-  BandRollup,
-  BandRow,
-  IndexedCompany,
-} from "../../../../shared/cap-bands";
-import type { Linking } from "../board-model";
+import type { BandRollup, IndexedCompany } from "../../../../shared/cap-bands";
 import type { StageContext, StageMode, StagePad } from "../stage-panel";
 import type { Side } from "../stage-marks";
 
 import { memo, useMemo } from "react";
 
 import { median } from "../../../../shared/boards.js";
-import {
-  bandMeetsBar,
-  bandPath,
-  BANDS,
-  MIN_COMPANIES,
-} from "../../../../shared/cap-bands.js";
+import { BANDS } from "../../../../shared/cap-bands.js";
 import { formatMoney } from "../../../../shared/sectors.js";
 import { dateLabel } from "../board-model";
 import { StageFigures } from "../stage-figures";
+import { StageNotice } from "../stage-notice";
 import {
   DotField,
   exactMoney,
@@ -57,7 +52,7 @@ import { BoardStagePanel } from "../stage-panel";
 
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 
-type Mode = "size" | "band";
+type Mode = "size";
 
 interface CapMarket {
   id: "UK" | "US";
@@ -87,7 +82,6 @@ interface Dot {
 
 const MODES: ReadonlyArray<StageMode<Mode>> = [
   { id: "size", label: "By size" },
-  { id: "band", label: "By band" },
 ];
 
 /** A wider left gutter than the default: the value axis prints money. The
@@ -104,9 +98,6 @@ const NAMED_R = 13;
 /** A logo's own radius plus its ring, kept between the outermost mark and the
  *  panel's edge so the largest company on the board is drawn whole. */
 const EDGE = NAMED_R + 6;
-
-/** The deepest a "by band" column is allowed to stack, per company. */
-const STEP_MAX = 10;
 
 /** Where along its own line a share diagonal will try to carry its label,
  *  nearest the sparse lower-left end first. */
@@ -289,118 +280,6 @@ function sizeLayout(rows: CapRow[], sc: Scales): Dot[] {
   return rows.map((row) => ({ row, x: sc.x(row.cap), y: sc.y(row.value) }));
 }
 
-/** The same companies, dropped onto one axis.
- *
- *  Binned by market value and stacked upward from a baseline, so height is
- *  density rather than a second quantity — there is no y scale in this mode
- *  and nothing is labelled as though there were. A named company takes four
- *  slots and sits at the top of its column, because a logo buried in a stack
- *  of dots is a logo nobody can click.
- *
- *  `room` is the height the columns may grow into and the returned `top` is
- *  the height they actually took, so the band headers can sit on the picture
- *  rather than at a guessed offset above it. */
-function bandLayout(
-  rows: CapRow[],
-  sc: Scales,
-  named: Set<string>,
-  baseline: number,
-  room: number,
-): { dots: Dot[]; top: number } {
-  const binW = Math.max(7, (sc.plot.x1 - sc.plot.x0) / 64);
-  const bins = new Map<number, CapRow[]>();
-
-  for (const row of [...rows].sort((a, b) => a.cap - b.cap)) {
-    const bin = Math.round(sc.x(row.cap) / binW);
-    const held = bins.get(bin);
-
-    if (held) held.push(row);
-    else bins.set(bin, [row]);
-  }
-
-  const units = (row: CapRow) => (named.has(row.key) ? 4 : 1);
-  let tallest = 1;
-
-  for (const list of bins.values()) {
-    tallest = Math.max(
-      tallest,
-      list.reduce((n, row) => n + units(row), 0),
-    );
-  }
-
-  const step = Math.min(STEP_MAX, Math.max(2, room / tallest));
-  const out: Dot[] = [];
-  // Binning rounds a company off its own cap by up to half a bin, which at the
-  // ends of the axis is enough to push a logo through the panel edge.
-  const xMin = sc.plot.x0 + EDGE;
-  const xMax = sc.plot.x1 - EDGE;
-
-  for (const [bin, list] of bins) {
-    const ordered = [...list].sort(
-      (a, b) => Number(named.has(a.key)) - Number(named.has(b.key)),
-    );
-    let used = 0;
-
-    for (const row of ordered) {
-      const u = units(row);
-
-      out.push({
-        row,
-        x: Math.max(xMin, Math.min(xMax, bin * binW)),
-        y: baseline - (used + u / 2) * step,
-      });
-      used += u;
-    }
-  }
-
-  return { dots: out, top: baseline - tallest * step };
-}
-
-interface Region {
-  row: BandRow;
-  x0: number;
-  x1: number;
-}
-
-/** Where each band sits on the size axis, clipped to the companies we hold.
- *  A band whose thresholds fall outside the drawn range gets no region rather
- *  than a sliver at an edge. */
-function regionsFor(
-  rollup: BandRollup,
-  market: "UK" | "US",
-  sc: Scales,
-): Region[] {
-  const out: Region[] = [];
-
-  for (const row of rollup.bands) {
-    if (row.count === 0) continue;
-    const lo = Math.max(row.band.min[market] || 0, sc.capMin);
-    const ceiling = row.band.max[market];
-    const hi = Math.min(ceiling == null ? sc.capMax : ceiling, sc.capMax);
-
-    if (hi <= lo) continue;
-    const x0 = sc.x(lo);
-    const x1 = sc.x(hi);
-
-    if (x1 - x0 < 46) continue;
-    out.push({ row, x0, x1 });
-  }
-
-  return out;
-}
-
-/** The words a band header says, in the tooltip and to a screen reader
- *  alike. A band under the bar states that it is under the bar. */
-function bandWords(row: BandRow, symbol: string, locale: string): string {
-  if (!bandMeetsBar(row)) {
-    return `${row.band.plural}: too few to publish, ${plural(row.count, "company", "companies")}`;
-  }
-  const value =
-    row.value > 0 ? `, ${spend(row.value, symbol, locale)} bought` : "";
-
-  return `${row.band.plural}: ${plural(row.count, "company", "companies")}, ${plural(row.deals, "purchase", "purchases")}${value}`;
-}
-
 /** Roughly how wide a company's name label runs: the labeller's own width
  *  function, so the space a name is given and the space kept clear for it are
  *  the same number. */
@@ -574,17 +453,15 @@ const Population = memo(function Population({
 function StageBody({
   ctx,
   rows,
-  rollup,
   market,
   locale,
 }: {
   ctx: StageContext<Mode>;
   rows: CapRow[];
-  rollup: BandRollup;
   market: CapMarket;
   locale: string;
 }) {
-  const { W, H, pad, mode, active } = ctx;
+  const { W, H, pad, active } = ctx;
   const symbol = market.symbol;
 
   const sc = useMemo(() => scalesFor(rows, W, H, pad), [rows, W, H, pad]);
@@ -594,16 +471,7 @@ function StageBody({
     [named],
   );
 
-  const baseline = H - pad.b - 12;
-
-  const sizeDots = useMemo(() => sizeLayout(rows, sc), [rows, sc]);
-  const band = useMemo(
-    () => bandLayout(rows, sc, namedKeys, baseline, baseline - pad.t - 76),
-    [rows, sc, namedKeys, baseline, pad],
-  );
-  // The headers ride on top of the tallest column, wherever that came out.
-  const headerY = Math.max(pad.t + 44, band.top - 40);
-  const dots = mode === "size" ? sizeDots : band.dots;
+  const dots = useMemo(() => sizeLayout(rows, sc), [rows, sc]);
   const narrow = W < 560;
   const notesShareALine =
     noteWidth(X_NOTE) + noteWidth(Y_NOTE) + 24 <= sc.plot.x1 - sc.plot.x0;
@@ -645,11 +513,6 @@ function StageBody({
         () => 30,
       ),
     [sc, symbol],
-  );
-
-  const regions = useMemo(
-    () => regionsFor(rollup, market.id, sc),
-    [rollup, market.id, sc],
   );
 
   // The two thresholds, drawn only where they actually fall inside the range
@@ -711,7 +574,7 @@ function StageBody({
     // own line. Reserve the whole span a name might take on either side of its
     // logo rather than the side the labeller happened to choose.
     const taken: Box[] = named.flatMap((row) => {
-      const d = sizeDots.find((dot) => dot.row.key === row.key);
+      const d = dots.find((dot) => dot.row.key === row.key);
 
       if (!d) return [];
       const reach = NAMED_R + 8 + labelWidth(row.name);
@@ -754,7 +617,7 @@ function StageBody({
         )
         .map((box) => ({
           box,
-          hits: sizeDots.filter(
+          hits: dots.filter(
             (d) =>
               d.x + DOT_R > box.x &&
               d.x - DOT_R < box.x + box.w &&
@@ -774,7 +637,7 @@ function StageBody({
     }
 
     return out;
-  }, [sc, sizeDots, named, narrow]);
+  }, [sc, dots, named, narrow]);
 
   // Named companies are labelled from where they sit on the ladder, so the
   // label geometry does not change when the marks travel to the strip. The
@@ -782,7 +645,7 @@ function StageBody({
   // through "0.1% of the company" costs both of them.
   const labelled = useMemo(() => {
     if (named.length === 0) return new Map<string, Side>();
-    const at = new Map(sizeDots.map((d) => [d.row.key, d] as const));
+    const at = new Map(dots.map((d) => [d.row.key, d] as const));
     const cands = named
       .map((row) => {
         const p = at.get(row.key);
@@ -795,7 +658,7 @@ function StageBody({
 
     return placeLabels(cands, {
       obstacles: [
-        ...sizeDots.map((d) => ({ x: d.x, y: d.y, r: DOT_R })),
+        ...dots.map((d) => ({ x: d.x, y: d.y, r: DOT_R })),
         ...diagonals.flatMap((d) => boxObstacles(d.at)),
         // The strip over the plot is spoken for. A name placed "above" a mark
         // near the top of the ladder would otherwise be written across the
@@ -812,25 +675,19 @@ function StageBody({
       cap: W < 520 ? 2 : W < 760 ? 3 : 5,
       width: (c) => labelWidth(c.text),
     });
-  }, [named, sizeDots, diagonals, sc, pad, W]);
+  }, [named, dots, diagonals, sc, pad, W]);
 
   if (rows.length === 0) return null;
 
   return (
     <>
-      {/* The size axis, in both arrangements: it is the one thing that does
-          not move between them. */}
       <StageAxis plot={sc.plot} x={xTicks} />
       <AxisNote anchor="end" text={X_NOTE} x={sc.plot.x1} y={sc.plot.y0 - 26} />
 
-      {/* The value axis, the share diagonals and the band captions belong to
-          the ladder only: in the strip the band headers name the bands, and
-          two systems naming the same three things is what crowded the top of
-          the plot. */}
-      <g
-        className="transition-opacity duration-700"
-        style={{ opacity: mode === "size" ? 1 : 0 }}
-      >
+      {/* The value axis, the share diagonals and the band captions. One
+          system naming the three bands, not two: the strip that named them a
+          second time is gone. */}
+      <g>
         <StageAxis plot={sc.plot} y={yTicks} />
         {/* Both notes on one line where they clear each other, stacked where
             they do not — a phone has neither the width nor a second axis it
@@ -862,8 +719,8 @@ function StageBody({
         ))}
       </g>
 
-      {/* The band lines. They cut both arrangements, which is the argument:
-          the same continuum, the same two cuts. */}
+      {/* The band lines: the cuts the page argues are lines on a continuum,
+          drawn through the continuum itself. */}
       {/* Three regions, two rules: the top band's caption has no line to hang
           on, so all three are drawn together below and every rule's own label
           slot is left empty rather than captioning two of them differently. */}
@@ -881,10 +738,7 @@ function StageBody({
 
       {/* The diagonals' own captions, over the population rather than under
           it: a dot drawn on top of the word is the word gone. */}
-      <g
-        className="transition-opacity duration-700"
-        style={{ opacity: mode === "size" ? 1 : 0 }}
-      >
+      <g>
         {diagonals.map((d) => (
           <text
             key={d.label}
@@ -902,72 +756,6 @@ function StageBody({
             {d.label}
           </text>
         ))}
-      </g>
-
-      {/* The band headers, over the regions, once the companies have gathered
-          under them. */}
-      <g
-        className="transition-opacity duration-500"
-        style={{
-          opacity: mode === "band" ? 1 : 0,
-          pointerEvents: mode === "band" ? undefined : "none",
-        }}
-      >
-        {regions.map((region) => {
-          const width = Math.min(region.x1 - region.x0 - 8, 280);
-          const cx = (region.x0 + region.x1) / 2;
-          const ok = bandMeetsBar(region.row);
-          const title =
-            width >= 150 ? region.row.band.plural : region.row.band.label;
-          const counts = plural(region.row.count, "company", "companies");
-          const meta = !ok
-            ? `too few to publish · ${region.row.count}`
-            : width >= 210 && region.row.value > 0
-              ? `${counts} · ${plural(region.row.deals, "purchase", "purchases")} · ${spend(region.row.value, symbol, locale)}`
-              : width >= 150 && region.row.value > 0
-                ? `${counts} · ${spend(region.row.value, symbol, locale)}`
-                : counts;
-
-          return (
-            <StageMark
-              key={region.row.band.slug}
-              anchor={{ x: cx, y: headerY, r: width / 2 }}
-              ariaLabel={bandWords(region.row, symbol, locale)}
-              hit={{ shape: "rect", x: -width / 2, y: -28, w: width, h: 54 }}
-              href={ok ? bandPath(region.row.band.slug) : undefined}
-              id={region.row.band.slug}
-              move={false}
-              x={cx}
-              y={headerY}
-            >
-              <text
-                fill={ok ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.35)"}
-                fontSize={15}
-                fontWeight={500}
-                paintOrder="stroke"
-                stroke="var(--stage-bg)"
-                strokeLinejoin="round"
-                strokeWidth={4}
-                textAnchor="middle"
-              >
-                {title}
-              </text>
-              <text
-                className="font-mono"
-                fill={ok ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.35)"}
-                fontSize={11}
-                paintOrder="stroke"
-                stroke="var(--stage-bg)"
-                strokeLinejoin="round"
-                strokeWidth={4}
-                textAnchor="middle"
-                y={18}
-              >
-                {meta}
-              </text>
-            </StageMark>
-          );
-        })}
       </g>
 
       {/* The named few: a logo apiece, and a name while the ladder is up. */}
@@ -991,11 +779,11 @@ function StageBody({
           />
           {labelled.has(d.row.key) ? (
             <StageLabel
+              visible
               r={NAMED_R}
               side={labelled.get(d.row.key) ?? "right"}
               sub={spend(d.row.value, symbol, locale)}
               text={d.row.name}
-              visible={mode === "size"}
             />
           ) : null}
         </StageMark>
@@ -1009,15 +797,12 @@ export function MarketCapStage({
   market,
   locale,
   loading,
-  linking,
 }: {
   rollup: BandRollup;
   market: CapMarket;
   locale: string;
   /** The index is in flight. The header still stands; the chart does not. */
   loading: boolean;
-  /** Hovering a band header tints that band's card below. */
-  linking: Linking;
 }) {
   const symbol = market.symbol;
   const rows = useMemo(() => toCapRows(rollup), [rollup]);
@@ -1025,11 +810,6 @@ export function MarketCapStage({
     () => new Map(rows.map((row) => [row.key, row] as const)),
     [rows],
   );
-  const bySlug = useMemo(
-    () => new Map(rollup.bands.map((row) => [row.band.slug, row] as const)),
-    [rollup],
-  );
-
   const placed = rows.length;
   const banded = bandedCount(rollup);
   // Everything the rollup could not band: no market value on file, or a value
@@ -1089,105 +869,46 @@ export function MarketCapStage({
         most of the difference.
       </p>
       <StageFigures items={figures} reserve={loading} />
+      <StageNotice marketId={market.id} />
     </>
-  );
-
-  const small = bySlug.get("small");
-  // Every published band gets named in the strip's sentence, not just the two
-  // ends: on a narrow stage a band's region is too thin to carry a header, and
-  // a band the page publishes has to be identifiable somewhere.
-  const others = rollup.bands
-    .filter(
-      (row) => row.band.slug !== "small" && row.count > 0 && bandMeetsBar(row),
-    )
-    // Up the ladder from the small-caps the sentence opens on.
-    .reverse();
-  const belowBar = rollup.bands.filter(
-    (row) => row.count > 0 && !bandMeetsBar(row),
   );
 
   return (
     <BoardStagePanel<Mode>
-      caption={(ctx) =>
-        ctx.mode === "size" ? (
-          <p>
-            <span className="font-semibold text-white">
-              {placed} of {rollup.total} companies placed by market value today
-            </span>
-            , one dot each
-            {notPlaced > 0 ? (
-              <>
-                ; {notPlaced} aren’t on the ladder, with no market value on file
-                or a value in another currency
-              </>
-            ) : null}
-            .
-            {dropped > 0 ? (
-              <>
-                {" "}
-                A further {plural(dropped, "company has", "companies have")} no
-                value on file to plot.
-              </>
-            ) : null}
-            {topShare >= 0.3 && top ? (
-              <>
-                {" "}
-                {spend(top.value, symbol, locale)} of the{" "}
-                {spend(totalValue, symbol, locale)} is {top.name} alone.
-              </>
-            ) : null}{" "}
-            <button
-              className="text-white/80 underline decoration-white/30 underline-offset-4 hover:text-white"
-              type="button"
-              onClick={() => ctx.choose("band")}
-            >
-              See them by band →
-            </button>
-          </p>
-        ) : small ? (
-          <p>
-            <span className="font-semibold text-white">
-              {small.count} of the {placed} are small-caps
-            </span>
-            , with {spend(small.value, symbol, locale)} of the{" "}
-            {spend(totalValue, symbol, locale)} bought
-            {others.length > 0 ? "; " : "."}
-            {others.map((row, i) => {
-              const name = row.band.label.toLowerCase();
-
-              return (
-                <span key={row.band.slug}>
-                  {i === 0 ? "" : i === others.length - 1 ? " and " : ", "}
-                  {plural(row.count, name, `${name}s`)} account for{" "}
-                  {spend(row.value, symbol, locale)}
-                  {i === others.length - 1 ? "." : ""}
-                </span>
-              );
-            })}
-            {belowBar.map((row) => (
-              <span key={row.band.slug}>
-                {" "}
-                {row.band.label} has {row.count}, below the {MIN_COMPANIES} we
-                publish a page from.
-              </span>
-            ))}
-          </p>
-        ) : null
-      }
+      caption={() => (
+        <p>
+          <span className="font-semibold text-white">
+            {placed} of {rollup.total} companies placed by market value today
+          </span>
+          , one dot each
+          {notPlaced > 0 ? (
+            <>
+              ; {notPlaced} aren’t on the ladder, with no market value on file
+              or a value in another currency
+            </>
+          ) : null}
+          .
+          {dropped > 0 ? (
+            <>
+              {" "}
+              A further {plural(dropped, "company has", "companies have")} no
+              value on file to plot.
+            </>
+          ) : null}
+          {topShare >= 0.3 && top ? (
+            <>
+              {" "}
+              {spend(top.value, symbol, locale)} of the{" "}
+              {spend(totalValue, symbol, locale)} is {top.name} alone.
+            </>
+          ) : null}
+        </p>
+      )}
       header={header}
-      linking={linking}
       loading={loading}
       modes={MODES}
       pad={PAD}
       renderTip={(id) => {
-        const band = bySlug.get(id);
-
-        if (band)
-          return (
-            <div className="font-semibold">
-              {bandWords(band, symbol, locale)}
-            </div>
-          );
         const row = byKey.get(id);
 
         if (!row) return null;
@@ -1218,24 +939,16 @@ export function MarketCapStage({
           </>
         );
       }}
-      svgLabel={(mode) =>
-        mode === "size"
-          ? `${placed} companies placed by market value across and value bought up${
-              drawnRules.length > 0
-                ? `, with the ${drawnRules.join(" and ")} band lines drawn`
-                : ""
-            }`
-          : "The same companies gathered along the size axis into the three bands"
+      svgLabel={() =>
+        `${placed} companies placed by market value across and value bought up${
+          drawnRules.length > 0
+            ? `, with the ${drawnRules.join(" and ")} band lines drawn`
+            : ""
+        }`
       }
     >
       {(ctx) => (
-        <StageBody
-          ctx={ctx}
-          locale={locale}
-          market={market}
-          rollup={rollup}
-          rows={rows}
-        />
+        <StageBody ctx={ctx} locale={locale} market={market} rows={rows} />
       )}
     </BoardStagePanel>
   );

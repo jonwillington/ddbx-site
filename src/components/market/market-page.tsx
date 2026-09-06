@@ -1356,12 +1356,12 @@ export function MarketPage<W>({
             <div
               ref={filterBarRef}
               // Sticky from md up only. Seats flush against the floating
-              // navbar's capsule: the navbar's sticky wrapper
-              // (layouts/default.tsx) is `top-0 px-3 pt-3 md:pt-4` around an
-              // `h-14` header, so the capsule's bottom edge is at 72px from
-              // md up — and this offset matches it exactly. The earlier 84px
-              // "breath" left a strip of ground between capsule and bar that
-              // the list's rows scrolled visibly through.
+              // navbar's capsule via --nav-h (styles/globals.css), which is
+              // that capsule's bottom edge derived from the two inputs that
+              // set it. Flush is deliberate, so --nav-h rather than
+              // --nav-clear: the earlier 84px "breath" left a strip of ground
+              // between capsule and bar that the list's rows scrolled visibly
+              // through.
               //
               // On a phone the bar holds only the Winners/Latest tabs, and
               // pinned under the capsule they cost the viewport a second
@@ -1371,7 +1371,7 @@ export function MarketPage<W>({
               // bar scrolls away with the page and the month headers below
               // pin to the capsule alone (filterBarHeight reads 0 while the
               // bar isn't sticky).
-              className="md:sticky md:top-[72px] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
+              className="md:sticky md:top-[var(--nav-h)] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
             >
               {/* Mobile list tabs — the winners rows from the 90-day channel
                 window vs the chronological feed. Labelled by what you get,

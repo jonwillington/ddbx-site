@@ -18,10 +18,15 @@
  *  edge. The tally is the picture; the two numerals are there so no reader has
  *  to count pips to reach a figure the page already holds.
  *
- *  Two arrangements. "By purchases" is the board order, with count rules to
- *  read the runs against. "By who bought" re-sorts by distinct insiders and
- *  brackets the result into labelled runs, so the ranks scramble and the
- *  reader can see that the busiest company is not always the broadest one.
+ *  One arrangement, since 2026-09-06. There used to be a second, "By who
+ *  bought", which re-sorted the same 25 rows on distinct insiders and
+ *  bracketed them into labelled runs. It was the same picture twice: the pips
+ *  already say how many people bought, so re-ordering the rows restated the
+ *  column rather than adding one, and the reader paid for it with a board that
+ *  would not hold still. The finding that arrangement carried — how many of
+ *  the 25 were broad and how many were one person repeating — is now a clause
+ *  in the caption, where it costs no rearrangement to read. The breadth column
+ *  on the right of every row is what makes that possible.
  *
  *  MONOCHROME, without exception. This board is not ranked by performance and
  *  must not borrow the panel's ahead/behind pair to suggest that it is; a pip
@@ -37,27 +42,28 @@ import type { ReactNode } from "react";
 import { useMemo } from "react";
 
 import { formatMoney } from "../../../../shared/sectors.js";
-import { numberWord, signedPp } from "../board-model";
+import { signedPp } from "../board-model";
 import { BoardStagePanel } from "../stage-panel";
 import { LogoDisc, StageAxis, StageMark } from "../stage-marks";
 
 import { shortDate } from "@/components/market/market-utils";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 
-type Mode = "purchases" | "people";
+type Mode = "purchases";
 
 const MODES: ReadonlyArray<StageMode<Mode>> = [
   { id: "purchases", label: "By purchases" },
-  { id: "people", label: "By who bought" },
 ];
 
 /** Rows are the full width of the plot, so the gutters are thin on both
  *  sides and the vertical padding only has to clear the count labels. A
- *  phone gets thinner still — every pixel here is a pixel off the tally. */
+ *  phone gets thinner still — every pixel here is a pixel off the tally. The
+ *  bottom reserves two lines: the tally key always, the hollow key under it
+ *  when there is an unattributed purchase on the board. */
 function stagePad(W: number): StagePad {
   return W < 520
-    ? { l: 14, r: 14, t: 36, b: 26 }
-    : { l: 24, r: 24, t: 40, b: 28 };
+    ? { l: 14, r: 14, t: 36, b: 44 }
+    : { l: 24, r: 24, t: 40, b: 46 };
 }
 
 /** Height is a function of the row count, not of the width: 25 rows need the
@@ -68,10 +74,22 @@ function stageHeight(W: number): number {
 }
 
 /** Rank, logo and name, drawn inside the plot so the pips start at a single
- *  x on every row. A phone gets the ticker instead of the name. */
+ *  x on every row. A phone gets the ticker instead of the name.
+ *
+ *  Only the rank's own x is fixed. The logo's centre and the name's start are
+ *  DERIVED from the logo radius the layout settled on, because the radius is a
+ *  function of the lane height and the lane height is a function of how many
+ *  rows there are: hardcoding 22 and 38 against a radius that reaches 11 put
+ *  the disc's opaque backing circle (r + 2.5, drawn after the text) over the
+ *  second digit of every rank, so the board read "0:", "1(", "2:". */
 const RANK_X = 0;
-const LOGO_CX = 22;
-const NAME_X = 38;
+
+/** Two mono digits at 11px, plus a pixel. */
+const RANK_W = 15;
+
+/** The gap either side of the disc. */
+const RANK_GAP = 6;
+const NAME_GAP = 8;
 
 function gutterWidth(W: number): number {
   return W < 520 ? 104 : W < 860 ? 230 : 300;
@@ -100,6 +118,13 @@ const PIP_H_MAX = 15;
 const GROUP_GAP = 0.7;
 
 const HOLLOW_LEGEND = "filer not named on the filing";
+
+/** The grouping is the whole point of the mark and nothing on the board said
+ *  so: a reader could see the gaps and had no way to learn what a gap meant.
+ *  Drawn with the mark rather than described, in the same key strip as the
+ *  hollow pip, once. */
+const TALLY_LEGEND = "one stroke = one purchase · a gap = a different insider";
+const TALLY_LEGEND_NARROW = "one stroke = one purchase · a gap = a new insider";
 
 interface Pip {
   at: number;
@@ -284,19 +309,11 @@ interface Lane {
   endX: number;
 }
 
-interface Bracket {
-  insiders: number;
-  count: number;
-  y0: number;
-  y1: number;
-  labelY: number;
-}
-
 /** The marks, inside the panel's svg.
  *
- *  A component rather than the render prop run inline: the two orders, the
- *  runs and every row's pip positions are memoised, and none of it should be
- *  redone because a pointer crossed a row. */
+ *  A component rather than the render prop run inline: the lane geometry and
+ *  every row's pip positions are memoised, and none of it should be redone
+ *  because a pointer crossed a row. */
 function StageBody({
   ctx,
   rows,
@@ -304,7 +321,7 @@ function StageBody({
   ctx: StageContext<Mode>;
   rows: CompanyActivity[];
 }) {
-  const { W, H, pad, mode } = ctx;
+  const { W, H, pad } = ctx;
   const gutter = gutterWidth(W);
   const gutterX = pad.l + gutter;
   const plotX1 = W - pad.r;
@@ -314,40 +331,7 @@ function StageBody({
     const n = rows.length;
     const plotTop = pad.t;
     const plotH = H - pad.b - pad.t;
-
-    // Second order: most different insiders first, then the busiest, then the
-    // ticker so the arrangement is stable between renders.
-    const orderB = rows
-      .map((_, i) => i)
-      .sort(
-        (a, b) =>
-          rows[b].insiders - rows[a].insiders ||
-          rows[b].filings - rows[a].filings ||
-          rows[a].ticker.localeCompare(rows[b].ticker),
-      );
-
-    const runs: Array<{ insiders: number; from: number; to: number }> = [];
-
-    orderB.forEach((idx, j) => {
-      const last = runs[runs.length - 1];
-
-      if (last && last.insiders === rows[idx].insiders) last.to = j;
-      else runs.push({ insiders: rows[idx].insiders, from: j, to: j });
-    });
-
-    const gap = runs.length > 1 ? (W < 520 ? 13 : 16) : 0;
-    const laneH = (plotH - gap * (runs.length - 1)) / Math.max(1, n);
-    const offsetA = (plotH - laneH * n) / 2;
-
-    const posB: number[] = new Array(n).fill(0);
-    const runB: number[] = new Array(n).fill(0);
-
-    runs.forEach((run, gi) => {
-      for (let j = run.from; j <= run.to; j++) {
-        posB[orderB[j]] = j;
-        runB[orderB[j]] = gi;
-      }
-    });
+    const laneH = plotH / Math.max(1, n);
 
     // The field is what is left once the name gutter, the run's total and the
     // insider column have taken theirs, and the busiest row is sized to fill
@@ -360,33 +344,23 @@ function StageBody({
     const pipH = Math.min(PIP_H_MAX, Math.max(6, laneH - 8));
     const logoR = Math.min(11, Math.max(5, laneH / 2 - 3));
 
+    // Everything in the gutter is measured off the disc that is actually
+    // drawn. Below 520 the gutter is 104px and the name would start at ~56,
+    // so the rank rail is dropped there rather than squeezed: the list under
+    // the stage carries the same numbering.
+    const rankW = W < 520 ? 0 : RANK_W;
+    const logoCx = rankW + (rankW ? RANK_GAP : 0) + (logoR + 2.5);
+    const nameX = logoCx + (logoR + 2.5) + NAME_GAP;
+
     const pips = rows.map((r) => pipSlots(r.insiderFilings, r.unattributed));
 
-    const lanesA: Lane[] = rows.map((row, i) => ({
+    const lanes: Lane[] = rows.map((row, i) => ({
       row,
       rank: i + 1,
-      y: plotTop + offsetA + laneH * (i + 0.5),
+      y: plotTop + laneH * (i + 0.5),
       pips: pips[i],
       endX: gutter + (pips[i][pips[i].length - 1]?.at ?? 0) * step + pipW,
     }));
-
-    const lanesB: Lane[] = lanesA.map((lane, i) => ({
-      ...lane,
-      y: plotTop + laneH * (posB[i] + 0.5) + gap * runB[i],
-    }));
-
-    const brackets: Bracket[] = runs.map((run, gi) => {
-      const first = plotTop + laneH * (run.from + 0.5) + gap * gi;
-      const last = plotTop + laneH * (run.to + 0.5) + gap * gi;
-
-      return {
-        insiders: run.insiders,
-        count: run.to - run.from + 1,
-        y0: first - laneH / 2 + 1,
-        y1: last + laneH / 2 - 1,
-        labelY: first - laneH / 2 - 4,
-      };
-    });
 
     // Count rules every five purchases, dropped where they would collide with
     // the "purchases →" kicker in the same band.
@@ -402,21 +376,22 @@ function StageBody({
     }
 
     return {
-      brackets,
-      lanesA,
-      lanesB,
+      lanes,
       laneH,
+      logoCx,
       logoR,
+      nameX,
       pipH,
       pipW,
       plotTop,
+      rankW,
       step,
       ticks,
     };
   }, [rows, W, H, pad, gutter, gutterX, plotX1, breadthW]);
 
-  const lanes = mode === "purchases" ? geom.lanesA : geom.lanesB;
-  const nameW = gutter - NAME_X - 14;
+  const lanes = geom.lanes;
+  const nameW = gutter - geom.nameX - 14;
   const anyHollow = rows.some((r) => r.unattributed > 0);
   const plot = {
     x0: pad.l,
@@ -427,53 +402,16 @@ function StageBody({
 
   return (
     <>
-      {/* Mode A furniture: the ruler the runs are read against. `StageAxis`
-          keeps its own tones: measured on a settled frame they are the same
-          grey as /biggest-buys' and clear AA at 5.3:1, and what made them
-          look dim was the tally printed across the rows, not the axis. */}
-      <g
-        className="transition-opacity duration-500"
-        style={{ opacity: mode === "purchases" ? 1 : 0 }}
-      >
-        <StageAxis
-          plot={plot}
-          x={geom.ticks}
-          xLabel="purchases →"
-          xLabelsAt="top"
-        />
-      </g>
-
-      {/* Mode B furniture: the runs, bracketed and counted in words. */}
-      <g
-        className="transition-opacity duration-500"
-        style={{ opacity: mode === "people" ? 1 : 0 }}
-      >
-        {geom.brackets.map((b) => (
-          <g key={b.insiders}>
-            <line
-              stroke="rgba(255,255,255,0.3)"
-              x1={gutterX - 6}
-              x2={gutterX - 6}
-              y1={b.y0}
-              y2={b.y1}
-            />
-            <text
-              className="font-mono uppercase"
-              fill="rgba(255,255,255,0.62)"
-              fontSize={10}
-              letterSpacing="0.12em"
-              x={gutterX - 6}
-              y={b.labelY}
-            >
-              {b.insiders === 0
-                ? `no filer named · ${b.count}`
-                : `${numberWord(b.insiders)} ${
-                    b.insiders === 1 ? "insider" : "insiders"
-                  } · ${b.count}`}
-            </text>
-          </g>
-        ))}
-      </g>
+      {/* The ruler the runs are read against. `StageAxis` keeps its own tones:
+          measured on a settled frame they are the same grey as
+          /biggest-buys' and clear AA at 5.3:1, and what made them look dim was
+          the tally printed across the rows, not the axis. */}
+      <StageAxis
+        plot={plot}
+        x={geom.ticks}
+        xLabel="purchases →"
+        xLabelsAt="top"
+      />
 
       {/* The rows. One mark per company, never a person and never a filing. */}
       <g>
@@ -494,21 +432,23 @@ function StageBody({
             x={pad.l}
             y={lane.y}
           >
-            <text
-              className="font-mono tabular-nums"
-              dy="0.35em"
-              fill={
-                lane.rank <= 3
-                  ? "rgba(255,255,255,0.92)"
-                  : "rgba(255,255,255,0.5)"
-              }
-              fontSize={11}
-              x={RANK_X}
-            >
-              {String(lane.rank).padStart(2, "0")}
-            </text>
+            {geom.rankW > 0 ? (
+              <text
+                className="font-mono tabular-nums"
+                dy="0.35em"
+                fill={
+                  lane.rank <= 3
+                    ? "rgba(255,255,255,0.92)"
+                    : "rgba(255,255,255,0.5)"
+                }
+                fontSize={11}
+                x={RANK_X}
+              >
+                {String(lane.rank).padStart(2, "0")}
+              </text>
+            ) : null}
 
-            <g style={{ transform: `translate(${LOGO_CX}px, 0px)` }}>
+            <g style={{ transform: `translate(${geom.logoCx}px, 0px)` }}>
               <LogoDisc
                 clipId={`ma-${lane.row.ticker}`}
                 edge="rgba(255,255,255,0.35)"
@@ -522,7 +462,7 @@ function StageBody({
               fill="rgba(255,255,255,0.9)"
               fontSize={13}
               fontWeight={600}
-              x={NAME_X}
+              x={geom.nameX}
             >
               {fitLabel(
                 W < 520
@@ -577,8 +517,30 @@ function StageBody({
         ))}
       </g>
 
-      {/* Hollow pips are drawn in both arrangements, so their key is too, and
-          the key draws the mark rather than describing it in words. */}
+      {/* The key, and it draws the marks rather than describing them: two
+          strokes, a gap, one stroke — which is exactly a row that had two
+          purchases from one person and one from another. The hollow pip sits
+          on the line under it when the board carries any. */}
+      <g style={{ color: "rgba(255,255,255,0.78)" }}>
+        <PipRects
+          pipH={9}
+          pipW={2.6}
+          pips={pipSlots([2, 1], 0)}
+          step={5.5}
+          x0={pad.l}
+          y={H - 39}
+        />
+        <text
+          className="font-mono"
+          fill="rgba(255,255,255,0.6)"
+          fontSize={W < 520 ? 9.5 : 10}
+          x={pad.l + 26}
+          y={H - 31}
+        >
+          {W < 520 ? TALLY_LEGEND_NARROW : TALLY_LEGEND}
+        </text>
+      </g>
+
       {anyHollow ? (
         <g style={{ color: "rgba(255,255,255,0.7)" }}>
           <rect
@@ -635,30 +597,26 @@ export function ActivityStage({
 
   return (
     <BoardStagePanel<Mode>
-      caption={(ctx) => {
+      caption={() => {
         if (!board || !totals) return null;
 
-        if (ctx.mode === "purchases") {
-          return (
-            <p>
-              <span className="font-semibold text-white">
-                {totals.filings} purchases across {n} companies
-              </span>
-              , one pip each; {companyName(board[0])} the busiest at{" "}
-              {board[0].filings}.{" "}
-              <button
-                className="text-white/80 underline decoration-white/30 underline-offset-4 hover:text-white"
-                type="button"
-                onClick={() => ctx.choose("people")}
-              >
-                See how many people that was →
-              </button>
-            </p>
-          );
-        }
+        // One sentence carrying both findings, because there is now one
+        // arrangement to carry them: the scale of the board, then the thing
+        // the second arrangement used to be for — how many of these are a
+        // board acting together and how many are one person repeating.
+        const lead = (
+          <span className="font-semibold text-white">
+            {totals.filings} purchases across {n} companies
+          </span>
+        );
 
         if (totals.broadest === 0) {
-          return <p>We don’t have the filer named on these purchases yet.</p>;
+          return (
+            <p>
+              {lead}, one stroke each. We don’t have the filer named on these
+              purchases yet, so the runs are undivided.
+            </p>
+          );
         }
 
         const broad = board.filter((r) => r.insiders >= 4).length;
@@ -666,23 +624,17 @@ export function ActivityStage({
         const widest = board.reduce((best, r) =>
           r.insiders > best.insiders ? r : best,
         );
-        const deepestSolo = [...solo].sort((a, b) => b.filings - a.filings)[0];
 
         if (broad > 0) {
           return (
             <p>
-              <span className="font-semibold text-white">
-                {broad} of the {n} had four or more different insiders buying
-              </span>
+              {lead}, one stroke each. {broad} had four or more different
+              insiders buying
               {solo.length > 0
                 ? `; ${solo.length} ${solo.length === 1 ? "was" : "were"} one person buying repeatedly`
                 : ""}
               . {companyName(widest)} is the broadest at {totals.broadest}{" "}
-              people over {widest.filings} purchases
-              {deepestSolo
-                ? `, and ${companyName(deepestSolo)}’s ${deepestSolo.filings} are all one insider`
-                : ""}
-              .
+              people over {widest.filings} purchases.
             </p>
           );
         }
@@ -690,19 +642,19 @@ export function ActivityStage({
         if (solo.length === 0) {
           return (
             <p>
-              The broadest, {companyName(widest)}, had {totals.broadest}{" "}
-              different insiders over {widest.filings} purchases.
+              {lead}, one stroke each. The broadest, {companyName(widest)}, had{" "}
+              {totals.broadest} different insiders over {widest.filings}{" "}
+              purchases.
             </p>
           );
         }
 
         return (
           <p>
-            <span className="font-semibold text-white">
-              {solo.length} of the {n} are one person buying repeatedly
-            </span>
-            ; the broadest, {companyName(widest)}, had {totals.broadest}{" "}
-            different insiders over {widest.filings} purchases.
+            {lead}, one stroke each. {solo.length} of the {n} are one person
+            buying repeatedly; the broadest, {companyName(widest)}, had{" "}
+            {totals.broadest} different insiders over {widest.filings}{" "}
+            purchases.
           </p>
         );
       }}
@@ -745,10 +697,10 @@ export function ActivityStage({
           </>
         );
       }}
-      svgLabel={(mode) =>
-        mode === "purchases"
-          ? `${n} companies ranked by disclosed purchases, one pip per purchase, grouped by the insider who made it`
-          : `The same ${n} companies ordered by how many different insiders bought`
+      skeletonRows={25}
+      skeletonShape="rows"
+      svgLabel={() =>
+        `${n} companies ranked by disclosed purchases, one pip per purchase, grouped by the insider who made it`
       }
     >
       {(ctx) => (board ? <StageBody ctx={ctx} rows={board} /> : null)}

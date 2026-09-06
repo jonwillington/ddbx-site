@@ -860,12 +860,27 @@ export function SectorsStage({
                   trails at {formatSignedPct(summary.worst.medianAlpha)} from{" "}
                   {summary.worst.alphaCount} buys.
                 </>
-              ) : null}
+              ) : null}{" "}
+              {/* The reciprocal of the value caption's offer. Now that the
+                  board opens here and nothing advances on its own, this
+                  button is how a reader finds the other arrangement at all. */}
+              <button
+                className="text-white/80 underline decoration-white/30 underline-offset-4 hover:text-white"
+                type="button"
+                onClick={() => ctx.choose("value")}
+              >
+                See where the money went →
+              </button>
             </p>
           )
         ) : null
       }
       header={header}
+      // The outcome view is the stronger opener: "whether it worked" is the
+      // question the page is for, and "where the money went" is the setup for
+      // it. The toggle keeps the narrative order rather than being reversed to
+      // match.
+      initialMode="outcome"
       linking={linking}
       loading={board === null || summary === null}
       modes={MODES}

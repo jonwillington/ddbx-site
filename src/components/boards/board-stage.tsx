@@ -6,9 +6,9 @@
  *  scatter: amount across, performance against the index up, with a stem from
  *  every disc to the zero line so the distance from level is drawn rather
  *  than inferred. The move from one to the other is the hook — "who spent the
- *  most" re-sorts itself into "who was right" — so the page opens on the
- *  first and advances to the second once, unless the reader has already
- *  reached for the toggle or asked for reduced motion.
+ *  most" re-sorts itself into "who was right" — and it is the reader who
+ *  makes it: the page opens on "By amount" and offers the second through the
+ *  toggle and through the caption's text button. Nothing moves on a timer.
  *
  *  A dark contained panel (design language, tenet 1): the visual is an object
  *  on the page, not a backdrop, and the message column beside it never sits

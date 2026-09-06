@@ -54,6 +54,7 @@ import { FilingRow } from "@/components/boards/filing-row";
 import { useBoardFeed } from "@/components/boards/board-feed";
 import { BENCHMARK } from "@/components/boards/board-prices";
 import { StageFigures } from "@/components/boards/stage-figures";
+import { StageNotice } from "@/components/boards/stage-notice";
 import {
   roleFigures,
   toRoleColumns,
@@ -176,6 +177,7 @@ export function RolesIndexPage() {
                     reserve
                     items={rows === null ? [] : roleFigures(model)}
                   />
+                  <StageNotice marketId={market.id} />
                 </>
               }
               linking={linking}
@@ -197,8 +199,9 @@ export function RolesIndexPage() {
         titleInHero={drawn}
         width="wide"
       >
-        {/* Under the stage: the rule, the tracking caveat, the truncation
-            caveat. Small print belongs outside the object. */}
+        {/* Under the stage: the rule and the truncation caveat. The tracking
+            line moved into the stage header, under the figures it qualifies —
+            below a 600px object at 45% opacity it was invisible. */}
         <div className="mt-4 max-w-[62ch]">
           <a
             className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
@@ -206,7 +209,12 @@ export function RolesIndexPage() {
           >
             Roles are read from the filed job title. How that’s matched ↓
           </a>
-          <TrackingNotice className="mt-2.5" />
+          {/* The empty and error states mount no stage, so there is no header
+              for the in-stage notice to sit in. The page still has to say how
+              far back it holds. */}
+          {drawn ? null : (
+            <TrackingNotice className="mt-2.5" marketId={market.id} />
+          )}
           {!complete && buckets.length > 0 && (
             // The counts stand as floors when the window is short. The
             // pre-render says so; the hydrated page did not until now.
@@ -424,7 +432,7 @@ export default function RolePage() {
             >
               Who counts as {entry.noun.replace(/s$/, "")} here ↓
             </a>
-            <TrackingNotice className="mt-2.5" />
+            <TrackingNotice className="mt-2.5" marketId={market.id} />
             {!complete && shown.length > 0 && (
               <p className={`mt-3 ${CAVEAT}`}>
                 We couldn’t load the whole period, so this may be missing older

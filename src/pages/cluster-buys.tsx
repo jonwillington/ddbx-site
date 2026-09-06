@@ -45,7 +45,6 @@ import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { RelatedCards } from "@/components/seo/related-cards";
-import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { clusterBoardCta } from "@/components/seo/cta-copy";
 import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
 import { TickerPill } from "@/components/ticker-pill";
@@ -60,6 +59,8 @@ import { AlphaBadge } from "@/components/boards/filing-row";
 import { useBoardFeed } from "@/components/boards/board-feed";
 import { BENCHMARK } from "@/components/boards/board-prices";
 import { StageFigures } from "@/components/boards/stage-figures";
+import { TrackingNotice } from "@/components/seo/tracking-notice";
+import { StageNotice } from "@/components/boards/stage-notice";
 import {
   ClusterStage,
   episodeId,
@@ -193,6 +194,7 @@ export default function ClusterBuysPage() {
                     rarer thing.
                   </p>
                   <StageFigures reserve items={figures} />
+                  <StageNotice marketId={market.id} />
                 </>
               }
               linking={linking}
@@ -221,8 +223,9 @@ export default function ClusterBuysPage() {
         titleInHero={inHero}
         width="wide"
       >
-        {/* Under the stage: the rule, the tracking caveat, the truncation
-            caveat. Small print belongs outside the object. */}
+        {/* Under the stage: the rule and the truncation caveat. The tracking
+            line moved into the stage header, under the figures it qualifies —
+            below a 600px object at 45% opacity it was invisible. */}
         <div className="mt-4 max-w-[62ch]">
           <a
             className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
@@ -230,7 +233,12 @@ export default function ClusterBuysPage() {
           >
             A cluster is an event, not a company. How these are grouped ↓
           </a>
-          <TrackingNotice className="mt-2.5" />
+          {/* The empty and error states mount no stage, so there is no header
+              for the in-stage notice to sit in. The page still has to say how
+              far back it holds. */}
+          {inHero ? null : (
+            <TrackingNotice className="mt-2.5" marketId={market.id} />
+          )}
           {!complete && hasBoard && (
             <p className={`mt-3 ${CAVEAT}`}>
               We couldn’t load the whole period, so this ranking may be missing

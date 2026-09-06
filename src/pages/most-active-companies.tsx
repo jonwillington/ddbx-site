@@ -20,6 +20,13 @@
  *  figures moved into the message column beside the stage. Composition is
  *  still SeoPageShell's, which keeps the app band after the last content
  *  section.
+ *
+ *  The list under it moved to `BoardRow` (2026-09-06). Insiders, value and the
+ *  last purchase were an 11px dot-string at half ink inside a column that had
+ *  the whole width to itself; they are now three labelled, aligned, tabular
+ *  tracks, which is what makes a leaderboard scannable down a column rather
+ *  than readable across a row. Breadth still leads: it is the first fact, and
+ *  where the number cannot say it the cell says "not named" instead.
  */
 import type { CompanyActivity } from "../../shared/boards";
 import type { RelatedCard } from "@/components/seo/related-cards";
@@ -43,30 +50,28 @@ import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { StageFigures } from "@/components/boards/stage-figures";
-import { TrackingNotice } from "@/components/seo/tracking-notice";
+import { StageNotice } from "@/components/boards/stage-notice";
 import { activityBoardCta } from "@/components/seo/cta-copy";
 import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
 import { TickerPill } from "@/components/ticker-pill";
 import { shortDate } from "@/components/market/market-utils";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 import { AlphaBadge } from "@/components/boards/filing-row";
+import {
+  BoardRow,
+  BoardRowHeader,
+  BoardRowList,
+} from "@/components/boards/board-row";
 import { useBoardFeed } from "@/components/boards/board-feed";
 import { BENCHMARK } from "@/components/boards/board-prices";
 import {
   activityTotals,
-  breadthWords,
   ActivityStage,
   PipRun,
 } from "@/components/boards/stages/activity-stage";
 
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
-
-const ROW_LINK =
-  "-mx-2 block rounded-lg px-2 py-3.5 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]";
-
-const ROW_GRID =
-  "grid grid-cols-[1.5rem_minmax(0,1fr)_5.5rem] items-start gap-x-3 sm:grid-cols-[2rem_minmax(0,1fr)_9rem] sm:gap-x-4";
 
 const CROSS_LINKS: RelatedCard[] = [
   {
@@ -157,6 +162,7 @@ export default function MostActiveCompaniesPage() {
                     signal.
                   </p>
                   <StageFigures reserve items={figures} />
+                  <StageNotice marketId={marketId} />
                 </>
               }
               linking={linking}
@@ -167,7 +173,13 @@ export default function MostActiveCompaniesPage() {
           ) : undefined
         }
         loading={rows === null}
-        skeleton={<SeoSkeleton rows={TOP_N} variant="ranked-board" />}
+        skeleton={
+          <SeoSkeleton
+            board={{ facts: 3, logo: 56, meter: false }}
+            rows={TOP_N}
+            variant="ranked-board"
+          />
+        }
         standfirst={
           rows === null || hasBoard ? undefined : (
             <>
@@ -190,7 +202,6 @@ export default function MostActiveCompaniesPage() {
           >
             Ranked on purchases, then on how many people made them ↓
           </a>
-          <TrackingNotice className="mt-2.5" />
           {!complete && hasBoard && (
             // Truncation is invisible unless you say so: the board still
             // renders and still looks complete.
@@ -229,16 +240,14 @@ export default function MostActiveCompaniesPage() {
           </p>
         ) : (
           <>
-            <div
-              aria-hidden
-              className={`mt-8 pb-2.5 text-[11px] leading-[1.4] text-foreground/50 ${ROW_GRID}`}
-            >
-              <span />
-              <span>Company, buyers and what they spent</span>
-              <span className="text-right">Purchases</span>
-            </div>
+            <BoardRowHeader
+              facts={["Insiders", "Value", "Last buy"]}
+              figure="Purchases"
+              subject="Company"
+              visual="Tally"
+            />
 
-            <ol className={`border-t ${R.rule}`}>
+            <BoardRowList>
               {ranked.map((row, i) => (
                 <ActivityRow
                   key={row.ticker || i}
@@ -249,7 +258,7 @@ export default function MostActiveCompaniesPage() {
                   symbol={market.symbol}
                 />
               ))}
-            </ol>
+            </BoardRowList>
           </>
         )}
 
@@ -325,100 +334,65 @@ function ActivityRow({
   symbol: string;
 }) {
   const ticker = displayTicker(row.ticker);
-  // One person filing repeatedly is a different story from a board acting
-  // together, and it is the one thing this page can say that a filing count
-  // cannot. So it is said in words, on the row, rather than left to the reader
-  // to infer from two numbers.
-  const breadth = breadthWords(row);
-  const dimmed = linking.activeId != null && linking.activeId !== row.ticker;
+  // The "clustered" mark and the median are the two things the four columns
+  // cannot carry, so they are what the second line is for. Breadth used to sit
+  // here in words; it is the first fact column now, which is a stronger place
+  // for it — except where there is no number to state, and the cell says so.
+  const hasNote = row.peakCluster > 1 || row.alphaCount > 0;
 
   return (
-    <li
-      className={`border-b transition-opacity ${R.rule} ${dimmed ? "opacity-45" : ""}`}
-      onMouseEnter={() => linking.setActiveId(row.ticker)}
-      onMouseLeave={() => linking.setActiveId(null)}
-    >
-      <Link
-        className={ROW_LINK}
-        to={companyPath(row.ticker)}
-        onBlur={() => linking.setActiveId(null)}
-        onFocus={() => linking.setActiveId(row.ticker)}
-      >
-        <div className={ROW_GRID}>
-          <span
-            aria-hidden
-            className={`font-mono text-[15px] leading-[1.35] tabular-nums ${
-              position <= 3 ? "text-foreground" : "text-foreground/35"
-            }`}
-          >
-            {String(position).padStart(2, "0")}
-          </span>
-
-          <span className="min-w-0">
-            <span className="flex min-w-0 items-center gap-2">
-              <CompanyLogo size={28} ticker={row.ticker} />
-              <span className="min-w-0 truncate text-[16px] font-semibold leading-[1.3] tracking-[-0.012em] text-foreground sm:text-[18px]">
-                {cleanCompanyName(row.company) || ticker}
-              </span>
-              <TickerPill ticker={ticker} />
-            </span>
-
-            <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-[1.35] text-foreground/50">
-              <span>{breadth}</span>
+    <BoardRow
+      badge={<TickerPill ticker={ticker} />}
+      facts={[
+        {
+          label: "Insiders",
+          value: row.insiders === 0 ? "not named" : row.insiders,
+        },
+        {
+          label: "Value",
+          // formatMoney prints "£0k" under 500 and an em-dash at zero, and
+          // both are a figure standing in for one we do not hold.
+          value: row.value >= 500 ? money(row.value, symbol) : "not stated",
+        },
+        {
+          label: "Last buy",
+          value: row.lastDate ? shortDate(row.lastDate, locale) : "not dated",
+        },
+      ]}
+      figure={{
+        srLabel: "Purchases",
+        unit: row.filings === 1 ? "purchase" : "purchases",
+        value: row.filings,
+      }}
+      linkId={row.ticker}
+      linking={linking}
+      logo={<CompanyLogo size={56} ticker={row.ticker} />}
+      name={cleanCompanyName(row.company) || ticker}
+      position={position}
+      secondary={
+        hasNote ? (
+          <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+            {row.peakCluster > 1 ? <span>Bought in a cluster</span> : null}
+            {row.peakCluster > 1 && row.alphaCount > 0 ? (
               <span aria-hidden className="opacity-40">
                 ·
               </span>
-              <span className="tabular-nums">{money(row.value, symbol)}</span>
-              {row.lastDate ? (
-                <>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                  <span className="tabular-nums">
-                    last {shortDate(row.lastDate, locale)}
-                  </span>
-                </>
-              ) : null}
-              {row.peakCluster > 1 ? (
-                <>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                  <span>clustered</span>
-                </>
-              ) : null}
-              {row.alphaCount > 0 && (
-                <>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <AlphaBadge ratio={row.medianAlpha} />
-                    <span>median since</span>
-                  </span>
-                </>
-              )}
-            </span>
-
-            {/* One pip per purchase, grouped by insider — the same run the
-                stage draws, at the row's scale. It belongs inside the content
-                column, under the line that describes it: spanning the whole
-                grid started the run under the rank numeral instead, which is
-                a tally measured from a column it has nothing to do with. */}
-            <PipRun className="mt-2 block text-foreground/55" row={row} />
+            ) : null}
+            {row.alphaCount > 0 ? (
+              <span className="inline-flex items-center gap-1">
+                <AlphaBadge ratio={row.medianAlpha} />
+                <span>median since</span>
+              </span>
+            ) : null}
           </span>
-
-          <span className="text-right">
-            <span className="text-[19px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground sm:text-[26px]">
-              <span className="sr-only">Purchases: </span>
-              {row.filings}
-            </span>
-            <span className="mt-1.5 block text-[11px] leading-[1.3] text-foreground/45">
-              {row.filings === 1 ? "purchase" : "purchases"}
-            </span>
-          </span>
-        </div>
-      </Link>
-    </li>
+        ) : undefined
+      }
+      to={companyPath(row.ticker)}
+      // One pip per purchase, grouped by insider — the same run the stage
+      // draws, at the row's scale. Its own column once there is room for one;
+      // under the name below that, which is where the line that describes it
+      // is.
+      visual={<PipRun className="block text-foreground/55" row={row} />}
+    />
   );
 }

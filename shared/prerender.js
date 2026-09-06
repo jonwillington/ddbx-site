@@ -169,7 +169,23 @@ export async function fetchJson(url, ttl = 1800) {
 
 /** Wrapper for injected markup. No classes — React owns real presentation;
  *  these inline styles only keep the pre-hydration view legible on a slow
- *  connection. Matches functions/company/[key].js. */
+ *  connection. Matches functions/company/[key].js.
+ *
+ *  The `id="prerender"` is what index.html's inline stylesheet hides from any
+ *  browser that runs JS (`html.js #prerender { display: none }`). Without it
+ *  this markup paints and then gets wiped when React mounts — on /companies
+ *  that is a 575-item list flashing up in #1E1506 ink, which on the dark theme
+ *  is near-invisible dark-on-dark, before the real page arrives. With it, first
+ *  paint is the page ground and then the route's own skeleton.
+ *
+ *  Every renderInto() family reaches the DOM through here, including the four
+ *  filing pre-renders that go via shared/filing-prerender.js — so the id, and
+ *  the fix, are one line rather than 27.
+ *
+ *  Not cloaking: no user-agent sniffing anywhere in this path. Googlebot runs
+ *  JS and so receives the React page, identical to today's post-mount state and
+ *  reached sooner. A crawler that doesn't run JS never gets the `js` class, so
+ *  the rule never applies and it still reads the full link list. */
 export function page(inner) {
-  return `<div style="max-width:900px;margin:0 auto;padding:32px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1E1506">${inner}</div>`;
+  return `<div id="prerender" style="max-width:900px;margin:0 auto;padding:32px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1E1506">${inner}</div>`;
 }

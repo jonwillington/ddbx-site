@@ -1211,6 +1211,11 @@ export function RolesStage({
       }
       header={header}
       height={stageHeight}
+      // The outcome view is the one that draws a finding; "by how many"
+      // restates the figures band above it. Safe to name unconditionally: in
+      // the no-alpha window `modes` shrinks to COUNT_ONLY and the panel's
+      // guard falls back to the only mode there is.
+      initialMode="outcome"
       linking={linking}
       loading={loading || cols.length === 0}
       modes={modes}

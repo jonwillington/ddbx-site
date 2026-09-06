@@ -19,7 +19,7 @@ import { buyAlpha, buyPerson, buyValue } from "../shared/leaderboard.js";
 import { esc, noindex, page, renderInto } from "../shared/prerender.js";
 import { windowStart } from "../shared/sectors.js";
 import { brandTitle, isProductionHost } from "../shared/seo.js";
-import { TRACKING_NOTICE } from "../shared/tracking.js";
+import { trackingNotice } from "../shared/tracking.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 const MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
@@ -127,7 +127,7 @@ function prerender(rows, suppressed, considered, market, host, complete) {
   return page(`<p style="${eyebrow}">Leaderboard</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">The best-performing ${esc(market)} insider buys of the last year</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">The purchases ${market === "US" ? "insiders" : "directors"} made in their own companies that have since beaten the market by the widest margin, measured as alpha — the share's own move minus the index's over the same period, so a rising market doesn't flatter the whole board.</p>
-  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(TRACKING_NOTICE)}</p>
+  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(trackingNotice(market))}</p>
   ${complete ? "" : `<p style="font-size:13px;color:#6b6154">We couldn’t load the whole period, so this ranking may be missing older purchases.</p>`}
   <p style="font-size:14px;color:#4a4034;max-width:62ch">Ranked from the ${considered} purchases in the last twelve months that clear the ${esc(floor)} floor and have a performance mark. Best on the board: ${esc(signedPp(buyAlpha(rows[0])))}; median of the ${rows.length} listed: ${esc(signedPp(summary.medianAlpha))}, across ${summary.companies} ${summary.companies === 1 ? "company" : "companies"}.</p>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>

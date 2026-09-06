@@ -27,7 +27,7 @@ import {
 import { esc, noindex, page, renderInto } from "../../shared/prerender.js";
 import { windowStart } from "../../shared/sectors.js";
 import { brandTitle, isProductionHost } from "../../shared/seo.js";
-import { TRACKING_NOTICE } from "../../shared/tracking.js";
+import { trackingNotice } from "../../shared/tracking.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 const MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
@@ -123,7 +123,7 @@ function indexPrerender(buckets, coverage, market, host, complete) {
   return page(`<p style="${EYEBROW}">By role</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(market)} insider buying by role</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">The same twelve months of ${esc(market)} buying, split by the job the buyer filed under. A chief executive and a newly appointed non-executive are both insiders, and they are not both saying the same thing when they buy.</p>
-  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(TRACKING_NOTICE)}</p>
+  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(trackingNotice(market))}</p>
   ${complete ? "" : `<p style="font-size:13px;color:#6b6154">We couldn’t load the whole period, so these counts may be missing older purchases.</p>`}
   <ul style="font-size:15px;line-height:1.6;color:#4a4034;max-width:70ch">${cards}</ul>
   <p style="font-size:13px;color:#6b6154;max-width:64ch">These groups overlap and are not meant to add up. A non-executive chair is counted under both Chair and Non-executive director. Of the ${esc(coverage.total)} disclosures in the window, ${esc(coverage.classified)} fall into at least one group, ${esc(coverage.unbucketed)} carry a job title we don’t publish a page for, and ${esc(coverage.closelyAssociated)} were filed by someone closely associated with an insider rather than by the insider${coverage.missing > 0 ? `, and ${esc(coverage.missing)} were ${esc(missingRoleLabel(market))}` : ""}.</p>
@@ -168,7 +168,7 @@ function rolePrerender(role, filings, market, host, complete, siblings) {
   return page(`<p style="${EYEBROW}">By role</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(role.plural)} buying their own shares (${esc(market)})</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(role.blurb)}</p>
-  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(TRACKING_NOTICE)}</p>
+  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(trackingNotice(market))}</p>
   ${complete ? "" : `<p style="font-size:13px;color:#6b6154">We couldn’t load the whole period, so this may be missing older purchases.</p>`}
   <p style="font-size:14px;color:#4a4034;max-width:62ch">Covers the ${esc(filings.length)} qualifying purchases by ${esc(role.noun)} in the last twelve months, worth ${esc(money(summary.value, symbol))} across ${esc(summary.companies)} ${summary.companies === 1 ? "company" : "companies"}; the ${shown.length} largest are listed. Median alpha since disclosure: ${esc(signedPp(summary.medianAlpha))}, taken from the ${esc(summary.alphaCount)} with a performance mark.</p>
   <p style="font-size:14px;line-height:1.6;color:#4a4034;max-width:66ch">${esc(role.definition)}</p>

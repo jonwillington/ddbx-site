@@ -4,13 +4,17 @@
  *  A cluster is not a company and not a purchase — it is an event with two
  *  facts about it, how many insiders were in it and how tightly it happened.
  *  So each mark is the company's logo with one dot per NAMED insider ringed
- *  around it, and the two arrangements are the two facts. "How many" files
- *  the marks into a column per insider count, which makes the shape of the
- *  year legible in one look: a wide base of pairs, a handful of fours, one
- *  board that all bought together. "When" sends the same marks to a scatter —
- *  when the buying started across, how many days it covered down — so a
- *  cluster that happened in a single morning sits hard against the top rule
- *  and one that dribbled over four weeks sits at the bottom.
+ *  around it, filed into a column per insider count, which makes the shape of
+ *  the year legible in one look: a wide base of pairs, a handful of fours, one
+ *  board that all bought together.
+ *
+ *  ONE arrangement, since 2026-09-06. There was a second — a scatter of when
+ *  each episode started against how many days it covered — and it answered a
+ *  question the page never asks. Nothing above it or below it is ordered by
+ *  date, its caption's fallback branch ("every one of these clusters took more
+ *  than a day") is a non-finding, and the tightness it drew is one clause of
+ *  prose rather than a picture. The fact survives in the caption; the axis
+ *  does not.
  *
  *  MONOCHROME, deliberately. Every other board on the site colours a mark by
  *  how the purchase performed; this one must not. The published methodology
@@ -29,7 +33,6 @@
 import type { ClusterEpisode } from "../../../../shared/boards";
 import type { Linking } from "../board-model";
 import type { StageContext, StageMode, StagePad } from "../stage-panel";
-import type { Side } from "../stage-marks";
 import type { ReactNode } from "react";
 
 import { useMemo } from "react";
@@ -37,47 +40,23 @@ import { useMemo } from "react";
 import { formatMoney } from "../../../../shared/sectors.js";
 import { dateLabel, numberWord, signedPp } from "../board-model";
 import { BoardStagePanel } from "../stage-panel";
-import {
-  LogoDisc,
-  placeLabels,
-  StageAxis,
-  StageLabel,
-  StageMark,
-} from "../stage-marks";
+import { LogoDisc, StageAxis, StageLabel, StageMark } from "../stage-marks";
 
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 
-type Mode = "many" | "when";
+type Mode = "many";
 
 const MODES: ReadonlyArray<StageMode<Mode>> = [
   { id: "many", label: "How many" },
-  { id: "when", label: "When" },
 ];
 
 /** Deeper at the foot than the panel default: the column labels are two
- *  lines, "6 insiders" over "three clusters", and the time view puts its
- *  methodology footnote on a third row under the months. */
+ *  lines, "6 insiders" over "three clusters". */
 const PAD: StagePad = { l: 56, r: 24, t: 68, b: 52 };
-
-/** The span rules are labelled in words — "a fortnight", "three weeks" — and
- *  those do not fit the panel's 56px left gutter. The time view insets its own
- *  plot rather than widening the pad, which would push the column view's
- *  marks off-centre for a gutter it has no labels in. */
-const TIME_GUTTER = 30;
 
 /** The edge ring on every disc. One value, because a cluster has no
  *  direction. */
 const EDGE = "rgba(255,255,255,0.28)";
-
-const SPAN_RULES: Array<{ days: number; label: string }> = [
-  { days: 0, label: "same day" },
-  { days: 7, label: "a week" },
-  { days: 14, label: "a fortnight" },
-  { days: 21, label: "three weeks" },
-  { days: 28, label: "four weeks" },
-];
-
-const MS_DAY = 86_400_000;
 
 /** Gap between two marks in a column, and between two files of one. */
 const GAP = 8;
@@ -112,50 +91,6 @@ export function episodeId(e: ClusterEpisode): string {
   return `${e.ticker}-${e.firstDate ?? ""}`;
 }
 
-function dayOf(iso: string): number {
-  const t = Date.parse(`${iso.slice(0, 10)}T00:00:00Z`);
-
-  return Number.isFinite(t) ? Math.round(t / MS_DAY) : NaN;
-}
-
-function monthStartDay(ym: string): number {
-  return dayOf(`${ym}-01`);
-}
-
-function nextMonth(ym: string): string {
-  const y = Number(ym.slice(0, 4));
-  const m = Number(ym.slice(5, 7));
-
-  return m >= 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
-}
-
-function monthsFrom(firstYm: string, lastYm: string): string[] {
-  const out: string[] = [];
-  let ym = firstYm;
-
-  // Bounded rather than trusted: two unparseable dates would otherwise spin.
-  for (let i = 0; i < 240; i++) {
-    out.push(ym);
-    if (ym >= lastYm) break;
-    ym = nextMonth(ym);
-  }
-
-  return out;
-}
-
-/** "Mar", with the year added only when it isn't the current one. */
-function monthLabel(ym: string, locale: string): string {
-  const d = new Date(`${ym}-01T00:00:00Z`);
-  const label = d.toLocaleDateString(locale, {
-    month: "short",
-    timeZone: "UTC",
-  });
-
-  return ym.slice(0, 4) !== String(new Date().getFullYear())
-    ? `${label} ${ym.slice(0, 4)}`
-    : label;
-}
-
 /** The insiders, as dots.
  *
  *  Evenly spaced on a ring from twelve o'clock, one per named buyer, each
@@ -188,7 +123,6 @@ interface Mark {
   e: ClusterEpisode;
   /** ISO first filing date, or "" when the episode has none to state. */
   first: string;
-  day: number;
 }
 
 interface Placed {
@@ -306,114 +240,6 @@ function solveRadius(
   return floorR;
 }
 
-interface TimeView {
-  placed: Placed[];
-  months: Array<{ at: number; label: string }>;
-  spans: Array<{ at: number; label: string }>;
-  fortnightY: number;
-  plot: Plot;
-}
-
-/** When the buying started, and how long it ran.
- *
- *  The day axis is snapped to the containing months of the earliest and latest
- *  episode DRAWN, not to the twelve months the board covers. Drawing the full
- *  window would put empty stretches either side of the marks, and an empty
- *  stretch on a time axis is a claim: it would say no clusters happened then
- *  about the thirty-six qualifying episodes this board does not list. */
-function timeView(
-  marks: Mark[],
-  W: number,
-  H: number,
-  pad: StagePad,
-  r: number,
-  locale: string,
-): TimeView {
-  const plot = {
-    x0: pad.l + TIME_GUTTER,
-    x1: W - pad.r,
-    y0: pad.t,
-    y1: H - pad.b,
-  };
-  const outer = r + 10;
-  const usableW = Math.max(1, plot.x1 - plot.x0 - outer * 2);
-  const usableH = Math.max(1, plot.y1 - plot.y0 - outer * 2);
-  const dated = marks
-    .map((m) => m.first)
-    .filter(Boolean)
-    .sort();
-  const firstYm = dated[0]?.slice(0, 7) ?? "";
-  const lastYm = dated[dated.length - 1]?.slice(0, 7) ?? firstYm;
-  const dayMin = firstYm ? monthStartDay(firstYm) : 0;
-  const dayMax = firstYm ? monthStartDay(nextMonth(lastYm)) : 1;
-  const days = Math.max(1, dayMax - dayMin);
-  const xs = (day: number) =>
-    plot.x0 +
-    outer +
-    ((Number.isFinite(day) ? day - dayMin : 0) / days) * usableW;
-  const spanMax = Math.max(28, ...marks.map((m) => m.e.spanDays));
-  const ys = (d: number) => plot.y0 + outer + (d / spanMax) * usableH;
-
-  const pts = marks.map((m) => ({
-    id: m.id,
-    x: xs(m.day),
-    y: ys(m.e.spanDays),
-  }));
-
-  // Two clusters that started the same week and ran the same length draw as
-  // one mark. Ease them apart, then clamp: a mark must not leave the day and
-  // the span it sits on, and a picture that reads is worth less than one a
-  // reader can trust.
-  for (let it = 0; it < 30; it++) {
-    for (let i = 0; i < pts.length; i++) {
-      for (let j = i + 1; j < pts.length; j++) {
-        const a = pts[i];
-        const b = pts[j];
-        let dx = b.x - a.x;
-        let dy = b.y - a.y;
-        let d = Math.hypot(dx, dy);
-        const min = outer * 2 + 2;
-
-        if (d >= min) continue;
-        if (d < 0.01) {
-          dx = 1;
-          dy = 0;
-          d = 1;
-        }
-        const push = (min - d) / 2;
-
-        a.x -= (dx / d) * push;
-        a.y -= (dy / d) * push;
-        b.x += (dx / d) * push;
-        b.y += (dy / d) * push;
-      }
-    }
-  }
-  pts.forEach((p, i) => {
-    const ox = xs(marks[i].day);
-    const oy = ys(marks[i].e.spanDays);
-
-    p.x = Math.max(ox - 12, Math.min(ox + 12, p.x));
-    p.y = Math.max(oy - 8, Math.min(oy + 8, p.y));
-  });
-
-  return {
-    placed: pts,
-    months: firstYm
-      ? monthsFrom(firstYm, lastYm).map((ym) => ({
-          at: xs(monthStartDay(ym)),
-          label: monthLabel(ym, locale),
-        }))
-      : [],
-    spans: SPAN_RULES.filter((s) => s.days <= spanMax).map((s) => ({
-      at: ys(s.days),
-      label: s.label,
-    })),
-    fortnightY: ys(14),
-    plot,
-  };
-}
-
 /** The marks, inside the panel's svg.
  *
  *  A component rather than the panel's render prop run inline: the radius is
@@ -430,7 +256,7 @@ function StageBody({
   locale: string;
   symbol: string;
 }) {
-  const { W, H, pad, mode, active } = ctx;
+  const { W, H, pad, active } = ctx;
 
   const r = useMemo(() => solveRadius(marks, W, H, pad), [marks, W, H, pad]);
   const outer = r + 10;
@@ -443,129 +269,27 @@ function StageBody({
     () => countView(marks, W, H, pad, r),
     [marks, W, H, pad, r],
   );
-  const time = useMemo(
-    () => timeView(marks, W, H, pad, r, locale),
-    [marks, W, H, pad, r, locale],
-  );
 
-  const layout = mode === "many" ? count.placed : time.placed;
   const at = useMemo(
-    () => new Map(layout.map((p) => [p.id, p] as const)),
-    [layout],
+    () => new Map(count.placed.map((p) => [p.id, p] as const)),
+    [count],
   );
-
-  // Three names in the time view: the widest cluster, the tightest one that
-  // still had the most people in it, and the one that took longest. Those are
-  // the three the caption talks about, and a picture with three names on it
-  // reads where the same picture with twenty-five does not.
-  const named = useMemo<Map<string, LabelSpec>>(() => {
-    if (mode !== "when") return new Map();
-    const sameDay = marks
-      .filter((m) => m.e.spanDays === 0)
-      .sort((a, b) => b.e.named - a.e.named);
-    const spread = [...marks].sort((a, b) => b.e.spanDays - a.e.spanDays);
-    const cands = [marks[0], sameDay[0], spread[0]]
-      .filter((m): m is Mark => Boolean(m))
-      .map((m) => {
-        const p = time.placed.find((q) => q.id === m.id);
-
-        if (!p) return null;
-
-        return {
-          id: m.id,
-          x: p.x,
-          y: p.y,
-          r: reach,
-          text: cleanCompanyName(m.e.company) || displayTicker(m.e.ticker),
-          sub: `${m.e.named} insiders, ${spanLabel(m.e.spanDays)}`,
-        };
-      })
-      .filter((c): c is NonNullable<typeof c> => c != null);
-    const sides = placeLabels(cands, {
-      obstacles: time.placed.map((p) => ({ x: p.x, y: p.y, r: reach })),
-      xMin: pad.l,
-      xMax: W - 6,
-      cap: 3,
-      width: (c) => Math.max(c.text.length * 6.6, c.sub.length * 6) + 8,
-    });
-
-    return new Map(
-      cands
-        .filter((c) => sides.has(c.id))
-        .map(
-          (c) =>
-            [
-              c.id,
-              {
-                side: sides.get(c.id) ?? "right",
-                text: c.text,
-                sub: c.sub,
-              },
-            ] as const,
-        ),
-    );
-  }, [mode, marks, time, reach, pad, W]);
 
   const widest = marks[0];
 
   return (
     <>
-      {/* One axis at a time, mounted rather than faded.
-
-          /biggest-buys crossfades its furniture, and that is safe there
-          because only one of its two arrangements HAS any: nothing can land
-          on anything. Here both arrangements write x labels into the same
-          20px band at the foot of the plot — "3 insiders / twelve clusters"
-          and "May" are the same two rows — so the only thing keeping the two
-          apart was an opacity transition, which is to say the animation
-          clock. A clock that is not running (a backgrounded tab, a throttled
-          capture, a frame grabbed mid-fade) paints both label sets over each
-          other at half strength, which reads as a bug in the chart rather
-          than a stalled transition. The marks still travel between the two
-          arrangements — that move is the argument — but the rules under them
-          cut. */}
-      {mode === "many" ? (
-        <StageAxis
-          plot={count.plot}
-          x={count.ticks}
-          xLabel={count.terse ? "insiders →" : "insiders in the cluster →"}
-        />
-      ) : (
-        <>
-          <StageAxis
-            emphasise={[time.fortnightY]}
-            plot={time.plot}
-            x={time.months}
-            y={time.spans}
-          />
-          {/* The rule readers ask about: an episode anchored on one filing
-              reaches a fortnight either way, so four weeks is inside the rule
-              rather than a breach of it. A footnote under the date axis, not
-              a line across the plot — inside the plot it was cut into pieces
-              by whichever marks happened to sit on the fortnight rule. Only
-              where there is room to say it. */}
-          {W >= 700 ? (
-            <text
-              className="font-mono"
-              fill="rgba(255,255,255,0.45)"
-              fontSize={10}
-              textAnchor="end"
-              x={time.plot.x1}
-              y={time.plot.y1 + 34}
-            >
-              ±14 days from the anchor filing, so an episode can reach four
-              weeks
-            </text>
-          ) : null}
-        </>
-      )}
+      <StageAxis
+        plot={count.plot}
+        x={count.ticks}
+        xLabel={count.terse ? "insiders →" : "insiders in the cluster →"}
+      />
 
       <g>
         {marks.map((m) => {
           const p = at.get(m.id);
 
           if (!p) return null;
-          const label = named.get(m.id);
 
           return (
             <StageMark
@@ -592,22 +316,13 @@ function StageBody({
               />
               {widest && m.id === widest.id ? (
                 <StageLabel
+                  visible
                   r={reach}
                   side="above"
                   sub={spanLabel(m.e.spanDays)}
                   text={
                     cleanCompanyName(m.e.company) || displayTicker(m.e.ticker)
                   }
-                  visible={mode === "many"}
-                />
-              ) : null}
-              {label ? (
-                <StageLabel
-                  r={reach}
-                  side={label.side}
-                  sub={label.sub}
-                  text={label.text}
-                  visible={mode === "when"}
                 />
               ) : null}
             </StageMark>
@@ -616,12 +331,6 @@ function StageBody({
       </g>
     </>
   );
-}
-
-interface LabelSpec {
-  side: Side;
-  text: string;
-  sub: string;
 }
 
 export function ClusterStage({
@@ -651,11 +360,11 @@ export function ClusterStage({
   const marks = useMemo<Mark[] | null>(() => {
     if (!list) return null;
 
-    return list.map((e) => {
-      const first = e.firstDate ?? "";
-
-      return { id: episodeId(e), e, first, day: dayOf(first) };
-    });
+    return list.map((e) => ({
+      id: episodeId(e),
+      e,
+      first: e.firstDate ?? "",
+    }));
   }, [list]);
 
   const byId = useMemo(
@@ -666,7 +375,6 @@ export function ClusterStage({
   const facts = useMemo(() => {
     if (!list) return null;
     const sameDay = list.filter((e) => e.spanDays === 0);
-    const bySpan = [...list].sort((a, b) => a.spanDays - b.spanDays);
 
     return {
       n: list.length,
@@ -674,8 +382,6 @@ export function ClusterStage({
       widest: list[0],
       sameDay,
       tight: [...sameDay].sort((a, b) => b.named - a.named)[0] ?? null,
-      tightest: bySpan[0] ?? null,
-      spread: bySpan[bySpan.length - 1] ?? null,
     };
   }, [list]);
 
@@ -684,74 +390,44 @@ export function ClusterStage({
 
   return (
     <BoardStagePanel<Mode>
-      caption={(ctx) => {
+      caption={() => {
         if (!facts) return null;
         // Two or fewer clusters and the picture has no shape to describe, so
         // the second clause goes rather than being padded out.
         const detail = facts.n >= 3;
 
-        if (ctx.mode === "many") {
-          return (
-            <p>
-              <span className="font-semibold text-white">
-                {facts.namedTotal} named insiders across {facts.n} clusters
-              </span>
-              , one dot each.
-              {detail ? (
-                <>
-                  {" "}
-                  {name(facts.widest)} is the widest, with{" "}
-                  {numberWord(facts.widest.named)} {noun}{" "}
-                  {spanLabel(facts.widest.spanDays)}.
-                </>
-              ) : null}{" "}
-              <button
-                className="text-white/80 underline decoration-white/30 underline-offset-4 hover:text-white"
-                type="button"
-                onClick={() => ctx.choose("when")}
-              >
-                See when they happened →
-              </button>
-            </p>
-          );
-        }
-
-        if (facts.sameDay.length > 0 && facts.tight) {
-          return (
-            <p>
-              <span className="font-semibold text-white">
-                {capitalise(numberWord(facts.sameDay.length))} of these{" "}
-                {facts.n} clusters happened on a single day
-              </span>
-              , the strongest version of the signal: {name(facts.tight)} had{" "}
-              {numberWord(facts.tight.named)} {noun} buy
-              {facts.tight.firstDate
-                ? ` on ${dateLabel(facts.tight.firstDate, locale)}`
-                : ""}
-              .
-              {detail && facts.spread ? (
-                <>
-                  {" "}
-                  The most spread out, {name(facts.spread)}, took{" "}
-                  {facts.spread.spanDays} days.
-                </>
-              ) : null}
-            </p>
-          );
-        }
-
         return (
           <p>
             <span className="font-semibold text-white">
-              Every one of these {facts.n} clusters took more than a day.
+              {facts.namedTotal} named insiders across {facts.n} clusters
             </span>
-            {detail && facts.tightest && facts.spread ? (
+            , one dot each.
+            {detail ? (
               <>
                 {" "}
-                The tightest, {name(facts.tightest)}, covered{" "}
-                {facts.tightest.spanDays}{" "}
-                {facts.tightest.spanDays === 1 ? "day" : "days"}; the most
-                spread out, {name(facts.spread)}, took {facts.spread.spanDays}.
+                {name(facts.widest)} is the widest, with{" "}
+                {numberWord(facts.widest.named)} {noun}{" "}
+                {spanLabel(facts.widest.spanDays)}.
+              </>
+            ) : null}
+            {/* Tightness used to be a whole arrangement. It is one fact, and
+                one fact belongs in the sentence: the clause appears only when
+                there is a same-day cluster to name, so the caption never has
+                to fall back on "every one of these took more than a day",
+                which states nothing. */}
+            {facts.sameDay.length > 0 && facts.tight ? (
+              <>
+                {" "}
+                {facts.sameDay.length === facts.n
+                  ? "Every one of them landed"
+                  : `${capitalise(numberWord(facts.sameDay.length))} of them landed`}{" "}
+                on a single day, the strongest version of the signal:{" "}
+                {name(facts.tight)} had {numberWord(facts.tight.named)} {noun}{" "}
+                buy
+                {facts.tight.firstDate
+                  ? ` on ${dateLabel(facts.tight.firstDate, locale)}`
+                  : ""}
+                .
               </>
             ) : null}
           </p>
@@ -808,12 +484,10 @@ export function ClusterStage({
           </>
         );
       }}
-      svgLabel={(mode) =>
+      svgLabel={() =>
         facts == null
           ? ""
-          : mode === "many"
-            ? `${facts.n} clusters grouped by how many insiders bought, one dot per insider`
-            : `${facts.n} clusters placed by when the buying started and how many days each covered`
+          : `${facts.n} clusters grouped by how many insiders bought, one dot per insider`
       }
     >
       {(ctx) =>

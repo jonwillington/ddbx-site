@@ -12,6 +12,8 @@
  *  slot omits the entry and says "Not enough data yet" in its own words, in
  *  prose, where it can also say when there will be one.
  */
+import { Skeleton } from "../skeleton";
+
 export interface StageFigure {
   k: string;
   v: string;
@@ -26,8 +28,12 @@ const NOT_A_FIGURE = /^\s*(—|–|-|n\/a|na|nan|null|undefined)\s*$/i;
 const ROUNDED_ZERO = /^[^\d-]*0(\.0)?\s*(k|m|bn)$/i;
 
 /** The dl reserves its own height while a board is loading, so the header
- *  block does not change shape under the reader when the figures arrive. */
-const RESERVED = "mt-7 h-[52px]";
+ *  block does not change shape under the reader when the figures arrive. It
+ *  reserved that height with an empty div until 2026-09-06, which held the
+ *  geometry but said nothing: the band read as a gap in the header rather than
+ *  as figures on their way. Two stand-in pairs on the real grid say "numbers
+ *  land here" without stating one. */
+const RESERVED_PAIRS = 2;
 
 const DL =
   "mt-7 grid grid-cols-2 gap-x-8 gap-y-5 sm:flex sm:flex-wrap sm:gap-x-12";
@@ -63,7 +69,18 @@ export function StageFigures({
   }
 
   if (items.length === 0) {
-    return reserve ? <div aria-hidden className={RESERVED} /> : null;
+    if (!reserve) return null;
+
+    return (
+      <div aria-hidden className={`${DL} h-[52px] ${className}`.trimEnd()}>
+        {Array.from({ length: RESERVED_PAIRS }, (_, i) => (
+          <div key={i}>
+            <Skeleton className="h-[11px] w-[52px]" />
+            <Skeleton className="mt-1.5 h-[26px] w-[72px]" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (

@@ -28,7 +28,7 @@ import {
   TOP_COMPANIES,
 } from "../../shared/sectors.js";
 import { brandTitle, isProductionHost } from "../../shared/seo.js";
-import { TRACKING_NOTICE } from "../../shared/tracking.js";
+import { trackingNotice } from "../../shared/tracking.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -82,7 +82,7 @@ function prerender(row, deals, market, host, complete) {
 
   return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(row.sector.label)} — ${esc(market)} insider buying</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(row.sector.framing)}</p>
-  <p style="font-size:13px;line-height:1.5;color:#6b6154;max-width:62ch">${esc(TRACKING_NOTICE)}</p>
+  <p style="font-size:13px;line-height:1.5;color:#6b6154;max-width:62ch">${esc(trackingNotice(market))}</p>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(leadSentence(row, market))}</p>
   <p style="font-size:14px;color:#6b6154">${row.buys} buys · ${esc(money(row.value, symbol))} · ${row.companies} companies · ${row.people} ${esc(marketNoun(market))} · median alpha ${esc(signedPct(row.medianAlpha))}</p>
   <p style="font-size:13px;color:#6b6154;max-width:62ch">${row.alphaCount} of ${row.buys} buys have a performance mark; the median is taken from those.</p>

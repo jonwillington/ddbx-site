@@ -60,6 +60,7 @@ import { useBoardFeed } from "@/components/boards/board-feed";
 import { toBoardRows } from "@/components/boards/board-model";
 import { BENCHMARK } from "@/components/boards/board-prices";
 import { StageFigures } from "@/components/boards/stage-figures";
+import { StageNotice } from "@/components/boards/stage-notice";
 import { exactMoney } from "@/components/boards/stage-marks";
 import {
   BestPerformingStage,
@@ -233,6 +234,7 @@ export default function BestPerformingBuysPage() {
                     period, so a rising market doesn’t flatter the whole board.
                   </p>
                   <StageFigures items={figures} reserve={rows === null} />
+                  <StageNotice marketId={market.id} />
                 </>
               }
               linking={linking}
@@ -259,8 +261,9 @@ export default function BestPerformingBuysPage() {
         titleInHero={rows === null || hasBoard}
         width="wide"
       >
-        {/* Under the stage: the rule, the tracking caveat, the truncation
-            caveat. Small print belongs outside the object. */}
+        {/* Under the stage: the rule and the truncation caveat. The tracking
+            line moved into the stage header, under the figures it qualifies —
+            below a 600px object at 45% opacity it was invisible. */}
         <div className="mt-4 max-w-[62ch]">
           <a
             className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
@@ -268,7 +271,12 @@ export default function BestPerformingBuysPage() {
           >
             Ranked on alpha, with a {floor} floor. How this is built ↓
           </a>
-          <TrackingNotice className="mt-2.5" />
+          {/* The empty and error states mount no stage, so there is no header
+              for the in-stage notice to sit in. The page still has to say how
+              far back it holds. */}
+          {rows === null || hasBoard ? null : (
+            <TrackingNotice className="mt-2.5" marketId={market.id} />
+          )}
           {!complete && ranked.length > 0 && (
             <p className={`mt-3 ${CAVEAT}`}>
               We couldn’t load the whole period, so this ranking may be missing
