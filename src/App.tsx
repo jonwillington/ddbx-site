@@ -22,6 +22,7 @@ import DownloadPage from "@/pages/download";
 import FilingPage from "@/pages/filing";
 import WeeklyWeekPage, { WeeklyIndexPage } from "@/pages/weekly";
 import HowItWorksPage from "@/pages/how-it-works";
+import LabHowItWorksPage from "@/pages/lab-how-it-works";
 import LearnEntryPage, { LearnIndexPage } from "@/pages/learn";
 import ReportPage from "@/pages/report";
 import SectorPage from "@/pages/sector";
@@ -211,6 +212,14 @@ function App() {
             can't be linked to, shared or indexed. Both read from
             src/lib/methodology.ts. */}
         <Route element={<HowItWorksPage />} path="/how-it-works" />
+        {/* Dev-only preview harness for the how-it-works redesign; see the
+            file header. Never registered in a production bundle. */}
+        {import.meta.env.DEV ? (
+          <Route
+            element={<LabHowItWorksPage />}
+            path="/__lab/how-it-works/:name"
+          />
+        ) : null}
         <Route element={<LearnIndexPage />} path="/learn" />
         <Route element={<LearnEntryPage />} path="/learn/:slug" />
         <Route element={<BiggestBuysPage />} path="/biggest-buys" />

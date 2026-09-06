@@ -3,43 +3,60 @@
  *  The explanation existed before this; it just wasn't reachable. The good
  *  version — MarketExplainerExperience, a six-scene walkthrough that runs a
  *  real filing through the checks — is a modal behind a button on the market
- *  hero. It has no URL, so it can't be linked to from an email, shared into a
- *  thread, cited by anyone writing about us, or indexed. /download never names
- *  the six checks at all, and the glossary explains ten regulatory concepts
- *  without once explaining ours. The single most-asked question about this
- *  product had no address.
- *
- *  This page is that address, and it is deliberately the boring shape: the
- *  standard SeoPageShell document, the same grammar as the sector hubs and the
- *  glossary. The walkthrough keeps its atmosphere and its worked example — this
- *  is the version you can read without JavaScript, print, or send to someone.
+ *  hero, with no URL to link, share, cite or index. This page is that address.
  *  Both read from src/lib/methodology.ts, so they cannot drift.
  *
  *  ---------------------------------------------------------------------------
- *  Shown, not described
+ *  The shape (2026-09-06 redesign)
  *  ---------------------------------------------------------------------------
  *
- *  The first shipped version was seven sections of near-identical prose — the
- *  checks section alone was eighteen consecutive abstract paragraphs — while
- *  the walkthrough it was flattened from *demonstrates* the method on a real
- *  filing. This version puts that trick back, at document scale: one real
- *  filing (the "specimen", src/lib/methodology-examples.ts) is introduced
- *  after the thesis and threaded through the page — each check narrates its
- *  verdict on it via the check's own `passLine`, paired with a real filing
- *  that FAILED that check; each rating carries a linked real example; and the
- *  measured section fetches two of those filings live and shows their actual
- *  alpha.
+ *  Same material and grammar as the board pages (the dark stage, the light
+ *  hairline panels, full-width rows, the numbered SeoSection run), but the
+ *  proof objects are about METHOD rather than populations, so each section
+ *  draws the element it actually needs. In order:
  *
- *  The second pass (2026-08-31) applied the design language
- *  (investigations/2026-08-30-design-language.md) to what was still reading
- *  as documentation. The checks are the page's argument, so they get tenet
- *  3's treatment — full-width RowList rows, the question set LARGE, the body
- *  as the quiet description — with the worked examples and the long "why"
- *  folded behind one <details> per row. The thesis lost its grey panel
- *  (panels are for proof objects, not for the message layer) and gained the
- *  type scale instead. Everywhere else, the sentence that explains how the
- *  page was built moved out of the visible page: the reader wants the method,
- *  not the methodology of describing the method.
+ *    hero      HeroStage — the one dark stage on the page. The record drawn to
+ *              scale as a bed of hairlines thinning left to right (disclosed →
+ *              bought on market → sorted → read in full and rated), with one
+ *              tan hairline running the whole way: the worked example. The h1,
+ *              standfirst, thesis and live figures sit in the stage's message
+ *              column; the finding in words sits in its caption strip.
+ *    (intro)   SpecimenCard — the worked example introduced once, in full
+ *              (who, role, value, price, date). Then the contents strip.
+ *    01        PipelineLedger — six gates as full-width rows on a static
+ *              spine: stage left, "what leaves" the pipe right of a vertical
+ *              hairline. The finding falls out of the geometry: two stages
+ *              discard filings, four do not.
+ *    02        ChecksScorecard + ChecksRowList — the specimen's six results
+ *              as six filled discs (which teaches the code: filled = cleared,
+ *              hollow = not), then the six tenet-3 rows, each with its verdict
+ *              pair visible (how the specimen cleared it; a real filing that
+ *              didn't) and the long "why" folded.
+ *    03        RatingLadder — four rungs best-first in one panel, the six-slot
+ *              gauge on the top rung, the ceiling stated once in a tinted band
+ *              beneath it, the specimen marked on the rung it landed on.
+ *    04        SourcesRegister — five feeds as one register: flag, name, the
+ *              feed's own filer vocabulary, and aligned columns (records,
+ *              open-market buys, filers, issuers, records from). The host
+ *              market's row first, tinted, with exchange and cadence inline.
+ *    05        MeasuredSection — the horizon rail (five frames, one
+ *              denominator: every buy with a measured outcome), the specimen
+ *              placed at the horizon it has really reached, two live alphas as
+ *              rows, the mechanics folded.
+ *    06        LimitsLedger — five caveats at the selling-row scale, each on a
+ *              named axis (scope, judgement, disclosure, sample, revision).
+ *
+ *  The page's vocabulary is exclusive and lives in two files: the marks in
+ *  components/how-it-works/specimen-mark.tsx (specimen mark, verdict disc) and
+ *  the tokens and small parts in components/how-it-works/shared.tsx (rule,
+ *  panel, eyebrow, kicker, caption, Fold, StepNode, shortDate). Colour: green
+ *  and red appear only on the two measured alphas in section 05; pass/fail is
+ *  fill, not colour. Every number is live from useCoverage() with a dated
+ *  snapshot fallback, and every slot with no number is omitted.
+ *
+ *  Each section's own file carries the argument for its element and what it
+ *  replaced. `src/pages/lab-how-it-works.tsx` mounts any one of them alone at
+ *  /__lab/how-it-works/<name> in dev.
  *
  *  ---------------------------------------------------------------------------
  *  Ownership
@@ -54,50 +71,36 @@
  *  shared/seo.js), and the SPA branch below only ever renders on localhost.
  */
 import type { GlossaryEntry } from "../../shared/glossary";
-import type { Rating } from "@/types/ddbx";
-import type { ReactNode } from "react";
 
 import { useMemo } from "react";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { Link } from "react-router-dom";
 
 import { entryBySlug, learnPath, ownerForHost } from "../../shared/glossary.js";
 
 import {
-  FeedGrid,
-  OutcomeCoverage,
-} from "@/components/how-it-works/coverage-panel";
-import {
-  PipelineDiagram,
-  StepNode,
-} from "@/components/how-it-works/pipeline-diagram";
-import {
-  CheckInPractice,
-  RatingExampleLine,
-  SpecimenCard,
-  TrackedExamples,
-} from "@/components/how-it-works/worked-examples";
-import { RatingBadge } from "@/components/rating-badge";
-import { Row, RowList } from "@/components/row-list";
+  ChecksRowList,
+  ChecksScorecard,
+} from "@/components/how-it-works/checks-scorecard";
+import { HeroStage } from "@/components/how-it-works/hero-stage";
+import { LimitsLedger } from "@/components/how-it-works/limits-ledger";
+import { MeasuredSection } from "@/components/how-it-works/measured-section";
+import { PipelineLedger } from "@/components/how-it-works/pipeline-ledger";
+import { RatingLadder } from "@/components/how-it-works/ratings-ladder";
+import { DIVIDE, Fold, RULE } from "@/components/how-it-works/shared";
+import { SourcesRegister } from "@/components/how-it-works/sources-register";
+import { SpecimenCard } from "@/components/how-it-works/specimen-card";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoSection } from "@/components/seo/section";
 import DefaultLayout from "@/layouts/default";
-import { approx, count, monthLabel, useCoverage } from "@/lib/coverage";
+import { approx, monthLabel, useCoverage } from "@/lib/coverage";
 import { marketCopyFor } from "@/lib/markets/market-copy";
 import { marketForPath } from "@/lib/markets/registry";
-import {
-  CHECKS,
-  CHECK_COUNT_WORD,
-  PIPELINE,
-  RATING_SCALE,
-} from "@/lib/methodology";
+import { CHECK_COUNT_WORD } from "@/lib/methodology";
 import { examplesFor } from "@/lib/methodology-examples";
 
 const EYEBROW = "Methodology";
-const RULE = "border-hairline dark:border-separator";
-const DIVIDE = "divide-black/[0.06] dark:divide-white/[0.08]";
 
 /** The numbered run, in reading order. Kept as data because it drives two
  *  things that have to agree: the contents strip at the top and the `NN / 06`
@@ -158,23 +161,27 @@ export default function HowItWorksPage() {
   // below gates on it, so the page still composes for unrated markets.
   const examples = examplesFor(market.id);
 
-  // Funnel annotations: real counts where an honest one exists, nothing
-  // where it doesn't. The open-market figure is a floor (rows a classifier
-  // has CONFIRMED were bought on the market), and triage survivors aren't
-  // counted anywhere, so that stop stays a bare label.
+  // Hero figures: real counts where an honest one exists, nothing where
+  // there isn't one. All five feeds are summed (the drawing's first band says
+  // so). The open-market figure is a floor (rows a classifier has CONFIRMED
+  // were bought on the market), and triage survivors aren't counted anywhere,
+  // so that band stays a bare label.
   const openMarketFloor = coverage.markets.reduce(
     (sum, m) => (m.open_market_buys != null ? sum + m.open_market_buys : sum),
     0,
   );
-  const funnelCounts = [
-    count(coverage.totals.disclosures),
-    openMarketFloor > 0 ? `≥ ${count(openMarketFloor)}` : null,
-    null,
-    count(coverage.totals.analyses),
-  ];
   const funnelCaption = `${
     source === "snapshot" ? "Stored counts from" : "Counted"
-  } ${monthLabel(coverage.generated_at)} · open-market figure is a floor · widths illustrative`;
+  } ${monthLabel(coverage.generated_at)} · open-market figure is a floor`;
+
+  const standfirst = `Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks actually test, and where the method stops${examples ? ", shown on real filings you can check" : ""}.`;
+  const title = (
+    <>
+      How we rate{" "}
+      {copy.insiderTerm === "director" ? "a director’s" : "an insider’s"} share
+      purchase
+    </>
+  );
 
   const related = useMemo(() => {
     const owner = ownerForHost(hostname ?? "");
@@ -193,44 +200,49 @@ export default function HowItWorksPage() {
         ukHeading="Start investing"
       />
       <SeoPageShell
+        titleInHero
         cta={{
-          headline: "You've read the method. Watch it run.",
+          headline: "You’ve read the method. Watch it run.",
           body: `The checks above are applied to every ${copy.insiderTerm} purchase disclosed on ${copy.exchangeShortName}, the day it files. The app is where the results land, rated, with the reasoning attached, before the story reaches anyone else.`,
           gaLabel: "How it works",
           marketId: appMarketId,
         }}
         eyebrow={EYEBROW}
-        standfirst={`Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks actually test, and where the method stops${examples ? ", shown on real filings you can check" : ""}.`}
-        standfirstSize="lede"
-        title={`How we rate ${
-          copy.insiderTerm === "director" ? "a director’s" : "an insider’s"
-        } share purchase`}
+        hero={
+          <HeroStage
+            analyses={coverage.totals.analyses}
+            caption={funnelCaption}
+            disclosures={coverage.totals.disclosures}
+            eyebrow={EYEBROW}
+            finding="Almost everything filed is a grant, a vesting or an option exercise, with the purchases buried among them, so the work is almost entirely in the sorting."
+            openMarketFloor={openMarketFloor}
+            specimenCompany={examples?.specimen.company ?? null}
+            standfirst={standfirst}
+            thesis={
+              <>
+                {copy.insiderTermPlural.charAt(0).toUpperCase() +
+                  copy.insiderTermPlural.slice(1)}{" "}
+                know their companies better than the market does. When one of
+                them buys with their own money, that is worth a look.
+              </>
+            }
+            title={title}
+          />
+        }
+        standfirst={standfirst}
+        title={title}
+        width="wide"
       >
-        {/* The thesis, before the machinery — set large, on clean ground.
-            It shipped as a 15px paragraph in a grey panel, which filed the
-            page's one idea as a sidebar note; the design language's tenet 4
-            (type does the work) and its corollary (panels are for proof
-            objects, and the specimen card below IS one) both point the same
-            way. A reader who wants one idea gets it here and can stop. */}
-        <p className="mt-10 max-w-[30ch] text-balance text-[22px] font-semibold leading-[1.25] tracking-[-0.022em] text-foreground sm:text-[27px]">
-          {copy.insiderTermPlural.charAt(0).toUpperCase() +
-            copy.insiderTermPlural.slice(1)}{" "}
-          know their companies better than the market does. When one of them
-          buys with their own money, that is worth a look.
-        </p>
-        <p className="mt-4 max-w-[58ch] text-[15px] leading-[1.65] text-foreground/70">
-          The difficulty is that the same disclosure regime that surfaces those
-          purchases also surfaces the grants, the vestings and the option
-          exercises they are buried in, so the work is almost entirely in the
-          sorting.
-        </p>
-
-        {/* The specimen — one real filing the reader meets before the
+        {/* The document keeps the 860px measure under a hero that spans the
+            column: `width="wide"` hands the measure to the page, so every
+            section below sits inside this one wrapper. */}
+        <div className="mx-auto w-full max-w-[860px]">
+          {/* The specimen — one real filing the reader meets before the
             machinery, then follows through it. Introduced here so every
             "this filing" below already means something. */}
-        {examples ? <SpecimenCard specimen={examples.specimen} /> : null}
+          {examples ? <SpecimenCard specimen={examples.specimen} /> : null}
 
-        {/* The contents strip. Every one of these sections has carried an `id`
+          {/* The contents strip. Every one of these sections has carried an `id`
             and a scroll margin since the page shipped and nothing has ever
             linked to them, so a reader arriving for "what are the six checks"
             has had to scroll past the pipeline to find out.
@@ -241,477 +253,221 @@ export default function HowItWorksPage() {
             the target underneath the bar it was clicked from, and the page
             appeared not to respond. A contents list at the top of a document is
             the ordinary shape and has none of that risk. */}
-        <nav
-          aria-label="On this page"
-          className={`mt-8 flex flex-wrap gap-1.5 border-t ${RULE} pt-5`}
-        >
-          {CONTENTS.map((c, i) => (
-            <a
-              key={c.id}
-              className={`rounded-full border border-hairline bg-sheet px-2.5 py-1 text-[11.5px] leading-4 text-foreground/70 transition-colors hover:border-brand-brown/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-separator dark:bg-surface dark:hover:border-white/20`}
-              href={`#${c.id}`}
-            >
-              <span className="mr-1.5 font-mono text-[10px] tabular-nums text-foreground/40">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              {c.label}
-            </a>
-          ))}
-        </nav>
-
-        <SeoSection
-          aside="Filing to rating, in six stages, at its real size."
-          id="pipeline"
-          index={stepOf("pipeline")}
-          title="What happens to a disclosure"
-          total={CONTENTS.length}
-        >
-          {/* "Counted from the live database rather than written into the
-              page" moved out of the copy: true, but it explains how the page
-              was built, and the caption under the funnel already carries the
-              provenance. */}
-          <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            Five disclosure feeds, each read in its own format, every fifteen
-            minutes through the trading day. Of the{" "}
-            {count(coverage.totals.triage_decisions)} sorting decisions taken so
-            far, {count(coverage.totals.triage_llm)} were made by a model and
-            the rest by fixed rules.
-          </p>
-
-          <PipelineDiagram caption={funnelCaption} counts={funnelCounts} />
-
-          {/* One sequence, stated once. The rail above carries each stage's
-              label and meta; these rows carry the titles, with the two
-              sentences of how collapsed behind each one — the section used to
-              say all of this twice in two visual languages, and the second
-              telling is what made it a wall. */}
-          <ol className={`mt-9 border-t ${RULE}`}>
-            {PIPELINE.map((stage, i) => (
-              <li key={stage.id} className={`border-b ${RULE}`}>
-                <details className="group">
-                  <summary className="flex cursor-pointer list-none items-center gap-4 py-4 [&::-webkit-details-marker]:hidden">
-                    <StepNode index={i} />
-                    <h3 className="min-w-0 flex-1 text-[16.5px] font-semibold leading-[1.35] tracking-[-0.018em] text-foreground">
-                      {stage.title}
-                    </h3>
-                    <ChevronDownIcon
-                      aria-hidden
-                      className="h-4 w-4 shrink-0 text-foreground/35 transition-transform group-open:rotate-180"
-                    />
-                  </summary>
-                  <p className="max-w-[62ch] pb-5 pl-10 text-[14.5px] leading-[1.7] text-foreground/75">
-                    {stage.body}
-                  </p>
-                </details>
-              </li>
-            ))}
-          </ol>
-        </SeoSection>
-
-        <SeoSection
-          aside="Applied in this order, to every purchase that reaches the read."
-          id="checks"
-          index={stepOf("checks")}
-          title={`The ${CHECK_COUNT_WORD} checks`}
-          total={CONTENTS.length}
-        >
-          <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            Each check is a yes or no. There is no score to average: a purchase
-            clears them or it doesn’t, and the count of what it cleared is
-            published on the filing itself, so you can see which ones it missed
-            rather than taking the rating on trust.
-          </p>
-
-          {/* Tenet 3 of the design language, on the list that most deserves
-              it: the question set LARGE on the left, the plain answer quiet
-              on the right, and everything deeper — the specimen's verdict, a
-              real filing that failed, the long why — behind one fold per row.
-              The visible section is six questions a reader can take in on one
-              scroll; the earlier shape (heading, mono tag, paragraph, verdict
-              panel, second fold, six times over) was the wall this page kept
-              being accused of. */}
-          <RowList className="mt-8">
-            {CHECKS.map((check, i) => (
-              <Row
-                key={check.key}
-                glyph={<StepNode index={i} />}
-                kicker={check.label}
-                more={
-                  <Disclosure
-                    className="mt-4 max-w-[62ch]"
-                    label={
-                      examples
-                        ? "See it judged on real filings"
-                        : "Why this check earns its place"
-                    }
-                  >
-                    {/* The check demonstrated: the specimen's verdict via
-                        the check's own passLine — the same machinery the
-                        walkthrough uses — against a real filing that failed
-                        it. Contrast is the strongest form of each check. */}
-                    {examples ? (
-                      <CheckInPractice
-                        check={check}
-                        counter={examples.counters[check.key]}
-                        specimen={examples.specimen}
-                      />
-                    ) : null}
-                    <p
-                      className={`${examples ? "mt-4" : ""} text-[14px] leading-[1.7] text-foreground/65`}
-                    >
-                      {check.detail}
-                    </p>
-                  </Disclosure>
-                }
-                title={check.question}
+          <nav
+            aria-label="On this page"
+            className={`mt-8 flex flex-wrap gap-1.5 border-t ${RULE} pt-5`}
+          >
+            {CONTENTS.map((c, i) => (
+              <a
+                key={c.id}
+                className={`rounded-full border border-hairline bg-sheet px-2.5 py-1 text-[11.5px] leading-4 text-foreground/70 transition-colors hover:border-brand-brown/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-separator dark:bg-surface dark:hover:border-white/20`}
+                href={`#${c.id}`}
               >
-                {check.body}
-              </Row>
+                <span className="mr-1.5 font-mono text-[10px] tabular-nums text-foreground/40">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {c.label}
+              </a>
             ))}
-          </RowList>
-        </SeoSection>
+          </nav>
 
-        <SeoSection
-          aside="What the label on a filing is telling you."
-          id="ratings"
-          index={stepOf("ratings")}
-          title="The four ratings"
-          total={CONTENTS.length}
-        >
-          {/* The real badge, not a mono word set to look like one. These are
-              the four objects a reader will meet on every filing in the app,
-              and a page that describes them in a different visual language
-              than the product uses has made the reader learn them twice. The
-              taper in size and fill is itself part of the explanation — and
-              under each meaning, a real filing that earned that badge, so the
-              scale is four linked examples rather than four definitions. */}
-          <dl className={`border-t ${RULE}`}>
-            {RATING_SCALE.map((r) => {
-              const example = examples?.ratings[r.rating as Rating];
-
-              return (
-                <div
-                  key={r.rating}
-                  className={`grid gap-x-6 gap-y-2 border-b ${RULE} py-5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:py-6`}
-                >
-                  <dt className="flex items-start">
-                    <RatingBadge rating={r.rating as Rating} />
-                  </dt>
-                  <dd className="max-w-[58ch] text-[15px] leading-[1.65] text-foreground/80">
-                    {r.meaning}
-                    {example ? <RatingExampleLine example={example} /> : null}
-                  </dd>
-                </div>
-              );
-            })}
-          </dl>
-        </SeoSection>
-
-        <SeoSection
-          aside={`Built for ${copy.regionName}.`}
-          id="sources"
-          index={stepOf("sources")}
-          title="Where the filings come from"
-          total={CONTENTS.length}
-        >
-          {/* The exchange is left to the table below rather than named here as
-              well: for the UK `regulatorFullName` already contains the venue
-              ("London Stock Exchange RNS filings"), so interpolating both put
-              "London Stock Exchange" in the sentence twice. */}
-          <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            Markets don’t disclose the same way, and a pipeline that pretends
-            they do gets the vocabulary wrong before it gets anything else
-            wrong. In {copy.regionName} that means reading{" "}
-            {copy.regulatorFullName}, filed by the people local rules call{" "}
-            {copy.insiderTermPlural}, in their own format, standardised here,
-            and never a third party’s summary of them.
-          </p>
-
-          <dl
-            className={`mt-5 overflow-hidden rounded-xl border ${RULE} divide-y ${DIVIDE}`}
+          <SeoSection
+            aside="Filing to rating, in six stages, and where the pipe narrows."
+            id="pipeline"
+            index={stepOf("pipeline")}
+            title="What happens to a disclosure"
+            total={CONTENTS.length}
           >
-            <MetaRow label="Exchange" value={copy.exchangeFullName} />
-            <MetaRow label="Disclosures" value={copy.regulatorFullName} />
-            <MetaRow
-              label="Who files"
-              value={
-                copy.insiderNote
-                  ? `${copy.insiderTermPlural} — ${copy.insiderNote}`
-                  : copy.insiderTermPlural
-              }
+            <PipelineLedger
+              specimen={examples?.specimen ?? null}
+              totals={coverage.totals}
             />
-            <MetaRow
-              label="Checked"
-              value="Every 15 minutes, through the trading day"
+          </SeoSection>
+
+          <SeoSection
+            aside="Applied one at a time, in this order, to every purchase that reaches the read."
+            id="checks"
+            index={stepOf("checks")}
+            title={`The ${CHECK_COUNT_WORD} checks`}
+            total={CONTENTS.length}
+          >
+            <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+              Each check is a yes or no. There is no score to average: a
+              purchase clears them or it doesn’t, and the count of what it
+              cleared is published on the filing itself, so you can see which
+              ones it missed rather than taking the rating on trust.
+            </p>
+
+            <ChecksScorecard examples={examples} />
+            <ChecksRowList examples={examples} />
+          </SeoSection>
+
+          <SeoSection
+            aside="What the label on a filing is telling you."
+            id="ratings"
+            index={stepOf("ratings")}
+            title="The four ratings"
+            total={CONTENTS.length}
+          >
+            <RatingLadder examples={examples} />
+          </SeoSection>
+
+          <SeoSection
+            aside={`Built for ${copy.regionName}.`}
+            id="sources"
+            index={stepOf("sources")}
+            title="Where the filings come from"
+            total={CONTENTS.length}
+          >
+            <SourcesRegister
+              copy={copy}
+              data={coverage}
+              marketId={market.id}
+              source={source}
             />
-          </dl>
+          </SeoSection>
 
-          {/* The wider corpus, feed by feed. This grid lived in its own
-              "What we've read" section; it is really a statement about
-              sources — five feeds, five formats, five start dates — so it
-              lives with them now. The caveat sentences about row semantics
-              folded: they matter, but only to the reader already studying
-              the grid, and that reader will open them. */}
-          <p className="mt-8 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            And it is not one feed but five. They are not equivalent, and the
-            grid below is laid out so you can see that rather than take our word
-            for it.
-          </p>
-          <Disclosure
-            className="mt-3 max-w-[64ch]"
-            label="How to read the grid"
+          <SeoSection
+            aside="The evidence behind the last stage, at its real size."
+            id="measured"
+            index={stepOf("measured")}
+            title="What we can measure, and how much of it there is"
+            total={CONTENTS.length}
           >
-            <p className="text-[14px] leading-[1.7] text-foreground/65">
-              A US, Swedish or Dutch row is a single transaction line from a
-              filing that may hold several, and a congressional row is an amount
-              band sorted by fixed rules rather than by a model. The open-market
-              count on each card is a floor, counting only the rows a classifier
-              has confirmed were bought on the market.
-            </p>
-          </Disclosure>
+            <MeasuredSection
+              coverage={coverage}
+              examples={examples}
+              marketId={market.id}
+            >
+              <Fold
+                className="mt-3 max-w-[64ch]"
+                label="How the measuring is done"
+              >
+                <p className="text-[14px] leading-[1.7] text-foreground/65">
+                  Both legs of every return are market closes off the same price
+                  series, entry and exit, stored beside the benchmark over the
+                  identical window, so what we keep is the difference against
+                  the market rather than the raw direction. Rows that look wrong
+                  are flagged and kept, never dropped, because quietly
+                  discarding the ugly ones biases a sample in exactly the
+                  direction that flatters us.
+                </p>
+                {/* Rendered only when the research database answered. The
+                  `research` field is nullable precisely so this paragraph can
+                  be absent rather than claim "0 insider transactions from 0
+                  filings", which is the one thing worse than saying nothing. */}
+                {coverage.research ? (
+                  <p className="mt-4 text-[14px] leading-[1.7] text-foreground/65">
+                    The checks themselves are tuned against a much larger
+                    offline panel: {approx(coverage.research.transactions)}{" "}
+                    insider transactions from{" "}
+                    {approx(coverage.research.filings)} US Form 4 filings since{" "}
+                    {coverage.research.first_filing?.slice(0, 4)}, held in a
+                    separate database and never served as content here. It is US
+                    filings because that is where a corpus of this size can be
+                    had in bulk; what it calibrates is the shape of the checks,
+                    which are the same six in every market. A change to a check
+                    has to survive that panel before it ships.
+                  </p>
+                ) : null}
+              </Fold>
+            </MeasuredSection>
+          </SeoSection>
 
-          <FeedGrid data={coverage} />
-        </SeoSection>
-
-        <SeoSection
-          aside="The evidence behind the last stage, at its real size."
-          id="measured"
-          index={stepOf("measured")}
-          title="What we can measure, and how much of it there is"
-          total={CONTENTS.length}
-        >
-          <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            The last stage of the pipeline follows a rated buy and scores it
-            against the index, which is the only way a rating ever gets checked
-            rather than argued about. It runs on the two rated markets, the
-            United Kingdom and the United States, and has measured{" "}
-            {count(coverage.outcomes.events)} buys between them, on a price
-            history of {count(coverage.prices.observations)} daily closes across{" "}
-            {count(coverage.prices.tickers)} tickers, back to{" "}
-            {coverage.prices.first_date?.slice(0, 4) ?? "2016"}. The count thins
-            out fast as the horizon lengthens:
-          </p>
-
-          <OutcomeCoverage data={coverage} />
-
-          {/* Two of those measurements, at their live values — the tracked
-              pair from methodology-examples, one of them the specimen. The
-              component owns its own intro line and vanishes whole if the
-              live figures don't come back, so no sentence is left promising
-              cards that aren't there. */}
-          {examples ? (
-            <TrackedExamples examples={examples} marketId={market.id} />
-          ) : null}
-
-          {/* The one sentence a reader must not scroll past stays visible;
-              the mechanics of the measurement fold under it. The honesty
-              claim is the argument, the price-series plumbing is the
-              appendix. */}
-          <p className="mt-7 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-            Read honestly, the table above says the thirty-day evidence is real
-            and the one-year evidence barely exists yet: that is the whole
-            reason performance figures on this site are described as a small
-            sample rather than as a track record.
-          </p>
-
-          <Disclosure
-            className="mt-3 max-w-[64ch]"
-            label="How the measuring is done"
-          >
-            <p className="text-[14px] leading-[1.7] text-foreground/65">
-              Both legs of every return are market closes off the same price
-              series, entry and exit, stored beside the benchmark over the
-              identical window, so what we keep is the difference against the
-              market rather than the raw direction. Rows that look wrong are
-              flagged and kept, never dropped, because quietly discarding the
-              ugly ones biases a sample in exactly the direction that flatters
-              us.
-            </p>
-            {/* Rendered only when the research database answered. The
-                `research` field is nullable precisely so this paragraph can
-                be absent rather than claim "0 insider transactions from 0
-                filings", which is the one thing worse than saying nothing. */}
-            {coverage.research ? (
-              <p className="mt-4 text-[14px] leading-[1.7] text-foreground/65">
-                The checks themselves are tuned against a much larger offline
-                panel: {approx(coverage.research.transactions)} insider
-                transactions from {approx(coverage.research.filings)} US Form 4
-                filings since {coverage.research.first_filing?.slice(0, 4)},
-                held in a separate database and never served as content here. It
-                is US filings because that is where a corpus of this size can be
-                had in bulk; what it calibrates is the shape of the checks,
-                which are the same six in every market. A change to a check has
-                to survive that panel before it ships.
-              </p>
-            ) : null}
-          </Disclosure>
-        </SeoSection>
-
-        {/* Korea only. Every other market in the product reports a purchase
+          {/* Korea only. Every other market in the product reports a purchase
             that HAS happened; Korea's headline feed reports ones that have
             not. That distinction is the single thing a reader most needs and
             most easily misses, so it gets a section rather than a footnote.
             The /api/kr-plans payload links straight to this anchor. */}
-        {market.id === "kr" ? (
-          <SeoSection
-            aside="Why the Korean feed reads differently from every other one here."
-            id="korea-advance-plans"
-            title="Trades declared before they happen"
-          >
-            <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-              Korea is the only market here where the disclosure arrives{" "}
-              <em>before</em> the trade. Officers and major shareholders have to
-              declare a planned purchase in advance, naming themselves, the
-              size, and the window it has to happen in. When you read one of
-              these, nothing has been bought yet.
-            </p>
-
-            <dl
-              className={`mt-5 overflow-hidden rounded-xl border ${RULE} divide-y ${DIVIDE}`}
+          {market.id === "kr" ? (
+            <SeoSection
+              aside="Why the Korean feed reads differently from every other one here."
+              id="korea-advance-plans"
+              title="Trades declared before they happen"
             >
-              <MetaRow
-                label="When it applies"
-                value="A planned trade that, with the previous six months of dealing, reaches 1% of the company's shares or 50bn won"
-              />
-              <MetaRow
-                label="How far ahead"
-                value="At least 30 days before the window opens"
-              />
-              <MetaRow
-                label="The window"
-                value="30 days or less, and the trade must land at 70% to 130% of the declared amount"
-              />
-              <MetaRow
-                label="If they change their mind"
-                value="The plan can be withdrawn, and about one in ten is. Withdrawals are shown next to the plan they cancel"
-              />
-            </dl>
+              <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+                Korea is the only market here where the disclosure arrives{" "}
+                <em>before</em> the trade. Officers and major shareholders have
+                to declare a planned purchase in advance, naming themselves, the
+                size, and the window it has to happen in. When you read one of
+                these, nothing has been bought yet.
+              </p>
 
-            <p className="mt-5 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-              Because the threshold is a share of the company rather than a cash
-              amount, the people who file are mostly controlling shareholders
-              and large holders, not rank-and-file managers. That makes it a
-              different population from the director buys on the other market
-              pages, and it is worth reading it as one.
-            </p>
-
-            <p className="mt-4 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
-              We lead this page with the declarations rather than the completed
-              purchases that follow them. The declaration is the moment
-              something is learned; the filing that confirms it, weeks later,
-              tells you only that a plan already on the record was carried out.
-            </p>
-          </SeoSection>
-        ) : null}
-
-        <SeoSection
-          aside="The parts worth knowing before you lean on any of it."
-          id="limits"
-          index={stepOf("limits")}
-          title="Where the method stops"
-          total={CONTENTS.length}
-        >
-          {/* Cards rather than a bulleted list. Five caveats set as run-in bold
-              paragraphs is the shape of small print a reader skims past, and
-              these are the paragraphs on the page most worth not skimming. */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            {LIMITS.map((limit) => (
-              <div
-                key={limit.title}
-                className="rounded-xl border border-hairline bg-sheet px-4 py-3.5 dark:border-white/[0.07] dark:bg-surface"
+              <dl
+                className={`mt-5 overflow-hidden rounded-xl border ${RULE} divide-y ${DIVIDE}`}
               >
-                <h3 className="text-[14px] font-semibold leading-[1.35] tracking-[-0.01em] text-foreground">
-                  {limit.title}
-                </h3>
-                <p className="mt-2 text-[13.5px] leading-[1.6] text-foreground/65">
-                  {limit.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </SeoSection>
+                <MetaRow
+                  label="When it applies"
+                  value="A planned trade that, with the previous six months of dealing, reaches 1% of the company's shares or 50bn won"
+                />
+                <MetaRow
+                  label="How far ahead"
+                  value="At least 30 days before the window opens"
+                />
+                <MetaRow
+                  label="The window"
+                  value="30 days or less, and the trade must land at 70% to 130% of the declared amount"
+                />
+                <MetaRow
+                  label="If they change their mind"
+                  value="The plan can be withdrawn, and about one in ten is. Withdrawals are shown next to the plan they cancel"
+                />
+              </dl>
 
-        {related.length > 0 ? (
-          <SeoSection title="Read next">
-            <RelatedCards
-              items={related.map((e) => ({
-                to: learnPath(e.slug),
-                title: e.term,
-                description: e.description,
-              }))}
-            />
-          </SeoSection>
-        ) : null}
+              <p className="mt-5 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+                Because the threshold is a share of the company rather than a
+                cash amount, the people who file are mostly controlling
+                shareholders and large holders, not rank-and-file managers. That
+                makes it a different population from the director buys on the
+                other market pages, and it is worth reading it as one.
+              </p>
 
-        <p className="mt-8 text-[13.5px] leading-[1.6] text-foreground/60">
-          Prefer to see it applied?{" "}
-          <Link
-            className="font-medium text-foreground underline underline-offset-4"
-            to="/"
+              <p className="mt-4 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+                We lead this page with the declarations rather than the
+                completed purchases that follow them. The declaration is the
+                moment something is learned; the filing that confirms it, weeks
+                later, tells you only that a plan already on the record was
+                carried out.
+              </p>
+            </SeoSection>
+          ) : null}
+
+          <SeoSection
+            aside="The parts worth knowing before you lean on any of it."
+            id="limits"
+            index={stepOf("limits")}
+            title="Where the method stops"
+            total={CONTENTS.length}
           >
-            Open today’s filings
-          </Link>{" "}
-          and the walkthrough on the homepage runs a real recent purchase
-          through all {CHECK_COUNT_WORD} checks, one at a time.
-        </p>
+            <LimitsLedger />
+          </SeoSection>
+
+          {related.length > 0 ? (
+            <SeoSection title="Read next">
+              <RelatedCards
+                items={related.map((e) => ({
+                  to: learnPath(e.slug),
+                  title: e.term,
+                  description: e.description,
+                }))}
+              />
+            </SeoSection>
+          ) : null}
+
+          <p className="mt-8 text-[13.5px] leading-[1.6] text-foreground/60">
+            Prefer to see it applied?{" "}
+            <Link
+              className="font-medium text-foreground underline underline-offset-4"
+              to="/"
+            >
+              Open today’s filings
+            </Link>{" "}
+            and the walkthrough on the homepage runs a real recent purchase
+            through all {CHECK_COUNT_WORD} checks, one at a time.
+          </p>
+        </div>
       </SeoPageShell>
     </DefaultLayout>
-  );
-}
-
-/** The caveats, stated plainly rather than buried in small print.
- *
- *  A methodology page that only lists strengths is marketing wearing a lab
- *  coat, and every one of these is a question a careful reader arrives with.
- *  Answering them here is also the cheapest defence against the page being
- *  read as a performance claim, which is the one reading we can't afford. */
-const LIMITS: { title: string; body: string }[] = [
-  {
-    title: "A rating is a reading, not a recommendation",
-    body: "It describes how well a purchase clears six specific tests. It is not advice, not a price target, and carries no view on whether the shares are worth buying at today’s price.",
-  },
-  {
-    title: "The checks are judgements, and judgements can be wrong",
-    body: "Seniority, conviction and context are all assessed rather than measured, and a check can be marked wrongly in either direction. Every rating is published with the reasoning and the sources behind it precisely so you can disagree with it.",
-  },
-  {
-    title: "We only see what gets disclosed",
-    body: "The pipeline reads filings. An insider who buys through a structure that doesn’t require disclosure, or a market that files late, is invisible to it, and a disclosure can arrive days after the trade it describes.",
-  },
-  {
-    title: "The record behind it is still short",
-    body: "Ratings are scored against what the shares did next, but that scoring covers a fraction of what we hold and is concentrated at thirty days. The section above shows the exact shape of it. Treat any performance figure on the site as a description of a small sample.",
-  },
-  {
-    title: "The checklist moves",
-    body: "As the record builds, what each check looks for gets adjusted, which means a filing’s rating can change after publication. That is deliberate, a fixed checklist would be easier to describe and worse at its job.",
-  },
-];
-
-/** A folded paragraph: native <details>, so it costs no state, prints open
- *  where user agents choose to, and keeps its content in the DOM for the
- *  crawler pre-render. Used for the depth this page used to show all of —
- *  the fold is the point, not the content's demotion. */
-function Disclosure({
-  label,
-  className,
-  children,
-}: {
-  label: string;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <details className={`group ${className ?? ""}`}>
-      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-foreground/55 transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
-        <ChevronDownIcon
-          aria-hidden
-          className="h-3.5 w-3.5 shrink-0 -rotate-90 transition-transform group-open:rotate-0"
-        />
-        {label}
-      </summary>
-      <div className="mt-2.5">{children}</div>
-    </details>
   );
 }
 

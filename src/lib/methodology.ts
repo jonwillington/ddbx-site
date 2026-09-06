@@ -94,9 +94,9 @@ export interface PipelineStage {
  *
  *  Ordered as the Worker actually runs them (scrape → classify → triage →
  *  analyse → rate → track). The narrowing is the point of the whole sequence
- *  and the reason the diagram draws it as a funnel: almost everything filed is
- *  housekeeping, and a product that showed you all of it would be worse than
- *  useless. */
+ *  and the reason /how-it-works draws it to scale in its hero: almost
+ *  everything filed is housekeeping, and a product that showed you all of it
+ *  would be worse than useless. */
 export const PIPELINE: PipelineStage[] = [
   {
     id: "watch",
@@ -137,23 +137,9 @@ export const PIPELINE: PipelineStage[] = [
     id: "track",
     label: "Track",
     title: "Then measure what actually happened",
-    body: "Every rated buy is followed from its disclosure-day close and scored against the index, so the rating can be checked against the outcome rather than left as an opinion. The checks are not fixed: as the record builds, what each one looks for gets adjusted, and a buy’s rating can change.",
+    body: "Every open-market buy on the rated markets is followed from its disclosure-day close and scored against the index, so a rating can be checked against the buys it passed over as well as the ones it kept. The checks are not fixed: as the record builds, what each one looks for gets adjusted, and a buy’s rating can change.",
     meta: "Measured against the index",
   },
-];
-
-/** The narrowing the diagram draws, as labels rather than invented numbers.
- *  We publish no attrition figures and shouldn’t imply one — the widths in the
- *  funnel are illustrative, and the labels are what the reader takes away.
- *
- *  Kept short deliberately: they are set inside the tapering bands, and the
- *  last band is narrow, so a longer phrase ("Rated and published") truncates
- *  to an ellipsis at the exact point the figure is trying to make. */
-export const FUNNEL_STOPS = [
-  "Everything filed",
-  "Open-market buys",
-  "Worth reading",
-  "Rated",
 ];
 
 /** Canonical route for the published methodology. Imported rather than typed
