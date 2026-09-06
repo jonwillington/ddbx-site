@@ -1,7 +1,8 @@
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { Drawer } from "vaul";
 
 import { StoreGlyph } from "@/components/store-glyph";
 import { RESEARCH_PATHS, researchNavLinks } from "@/lib/site-nav";
@@ -10,8 +11,12 @@ import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { MarketSwitcher } from "@/components/market-switcher";
 import { appHrefForMarket } from "@/lib/app-store";
-import { useAppHandoff } from "@/components/app-handoff-modal";
+import {
+  useAppHandoff,
+  type AppHandoffAnchorProps,
+} from "@/components/app-handoff-modal";
 import { useDevicePlatform } from "@/lib/use-device-platform";
+import { useMediaQuery } from "@/lib/use-media-query";
 import {
   marketDashboardPath,
   marketForPath,
@@ -162,10 +167,154 @@ function ResearchMenu({ active }: { active: boolean }) {
   );
 }
 
+/** The masthead below md — a hamburger opening a bottom sheet.
+ *
+ *  Under 768px the <ul> of links is display:none and the bar carries only the
+ *  logo, the market pill and the theme switch, so Research, Brokers, Method
+ *  and API had no way in from a phone at all. This is the same vaul sheet the
+ *  market picker uses on touch (components/market-switcher MobileSheet), same
+ *  handle, same ground, same row metrics, so the two menus a phone reader can
+ *  open from the bar read as one material.
+ *
+ *  Two shapes differ from the desktop row:
+ *
+ *  - Research is flattened. A disclosure nested inside a sheet is two taps
+ *    for one destination, so the seven links sit under an eyebrow at the foot
+ *    of the list, after the plain rows — a heading mid-list would claim the
+ *    rows beneath it as its own.
+ *  - The download CTA rides along. Desktop reveals it on scroll; here it is a
+ *    standing row at the sheet's foot, because a menu is where a reader who
+ *    has come looking for something expects to find the app.
+ *
+ *  Every row is a plain <a> doing a full navigation, like the desktop links,
+ *  so the sheet unmounts with the page and needs no close-on-navigate. */
+function MobileMenu({
+  items,
+  downloadAnchorProps,
+  marketId,
+}: {
+  items: NavItem[];
+  downloadAnchorProps: AppHandoffAnchorProps;
+  marketId: string;
+}) {
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const research = items.find((i) => i.kind === "research");
+  const links = research ? researchNavLinks(location.pathname) : [];
+  const rowClass = (active: boolean) =>
+    clsx(
+      "flex w-full items-center rounded-lg px-2 py-3 text-base transition-colors hover:bg-black/5 dark:hover:bg-white/5",
+      active
+        ? "text-[#5a4128] dark:text-[#d8c4af] font-medium"
+        : "text-foreground",
+    );
+
+  return (
+    <Drawer.Root open={open} onOpenChange={setOpen}>
+      <Drawer.Trigger asChild>
+        <button
+          aria-label="Open menu"
+          className="-mr-1 flex h-8 w-8 items-center justify-center rounded-full text-foreground transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+          type="button"
+        >
+          <Bars3Icon className="h-6 w-6" />
+        </button>
+      </Drawer.Trigger>
+
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/50" />
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-hairline bg-[#f5f0e8] outline-none dark:border-separator dark:bg-background">
+          <div className="mx-auto mb-1 mt-3 h-1.5 w-10 shrink-0 rounded-full bg-black/15 dark:bg-white/20" />
+
+          {/* The list scrolls; the CTA below it does not. Twelve rows outrun a
+              short phone under the 85vh cap, and a download button that has
+              to be scrolled to is a download button most readers never see. */}
+          <div className="min-h-0 overflow-y-auto px-4 pt-2">
+            <Drawer.Title className="px-2 pb-2 text-base font-semibold">
+              Menu
+            </Drawer.Title>
+
+            <ul>
+              {items.map((item) => {
+                if (item.kind === "research") return null;
+
+                return (
+                  <li key={item.href}>
+                    <a
+                      className={rowClass(item.match(location.pathname))}
+                      href={item.href}
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {research && (
+              <>
+                <div className="my-1.5 border-t border-separator/60" />
+                <div className="px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-foreground/45">
+                  Research
+                </div>
+                <ul>
+                  {links.map((link) => (
+                    // Same rule the desktop dropdown draws above the archive.
+                    <li
+                      key={link.path}
+                      className={clsx(
+                        link.divider &&
+                          "mt-1.5 border-t border-separator/60 pt-1.5",
+                      )}
+                    >
+                      <a
+                        className={rowClass(location.pathname === link.path)}
+                        href={link.href}
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+
+          <div className="shrink-0 border-t border-separator/60 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3">
+            <a
+              className={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-4 py-3 text-base font-medium transition-colors`}
+              data-ga-event="cta_nav_download_app"
+              data-ga-label={`Nav menu ${marketId}`}
+              data-ga-store-intercepted={
+                downloadAnchorProps["data-ga-store-intercepted"]
+              }
+              href={downloadAnchorProps.href}
+              rel="noopener noreferrer"
+              target="_blank"
+              // A desktop-width window narrowed under md gets the handoff
+              // modal; the sheet has to leave before it arrives.
+              onClick={(e) => {
+                setOpen(false);
+                downloadAnchorProps.onClick?.(e);
+              }}
+            >
+              <StoreGlyph className="h-4 w-4 shrink-0" />
+              Download app
+            </a>
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  );
+}
+
 export const Navbar = () => {
   const location = useLocation();
   const market = marketForPath(location.pathname);
   const platform = useDevicePlatform();
+  // The same breakpoint that shows the link row (`md:flex` below). Under it the
+  // row is display:none and the hamburger is the only way to the sections.
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   // Dashboard stays in-app; secondary nav action now points to the market's
   // store listing for the visitor's device (App Store on iOS/desktop, Play on
   // Android), with the UK app as the fallback where a market-specific listing
@@ -334,6 +483,13 @@ export const Navbar = () => {
           {/* /api pins itself dark (see lib/use-pinned-theme.ts), so the
               toggle would be a control that visibly does nothing. */}
           {!isPinnedTheme && <ThemeSwitch />}
+          {showNav && !isDesktop && (
+            <MobileMenu
+              downloadAnchorProps={handoff.anchorProps}
+              items={navItems}
+              marketId={market.id}
+            />
+          )}
         </div>
       </header>
     </nav>
