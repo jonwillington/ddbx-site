@@ -35,6 +35,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
+  median,
   rankByAlpha,
   summarise,
   MIN_BOARD_VALUE,
@@ -60,7 +61,10 @@ import { toBoardRows } from "@/components/boards/board-model";
 import { BENCHMARK } from "@/components/boards/board-prices";
 import { StageFigures } from "@/components/boards/stage-figures";
 import { exactMoney } from "@/components/boards/stage-marks";
-import { BestPerformingStage } from "@/components/boards/stages/best-performing-stage";
+import {
+  BestPerformingStage,
+  eligibleAlphas,
+} from "@/components/boards/stages/best-performing-stage";
 
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
@@ -111,6 +115,25 @@ export default function BestPerformingBuysPage() {
   );
   const summary = useMemo(() => summarise(ranked), [ranked]);
 
+  // The field, measured once. Every population figure this page states — the
+  // median beside the object, the ahead/behind counts the stage letters on its
+  // axis, the median its caption repeats — comes off this one array, because a
+  // statistic printed twice from two computations is a statistic that can
+  // print two different numbers. The population is the board's own denominator:
+  // eligible, marked, above the floor. Not the 25, which are selected for the
+  // very thing the median would be measuring.
+  const fieldAlphas = useMemo(
+    () => eligibleAlphas(rows ?? [], market.id),
+    [rows, market.id],
+  );
+  // Only over a complete window: the median of a truncated fetch is a fact
+  // about the fetch. The figure is omitted rather than qualified, which is the
+  // same stance the stage's caption already takes.
+  const fieldMedian = useMemo(
+    () => (complete ? median(fieldAlphas) : null),
+    [complete, fieldAlphas],
+  );
+
   // FilingRow still takes the meter's scale even with the bar off: the stage
   // above the list draws the same comparison at a scale a 3px bar can't match.
   const topAlpha = useMemo(
@@ -141,10 +164,14 @@ export default function BestPerformingBuysPage() {
         tone: best > 0 ? "pos" : best < 0 ? "neg" : undefined,
       });
     }
-    if (summary.alphaCount > 0 && summary.medianAlpha != null) {
+    // The field's median, not the board's. How far above the market a set
+    // chosen for being far above the market sits is not a finding; what the
+    // typical eligible purchase did is, and it is the figure the best on the
+    // board is worth reading against.
+    if (fieldMedian != null) {
       figures.push({
-        k: "Median of the board",
-        v: signedPp(summary.medianAlpha),
+        k: `Median of all ${considered}`,
+        v: signedPp(fieldMedian),
       });
     }
     figures.push({ k: "Companies", v: String(summary.companies) });
@@ -179,6 +206,8 @@ export default function BestPerformingBuysPage() {
               complete={complete}
               considered={considered}
               dealings={rows}
+              fieldAlphas={fieldAlphas}
+              fieldMedian={fieldMedian}
               header={
                 <>
                   <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">

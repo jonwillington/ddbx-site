@@ -31,7 +31,6 @@ import { useMemo } from "react";
 
 import {
   hasBoardMark,
-  median,
   MIN_BOARD_VALUE,
   TOP_N,
 } from "../../../../shared/boards.js";
@@ -161,6 +160,33 @@ function splitField(
   });
 
   return { field, ghosts };
+}
+
+/** The alphas of every eligible marked purchase that clears the floor — the
+ *  board's own denominator, and the population every figure on this page is
+ *  taken over.
+ *
+ *  Exported because the number is stated twice: as a figure beside the object
+ *  ("median of all 283") and in the stage's own caption and band labels. It is
+ *  computed once, by the page, and handed down; two computations of the same
+ *  statistic are two chances to print different ones. The predicate is
+ *  `rankByAlpha`'s eligibility test, so `.length` is exactly the `considered`
+ *  that module reports. */
+export function eligibleAlphas(
+  dealings: Array<Dealing | UsDealing>,
+  market: "UK" | "US",
+): number[] {
+  const out: number[] = [];
+
+  for (const d of dealings) {
+    if (!hasBoardMark(d, market)) continue;
+    if (buyValue(d) < MIN_BOARD_VALUE) continue;
+    const a = buyAlpha(d);
+
+    if (a != null) out.push(a);
+  }
+
+  return out;
 }
 
 interface Scales {
@@ -336,7 +362,7 @@ function Body({
   field: FieldPoint[];
   ghosts: GhostPoint[];
   namedGhost: GhostPoint | null;
-  bandLabels: { pos: string; neg: string };
+  bandLabels: { pos: string; posShort: string; neg: string };
   cutoffAlpha: number | null;
   marketId: "UK" | "US";
   symbol: string;
@@ -345,7 +371,8 @@ function Body({
 }) {
   const { W, H, pad, mode, active } = ctx;
   const amount = mode === "amount";
-  const discR = W >= 520 ? 13 : 9;
+  const wide = W >= 520;
+  const discR = wide ? 13 : 9;
 
   const sc = useMemo(
     () => buildScales(rows, field, ghosts, namedGhost, W, H, pad),
@@ -390,9 +417,20 @@ function Body({
     [worst, fieldDots],
   );
 
-  // Named marks: the top three, and the field's worst purchase — the two ends
-  // of what the page is claiming. One label per company, and none placed at
-  // all where it would land on a disc or another label.
+  const ghostAt = useMemo(
+    () =>
+      namedGhost
+        ? { x: sc.x(namedGhost.value), y: sc.y(namedGhost.alpha) }
+        : null,
+    [namedGhost, sc],
+  );
+
+  // Named marks: the top three, the one named sub-floor purchase and the
+  // field's worst — the ends of what the page is claiming. Every one of them
+  // goes through the same placement, the ghost included: it was the label
+  // drawn outside it that ended up written across the board's own names.
+  // One label per company, and none placed at all where it would land on a
+  // disc, on the ghost's ring, or on another label.
   const named = useMemo(() => {
     const placedById = new Map(layout.map((p) => [p.row.id, p] as const));
     const cands = rows
@@ -414,6 +452,17 @@ function Body({
       })
       .filter((c): c is NonNullable<typeof c> => c != null);
 
+    if (amount && namedGhost && ghostAt) {
+      cands.push({
+        id: namedGhost.id,
+        key: namedGhost.id,
+        x: ghostAt.x,
+        y: ghostAt.y,
+        r: 6,
+        text: displayTicker(namedGhost.ticker),
+        sub: `${exactMoney(namedGhost.value, symbol, locale)} · ${signedPp(namedGhost.alpha)}`,
+      });
+    }
     if (worst && worstDot) {
       cands.push({
         id: "field-worst",
@@ -427,23 +476,84 @@ function Body({
     }
 
     return placeLabels(cands, {
-      obstacles: layout,
+      obstacles: amount && ghostAt ? [...layout, { ...ghostAt, r: 9 }] : layout,
       xMin: pad.l,
       xMax: W - 6,
-      cap: W < 520 ? 2 : 4,
-      width: (c) => Math.max(c.text.length * 6.6, 86) + 4,
+      cap: wide ? 5 : 2,
+      // No "above" on a phone: the highest mark on this stage sits a few
+      // pixels under the plot's top edge, and a label stacked over it lands
+      // in the axis captions rather than on the picture.
+      sides: wide ? undefined : ["right", "left"],
+      // Both lines, not just the name: a three-letter ticker under a figure
+      // like "£3,007 · +121.0pp" is a wide label, and measuring only the name
+      // is how one came to be drawn over the company beside it. Measuring
+      // both also retires the old 86px floor, which was the estimate standing
+      // in for the figure and which made a short name too wide to place at
+      // the right-hand end of a phone.
+      width: (c) =>
+        Math.max(c.text.length * 6.7, (c.sub?.length ?? 0) * 6.2) + 6,
     });
-  }, [rows, layout, worst, worstDot, W, pad]);
+  }, [
+    rows,
+    layout,
+    worst,
+    worstDot,
+    amount,
+    namedGhost,
+    ghostAt,
+    symbol,
+    locale,
+    wide,
+    W,
+    pad,
+  ]);
 
   const floorX = sc.x(MIN_BOARD_VALUE);
   const cutoffY = cutoffAlpha == null ? null : sc.y(cutoffAlpha);
   const worstSide = named.get("field-worst");
+  const ghostSide = namedGhost ? named.get(namedGhost.id) : undefined;
+
+  // The floor's caption sits above the plot, not inside it: at the wall's own
+  // x it is in the middle of the board, and the discs are drawn after it and
+  // paint their backing rings straight over it. Above the plot there are two
+  // occupied places — the band label at the left, the cross label at the
+  // right — so the caption takes whichever side of its rule clears them, and
+  // steps up a line rather than run into the band label.
+  //
+  // Widths are estimated in characters because the text is monospaced: 7.2px
+  // is the 10px cell plus the 0.12em tracking these captions carry, measured
+  // off the rendered panel.
+  const CH = 7.2;
+  const posLabel = wide ? bandLabels.pos : bandLabels.posShort;
+  const crossLabel = amount ? "amount spent →" : `ranked 1 → ${rows.length}`;
+  // One line rather than the component's stacked pair: `sublabel` is drawn
+  // ABOVE `label`, which would put "nothing below it ranks" over the thing it
+  // is about.
+  const floorCaption = `${exactMoney(MIN_BOARD_VALUE, symbol, locale)} floor${
+    wide ? " · nothing below it ranks" : ""
+  }`;
+  const floorCapW = floorCaption.length * CH;
+  const floorAnchor =
+    floorX + 6 + floorCapW <= sc.plot.x1 - crossLabel.length * CH - 12
+      ? "start"
+      : ("end" as const);
+  const floorFrom =
+    floorAnchor === "start" ? floorX + 6 : floorX - 6 - floorCapW;
+  // 48px of clearance, not the 1px that "does not overlap" would allow: two
+  // captions on one line a hair apart read as one sentence.
+  const floorRaise =
+    floorFrom < sc.plot.x0 + posLabel.length * CH + 48 ? 14 : 0;
 
   return (
     <>
+      {/* The bands are collapsed to nothing and replaced by the two hairlines
+          below, in both arrangements. A tint over half the plot is a field,
+          and the design language asks for the colour to be contained: here it
+          is the dots, the disc rings, the level line and the two labels that
+          carry the sides. /sectors retired its bands the same way. */}
       <SignedAxis
-        bands={amount ? undefined : { from: sc.plot.x0, to: sc.railRight }}
-        crossLabel={amount ? "amount spent →" : `ranked 1 → ${rows.length}`}
+        bands={{ from: sc.plot.x0, to: sc.plot.x0 }}
+        crossLabel={crossLabel}
         crossTicks={
           amount
             ? thinTicks(
@@ -458,9 +568,30 @@ function Body({
         labelGutter={pad.l - 10}
         negLabel={bandLabels.neg}
         plot={sc.plot}
-        posLabel={bandLabels.pos}
+        posLabel={posLabel}
         scale={sc.y}
         ticks={alphaTicks(sc.amin, sc.amax)}
+      />
+
+      {/* One hairline under each band label, the width of the side it names.
+          Alpha is the vertical axis here, so both sides are the full width of
+          the plot: the ahead line rides the top of the picture and the behind
+          line its floor, with the level line between them. */}
+      <rect
+        fill="var(--stage-pos)"
+        fillOpacity={0.55}
+        height={2}
+        width={Math.max(0, sc.plot.x1 - sc.plot.x0)}
+        x={sc.plot.x0}
+        y={sc.plot.y0 - 6}
+      />
+      <rect
+        fill="var(--stage-neg)"
+        fillOpacity={0.55}
+        height={2}
+        width={Math.max(0, sc.plot.x1 - sc.plot.x0)}
+        x={sc.plot.x0}
+        y={sc.plot.y1 - 4}
       />
 
       {/* The floor, and where the board's last place sits. Faded rather than
@@ -477,10 +608,10 @@ function Body({
           y={sc.plot.y0}
         />
         <RuleWithLabel
-          label={`${exactMoney(MIN_BOARD_VALUE, symbol, locale)} floor`}
-          sublabel="nothing below it ranks"
+          anchor={floorAnchor}
+          label={floorCaption}
           x={floorX}
-          y0={sc.plot.y0 + 26}
+          y0={sc.plot.y0 - floorRaise}
           y1={sc.plot.y1}
         />
         {cutoffY == null ? null : (
@@ -493,6 +624,10 @@ function Body({
               y1={cutoffY}
               y2={cutoffY}
             />
+            {/* At the left end of its rule, where the board is not: the
+                board's own discs sit at the right of this arrangement and
+                are drawn after this line, so a caption over there is painted
+                out by their backing rings. */}
             <text
               className="font-mono uppercase"
               fill="rgba(255,255,255,0.45)"
@@ -502,11 +637,14 @@ function Body({
               stroke="var(--stage-bg)"
               strokeLinejoin="round"
               strokeWidth={4}
-              textAnchor="end"
-              x={sc.plot.x1 - 4}
+              textAnchor="start"
+              x={sc.plot.x0 + 4}
               y={cutoffY - 7}
             >
-              board starts here · {signedPp(cutoffAlpha)}
+              {/* The figure only where the caption has room for it: on a
+                  phone the board's own discs reach this far left, and a
+                  number half-covered by a logo is worse than no number. */}
+              board starts here{wide ? ` · ${signedPp(cutoffAlpha)}` : ""}
             </text>
           </>
         )}
@@ -616,12 +754,14 @@ function Body({
               stroke="rgba(255,255,255,0.7)"
               strokeWidth={1.5}
             />
-            <StageLabel
-              r={6}
-              side="right"
-              sub={`${exactMoney(namedGhost.value, symbol, locale)} · ${signedPp(namedGhost.alpha)}`}
-              text={displayTicker(namedGhost.ticker)}
-            />
+            {ghostSide ? (
+              <StageLabel
+                r={6}
+                side={ghostSide}
+                sub={`${exactMoney(namedGhost.value, symbol, locale)} · ${signedPp(namedGhost.alpha)}`}
+                text={displayTicker(namedGhost.ticker)}
+              />
+            ) : null}
           </StageMark>
         </g>
       ) : null}
@@ -633,6 +773,8 @@ export function BestPerformingStage({
   board,
   dealings,
   considered,
+  fieldAlphas,
+  fieldMedian,
   complete,
   marketId,
   symbol,
@@ -648,6 +790,14 @@ export function BestPerformingStage({
   /** Eligible purchases with a mark that clear the floor — the board's own
    *  denominator, computed by the same module that ranks it. */
   considered: number;
+  /** Those purchases' alphas, from `eligibleAlphas`, and their median. Both
+   *  arrive from the page rather than being worked out here: the page states
+   *  the median as a figure, this object letters the counts under the same
+   *  claim, and the two have to be the same arithmetic. `fieldMedian` is null
+   *  when the window is truncated, where a median of a partial field is a
+   *  number about the fetch rather than about the market. */
+  fieldAlphas: number[];
+  fieldMedian: number | null;
   /** False when the window is truncated, in which case every population count
    *  on this stage is a floor rather than a total. */
   complete: boolean;
@@ -679,11 +829,6 @@ export function BestPerformingStage({
   // Every figure below counts the WHOLE field, the board included. A statistic
   // taken over the 25 would be a statistic about a set selected for the thing
   // it measures.
-  const fieldAlphas = useMemo(
-    () => [...field.map((f) => f.alpha), ...(rows ?? []).map((r) => r.alpha)],
-    [field, rows],
-  );
-  const fieldMedian = useMemo(() => median(fieldAlphas), [fieldAlphas]);
   const tally = useMemo(() => {
     let pos = 0;
     let neg = 0;
@@ -712,6 +857,12 @@ export function BestPerformingStage({
     pos: complete
       ? `${tally.pos} of ${considered} eligible ahead`
       : `at least ${tally.pos} eligible ahead`,
+    // The same claim on a phone, where the full one runs into the cross
+    // label. "Eligible" is the word that goes: the caption under the picture
+    // still says which purchases these are, and the counts stay whole.
+    posShort: complete
+      ? `${tally.pos} of ${considered} ahead`
+      : `at least ${tally.pos} ahead`,
     neg: complete
       ? `${tally.neg} of ${considered} behind`
       : `at least ${tally.neg} behind`,
@@ -730,7 +881,7 @@ export function BestPerformingStage({
             <span className="font-semibold text-white">
               The {rows.length} best of {denominator} eligible purchases.
             </span>{" "}
-            {complete && fieldMedian != null ? (
+            {fieldMedian != null ? (
               <>
                 The median of all {considered} is {signedPp(fieldMedian)}
                 {full && cutoffAlpha != null

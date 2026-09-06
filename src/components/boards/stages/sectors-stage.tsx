@@ -7,8 +7,9 @@
  *  strip of dots on a log money scale, so a sector's spread is visible next to
  *  its neighbours' and the £11m purchase and the £11 purchase are both on the
  *  picture. In "Whether it worked" the same dots slide onto alpha, the lanes
- *  re-sort by their median, and each lane gains a median tick that says how
- *  many buys it was drawn from.
+ *  re-sort by their median, and each lane gains a median tick. The figure the
+ *  tick is worth is stated in the gutter beside the sector's name, not over
+ *  the swarm: a lane of 363 dots has no room inside it for a sentence.
  *
  *  Two things this deliberately does not do. It encodes nothing in length or
  *  area: the sectors span 146:1 by value and the companies inside them 1,470:1,
@@ -67,7 +68,7 @@ const MODES: ReadonlyArray<StageMode<Mode>> = [
   { id: "outcome", label: "Whether it worked" },
 ];
 
-/** The gutter carries a sector name and a count under it, which needs real
+/** The gutter carries a sector name and a figure under it, which needs real
  *  width. A phone has none to give, so below this the names move inside the
  *  lanes and the dots take the rest of the height. */
 const GUTTER_FROM = 640;
@@ -75,8 +76,13 @@ const GUTTER_FROM = 640;
 /** The lane's own label strip, when there is no gutter. */
 const LABEL_STRIP = 14;
 
+/** Wide enough for "Consumer Discretionary" — the longest published sector
+ *  name — set at 13px semibold, plus the 14 the labels are inset by. A gutter
+ *  that fits ten of the eleven names is a clipped name, not a narrow gutter. */
+const GUTTER = 190;
+
 const PAD = (W: number): StagePad => ({
-  l: W < GUTTER_FROM ? 24 : 160,
+  l: W < GUTTER_FROM ? 24 : GUTTER,
   r: 24,
   t: 68,
   b: 44,
@@ -94,6 +100,11 @@ const HALO = {
   strokeLinejoin: "round" as const,
   strokeWidth: 4,
 };
+
+/** The same idiom, wider, for the two counts that sit at the ends of a lane
+ *  where the dots are densest — four pixels of ground is not enough to clear
+ *  the gaps between the glyphs. */
+const EDGE_HALO = { ...HALO, strokeWidth: 6 };
 
 /** Ratio → "+20%". The list below this stage prints percentages, so the axis
  *  does too; "pp" on the chart and "%" in the table is one page speaking two
@@ -421,16 +432,59 @@ function StageBody({
         className="transition-opacity duration-700"
         style={{ opacity: outcome ? 1 : 0 }}
       >
+        {/* The bands are collapsed to nothing and replaced by the two rules
+            below. A tint over half the plot is a field, and the design
+            language asks for the colour to be contained: here it is the dots,
+            the level line and the two labels that carry the sides. */}
         <SignedAxis
+          bands={{ from: L.plot.y0, to: L.plot.y0 }}
           labelGutter={L.plot.y1 + 30}
           negLabel={`${summary.behind} behind`}
           orientation="vertical"
           plot={L.plot}
-          posLabel={`${summary.ahead} of ${rows.length} sector medians ahead`}
+          // Centred over its half, so on a phone the long form runs off the
+          // panel. What it counts is the same sentence either way.
+          posLabel={
+            wide
+              ? `${summary.ahead} of ${rows.length} sector medians ahead`
+              : `${summary.ahead} of ${rows.length} ahead`
+          }
           scale={L.xAlpha}
           tickLabel={pctTick}
           ticks={alphaTicks(-L.clip, L.clip)}
         />
+        {/* One hairline under each label, the width of the side it names. */}
+        <rect
+          fill="var(--stage-neg)"
+          fillOpacity={0.55}
+          height={2}
+          width={Math.max(0, L.xAlpha(0) - L.plot.x0)}
+          x={L.plot.x0}
+          y={L.plot.y0 - 6}
+        />
+        <rect
+          fill="var(--stage-pos)"
+          fillOpacity={0.55}
+          height={2}
+          width={Math.max(0, L.plot.x1 - L.xAlpha(0))}
+          x={L.xAlpha(0)}
+          y={L.plot.y0 - 6}
+        />
+        {/* The gutter's second line changes what it counts between the two
+            arrangements, so the column says which one it is showing. */}
+        {wide ? (
+          <text
+            className="font-mono uppercase"
+            fill="rgba(255,255,255,0.4)"
+            fontSize={10}
+            letterSpacing="0.12em"
+            textAnchor="end"
+            x={L.plot.x0 - 14}
+            y={L.plot.y0 - 10}
+          >
+            median
+          </text>
+        ) : null}
         {L.strip ? (
           <text
             className="font-mono"
@@ -449,20 +503,21 @@ function StageBody({
         const slug = row.sector.slug;
         const cy = lane.centre - lane.top;
         const tickH = (lane.height - L.labelInset) * 0.8;
+        // The figure the tick is worth, stated where there is room for it: the
+        // gutter beside the name, or the lane's own label strip on a phone.
         const medianText =
           row.medianAlpha == null
-            ? null
+            ? "no median yet"
             : `${formatSignedPct(row.medianAlpha)} · from ${row.alphaCount} buys`;
-        // The median label sits to the right of its tick unless the right of
-        // the lane is spoken for — by the plot edge, or by the count of the
-        // buys that ran off it.
-        const medianW = (medianText?.length ?? 0) * 6.1;
-        const rightRoom =
-          L.plot.x1 -
-          (lane.beyondPos > 0 ? 116 : 6) -
-          ((lane.medianX ?? 0) + 7);
-        const leftRoom = (lane.medianX ?? 0) - 7 - L.plot.x0;
-        const medianRight = medianW <= rightRoom || medianW > leftRoom;
+        // On a phone the figure shares one line with the sector's name, and
+        // "Consumer Discretionary" plus the sample it was drawn from does not
+        // fit on 360px. The figure goes on the line, the sample stays in the
+        // tooltip and in the sentence under the panel — the same figure on
+        // every lane, rather than a count on the lanes with short names.
+        const medianStrip =
+          row.medianAlpha == null
+            ? "no median yet"
+            : `median ${formatSignedPct(row.medianAlpha)}`;
 
         return (
           <StageMark
@@ -501,37 +556,95 @@ function StageBody({
                 >
                   {row.sector.label}
                 </text>
-                <text
-                  className="font-mono"
-                  fill="rgba(255,255,255,0.45)"
-                  fontSize={10}
-                  textAnchor="end"
-                  x={L.plot.x0 - 14}
-                  y={cy + 12}
+                {/* One line, two facts, crossfaded: what the lane is made of
+                    while the money is on show, what its middle came to once
+                    the dots are on outcome. */}
+                <g
+                  className="transition-opacity duration-500"
+                  style={{ opacity: outcome ? 0 : 1 }}
                 >
-                  {row.buys} buys · {row.companies} companies
-                </text>
+                  <text
+                    className="font-mono"
+                    fill="rgba(255,255,255,0.45)"
+                    fontSize={10}
+                    textAnchor="end"
+                    x={L.plot.x0 - 14}
+                    y={cy + 12}
+                  >
+                    {row.buys} buys · {row.companies} companies
+                  </text>
+                </g>
+                <g
+                  className="transition-opacity duration-500"
+                  style={{ opacity: outcome ? 1 : 0 }}
+                >
+                  <text
+                    className="font-mono"
+                    fill={
+                      row.medianAlpha == null
+                        ? "rgba(255,255,255,0.4)"
+                        : "rgba(255,255,255,0.75)"
+                    }
+                    fontSize={10.5}
+                    textAnchor="end"
+                    x={L.plot.x0 - 14}
+                    y={cy + 12}
+                  >
+                    {medianText}
+                  </text>
+                </g>
               </>
             ) : (
-              <text
-                fill="rgba(255,255,255,0.9)"
-                fontSize={11.5}
-                fontWeight={600}
-                x={L.plot.x0}
-                y={10}
-                {...HALO}
-              >
-                {row.sector.label}
-                <tspan
-                  className="font-mono"
-                  fill="rgba(255,255,255,0.45)"
-                  fontSize={9.5}
-                  fontWeight={400}
+              <>
+                <g
+                  className="transition-opacity duration-500"
+                  style={{ opacity: outcome ? 0 : 1 }}
                 >
-                  {" "}
-                  · {row.buys} buys · {row.companies} companies
-                </tspan>
-              </text>
+                  <text
+                    fill="rgba(255,255,255,0.9)"
+                    fontSize={11.5}
+                    fontWeight={600}
+                    x={L.plot.x0}
+                    y={10}
+                    {...HALO}
+                  >
+                    {row.sector.label}
+                    <tspan
+                      className="font-mono"
+                      fill="rgba(255,255,255,0.45)"
+                      fontSize={9.5}
+                      fontWeight={400}
+                    >
+                      {" "}
+                      · {row.buys} buys · {row.companies} companies
+                    </tspan>
+                  </text>
+                </g>
+                <g
+                  className="transition-opacity duration-500"
+                  style={{ opacity: outcome ? 1 : 0 }}
+                >
+                  <text
+                    fill="rgba(255,255,255,0.9)"
+                    fontSize={11.5}
+                    fontWeight={600}
+                    x={L.plot.x0}
+                    y={10}
+                    {...HALO}
+                  >
+                    {row.sector.label}
+                    <tspan
+                      className="font-mono"
+                      fill="rgba(255,255,255,0.55)"
+                      fontSize={9.5}
+                      fontWeight={400}
+                    >
+                      {" "}
+                      · {medianStrip}
+                    </tspan>
+                  </text>
+                </g>
+              </>
             )}
 
             {/* The one issuer that is most of a lane, named on the lane rather
@@ -568,40 +681,26 @@ function StageBody({
               className="transition-opacity duration-500"
               style={{ opacity: outcome ? 1 : 0 }}
             >
-              {lane.medianX != null && medianText ? (
-                <>
-                  <line
-                    stroke="rgba(255,255,255,0.85)"
-                    strokeWidth={2}
-                    x1={lane.medianX}
-                    x2={lane.medianX}
-                    y1={cy - tickH / 2}
-                    y2={cy + tickH / 2}
-                  />
-                  <text
-                    className="font-mono"
-                    fill="rgba(255,255,255,0.85)"
-                    fontSize={10.5}
-                    textAnchor={medianRight ? "start" : "end"}
-                    x={medianRight ? lane.medianX + 7 : lane.medianX - 7}
-                    y={cy + 3.5}
-                    {...HALO}
-                  >
-                    {medianText}
-                  </text>
-                </>
-              ) : (
-                <text
-                  className="font-mono"
-                  fill="rgba(255,255,255,0.4)"
-                  fontSize={10}
-                  x={L.plot.x0 + 8}
-                  y={cy + 3.5}
-                  {...HALO}
-                >
-                  no median yet
-                </text>
-              )}
+              {lane.medianX != null ? (
+                <line
+                  stroke="var(--stage-bg)"
+                  strokeWidth={5}
+                  x1={lane.medianX}
+                  x2={lane.medianX}
+                  y1={cy - tickH / 2}
+                  y2={cy + tickH / 2}
+                />
+              ) : null}
+              {lane.medianX != null ? (
+                <line
+                  stroke="rgba(255,255,255,0.9)"
+                  strokeWidth={2}
+                  x1={lane.medianX}
+                  x2={lane.medianX}
+                  y1={cy - tickH / 2}
+                  y2={cy + tickH / 2}
+                />
+              ) : null}
 
               {/* The axis ends are a clip, not a maximum, so the purchases
                   past it are counted where they were cut off. */}
@@ -620,7 +719,7 @@ function StageBody({
                     textAnchor="end"
                     x={L.plot.x1 - 15}
                     y={cy + 3.5}
-                    {...HALO}
+                    {...EDGE_HALO}
                   >
                     {lane.beyondPos} beyond +{clipLabel}
                   </text>
@@ -640,7 +739,7 @@ function StageBody({
                     fontSize={9.5}
                     x={L.plot.x0 + 15}
                     y={cy + 3.5}
-                    {...HALO}
+                    {...EDGE_HALO}
                   >
                     {lane.beyondNeg} beyond −{clipLabel}
                   </text>
