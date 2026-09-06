@@ -18,13 +18,24 @@
  *  Rolling twelve months only, with no year archive. A calendar-year board of
  *  performance would freeze a mark taken on 31 December and then keep serving
  *  it as though it were still true.
+ *
+ *  Drawn, not just listed (2026-09-05). All three of those decisions used to
+ *  be prose under a table; the hero now draws them. The board's 25 discs sit
+ *  in the field they were picked from, the floor is a wall with the purchases
+ *  it holds back behind it, and the four stat tiles moved into the message
+ *  column beside the object — where "Ranked from 283" is the denominator the
+ *  caption uses rather than a number in a box. Composition is still
+ *  SeoPageShell's, which keeps the app band after the last content section.
  */
 import type { RelatedCard } from "@/components/seo/related-cards";
+import type { StageFigure } from "@/components/boards/stage-figures";
+import type { Linking } from "@/components/boards/board-model";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
+  median,
   rankByAlpha,
   summarise,
   MIN_BOARD_VALUE,
@@ -33,20 +44,27 @@ import {
 } from "../../shared/boards.js";
 import { buyAlpha } from "../../shared/leaderboard.js";
 
-import { money, R, useSectorMarket } from "@/components/sector-ui";
+import { R, useSectorMarket } from "@/components/sector-ui";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { RelatedCards } from "@/components/seo/related-cards";
-import { StatTiles } from "@/components/seo/stat-tiles";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { performanceBoardCta } from "@/components/seo/cta-copy";
 import { LogoDevAttribution } from "@/components/company-logo";
 import { displayTicker } from "@/lib/company";
 import { FilingRow } from "@/components/boards/filing-row";
 import { useBoardFeed } from "@/components/boards/board-feed";
+import { toBoardRows } from "@/components/boards/board-model";
+import { BENCHMARK } from "@/components/boards/board-prices";
+import { StageFigures } from "@/components/boards/stage-figures";
+import { exactMoney } from "@/components/boards/stage-marks";
+import {
+  BestPerformingStage,
+  eligibleAlphas,
+} from "@/components/boards/stages/best-performing-stage";
 
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
@@ -75,6 +93,11 @@ function signedPp(ratio: number | null): string {
 export default function BestPerformingBuysPage() {
   const market = useSectorMarket();
   const { rows, complete } = useBoardFeed(market.id);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const linking: Linking = useMemo(
+    () => ({ activeId, setActiveId }),
+    [activeId],
+  );
 
   const { ranked, suppressed, considered } = useMemo(() => {
     const r = rankByAlpha(rows ?? [], market.id, TOP_N);
@@ -86,10 +109,33 @@ export default function BestPerformingBuysPage() {
     };
   }, [rows, market.id]);
 
+  const board = useMemo(
+    () => (rows === null ? null : toBoardRows(ranked)),
+    [rows, ranked],
+  );
   const summary = useMemo(() => summarise(ranked), [ranked]);
 
-  // Bars are drawn against the best alpha on the board, so the meter measures
-  // the ranked quantity. Against a fixed scale they would all look the same.
+  // The field, measured once. Every population figure this page states — the
+  // median beside the object, the ahead/behind counts the stage letters on its
+  // axis, the median its caption repeats — comes off this one array, because a
+  // statistic printed twice from two computations is a statistic that can
+  // print two different numbers. The population is the board's own denominator:
+  // eligible, marked, above the floor. Not the 25, which are selected for the
+  // very thing the median would be measuring.
+  const fieldAlphas = useMemo(
+    () => eligibleAlphas(rows ?? [], market.id),
+    [rows, market.id],
+  );
+  // Only over a complete window: the median of a truncated fetch is a fact
+  // about the fetch. The figure is omitted rather than qualified, which is the
+  // same stance the stage's caption already takes.
+  const fieldMedian = useMemo(
+    () => (complete ? median(fieldAlphas) : null),
+    [complete, fieldAlphas],
+  );
+
+  // FilingRow still takes the meter's scale even with the bar off: the stage
+  // above the list draws the same comparison at a scale a 3px bar can't match.
   const topAlpha = useMemo(
     () => (ranked.length > 0 ? (buyAlpha(ranked[0]) ?? 0) : 0),
     [ranked],
@@ -97,7 +143,45 @@ export default function BestPerformingBuysPage() {
 
   const marketId = market.id === "US" ? "us" : "uk";
   const locale = market.id === "US" ? "en-US" : "en-GB";
-  const floor = money(MIN_BOARD_VALUE, market.symbol);
+  const bench = BENCHMARK[market.id];
+  // The floor in full. "£50k" is the rounded form of a published editorial
+  // line a reader is meant to be able to check against the methodology, which
+  // states £50,000.
+  const floor = exactMoney(MIN_BOARD_VALUE, market.symbol, locale);
+  const hasBoard = board !== null && board.length > 0;
+
+  // Omitted, never placeholdered: a slot with nothing in it says nothing here,
+  // and the caption below the stage says why in words.
+  const figures: StageFigure[] = [];
+
+  if (hasBoard) {
+    const best = buyAlpha(ranked[0]);
+
+    if (best != null) {
+      figures.push({
+        k: "Best on the board",
+        v: signedPp(best),
+        tone: best > 0 ? "pos" : best < 0 ? "neg" : undefined,
+      });
+    }
+    // The field's median, not the board's. How far above the market a set
+    // chosen for being far above the market sits is not a finding; what the
+    // typical eligible purchase did is, and it is the figure the best on the
+    // board is worth reading against.
+    if (fieldMedian != null) {
+      figures.push({
+        k: `Median of all ${considered}`,
+        v: signedPp(fieldMedian),
+      });
+    }
+    figures.push({ k: "Companies", v: String(summary.companies) });
+    // Truncated window: the qualifier goes in the label, so the figure stays a
+    // figure and still can't be read as a total.
+    figures.push({
+      k: complete ? "Ranked from" : "Ranked from at least",
+      v: String(considered),
+    });
+  }
 
   return (
     <DefaultLayout drawerRight>
@@ -114,48 +198,87 @@ export default function BestPerformingBuysPage() {
           marketId,
         }}
         eyebrow="Leaderboard"
+        hero={
+          rows === null || hasBoard ? (
+            <BestPerformingStage
+              benchmark={bench.label}
+              board={board}
+              complete={complete}
+              considered={considered}
+              dealings={rows}
+              fieldAlphas={fieldAlphas}
+              fieldMedian={fieldMedian}
+              header={
+                <>
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                    Leaderboard
+                  </p>
+                  {/* Light, not bold: the object is the emphasis, the title
+                      names it. */}
+                  <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
+                    The best-performing {market.label} insider buys of the last
+                    year
+                  </h1>
+                  <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
+                    The purchases {market.noun} made in their own companies that
+                    have since beaten the market by the widest margin, measured
+                    as{" "}
+                    <Link
+                      className="text-white/85 underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white/70"
+                      to="/learn/what-a-director-buy-signals"
+                    >
+                      alpha
+                    </Link>
+                    , the share’s own move minus the index’s over the same
+                    period, so a rising market doesn’t flatter the whole board.
+                  </p>
+                  <StageFigures items={figures} reserve={rows === null} />
+                </>
+              }
+              linking={linking}
+              locale={locale}
+              marketId={market.id}
+              symbol={market.symbol}
+            />
+          ) : undefined
+        }
         loading={rows === null}
-        notice={
-          <>
-            <a
-              className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
-              href="#methodology"
-            >
-              Ranked on alpha, with a {floor} floor. How this is built ↓
-            </a>
-            <TrackingNotice className="mt-2.5" />
-            {!complete && ranked.length > 0 && (
-              <p className={`mt-3 ${CAVEAT}`}>
-                We couldn’t load the whole period, so this ranking may be
-                missing older purchases.
-              </p>
-            )}
-          </>
-        }
-        skeleton={
-          <>
-            <SeoSkeleton rows={4} variant="stat-tiles" />
-            <SeoSkeleton rows={TOP_N} variant="ranked-board" />
-          </>
-        }
+        skeleton={<SeoSkeleton rows={TOP_N} variant="ranked-board" />}
         standfirst={
-          <>
-            The purchases {market.noun} made in their own companies that have
-            since beaten the market by the widest margin, measured as{" "}
-            <Link
-              className="underline decoration-foreground/25 underline-offset-4 transition-colors hover:decoration-foreground/60"
-              to="/learn/what-a-director-buy-signals"
-            >
-              alpha
-            </Link>
-            , the share’s own move minus the index’s over the same period, so a
-            rising market doesn’t flatter the whole board.
-          </>
+          hasBoard || rows === null ? undefined : (
+            <>
+              The purchases {market.noun} made in their own companies that have
+              since beaten the market by the widest margin, measured as alpha,
+              the share’s own move minus the index’s over the same period.
+            </>
+          )
         }
         title={
           <>The best-performing {market.label} insider buys of the last year</>
         }
+        titleInHero={rows === null || hasBoard}
+        width="wide"
       >
+        {/* Under the stage: the rule, the tracking caveat, the truncation
+            caveat. Small print belongs outside the object. */}
+        <div className="mt-4 max-w-[62ch]">
+          <a
+            className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+            href="#methodology"
+          >
+            Ranked on alpha, with a {floor} floor. How this is built ↓
+          </a>
+          <TrackingNotice className="mt-2.5" />
+          {!complete && ranked.length > 0 && (
+            <p className={`mt-3 ${CAVEAT}`}>
+              We couldn’t load the whole period, so this ranking may be missing
+              older purchases.
+            </p>
+          )}
+        </div>
+
+        {/* An empty board and a board we couldn't fetch are the same shape and
+            two different statements. */}
         {ranked.length === 0 && !complete ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the board just now. It’s a network problem rather
@@ -168,33 +291,11 @@ export default function BestPerformingBuysPage() {
             <a className="underline underline-offset-4" href="#methodology">
               What qualifies
             </a>{" "}
-            is set out below.
+            is set out below. A purchase appears once it has been priced against
+            the index, which takes a few days after disclosure.
           </p>
         ) : (
           <>
-            <StatTiles
-              className="mt-6"
-              cols={4}
-              note={`Ranked from the ${considered} purchases in the last twelve months that clear the ${floor} floor and have a performance mark. Totals cover the ${ranked.length} listed below, not the whole market.`}
-              stats={[
-                {
-                  label: "Best alpha",
-                  primary: true,
-                  tone: "positive",
-                  value: signedPp(topAlpha),
-                },
-                {
-                  label: "Median of the board",
-                  value: signedPp(summary.medianAlpha),
-                },
-                { label: "Companies", value: summary.companies },
-                {
-                  label: "Combined spend",
-                  value: money(summary.value, market.symbol),
-                },
-              ]}
-            />
-
             <div
               aria-hidden
               className="mt-8 grid grid-cols-[1.5rem_minmax(0,1fr)_5.5rem] gap-x-3 pb-2.5 text-[11px] leading-[1.4] text-foreground/50 sm:grid-cols-[2rem_minmax(0,1fr)_9rem] sm:gap-x-4"
@@ -210,8 +311,10 @@ export default function BestPerformingBuysPage() {
                   key={d.id ?? i}
                   showRole
                   deal={d}
+                  linking={linking}
                   locale={locale}
                   marketId={market.id}
+                  meter={false}
                   meterMax={topAlpha}
                   meterValue={buyAlpha(d) ?? 0}
                   position={i + 1}
@@ -254,7 +357,10 @@ export default function BestPerformingBuysPage() {
           variant="rail"
         >
           <ul className="space-y-2.5">
-            {PERFORMANCE_METHODOLOGY.map((line: string) => (
+            {[
+              ...PERFORMANCE_METHODOLOGY,
+              "The stage in the header draws every purchase that qualified, not just the 25 listed. Each dot is one eligible purchase with a mark, set at its alpha; the logos are the board. By amount, the same marks move to what was spent, the floor is drawn as a wall, and the purchases behind it are the ones it holds back.",
+            ].map((line: string) => (
               <li key={line} className={`flex gap-2.5 ${R.body}`}>
                 <span
                   aria-hidden

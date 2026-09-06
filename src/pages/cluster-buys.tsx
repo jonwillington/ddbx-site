@@ -10,11 +10,24 @@
  *  names reads as a defect whether or not it is one. `named` is computed with
  *  the same per-market floor the pipeline applies to co-buyers (£10,000 UK,
  *  $25,000 US), so this page and the cluster chip on every filing agree.
+ *
+ *  Drawn, not just listed (2026-09-05). The hero carries the board as one
+ *  object: every episode is its company's logo ringed with one dot per named
+ *  insider, filed into a column per insider count and then sent to a scatter
+ *  of when the buying started against how many days it took. The four stat
+ *  tiles went with it — "most insiders in one" is now the rightmost column,
+ *  drawn and named, and the other three are figures in the message column
+ *  beside the stage. The meter bar under each row went too: it measured rank
+ *  within the board, which the ordinal in the gutter already states.
+ *  Composition is still SeoPageShell's, which keeps the app band after the
+ *  last content section.
  */
 import type { ClusterEpisode } from "../../shared/boards";
 import type { RelatedCard } from "@/components/seo/related-cards";
+import type { Linking } from "@/components/boards/board-model";
+import type { StageFigure } from "@/components/boards/stage-figures";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
@@ -32,8 +45,6 @@ import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { RelatedCards } from "@/components/seo/related-cards";
-import { StatTiles } from "@/components/seo/stat-tiles";
-import { MeterBar } from "@/components/seo/meter-bar";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { clusterBoardCta } from "@/components/seo/cta-copy";
 import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
@@ -47,6 +58,13 @@ import {
 } from "@/lib/company";
 import { AlphaBadge } from "@/components/boards/filing-row";
 import { useBoardFeed } from "@/components/boards/board-feed";
+import { BENCHMARK } from "@/components/boards/board-prices";
+import { StageFigures } from "@/components/boards/stage-figures";
+import {
+  ClusterStage,
+  episodeId,
+  spanLabel,
+} from "@/components/boards/stages/cluster-stage";
 
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
@@ -80,19 +98,14 @@ const CROSS_LINKS: RelatedCard[] = [
   },
 ];
 
-/** "over 11 days", or "on one day" when every filing landed together — which
- *  is the strongest version of the signal and deserves saying rather than
- *  rendering as "over 0 days". */
-function spanLabel(days: number): string {
-  if (days <= 0) return "on one day";
-  if (days === 1) return "over two days";
-
-  return `over ${days} days`;
-}
-
 export default function ClusterBuysPage() {
   const market = useSectorMarket();
   const { rows, complete } = useBoardFeed(market.id);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const linking: Linking = useMemo(
+    () => ({ activeId, setActiveId }),
+    [activeId],
+  );
 
   const { ranked, qualifying, soft, partial } = useMemo(() => {
     const r = rankClusters(rows ?? [], market.id, TOP_N);
@@ -105,7 +118,6 @@ export default function ClusterBuysPage() {
     };
   }, [rows, market.id]);
 
-  const topNamed = ranked.length > 0 ? ranked[0].named : 0;
   const totals = useMemo(
     () => ({
       insiders: ranked.reduce((sum, e) => sum + e.named, 0),
@@ -117,6 +129,24 @@ export default function ClusterBuysPage() {
 
   const marketId = market.id === "US" ? "us" : "uk";
   const locale = market.id === "US" ? "en-US" : "en-GB";
+  const hasBoard = ranked.length > 0;
+  const inHero = rows === null || hasBoard;
+
+  // "Insiders named" is a sum across episodes and says so: the same director
+  // buying in two of them counts in both, which is the right answer for a
+  // board of events and the wrong one for a count of people. Combined value is
+  // omitted rather than placeheld — formatMoney renders a zero as a dash, and
+  // a dash in a figure slot means three different things.
+  const figures: StageFigure[] = hasBoard
+    ? [
+        { k: "Clusters", v: String(ranked.length) },
+        { k: "Insiders named", v: String(totals.insiders) },
+        { k: "Purchases", v: String(totals.filings) },
+        ...(totals.value > 0
+          ? [{ k: "Combined value", v: money(totals.value, market.symbol) }]
+          : []),
+      ]
+    : [];
 
   return (
     <DefaultLayout drawerRight>
@@ -133,83 +163,110 @@ export default function ClusterBuysPage() {
           marketId,
         }}
         eyebrow="Leaderboard"
+        hero={
+          inHero ? (
+            <ClusterStage
+              benchmark={BENCHMARK[market.id].label}
+              episodes={rows === null ? null : ranked}
+              header={
+                <>
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                    Leaderboard
+                  </p>
+                  {/* Light, not bold: the object is the emphasis, the title
+                      names it. */}
+                  <h1 className="mt-3 max-w-[24ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
+                    Cluster buying, where several {market.label} insiders bought
+                    at once
+                  </h1>
+                  <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
+                    Where several {market.noun} bought the same company within a
+                    fortnight of each other. One insider buying is a person’s
+                    opinion;{" "}
+                    <Link
+                      className="text-white/85 underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white/70"
+                      to="/learn/cluster-buying"
+                    >
+                      a cluster
+                    </Link>{" "}
+                    is a board agreeing with itself, which is a different and
+                    rarer thing.
+                  </p>
+                  <StageFigures reserve items={figures} />
+                </>
+              }
+              linking={linking}
+              locale={locale}
+              noun={market.noun}
+              symbol={market.symbol}
+            />
+          ) : undefined
+        }
         loading={rows === null}
-        notice={
-          <>
-            <a
-              className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
-              href="#methodology"
-            >
-              A cluster is an event, not a company. How these are grouped ↓
-            </a>
-            <TrackingNotice className="mt-2.5" />
-            {!complete && ranked.length > 0 && (
-              <p className={`mt-3 ${CAVEAT}`}>
-                We couldn’t load the whole period, so this ranking may be
-                missing older clusters.
-              </p>
-            )}
-          </>
-        }
-        skeleton={
-          <>
-            <SeoSkeleton rows={4} variant="stat-tiles" />
-            <SeoSkeleton rows={TOP_N} variant="ranked-board" />
-          </>
-        }
+        skeleton={<SeoSkeleton rows={TOP_N} variant="ranked-board" />}
         standfirst={
-          <>
-            Where several {market.noun} bought the same company within a
-            fortnight of each other. One insider buying is a person’s opinion;{" "}
-            <Link
-              className="underline decoration-foreground/25 underline-offset-4 transition-colors hover:decoration-foreground/60"
-              to="/learn/cluster-buying"
-            >
-              a cluster
-            </Link>{" "}
-            is a board agreeing with itself, which is a different and rarer
-            thing.
-          </>
+          inHero ? undefined : (
+            <>
+              Where several {market.noun} bought the same company within a
+              fortnight of each other. One insider buying is a person’s opinion;
+              a cluster is a board agreeing with itself.
+            </>
+          )
         }
         title={
           <>
             Cluster buying, where several {market.label} insiders bought at once
           </>
         }
+        titleInHero={inHero}
+        width="wide"
       >
-        {ranked.length === 0 && !complete ? (
+        {/* Under the stage: the rule, the tracking caveat, the truncation
+            caveat. Small print belongs outside the object. */}
+        <div className="mt-4 max-w-[62ch]">
+          <a
+            className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+            href="#methodology"
+          >
+            A cluster is an event, not a company. How these are grouped ↓
+          </a>
+          <TrackingNotice className="mt-2.5" />
+          {!complete && hasBoard && (
+            <p className={`mt-3 ${CAVEAT}`}>
+              We couldn’t load the whole period, so this ranking may be missing
+              older clusters.
+            </p>
+          )}
+        </div>
+
+        {/* An empty board and a board we couldn't fetch are the same shape and
+            two different statements. Only one of them is a fact about the
+            market. */}
+        {!hasBoard && !complete ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the board just now. It’s a network problem rather
             than an empty period. Try a refresh in a moment.
           </p>
-        ) : ranked.length === 0 ? (
+        ) : !hasBoard ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             No clusters in this period meet the bar.{" "}
             <a className="underline underline-offset-4" href="#methodology">
               What counts as one
             </a>{" "}
-            is set out below.
+            is set out below. The board covers a rolling twelve months, and a
+            new cluster appears as soon as a second insider files within a
+            fortnight of a first.
           </p>
         ) : (
           <>
-            <StatTiles
-              className="mt-6"
-              cols={4}
-              note={`${qualifying} clusters in the last twelve months can be shown in full; the ${ranked.length} largest are listed. Totals cover those, not the whole market.`}
-              stats={[
-                { label: "Clusters shown", value: ranked.length },
-                {
-                  label: "Most insiders in one",
-                  primary: true,
-                  value: topNamed,
-                },
-                { label: "Purchases between them", value: totals.filings },
-                {
-                  label: "Combined value",
-                  value: money(totals.value, market.symbol),
-                },
-              ]}
-            />
+            {/* The denominator, in prose rather than under a tile. "Widest",
+                not "largest": rankClusters sorts on how many people bought,
+                not on what they spent. */}
+            <p className={`mt-6 max-w-[62ch] ${R.body}`}>
+              {qualifying} clusters in the last twelve months can be shown in
+              full; the {ranked.length} widest are listed. Totals cover those,
+              not the whole market.
+            </p>
 
             <div
               aria-hidden
@@ -223,13 +280,13 @@ export default function ClusterBuysPage() {
             <ol className={`border-t ${R.rule}`}>
               {ranked.map((episode, i) => (
                 <ClusterRow
-                  key={episode.ticker || i}
+                  key={episodeId(episode)}
                   episode={episode}
+                  linking={linking}
                   locale={locale}
                   marketId={market.id}
                   position={i + 1}
                   symbol={market.symbol}
-                  topNamed={topNamed}
                 />
               ))}
             </ol>
@@ -318,23 +375,24 @@ export default function ClusterBuysPage() {
 
 function ClusterRow({
   episode,
+  linking,
   locale,
   marketId,
   position,
   symbol,
-  topNamed,
 }: {
   episode: ClusterEpisode;
+  /** Shared highlight with the stage above: hovering the row lights its
+   *  constellation, and a row dims while another episode is active. */
+  linking: Linking;
   locale: string;
   /** Decides the co-buyer floor — £10,000 UK, $25,000 US. */
   marketId: "UK" | "US";
   position: number;
   symbol: string;
-  /** The broadest cluster on the board — every meter is drawn against it, so
-   *  the bar measures the ranked quantity. */
-  topNamed: number;
 }) {
   const ticker = displayTicker(episode.ticker);
+  const id = episodeId(episode);
   // The buyers, in the order they filed. Named on the row rather than hidden
   // behind the count, because the count is only credible if the names are
   // there to check it against — that is the whole reason this page states
@@ -358,8 +416,16 @@ function ClusterRow({
     return seen;
   }, [episode.rows, marketId]);
 
+  const dimmed = linking.activeId != null && linking.activeId !== id;
+
   return (
-    <li className={`border-b ${R.rule}`}>
+    <li
+      className={`border-b transition-opacity ${R.rule}${
+        dimmed ? " opacity-45" : ""
+      }`}
+      onMouseEnter={() => linking.setActiveId(id)}
+      onMouseLeave={() => linking.setActiveId(null)}
+    >
       <Link className={ROW_LINK} to={companyPath(episode.ticker)}>
         <div className={ROW_GRID}>
           <span
@@ -401,12 +467,16 @@ function ClusterRow({
                 ·
               </span>
               <span>{spanLabel(episode.spanDays)}</span>
-              <span aria-hidden className="opacity-40">
-                ·
-              </span>
-              <span className="tabular-nums">
-                {episode.firstDate ? shortDate(episode.firstDate, locale) : "—"}
-              </span>
+              {episode.firstDate ? (
+                <>
+                  <span aria-hidden className="opacity-40">
+                    ·
+                  </span>
+                  <span className="tabular-nums">
+                    {shortDate(episode.firstDate, locale)}
+                  </span>
+                </>
+              ) : null}
               <span aria-hidden className="opacity-40">
                 ·
               </span>
@@ -436,12 +506,6 @@ function ClusterRow({
               {episode.named === 1 ? "insider" : "insiders"}
             </span>
           </span>
-
-          <MeterBar
-            className="col-span-3 mt-2.5"
-            max={topNamed}
-            value={episode.named}
-          />
         </div>
       </Link>
     </li>

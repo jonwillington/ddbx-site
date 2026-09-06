@@ -268,7 +268,12 @@ function toRatio(pct) {
  *  whose buys are all too recent to have a performance mark has no median, and
  *  rendering 0% would assert a flat return we haven't observed. */
 export function median(values) {
+  // Filter BEFORE coercing: Number(null) is 0, not NaN, so a null that reaches
+  // .map(Number) survives the isFinite gate as a real zero and votes on the
+  // median. That is the difference between "no mark" and "flat against the
+  // market", which is the one distinction this file exists to protect.
   const nums = values
+    .filter((v) => v != null && v !== "")
     .map(Number)
     .filter((n) => isFinite(n))
     .sort((a, b) => a - b);

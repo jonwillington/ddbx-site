@@ -14,23 +14,38 @@
  *  on the page, not a backdrop, and the message column beside it never sits
  *  on top of it. Colours are fixed for the dark surface rather than read
  *  through the theme, because the panel is dark in both modes.
+ *
+ *  This is now the BESPOKE renderer for one board, composed from the shared
+ *  kit (2026-09-05): `BoardStagePanel` is the frame, `stage-marks` the
+ *  material. What stayed here is what only this page does — packing money,
+ *  scattering it against alpha, choosing which discs earn a name, and the
+ *  three sentences the picture is allowed to state. The drawn output did not
+ *  change in the extraction, and it is not meant to.
  */
 import type { BoardRow, Linking } from "./board-model";
+import type { StageContext, StageMode, StagePad } from "./stage-panel";
+import type { Side } from "./stage-marks";
 import type { ReactNode } from "react";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 
 import { moneyPair, moneyDelta } from "../../../shared/leaderboard.js";
 import { formatMoney } from "../../../shared/sectors.js";
 
+import { dateLabel, signedPp, summarise } from "./board-model";
+import { BoardStagePanel } from "./stage-panel";
 import {
-  dateLabel,
-  signedPp,
-  summarise,
-  useMeasuredWidth,
-} from "./board-model";
-
-import { logoUrl } from "@/components/company-logo";
+  alphaTicks,
+  fitPacked,
+  LogoDisc,
+  moneyTicks,
+  packCircles,
+  placeLabels,
+  SignedAxis,
+  StageLabel,
+  StageMark,
+  stageTone,
+} from "./stage-marks";
 
 type Mode = "size" | "outcome";
 
@@ -41,62 +56,22 @@ interface Placed {
   r: number;
 }
 
-const PAD_L = 56;
-const PAD_R = 24;
-const PAD_T = 68;
-const PAD_B = 44;
+const MODES: ReadonlyArray<StageMode<Mode>> = [
+  { id: "size", label: "By amount" },
+  { id: "outcome", label: "By outcome" },
+];
 
-/** Greedy circle packing: each disc goes as close to the centre as it can
- *  without touching a placed one. Deterministic, and 25 discs is nothing. */
-function pack(items: Array<{ row: BoardRow; r: number }>): Placed[] {
-  const placed: Placed[] = [];
-  const sorted = [...items].sort((a, b) => b.r - a.r);
-
-  for (const it of sorted) {
-    if (placed.length === 0) {
-      placed.push({ ...it, x: 0, y: 0 });
-      continue;
-    }
-    let best: { x: number; y: number; d: number } | null = null;
-
-    for (const p of placed) {
-      const dist = p.r + it.r + 3;
-
-      for (let a = 0; a < 360; a += 6) {
-        const x = p.x + Math.cos((a * Math.PI) / 180) * dist;
-        const y = p.y + Math.sin((a * Math.PI) / 180) * dist;
-        const clear = placed.every(
-          (q) => Math.hypot(q.x - x, q.y - y) >= q.r + it.r + 2.5,
-        );
-
-        if (!clear) continue;
-        const d = Math.hypot(x, y);
-
-        if (!best || d < best.d) best = { x, y, d };
-      }
-    }
-    placed.push({ ...it, x: best?.x ?? 0, y: best?.y ?? 0 });
-  }
-
-  return placed;
-}
+/** The money axis is priced from £100k to £100m however small this board's
+ *  smallest purchase happens to be, so the ticks mean the same thing on the
+ *  rolling board and on a thin archive year. */
+const MONEY_DECADES: [number, number] = [1e5, 1e8];
 
 function sizeLayout(rows: BoardRow[], W: number, H: number): Placed[] {
-  const packed = pack(rows.map((row) => ({ row, r: Math.sqrt(row.value) })));
-  const minX = Math.min(...packed.map((p) => p.x - p.r));
-  const maxX = Math.max(...packed.map((p) => p.x + p.r));
-  const minY = Math.min(...packed.map((p) => p.y - p.r));
-  const maxY = Math.max(...packed.map((p) => p.y + p.r));
-  const s = Math.min((W - 40) / (maxX - minX), (H - 84) / (maxY - minY));
-  const cx = (minX + maxX) / 2;
-  const cy = (minY + maxY) / 2;
-
-  return packed.map((p) => ({
-    row: p.row,
-    x: W / 2 + (p.x - cx) * s,
-    y: H / 2 + 8 + (p.y - cy) * s,
-    r: p.r * s,
-  }));
+  return fitPacked(
+    packCircles(rows.map((row) => ({ row, r: Math.sqrt(row.value) }))),
+    W,
+    H,
+  );
 }
 
 interface Scales {
@@ -109,7 +84,12 @@ interface Scales {
   zeroY: number;
 }
 
-function outcomeScales(rows: BoardRow[], W: number, H: number): Scales {
+function outcomeScales(
+  rows: BoardRow[],
+  W: number,
+  H: number,
+  pad: StagePad,
+): Scales {
   const values = rows.map((r) => r.value);
   const alphas = rows.map((r) => r.alpha).filter((a): a is number => a != null);
   const vmin = Math.min(...values) * 0.82;
@@ -120,11 +100,11 @@ function outcomeScales(rows: BoardRow[], W: number, H: number): Scales {
   const amin = lo - span * 0.14;
   const amax = hi + span * 0.14;
   const x = (v: number) =>
-    PAD_L +
+    pad.l +
     ((Math.log(v) - Math.log(vmin)) / (Math.log(vmax) - Math.log(vmin))) *
-      (W - PAD_L - PAD_R);
+      (W - pad.l - pad.r);
   const y = (a: number) =>
-    PAD_T + ((amax - a) / (amax - amin)) * (H - PAD_T - PAD_B);
+    pad.t + ((amax - a) / (amax - amin)) * (H - pad.t - pad.b);
 
   return { x, y, vmin, vmax, amin, amax, zeroY: y(0) };
 }
@@ -133,6 +113,7 @@ function outcomeLayout(
   rows: BoardRow[],
   W: number,
   H: number,
+  pad: StagePad,
   sc: Scales,
 ): Placed[] {
   const rmax = Math.max(...rows.map((r) => Math.sqrt(r.value)));
@@ -184,119 +165,187 @@ function outcomeLayout(
   // No mark yet: a quiet row along the bottom edge, so a purchase disclosed
   // this week is still on the picture without asserting a result.
   unmarked.forEach((row, i) => {
-    pts.push({ row, x: W - PAD_R - 18 - i * 30, y: H - PAD_B + 16, r: 9 });
+    pts.push({ row, x: W - pad.r - 18 - i * 30, y: H - pad.b + 16, r: 9 });
   });
 
   return pts;
 }
 
-function tickValues(vmin: number, vmax: number): number[] {
-  const out: number[] = [];
+/** The marks, inside the panel's svg.
+ *
+ *  A component rather than the panel's render prop run inline, because the
+ *  packing is 25 discs against 360 candidate angles each and it must not be
+ *  redone every time a pointer moves over a row. */
+function StageBody({
+  ctx,
+  rows,
+  symbol,
+  benchmark,
+  summary,
+}: {
+  ctx: StageContext<Mode>;
+  rows: BoardRow[];
+  symbol: string;
+  benchmark: string;
+  summary: ReturnType<typeof summarise>;
+}) {
+  const { W, H, pad, mode, active } = ctx;
 
-  for (const base of [1e5, 1e6, 1e7, 1e8]) {
-    for (const m of [1, 2, 5]) {
-      const v = base * m;
+  const scales = useMemo(
+    () => outcomeScales(rows, W, H, pad),
+    [rows, W, H, pad],
+  );
+  const layout = useMemo(
+    () =>
+      mode === "size"
+        ? sizeLayout(rows, W, H)
+        : outcomeLayout(rows, W, H, pad, scales),
+    [rows, W, H, pad, mode, scales],
+  );
 
-      if (v >= vmin && v <= vmax) out.push(v);
-    }
-  }
+  const featuredIds = useMemo(
+    () =>
+      new Set(
+        [rows[0], summary.best, summary.worst]
+          .filter((r): r is BoardRow => Boolean(r))
+          .map((r) => r.id),
+      ),
+    [rows, summary],
+  );
 
-  return out;
-}
+  // Which discs get a name in the outcome view: the biggest purchase, then
+  // the largest moves either way, one label per company, as many as fit
+  // without a label landing on another label or another disc. Narrow stages
+  // stop at three so the picture stays a picture.
+  const labelled = useMemo(() => {
+    if (mode !== "outcome" || !layout.length) return new Map<string, Side>();
+    const byId = new Map(layout.map((p) => [p.row.id, p] as const));
+    const order = [
+      rows[0],
+      ...[...rows]
+        .filter((r) => r.alpha != null)
+        .sort((a, b) => Math.abs(b.alpha ?? 0) - Math.abs(a.alpha ?? 0)),
+    ].filter((r) => r && r.alpha != null && Math.abs(r.alpha) >= 0.08);
+    // Full names for the three the caption talks about; everything else is
+    // named by its ticker, which is short enough to sit between neighbours.
+    const cands = order
+      .map((r) => {
+        const p = byId.get(r.id);
 
-function alphaTicks(amin: number, amax: number): number[] {
-  const span = amax - amin;
-  const step = span > 1.2 ? 0.4 : span > 0.6 ? 0.2 : 0.1;
-  const out: number[] = [];
+        if (!p) return null;
+        const featured = featuredIds.has(r.id);
 
-  for (let a = Math.ceil(amin / step) * step; a <= amax + 1e-9; a += step) {
-    out.push(Math.round(a * 100) / 100);
-  }
+        return {
+          id: r.id,
+          key: r.ticker,
+          x: p.x,
+          y: p.y,
+          r: p.r,
+          featured,
+          text: featured ? r.company : r.ticker.replace(/\.[A-Z]+$/, ""),
+        };
+      })
+      .filter((c): c is NonNullable<typeof c> => c != null);
 
-  return out;
-}
+    return placeLabels(cands, {
+      obstacles: layout,
+      xMin: pad.l,
+      xMax: W + 6,
+      cap: W < 520 ? 3 : W < 760 ? 6 : W < 1000 ? 9 : 14,
+      // The money line under the name ("£996k → £1.1m") is usually the wider
+      // of the two, so a ticker label is never narrower than it.
+      width: (c) => Math.max(c.text.length * (c.featured ? 6.6 : 6.4), 86) + 4,
+    });
+  }, [mode, rows, layout, W, pad, featuredIds]);
 
-function Logo({ row, r }: { row: BoardRow; r: number }) {
-  const [failed, setFailed] = useState(false);
-  const inner = Math.max(4, r - 2.5);
-  const src = logoUrl(row.ticker);
-
-  // SVG <image> has no usable error event in React, so probe the URL with an
-  // HTMLImageElement; the browser cache means the <image> then lands warm.
-  useEffect(() => {
-    let live = true;
-    const probe = new Image();
-
-    probe.onerror = () => live && setFailed(true);
-    probe.src = src;
-
-    return () => {
-      live = false;
-    };
-  }, [src]);
-
-  if (failed) {
-    return (
-      <text
-        className="fill-white/80 font-semibold"
-        dy="0.35em"
-        fontSize={Math.max(8, Math.round(r * 0.6))}
-        textAnchor="middle"
-      >
-        {row.ticker.replace(/\.[A-Z]+$/, "").slice(0, 3)}
-      </text>
-    );
-  }
+  const zeroY = scales.zeroY;
 
   return (
     <>
-      <clipPath id={`bs-${row.id}`}>
-        <circle r={inner} />
-      </clipPath>
-      <circle fill="#f1ebe2" r={inner} />
-      <image
-        clipPath={`url(#bs-${row.id})`}
-        height={inner * 2}
-        href={src}
-        preserveAspectRatio="xMidYMid slice"
-        width={inner * 2}
-        x={-inner}
-        y={-inner}
-      />
-    </>
-  );
-}
+      {/* Outcome-only furniture, faded rather than mounted so the
+        discs travel over it as it arrives. */}
+      <g
+        className="transition-opacity duration-700"
+        style={{ opacity: mode === "outcome" ? 1 : 0 }}
+      >
+        <SignedAxis
+          crossLabel="amount spent →"
+          crossTicks={moneyTicks(scales.vmin, scales.vmax, {
+            decades: MONEY_DECADES,
+          }).map((v) => ({ at: scales.x(v), label: formatMoney(v, symbol) }))}
+          labelGutter={pad.l - 10}
+          negLabel={<>trailed it · {summary.behind}</>}
+          plot={{ x0: pad.l, x1: W - pad.r, y0: pad.t, y1: H - pad.b }}
+          posLabel={<>beat the market · {summary.ahead}</>}
+          scale={scales.y}
+          ticks={alphaTicks(scales.amin, scales.amax)}
+        />
+      </g>
 
-function Toggle({
-  mode,
-  onChoose,
-}: {
-  mode: Mode;
-  onChoose: (m: Mode) => void;
-}) {
-  return (
-    <div className="flex rounded-full border border-white/12 bg-white/[0.06] p-0.5 backdrop-blur-md">
-      {(
-        [
-          ["size", "By amount"],
-          ["outcome", "By outcome"],
-        ] as const
-      ).map(([m, label]) => (
-        <button
-          key={m}
-          aria-pressed={mode === m}
-          className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium tracking-[-0.005em] transition-colors ${
-            mode === m
-              ? "bg-white text-[#1a140d]"
-              : "text-white/65 hover:text-white"
-          }`}
-          type="button"
-          onClick={() => onChoose(m)}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+      {/* Stems: one per disc, from the disc to the zero line. */}
+      <g
+        className="transition-opacity duration-500"
+        style={{ opacity: mode === "outcome" ? 1 : 0 }}
+      >
+        {layout
+          .filter((p) => p.row.alpha != null)
+          .map((p) => (
+            <g
+              key={p.row.id}
+              className="board-stage-move"
+              style={{ transform: `translate(${p.x}px, ${p.y}px)` }}
+            >
+              <line
+                stroke={stageTone(p.row.dir)}
+                strokeOpacity={active && active !== p.row.id ? 0.25 : 0.7}
+                strokeWidth={2}
+                y2={zeroY - p.y}
+              />
+            </g>
+          ))}
+      </g>
+
+      {/* The discs. Position on the outer group (CSS transform, so it
+        transitions), identity and hit target inside. */}
+      <g>
+        {layout.map((p) => (
+          <StageMark
+            key={p.row.id}
+            anchor={{ x: p.x, y: p.y, r: p.r }}
+            ariaLabel={`${p.row.company}, ${formatMoney(p.row.value, symbol)}, ${signedPp(p.row.alpha)} vs ${benchmark}`}
+            hit={{ shape: "circle", r: p.r + 8 }}
+            id={p.row.id}
+            x={p.x}
+            y={p.y}
+          >
+            <LogoDisc
+              active={active === p.row.id}
+              clipId={`bs-${p.row.id}`}
+              edge={stageTone(p.row.dir)}
+              r={p.r}
+              ticker={p.row.ticker}
+            />
+            {labelled.has(p.row.id) ? (
+              <StageLabel
+                r={p.r}
+                side={labelled.get(p.row.id) ?? "right"}
+                sub={
+                  p.row.worthNow != null
+                    ? moneyPair(p.row.value, p.row.worthNow, symbol).join(" → ")
+                    : formatMoney(p.row.value, symbol)
+                }
+                text={
+                  featuredIds.has(p.row.id)
+                    ? p.row.company
+                    : p.row.ticker.replace(/\.[A-Z]+$/, "")
+                }
+                visible={mode === "outcome"}
+              />
+            ) : null}
+          </StageMark>
+        ))}
+      </g>
+    </>
   );
 }
 
@@ -319,495 +368,38 @@ export function BoardStage({
   locale: string;
   linking: Linking;
 }) {
-  const [ref, width] = useMeasuredWidth<HTMLDivElement>();
-  const reduced =
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  const [mode, setMode] = useState<Mode>(reduced ? "outcome" : "size");
-  const touched = useRef(false);
-  const [tip, setTip] = useState<BoardRow | null>(null);
-
-  // Open on the packed picture, then advance to the answer once.
-  useEffect(() => {
-    if (!rows || reduced) return;
-    const t = window.setTimeout(() => {
-      if (!touched.current) setMode("outcome");
-    }, 2600);
-
-    return () => window.clearTimeout(t);
-  }, [rows, reduced]);
-
-  const W = Math.max(300, width);
-  const H = Math.round(
-    header
-      ? Math.min(660, Math.max(440, W * 0.56))
-      : Math.min(640, Math.max(460, W * 0.82)),
+  const board = rows && rows.length ? rows : null;
+  const summary = useMemo(() => (board ? summarise(board) : null), [board]);
+  const byId = useMemo(
+    () => new Map((board ?? []).map((r) => [r.id, r] as const)),
+    [board],
   );
 
-  const scales = useMemo(
-    () => (rows && rows.length ? outcomeScales(rows, W, H) : null),
-    [rows, W, H],
-  );
-  const layout = useMemo(() => {
-    if (!rows || !rows.length || !scales) return [];
-
-    return mode === "size"
-      ? sizeLayout(rows, W, H)
-      : outcomeLayout(rows, W, H, scales);
-  }, [rows, W, H, mode, scales]);
-
-  const summary = useMemo(() => (rows ? summarise(rows) : null), [rows]);
-
-  // Which discs get a name in the outcome view: the biggest purchase, then
-  // the largest moves either way, one label per company, as many as fit
-  // without a label landing on another label or another disc. Narrow stages
-  // stop at three so the picture stays a picture.
-  const labelled = useMemo(() => {
-    const out = new Map<string, "right" | "left" | "above">();
-
-    if (mode !== "outcome" || !rows || !layout.length) return out;
-    const byId = new Map(layout.map((p) => [p.row.id, p] as const));
-    const seen = new Set<string>();
-    const order = [
-      rows[0],
-      ...[...rows]
-        .filter((r) => r.alpha != null)
-        .sort((a, b) => Math.abs(b.alpha ?? 0) - Math.abs(a.alpha ?? 0)),
-    ].filter((r) => r && r.alpha != null && Math.abs(r.alpha) >= 0.08);
-    const cap = W < 520 ? 3 : W < 760 ? 6 : W < 1000 ? 9 : 14;
-    // Full names for the three the caption talks about; everything else is
-    // named by its ticker, which is short enough to sit between neighbours.
-    const featured = new Set(
-      [rows[0], summary?.best, summary?.worst]
-        .filter((r): r is BoardRow => Boolean(r))
-        .map((r) => r.id),
-    );
-    const labelText = (r: BoardRow) =>
-      featured.has(r.id) ? r.company : r.ticker.replace(/\.[A-Z]+$/, "");
-
-    const boxes: Array<{ x: number; y: number; w: number; h: number }> = [];
-    const overlaps = (a: { x: number; y: number; w: number; h: number }) =>
-      boxes.some(
-        (b) =>
-          a.x < b.x + b.w &&
-          a.x + a.w > b.x &&
-          a.y < b.y + b.h &&
-          a.y + a.h > b.y,
-      ) ||
-      layout.some(
-        (p) =>
-          p.x + p.r > a.x &&
-          p.x - p.r < a.x + a.w &&
-          p.y + p.r > a.y &&
-          p.y - p.r < a.y + a.h,
-      );
-
-    for (const r of order) {
-      if (out.size >= cap) break;
-      if (seen.has(r.ticker)) continue;
-      const p = byId.get(r.id);
-
-      if (!p) continue;
-      const text = labelText(r);
-      // The money line under the name ("£996k → £1.1m") is usually the wider
-      // of the two, so a ticker label is never narrower than it.
-      const w =
-        Math.max(text.length * (featured.has(r.id) ? 6.6 : 6.4), 86) + 4;
-      const h = 28;
-
-      for (const side of ["right", "left", "above"] as const) {
-        const x =
-          side === "right"
-            ? p.x + p.r + 8
-            : side === "left"
-              ? p.x - p.r - 8 - w
-              : p.x - w / 2;
-        const y = side === "above" ? p.y - p.r - 34 : p.y - 12;
-        const box = { x, y, w, h };
-
-        if (x < PAD_L || x + w > W + 6) continue;
-        if (overlaps(box)) continue;
-        boxes.push(box);
-        out.set(r.id, side);
-        seen.add(r.ticker);
-        break;
-      }
-    }
-
-    return out;
-  }, [mode, rows, layout, W, summary]);
-
-  const featuredIds = useMemo(
-    () =>
-      new Set(
-        rows && summary
-          ? [rows[0], summary.best, summary.worst]
-              .filter((r): r is BoardRow => Boolean(r))
-              .map((r) => r.id)
-          : [],
-      ),
-    [rows, summary],
-  );
-
-  const active = linking.activeId;
-  const zeroY = scales?.zeroY ?? 0;
-
-  const choose = (m: Mode) => {
-    touched.current = true;
-    setMode(m);
-  };
-
-  const tipPlaced = tip ? layout.find((p) => p.row.id === tip.id) : null;
+  // Only asked for while the board is drawn: the panel renders no svg, no
+  // caption and no tooltip until it has one.
+  const labels =
+    board && summary
+      ? {
+          size: `${board.length} purchases drawn to scale, ${formatMoney(summary.total, symbol)} in total`,
+          outcome: `Each purchase by amount spent and performance against ${benchmark} since disclosure`,
+        }
+      : null;
 
   return (
-    <div
-      ref={ref}
-      className={`board-stage relative overflow-hidden border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)] ${header ? "rounded-[28px]" : "rounded-[24px]"}`}
-    >
-      {header ? (
-        <div className="grid gap-x-12 gap-y-6 px-6 pt-7 sm:px-8 sm:pt-9 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
-          <div className="min-w-0">{header}</div>
-          <div className="flex lg:justify-end">
-            <Toggle mode={mode} onChoose={choose} />
-          </div>
-        </div>
-      ) : (
-        <div className="absolute left-4 top-4 z-10">
-          <Toggle mode={mode} onChoose={choose} />
-        </div>
-      )}
-
-      {rows === null || !scales || !summary ? (
-        <div className="animate-pulse" style={{ height: H }} />
-      ) : (
-        <div className="relative">
-          <svg
-            aria-label={
-              mode === "size"
-                ? `${rows.length} purchases drawn to scale, ${formatMoney(summary.total, symbol)} in total`
-                : `Each purchase by amount spent and performance against ${benchmark} since disclosure`
-            }
-            className="block"
-            height={H}
-            role="img"
-            width={W}
-          >
-            {/* Outcome-only furniture, faded rather than mounted so the
-              discs travel over it as it arrives. */}
-            <g
-              className="transition-opacity duration-700"
-              style={{ opacity: mode === "outcome" ? 1 : 0 }}
-            >
-              <rect
-                fill="var(--stage-pos)"
-                fillOpacity={0.07}
-                height={Math.max(0, zeroY - PAD_T)}
-                width={W - PAD_L - PAD_R}
-                x={PAD_L}
-                y={PAD_T}
-              />
-              <rect
-                fill="var(--stage-neg)"
-                fillOpacity={0.08}
-                height={Math.max(0, H - PAD_B - zeroY)}
-                width={W - PAD_L - PAD_R}
-                x={PAD_L}
-                y={zeroY}
-              />
-              {alphaTicks(scales.amin, scales.amax).map((a) => (
-                <g key={a}>
-                  <line
-                    stroke="rgba(255,255,255,0.08)"
-                    x1={PAD_L}
-                    x2={W - PAD_R}
-                    y1={scales.y(a)}
-                    y2={scales.y(a)}
-                  />
-                  <text
-                    className="font-mono"
-                    fill="rgba(255,255,255,0.5)"
-                    fontSize={10.5}
-                    textAnchor="end"
-                    x={PAD_L - 10}
-                    y={scales.y(a) + 3.5}
-                  >
-                    {a === 0
-                      ? "level"
-                      : `${a > 0 ? "+" : ""}${Math.round(a * 100)}pp`}
-                  </text>
-                </g>
-              ))}
-              {tickValues(scales.vmin, scales.vmax).map((v) => (
-                <g key={v}>
-                  <line
-                    stroke="rgba(255,255,255,0.08)"
-                    x1={scales.x(v)}
-                    x2={scales.x(v)}
-                    y1={PAD_T}
-                    y2={H - PAD_B}
-                  />
-                  <text
-                    className="font-mono"
-                    fill="rgba(255,255,255,0.5)"
-                    fontSize={10.5}
-                    textAnchor="middle"
-                    x={scales.x(v)}
-                    y={H - PAD_B + 18}
-                  >
-                    {formatMoney(v, symbol)}
-                  </text>
-                </g>
-              ))}
-              <line
-                stroke="rgba(255,255,255,0.55)"
-                strokeWidth={1.5}
-                x1={PAD_L}
-                x2={W - PAD_R}
-                y1={zeroY}
-                y2={zeroY}
-              />
-              <text
-                className="font-mono uppercase"
-                fill="var(--stage-pos)"
-                fontSize={10}
-                letterSpacing="0.12em"
-                x={PAD_L}
-                y={PAD_T - 10}
-              >
-                beat the market · {summary.ahead}
-              </text>
-              <text
-                className="font-mono uppercase"
-                fill="var(--stage-neg)"
-                fontSize={10}
-                letterSpacing="0.12em"
-                x={PAD_L}
-                y={H - PAD_B - 8}
-              >
-                trailed it · {summary.behind}
-              </text>
-              <text
-                className="font-mono uppercase"
-                fill="rgba(255,255,255,0.4)"
-                fontSize={10}
-                letterSpacing="0.12em"
-                textAnchor="end"
-                x={W - PAD_R}
-                y={PAD_T - 10}
-              >
-                amount spent →
-              </text>
-            </g>
-
-            {/* Stems: one per disc, from the disc to the zero line. */}
-            <g
-              className="transition-opacity duration-500"
-              style={{ opacity: mode === "outcome" ? 1 : 0 }}
-            >
-              {layout
-                .filter((p) => p.row.alpha != null)
-                .map((p) => (
-                  <g
-                    key={p.row.id}
-                    className="board-stage-move"
-                    style={{ transform: `translate(${p.x}px, ${p.y}px)` }}
-                  >
-                    <line
-                      stroke={
-                        p.row.dir === "pos"
-                          ? "var(--stage-pos)"
-                          : p.row.dir === "neg"
-                            ? "var(--stage-neg)"
-                            : "rgba(255,255,255,0.35)"
-                      }
-                      strokeOpacity={active && active !== p.row.id ? 0.25 : 0.7}
-                      strokeWidth={2}
-                      y2={zeroY - p.y}
-                    />
-                  </g>
-                ))}
-            </g>
-
-            {/* The discs. Position on the outer group (CSS transform, so it
-              transitions), identity and hit target inside. */}
-            <g>
-              {layout.map((p) => {
-                const dim = active != null && active !== p.row.id;
-                const edge =
-                  p.row.dir === "pos"
-                    ? "var(--stage-pos)"
-                    : p.row.dir === "neg"
-                      ? "var(--stage-neg)"
-                      : "rgba(255,255,255,0.35)";
-                const side = labelled.get(p.row.id) ?? "right";
-                const anchor =
-                  side === "right"
-                    ? "start"
-                    : side === "left"
-                      ? "end"
-                      : "middle";
-                const lx =
-                  side === "right" ? p.r + 8 : side === "left" ? -(p.r + 8) : 0;
-                const ly = side === "above" ? -(p.r + 22) : 0;
-
-                return (
-                  <g
-                    key={p.row.id}
-                    className="board-stage-move"
-                    style={{
-                      transform: `translate(${p.x}px, ${p.y}px)`,
-                      opacity: dim ? 0.3 : 1,
-                      transition:
-                        "transform 900ms cubic-bezier(.2,.8,.2,1), opacity 180ms",
-                    }}
-                  >
-                    <circle
-                      className="board-stage-r"
-                      fill="var(--stage-bg)"
-                      r={p.r + 2.5}
-                    />
-                    <circle
-                      className="board-stage-r"
-                      fill="none"
-                      r={p.r}
-                      stroke={edge}
-                      strokeWidth={active === p.row.id ? 3 : 2}
-                    />
-                    <Logo r={p.r} row={p.row} />
-                    {labelled.has(p.row.id) ? (
-                      <g
-                        className="transition-opacity duration-500"
-                        style={{ opacity: mode === "outcome" ? 1 : 0 }}
-                      >
-                        <text
-                          fill="rgba(255,255,255,0.92)"
-                          fontSize={12}
-                          fontWeight={600}
-                          paintOrder="stroke"
-                          stroke="var(--stage-bg)"
-                          strokeLinejoin="round"
-                          strokeWidth={4}
-                          textAnchor={anchor}
-                          x={lx}
-                          y={ly - 1}
-                        >
-                          {featuredIds.has(p.row.id)
-                            ? p.row.company
-                            : p.row.ticker.replace(/\.[A-Z]+$/, "")}
-                        </text>
-                        <text
-                          fill="rgba(255,255,255,0.6)"
-                          fontSize={11}
-                          paintOrder="stroke"
-                          stroke="var(--stage-bg)"
-                          strokeLinejoin="round"
-                          strokeWidth={4}
-                          textAnchor={anchor}
-                          x={lx}
-                          y={ly + 13}
-                        >
-                          {p.row.worthNow != null
-                            ? moneyPair(
-                                p.row.value,
-                                p.row.worthNow,
-                                symbol,
-                              ).join(" → ")
-                            : formatMoney(p.row.value, symbol)}
-                        </text>
-                      </g>
-                    ) : null}
-                    <circle
-                      aria-label={`${p.row.company}, ${formatMoney(p.row.value, symbol)}, ${signedPp(p.row.alpha)} vs ${benchmark}`}
-                      className="cursor-pointer"
-                      fill="transparent"
-                      r={p.r + 8}
-                      role="img"
-                      onBlur={() => {
-                        linking.setActiveId(null);
-                        setTip(null);
-                      }}
-                      onFocus={() => {
-                        linking.setActiveId(p.row.id);
-                        setTip(p.row);
-                      }}
-                      onMouseEnter={() => {
-                        linking.setActiveId(p.row.id);
-                        setTip(p.row);
-                      }}
-                      onMouseLeave={() => {
-                        linking.setActiveId(null);
-                        setTip(null);
-                      }}
-                    />
-                  </g>
-                );
-              })}
-            </g>
-          </svg>
-          {/* Tooltip, HTML over the SVG, never under the pointer. */}
-          {tip && tipPlaced ? (
-            <div
-              className="pointer-events-none absolute z-20 min-w-[190px] rounded-xl border border-white/12 bg-[#241b12]/95 px-3 py-2 text-[12px] leading-[1.45] text-white shadow-xl backdrop-blur-md"
-              style={{
-                left: Math.min(
-                  W - 210,
-                  Math.max(8, tipPlaced.x + tipPlaced.r + 12),
-                ),
-                top: Math.max(8, tipPlaced.y - 30),
-              }}
-            >
-              <div className="font-semibold">
-                {tip.company}{" "}
-                <span className="font-mono text-[10px] font-normal text-white/50">
-                  {tip.ticker.replace(/\.[A-Z]+$/, "")}
-                </span>
-              </div>
-              <div className="text-[11px] text-white/55">
-                {tip.person ?? "Undisclosed"}
-                {tip.role ? ` · ${tip.role}` : ""} ·{" "}
-                {dateLabel(tip.tradeDate, locale)}
-              </div>
-              <div className="mt-1 tabular-nums">
-                {tip.worthNow != null ? (
-                  <>
-                    {moneyPair(tip.value, tip.worthNow, symbol).join(" → ")}{" "}
-                    <span
-                      style={{
-                        color:
-                          tip.dir === "pos"
-                            ? "var(--stage-pos)"
-                            : tip.dir === "neg"
-                              ? "var(--stage-neg)"
-                              : "rgba(255,255,255,0.6)",
-                      }}
-                    >
-                      {moneyDelta(tip.value, tip.worthNow, symbol)} ·{" "}
-                      {signedPp(tip.alpha)} vs index
-                    </span>
-                  </>
-                ) : (
-                  <>{formatMoney(tip.value, symbol)} · no mark yet</>
-                )}
-              </div>
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      {/* Caption: the finding, in words, inside the object. */}
-      {summary && rows ? (
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-white/10 px-5 py-3.5 text-[12.5px] leading-[1.5] text-white/65">
-          {mode === "size" ? (
+    <BoardStagePanel<Mode>
+      caption={(ctx) =>
+        board && summary ? (
+          ctx.mode === "size" ? (
             <p>
               <span className="font-semibold text-white">
-                {formatMoney(summary.total, symbol)} across {rows.length}{" "}
+                {formatMoney(summary.total, symbol)} across {board.length}{" "}
                 purchases
               </span>
               , drawn to scale.{" "}
               <button
                 className="text-white/80 underline decoration-white/30 underline-offset-4 hover:text-white"
                 type="button"
-                onClick={() => choose("outcome")}
+                onClick={() => ctx.choose("outcome")}
               >
                 See who was right →
               </button>
@@ -815,7 +407,7 @@ export function BoardStage({
           ) : (
             <p>
               <span className="font-semibold text-white">
-                {summary.ahead} of {rows.length} are ahead of {benchmark}
+                {summary.ahead} of {board.length} are ahead of {benchmark}
               </span>{" "}
               since they were disclosed.
               {summary.best && summary.worst ? (
@@ -827,9 +419,69 @@ export function BoardStage({
                 </>
               ) : null}
             </p>
-          )}
-        </div>
-      ) : null}
-    </div>
+          )
+        ) : null
+      }
+      header={header}
+      linking={linking}
+      loading={board === null || summary === null}
+      modes={MODES}
+      renderTip={(id) => {
+        const tip = byId.get(id);
+
+        if (!tip) return null;
+
+        return (
+          <>
+            <div className="font-semibold">
+              {tip.company}{" "}
+              <span className="font-mono text-[10px] font-normal text-white/50">
+                {tip.ticker.replace(/\.[A-Z]+$/, "")}
+              </span>
+            </div>
+            <div className="text-[11px] text-white/55">
+              {tip.person ?? "Undisclosed"}
+              {tip.role ? ` · ${tip.role}` : ""} ·{" "}
+              {dateLabel(tip.tradeDate, locale)}
+            </div>
+            <div className="mt-1 tabular-nums">
+              {tip.worthNow != null ? (
+                <>
+                  {moneyPair(tip.value, tip.worthNow, symbol).join(" → ")}{" "}
+                  <span
+                    style={{
+                      color:
+                        tip.dir === "pos"
+                          ? "var(--stage-pos)"
+                          : tip.dir === "neg"
+                            ? "var(--stage-neg)"
+                            : "rgba(255,255,255,0.6)",
+                    }}
+                  >
+                    {moneyDelta(tip.value, tip.worthNow, symbol)} ·{" "}
+                    {signedPp(tip.alpha)} vs index
+                  </span>
+                </>
+              ) : (
+                <>{formatMoney(tip.value, symbol)} · no mark yet</>
+              )}
+            </div>
+          </>
+        );
+      }}
+      svgLabel={(mode) => labels?.[mode] ?? ""}
+    >
+      {(ctx) =>
+        board && summary ? (
+          <StageBody
+            benchmark={benchmark}
+            ctx={ctx}
+            rows={board}
+            summary={summary}
+            symbol={symbol}
+          />
+        ) : null
+      }
+    </BoardStagePanel>
   );
 }

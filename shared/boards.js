@@ -70,6 +70,17 @@ function issuerKey(d, market) {
  *  a performance mark — comfortably more than the 25 a board needs. */
 export const MIN_BOARD_VALUE = 50_000;
 
+/** The eligible-and-marked predicate the performance board ranks over.
+ *
+ *  Exported so a page can draw the field the board was picked from without
+ *  restating the rule. The floor is deliberately NOT part of it: a stage that
+ *  shows the purchases below £50,000 as the population the board excludes has
+ *  to be able to ask which rows have a mark separately from whether they clear
+ *  the line. */
+export function hasBoardMark(d, market) {
+  return qualifies(d, market) && buyAlpha(d) != null;
+}
+
 /** Rank eligible purchases by alpha, best first.
  *
  *  Alpha, not raw return, and the distinction is the whole page: a board ranked
@@ -85,10 +96,7 @@ export const MIN_BOARD_VALUE = 50_000;
  *  can state its own denominator. */
 export function rankByAlpha(dealings, market, limit = TOP_N) {
   const eligible = (dealings ?? []).filter(
-    (d) =>
-      qualifies(d, market) &&
-      buyValue(d) >= MIN_BOARD_VALUE &&
-      buyAlpha(d) != null,
+    (d) => hasBoardMark(d, market) && buyValue(d) >= MIN_BOARD_VALUE,
   );
 
   const ordered = [...eligible].sort((a, b) => buyAlpha(b) - buyAlpha(a));
@@ -160,7 +168,7 @@ export function companyRollup(dealings, market) {
         company: d.company ?? d.ticker ?? key,
         filings: 0,
         value: 0,
-        insiders: new Set(),
+        insiders: new Map(),
         alphas: [],
         firstDate: null,
         lastDate: null,
@@ -174,7 +182,7 @@ export function companyRollup(dealings, market) {
 
     const person = d?.director?.name ?? d?.reporter?.name ?? null;
 
-    if (person) row.insiders.add(person);
+    if (person) row.insiders.set(person, (row.insiders.get(person) ?? 0) + 1);
 
     const alpha = buyAlpha(d);
 
@@ -192,12 +200,24 @@ export function companyRollup(dealings, market) {
     if (count > row.peakCluster) row.peakCluster = count;
   }
 
-  return [...byTicker.values()].map((row) => ({
-    ...row,
-    insiders: row.insiders.size,
-    medianAlpha: median(row.alphas),
-    alphaCount: row.alphas.length,
-  }));
+  return [...byTicker.values()].map((row) => {
+    // COUNTS ONLY. How many purchases each insider made, largest run first,
+    // and no name ever leaves this module — the shape of the buying is what
+    // the boards need, and who did it is the profile-of-a-person surface the
+    // plan defers until the privacy handling is thought through.
+    const insiderFilings = [...row.insiders.values()].sort((a, b) => b - a);
+
+    return {
+      ...row,
+      insiders: row.insiders.size,
+      insiderFilings,
+      /** Purchases whose filer we could not name, so the runs above add up. */
+      unattributed:
+        row.filings - insiderFilings.reduce((sum, n) => sum + n, 0),
+      medianAlpha: median(row.alphas),
+      alphaCount: row.alphas.length,
+    };
+  });
 }
 
 /** Most-active issuers: filings first, then distinct insiders, then value.
@@ -442,6 +462,7 @@ export function rankClusters(dealings, market, limit = TOP_N) {
 export const CLUSTER_METHODOLOGY = [
   "A cluster is several different insiders buying the same company at about the same time. It is an event, not a company: a company that had a burst of buying in March and another in July has two of them, and the board lists the stronger. A whole season of buying at one issuer is not a cluster, and adding it up as though it were is the mistake this page is built to avoid.",
   "The number of insiders shown for each cluster is the number named in the purchases listed beneath it — a figure a reader can count rather than take on trust. Each episode is anchored on the filing with the most co-buyers and extends fourteen days either side of it, so an episode can span up to four weeks; the row states the days it actually covers.",
+  "A co-buyer counts toward a cluster’s insider number only if their purchase was at least £10,000, or on the US board $25,000 held directly and not under a 10b5-1 plan. That is the same floor the filing pages and the app apply, so this page and the cluster chip on a filing never disagree.",
   "Only strong clusters are listed — two or more insiders within fourteen days of each other, the filer included. A softer thirty-day tier exists and is used to mark individual filings, but two people buying a month apart is common enough that ranking it would be ranking coincidence.",
   "Where a cluster's other purchases fall outside the period this page covers, it is left off rather than listed with fewer buyers than it claims. The count of those is shown below the board.",
   "Investment trusts, VCTs and other closed-end vehicles never appear. Several of their directors buying near net asset value in a fortnight is routine board housekeeping rather than a signal, and the pipeline suppresses the cluster on them deliberately.",

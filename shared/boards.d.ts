@@ -28,6 +28,14 @@ export declare function countsTowardCluster(
   market: BoardMarket,
 ): boolean;
 
+/** Eligible, filed by an insider, and carrying a performance mark — the
+ *  population the performance board is ranked out of, before its £50,000
+ *  floor. */
+export declare function hasBoardMark(
+  d: Buy | null | undefined,
+  market: BoardMarket,
+): boolean;
+
 export declare function rankByAlpha(
   dealings: Buy[] | null | undefined,
   market: BoardMarket,
@@ -41,6 +49,11 @@ export interface CompanyActivity {
   value: number;
   /** Distinct people, not filings — the two answer different questions. */
   insiders: number;
+  /** How many purchases each of them made, largest run first. Counts only:
+   *  the module never returns a name. */
+  insiderFilings: number[];
+  /** Purchases whose filer could not be named, so the runs add up. */
+  unattributed: number;
   medianAlpha: number | null;
   alphaCount: number;
   firstDate: string | null;
