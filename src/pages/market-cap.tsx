@@ -16,6 +16,7 @@
  */
 import type { Band, IndexedCompany } from "../../shared/cap-bands";
 import type { RelatedCard } from "@/components/seo/related-cards";
+import type { Linking } from "@/components/boards/board-model";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -45,6 +46,10 @@ import { MeterBar } from "@/components/seo/meter-bar";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { companiesCta } from "@/components/seo/cta-copy";
 import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
+import {
+  MarketCapStage,
+  placedCount,
+} from "@/components/boards/stages/market-cap-stage";
 import { TickerPill } from "@/components/ticker-pill";
 import { API_BASE } from "@/lib/api";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
@@ -72,6 +77,10 @@ const CROSS_LINKS: RelatedCard[] = [
 /** The company index, which is the only call this family makes. */
 function useCompanyIndex(market: "UK" | "US") {
   const [rows, setRows] = useState<IndexedCompany[] | null>(null);
+  // Empty and failed are different states, and the index arrives at `[]` for
+  // both. A page that draws a picture of the market has to be able to say
+  // "we couldn't load it" rather than draw an empty one.
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -83,10 +92,14 @@ function useCompanyIndex(market: "UK" | "US") {
         r.ok ? r.json() : Promise.reject(new Error(String(r.status))),
       )
       .then((b: { companies: IndexedCompany[] }) => {
-        if (live) setRows(b.companies ?? []);
+        if (!live) return;
+        setRows(b.companies ?? []);
+        setFailed(false);
       })
       .catch(() => {
-        if (live) setRows([]);
+        if (!live) return;
+        setRows([]);
+        setFailed(true);
       });
 
     return () => {
@@ -94,7 +107,7 @@ function useCompanyIndex(market: "UK" | "US") {
     };
   }, [market]);
 
-  return rows;
+  return { rows, failed };
 }
 
 // ---------------------------------------------------------------------------
@@ -103,8 +116,17 @@ function useCompanyIndex(market: "UK" | "US") {
 
 export function MarketCapIndexPage() {
   const market = useSectorMarket();
-  const companies = useCompanyIndex(market.id);
+  const { rows: companies, failed } = useCompanyIndex(market.id);
   const marketId = market.id === "US" ? "us" : "uk";
+  const locale = market.id === "US" ? "en-US" : "en-GB";
+
+  // The stage and the band cards highlight the same band: hovering a header
+  // on the ladder tints the card that band links to.
+  const [activeBand, setActiveBand] = useState<string | null>(null);
+  const linking: Linking = useMemo(
+    () => ({ activeId: activeBand, setActiveId: setActiveBand }),
+    [activeBand],
+  );
 
   const rollup = useMemo(
     () => bandRollup(companies ?? [], market.id),
@@ -113,6 +135,13 @@ export function MarketCapIndexPage() {
   const shown = rollup.bands.filter(bandMeetsBar);
   const exclusions = exclusionSentence(rollup, market.id);
   const cta = companiesCta(marketId);
+
+  const loading = companies === null;
+  const placed = useMemo(() => placedCount(rollup), [rollup]);
+  // No companies to place is not the same as no index: the ladder stands only
+  // when there is something on it, and the shell's own header carries the page
+  // in both of the other two states.
+  const staged = loading || placed > 0;
 
   return (
     <DefaultLayout drawerRight>
@@ -129,34 +158,66 @@ export function MarketCapIndexPage() {
           marketId,
         }}
         eyebrow="By size"
-        loading={companies === null}
-        notice={
-          <>
-            <a
-              className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
-              href="#methodology"
-            >
-              Where the band lines fall, and what sits outside them ↓
-            </a>
-            <TrackingNotice className="mt-2.5" />
-          </>
+        hero={
+          staged ? (
+            <MarketCapStage
+              linking={linking}
+              loading={loading}
+              locale={locale}
+              market={market}
+              rollup={rollup}
+            />
+          ) : undefined
         }
-        skeleton={<SeoSkeleton rows={3} variant="stat-tiles" />}
+        loading={loading}
+        skeleton={<SeoSkeleton rows={3} variant="sheet-stack" />}
         standfirst={
-          <>
-            The same disclosed buying, split by how big the company is. A chief
-            executive putting {market.symbol}
-            100,000 into a {market.symbol}20bn company and into a{" "}
-            {market.symbol}50m one are not the same act, and the size of the
-            business is most of the difference.
-          </>
+          staged ? undefined : (
+            <>
+              The same disclosed buying, split by how big the company is. A
+              chief executive putting {market.symbol}
+              100,000 into a {market.symbol}20bn company and into a{" "}
+              {market.symbol}50m one are not the same act, and the size of the
+              business is most of the difference.
+            </>
+          )
         }
         title={<>{market.label} insider buying by company size</>}
+        titleInHero={staged}
+        width="wide"
       >
-        {shown.length === 0 ? (
+        {/* The rule and the tracking caveat sit under the object rather than
+            inside it: small print belongs outside the picture it qualifies. */}
+        <div className="mt-4 max-w-[62ch]">
+          <a
+            className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+            href="#methodology"
+          >
+            Where the band lines fall, and what sits outside them ↓
+          </a>
+          <TrackingNotice className="mt-2.5" />
+        </div>
+
+        {failed ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the company index just now. It’s a network problem
             rather than an empty market. Try a refresh in a moment.
+          </p>
+        ) : placed === 0 ? (
+          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+            No company in this market has a market value on file yet, so there
+            is nothing to place in a band. Market values are refreshed daily;
+            this page will fill in as soon as they land. Meanwhile,{" "}
+            <Link className="underline underline-offset-4" to="/companies">
+              browse every company
+            </Link>
+            .
+          </p>
+        ) : shown.length === 0 ? (
+          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+            No band has the {MIN_COMPANIES} companies we publish a page from
+            yet. The ladder above holds every company we can place, and the band
+            pages open as more of them disclose.
           </p>
         ) : (
           <>
@@ -164,8 +225,14 @@ export function MarketCapIndexPage() {
               {shown.map((row) => (
                 <Link
                   key={row.band.slug}
-                  className={`block rounded-2xl border p-5 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] ${R.rule}`}
+                  className={`block rounded-2xl border p-5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-brown/40 ${R.rule} ${
+                    activeBand === row.band.slug
+                      ? "bg-black/[0.035] dark:bg-white/[0.05]"
+                      : "hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+                  }`}
                   to={bandPath(row.band.slug)}
+                  onMouseEnter={() => setActiveBand(row.band.slug)}
+                  onMouseLeave={() => setActiveBand(null)}
                 >
                   <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                     <span className="text-[18px] font-semibold leading-[1.25] tracking-[-0.014em] text-foreground">
@@ -186,7 +253,9 @@ export function MarketCapIndexPage() {
               ))}
             </div>
 
-            {exclusions && <p className={`mt-5 ${CAVEAT}`}>{exclusions}</p>}
+            {exclusions && (
+              <p className={`mt-5 max-w-[70ch] ${CAVEAT}`}>{exclusions}</p>
+            )}
           </>
         )}
 
@@ -195,6 +264,8 @@ export function MarketCapIndexPage() {
         <nav aria-label="More from ddbx" className="mt-9">
           <RelatedCards cols={2} items={CROSS_LINKS} />
         </nav>
+
+        <LogoDevAttribution className="mt-10" />
       </SeoPageShell>
     </DefaultLayout>
   );
@@ -207,7 +278,7 @@ export function MarketCapIndexPage() {
 export default function MarketCapBandPage() {
   const { band: slug } = useParams<{ band: string }>();
   const market = useSectorMarket();
-  const companies = useCompanyIndex(market.id);
+  const { rows: companies } = useCompanyIndex(market.id);
   const marketId = market.id === "US" ? "us" : "uk";
   const band = bandBySlug(slug ?? "");
 
