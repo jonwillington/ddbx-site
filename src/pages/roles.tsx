@@ -20,8 +20,9 @@
 import type { Dealing, UsDealing } from "@/types/ddbx";
 import type { RoleEntry } from "../../shared/roles";
 import type { RelatedCard } from "@/components/seo/related-cards";
+import type { Linking } from "@/components/boards/board-model";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { summarise } from "../../shared/boards.js";
@@ -51,6 +52,13 @@ import { roleCta } from "@/components/seo/cta-copy";
 import { LogoDevAttribution } from "@/components/company-logo";
 import { FilingRow } from "@/components/boards/filing-row";
 import { useBoardFeed } from "@/components/boards/board-feed";
+import { BENCHMARK } from "@/components/boards/board-prices";
+import { StageFigures } from "@/components/boards/stage-figures";
+import {
+  roleFigures,
+  toRoleColumns,
+  RolesStage,
+} from "@/components/boards/stages/roles-stage";
 
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
@@ -80,25 +88,57 @@ export function RolesIndexPage() {
   const market = useSectorMarket();
   const { rows, complete } = useBoardFeed(market.id);
   const marketId = market.id === "US" ? "us" : "uk";
+  const bench = BENCHMARK[market.id];
 
-  const buckets = useMemo(() => {
-    const feed = rows ?? [];
+  // One placement pass for the whole page: the stage, the cards, the figures
+  // and the gates all read the same object, so the picture and the list under
+  // it cannot describe different corpora.
+  const model = useMemo(() => {
+    const built = toRoleColumns(rows, market.id);
 
-    return rolesForMarket(market.id)
-      .map((role: RoleEntry) => {
-        const filings = filingsInRole(feed, market.id, role.slug);
+    // The stage places each purchase into every group it matches in one pass;
+    // the per-role filter walks the feed once per group. Two routes, one set —
+    // and if they ever come apart, the hero is drawing something the cards
+    // aren't.
+    if (import.meta.env.DEV && rows) {
+      for (const c of built.columns) {
+        const n = filingsInRole(rows, market.id, c.slug).length;
 
-        return { role, filings, summary: summarise(filings) };
-      })
-      .filter((b) => b.filings.length >= MIN_FILINGS);
+        if (n !== c.n) {
+          throw new Error(
+            `Role bucket ${c.slug} drew ${c.n} purchases, filingsInRole found ${n}.`,
+          );
+        }
+      }
+    }
+
+    return built;
   }, [rows, market.id]);
+
+  const buckets = model.published;
 
   const coverage = useMemo(
     () => roleCoverage(rows ?? [], market.id),
     [rows, market.id],
   );
 
+  // Stage and cards highlight the same group, keyed on its slug.
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const linking: Linking = useMemo(
+    () => ({ activeId, setActiveId }),
+    [activeId],
+  );
+
   const cta = roleCta();
+  const drawn = rows === null || buckets.length > 0;
+  const standfirst = (
+    <>
+      The same twelve months of {market.label} buying, split by the job the
+      buyer filed under. A chief executive and a newly appointed non-executive
+      are both insiders, and they are not both saying the same thing when they
+      buy.
+    </>
+  );
 
   return (
     <DefaultLayout drawerRight>
@@ -115,29 +155,68 @@ export function RolesIndexPage() {
           marketId,
         }}
         eyebrow="By role"
+        hero={
+          drawn ? (
+            <RolesStage
+              benchmark={bench.label}
+              header={
+                <>
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                    By role
+                  </p>
+                  {/* Light, not bold: the columns are the emphasis and the
+                      title names them. */}
+                  <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
+                    {market.label} insider buying by role
+                  </h1>
+                  <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
+                    {standfirst}
+                  </p>
+                  <StageFigures
+                    reserve
+                    items={rows === null ? [] : roleFigures(model)}
+                  />
+                </>
+              }
+              linking={linking}
+              loading={rows === null}
+              model={model}
+              symbol={market.symbol}
+            />
+          ) : undefined
+        }
         loading={rows === null}
-        notice={
-          <>
-            <a
-              className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
-              href="#methodology"
-            >
-              Roles are read from the filed job title. How that’s matched ↓
-            </a>
-            <TrackingNotice className="mt-2.5" />
-          </>
+        skeleton={
+          <SeoSkeleton
+            rows={rolesForMarket(market.id).length}
+            variant="sheet-stack"
+          />
         }
-        skeleton={<SeoSkeleton rows={4} variant="stat-tiles" />}
-        standfirst={
-          <>
-            The same twelve months of {market.label} buying, split by the job
-            the buyer filed under. A chief executive and a newly appointed
-            non-executive are both insiders, and they are not both saying the
-            same thing when they buy.
-          </>
-        }
+        standfirst={drawn ? undefined : standfirst}
         title={<>{market.label} insider buying by role</>}
+        titleInHero={drawn}
+        width="wide"
       >
+        {/* Under the stage: the rule, the tracking caveat, the truncation
+            caveat. Small print belongs outside the object. */}
+        <div className="mt-4 max-w-[62ch]">
+          <a
+            className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+            href="#methodology"
+          >
+            Roles are read from the filed job title. How that’s matched ↓
+          </a>
+          <TrackingNotice className="mt-2.5" />
+          {!complete && buckets.length > 0 && (
+            // The counts stand as floors when the window is short. The
+            // pre-render says so; the hydrated page did not until now.
+            <p className={`mt-3 ${CAVEAT}`}>
+              We couldn’t load the whole period, so these counts may be missing
+              older purchases.
+            </p>
+          )}
+        </div>
+
         {buckets.length === 0 && !complete ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t load the filings just now. It’s a network problem rather
@@ -146,6 +225,8 @@ export function RolesIndexPage() {
         ) : buckets.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             No role reached {MIN_FILINGS} qualifying purchases in this period.
+            The window is the last twelve months and refills as filings arrive,
+            so a group reappears here as soon as it crosses that bar.
           </p>
         ) : (
           <>
@@ -153,8 +234,14 @@ export function RolesIndexPage() {
               {buckets.map(({ role, filings, summary }) => (
                 <Link
                   key={role.slug}
-                  className={`block rounded-2xl border p-5 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] ${R.rule}`}
+                  className={`block rounded-2xl border p-5 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] ${R.rule} ${
+                    activeId === role.slug
+                      ? "bg-black/[0.03] dark:bg-white/[0.05]"
+                      : ""
+                  }`}
                   to={rolePath(role.slug)}
+                  onMouseEnter={() => setActiveId(role.slug)}
+                  onMouseLeave={() => setActiveId(null)}
                 >
                   <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                     <span className="text-[18px] font-semibold leading-[1.25] tracking-[-0.014em] text-foreground">
