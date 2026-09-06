@@ -399,6 +399,13 @@ function ActivityRow({
                 </>
               )}
             </span>
+
+            {/* One pip per purchase, grouped by insider — the same run the
+                stage draws, at the row's scale. It belongs inside the content
+                column, under the line that describes it: spanning the whole
+                grid started the run under the rank numeral instead, which is
+                a tally measured from a column it has nothing to do with. */}
+            <PipRun className="mt-2 block text-foreground/55" row={row} />
           </span>
 
           <span className="text-right">
@@ -410,10 +417,6 @@ function ActivityRow({
               {row.filings === 1 ? "purchase" : "purchases"}
             </span>
           </span>
-
-          {/* One pip per purchase, grouped by insider — the same run the
-              stage draws, at the row's scale. */}
-          <PipRun className="col-span-3 mt-2.5 text-foreground/55" row={row} />
         </div>
       </Link>
     </li>
