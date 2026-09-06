@@ -12,6 +12,12 @@
  *  person (cluster). A pip is a tally stroke, which is exactly what "sixteen
  *  purchases from one person" is, and it keeps the vocabulary unambiguous.
  *
+ *  A row is a leaderboard row the full width of the plot: rank, logo and name
+ *  in a fixed gutter, the tally in the field beside it, the row's own total at
+ *  the end of its run, and how many people made it right-aligned at the far
+ *  edge. The tally is the picture; the two numerals are there so no reader has
+ *  to count pips to reach a figure the page already holds.
+ *
  *  Two arrangements. "By purchases" is the board order, with count rules to
  *  read the runs against. "By who bought" re-sorts by distinct insiders and
  *  brackets the result into labelled runs, so the ranks scramble and the
@@ -46,12 +52,19 @@ const MODES: ReadonlyArray<StageMode<Mode>> = [
 ];
 
 /** Rows are the full width of the plot, so the gutters are thin on both
- *  sides and the vertical padding only has to clear the count labels. */
-const PAD: StagePad = { l: 24, r: 24, t: 40, b: 28 };
+ *  sides and the vertical padding only has to clear the count labels. A
+ *  phone gets thinner still — every pixel here is a pixel off the tally. */
+function stagePad(W: number): StagePad {
+  return W < 520
+    ? { l: 14, r: 14, t: 36, b: 26 }
+    : { l: 24, r: 24, t: 40, b: 28 };
+}
 
-/** Taller than the packing stages: 25 rows have to fit as rows. */
+/** Height is a function of the row count, not of the width: 25 rows need the
+ *  same vertical room on a phone as on a desktop, and a lane thinner than its
+ *  own name is what makes a board of rows read as a smear. */
 function stageHeight(W: number): number {
-  return Math.round(Math.min(760, Math.max(480, W * 0.62)));
+  return Math.round(Math.min(860, Math.max(560, W * 0.78)));
 }
 
 /** Rank, logo and name, drawn inside the plot so the pips start at a single
@@ -61,18 +74,32 @@ const LOGO_CX = 22;
 const NAME_X = 38;
 
 function gutterWidth(W: number): number {
-  return W < 520 ? 96 : W < 860 ? 168 : 210;
+  return W < 520 ? 104 : W < 860 ? 230 : 300;
 }
 
-/** One pip is 3 x 10 at rest; both shrink rather than the run overflowing. */
-const PIP_STEP = 8;
-const PIP_W = 3;
-const PIP_H = 10;
+/** The right-hand column: how many people made the row's purchases, which is
+ *  the fact the board is really about. A phone has no room for it and says it
+ *  in the tooltip instead. */
+function breadthWidth(W: number): number {
+  return W < 520 ? 0 : W < 860 ? 66 : 78;
+}
+
+/** Room for the run's own total, set immediately after the last pip. */
+const COUNT_W = 30;
+
+/** A pip is a tally stroke: tall, narrow, and about a third of its own step,
+ *  so a run reads as a run at any density the field allows. The step opens up
+ *  to fill the field and closes to 4.2 rather than letting a run overflow —
+ *  every purchase keeps a pip, whatever it costs the spacing. */
+const PIP_STEP_MAX = 20;
+const PIP_STEP_MIN = 4.2;
+const PIP_W_MAX = 6;
+const PIP_H_MAX = 15;
 
 /** The extra advance at a group boundary, in slots: a 1.7x step gap. */
 const GROUP_GAP = 0.7;
 
-const HOLLOW_LEGEND = "hollow · filer not named";
+const HOLLOW_LEGEND = "filer not named on the filing";
 
 interface Pip {
   at: number;
@@ -120,16 +147,21 @@ function PipRects({
   pipW,
   pips,
   step,
+  x0 = 0,
   y,
 }: {
   pipH: number;
   pipW: number;
   pips: Pip[];
   step: number;
+  /** Where slot zero sits. On the stage the tally starts after the name
+   *  gutter, and a run drawn from the mark's own origin instead is a run
+   *  printed straight through the name it belongs to. */
+  x0?: number;
   y: number;
 }) {
   const rx = Math.min(1.5, pipW / 2);
-  const sw = Math.min(1, pipW / 3);
+  const sw = Math.max(0.8, Math.min(1.6, pipW / 4));
 
   return (
     <>
@@ -143,7 +175,7 @@ function PipRects({
             stroke="currentColor"
             strokeWidth={sw}
             width={pipW - sw}
-            x={p.at * step + sw / 2}
+            x={x0 + p.at * step + sw / 2}
             y={y + sw / 2}
           />
         ) : (
@@ -153,7 +185,7 @@ function PipRects({
             height={pipH}
             rx={rx}
             width={pipW}
-            x={p.at * step}
+            x={x0 + p.at * step}
             y={y}
           />
         ),
@@ -219,6 +251,14 @@ export function breadthWords(row: CompanyActivity): string {
   return `${row.insiders} different insiders`;
 }
 
+/** The same fact in the width of the right-hand column, in the vocabulary the
+ *  mode B brackets use so the column and the bracket agree. */
+function breadthTag(row: CompanyActivity): string {
+  if (row.insiders === 0) return "not named";
+
+  return `${row.insiders} insider${row.insiders === 1 ? "" : "s"}`;
+}
+
 function companyName(row: CompanyActivity): string {
   return cleanCompanyName(row.company) || displayTicker(row.ticker);
 }
@@ -239,6 +279,8 @@ interface Lane {
   rank: number;
   y: number;
   pips: Pip[];
+  /** Just past the last pip, in mark-local coordinates: where the run's own
+   *  total is set, and what the tooltip hangs off. */
   endX: number;
 }
 
@@ -266,6 +308,7 @@ function StageBody({
   const gutter = gutterWidth(W);
   const gutterX = pad.l + gutter;
   const plotX1 = W - pad.r;
+  const breadthW = breadthWidth(W);
 
   const geom = useMemo(() => {
     const n = rows.length;
@@ -292,7 +335,7 @@ function StageBody({
       else runs.push({ insiders: rows[idx].insiders, from: j, to: j });
     });
 
-    const gap = runs.length > 1 ? (W < 520 ? 10 : 16) : 0;
+    const gap = runs.length > 1 ? (W < 520 ? 13 : 16) : 0;
     const laneH = (plotH - gap * (runs.length - 1)) / Math.max(1, n);
     const offsetA = (plotH - laneH * n) / 2;
 
@@ -306,13 +349,16 @@ function StageBody({
       }
     });
 
-    // The step shrinks before a run does. Every purchase keeps a pip.
-    const field = plotX1 - gutterX - 6;
+    // The field is what is left once the name gutter, the run's total and the
+    // insider column have taken theirs, and the busiest row is sized to fill
+    // it. The step shrinks before a run does: every purchase keeps a pip.
+    const tail = COUNT_W + (breadthW > 0 ? breadthW + 12 : 0);
+    const field = plotX1 - gutterX - tail - 6;
     const widest = Math.max(1, ...rows.map(slotSpan));
-    const step = Math.max(4.2, Math.min(PIP_STEP, field / widest));
-    const pipW = Math.min(PIP_W, Math.max(1.8, step - 1.6));
-    const pipH = Math.min(PIP_H, Math.max(5, laneH - 6));
-    const logoR = Math.min(10, Math.max(5, laneH / 2 - 2.5));
+    const step = Math.max(PIP_STEP_MIN, Math.min(PIP_STEP_MAX, field / widest));
+    const pipW = Math.min(PIP_W_MAX, Math.max(1.8, step * 0.34));
+    const pipH = Math.min(PIP_H_MAX, Math.max(6, laneH - 8));
+    const logoR = Math.min(11, Math.max(5, laneH / 2 - 3));
 
     const pips = rows.map((r) => pipSlots(r.insiderFilings, r.unattributed));
 
@@ -350,7 +396,9 @@ function StageBody({
     for (let c = 5; c <= maxFilings; c += 5) {
       const at = gutterX + c * step;
 
-      if (at < plotX1 - 78) ticks.push({ at, label: String(c) });
+      if (at < plotX1 - Math.max(78, tail + 16)) {
+        ticks.push({ at, label: String(c) });
+      }
     }
 
     return {
@@ -365,7 +413,7 @@ function StageBody({
       step,
       ticks,
     };
-  }, [rows, W, H, pad, gutter, gutterX, plotX1]);
+  }, [rows, W, H, pad, gutter, gutterX, plotX1, breadthW]);
 
   const lanes = mode === "purchases" ? geom.lanesA : geom.lanesB;
   const nameW = gutter - NAME_X - 14;
@@ -379,7 +427,10 @@ function StageBody({
 
   return (
     <>
-      {/* Mode A furniture: the ruler the runs are read against. */}
+      {/* Mode A furniture: the ruler the runs are read against. `StageAxis`
+          keeps its own tones: measured on a settled frame they are the same
+          grey as /biggest-buys' and clear AA at 5.3:1, and what made them
+          look dim was the tally printed across the rows, not the axis. */}
       <g
         className="transition-opacity duration-500"
         style={{ opacity: mode === "purchases" ? 1 : 0 }}
@@ -400,7 +451,7 @@ function StageBody({
         {geom.brackets.map((b) => (
           <g key={b.insiders}>
             <line
-              stroke="rgba(255,255,255,0.22)"
+              stroke="rgba(255,255,255,0.3)"
               x1={gutterX - 6}
               x2={gutterX - 6}
               y1={b.y0}
@@ -408,7 +459,7 @@ function StageBody({
             />
             <text
               className="font-mono uppercase"
-              fill="rgba(255,255,255,0.45)"
+              fill="rgba(255,255,255,0.62)"
               fontSize={10}
               letterSpacing="0.12em"
               x={gutterX - 6}
@@ -429,7 +480,7 @@ function StageBody({
         {lanes.map((lane) => (
           <StageMark
             key={lane.row.ticker}
-            anchor={{ x: pad.l + lane.endX, y: lane.y, r: 6 }}
+            anchor={{ x: pad.l + lane.endX, y: lane.y, r: 24 }}
             ariaLabel={`${companyName(lane.row)}, ${lane.row.filings} purchases from ${breadthWords(lane.row)}`}
             hit={{
               shape: "rect",
@@ -449,7 +500,7 @@ function StageBody({
               fill={
                 lane.rank <= 3
                   ? "rgba(255,255,255,0.92)"
-                  : "rgba(255,255,255,0.35)"
+                  : "rgba(255,255,255,0.5)"
               }
               fontSize={11}
               x={RANK_X}
@@ -482,30 +533,74 @@ function StageBody({
               )}
             </text>
 
-            <g style={{ color: "rgba(255,255,255,0.82)" }}>
+            {/* The tally, starting where the gutter ends so a run never
+                crosses the name it belongs to. */}
+            <g style={{ color: "rgba(255,255,255,0.94)" }}>
               <PipRects
                 pipH={geom.pipH}
                 pipW={geom.pipW}
                 pips={lane.pips}
                 step={geom.step}
+                x0={gutter}
                 y={-geom.pipH / 2}
               />
             </g>
+
+            {/* The run's own total, set against it rather than counted. */}
+            <text
+              className="font-mono tabular-nums"
+              dy="0.35em"
+              fill="rgba(255,255,255,0.72)"
+              fontSize={11}
+              paintOrder="stroke"
+              stroke="var(--stage-bg)"
+              strokeLinejoin="round"
+              strokeWidth={3}
+              x={lane.endX + 9}
+            >
+              {lane.row.filings}
+            </text>
+
+            {breadthW > 0 ? (
+              <text
+                className="font-mono"
+                dy="0.35em"
+                fill="rgba(255,255,255,0.6)"
+                fontSize={10.5}
+                textAnchor="end"
+                x={plotX1 - pad.l}
+              >
+                {breadthTag(lane.row)}
+              </text>
+            ) : null}
           </StageMark>
         ))}
       </g>
 
-      {/* Hollow pips are drawn in both arrangements, so their key is too. */}
+      {/* Hollow pips are drawn in both arrangements, so their key is too, and
+          the key draws the mark rather than describing it in words. */}
       {anyHollow ? (
-        <text
-          className="font-mono"
-          fill="rgba(255,255,255,0.4)"
-          fontSize={10}
-          x={pad.l}
-          y={H - 9}
-        >
-          {HOLLOW_LEGEND}
-        </text>
+        <g style={{ color: "rgba(255,255,255,0.7)" }}>
+          <rect
+            fill="none"
+            height={9}
+            rx={1.2}
+            stroke="currentColor"
+            strokeWidth={1.2}
+            width={Math.max(3, geom.pipW)}
+            x={pad.l}
+            y={H - 17}
+          />
+          <text
+            className="font-mono"
+            fill="rgba(255,255,255,0.6)"
+            fontSize={10}
+            x={pad.l + Math.max(3, geom.pipW) + 8}
+            y={H - 9}
+          >
+            {HOLLOW_LEGEND}
+          </text>
+        </g>
       ) : null}
     </>
   );
@@ -580,7 +675,7 @@ export function ActivityStage({
                 {broad} of the {n} had four or more different insiders buying
               </span>
               {solo.length > 0
-                ? `; ${solo.length} were one person buying repeatedly`
+                ? `; ${solo.length} ${solo.length === 1 ? "was" : "were"} one person buying repeatedly`
                 : ""}
               . {companyName(widest)} is the broadest at {totals.broadest}{" "}
               people over {widest.filings} purchases
@@ -616,7 +711,7 @@ export function ActivityStage({
       linking={linking}
       loading={board === null}
       modes={MODES}
-      pad={PAD}
+      pad={stagePad}
       renderTip={(id) => {
         const tip = byTicker.get(id);
 

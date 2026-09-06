@@ -257,7 +257,7 @@ export function toRoleColumns(
  *  placeholder, which is the second static-page rule made mechanical. */
 export function roleFigures(model: RolesModel): StageFigure[] {
   const items: StageFigure[] = [
-    { k: "Purchases drawn", v: String(model.distinct) },
+    { k: "Purchases", v: String(model.distinct) },
     { k: "Companies", v: String(model.companies) },
   ];
 
@@ -284,10 +284,41 @@ export function roleFigures(model: RolesModel): StageFigure[] {
 // Geometry
 // ---------------------------------------------------------------------------
 
-const PAD: StagePad = { l: 48, r: 24, t: 64, b: 92 };
+const AXIS_GUTTER = 48;
+const RIGHT_GUTTER = 24;
 
-/** Taller than the default: four columns of footer take 92px off the bottom,
- *  and the stack has to keep its height meaning something after that. */
+/** A column narrower than this gets no named purchase above it — two names
+ *  that wide would sit on each other — and its footer wraps to three lines
+ *  rather than one. */
+const NAMED_MIN_COL = 150;
+const NARROW_COL = 110;
+
+/** Where the named purchase sits: one row across the top of the stage, at a
+ *  constant height, so four names cannot stagger into each other and a short
+ *  column's name is not left floating in the middle of the plot. */
+const NAMED_ROW_LIFT = 38;
+
+function colWidth(W: number, cols: number): number {
+  return (W - AXIS_GUTTER - RIGHT_GUTTER) / Math.max(1, cols);
+}
+
+/** The top gutter carries the named-purchase row and the bottom one carries
+ *  the column footer, so both are sized from the column width rather than
+ *  fixed: a phone draws neither a name nor a one-line footer, and reserving
+ *  space for them there is 100px of black. */
+function stagePad(W: number, cols: number): StagePad {
+  const cw = colWidth(W, cols);
+
+  return {
+    l: AXIS_GUTTER,
+    r: RIGHT_GUTTER,
+    t: cw >= NAMED_MIN_COL ? 96 : 44,
+    b: cw < NARROW_COL ? 96 : 68,
+  };
+}
+
+/** Taller than the default: the footer takes a chunk off the bottom, and the
+ *  stack has to keep its height meaning something after that. */
 function stageHeight(W: number): number {
   return Math.round(Math.min(700, Math.max(480, W * 0.6)));
 }
@@ -299,14 +330,32 @@ const ROW_RATIO = 0.866;
  *  stretching the scale for one purchase and flattening the rest. */
 const CLIP = 0.5;
 
-const SOLID = "rgba(255,255,255,0.28)";
-const RING = "rgba(255,255,255,0.45)";
+/** The count arrangement is monochrome: the dots ARE the picture, so they are
+ *  drawn at a weight that survives four hundred of them on a dark panel. A
+ *  purchase in two groups is the same dot hollowed, and a ring reads lighter
+ *  than the disc it was cut from, so it is stroked brighter to hold the same
+ *  presence. Colour on this page belongs to the outcome arrangement alone. */
+const SOLID = "rgba(255,255,255,0.6)";
+const RING = "rgba(255,255,255,0.95)";
+
+/** The overlap ribbon. Bright enough to read as a connection between two
+ *  bands of rings rather than as a smudge behind the dots, and hairlined so
+ *  its edges say where it starts and stops. */
+const RIBBON_FILL = "rgba(255,255,255,0.1)";
+const RIBBON_EDGE = "rgba(255,255,255,0.22)";
+
+/** The hairline tying a named purchase in the top row back to its column. */
+const STEM = "rgba(255,255,255,0.18)";
 
 interface Entry {
   key: string;
   alpha: number | null;
   hollow: boolean;
   partner: string | null;
+  /** x is COLUMN-LOCAL — every dot is drawn inside its column's `StageMark`,
+   *  which is already translated to the column centre. y is stage
+   *  coordinates, because that mark is translated to y=0. Mixing the two
+   *  frames is what put the columns over their neighbours' labels. */
   ax: number;
   ay: number;
   bx: number;
@@ -329,7 +378,10 @@ interface ColGeom {
 }
 
 /** The largest pitch whose tallest stack still fits the drawing height. Every
- *  column then shares it, which is the whole claim: height is count. */
+ *  column then shares it, and every column shares `perRow` with it, which is
+ *  the whole claim: two columns differ in height by exactly the ratio of
+ *  their counts. The moment a column picked its own width, height would stop
+ *  meaning anything and the picture would be making a claim it cannot keep. */
 function solveLattice(nMax: number, innerW: number, h: number) {
   for (let p = 26; p >= 2.2; p -= 0.1) {
     const perRow = Math.max(1, Math.floor(innerW / p));
@@ -339,7 +391,9 @@ function solveLattice(nMax: number, innerW: number, h: number) {
       return {
         pitch: p,
         perRow,
-        r: Math.max(1.2, Math.min(5.5, p * 0.4)),
+        // Nearly touching, so a stack reads as one mass rather than as a
+        // scatter that happens to be on a grid.
+        r: Math.max(1.2, Math.min(6.5, p * 0.42)),
       };
     }
   }
@@ -349,14 +403,22 @@ function solveLattice(nMax: number, innerW: number, h: number) {
 }
 
 /** Greedy word wrap on an estimated advance width. Long enough for a column
- *  label and no longer: nothing here needs to measure a font. */
+ *  label and no longer: nothing here needs to measure a font.
+ *
+ *  A hyphen is a break opportunity, because on a phone the column is 64px
+ *  wide and “Non-executive” does not fit on one line at any size the footer
+ *  can carry. The hyphen stays on the line it broke. */
 function wrapWords(text: string, maxChars: number, maxLines: number): string[] {
-  const words = text.split(" ");
+  const words = text.split(/(?<=-)|\s+/).filter(Boolean);
   const lines: string[] = [];
   let line = "";
 
   for (const w of words) {
-    const next = line ? `${line} ${w}` : w;
+    const next = line
+      ? line.endsWith("-")
+        ? `${line}${w}`
+        : `${line} ${w}`
+      : w;
 
     if (line && next.length > maxChars && lines.length < maxLines - 1) {
       lines.push(line);
@@ -370,11 +432,32 @@ function wrapWords(text: string, maxChars: number, maxLines: number): string[] {
   return lines.slice(0, maxLines);
 }
 
+/** The ribbon's words, in the longest form the space beside it can hold.
+ *  Never a bare number: the picture's one hard fact is that these purchases
+ *  are in both groups rather than split between them, and a numeral on its
+ *  own does not say it — the caller passes the room it has, and gets nothing
+ *  back rather than a form that would overrun a neighbouring stack. */
+function ribbonLines(k: number, width: number): string[] {
+  // Mono advance is 0.6em at 10px.
+  const room = width / 6;
+  const forms = [
+    [`the same ${k} purchases, in both`],
+    [`${k} purchases`, `in both groups`],
+    [`${k} in both`],
+  ];
+
+  return forms.find((f) => Math.max(...f.map((l) => l.length)) <= room) ?? [];
+}
+
 function buildGeometry(model: RolesModel, W: number, H: number, pad: StagePad) {
   const cols = model.published;
   const plot = { x0: pad.l, x1: W - pad.r, y0: pad.t, y1: H - pad.b };
   const colW = (plot.x1 - plot.x0) / Math.max(1, cols.length);
-  const innerW = Math.max(16, colW - Math.min(30, colW * 0.24));
+  // The gutter between two stacks is where the overlap ribbon and its words
+  // go, so it is a column of space rather than a hairline: a ribbon whose
+  // count nobody can read is decoration.
+  const gutter = Math.min(76, Math.max(14, colW * 0.26));
+  const innerW = Math.max(16, colW - gutter);
   const nMax = Math.max(1, ...cols.map((c) => c.n));
   const { pitch, perRow, r } = solveLattice(
     nMax,
@@ -445,8 +528,7 @@ function buildGeometry(model: RolesModel, W: number, H: number, pad: StagePad) {
       const cnt = Math.min(perRow, entries.length - start);
       const k = idx - start;
 
-      e.ax =
-        cx + (k - (cnt - 1) / 2) * pitch + (j % 2 ? pitch / 4 : -pitch / 4);
+      e.ax = (k - (cnt - 1) / 2) * pitch + (j % 2 ? pitch / 4 : -pitch / 4);
       e.ay = baseline - r - j * rowH;
     });
 
@@ -491,7 +573,7 @@ function buildGeometry(model: RolesModel, W: number, H: number, pad: StagePad) {
         // alpha bulges symmetrically instead of drifting one way.
         const dy = j === 0 ? 0 : (j % 2 ? 1 : -1) * Math.ceil(j / 2) * laneH;
 
-        e.bx = cx + (k - (cnt - 1) / 2) * step;
+        e.bx = (k - (cnt - 1) / 2) * step;
         e.by = aTop + lane * laneH + dy;
       });
     }
@@ -504,16 +586,16 @@ function buildGeometry(model: RolesModel, W: number, H: number, pad: StagePad) {
       const cnt = Math.min(perLane, unmarked.length - start);
       const k = idx - start;
 
-      e.bx = cx + (k - (cnt - 1) / 2) * step;
+      e.bx = (k - (cnt - 1) / 2) * step;
       e.by = parkY - j * laneH;
     });
 
     const nameSize = Math.max(9, Math.min(12.5, colW / 8.5));
-    const monoSize = Math.max(8.5, Math.min(10.5, colW / 9));
+    const monoSize = Math.max(8, Math.min(10.5, colW / 9));
     const name = wrapWords(
       col.role.plural,
-      Math.max(6, Math.floor((colW - 6) / (nameSize * 0.55))),
-      2,
+      Math.max(5, Math.floor((colW - 6) / (nameSize * 0.55))),
+      colW < NARROW_COL ? 3 : 2,
     );
 
     if (colW >= 120) name[name.length - 1] = `${name[name.length - 1]} →`;
@@ -536,6 +618,11 @@ function buildGeometry(model: RolesModel, W: number, H: number, pad: StagePad) {
     plot,
     colW,
     innerW,
+    gutter,
+    // One footer geometry for the whole strip. "Chairs" is one line and
+    // "Non-executive directors" is three, and letting each column start its
+    // count where its own name ended drew four different footers.
+    nameLines: Math.max(1, ...geoms.map((cg) => cg.name.length)),
     pitch,
     perRow,
     r,
@@ -639,7 +726,8 @@ function RolesBody({
     const out: Array<{
       key: string;
       d: string;
-      label: string | null;
+      lines: string[];
+      anchor: "middle" | "start";
       lx: number;
       ly: number;
     }> = [];
@@ -660,25 +748,35 @@ function RolesBody({
         const [aTopY, aBotY] = [ba.top - r, ba.bottom + r];
         const [bTopY, bBotY] = [bb.top - r, bb.bottom + r];
 
+        // Two neighbours: the words go in the gutter the ribbon crosses.
+        // Two columns with another one between them: centring would park the
+        // words over a group they say nothing about, so they leave from the
+        // ribbon's own end instead.
+        const adjacent = j === i + 1;
+
         out.push({
           key: `${a.col.slug}-${b.col.slug}`,
           d: `M ${xr} ${aTopY} C ${xr + t} ${aTopY} ${xl - t} ${bTopY} ${xl} ${bTopY} L ${xl} ${bBotY} C ${xl - t} ${bBotY} ${xr + t} ${aBotY} ${xr} ${aBotY} Z`,
-          label:
-            W >= 900
-              ? `the same ${k} purchases, in both`
-              : W >= 560
-                ? `${k} in both`
-                : null,
-          lx: (a.cx + b.cx) / 2,
-          ly: (aTopY + aBotY + bTopY + bBotY) / 4 + 3.5,
+          // Centred in the gutter, a label may spill a little either way and
+          // the halo carries it. Leaving one end, all of the spill lands on
+          // the stack it is running towards, so it gets the gap and no more.
+          lines: ribbonLines(k, adjacent ? dx + 34 : dx - 16),
+          anchor: adjacent ? ("middle" as const) : ("start" as const),
+          lx: adjacent ? (xr + xl) / 2 : xr + 10,
+          ly: adjacent
+            ? (aTopY + aBotY + bTopY + bBotY) / 4 + 3.5
+            : (aTopY + aBotY) / 2 + 3.5,
         });
       }
     }
 
     return out;
-  }, [geoms, g.innerW, r, W]);
+  }, [geoms, g.innerW, r]);
 
-  const showLogos = colW >= 150;
+  const showLogos = colW >= NAMED_MIN_COL;
+  const narrow = colW < NARROW_COL;
+  // The named-purchase row, one constant height for every column.
+  const namedY = plot.y0 - NAMED_ROW_LIFT;
   const move = !reduced;
 
   return (
@@ -691,19 +789,25 @@ function RolesBody({
       >
         {ribbons.map((rb) => (
           <g key={rb.key}>
-            <path d={rb.d} fill="rgba(255,255,255,0.06)" />
-            {rb.label ? (
+            <path
+              d={rb.d}
+              fill={RIBBON_FILL}
+              stroke={RIBBON_EDGE}
+              strokeWidth={1}
+            />
+            {rb.lines.map((line, li) => (
               <text
+                key={line}
                 className="font-mono"
-                fill="rgba(255,255,255,0.5)"
-                textAnchor="middle"
+                fill="rgba(255,255,255,0.82)"
+                textAnchor={rb.anchor}
                 x={rb.lx}
-                y={rb.ly}
+                y={rb.ly + (li - (rb.lines.length - 1) / 2) * 12}
                 {...haloText(10, 400)}
               >
-                {rb.label}
+                {line}
               </text>
-            ) : null}
+            ))}
           </g>
         ))}
         <StageAxis plot={plot} y={countTicks} />
@@ -758,8 +862,32 @@ function RolesBody({
           mode === "count" ? cg.stackTop : (cg.medianY ?? g.aTop + 20);
         const nameTop = plot.y1 + 16;
         const nameH = cg.nameSize * 1.2;
-        const metaY = nameTop + cg.name.length * nameH + 4;
-        const valueY = metaY + 15;
+        const metaY = nameTop + g.nameLines * nameH + 4;
+        // A phone's column is under sixty pixels wide, which one line of this
+        // does not fit inside — four of them ran together into a single strip
+        // of text with no gaps where the columns are.
+        const meta =
+          mode === "count"
+            ? narrow
+              ? [String(col.n), "purchases"]
+              : [`${col.n} purchases`]
+            : narrow
+              ? [`${col.ahead} ahead`, `${col.behind} behind`]
+              : [`${col.ahead} ahead · ${col.behind} behind`];
+        // Reserved rather than measured, so the money below it does not jump
+        // between the two arrangements.
+        const valueY = metaY + (narrow ? 12 : 0) + 15;
+        const medianY = cg.medianY;
+        // Every group's median sits within a few points of level, so on a
+        // narrow column four of these labels would be one line of overstruck
+        // text. Stacked, not abbreviated: the word is what makes the number a
+        // median rather than a mark.
+        const medianLines =
+          col.medianAlpha == null
+            ? []
+            : narrow
+              ? ["median", signedPp(col.medianAlpha)]
+              : [`median ${signedPp(col.medianAlpha)}`];
 
         return (
           <StageMark
@@ -769,9 +897,9 @@ function RolesBody({
             hit={{
               shape: "rect",
               x: -colW / 2,
-              y: plot.y0 - 34,
+              y: namedY - 26,
               w: colW,
-              h: plot.y1 + 84 - (plot.y0 - 34),
+              h: plot.y1 + 84 - (namedY - 26),
             }}
             href={rolePath(col.slug)}
             id={col.slug}
@@ -783,29 +911,47 @@ function RolesBody({
 
             {/* The biggest purchase in the group, named. The only logos on the
               stage: a mark per dot would be 765 of them. A neutral ring: this
-              logo shows in the count picture, where nothing is coloured. */}
+              logo shows in the count picture, where nothing is coloured.
+
+              Pinned to one row across the top of the stage rather than riding
+              its own stack: four names at four heights land on each other and
+              on the ribbon's words, which is exactly what they did. A
+              hairline ties each one back down to the column it names. */}
             {showLogos && col.members[0] ? (
               <g
                 className="transition-opacity duration-500"
                 style={{ opacity: mode === "count" ? 1 : 0 }}
-                transform={`translate(0, ${Math.max(plot.y0 - 26, cg.stackTop - 24)})`}
               >
-                <LogoDisc
-                  clipId={`rl-${col.slug}`}
-                  edge={RING}
-                  r={9}
-                  ticker={col.members[0].ticker}
+                <line
+                  stroke={STEM}
+                  strokeWidth={1}
+                  x1={0}
+                  x2={0}
+                  y1={namedY + 12}
+                  y2={Math.max(namedY + 12, cg.stackTop - r - 5)}
                 />
-                <StageLabel
-                  r={9}
-                  side="above"
-                  text={`${clip(col.members[0].company, Math.floor((colW * 1.5) / 6.6) - 8)} · ${money(col.members[0].value, symbol)}`}
-                />
+                <g transform={`translate(0, ${namedY})`}>
+                  <LogoDisc
+                    clipId={`rl-${col.slug}`}
+                    edge={RING}
+                    r={9}
+                    ticker={col.members[0].ticker}
+                  />
+                  <StageLabel
+                    r={9}
+                    side="above"
+                    sub={money(col.members[0].value, symbol)}
+                    text={clip(
+                      col.members[0].company,
+                      Math.floor((colW - 14) / 6.4),
+                    )}
+                  />
+                </g>
               </g>
             ) : null}
 
             {/* The group's median, ticked across its own column only. */}
-            {cg.medianY != null && col.medianAlpha != null ? (
+            {medianY != null && medianLines.length > 0 ? (
               <g
                 className="transition-opacity duration-500"
                 style={{ opacity: mode === "outcome" ? 1 : 0 }}
@@ -815,18 +961,21 @@ function RolesBody({
                   strokeWidth={2}
                   x1={-g.innerW / 2}
                   x2={g.innerW / 2}
-                  y1={cg.medianY}
-                  y2={cg.medianY}
+                  y1={medianY}
+                  y2={medianY}
                 />
-                <text
-                  className="font-mono"
-                  fill="rgba(255,255,255,0.9)"
-                  textAnchor="middle"
-                  y={cg.medianY - 7}
-                  {...haloText(10.5, 500)}
-                >
-                  median {signedPp(col.medianAlpha)}
-                </text>
+                {medianLines.map((line, li) => (
+                  <text
+                    key={line}
+                    className="font-mono"
+                    fill="rgba(255,255,255,0.9)"
+                    textAnchor="middle"
+                    y={medianY - 7 - (medianLines.length - 1 - li) * 12}
+                    {...haloText(10.5, 500)}
+                  >
+                    {line}
+                  </text>
+                ))}
               </g>
             ) : null}
 
@@ -846,17 +995,18 @@ function RolesBody({
                 {line}
               </text>
             ))}
-            <text
-              className="font-mono"
-              fill="rgba(255,255,255,0.5)"
-              fontSize={cg.monoSize}
-              textAnchor="middle"
-              y={metaY}
-            >
-              {mode === "count"
-                ? `${col.n} purchases`
-                : `${col.ahead} ahead · ${col.behind} behind`}
-            </text>
+            {meta.map((line, li) => (
+              <text
+                key={line}
+                className="font-mono"
+                fill="rgba(255,255,255,0.55)"
+                fontSize={cg.monoSize}
+                textAnchor="middle"
+                y={metaY + li * 12}
+              >
+                {line}
+              </text>
+            ))}
             <text
               className="font-mono"
               fill="rgba(255,255,255,0.72)"
@@ -1064,7 +1214,7 @@ export function RolesStage({
       linking={linking}
       loading={loading || cols.length === 0}
       modes={modes}
-      pad={PAD}
+      pad={(W) => stagePad(W, cols.length)}
       renderTip={(id) => {
         const col = cols.find((c) => c.slug === id);
 
