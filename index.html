@@ -28,9 +28,22 @@
       // page, in near-invisible dark-on-dark ink once the theme resolves. A
       // browser that runs JS never wants to see it; a crawler that doesn't run
       // JS never sets the class, so it still gets the full link list.
+      //
+      // The class has to be set here, before the body parses, or the
+      // pre-render paints anyway while the module bundle is still on the
+      // wire. The cost is the browser whose bundle never arrives (a stale
+      // cached shell against a redeployed hash, a throw before mount): it
+      // would sit on a blank page. So the class is provisional — main.tsx
+      // marks the document `mounted`, and if that hasn't happened in eight
+      // seconds the pre-render is let back through.
       (function () {
         try {
           document.documentElement.classList.add("js");
+          setTimeout(function () {
+            if (!document.documentElement.classList.contains("mounted")) {
+              document.documentElement.classList.remove("js");
+            }
+          }, 8000);
           var saved = localStorage.getItem("theme");
           var dark = saved
             ? saved === "dark"

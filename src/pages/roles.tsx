@@ -673,7 +673,10 @@ function RoleFilingRow({
         },
       ]}
       logo={<CompanyLogo size={56} ticker={d.ticker ?? ""} />}
-      money={money(buyValue(d), symbol)}
+      // A buy whose value never reached the feed comes back as 0, and
+      // formatMoney prints that as a dash — a placeholder in a figure slot.
+      // The same threshold the sibling boards use: below it, say so in words.
+      money={buyValue(d) >= 500 ? money(buyValue(d), symbol) : "not stated"}
       name={cleanCompanyName(d.company ?? "") || ticker}
       perf={
         alpha == null ? (

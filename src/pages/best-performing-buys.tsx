@@ -408,7 +408,16 @@ export default function BestPerformingBuysPage() {
               traded company moves much further than a real one, and without the
               floor this board fills with sums too small for the buyer to
               notice.{" "}
-              {floorCost.below === 0 ? (
+              {/* A truncated window makes `below` a floor, not a total, so
+                  the two sentences that assert "this period" and "changes
+                  nothing" only run on a complete one. The third already
+                  says "at least". */}
+              {!complete && floorCost.heldBack === 0 ? (
+                <>
+                  Of the purchases we could load, none below it would rank on
+                  this board; the whole period may hold more.
+                </>
+              ) : floorCost.below === 0 ? (
                 <>
                   No purchase with a mark fell below it this period, so it
                   changes nothing on today’s board.

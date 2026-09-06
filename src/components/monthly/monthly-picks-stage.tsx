@@ -289,7 +289,10 @@ export function MonthlyPicksStage({
   const unmarked =
     picks == null || marked == null ? 0 : picks.length - marked.length;
   const rows = marked && marked.length > 0 ? marked : null;
-  const total = hits + misses;
+  // `hits` and `misses` are strictly up and strictly down, so a pick at
+  // exactly 0.0% is in neither — but it has a mark and is drawn. The total
+  // the caption states must be the number of discs on the picture.
+  const total = rows?.length ?? hits + misses;
 
   return (
     <BoardStagePanel<Mode>

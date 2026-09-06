@@ -77,6 +77,14 @@ export function spanLabel(days: number): string {
   return `over ${days} days`;
 }
 
+/** The episode's value for the tooltip and the aria-label. An episode whose
+ *  filings carried no value comes through as 0, which formatMoney prints as
+ *  a dash; the row under the mark says "not stated" at the same threshold,
+ *  and the picture must not contradict it. */
+function clusterMoney(value: number, symbol: string): string {
+  return value >= 500 ? formatMoney(value, symbol) : "value not stated";
+}
+
 function capitalise(word: string): string {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
@@ -299,7 +307,7 @@ function StageBody({
                 m.first ? ` from ${dateLabel(m.first, locale)}` : ""
               }, ${m.e.filings} ${
                 m.e.filings === 1 ? "purchase" : "purchases"
-              }, ${formatMoney(m.e.value, symbol)}`}
+              }, ${clusterMoney(m.e.value, symbol)}`}
               hit={{ shape: "circle", r: outer + 4 }}
               href={companyPath(m.e.ticker)}
               id={m.id}
@@ -461,7 +469,7 @@ export function ClusterStage({
               {spanLabel(e.spanDays)}
             </div>
             <div className="mt-1 tabular-nums">
-              {formatMoney(e.value, symbol)}
+              {clusterMoney(e.value, symbol)}
               {e.firstDate ? (
                 e.spanDays === 0 ? (
                   <> · on {dateLabel(e.firstDate, locale)}</>

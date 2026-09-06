@@ -24,8 +24,9 @@ export const TRACKING_SINCE_LABEL = "March 2026";
 export const TRACKING_SINCE_LABEL_BY_MARKET = {
   uk: TRACKING_SINCE_LABEL,
   us: "May 2026",
-  usg: "May 2026",
-  djt: "May 2026",
+  // Congressional disclosures were loaded from April 2023, not scraped
+  // live from May 2026 like the Form 4 feed.
+  usg: "April 2023",
   se: "May 2026",
 };
 

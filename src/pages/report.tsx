@@ -190,7 +190,10 @@ export default function ReportPage() {
   // at; an empty array when the month has neither, which drops the hero.
   const graded = useMemo(() => gradedPicks(summary), [summary]);
 
-  const hasHero = graded == null || graded.picks.length > 0;
+  // Picks that exist but none of which carry a mark yet (prices not cached
+  // for a first report) would mount a stage with nothing to draw in it — an
+  // h1 over an empty dark panel. That month takes the flat shell instead.
+  const hasHero = graded == null || graded.picks.some((p) => p.now != null);
   const figures = summary ? headlineFigures(summary.metrics) : [];
   const returns = summary ? returnTiles(summary.metrics) : [];
 
