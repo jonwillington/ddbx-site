@@ -221,10 +221,14 @@ export default function CompaniesPage() {
             </div>
 
             {groups.length > 0 ? (
-              // Sticky under the 64px navbar: on a 368-company index the
+              // Sticky under the floating navbar: on a 368-company index the
               // alphabet is the only navigation there is, and scrolling past it
-              // meant scrolling back to the top to use it.
-              <nav className="sticky top-16 z-10 -mx-2 mt-6 flex flex-wrap gap-1.5 bg-background/80 px-2 py-2 backdrop-blur">
+              // meant scrolling back to the top to use it. --nav-clear tracks
+              // the capsule's bottom edge at both breakpoints (see
+              // styles/globals.css); the hardcoded 64px this replaced was the
+              // height of the old full-width bar, so the rail spent every
+              // scroll tucked a few pixels underneath the capsule.
+              <nav className="sticky top-[var(--nav-clear)] z-10 -mx-2 mt-6 flex flex-wrap gap-1.5 bg-background/80 px-2 py-2 backdrop-blur">
                 {groups.map(([letter]) => (
                   <a
                     key={letter}
@@ -245,7 +249,14 @@ export default function CompaniesPage() {
             ) : null}
 
             {groups.map(([letter, list]) => (
-              <section key={letter} className="mt-10 scroll-mt-28">
+              // A letter anchor has two things to clear, not one: the capsule
+              // and the ~45px A–Z rail stuck beneath it. 2.75rem is that rail.
+              // Underscores, not literal spaces — Tailwind turns them back
+              // into the whitespace calc() requires around its operators.
+              <section
+                key={letter}
+                className="mt-10 scroll-mt-[calc(var(--nav-clear)_+_2.75rem)]"
+              >
                 <h2
                   className={`${R.label} border-b ${R.rule} pb-2 font-semibold uppercase tracking-[0.12em]`}
                   id={letter === "#" ? "num" : letter}

@@ -852,6 +852,51 @@ export function RuleWithLabel({
   );
 }
 
+/** How far a mark has moved since it was first published: a hollow ring where
+ *  it was, and a stem from there to the edge of the disc where it is now.
+ *
+ *  Built for the monthly report card, which is the one board that draws the
+ *  same thing twice. That page publishes both marks on purpose — what a pick
+ *  looked like when we featured it, and what it looks like after a month —
+ *  because a scorecard that quietly reprices its own entries is not a
+ *  scorecard. Drawn, the length of the stem IS the re-marking, so a pick
+ *  published at +27% and now −8% is a long fall rather than two numbers a
+ *  reader has to subtract.
+ *
+ *  Neutral white rather than the direction's colour. The disc's edge already
+ *  carries one claim (ahead or behind since entry); the stem carries a
+ *  different one (up or down since we published), and painting both in the
+ *  same two hues would make the picture say one thing twice and neither
+ *  clearly. The stem itself is the idiom `best-performing-stage` and
+ *  `roles-stage` already draw to the level line.
+ *
+ *  `dy` is the offset from the mark's own centre to where it was, in stage
+ *  pixels, so this belongs INSIDE a StageMark's translated group. Null — no
+ *  earlier mark to state — renders nothing, and so does a move small enough
+ *  to disappear under the disc, where a ring and a stub would read as
+ *  furniture rather than as a distance. */
+export function StageTravel({ dy, r }: { dy: number | null; r: number }) {
+  if (dy == null || !isFinite(dy) || Math.abs(dy) < r + 7) return null;
+
+  return (
+    <g>
+      <line
+        stroke="rgba(255,255,255,0.35)"
+        strokeWidth={1.5}
+        y1={dy}
+        y2={dy > 0 ? r : -r}
+      />
+      <circle
+        cy={dy}
+        fill="none"
+        r={4}
+        stroke="rgba(255,255,255,0.45)"
+        strokeWidth={1.5}
+      />
+    </g>
+  );
+}
+
 /** The population a board's marks are drawn from: hundreds of plain circles,
  *  one fill, no listeners and no labels.
  *

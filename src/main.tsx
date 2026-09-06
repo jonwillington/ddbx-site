@@ -13,6 +13,12 @@ import "@/styles/globals.css";
 // so gtag is defined when DocumentTitle fires the initial page_view.
 bootstrapAnalytics();
 
+// Tells the head script in index.html that the bundle made it: the crawler
+// pre-render it hid at first paint can stay hidden. Without this mark the
+// script lets the pre-render back through after eight seconds, which is the
+// right outcome only when we never got here.
+document.documentElement.classList.add("mounted");
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>

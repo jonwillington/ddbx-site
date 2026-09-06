@@ -533,9 +533,11 @@ export default function DefaultLayout({
       </div>
       {/* tabIndex -1 so the skip link actually moves focus here rather than
           only moving the scroll position; scroll-mt clears the sticky header,
-          which would otherwise cover the top of what we just jumped to. */}
+          which would otherwise cover the top of what we just jumped to — now
+          derived from the capsule's own height (--nav-clear, globals.css)
+          rather than a 96px guess that happened to be generous. */}
       <main
-        className="mx-auto w-full max-w-[1280px] px-4 md:px-6 flex-grow pt-8 scroll-mt-24 outline-none"
+        className="mx-auto w-full max-w-[1280px] px-4 md:px-6 flex-grow pt-8 scroll-mt-[var(--nav-clear)] outline-none"
         id="main"
         tabIndex={-1}
       >

@@ -19,8 +19,31 @@
       //
       // There is no static <meta name="theme-color"> in <head> — this is the
       // sole source, so theme.ts's single-node remove/re-insert stays valid.
+      //
+      // The `js` class is the other thing settled before first paint: it tells
+      // the stylesheet below to suppress the crawler pre-render that the Pages
+      // Functions inject into #root (shared/prerender.js). React wipes that
+      // markup when it mounts, but only after the bundle downloads, parses and
+      // runs — on /companies that is a few hundred ms of a visibly different
+      // page, in near-invisible dark-on-dark ink once the theme resolves. A
+      // browser that runs JS never wants to see it; a crawler that doesn't run
+      // JS never sets the class, so it still gets the full link list.
+      //
+      // The class has to be set here, before the body parses, or the
+      // pre-render paints anyway while the module bundle is still on the
+      // wire. The cost is the browser whose bundle never arrives (a stale
+      // cached shell against a redeployed hash, a throw before mount): it
+      // would sit on a blank page. So the class is provisional — main.tsx
+      // marks the document `mounted`, and if that hasn't happened in eight
+      // seconds the pre-render is let back through.
       (function () {
         try {
+          document.documentElement.classList.add("js");
+          setTimeout(function () {
+            if (!document.documentElement.classList.contains("mounted")) {
+              document.documentElement.classList.remove("js");
+            }
+          }, 8000);
           var saved = localStorage.getItem("theme");
           var dark = saved
             ? saved === "dark"
@@ -35,6 +58,15 @@
         } catch (e) {}
       })();
     </script>
+    <!-- Inline, and it has to be: globals.css is imported from src/main.tsx and
+         so arrives with the bundle — far too late to suppress a paint that
+         happens before the bundle has even downloaded. One rule, three lines
+         from the class that gates it. -->
+    <style>
+      html.js #prerender {
+        display: none;
+      }
+    </style>
     <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">

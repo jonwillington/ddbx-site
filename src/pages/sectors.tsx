@@ -50,6 +50,7 @@ import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { StageFigures } from "@/components/boards/stage-figures";
+import { StageNotice } from "@/components/boards/stage-notice";
 import {
   SectorsStage,
   toSectorBuys,
@@ -210,6 +211,7 @@ export default function SectorsPage() {
                     performed against the market since they were disclosed.
                   </p>
                   <StageFigures reserve items={figures} />
+                  <StageNotice marketId={market.id} />
                   {issuer && issuer.share > CONCENTRATION_THRESHOLD ? (
                     <p className="mt-3 max-w-[48ch] text-[12.5px] leading-[1.5] text-white/60">
                       {Math.round(issuer.share * 100)}% of that is{" "}
@@ -239,12 +241,17 @@ export default function SectorsPage() {
         titleInHero={rows === null || hasData}
         width="wide"
       >
-        {/* Under the stage: the small print the object shouldn't carry. The
-            shell renders no `notice` under `titleInHero`, so the tracking line
-            and the truncation caveat live here — without them the hero states
-            four totals with more confidence than we have. */}
+        {/* Under the stage: the truncation caveat, which is about this load
+            rather than about the archive. The tracking line moved into the
+            stage header, directly under the figures it qualifies — at 45%
+            opacity below a 600px object nobody was reading it. */}
         <div className="mt-4 max-w-[62ch]">
-          <TrackingNotice />
+          {/* The empty and error states mount no stage, so there is no header
+              for the in-stage notice to sit in. The page still has to say how
+              far back it holds. */}
+          {rows === null || hasData ? null : (
+            <TrackingNotice marketId={market.id} />
+          )}
           {!complete && !failed && (
             <p className={`mt-3 ${CAVEAT}`}>
               We couldn’t load the whole period, so these totals may be missing

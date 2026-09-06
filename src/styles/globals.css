@@ -46,6 +46,40 @@
   --color-brand-tan: #ad9479;   /* mid-brown support on dark surfaces     */
 }
 
+/* ─── Navbar clearance ───────────────────────────────────────────────────────
+   The floating capsule's bottom edge, derived from its two inputs rather than
+   guessed at each call site: the sticky wrapper's `pt-3 md:pt-4` in
+   src/layouts/default.tsx and the `h-14` header in src/components/navbar.tsx.
+   12 + 56 = 68px, and 16 + 56 = 72px from md up. Anything pinning itself below
+   the bar has to track BOTH numbers — the /companies A–Z rail was written as
+   `top-16` when the bar was a 64px full-width band, and has sat 4-8px under
+   the capsule ever since the bar started floating.
+
+   Not in @theme: @theme values can't switch on a media query, and switching on
+   the breakpoint is the entire point. One class now covers both widths, which
+   the magic numbers it replaces could not.
+
+   --nav-h is flush against the capsule; --nav-clear adds the breathing room a
+   scrolling list wants. Choose deliberately — the market filter bar seats
+   flush on purpose (see its comment in market-page.tsx) and so uses --nav-h.
+
+   Deliberately NOT swept into these, so nobody "finishes the job" later. Each
+   is 96px of editorial spacing that happens to clear the nav, not nav
+   clearance: the `lg:sticky lg:top-24` conversion panels in company.tsx and
+   broker-detail.tsx, `md:sticky md:top-24` in market-faq.tsx and api-faq.tsx,
+   the `scroll-mt-24` anchors in seo/section.tsx, company.tsx and
+   broker-detail.tsx, and beta-tag.tsx's `absolute top-[80px] md:top-28`, which
+   is positioned against the hero panel rather than against the bar at all. */
+:root {
+  --nav-h: 68px;
+  --nav-clear: calc(var(--nav-h) + 12px);
+}
+@media (min-width: 768px) {
+  :root {
+    --nav-h: 72px;
+  }
+}
+
 /* ─── Warm light theme ───────────────────────────────────────────────────────
    Light mode ran on HeroUI's stock tokens, which are COLD greys (hue ≈286):
    muted text at L55 cool-grey on the warm beige page, cold hairlines at
@@ -419,6 +453,22 @@ body {
   --stage-pos: oklch(78% 0.19 145);
   --stage-neg: oklch(64% 0.185 25);
   background: var(--stage-bg);
+}
+/* The panel is #1a140d in BOTH themes, so a skeleton inside it cannot inherit
+   either of the theme-keyed fills: the light one (a black tint) is invisible
+   on it, and `.dark .skeleton` only applies when the page happens to be dark.
+   Fixed to the dark set, one step lighter than the theme's so it reads as a
+   stand-in and not as a drawn mark. */
+.board-stage .skeleton {
+  background-color: rgb(255 255 255 / 0.06);
+  animation:
+    skeleton-in 300ms ease-out 140ms both,
+    skeleton-pulse-dark 2.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) 140ms infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-stage .skeleton {
+    animation: skeleton-in 300ms ease-out 140ms both;
+  }
 }
 .board-stage-r {
   transition: r 900ms cubic-bezier(0.2, 0.8, 0.2, 1);

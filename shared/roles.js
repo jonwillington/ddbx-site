@@ -60,6 +60,18 @@
  *  trade than no page. */
 export const MIN_FILINGS = 25;
 
+/** Below this many MARKED purchases, a group's median mark is not a comparison.
+ *
+ *  A separate floor from MIN_FILINGS because it gates a different quantity. A
+ *  group can clear 25 filings and carry four performance marks: the newest
+ *  purchases have none by construction, and a bucket whose filings are recent
+ *  is a bucket whose median is taken over a handful. Ranking the groups on a
+ *  median of four against a median of 289 puts a name at the top of the page
+ *  on the strength of four purchases. The verdict line ranks over this floor;
+ *  the columns are still drawn, because being drawn is a claim about counts,
+ *  not about outcomes. */
+export const MIN_MARKED = 10;
+
 /** How many filings a hub lists, and how many companies it ranks. */
 export const TOP_FILINGS = 25;
 export const TOP_COMPANIES = 12;

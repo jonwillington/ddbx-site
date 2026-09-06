@@ -37,6 +37,7 @@ import { SeoSkeleton } from "@/components/seo/skeletons";
 import { Skeleton } from "@/components/skeleton";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
+import { Row, RowList } from "@/components/row-list";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { api } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
@@ -46,12 +47,29 @@ import { formatGbp } from "@/lib/performance/format";
 const RULE = "border-hairline dark:border-separator";
 const BODY = "text-[14px] leading-[1.65] text-foreground/70";
 
-/** The definition-list row shared by the loaded "What's in every report" block
- *  and its skeleton, so the two can't drift apart on rail width or padding. */
-const CONTENTS_ROW = `grid gap-x-8 gap-y-1 border-b ${RULE} py-3.5 sm:grid-cols-[13rem_minmax(0,1fr)]`;
+/** The `Row` geometry from row-list.tsx, for the skeleton that stands in for
+ *  the "What's in every report" list. Written out rather than imported because
+ *  the component keeps its own class string private; kept beside the loaded
+ *  list here so the two are read together when either changes. */
+const CONTENTS_ROW = `grid gap-x-10 gap-y-3 border-b ${RULE} py-7 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-9`;
 
-/** The promoted month's sheet — shared with the skeleton for the same reason. */
-const LEAD_SHEET = `mt-8 rounded-2xl border ${RULE} bg-sheet px-5 py-5 dark:bg-surface sm:px-6 sm:py-6`;
+/** The promoted month's sheet — shared with the skeleton for the same reason.
+ *
+ *  A contrast panel: a dark object on the cream page, which is the design
+ *  language's first tenet naming the exact device for emphasis. It was a
+ *  raised cream sheet on a cream page, which is the same shape as every other
+ *  block on the archive and so promoted nothing.
+ *
+ *  The `dark` class does the work rather than a set of overrides. Everything
+ *  inside — the eyebrow, the tiles, the filled button, the loading bars — is
+ *  already written with a dark-theme form, and the theme is a class the
+ *  variant reads off any ancestor (`@custom-variant dark (&:is(.dark *))`), so
+ *  scoping it here gets all of them at once and forks none of them. `surface`
+ *  rather than `background`, so the panel stays a panel on the dark theme too:
+ *  on the cream page it is the contrast, on the dark page it is a step above
+ *  the ground. */
+const LEAD_SHEET =
+  "dark mt-8 rounded-[28px] border border-white/10 bg-surface px-5 py-6 text-foreground shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)] sm:px-8 sm:py-8";
 
 export default function ReportsPage() {
   const { marketId, marketParam, label } = useMemo(() => {
@@ -152,19 +170,24 @@ export default function ReportsPage() {
               summary={latest}
             />
 
+            {/* The house selling list, not a definition list. These five
+                entries are the argument for clicking into a report at all —
+                someone arriving from a search for "UK director buying report"
+                has no way to know whether "clusters" and "alpha" are worth a
+                click — and a 13.5px label in a 13rem rail set them as
+                documentation. `RowList` is tenet 3 of the design language and
+                exists for exactly this: the heading carries the claim, the
+                paragraph beside it earns the claim. */}
             <SeoSection title="What’s in every report">
-              <dl className={`border-t ${RULE}`}>
-                {REPORT_CONTENTS.map((row) => (
-                  <div key={row.label} className={CONTENTS_ROW}>
-                    <dt className="text-[13.5px] font-medium text-foreground">
-                      {row.label}
-                    </dt>
-                    <dd className={`max-w-[62ch] ${BODY}`}>
+              <RowList>
+                {REPORT_CONTENTS.map(
+                  (row: { label: string; description: string }) => (
+                    <Row key={row.label} title={row.label}>
                       {row.description}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+                    </Row>
+                  ),
+                )}
+              </RowList>
             </SeoSection>
 
             {/* The promoted month is deliberately absent from this list. It was
@@ -293,24 +316,26 @@ function ArchiveSkeleton() {
         <Skeleton className={`mt-5 h-[37px] w-52 ${BUTTON_RADIUS}`} />
       </div>
 
-      <section className={`mt-10 border-t ${RULE} pt-7`}>
-        <Skeleton className="h-[17px] w-48" />
-        <div className={`mt-4 border-t ${RULE}`}>
-          {REPORT_CONTENTS.map((row) => (
+      <section className={`mt-12 border-t ${RULE} pt-5`}>
+        <Skeleton className="h-[34px] w-72" />
+        <div className={`mt-6 border-t ${RULE}`}>
+          {REPORT_CONTENTS.map((row: { label: string }) => (
             <div key={row.label} className={CONTENTS_ROW}>
-              <Skeleton className="h-[13.5px] w-36" />
               <div className="min-w-0">
-                <Skeleton className="h-[14px] w-full max-w-[560px]" />
-                <Skeleton className="mt-2 h-[14px] w-4/5 max-w-[460px]" />
+                <Skeleton className="h-[24px] w-full max-w-[260px]" />
+              </div>
+              <div className="min-w-0 sm:pt-1">
+                <Skeleton className="h-[15px] w-full max-w-[520px]" />
+                <Skeleton className="mt-2.5 h-[15px] w-4/5 max-w-[420px]" />
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className={`mt-10 border-t ${RULE} pt-7`}>
-        <Skeleton className="h-[17px] w-36" />
-        <ul className={`mt-4 border-t ${RULE}`}>
+      <section className={`mt-12 border-t ${RULE} pt-5`}>
+        <Skeleton className="h-[34px] w-56" />
+        <ul className={`mt-6 border-t ${RULE}`}>
           {[0, 1].map((i) => (
             <li key={i} className={`border-b ${RULE} py-4`}>
               <div className="flex items-baseline justify-between gap-4">

@@ -21,6 +21,13 @@
  *  within the board, which the ordinal in the gutter already states.
  *  Composition is still SeoPageShell's, which keeps the app band after the
  *  last content section.
+ *
+ *  The list under it moved to `BoardRow` (2026-09-06). The shape of an episode
+ *  — how many purchases, over how long, starting when — was an 11px dot-string
+ *  at half ink inside a column that had the whole width to itself; it is three
+ *  labelled, aligned, tabular tracks now, with the value and the median mark
+ *  as columns of their own. The buyer names did NOT become a fact cell: they
+ *  stay the wrapping second line, for the reason set out over `buyers` below.
  */
 import type { ClusterEpisode } from "../../shared/boards";
 import type { RelatedCard } from "@/components/seo/related-cards";
@@ -45,7 +52,6 @@ import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { RelatedCards } from "@/components/seo/related-cards";
-import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { clusterBoardCta } from "@/components/seo/cta-copy";
 import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
 import { TickerPill } from "@/components/ticker-pill";
@@ -57,23 +63,33 @@ import {
   displayTicker,
 } from "@/lib/company";
 import { AlphaBadge } from "@/components/boards/filing-row";
+import {
+  BoardRow,
+  BoardRowHeader,
+  BoardRowList,
+} from "@/components/boards/board-row";
 import { useBoardFeed } from "@/components/boards/board-feed";
 import { BENCHMARK } from "@/components/boards/board-prices";
 import { StageFigures } from "@/components/boards/stage-figures";
+import { TrackingNotice } from "@/components/seo/tracking-notice";
+import { StageNotice } from "@/components/boards/stage-notice";
 import {
   ClusterStage,
   episodeId,
-  spanLabel,
 } from "@/components/boards/stages/cluster-stage";
 
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
 
-const ROW_LINK =
-  "-mx-2 block rounded-lg px-2 py-3.5 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]";
+/** The span, without the preposition `spanLabel` supplies — the column heading
+ *  says "Span", so "over 9 days" underneath it says "over" twice. The stage
+ *  keeps `spanLabel`, which is written for a sentence. */
+function spanCell(days: number): string {
+  if (days <= 0) return "one day";
+  if (days === 1) return "two days";
 
-const ROW_GRID =
-  "grid grid-cols-[1.5rem_minmax(0,1fr)_5.5rem] items-start gap-x-3 sm:grid-cols-[2rem_minmax(0,1fr)_9rem] sm:gap-x-4";
+  return `${days} days`;
+}
 
 const CROSS_LINKS: RelatedCard[] = [
   {
@@ -193,6 +209,7 @@ export default function ClusterBuysPage() {
                     rarer thing.
                   </p>
                   <StageFigures reserve items={figures} />
+                  <StageNotice marketId={market.id} />
                 </>
               }
               linking={linking}
@@ -203,7 +220,13 @@ export default function ClusterBuysPage() {
           ) : undefined
         }
         loading={rows === null}
-        skeleton={<SeoSkeleton rows={TOP_N} variant="ranked-board" />}
+        skeleton={
+          <SeoSkeleton
+            board={{ facts: 3, logo: 56, meter: false, trailing: 2 }}
+            rows={TOP_N}
+            variant="ranked-board"
+          />
+        }
         standfirst={
           inHero ? undefined : (
             <>
@@ -221,8 +244,9 @@ export default function ClusterBuysPage() {
         titleInHero={inHero}
         width="wide"
       >
-        {/* Under the stage: the rule, the tracking caveat, the truncation
-            caveat. Small print belongs outside the object. */}
+        {/* Under the stage: the rule and the truncation caveat. The tracking
+            line moved into the stage header, under the figures it qualifies —
+            below a 600px object at 45% opacity it was invisible. */}
         <div className="mt-4 max-w-[62ch]">
           <a
             className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
@@ -230,7 +254,12 @@ export default function ClusterBuysPage() {
           >
             A cluster is an event, not a company. How these are grouped ↓
           </a>
-          <TrackingNotice className="mt-2.5" />
+          {/* The empty and error states mount no stage, so there is no header
+              for the in-stage notice to sit in. The page still has to say how
+              far back it holds. */}
+          {inHero ? null : (
+            <TrackingNotice className="mt-2.5" marketId={market.id} />
+          )}
           {!complete && hasBoard && (
             <p className={`mt-3 ${CAVEAT}`}>
               We couldn’t load the whole period, so this ranking may be missing
@@ -268,16 +297,15 @@ export default function ClusterBuysPage() {
               not the whole market.
             </p>
 
-            <div
-              aria-hidden
-              className={`mt-8 pb-2.5 text-[11px] leading-[1.4] text-foreground/50 ${ROW_GRID}`}
-            >
-              <span />
-              <span>Company, who bought and when</span>
-              <span className="text-right">Insiders buying</span>
-            </div>
+            <BoardRowHeader
+              facts={["Purchases", "Span", "First buy"]}
+              figure="Insiders"
+              money="Value bought"
+              perf="Median since"
+              subject="Company and who bought"
+            />
 
-            <ol className={`border-t ${R.rule}`}>
+            <BoardRowList>
               {ranked.map((episode, i) => (
                 <ClusterRow
                   key={episodeId(episode)}
@@ -289,7 +317,7 @@ export default function ClusterBuysPage() {
                   symbol={market.symbol}
                 />
               ))}
-            </ol>
+            </BoardRowList>
 
             {(soft > 0 || partial > 0) && (
               <p className={`mt-4 ${CAVEAT}`}>
@@ -416,98 +444,51 @@ function ClusterRow({
     return seen;
   }, [episode.rows, marketId]);
 
-  const dimmed = linking.activeId != null && linking.activeId !== id;
-
   return (
-    <li
-      className={`border-b transition-opacity ${R.rule}${
-        dimmed ? " opacity-45" : ""
-      }`}
-      onMouseEnter={() => linking.setActiveId(id)}
-      onMouseLeave={() => linking.setActiveId(null)}
-    >
-      <Link className={ROW_LINK} to={companyPath(episode.ticker)}>
-        <div className={ROW_GRID}>
-          <span
-            aria-hidden
-            className={`font-mono text-[15px] leading-[1.35] tabular-nums ${
-              position <= 3 ? "text-foreground" : "text-foreground/35"
-            }`}
-          >
-            {String(position).padStart(2, "0")}
-          </span>
-
-          <span className="min-w-0">
-            <span className="flex min-w-0 items-center gap-2">
-              <CompanyLogo size={28} ticker={episode.ticker} />
-              <span className="min-w-0 truncate text-[16px] font-semibold leading-[1.3] tracking-[-0.012em] text-foreground sm:text-[18px]">
-                {cleanCompanyName(episode.company) || ticker}
-              </span>
-              <TickerPill ticker={ticker} />
-            </span>
-
-            {/* The names, then the shape of the episode.
-                NOT truncated. The count in the right-hand column is only
-                credible because the names are there to check it against — that
-                is the whole reason this page states what it can show instead of
-                the pipeline's own figure. Truncating to one line gave Savills a
-                headline of six above five names and an ellipsis, which is the
-                exact impression the design exists to avoid. Six names wrap to
-                two lines; that is cheaper than an unverifiable number. */}
-            <span className="mt-1.5 block text-[12px] leading-[1.4] text-foreground/60">
-              {buyers.join(", ")}
-            </span>
-
-            <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-[1.35] text-foreground/50">
-              <span>
-                {episode.filings}{" "}
-                {episode.filings === 1 ? "purchase" : "purchases"}
-              </span>
-              <span aria-hidden className="opacity-40">
-                ·
-              </span>
-              <span>{spanLabel(episode.spanDays)}</span>
-              {episode.firstDate ? (
-                <>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                  <span className="tabular-nums">
-                    {shortDate(episode.firstDate, locale)}
-                  </span>
-                </>
-              ) : null}
-              <span aria-hidden className="opacity-40">
-                ·
-              </span>
-              <span className="tabular-nums">
-                {money(episode.value, symbol)}
-              </span>
-              {episode.alphaCount > 0 && (
-                <>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <AlphaBadge ratio={episode.medianAlpha} />
-                    <span>median since</span>
-                  </span>
-                </>
-              )}
-            </span>
-          </span>
-
-          <span className="text-right">
-            <span className="text-[19px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground sm:text-[26px]">
-              <span className="sr-only">Insiders buying: </span>
-              {episode.named}
-            </span>
-            <span className="mt-1.5 block text-[11px] leading-[1.3] text-foreground/45">
-              {episode.named === 1 ? "insider" : "insiders"}
-            </span>
-          </span>
-        </div>
-      </Link>
-    </li>
+    <BoardRow
+      badge={<TickerPill ticker={ticker} />}
+      facts={[
+        { label: "Purchases", value: episode.filings },
+        { label: "Span", value: spanCell(episode.spanDays) },
+        {
+          label: "First buy",
+          value: episode.firstDate
+            ? shortDate(episode.firstDate, locale)
+            : "not dated",
+        },
+      ]}
+      figure={{
+        srLabel: "Insiders buying",
+        unit: episode.named === 1 ? "insider" : "insiders",
+        value: episode.named,
+      }}
+      linkId={id}
+      linking={linking}
+      logo={<CompanyLogo size={56} ticker={episode.ticker} />}
+      // A cluster clears the co-buyer floor twice over before it is listed, so
+      // this guard should never fire — but formatMoney answers zero with an
+      // em-dash and anything under 500 with "£0k", and both are a figure
+      // standing in for one we do not hold.
+      money={episode.value >= 500 ? money(episode.value, symbol) : "not stated"}
+      name={cleanCompanyName(episode.company) || ticker}
+      // Null rather than a real median where nothing has a mark yet: AlphaBadge
+      // answers that with "n/a", and every row keeps the same columns, which is
+      // what makes the ones that do have a mark comparable down the page.
+      perf={
+        <AlphaBadge
+          ratio={episode.alphaCount > 0 ? episode.medianAlpha : null}
+        />
+      }
+      position={position}
+      // The names, wrapping, NOT truncated. The count in the right-hand column
+      // is only credible because the names are there to check it against — that
+      // is the whole reason this page states what it can show instead of the
+      // pipeline's own figure. Truncating to one line gave Savills a headline
+      // of six above five names and an ellipsis, which is the exact impression
+      // the design exists to avoid. Six names wrap to two lines; that is
+      // cheaper than an unverifiable number.
+      secondary={buyers.join(", ")}
+      to={companyPath(episode.ticker)}
+    />
   );
 }

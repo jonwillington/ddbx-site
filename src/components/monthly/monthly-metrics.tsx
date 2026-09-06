@@ -1,5 +1,6 @@
 import type { MonthlyMetrics as Metrics } from "@/types/ddbx";
 import type { StatTile } from "@/components/seo/stat-tiles";
+import type { StageFigure } from "@/components/boards/stage-figures";
 
 import { returnTextClass } from "./monthly-utils";
 
@@ -84,24 +85,51 @@ function tone(ratio: number | null | undefined): StatTile["tone"] {
   return ratio > 0 ? "positive" : "negative";
 }
 
-function PageMetrics({ metrics }: { metrics: Metrics }) {
-  const headline: StatTile[] = [
-    { label: "Buys disclosed", value: String(metrics.total_buys) },
-    {
-      label: "Committed",
-      value: formatGbp(metrics.total_value_gbp, { compact: true }),
-      primary: true,
-    },
-    { label: "Companies", value: String(metrics.distinct_companies) },
-    { label: "Insiders", value: String(metrics.distinct_directors) },
-    { label: "Clusters", value: String(metrics.cluster_count) },
-  ];
+/** The one figure the report is actually about, set a size larger wherever
+ *  these are drawn as tiles. */
+const PRIMARY = "Committed";
 
+/** The month's five headline counts, as stage figures.
+ *
+ *  A selector rather than a block, because /reports/:month states them inside
+ *  its hero panel now (beside the drawing, on the dark ground) while the recap
+ *  and any composed page form state them as tiles. One list, two dressings —
+ *  the alternative was a second hand-typed copy of the same four labels, which
+ *  is how a page and its own pre-render come to disagree about a number.
+ *
+ *  Committed is omitted, not placeheld, when the month committed nothing:
+ *  `formatGbp` renders zero as "£0.0k" and `StageFigures` throws on it in
+ *  development, which is the second static-page rule made mechanical. A month
+ *  with no money in it says so in prose. */
+export function headlineFigures(metrics: Metrics): StageFigure[] {
+  return [
+    { k: "Buys disclosed", v: String(metrics.total_buys) },
+    ...(metrics.total_value_gbp > 0
+      ? [
+          {
+            k: PRIMARY,
+            v: formatGbp(metrics.total_value_gbp, { compact: true }),
+          },
+        ]
+      : []),
+    { k: "Companies", v: String(metrics.distinct_companies) },
+    { k: "Insiders", v: String(metrics.distinct_directors) },
+    // Not the cluster count. Four figures fill the stage header's band; a
+    // fifth wraps onto its own line under the other four, which reads as an
+    // afterthought rather than a figure. The count is stated where the
+    // clusters are, in the Clusters section.
+  ];
+}
+
+/** The month's returns row: median, best, worst and the benchmark, each stated
+ *  only where there is something to state.
+ *
+ *  A median of exactly 0 is the "not enough priced buys to say" case coming
+ *  back as a number, and "Median buy 0.0%" reads as a measured flat month
+ *  rather than as a missing one. */
+export function returnTiles(metrics: Metrics): StatTile[] {
   const returns: StatTile[] = [];
 
-  // A median of exactly 0 is the "not enough priced buys to say" case coming
-  // back as a number, and "Median buy 0.0%" reads as a measured flat month.
-  // State it only when there is something to state.
   if (metrics.median_return != null && metrics.median_return !== 0) {
     returns.push({
       label: "Median buy",
@@ -136,14 +164,38 @@ function PageMetrics({ metrics }: { metrics: Metrics }) {
     });
   }
 
+  return returns;
+}
+
+/** How many columns a tile row of this length wants. `StatTiles` puts a 5-stat
+ *  group in a 4-col grid on a ragged row of its own otherwise. */
+function cols(n: number): 2 | 3 | 4 | 5 {
+  if (n >= 5) return 5;
+  if (n === 4) return 4;
+  if (n === 3) return 3;
+
+  return 2;
+}
+
+/** Both halves as tiles, one under the other.
+ *
+ *  /reports/:month composes the two selectors itself now — the headline counts
+ *  moved into the stage header, where they sit beside the drawing they belong
+ *  to, and only the returns row stays in the document. This stays the composed
+ *  form for any page-width surface that wants the whole band in one place. */
+function PageMetrics({ metrics }: { metrics: Metrics }) {
+  const headline: StatTile[] = headlineFigures(metrics).map((f) => ({
+    label: f.k,
+    value: f.v,
+    primary: f.k === PRIMARY,
+  }));
+  const returns = returnTiles(metrics);
+
   return (
     <div className="space-y-2">
-      <StatTiles cols={5} stats={headline} />
+      <StatTiles cols={cols(headline.length)} stats={headline} />
       {returns.length > 0 ? (
-        <StatTiles
-          cols={returns.length >= 4 ? 4 : returns.length === 3 ? 3 : 2}
-          stats={returns}
-        />
+        <StatTiles cols={cols(returns.length)} stats={returns} />
       ) : null}
     </div>
   );

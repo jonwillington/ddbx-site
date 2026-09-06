@@ -22,6 +22,34 @@ export type SeoSkeletonVariant =
   | "doc-sections" // report page / PageSection 10rem-rail ruled sections
   | "stat-tiles"; // figures grids
 
+/** The `ranked-board` geometry, for the boards that have moved to `BoardRow`.
+ *
+ *  Rule 9 asks a skeleton to stand at the shape that arrives, and BoardRow
+ *  arrives with a 56px logo, aligned fact cells and usually no meter — while
+ *  the pages that have not migrated yet still arrive at 28px with a bar under
+ *  every row. Both are the truth for their own page, so the geometry is a
+ *  parameter and the default is the old one: a page opts in when its rows do,
+ *  not when this file changes. */
+export interface SeoSkeletonBoard {
+  /** Logo diameter. BoardRow's is 56. */
+  logo?: number;
+  /** Aligned fact cells between the subject and the figure. */
+  facts?: number;
+  /** The 3px proportion bar under the subject. */
+  meter?: boolean;
+  /** Quantity columns to the right of the facts BESIDES the headline one —
+   *  /cluster-buys puts a value and a median mark there. They arrive with the
+   *  widest arrangement, so they stand from `xl` like the row's own do. */
+  trailing?: number;
+  /** The picture column: /biggest-buys' price line, /most-active's tally. */
+  visual?: boolean;
+  /** How tall that picture actually is. The default suits a price line;
+   *  /most-active's tally is a 7px run of pips, and standing a 44px bar in
+   *  its place makes the loading row 37px taller than the one that arrives —
+   *  a redraw wearing a loading state, which is the thing rule 6 is about. */
+  visualHeight?: number;
+}
+
 const DEFAULT_ROWS: Record<SeoSkeletonVariant, number> = {
   "ruled-list": 8,
   "ranked-board": 10,
@@ -33,6 +61,7 @@ const DEFAULT_ROWS: Record<SeoSkeletonVariant, number> = {
 export function SeoSkeleton({
   variant,
   rows,
+  board,
   className = "",
 }: {
   variant: SeoSkeletonVariant;
@@ -40,10 +69,19 @@ export function SeoSkeleton({
    *  the fetch (a static editorial list, a hard cap) — an 8-row stand-in for
    *  a 25-row board is a layout shift, not a skeleton. */
   rows?: number;
+  /** `ranked-board` only. Omit for the pre-BoardRow geometry. */
+  board?: SeoSkeletonBoard;
   className?: string;
 }) {
   const n = rows ?? DEFAULT_ROWS[variant];
   const keys = Array.from({ length: n }, (_, i) => i);
+  const logoPx = board?.logo ?? 28;
+  const factCells = Array.from({ length: board?.facts ?? 0 }, (_, i) => i);
+  const trailingCells = Array.from(
+    { length: board?.trailing ?? 0 },
+    (_, i) => i,
+  );
+  const showMeter = board?.meter ?? true;
 
   return (
     <div aria-busy="true" className={className}>
@@ -70,16 +108,46 @@ export function SeoSkeleton({
         <ol className={`mt-8 border-t ${RULE}`}>
           {keys.map((i) => (
             <li key={i} className={`border-b ${RULE} py-3.5`}>
-              <div className="flex items-start gap-3">
-                <Skeleton className="mt-1 h-[15px] w-6 shrink-0" />
-                <Skeleton circle className="shrink-0" h={28} w={28} />
+              <div
+                className={`flex items-start gap-3 ${board ? "sm:gap-4" : ""}`}
+              >
+                <Skeleton
+                  className={`mt-1 h-[15px] shrink-0 ${board ? "w-7 sm:w-10" : "w-6"}`}
+                />
+                <Skeleton circle className="shrink-0" h={logoPx} w={logoPx} />
                 <div className="min-w-0 flex-1">
-                  <Skeleton className="h-[14px] w-1/2 max-w-[240px]" />
+                  <Skeleton
+                    className={`w-1/2 max-w-[240px] ${board ? "h-[18px]" : "h-[14px]"}`}
+                  />
                   <Skeleton className="mt-2 h-[11px] w-2/3 max-w-[300px]" />
-                  <Skeleton className="mt-2.5 h-[3px] w-full" />
+                  {showMeter ? (
+                    <Skeleton className="mt-2.5 h-[3px] w-full" />
+                  ) : null}
                 </div>
+                {factCells.map((f) => (
+                  <Skeleton
+                    key={f}
+                    className={`mt-1 h-[13px] w-[5rem] shrink-0 ${
+                      f < 2 ? "hidden sm:block" : "hidden xl:block"
+                    }`}
+                  />
+                ))}
+                {board?.visual ? (
+                  <Skeleton
+                    className="mt-1 hidden w-[12rem] shrink-0 xl:block"
+                    h={board.visualHeight ?? 44}
+                  />
+                ) : null}
+                {trailingCells.map((t) => (
+                  <Skeleton
+                    key={`trailing-${t}`}
+                    className="mt-1 hidden h-[13px] w-[5.5rem] shrink-0 xl:block"
+                  />
+                ))}
                 <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  <Skeleton className="h-[18px] w-14" />
+                  <Skeleton
+                    className={board ? "h-[19px] w-12" : "h-[18px] w-14"}
+                  />
                   <Skeleton className="h-[12px] w-10" />
                 </div>
               </div>

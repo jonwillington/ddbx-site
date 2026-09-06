@@ -15,7 +15,7 @@ import {
 import { esc, noindex, page, renderInto } from "../shared/prerender.js";
 import { windowStart } from "../shared/sectors.js";
 import { brandTitle, isProductionHost } from "../shared/seo.js";
-import { TRACKING_NOTICE } from "../shared/tracking.js";
+import { trackingNotice } from "../shared/tracking.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 const MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
@@ -104,7 +104,7 @@ function prerender(rows, qualifying, market, host, complete) {
   return page(`<p style="${eyebrow}">Leaderboard</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(market)} companies with the most insider buying</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">The companies whose own ${market === "US" ? "insiders" : "directors"} bought most often over the last twelve months — with how many different people were buying, because one person buying twelve times and twelve people buying once are the same number and not the same signal.</p>
-  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(TRACKING_NOTICE)}</p>
+  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(trackingNotice(market))}</p>
   ${complete ? "" : `<p style="font-size:13px;color:#6b6154">We couldn’t load the whole period, so these counts may be missing older purchases.</p>`}
   <p style="font-size:14px;color:#4a4034;max-width:62ch">${esc(qualifying)} companies reached ${esc(MIN_COMPANY_FILINGS)} or more qualifying purchases in the last twelve months; the ${rows.length} busiest are listed here.</p>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>

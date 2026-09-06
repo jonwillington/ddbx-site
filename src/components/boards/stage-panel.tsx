@@ -5,11 +5,19 @@
  *  followed it could share a hero without sharing its subject. The line drawn
  *  here is deliberate: the panel owns the object — the dark rounded container,
  *  the header row with the toggle in it, the measured width and the height it
- *  implies, which of one or two modes is showing and the single advance from
- *  the first to the second, what is active, where the tooltip hangs and how
- *  far it may travel, the loading pulse, and the caption strip. It owns no
- *  discs, no money, no alpha and no rule about any of them. A page's own stage
- *  file keeps its model, its scales, its layouts and its words.
+ *  implies, which of one or two modes is showing and which one the board opens
+ *  on, what is active, where the tooltip hangs and how far it may travel, the
+ *  loading skeleton, and the caption strip. It owns no discs, no money, no
+ *  alpha and no rule about any of them. A page's own stage file keeps its
+ *  model, its scales, its layouts and its words.
+ *
+ *  The mode never changes on its own. Until 2026-09-06 the panel advanced from
+ *  the first arrangement to the second on a 2.6s timer, on the theory that the
+ *  re-sort was the hook. It read as a page that would not hold still: a reader
+ *  parsing the opening picture had it replaced mid-sentence, and the toggle
+ *  they had not yet noticed was what had moved it. A board whose second
+ *  arrangement is the stronger opener names it in `initialMode` and offers the
+ *  first through the caption's text button instead.
  *
  *  Three of the six boards draw no circle packing and no signed scatter at
  *  all, which is the test this split has to pass: what is here is a frame, not
@@ -26,6 +34,8 @@ import type { ReactNode } from "react";
 import type { Linking } from "./board-model";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+
+import { Skeleton } from "../skeleton";
 
 import { useMeasuredWidth } from "./board-model";
 
@@ -64,8 +74,8 @@ export interface StageContext<M extends string> {
   setActive: (id: string | null) => void;
   showTip: (id: string, anchor: TipAnchor) => void;
   hideTip: () => void;
-  /** Sets the mode AND marks the panel touched, so the one auto-advance never
-   *  moves the picture out from under a reader who has already chosen. */
+  /** Sets the mode. Handed to the caption so a text button there can offer the
+   *  other arrangement without the reader having to find the toggle. */
   choose: (mode: M) => void;
 }
 
@@ -114,10 +124,15 @@ export function useStage<M extends string = string>(): StageContext<M> {
 function Toggle<M extends string>({
   modes,
   mode,
+  disabled,
   onChoose,
 }: {
   modes: ReadonlyArray<StageMode<M>>;
   mode: M;
+  /** True while the board is loading. The toggle is rendered rather than
+   *  withheld — it is part of the arrived geometry — but pressing it before
+   *  there is anything to re-arrange only re-labels an empty frame. */
+  disabled: boolean;
   onChoose: (m: M) => void;
 }) {
   return (
@@ -126,11 +141,12 @@ function Toggle<M extends string>({
         <button
           key={m.id}
           aria-pressed={mode === m.id}
-          className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium tracking-[-0.005em] transition-colors ${
+          className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium tracking-[-0.005em] transition-colors disabled:pointer-events-none disabled:opacity-40 ${
             mode === m.id
               ? "bg-white text-[#1a140d]"
               : "text-white/65 hover:text-white"
           }`}
+          disabled={disabled}
           type="button"
           onClick={() => onChoose(m.id)}
         >
@@ -141,25 +157,140 @@ function Toggle<M extends string>({
   );
 }
 
+/** The stand-in for the picture, at the exact height and inside the exact pad
+ *  the arrived board will use.
+ *
+ *  Until 2026-09-06 this was `<div className="animate-pulse" style={{height}}/>`
+ *  — an empty dark void, pulsing nothing, for the second or two a board takes
+ *  to arrive. The geometry was already right (H is computed whether or not the
+ *  data is there); what was missing was anything inside it.
+ *
+ *  Two shapes cover all seven boards, because there are only two things a
+ *  stage draws: a field with marks scattered in it, and a list of rows. It is
+ *  a hint, not a preview — five hairlines and a few stubs, no dots. A skeleton
+ *  that guessed at the marks would be drawing a finding nobody has computed
+ *  yet, which is the second static-page rule wearing a different hat. */
+function StageSkeleton({
+  W,
+  H,
+  pad,
+  shape,
+  rows,
+}: {
+  W: number;
+  H: number;
+  pad: StagePad;
+  shape: "field" | "rows";
+  rows: number;
+}) {
+  const innerW = Math.max(0, W - pad.l - pad.r);
+  const innerH = Math.max(0, H - pad.t - pad.b);
+
+  if (shape === "rows") {
+    const n = Math.max(1, rows);
+    const rowH = innerH / n;
+    // A 25-row board gives each row about 20px, so the disc is sized off the
+    // row rather than fixed — an oversized circle would spill across the
+    // hairline it is meant to sit inside.
+    const disc = Math.max(8, Math.min(22, rowH - 6));
+
+    return (
+      <div aria-hidden style={{ height: H, position: "relative" }}>
+        <div
+          style={{
+            position: "absolute",
+            left: pad.l,
+            top: pad.t,
+            width: innerW,
+            height: innerH,
+          }}
+        >
+          {Array.from({ length: n }, (_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 border-b border-white/[0.06] last:border-b-0"
+              style={{ height: rowH }}
+            >
+              <Skeleton circle h={disc} w={disc} />
+              <Skeleton className="h-[11px] w-1/3" />
+              <Skeleton className="ml-auto h-[11px] w-16" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const lines = 5;
+
+  return (
+    <div aria-hidden style={{ height: H, position: "relative" }}>
+      {Array.from({ length: lines }, (_, i) => {
+        const y = pad.t + (innerH * i) / (lines - 1);
+
+        return (
+          <div key={i}>
+            <div
+              style={{
+                position: "absolute",
+                left: pad.l,
+                top: y,
+                width: innerW,
+                height: 1,
+                background: "rgb(255 255 255 / 0.05)",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                left: Math.max(8, pad.l - 52),
+                top: y - 4,
+              }}
+            >
+              <Skeleton className="h-[9px] w-[44px]" />
+            </div>
+          </div>
+        );
+      })}
+      <div
+        style={{
+          position: "absolute",
+          left: pad.l + Math.max(0, innerW / 2 - 66),
+          top: H - pad.b + 14,
+        }}
+      >
+        <Skeleton className="h-[12px] w-[132px]" />
+      </div>
+    </div>
+  );
+}
+
 export interface BoardStagePanelProps<M extends string> {
   /** The page's eyebrow, h1, standfirst and figures. Required: whenever the
    *  panel is mounted the document's h1 lives inside it. */
   header: ReactNode;
-  /** One or two. One means no toggle and no advance. */
+  /** One or two. One means no toggle. */
   modes: ReadonlyArray<StageMode<M>>;
-  /** The single advance from the first mode to the last, once the board has
-   *  arrived. `null` disables it. Skipped when the reader has already reached
-   *  for the toggle, and never armed under reduced motion — which opens on
-   *  the LAST mode instead, because the answer is worth more than the move. */
-  advanceAfterMs?: number | null;
+  /** Which arrangement the board opens on. Defaults to the first mode. A page
+   *  whose second arrangement is the stronger opener names it here rather than
+   *  reordering the toggle, so the toggle still reads in narrative order. */
+  initialMode?: M;
   height?: (W: number) => number;
   /** A function form lets a page widen its left gutter only from a
    *  breakpoint, for lane labels that a phone has no room for. */
   pad?: StagePad | ((W: number) => StagePad);
-  /** The header still renders; the chart, the caption and the tooltip do
-   *  not. The pulse stands at the arrived height so nothing below it moves
-   *  when the data lands. */
+  /** The header still renders; the chart and the tooltip do not, and the
+   *  caption strip holds a reserved line. The skeleton stands at the arrived
+   *  height, inside the arrived pad, so nothing below it moves when the data
+   *  lands. */
   loading: boolean;
+  /** Which stand-in the loading state draws. "field" is the default because
+   *  five of the seven boards scatter marks in a padded field; "rows" is for
+   *  the boards that are a ranked list. */
+  skeletonShape?: "field" | "rows";
+  /** How many rows the "rows" stand-in draws. Pass the board's real cap so the
+   *  stand-in and the arrived list have the same row height. */
+  skeletonRows?: number;
   /** When given, active state is the page's, so the stage and the rows under
    *  it highlight the same thing. */
   linking?: Linking;
@@ -179,10 +310,12 @@ export interface BoardStagePanelProps<M extends string> {
 export function BoardStagePanel<M extends string>({
   header,
   modes,
-  advanceAfterMs = 2600,
+  initialMode,
   height = defaultHeight,
   pad = DEFAULT_PAD,
   loading,
+  skeletonShape = "field",
+  skeletonRows = 8,
   linking,
   svgLabel,
   caption,
@@ -191,33 +324,40 @@ export function BoardStagePanel<M extends string>({
 }: BoardStagePanelProps<M>) {
   const [ref, width] = useMeasuredWidth<HTMLDivElement>();
   // Read once. A reader who changes the system setting mid-visit is not worth
-  // a media-query listener here, and re-reading it every render made the
-  // advance effect fire on an unrelated re-render.
+  // a media-query listener here, and the marks that consume it only read it as
+  // "may I transition", which is a per-mount answer.
   const [reduced] = useState(
     () =>
       typeof window !== "undefined" &&
       Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
   );
-  const advanceTo = modes[modes.length - 1].id;
-  const canAdvance = modes.length > 1;
+  const hasToggle = modes.length > 1;
+  // The guard is load-bearing rather than defensive: /roles drops to a
+  // single-mode toggle when it has no alpha to draw yet, and a page naming the
+  // mode that just disappeared would otherwise open on nothing.
   const [mode, setMode] = useState<M>(() =>
-    reduced ? advanceTo : modes[0].id,
+    initialMode && modes.some((m) => m.id === initialMode)
+      ? initialMode
+      : modes[0].id,
   );
-  const touched = useRef(false);
+  // The guard has a second edge. /roles derives its mode list from the data,
+  // so on the first render — before the fetch — the list is the single count
+  // mode, `initialMode` fails the guard, and the useState above locks in
+  // "count" for good; the outcome mode arriving a second later never gets a
+  // vote. This settles onto the declared opener once, when it first becomes
+  // available, and only if the reader has not already chosen for themselves.
+  // It is not the auto-advance that was removed: nothing moves after the
+  // board has shown the reader anything.
+  const chosen = useRef(false);
+
+  useEffect(() => {
+    if (chosen.current || !initialMode || mode === initialMode) return;
+    if (modes.some((m) => m.id === initialMode)) setMode(initialMode);
+  }, [initialMode, mode, modes]);
   const [tip, setTip] = useState<{ id: string; anchor: TipAnchor } | null>(
     null,
   );
   const [ownActive, setOwnActive] = useState<string | null>(null);
-
-  // Open on the first arrangement, then advance to the second once.
-  useEffect(() => {
-    if (loading || reduced || !canAdvance || advanceAfterMs == null) return;
-    const t = window.setTimeout(() => {
-      if (!touched.current) setMode(advanceTo);
-    }, advanceAfterMs);
-
-    return () => window.clearTimeout(t);
-  }, [loading, reduced, canAdvance, advanceAfterMs, advanceTo]);
 
   // A tooltip is anchored where the mark was when the pointer reached it, so
   // it cannot survive the marks moving somewhere else.
@@ -256,7 +396,7 @@ export function BoardStagePanel<M extends string>({
     showTip: (id, anchor) => setTip({ id, anchor }),
     hideTip: () => setTip(null),
     choose: (m: M) => {
-      touched.current = true;
+      chosen.current = true;
       setMode(m);
     },
   };
@@ -266,15 +406,26 @@ export function BoardStagePanel<M extends string>({
       <div ref={ref} className={PANEL}>
         <div className={HEADER_GRID}>
           <div className="min-w-0">{header}</div>
-          {canAdvance ? (
+          {hasToggle ? (
             <div className="flex lg:justify-end">
-              <Toggle mode={mode} modes={modes} onChoose={ctx.choose} />
+              <Toggle
+                disabled={loading}
+                mode={mode}
+                modes={modes}
+                onChoose={ctx.choose}
+              />
             </div>
           ) : null}
         </div>
 
         {loading ? (
-          <div className="animate-pulse" style={{ height: H }} />
+          <StageSkeleton
+            H={H}
+            W={W}
+            pad={padRef.current}
+            rows={skeletonRows}
+            shape={skeletonShape}
+          />
         ) : (
           <div className="relative">
             <svg
@@ -303,8 +454,17 @@ export function BoardStagePanel<M extends string>({
           </div>
         )}
 
-        {!loading && caption ? (
-          <div className={CAPTION}>{caption(ctx)}</div>
+        {/* The strip is reserved, not withheld. Rendering it only once the
+            caption has words to say made the panel grow by a row the moment
+            the data landed, which moved everything below the stage. */}
+        {caption ? (
+          <div className={CAPTION}>
+            {loading ? (
+              <Skeleton className="h-[13px] w-3/5 max-w-[420px]" />
+            ) : (
+              caption(ctx)
+            )}
+          </div>
         ) : null}
       </div>
     </StageCtx.Provider>

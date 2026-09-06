@@ -19,7 +19,7 @@ import { buyPerson } from "../shared/leaderboard.js";
 import { esc, noindex, page, renderInto } from "../shared/prerender.js";
 import { windowStart } from "../shared/sectors.js";
 import { brandTitle, isProductionHost } from "../shared/seo.js";
-import { TRACKING_NOTICE } from "../shared/tracking.js";
+import { trackingNotice } from "../shared/tracking.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 const MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
@@ -157,7 +157,7 @@ function prerender(rows, market, host, complete, counts) {
   return page(`<p style="${eyebrow}">Leaderboard</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">Cluster buying, where several ${esc(market)} insiders bought at once</h1>
   <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">Where several ${market === "US" ? "insiders" : "directors"} bought the same company within a fortnight of each other. One insider buying is a person's opinion; <a href="https://${esc(host)}/learn/cluster-buying">a cluster</a> is a board agreeing with itself, which is a different and rarer thing.</p>
-  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(TRACKING_NOTICE)}</p>
+  <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(trackingNotice(market))}</p>
   ${complete ? "" : `<p style="font-size:13px;color:#6b6154">We couldn’t load the whole period, so this ranking may be missing older clusters.</p>`}
   <p style="font-size:14px;color:#4a4034;max-width:62ch">${esc(counts.qualifying)} clusters in the last twelve months can be shown in full; the ${rows.length} largest are listed here.</p>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>

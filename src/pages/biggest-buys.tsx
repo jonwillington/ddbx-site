@@ -23,10 +23,24 @@
  *  headline figures moved into the message column beside the stage; the
  *  stat tiles with their unlabelled marks went. Composition is still
  *  SeoPageShell's, which keeps the app band after the last content section.
+ *
+ *  The list moved to `BoardRow` (2026-09-06). This board was the odd one out
+ *  in that migration — it is the only one with a picture in the middle of the
+ *  row and a PAIR in the money slot rather than a figure — so the shared row
+ *  grew two things for it: an opt-in wide money track (`moneyPair`) and a
+ *  logo slot that takes any node, which is where the repeat-entry turnstile
+ *  goes. The money pair also came down from 26px to the subject's own scale:
+ *  rule 5 says the row is about the company it names, and a figure set eight
+ *  points above the name says the opposite.
  */
 import type { Dealing, UsDealing } from "@/types/ddbx";
 import type { RelatedCard } from "@/components/seo/related-cards";
-import type { BoardRow, Linking } from "@/components/boards/board-model";
+// Aliased: `BoardRow` is also the shared row COMPONENT, and this is the data
+// shape it is handed. Two different things with the same good name.
+import type {
+  BoardRow as BoardRowModel,
+  Linking,
+} from "@/components/boards/board-model";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -66,6 +80,12 @@ import { leaderboardCta } from "@/components/seo/cta-copy";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { BoardStage } from "@/components/boards/board-stage";
 import {
+  BoardRow,
+  BoardRowHeader,
+  BoardRowList,
+} from "@/components/boards/board-row";
+import { StageNotice } from "@/components/boards/stage-notice";
+import {
   BoardTimeline,
   timelineFinding,
 } from "@/components/boards/board-timeline";
@@ -84,16 +104,6 @@ import {
  *  which is to say, invisible. */
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
-
-/** The whole row is the link, not the company name inside it. */
-const ROW_LINK =
-  "-mx-2 block rounded-xl px-2 py-4 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]";
-
-/** Rank gutter, detail, the price since the buy, figures. The sparkline has
- *  its own column from `md`; on a phone it drops beneath the detail so the
- *  figures keep their width. */
-const ROW_GRID =
-  "grid grid-cols-[1.5rem_minmax(0,1fr)_6.5rem] items-center gap-x-3 md:grid-cols-[2rem_minmax(0,1fr)_12rem_15rem] md:gap-x-6 lg:grid-cols-[2.25rem_minmax(0,1fr)_14rem_17rem]";
 
 /** Onward links, shaped as RelatedCards so the page has one card vocabulary. */
 const CROSS_LINKS: RelatedCard[] = [
@@ -347,6 +357,7 @@ export default function BiggestBuysPage() {
                       ))}
                     </dl>
                   ) : null}
+                  <StageNotice marketId={market.id} />
                 </>
               }
               linking={linking}
@@ -357,7 +368,13 @@ export default function BiggestBuysPage() {
           ) : undefined
         }
         loading={rows === null}
-        skeleton={<SeoSkeleton rows={TOP_N} variant="ranked-board" />}
+        skeleton={
+          <SeoSkeleton
+            board={{ logo: 56, meter: false, trailing: 1, visual: true }}
+            rows={TOP_N}
+            variant="ranked-board"
+          />
+        }
         standfirst={
           hasBoard || rows === null ? undefined : (
             <>
@@ -374,8 +391,9 @@ export default function BiggestBuysPage() {
         titleInHero={rows === null || hasBoard}
         width="wide"
       >
-        {/* Under the stage: the rule, the tracking caveat, the truncation
-            caveat. Small print belongs outside the object. */}
+        {/* Under the stage: the rule and the truncation caveat. The tracking
+            line moved into the stage header, under the figures it qualifies —
+            below a 600px object at 45% opacity it was invisible. */}
         <div className="mt-4 max-w-[62ch]">
           <a
             className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
@@ -383,7 +401,12 @@ export default function BiggestBuysPage() {
           >
             Only open-market purchases count. How we rank these ↓
           </a>
-          <TrackingNotice className="mt-2" />
+          {/* The empty and error states mount no stage, so there is no header
+              for the in-stage notice to sit in. The page still has to say how
+              far back it holds. */}
+          {rows === null || hasBoard ? null : (
+            <TrackingNotice className="mt-2" marketId={market.id} />
+          )}
           {!complete && ranked.length > 0 && (
             // Truncation is invisible unless you say so: the board still
             // renders and still looks complete. Better a caveat than a wrong
@@ -456,22 +479,16 @@ export default function BiggestBuysPage() {
             >
               {/* Column headers. Decorative for assistive tech: every row
                   states its own. */}
-              <div
-                aria-hidden
-                className={`pb-2.5 text-[11px] leading-[1.4] text-foreground/50 ${ROW_GRID}`}
-              >
-                <span />
-                <span>Company and buyer</span>
-                <span className="hidden md:block">
-                  Since the buy, vs the index
-                </span>
-                <span className="text-right">
-                  Paid → worth now
-                  <span className="mt-1 block">Alpha since disclosure</span>
-                </span>
-              </div>
+              <BoardRowHeader
+                moneyPair
+                className=""
+                money="Paid → worth now"
+                perf="Alpha"
+                subject="Company and buyer"
+                visual="Since the buy, vs the index"
+              />
 
-              <ol className={`border-t ${R.rule}`}>
+              <BoardRowList>
                 {board.map((r) => (
                   <BuyRow
                     key={r.id}
@@ -485,7 +502,7 @@ export default function BiggestBuysPage() {
                     symbol={market.symbol}
                   />
                 ))}
-              </ol>
+              </BoardRowList>
 
               {suppressed.size > 0 && (
                 <p className={`mt-4 ${CAVEAT}`}>
@@ -584,7 +601,7 @@ function BuyRow({
   marketId,
   symbol,
 }: {
-  row: BoardRow;
+  row: BoardRowModel;
   bars: ReturnType<typeof useBoardPrices> extends Map<string, infer B>
     ? B | undefined
     : never;
@@ -600,7 +617,6 @@ function BuyRow({
 }) {
   const ticker = displayTicker(r.ticker);
   const repeat = r.entry > 1;
-  const dim = active != null && active !== r.id;
   // THE ROW GOES TO THE PURCHASE, NOT THE ISSUER. Only the UK feed has filing
   // pages (`/dealings/:id` is a UK pipeline route), so this gates on market.
   const href =
@@ -618,122 +634,116 @@ function BuyRow({
         : "text-foreground/60";
 
   return (
-    <li
-      className={`border-b ${R.rule} transition-opacity ${dim ? "opacity-45" : ""} ${active === r.id ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""}`}
+    <BoardRow
+      moneyPair
+      badge={<TickerPill ticker={ticker} />}
+      // The active row is tinted as well as un-dimmed: hovering a dot on the
+      // timeline has to be findable in a list of twenty-five, and dimming the
+      // other twenty-four is only half of saying which one it is.
+      className={active === r.id ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""}
       id={`buy-${r.id}`}
-      onMouseEnter={() => linking.setActiveId(r.id)}
-      onMouseLeave={() => linking.setActiveId(null)}
-    >
-      <Link className={ROW_LINK} to={href}>
-        <div className={ROW_GRID}>
+      linkId={r.id}
+      linking={linking}
+      // A repeat entry from a company already on the board shows the turnstile
+      // instead of a second copy of the same mark — the row is about the
+      // purchase, and the logo would say "a different company" when it isn't.
+      // Same width as the disc so the names still line up.
+      logo={
+        repeat ? (
           <span
             aria-hidden
-            className={`self-start font-mono text-[15px] leading-[1.35] tabular-nums ${
-              r.rank <= 3 ? "text-foreground" : "text-foreground/35"
-            }`}
+            className="inline-flex w-14 shrink-0 justify-center pt-1 text-[18px] leading-none text-foreground/30"
           >
-            {String(r.rank).padStart(2, "0")}
+            &#8627;
           </span>
-
-          <span className="min-w-0">
-            <span className="flex min-w-0 items-center gap-2.5">
-              {repeat ? (
-                <span
+        ) : (
+          <CompanyLogo size={56} ticker={r.ticker} />
+        )
+      }
+      money={
+        <>
+          {/* Paid, then worth now: the pair is the claim, and neither half
+              means anything alone. Set at the subject's scale rather than
+              above it — rule 5 puts the company first, and this used to be
+              26px against an 18px name. */}
+          <span className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
+            <span className="text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground xl:text-[19px]">
+              <span className="sr-only">Value bought: </span>
+              {pair ? pair[0] : money(r.value, symbol)}
+            </span>
+            {pair ? (
+              <>
+                <ArrowRightIcon
                   aria-hidden
-                  className="inline-flex w-7 shrink-0 justify-center text-[15px] leading-none text-foreground/30"
-                >
-                  &#8627;
-                </span>
-              ) : (
-                <CompanyLogo size={28} ticker={r.ticker} />
-              )}
-              <span className="min-w-0 truncate text-[16px] font-semibold leading-[1.3] tracking-[-0.012em] text-foreground sm:text-[18px]">
-                {r.company}
-              </span>
-              <TickerPill ticker={ticker} />
-            </span>
-
-            <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-[1.35] text-foreground/50">
-              {r.person ? (
-                <>
-                  <span className="max-w-[24ch] truncate">{r.person}</span>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                </>
-              ) : null}
-              <span className="tabular-nums">
-                {dateLabel(r.tradeDate, locale)}
-              </span>
-              {repeat ? (
-                <>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                  <span>{ordinal(r.entry)} entry</span>
-                </>
-              ) : null}
-              {r.raw.cluster ? (
-                <span className="inline-flex items-center gap-1">
-                  <ClusterChip cluster={r.raw.cluster} />
-                  <span>of {r.raw.cluster.count} insiders</span>
-                </span>
-              ) : null}
-            </span>
-
-            {/* Phone: the price line sits under the detail. */}
-            <span className="mt-3 block max-w-[240px] md:hidden">
-              <BuySparkline bars={bars} bench={bench} row={r} />
-            </span>
-          </span>
-
-          <span className="hidden md:block">
-            <BuySparkline bars={bars} bench={bench} row={r} />
-          </span>
-
-          <span className="text-right">
-            <span className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:justify-end sm:gap-2.5">
-              <span className="text-[19px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground sm:text-[24px] lg:text-[26px]">
-                <span className="sr-only">Value bought: </span>
-                {pair ? pair[0] : money(r.value, symbol)}
-              </span>
-              {pair ? (
-                <>
-                  <ArrowRightIcon
-                    aria-hidden
-                    className={`h-3.5 w-3.5 shrink-0 rotate-90 sm:h-4 sm:w-4 sm:rotate-0 ${
-                      r.dir === "neg" ? "text-negative/60" : "text-positive/60"
-                    }`}
-                  />
-                  <span
-                    className={`text-[19px] font-semibold leading-none tabular-nums tracking-[-0.02em] sm:text-[24px] lg:text-[26px] ${tone}`}
-                  >
-                    <span className="sr-only">Worth now, if still held: </span>
-                    {pair[1]}
-                  </span>
-                </>
-              ) : null}
-            </span>
-            <span className="mt-2 flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-              {delta ? (
+                  className={`h-3.5 w-3.5 shrink-0 rotate-90 sm:rotate-0 ${
+                    r.dir === "neg" ? "text-negative/60" : "text-positive/60"
+                  }`}
+                />
                 <span
-                  className={`whitespace-nowrap text-[12.5px] font-medium tabular-nums ${tone}`}
+                  className={`text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] xl:text-[19px] ${tone}`}
                 >
-                  {delta}
+                  <span className="sr-only">Worth now, if still held: </span>
+                  {pair[1]}
                 </span>
-              ) : null}
-              <span className="sr-only">Alpha since disclosure: </span>
-              {r.alpha == null ? (
-                <span className="text-[13px] tabular-nums text-foreground/40">
-                  no mark yet
-                </span>
-              ) : (
-                <DeltaBadge suffix="pp" value={r.alpha * 100} />
-              )}
-            </span>
+              </>
+            ) : null}
           </span>
-        </div>
-      </Link>
-    </li>
+          {delta ? (
+            <span
+              className={`mt-1.5 block whitespace-nowrap text-[12.5px] font-medium tabular-nums ${tone}`}
+            >
+              {delta}
+            </span>
+          ) : null}
+        </>
+      }
+      name={r.company}
+      perf={
+        <>
+          <span className="sr-only">Alpha since disclosure: </span>
+          {r.alpha == null ? (
+            <span className="text-[13px] tabular-nums text-foreground/40">
+              no mark yet
+            </span>
+          ) : (
+            <DeltaBadge suffix="pp" value={r.alpha * 100} />
+          )}
+        </>
+      }
+      position={r.rank}
+      secondary={
+        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+          {r.person ? (
+            <>
+              <span className="max-w-[24ch] truncate">{r.person}</span>
+              <span aria-hidden className="opacity-40">
+                ·
+              </span>
+            </>
+          ) : null}
+          <span className="tabular-nums">{dateLabel(r.tradeDate, locale)}</span>
+          {repeat ? (
+            <>
+              <span aria-hidden className="opacity-40">
+                ·
+              </span>
+              <span>{ordinal(r.entry)} entry</span>
+            </>
+          ) : null}
+          {r.raw.cluster ? (
+            <span className="inline-flex items-center gap-1">
+              <ClusterChip cluster={r.raw.cluster} />
+              <span>of {r.raw.cluster.count} insiders</span>
+            </span>
+          ) : null}
+        </span>
+      }
+      to={href}
+      visual={
+        <span className="block max-w-[240px] xl:max-w-none">
+          <BuySparkline bars={bars} bench={bench} row={r} />
+        </span>
+      }
+    />
   );
 }

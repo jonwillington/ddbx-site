@@ -49,6 +49,7 @@ import {
   rolePath,
   rolesForMarket,
   MIN_FILINGS,
+  MIN_MARKED,
 } from "../../../../shared/roles.js";
 import { direction, signedPp } from "../board-model";
 import { BoardStagePanel } from "../stage-panel";
@@ -278,6 +279,108 @@ export function roleFigures(model: RolesModel): StageFigure[] {
   }
 
   return items;
+}
+
+/** Two groups' medians read against each other, within a tenth of a point. At
+ *  that distance `signedPp` rounds them to the same figure, and a sentence
+ *  naming a best and a worst that print identically is a finding the reader
+ *  can see is not one. */
+const TIE = 0.001;
+
+/** The page's finding, in one or two sentences, for the line under the
+ *  standfirst.
+ *
+ *  This used to live only in the stage's caption strip, and only in the outcome
+ *  arrangement — below a 600px object, on the second of two tabs. It is the
+ *  answer to the question the page's title asks, so it belongs above the fold
+ *  and on clean ground. The caption keeps the measurement caveat and nothing
+ *  else: the same finding stated twice is one of them going stale.
+ *
+ *  DENOMINATORS ARE `alphaCount`, NEVER `n`. A median mark is taken over the
+ *  purchases that carry a mark, and printing it "across 413 purchases" when 289
+ *  of them were measured is the page inflating its own sample. Where the filing
+ *  count matters it is said separately and in full.
+ *
+ *  Returns null rather than a placeholder when there is nothing to compare:
+ *  early in a market's life there are months of this, and "Not enough data" in
+ *  a slot the eye reads as the finding is worse than an absent line. The stage
+ *  already says why in its own small print. */
+export function roleVerdict(
+  model: RolesModel,
+  /** False when the window is truncated. The medians survive it — a median of
+   *  the marks we hold is still that — but "filed least" is a claim about a
+   *  count we know to be a floor, so that clause is suppressed. */
+  complete: boolean,
+): ReactNode | null {
+  if (model.alphaCount === 0) return null;
+
+  // Deterministic to the last comparison: a tie on the median falls to the
+  // larger marked sample, then to the slug. Without it two groups on the same
+  // rounded figure swap places between renders, and the page's finding changes
+  // when nothing about the data did.
+  const ranked = model.published
+    .filter((c) => c.alphaCount >= MIN_MARKED && c.medianAlpha != null)
+    .sort(
+      (a, b) =>
+        (b.medianAlpha ?? 0) - (a.medianAlpha ?? 0) ||
+        b.alphaCount - a.alphaCount ||
+        a.slug.localeCompare(b.slug),
+    );
+
+  if (ranked.length === 0) return null;
+
+  if (ranked.length === 1) {
+    const only = ranked[0];
+
+    return (
+      <>
+        {only.role.plural} are the only group with enough marked purchases to
+        compare, median{" "}
+        <span className="font-semibold text-white">
+          {signedPp(only.medianAlpha)}
+        </span>{" "}
+        across {only.alphaCount}.
+      </>
+    );
+  }
+
+  const highest = ranked[0];
+  const lowest = ranked[ranked.length - 1];
+
+  if ((highest.medianAlpha ?? 0) - (lowest.medianAlpha ?? 0) < TIE) {
+    return (
+      <>
+        Every group’s median sits within a tenth of a point of the others, so
+        the job the buyer filed under separates them by how much they bought
+        rather than by how the purchases have done.
+      </>
+    );
+  }
+
+  // "Filed least" is a claim about the whole set of drawn groups, not about
+  // the ones that cleared the marked floor: the group that filed fewest filed
+  // fewest whether or not its marks are numerous enough to rank.
+  const least = [...model.published].sort(
+    (a, b) => a.n - b.n || a.slug.localeCompare(b.slug),
+  )[0];
+
+  return (
+    <>
+      {highest.role.plural} have the highest median mark,{" "}
+      <span className="font-semibold text-white">
+        {signedPp(highest.medianAlpha)}
+      </span>{" "}
+      across {highest.alphaCount} marked purchases. {lowest.role.plural} have
+      the lowest,{" "}
+      <span className="font-semibold text-white">
+        {signedPp(lowest.medianAlpha)}
+      </span>{" "}
+      across {lowest.alphaCount}.
+      {complete && least.slug === highest.slug ? (
+        <> The group that filed least did best.</>
+      ) : null}
+    </>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1079,15 +1182,7 @@ export function RolesStage({
   const modes = model.alphaCount > 0 ? BOTH : COUNT_ONLY;
 
   const most = [...cols].sort((a, b) => b.n - a.n)[0];
-  const least = [...cols].sort((a, b) => a.n - b.n)[0];
   const richest = [...cols].sort((a, b) => b.value - a.value)[0];
-  const marked = cols.filter((c) => c.medianAlpha != null);
-  const highest = [...marked].sort(
-    (a, b) => (b.medianAlpha ?? 0) - (a.medianAlpha ?? 0),
-  )[0];
-  const lowest = [...marked].sort(
-    (a, b) => (a.medianAlpha ?? 0) - (b.medianAlpha ?? 0),
-  )[0];
 
   return (
     <BoardStagePanel<Mode>
@@ -1138,51 +1233,17 @@ export function RolesStage({
                 ) : null}
               </p>
             ) : (
+              // The finding this used to state — highest median, lowest median,
+              // and whether the group that filed least did best — is the
+              // verdict line under the page's standfirst now. What is left here
+              // is the caveat that belongs with the picture rather than with
+              // the finding: the marks are not taken over equal holding
+              // periods, which is the thing the ticks cannot show.
               <p>
-                {cols.length === 1 ? (
-                  <>
-                    <span className="font-semibold text-white">
-                      {most.role.plural} have a median mark of{" "}
-                      {signedPp(highest.medianAlpha)}
-                    </span>
-                    , over the {most.alphaCount} of their purchases that carry
-                    one.
-                  </>
-                ) : most.medianAlpha != null &&
-                  most === lowest &&
-                  least === highest ? (
-                  <>
-                    <span className="font-semibold text-white">
-                      {most.role.plural} filed most and have the lowest median
-                      mark, {signedPp(most.medianAlpha)}
-                    </span>
-                    ; {highest.role.plural.toLowerCase()} filed least and have
-                    the highest, {signedPp(highest.medianAlpha)}.
-                  </>
-                ) : most.medianAlpha != null ? (
-                  <>
-                    <span className="font-semibold text-white">
-                      {most.role.plural} filed most, with a median mark of{" "}
-                      {signedPp(most.medianAlpha)}
-                    </span>
-                    ; the highest median is {highest.role.plural.toLowerCase()}
-                    ’, at {signedPp(highest.medianAlpha)}, and the lowest{" "}
-                    {lowest.role.plural.toLowerCase()}’, at{" "}
-                    {signedPp(lowest.medianAlpha)}.
-                  </>
-                ) : (
-                  <>
-                    <span className="font-semibold text-white">
-                      The highest median mark is{" "}
-                      {highest.role.plural.toLowerCase()}’, at{" "}
-                      {signedPp(highest.medianAlpha)}
-                    </span>
-                    ; the lowest is {lowest.role.plural.toLowerCase()}’, at{" "}
-                    {signedPp(lowest.medianAlpha)}.
-                  </>
-                )}{" "}
-                Median alpha is measured from the disclosure-day close against{" "}
-                {benchmark}, over holding periods that differ.
+                Each group’s median is measured from the disclosure-day close
+                against {benchmark}, over holding periods that differ, and is
+                taken over its purchases that carry a mark rather than over all
+                of them.
               </p>
             )}
 
@@ -1211,6 +1272,11 @@ export function RolesStage({
       }
       header={header}
       height={stageHeight}
+      // The outcome view is the one that draws a finding; "by how many"
+      // restates the figures band above it. Safe to name unconditionally: in
+      // the no-alpha window `modes` shrinks to COUNT_ONLY and the panel's
+      // guard falls back to the only mode there is.
+      initialMode="outcome"
       linking={linking}
       loading={loading || cols.length === 0}
       modes={modes}
