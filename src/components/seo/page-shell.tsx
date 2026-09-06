@@ -66,13 +66,17 @@ export function SeoPageShell({
   /** An object that comes BEFORE the page's own furniture — above the back
    *  link, the crumbs and the eyebrow.
    *
-   *  Deliberately narrow in intent, and empty on every page in the family bar
-   *  one. The share route (/t/{id}) is the only surface here that a stranger
-   *  lands on cold from outside the site, and it has one job above the fold
-   *  that the ordering below cannot serve: show the notification. Everything
-   *  the shell normally opens with — crumbs, family stamp, h1, standfirst —
-   *  is orientation for a reader who already knows where they are, and on a
-   *  phone it pushed that object 400px down the page.
+   *  Two uses. The share route (/t/{id}) puts the notification above
+   *  everything, because a stranger lands there cold from outside the site and
+   *  everything the shell normally opens with — crumbs, family stamp, h1,
+   *  standfirst — is orientation for a reader who already knows where they
+   *  are; on a phone it pushed that object 400px down the page. The seven
+   *  board and hub pages (/biggest-buys and the 2026-09 sweep:
+   *  /best-performing-buys, /cluster-buys, /most-active-companies, /sectors,
+   *  /market-cap, /roles) put their proof object here with `titleInHero`, so
+   *  the h1 lives inside the panel and the shell renders none of its own
+   *  header, eyebrow, standfirst OR notice — a page using `titleInHero` must
+   *  render its notice content in `children`.
    *
    *  It is not a general "put anything at the top" hatch. A page that wants
    *  its content noticed sooner should shorten its standfirst; this exists for

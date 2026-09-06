@@ -15,7 +15,6 @@ import {
 } from "../../shared/sectors.js";
 
 import { marketForPath } from "@/lib/markets/registry";
-import { MeterBar } from "@/components/seo/meter-bar";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { DeltaBadge } from "@/components/market/market-row";
 
@@ -121,11 +120,9 @@ export function SectorComparisonHeader() {
 export function SectorComparisonRow({
   row,
   market,
-  maxValue,
 }: {
   row: SectorRollupRow;
   market: SectorMarket;
-  maxValue: number;
 }) {
   const concentrated =
     row.topCompanyShare != null &&
@@ -142,13 +139,15 @@ export function SectorComparisonRow({
         </span>
       </div>
 
-      {/* Value carries the bar directly beneath it so the figure and its share
-          of the page maximum read as one object rather than two. */}
+      {/* The figure alone. The bar that used to sit under it scaled every
+          sector against the largest one, which is the comparison the stage
+          above the list now draws at log scale — and drew better, because
+          eleven sectors spanning three orders of magnitude leave nine bars
+          reading as empty. */}
       <div className="order-3 col-span-2 sm:order-none sm:col-span-1">
         <span className="block text-[15px] font-semibold tabular-nums tracking-[-0.01em] text-foreground sm:text-right">
           {money(row.value, market.symbol)}
         </span>
-        <MeterBar className="mt-1.5" max={maxValue} value={row.value} />
       </div>
 
       <div className="text-right">

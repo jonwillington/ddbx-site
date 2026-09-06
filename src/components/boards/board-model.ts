@@ -122,6 +122,55 @@ export function signedPp(ratio: number | null): string {
   return `${ratio > 0 ? "+" : ""}${(ratio * 100).toFixed(1)}pp`;
 }
 
+const ONES = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+  "thirteen",
+  "fourteen",
+  "fifteen",
+  "sixteen",
+  "seventeen",
+  "eighteen",
+  "nineteen",
+];
+
+const TENS = [
+  "",
+  "",
+  "twenty",
+  "thirty",
+  "forty",
+  "fifty",
+  "sixty",
+  "seventy",
+  "eighty",
+  "ninety",
+];
+
+/** Small counts read as words in prose and as digits in a figure slot. "six
+ *  directors over 11 days" is a sentence; "6 directors" is a caption. Shared
+ *  by the cluster and activity stages so the two never spell a count apart. */
+export function numberWord(n: number): string {
+  if (!Number.isInteger(n) || n < 0 || n > 99) return String(n);
+  if (n < 20) return ONES[n];
+  const unit = n % 10;
+
+  return unit === 0
+    ? TENS[Math.floor(n / 10)]
+    : `${TENS[Math.floor(n / 10)]}-${ONES[unit]}`;
+}
+
 /** "12 Jun", with the year added only when it isn't the current one. */
 export function dateLabel(iso: string, locale: string): string {
   if (!iso) return "—";

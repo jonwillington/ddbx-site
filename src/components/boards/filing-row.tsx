@@ -12,6 +12,7 @@
  *  back to the company page rather than a 404 (see functions/dealings/[id].js).
  */
 import type { Dealing, UsDealing } from "@/types/ddbx";
+import type { Linking } from "./board-model";
 
 import { Link } from "react-router-dom";
 
@@ -57,6 +58,10 @@ export function FilingRow({
   deal: d,
   locale,
   marketId,
+  /** False where the same comparison is already drawn above the list, at a
+   *  scale the bar cannot match. A 3px bar under a row that restates the
+   *  stage's own ranking is decoration. */
+  meter = true,
   /** What the meter is drawn against. The ranked quantity, so the bar measures
    *  the thing the board is sorted by rather than decorating the row. */
   meterMax,
@@ -66,15 +71,20 @@ export function FilingRow({
    *  page shares the same role and repeating it is noise. */
   showRole = false,
   symbol,
+  /** Shared highlight with a stage above the list: hovering the row lights
+   *  its mark, and a row dims while another one is active. */
+  linking,
 }: {
   deal: Dealing | UsDealing;
   locale: string;
   marketId: "UK" | "US";
+  meter?: boolean;
   meterMax: number;
   meterValue: number;
   position: number;
   showRole?: boolean;
   symbol: string;
+  linking?: Linking;
 }) {
   const alpha = buyAlpha(d);
   const ticker = displayTicker(d.ticker ?? "");
@@ -86,8 +96,19 @@ export function FilingRow({
   const href =
     marketId === "UK" && d.id ? filingPath(d.id) : companyPath(d.ticker ?? "");
 
+  const dimmed =
+    linking != null && linking.activeId != null && linking.activeId !== d.id;
+
   return (
-    <li className={`border-b ${R.rule}`}>
+    <li
+      className={`border-b ${R.rule}${linking ? " transition-opacity" : ""}${
+        dimmed ? " opacity-45" : ""
+      }`}
+      onMouseEnter={
+        linking && d.id ? () => linking.setActiveId(d.id ?? null) : undefined
+      }
+      onMouseLeave={linking ? () => linking.setActiveId(null) : undefined}
+    >
       <Link className={ROW_LINK} to={href}>
         <div className={ROW_GRID}>
           <span
@@ -158,11 +179,13 @@ export function FilingRow({
             )}
           </span>
 
-          <MeterBar
-            className="col-span-3 mt-2.5"
-            max={meterMax}
-            value={meterValue}
-          />
+          {meter ? (
+            <MeterBar
+              className="col-span-3 mt-2.5"
+              max={meterMax}
+              value={meterValue}
+            />
+          ) : null}
         </div>
       </Link>
     </li>
