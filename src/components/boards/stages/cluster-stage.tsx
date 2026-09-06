@@ -55,7 +55,8 @@ const MODES: ReadonlyArray<StageMode<Mode>> = [
 ];
 
 /** Deeper at the foot than the panel default: the column labels are two
- *  lines, "6 insiders" over "three clusters". */
+ *  lines, "6 insiders" over "three clusters", and the time view puts its
+ *  methodology footnote on a third row under the months. */
 const PAD: StagePad = { l: 56, r: 24, t: 68, b: 52 };
 
 /** The span rules are labelled in words — "a fortnight", "three weeks" — and
@@ -205,9 +206,12 @@ interface Plot {
 
 interface CountView {
   placed: Placed[];
-  ticks: Array<{ at: number; label: string; sub: string }>;
+  ticks: Array<{ at: number; label: string; sub?: string }>;
   plot: Plot;
   fits: boolean;
+  /** The columns are narrower than their words, so the ticks are bare counts
+   *  and the axis heading has to carry the noun. */
+  terse: boolean;
 }
 
 /** One column per distinct insider count present, ascending.
@@ -236,6 +240,11 @@ function countView(
   const placed: Placed[] = [];
   const ticks: CountView["ticks"] = [];
   let fits = cell <= slot;
+  // "2 insiders" over "ten clusters" needs a column's width to itself. Where
+  // the columns are narrower than the words — a phone puts five of them in
+  // 250px — the count alone is the label and the axis heading carries the
+  // noun. Five two-line labels printed over each other state nothing.
+  const terse = slot < 96;
 
   values.forEach((named, i) => {
     const inCol = marks
@@ -264,14 +273,16 @@ function countView(
 
     ticks.push({
       at: cx,
-      label: `${named} insiders`,
-      sub: `${numberWord(inCol.length)} ${
-        inCol.length === 1 ? "cluster" : "clusters"
-      }`,
+      label: terse ? String(named) : `${named} insiders`,
+      sub: terse
+        ? undefined
+        : `${numberWord(inCol.length)} ${
+            inCol.length === 1 ? "cluster" : "clusters"
+          }`,
     });
   });
 
-  return { placed, ticks, plot, fits };
+  return { placed, ticks, plot, fits, terse };
 }
 
 /** The largest disc that draws the tallest column without compressing it.
@@ -423,6 +434,11 @@ function StageBody({
 
   const r = useMemo(() => solveRadius(marks, W, H, pad), [marks, W, H, pad]);
   const outer = r + 10;
+  // The satellite ring's outer edge. The dots sit at r + 7 and are 9 across,
+  // so they reach r + 11.5 — past `outer`, which is what the marks are placed
+  // and hit-tested on. Anything that has to keep clear of a mark keeps clear
+  // of this instead, or it lands on the insiders.
+  const reach = outer + 5;
   const count = useMemo(
     () => countView(marks, W, H, pad, r),
     [marks, W, H, pad, r],
@@ -459,14 +475,14 @@ function StageBody({
           id: m.id,
           x: p.x,
           y: p.y,
-          r: outer,
+          r: reach,
           text: cleanCompanyName(m.e.company) || displayTicker(m.e.ticker),
           sub: `${m.e.named} insiders, ${spanLabel(m.e.spanDays)}`,
         };
       })
       .filter((c): c is NonNullable<typeof c> => c != null);
     const sides = placeLabels(cands, {
-      obstacles: time.placed.map((p) => ({ x: p.x, y: p.y, r: outer })),
+      obstacles: time.placed.map((p) => ({ x: p.x, y: p.y, r: reach })),
       xMin: pad.l,
       xMax: W - 6,
       cap: 3,
@@ -488,45 +504,61 @@ function StageBody({
             ] as const,
         ),
     );
-  }, [mode, marks, time, outer, pad, W]);
+  }, [mode, marks, time, reach, pad, W]);
 
   const widest = marks[0];
 
   return (
     <>
-      <g
-        className="transition-opacity duration-700"
-        style={{ opacity: mode === "many" ? 1 : 0 }}
-      >
-        <StageAxis plot={count.plot} x={count.ticks} />
-      </g>
+      {/* One axis at a time, mounted rather than faded.
 
-      <g
-        className="transition-opacity duration-700"
-        style={{ opacity: mode === "when" ? 1 : 0 }}
-      >
+          /biggest-buys crossfades its furniture, and that is safe there
+          because only one of its two arrangements HAS any: nothing can land
+          on anything. Here both arrangements write x labels into the same
+          20px band at the foot of the plot — "3 insiders / twelve clusters"
+          and "May" are the same two rows — so the only thing keeping the two
+          apart was an opacity transition, which is to say the animation
+          clock. A clock that is not running (a backgrounded tab, a throttled
+          capture, a frame grabbed mid-fade) paints both label sets over each
+          other at half strength, which reads as a bug in the chart rather
+          than a stalled transition. The marks still travel between the two
+          arrangements — that move is the argument — but the rules under them
+          cut. */}
+      {mode === "many" ? (
         <StageAxis
-          emphasise={[time.fortnightY]}
-          plot={time.plot}
-          x={time.months}
-          y={time.spans}
+          plot={count.plot}
+          x={count.ticks}
+          xLabel={count.terse ? "insiders →" : "insiders in the cluster →"}
         />
-        {/* The rule readers ask about: an episode anchored on one filing
-            reaches a fortnight either way, so four weeks is inside the rule
-            rather than a breach of it. Only where there is room to say it. */}
-        {W >= 700 ? (
-          <text
-            className="font-mono"
-            fill="rgba(255,255,255,0.4)"
-            fontSize={10}
-            textAnchor="end"
-            x={time.plot.x1}
-            y={time.fortnightY - 7}
-          >
-            ±14 days from the anchor filing, so an episode can reach four weeks
-          </text>
-        ) : null}
-      </g>
+      ) : (
+        <>
+          <StageAxis
+            emphasise={[time.fortnightY]}
+            plot={time.plot}
+            x={time.months}
+            y={time.spans}
+          />
+          {/* The rule readers ask about: an episode anchored on one filing
+              reaches a fortnight either way, so four weeks is inside the rule
+              rather than a breach of it. A footnote under the date axis, not
+              a line across the plot — inside the plot it was cut into pieces
+              by whichever marks happened to sit on the fortnight rule. Only
+              where there is room to say it. */}
+          {W >= 700 ? (
+            <text
+              className="font-mono"
+              fill="rgba(255,255,255,0.45)"
+              fontSize={10}
+              textAnchor="end"
+              x={time.plot.x1}
+              y={time.plot.y1 + 34}
+            >
+              ±14 days from the anchor filing, so an episode can reach four
+              weeks
+            </text>
+          ) : null}
+        </>
+      )}
 
       <g>
         {marks.map((m) => {
@@ -560,7 +592,7 @@ function StageBody({
               />
               {widest && m.id === widest.id ? (
                 <StageLabel
-                  r={outer}
+                  r={reach}
                   side="above"
                   sub={spanLabel(m.e.spanDays)}
                   text={
@@ -571,7 +603,7 @@ function StageBody({
               ) : null}
               {label ? (
                 <StageLabel
-                  r={outer}
+                  r={reach}
                   side={label.side}
                   sub={label.sub}
                   text={label.text}
