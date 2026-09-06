@@ -340,6 +340,20 @@ export function BoardStagePanel<M extends string>({
       ? initialMode
       : modes[0].id,
   );
+  // The guard has a second edge. /roles derives its mode list from the data,
+  // so on the first render — before the fetch — the list is the single count
+  // mode, `initialMode` fails the guard, and the useState above locks in
+  // "count" for good; the outcome mode arriving a second later never gets a
+  // vote. This settles onto the declared opener once, when it first becomes
+  // available, and only if the reader has not already chosen for themselves.
+  // It is not the auto-advance that was removed: nothing moves after the
+  // board has shown the reader anything.
+  const chosen = useRef(false);
+
+  useEffect(() => {
+    if (chosen.current || !initialMode || mode === initialMode) return;
+    if (modes.some((m) => m.id === initialMode)) setMode(initialMode);
+  }, [initialMode, mode, modes]);
   const [tip, setTip] = useState<{ id: string; anchor: TipAnchor } | null>(
     null,
   );
@@ -381,7 +395,10 @@ export function BoardStagePanel<M extends string>({
     setActive,
     showTip: (id, anchor) => setTip({ id, anchor }),
     hideTip: () => setTip(null),
-    choose: (m: M) => setMode(m),
+    choose: (m: M) => {
+      chosen.current = true;
+      setMode(m);
+    },
   };
 
   return (

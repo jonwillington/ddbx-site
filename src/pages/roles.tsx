@@ -26,7 +26,13 @@ import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { summarise } from "../../shared/boards.js";
-import { buyValue, isEligibleBuy } from "../../shared/leaderboard.js";
+import {
+  buyAlpha,
+  buyPerson,
+  buyValue,
+  isEligibleBuy,
+} from "../../shared/leaderboard.js";
+import { filingPath } from "../../shared/filings.js";
 import {
   inRole,
   missingRoleLabel,
@@ -49,14 +55,28 @@ import { RelatedCards } from "@/components/seo/related-cards";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { roleCta } from "@/components/seo/cta-copy";
-import { LogoDevAttribution } from "@/components/company-logo";
-import { FilingRow } from "@/components/boards/filing-row";
+import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
+import { TickerPill } from "@/components/ticker-pill";
+import {
+  cleanCompanyName,
+  cleanInsiderName,
+  companyPath,
+  displayTicker,
+} from "@/lib/company";
+import { AlphaBadge } from "@/components/boards/filing-row";
+import {
+  BoardRow,
+  BoardRowHeader,
+  BoardRowList,
+} from "@/components/boards/board-row";
 import { useBoardFeed } from "@/components/boards/board-feed";
+import { dateLabel } from "@/components/boards/board-model";
 import { BENCHMARK } from "@/components/boards/board-prices";
 import { StageFigures } from "@/components/boards/stage-figures";
 import { StageNotice } from "@/components/boards/stage-notice";
 import {
   roleFigures,
+  roleVerdict,
   toRoleColumns,
   RolesStage,
 } from "@/components/boards/stages/roles-stage";
@@ -132,6 +152,10 @@ export function RolesIndexPage() {
 
   const cta = roleCta();
   const drawn = rows === null || buckets.length > 0;
+  const verdict = useMemo(
+    () => (rows === null ? null : roleVerdict(model, complete)),
+    [rows, model, complete],
+  );
   const standfirst = (
     <>
       The same twelve months of {market.label} buying, split by the job the
@@ -173,6 +197,25 @@ export function RolesIndexPage() {
                   <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
                     {standfirst}
                   </p>
+                  {/* The finding, above the fold and on clean ground. It was
+                      only ever in the stage's caption strip, and only on the
+                      second of two tabs — the answer to the question the title
+                      asks, three scrolls and a click away.
+
+                      Two lines are reserved while the window is in flight so
+                      the header doesn't grow under the reader when the data
+                      lands. When the verdict comes back null there is nothing
+                      to say and nothing is said: a slot reading "Not enough
+                      data" where the eye expects the finding is worse than an
+                      absent line, and the stage's own small print already
+                      explains why there are no marks yet. */}
+                  {rows === null ? (
+                    <div aria-hidden className="mt-4 h-[3rem]" />
+                  ) : verdict ? (
+                    <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.5] text-white/85">
+                      {verdict}
+                    </p>
+                  ) : null}
                   <StageFigures
                     reserve
                     items={rows === null ? [] : roleFigures(model)}
@@ -364,7 +407,6 @@ export default function RolePage() {
 
   const shown = filings.slice(0, TOP_FILINGS);
   const summary = useMemo(() => summarise(filings), [filings]);
-  const topValue = shown.length > 0 ? buyValue(shown[0]) : 0;
 
   const siblings: RelatedCard[] = rolesForMarket(market.id)
     .filter((r: RoleEntry) => r.slug !== role?.slug)
@@ -497,30 +539,28 @@ export default function RolePage() {
                 classification it hasn't shown. */}
             <p className={`mt-6 max-w-[68ch] ${R.body}`}>{entry.definition}</p>
 
-            <div
-              aria-hidden
-              className="mt-8 grid grid-cols-[1.5rem_minmax(0,1fr)_5.5rem] gap-x-3 pb-2.5 text-[11px] leading-[1.4] text-foreground/50 sm:grid-cols-[2rem_minmax(0,1fr)_9rem] sm:gap-x-4"
-            >
-              <span />
-              <span>Company, buyer and what they spent</span>
-              <span className="text-right">Alpha since disclosure</span>
-            </div>
+            {/* Ranked on what was spent, so the money is the figure and the
+                mark rides beside it. The header names both, because a column
+                of signed percentages under no heading reads as a return. */}
+            <BoardRowHeader
+              facts={["Disclosed"]}
+              money="Paid"
+              perf="Against the market"
+              subject="Company and buyer"
+            />
 
-            <ol className={`border-t ${R.rule}`}>
+            <BoardRowList>
               {shown.map((d, i) => (
-                <FilingRow
+                <RoleFilingRow
                   key={d.id ?? i}
-                  showRole
                   deal={d}
                   locale={locale}
                   marketId={market.id}
-                  meterMax={topValue}
-                  meterValue={buyValue(d)}
                   position={i + 1}
                   symbol={market.symbol}
                 />
               ))}
-            </ol>
+            </BoardRowList>
           </>
         )}
 
@@ -579,5 +619,90 @@ export default function RolePage() {
         <LogoDevAttribution className="mt-10" />
       </SeoPageShell>
     </DefaultLayout>
+  );
+}
+
+/** One purchase on a role hub.
+ *
+ *  The hub ranks on what was spent, so money is the figure the row leads with
+ *  and the mark sits beside it. Unlike the performance board, most of these
+ *  rows are new enough to have no mark at all, and that case is the one this
+ *  row exists to get right: it says "No mark yet" in words. A dash, an "n/a" or
+ *  an empty cell all read as a number we are withholding, and the second static
+ *  page rule is that an absent figure says so and says when it will exist.
+ *
+ *  The row links to the purchase, not the issuer — every UK disclosure has a
+ *  permanent page and sending the click to the company index throws away what
+ *  the reader chose. `/dealings/:id` is a UK pipeline route, so US rows fall
+ *  back to the company page rather than a 404 (see functions/dealings/[id].js). */
+function RoleFilingRow({
+  deal: d,
+  locale,
+  marketId,
+  position,
+  symbol,
+}: {
+  deal: Dealing | UsDealing;
+  locale: string;
+  marketId: "UK" | "US";
+  position: number;
+  symbol: string;
+}) {
+  const ticker = displayTicker(d.ticker ?? "");
+  const person = cleanInsiderName(buyPerson(d) ?? "");
+  // The FILED title, not the bucket's name: every row on this page shares the
+  // bucket, and what varies — "Non-Executive Chair of Audit and Risk" against a
+  // bare "Director" — is exactly what the classification rule acted on.
+  const role =
+    marketId === "US"
+      ? ((d as UsDealing).reporter?.officer_title ?? "")
+      : ((d as Dealing).director?.role ?? "");
+  const alpha = buyAlpha(d);
+
+  return (
+    <BoardRow
+      badge={<TickerPill ticker={ticker} />}
+      facts={[
+        {
+          label: "Disclosed",
+          value: d.disclosed_date
+            ? dateLabel(d.disclosed_date, locale)
+            : d.trade_date
+              ? dateLabel(d.trade_date, locale)
+              : "not dated",
+        },
+      ]}
+      logo={<CompanyLogo size={56} ticker={d.ticker ?? ""} />}
+      money={money(buyValue(d), symbol)}
+      name={cleanCompanyName(d.company ?? "") || ticker}
+      perf={
+        alpha == null ? (
+          <span className="whitespace-nowrap text-[10.5px] leading-[1.35] text-foreground/45">
+            No mark yet
+          </span>
+        ) : (
+          <AlphaBadge ratio={alpha} />
+        )
+      }
+      position={position}
+      secondary={
+        <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+          <span>{person || "Undisclosed"}</span>
+          {role ? (
+            <>
+              <span aria-hidden className="opacity-40">
+                ·
+              </span>
+              <span>{role}</span>
+            </>
+          ) : null}
+        </span>
+      }
+      to={
+        marketId === "UK" && d.id
+          ? filingPath(d.id)
+          : companyPath(d.ticker ?? "")
+      }
+    />
   );
 }

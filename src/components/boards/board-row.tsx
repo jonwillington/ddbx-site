@@ -27,6 +27,24 @@
  *  returns three template strings as custom properties, and one static class
  *  list reads them at the three widths — so the header and the rows genuinely
  *  share a spec instead of agreeing by inspection.
+ *
+ *  The widest arrangement waits for `xl`, not `lg`, and the reason is the SEO
+ *  rail. `DefaultLayout drawerRight` reserves `lg:mr-80` for a 320px fixed
+ *  aside that appears at exactly 1024px, so the content column does not grow
+ *  across that breakpoint — it FALLS, from 975px at 1023 to 656px at 1024.
+ *  Every board in this family runs with that rail, so a full-width row spec
+ *  keyed on `lg` unfolds into the one width where there is least room for it
+ *  and gets clipped by the layout's `overflow-x-clip` — silently, and from the
+ *  right, which is where the ranked figure lives. At `xl` the column is 912px
+ *  and the arrangement fits.
+ *
+ *  For the same reason only ONE trailing quantity is a column below `xl`. A
+ *  board with money and a performance mark and a count has six tracks after
+ *  the subject; at 720px they leave the company name about seventy pixels,
+ *  which is a worse row than the dot-string this replaced. So below `xl` the
+ *  stranded quantities join the caption under the name — labelled, in the
+ *  order the header names them — and only the board's headline figure keeps
+ *  its column.
  */
 import type { CSSProperties, ReactNode } from "react";
 import type { Linking } from "./board-model";
@@ -40,18 +58,26 @@ const ROW_LINK =
 
 /** Column widths, in one place so a change lands on every board at once.
  *  The phone rail and logo are narrower; everything else either survives at
- *  full width or collapses into the caption. */
+ *  full width or collapses into the caption.
+ *
+ *  Sized to their contents rather than rounded up: a fact cell holds "9 days",
+ *  "12 Aug" or "£1.2bn", a money cell holds "£1.2m", and every rem spent on
+ *  slack here is a rem taken off the company name, which rule 5 says is the
+ *  thing the row is about. */
 const TRACK = {
   railPhone: "1.75rem",
   rail: "2.5rem",
   logoPhone: "2.5rem",
   logo: "3.5rem",
   subject: "minmax(0,1fr)",
-  fact: "6.5rem",
+  fact: "5rem",
   visual: "12rem",
-  money: "7rem",
-  perf: "5rem",
-  figure: "7rem",
+  money: "5.5rem",
+  /** /biggest-buys' paid-to-worth-now pair, which is two figures and an arrow
+   *  rather than one number, and cannot be told in 5.5rem. Opt in per board. */
+  moneyPair: "11.5rem",
+  perf: "5.5rem",
+  figure: "5.5rem",
   /** The phone's single right-hand column: one quantity, not three. */
   tailPhone: "5.5rem",
 } as const;
@@ -60,7 +86,7 @@ const TRACK = {
  *  the numbers in them and the row is a table pretending to be a list. */
 export const MAX_FACTS = 3;
 
-/** The most facts that fit between 640 and 1024, where the visual is already
+/** The most facts that fit between 640 and 1280, where the visual is already
  *  gone and the subject is down to a name and a ticker. */
 const FACTS_AT_MEDIUM = 2;
 
@@ -71,19 +97,32 @@ export interface BoardRowShape {
   facts?: number;
   visual?: boolean;
   money?: boolean;
+  /** Widen the money track for a composed pair rather than one figure. */
+  moneyPair?: boolean;
   perf?: boolean;
   figure?: boolean;
 }
 
+/** Which trailing quantity a board leads on. */
+export type BoardRowTail = "figure" | "money" | "perf" | null;
+
 export interface BoardRowGrid {
   className: string;
   style: CSSProperties;
-  /** What the phone's one right-hand column holds. The other two trailing
-   *  quantities join the caption rather than stacking into a column narrower
-   *  than they are. */
+  /** Where the one trailing column sits before `xl`. */
   tailClass: string;
   /** Which of money / perf / figure won that column. */
-  tail: "figure" | "money" | "perf" | null;
+  tail: BoardRowTail;
+  /** Per-slot visibility, so the header and the rows can never disagree about
+   *  which columns exist at a width. Anything hidden here is carried by the
+   *  row's caption instead — never dropped. */
+  cell: {
+    fact: (index: number) => string;
+    visual: string;
+    money: string;
+    perf: string;
+    figure: string;
+  };
 }
 
 function tracks(parts: Array<string | null>): string {
@@ -93,14 +132,16 @@ function tracks(parts: Array<string | null>): string {
 /** The one column spec, at the three widths the boards are read at.
  *
  *  Under 640 the row is rail, logo, subject and a single quantity: the facts
- *  and the visual fold into the caption the old rows already had, written
- *  once here rather than per page. Between 640 and 1024 the visual goes and
- *  the facts are capped at two. At 1024 and over every slot the board asked
- *  for is a column of its own. */
+ *  and the visual fold into the caption the old rows already had, written once
+ *  here rather than per page. Between 640 and 1280 the facts are capped at two,
+ *  the visual is gone and the other trailing quantities are still in that
+ *  caption — see the header note on the rail for why 1280 and not 1024. At
+ *  1280 and over every slot the board asked for is a column of its own. */
 export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   const facts = Math.max(0, Math.min(MAX_FACTS, shape.facts ?? 0));
   const logo = shape.logo !== false;
-  const tail = shape.figure
+  const money = shape.moneyPair ? TRACK.moneyPair : TRACK.money;
+  const tail: BoardRowTail = shape.figure
     ? "figure"
     : shape.money
       ? "money"
@@ -112,14 +153,11 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
     TRACK.railPhone,
     logo ? TRACK.logoPhone : null,
     TRACK.subject,
+    // Always the narrow tail on a phone, even for the money pair: 11.5rem of
+    // a 343px screen leaves the company name nothing, and the pair already
+    // knows how to stack.
     tail ? TRACK.tailPhone : null,
   ]);
-
-  const trailing = [
-    shape.money ? TRACK.money : null,
-    shape.perf ? TRACK.perf : null,
-    shape.figure ? TRACK.figure : null,
-  ];
 
   const medium = tracks([
     TRACK.rail,
@@ -128,7 +166,8 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
     ...Array.from<string>({ length: Math.min(facts, FACTS_AT_MEDIUM) }).fill(
       TRACK.fact,
     ),
-    ...trailing,
+    tail === "money" ? money : tail === "perf" ? TRACK.perf : null,
+    tail === "figure" ? TRACK.figure : null,
   ]);
 
   const wide = tracks([
@@ -137,23 +176,39 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
     TRACK.subject,
     ...Array.from<string>({ length: facts }).fill(TRACK.fact),
     shape.visual ? TRACK.visual : null,
-    ...trailing,
+    shape.money ? money : null,
+    shape.perf ? TRACK.perf : null,
+    shape.figure ? TRACK.figure : null,
   ]);
+
+  const tailClass = logo
+    ? "col-start-4 sm:col-start-auto"
+    : "col-start-3 sm:col-start-auto";
+  // A trailing slot that did not win the tail has no column until `xl`; the
+  // caption carries it in the meantime.
+  const trailing = (slot: Exclude<BoardRowTail, null>) =>
+    tail === slot ? tailClass : "hidden xl:block";
 
   return {
     // The three arbitrary-property classes are literals, so Tailwind emits
     // them; only the values behind them are computed.
     className:
-      "grid items-start gap-x-3 pe-6 sm:gap-x-4 [grid-template-columns:var(--board-row-phone)] sm:[grid-template-columns:var(--board-row-medium)] lg:[grid-template-columns:var(--board-row-wide)]",
+      "grid items-start gap-x-3 pe-6 sm:gap-x-4 [grid-template-columns:var(--board-row-phone)] sm:[grid-template-columns:var(--board-row-medium)] xl:[grid-template-columns:var(--board-row-wide)]",
     style: {
       "--board-row-phone": phone,
       "--board-row-medium": medium,
       "--board-row-wide": wide,
     } as CSSProperties,
     tail,
-    tailClass: logo
-      ? "col-start-4 sm:col-start-auto"
-      : "col-start-3 sm:col-start-auto",
+    tailClass,
+    cell: {
+      fact: (i: number) =>
+        i < FACTS_AT_MEDIUM ? "hidden sm:block" : "hidden xl:block",
+      figure: trailing("figure"),
+      money: trailing("money"),
+      perf: trailing("perf"),
+      visual: "hidden xl:block",
+    },
   };
 }
 
@@ -176,6 +231,7 @@ export function BoardRowHeader({
   figure,
   logo = true,
   money,
+  moneyPair,
   perf,
   subject,
   visual,
@@ -185,6 +241,9 @@ export function BoardRowHeader({
   figure?: string;
   logo?: boolean;
   money?: string;
+  /** Match the row's own `moneyPair`, or the heading sits over the wrong
+   *  track. */
+  moneyPair?: boolean;
   perf?: string;
   subject: string;
   visual?: string;
@@ -194,6 +253,7 @@ export function BoardRowHeader({
     figure: figure != null,
     logo,
     money: money != null,
+    moneyPair,
     perf: perf != null,
     visual: visual != null,
   });
@@ -208,34 +268,21 @@ export function BoardRowHeader({
       {logo ? <span /> : null}
       <span>{subject}</span>
       {facts.map((label, i) => (
-        <span
-          key={label}
-          className={
-            i < FACTS_AT_MEDIUM ? "hidden sm:block" : "hidden lg:block"
-          }
-        >
+        <span key={label} className={grid.cell.fact(i)}>
           {label}
         </span>
       ))}
       {visual != null ? (
-        <span className="hidden lg:block">{visual}</span>
+        <span className={grid.cell.visual}>{visual}</span>
       ) : null}
       {money != null ? (
-        <span
-          className={`text-right ${grid.tail === "money" ? grid.tailClass : "hidden sm:block"}`}
-        >
-          {money}
-        </span>
+        <span className={`text-right ${grid.cell.money}`}>{money}</span>
       ) : null}
       {perf != null ? (
-        <span
-          className={`text-right ${grid.tail === "perf" ? grid.tailClass : "hidden sm:block"}`}
-        >
-          {perf}
-        </span>
+        <span className={`text-right ${grid.cell.perf}`}>{perf}</span>
       ) : null}
       {figure != null ? (
-        <span className={`text-right ${grid.tailClass}`}>{figure}</span>
+        <span className={`text-right ${grid.cell.figure}`}>{figure}</span>
       ) : null}
     </div>
   );
@@ -296,16 +343,21 @@ export interface BoardRowProps {
   secondary?: ReactNode;
   /** Up to three promoted quantities, in the order the header names them. */
   facts?: BoardRowFact[];
-  /** A sparkline or a tally run. Its own column at 1024 and over; under the
+  /** A sparkline or a tally run. Its own column at 1280 and over; under the
    *  caption below that, because it is the picture the page is about. */
   visual?: ReactNode;
   money?: ReactNode;
+  /** Widen the money track: /biggest-buys tells a pair and an arrow there,
+   *  which is not a thing 5.5rem can hold. */
+  moneyPair?: boolean;
   /** An AlphaBadge or a DeltaBadge. */
   perf?: ReactNode;
   /** The ranked quantity, with the noun under it. */
   figure?: { value: ReactNode; unit?: string; srLabel?: string };
   /** Spans every column, under the row. /market-cap's proportion bar. */
   meter?: ReactNode;
+  /** A DOM id on the row itself, for a page that wants to address one. */
+  id?: string;
   /** Shared highlight with a stage above the list. The id is a PROP because
    *  the boards key it differently — a filing id, an episode id, a ticker —
    *  and the row has no business guessing which. */
@@ -319,11 +371,13 @@ export function BoardRow({
   className = "",
   facts = [],
   figure,
+  id,
   linkId,
   linking,
   logo,
   meter,
   money,
+  moneyPair,
   name,
   perf,
   position,
@@ -336,6 +390,7 @@ export function BoardRow({
     figure: figure != null,
     logo: logo !== undefined,
     money: money != null,
+    moneyPair,
     perf: perf != null,
     visual: visual != null,
   });
@@ -348,21 +403,69 @@ export function BoardRow({
 
   const hover = linking && linkId != null ? linkId : null;
 
-  // What the phone shows in place of the fact columns: the labelled values,
-  // dot-separated, exactly where the old rows put them. The third fact has to
-  // survive as far as 1024, where its column has not arrived yet.
-  const phoneFacts = facts.slice(0, FACTS_AT_MEDIUM);
-  const mediumFact = facts[FACTS_AT_MEDIUM];
-  const strandedMoney = money != null && grid.tail !== "money";
-  const strandedPerf = perf != null && grid.tail !== "perf";
-  const hasPhoneCaption =
-    phoneFacts.length > 0 || strandedMoney || strandedPerf;
+  // Everything the row states that has no column yet, in the order the header
+  // names it: on a phone that is every fact, and up to 1280 it is the third
+  // fact plus whichever trailing quantity did not win the tail. Nothing is
+  // dropped on the way down — it moves, labelled, to the line under the name
+  // that the rows this replaced used for all of it.
+  const caption: Array<{
+    key: string;
+    node: ReactNode;
+    /** Drawn here under 640. */
+    phone: boolean;
+    /** Drawn here between 640 and 1280. */
+    medium: boolean;
+  }> = [
+    ...facts.map((fact, i) => ({
+      key: `fact-${fact.label}`,
+      medium: i >= FACTS_AT_MEDIUM,
+      node: (
+        <>
+          <span className="opacity-70">{fact.label}</span>
+          <span className="tabular-nums">{fact.value}</span>
+        </>
+      ),
+      phone: true,
+    })),
+    ...(money != null && grid.tail !== "money"
+      ? [
+          {
+            key: "money",
+            medium: true,
+            node: <span className="tabular-nums">{money}</span>,
+            phone: true,
+          },
+        ]
+      : []),
+    ...(perf != null && grid.tail !== "perf"
+      ? [{ key: "perf", medium: true, node: perf, phone: true }]
+      : []),
+  ];
+
+  // A separator belongs before an item only where something visible at that
+  // width precedes it — and "visible" differs between the two widths this
+  // line serves, so it is decided per width rather than per position.
+  let seenPhone = false;
+  let seenMedium = false;
+  const captionCells = caption.map((item) => {
+    const cell = {
+      ...item,
+      sepMedium: item.medium && seenMedium,
+      sepPhone: item.phone && seenPhone,
+    };
+
+    seenPhone = seenPhone || item.phone;
+    seenMedium = seenMedium || item.medium;
+
+    return cell;
+  });
 
   return (
     <li
       className={`border-b ${R.rule}${linking ? " transition-opacity" : ""}${
         dimmed ? " opacity-45" : ""
       } ${className}`}
+      id={id}
       onMouseEnter={
         linking && hover ? () => linking.setActiveId(hover) : undefined
       }
@@ -393,7 +496,13 @@ export function BoardRow({
 
           <span className="min-w-0">
             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="min-w-0 truncate text-[18px] font-semibold leading-[1.3] tracking-[-0.014em] text-foreground lg:text-[20px]">
+              {/* Wraps to two lines rather than truncating. A company board
+                  that loses the company name to make room for a fact cell has
+                  got the row backwards — rule 5 puts the subject first, and
+                  "Jardine Matheson Hold…" is the subject not being first. Two
+                  lines is the cap: past that the rows stop being scannable
+                  down, which is the whole point of the aligned columns. */}
+              <span className="line-clamp-2 min-w-0 text-[18px] font-semibold leading-[1.3] tracking-[-0.014em] text-foreground xl:text-[20px]">
                 {name}
               </span>
               {badge}
@@ -405,95 +514,83 @@ export function BoardRow({
               </span>
             ) : null}
 
-            {hasPhoneCaption ? (
-              <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-[1.35] text-foreground/50 sm:hidden">
-                {phoneFacts.map((fact, i) => (
-                  <span key={fact.label} className="inline-flex gap-1">
-                    {i > 0 ? (
-                      <span aria-hidden className="opacity-40">
+            {captionCells.length > 0 ? (
+              <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-[1.35] text-foreground/50 xl:hidden">
+                {captionCells.map((cell) => (
+                  <span
+                    key={cell.key}
+                    className={
+                      cell.phone && cell.medium
+                        ? "inline-flex items-center gap-1"
+                        : cell.phone
+                          ? "inline-flex items-center gap-1 sm:hidden"
+                          : "hidden items-center gap-1 sm:inline-flex"
+                    }
+                  >
+                    {cell.sepPhone || cell.sepMedium ? (
+                      <span
+                        aria-hidden
+                        className={
+                          cell.sepPhone && cell.sepMedium
+                            ? "opacity-40"
+                            : cell.sepPhone
+                              ? "opacity-40 sm:hidden"
+                              : "hidden opacity-40 sm:inline"
+                        }
+                      >
                         ·
                       </span>
                     ) : null}
-                    <span className="opacity-70">{fact.label}</span>
-                    <span className="tabular-nums">{fact.value}</span>
+                    {cell.node}
                   </span>
                 ))}
-                {strandedMoney ? (
-                  <span className="inline-flex gap-1">
-                    {phoneFacts.length > 0 ? (
-                      <span aria-hidden className="opacity-40">
-                        ·
-                      </span>
-                    ) : null}
-                    <span className="tabular-nums">{money}</span>
-                  </span>
-                ) : null}
-                {strandedPerf ? (
-                  <span className="inline-flex items-center gap-1">
-                    {phoneFacts.length > 0 || strandedMoney ? (
-                      <span aria-hidden className="opacity-40">
-                        ·
-                      </span>
-                    ) : null}
-                    {perf}
-                  </span>
-                ) : null}
-              </span>
-            ) : null}
-
-            {mediumFact != null ? (
-              // Between 640 and 1024 the third fact has no column, and a fact
-              // that disappears at one width and returns at another is worse
-              // than one that moves.
-              <span className="mt-1.5 hidden flex-wrap items-center gap-1 text-[11px] leading-[1.35] text-foreground/50 sm:flex lg:hidden">
-                <span className="opacity-70">{mediumFact.label}</span>
-                <span className="tabular-nums">{mediumFact.value}</span>
               </span>
             ) : null}
 
             {visual != null ? (
-              <span className="mt-2 block lg:hidden">{visual}</span>
+              <span className="mt-2 block xl:hidden">{visual}</span>
             ) : null}
           </span>
 
           {facts.map((fact, i) => (
             <span
               key={fact.label}
-              className={`text-[13px] leading-[1.35] tabular-nums text-foreground/75 ${
-                i < FACTS_AT_MEDIUM ? "hidden sm:block" : "hidden lg:block"
-              }`}
+              // Truncated, because a fact track is sized for "12 Aug" and
+              // /market-cap puts "Consumer Discretionary" in one; without this
+              // the overflow lands on top of the next column rather than in
+              // the cell it belongs to.
+              className={`truncate text-[13px] leading-[1.35] tabular-nums text-foreground/75 ${grid.cell.fact(i)}`}
             >
               {fact.value}
             </span>
           ))}
 
           {visual != null ? (
-            <span className="hidden self-center lg:block">{visual}</span>
+            // Top-set with the fact cells, not centred in the row. The facts
+            // start at the container top and the subject can now run to two
+            // lines, so a centred picture floats below the values it sits
+            // beside and the row reads as two staggered halves. 3px is where
+            // a 13px fact's glyphs start inside its line box.
+            <span className={`self-start pt-[3px] ${grid.cell.visual}`}>
+              {visual}
+            </span>
           ) : null}
 
           {money != null ? (
             <span
-              className={`text-right text-[14px] font-semibold leading-[1.35] tabular-nums text-foreground ${
-                grid.tail === "money" ? grid.tailClass : "hidden sm:block"
-              }`}
+              className={`text-right text-[14px] font-semibold leading-[1.35] tabular-nums text-foreground ${grid.cell.money}`}
             >
               {money}
             </span>
           ) : null}
 
           {perf != null ? (
-            <span
-              className={`text-right ${
-                grid.tail === "perf" ? grid.tailClass : "hidden sm:block"
-              }`}
-            >
-              {perf}
-            </span>
+            <span className={`text-right ${grid.cell.perf}`}>{perf}</span>
           ) : null}
 
           {figure != null ? (
-            <span className={`text-right ${grid.tailClass}`}>
-              <span className="text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground lg:text-[19px]">
+            <span className={`text-right ${grid.cell.figure}`}>
+              <span className="text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground xl:text-[19px]">
                 {figure.srLabel ? (
                   <span className="sr-only">{figure.srLabel}: </span>
                 ) : null}

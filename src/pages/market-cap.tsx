@@ -13,6 +13,14 @@
  *  One cheap call. Everything here comes from /api/companies, which as of
  *  2026-08-19 carries market_cap and sector_normalized — so unlike the boards
  *  this family never pulls a thousand dealing rows.
+ *
+ *  The band page's list moved to `BoardRow` (2026-09-06). Purchases, market
+ *  value and sector were an 11px dot-string under the name; they are three
+ *  labelled, aligned tracks now, which is what lets a reader compare two rows
+ *  on size rather than read each one. The proportion bar stayed, spanning the
+ *  row: rule 9 forbids a bar that encodes rank within a group, and this one
+ *  does not — the page IS a ranking by value bought and says so in its
+ *  methodology, which is the same exemption /biggest-buys had.
  */
 import type { Band, IndexedCompany } from "../../shared/cap-bands";
 import type { RelatedCard } from "@/components/seo/related-cards";
@@ -49,18 +57,17 @@ import {
   MarketCapStage,
   placedCount,
 } from "@/components/boards/stages/market-cap-stage";
+import {
+  BoardRow,
+  BoardRowHeader,
+  BoardRowList,
+} from "@/components/boards/board-row";
 import { TickerPill } from "@/components/ticker-pill";
 import { API_BASE } from "@/lib/api";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
-
-const ROW_LINK =
-  "-mx-2 block rounded-lg px-2 py-3 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]";
-
-const ROW_GRID =
-  "grid grid-cols-[1.5rem_minmax(0,1fr)_5.5rem] items-start gap-x-3 sm:grid-cols-[2rem_minmax(0,1fr)_9rem] sm:gap-x-4";
 
 const CROSS_LINKS: RelatedCard[] = [
   { to: "/sectors", title: "Buying by sector", description: "Where it went" },
@@ -401,7 +408,11 @@ export default function MarketCapBandPage() {
         skeleton={
           <>
             <SeoSkeleton rows={3} variant="stat-tiles" />
-            <SeoSkeleton rows={12} variant="ranked-board" />
+            <SeoSkeleton
+              board={{ facts: 3, logo: 56, meter: true }}
+              rows={12}
+              variant="ranked-board"
+            />
           </>
         }
         standfirst={band.blurb}
@@ -442,16 +453,13 @@ export default function MarketCapBandPage() {
               ]}
             />
 
-            <div
-              aria-hidden
-              className={`mt-8 pb-2.5 text-[11px] leading-[1.4] text-foreground/50 ${ROW_GRID}`}
-            >
-              <span />
-              <span>Company and what its insiders bought</span>
-              <span className="text-right">Value bought</span>
-            </div>
+            <BoardRowHeader
+              facts={["Purchases", "Market value", "Sector"]}
+              money="Value bought"
+              subject="Company"
+            />
 
-            <ol className={`border-t ${R.rule}`}>
+            <BoardRowList>
               {listed.map((company, i) => (
                 <BandRow
                   key={company.key}
@@ -461,7 +469,7 @@ export default function MarketCapBandPage() {
                   topValue={topValue}
                 />
               ))}
-            </ol>
+            </BoardRowList>
 
             {row.count > listed.length && (
               <p className={`mt-4 ${CAVEAT}`}>
@@ -535,68 +543,41 @@ function BandRow({
   topValue: number;
 }) {
   const ticker = displayTicker(company.key);
+  const value = company.total_value ?? 0;
 
   return (
-    <li className={`border-b ${R.rule}`}>
-      <Link className={ROW_LINK} to={companyPath(company.key)}>
-        <div className={ROW_GRID}>
-          <span
-            aria-hidden
-            className={`font-mono text-[15px] leading-[1.35] tabular-nums ${
-              position <= 3 ? "text-foreground" : "text-foreground/35"
-            }`}
-          >
-            {String(position).padStart(2, "0")}
-          </span>
-
-          <span className="min-w-0">
-            <span className="flex min-w-0 items-center gap-2">
-              <CompanyLogo size={26} ticker={company.key} />
-              <span className="min-w-0 truncate text-[15.5px] font-semibold leading-[1.3] tracking-[-0.012em] text-foreground sm:text-[17px]">
-                {cleanCompanyName(company.company) || ticker}
-              </span>
-              <TickerPill ticker={ticker} />
-            </span>
-
-            <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-[1.35] text-foreground/50">
-              <span>
-                {company.deals} {company.deals === 1 ? "purchase" : "purchases"}
-              </span>
-              {company.market_cap ? (
-                <>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                  <span className="tabular-nums">
-                    {money(company.market_cap, symbol)} market value
-                  </span>
-                </>
-              ) : null}
-              {company.sector_normalized ? (
-                <>
-                  <span aria-hidden className="opacity-40">
-                    ·
-                  </span>
-                  <span className="truncate">{company.sector_normalized}</span>
-                </>
-              ) : null}
-            </span>
-          </span>
-
-          <span className="text-right">
-            <span className="text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground sm:text-[22px]">
-              <span className="sr-only">Value bought: </span>
-              {money(company.total_value ?? 0, symbol)}
-            </span>
-          </span>
-
-          <MeterBar
-            className="col-span-3 mt-2.5"
-            max={topValue}
-            value={company.total_value ?? 0}
-          />
-        </div>
-      </Link>
-    </li>
+    <BoardRow
+      badge={<TickerPill ticker={ticker} />}
+      facts={[
+        { label: "Purchases", value: company.deals },
+        {
+          // Both of these are absences we can name. A company with no market
+          // value on file is one the daily refresh has not reached; a company
+          // with no sector is one the classifier could not place. Neither is a
+          // dash, and neither is a zero.
+          label: "Market value",
+          value: company.market_cap
+            ? money(company.market_cap, symbol)
+            : "not on file",
+        },
+        {
+          label: "Sector",
+          value: company.sector_normalized || "not classified",
+        },
+      ]}
+      logo={<CompanyLogo size={56} ticker={company.key} />}
+      // The rank stands in the gutter; this is the quantity the rank is drawn
+      // from, so it reads as a figure rather than a caption.
+      meter={<MeterBar max={topValue} value={value} />}
+      money={
+        <>
+          <span className="sr-only">Value bought: </span>
+          {value >= 500 ? money(value, symbol) : "not stated"}
+        </>
+      }
+      name={cleanCompanyName(company.company) || ticker}
+      position={position}
+      to={companyPath(company.key)}
+    />
   );
 }

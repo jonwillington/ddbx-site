@@ -37,6 +37,17 @@ export interface SeoSkeletonBoard {
   facts?: number;
   /** The 3px proportion bar under the subject. */
   meter?: boolean;
+  /** Quantity columns to the right of the facts BESIDES the headline one —
+   *  /cluster-buys puts a value and a median mark there. They arrive with the
+   *  widest arrangement, so they stand from `xl` like the row's own do. */
+  trailing?: number;
+  /** The picture column: /biggest-buys' price line, /most-active's tally. */
+  visual?: boolean;
+  /** How tall that picture actually is. The default suits a price line;
+   *  /most-active's tally is a 7px run of pips, and standing a 44px bar in
+   *  its place makes the loading row 37px taller than the one that arrives —
+   *  a redraw wearing a loading state, which is the thing rule 6 is about. */
+  visualHeight?: number;
 }
 
 const DEFAULT_ROWS: Record<SeoSkeletonVariant, number> = {
@@ -66,6 +77,10 @@ export function SeoSkeleton({
   const keys = Array.from({ length: n }, (_, i) => i);
   const logoPx = board?.logo ?? 28;
   const factCells = Array.from({ length: board?.facts ?? 0 }, (_, i) => i);
+  const trailingCells = Array.from(
+    { length: board?.trailing ?? 0 },
+    (_, i) => i,
+  );
   const showMeter = board?.meter ?? true;
 
   return (
@@ -112,9 +127,21 @@ export function SeoSkeleton({
                 {factCells.map((f) => (
                   <Skeleton
                     key={f}
-                    className={`mt-1 h-[13px] w-[6.5rem] shrink-0 ${
-                      f < 2 ? "hidden sm:block" : "hidden lg:block"
+                    className={`mt-1 h-[13px] w-[5rem] shrink-0 ${
+                      f < 2 ? "hidden sm:block" : "hidden xl:block"
                     }`}
+                  />
+                ))}
+                {board?.visual ? (
+                  <Skeleton
+                    className="mt-1 hidden w-[12rem] shrink-0 xl:block"
+                    h={board.visualHeight ?? 44}
+                  />
+                ) : null}
+                {trailingCells.map((t) => (
+                  <Skeleton
+                    key={`trailing-${t}`}
+                    className="mt-1 hidden h-[13px] w-[5.5rem] shrink-0 xl:block"
                   />
                 ))}
                 <div className="flex shrink-0 flex-col items-end gap-1.5">

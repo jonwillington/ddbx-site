@@ -21,6 +21,9 @@ export interface RoleEntry {
 }
 
 export declare const MIN_FILINGS: number;
+/** The floor on MARKED purchases, for ranking groups on their median mark.
+ *  Separate from MIN_FILINGS: it gates a different quantity. */
+export declare const MIN_MARKED: number;
 export declare const TOP_FILINGS: number;
 export declare const TOP_COMPANIES: number;
 export declare const ROLES: RoleEntry[];

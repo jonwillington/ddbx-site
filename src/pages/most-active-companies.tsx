@@ -175,7 +175,15 @@ export default function MostActiveCompaniesPage() {
         loading={rows === null}
         skeleton={
           <SeoSkeleton
-            board={{ facts: 3, logo: 56, meter: false }}
+            // The tally is a 7px run of pips, not a price line, so the
+            // loading row stands at the height the real one arrives at.
+            board={{
+              facts: 3,
+              logo: 56,
+              meter: false,
+              visual: true,
+              visualHeight: 7,
+            }}
             rows={TOP_N}
             variant="ranked-board"
           />
