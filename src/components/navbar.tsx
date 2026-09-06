@@ -290,7 +290,11 @@ export const Navbar = () => {
           </a>
           <MarketSwitcher />
           {showNav && (
-            <ul className="hidden gap-4 md:flex">
+            // Baseline, not stretch: the links are inline text sitting in the
+            // row's line box while the Research trigger is a flex box pinned
+            // to the top of its <li>, and the two put their glyphs a couple of
+            // pixels apart. Baselines line up whatever the boxes around them do.
+            <ul className="hidden items-baseline gap-4 md:flex">
               {navItems.map((item) => {
                 const active = item.match(location.pathname);
 
