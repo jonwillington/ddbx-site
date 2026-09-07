@@ -15,11 +15,16 @@
  *                      stroke 2 (inner edge 6, gap 2, disc 4 — identical to
  *                      the HTML box's 8/6/4).
  *
- *    VerdictDisc       a check's result. A ticked ink disc = cleared, a
- *                      crossed hollow ring = not cleared. Verdict is carried
- *                      by FILL AND GLYPH, never by colour: on this page green
- *                      and red are reserved for measured market outcomes, and
- *                      a pass is not one. Used by the checks scorecard, the
+ *    VerdictDisc       a check's result. A ticked GREEN disc = cleared, a
+ *                      crossed RED ring = not cleared. Until 2026-09-07 the
+ *                      verdict was carried by fill and glyph alone, with green
+ *                      and red reserved for measured market outcomes; Jon's
+ *                      review asked for "a green check and red x" on the
+ *                      verdict pairs, and one code page-wide beats two, so the
+ *                      scorecard strip and the ratings gauge follow. Colour
+ *                      reads as pass/fail here and as ahead/behind on the
+ *                      measured section — the glyph (tick vs cross) is what
+ *                      keeps the two apart. Used by the checks scorecard, the
  *                      verdict pairs under each check and the ratings ladder's
  *                      gauge, so the reader learns the code once.
  *
@@ -119,7 +124,7 @@ export function VerdictDisc({
       aria-hidden
       className={`inline-flex shrink-0 align-middle ${
         delayMs == null ? "" : "board-dot"
-      } ${cleared ? "text-foreground/85" : "text-foreground/40"}`}
+      } ${cleared ? "text-positive" : "text-negative"}`}
       style={{
         height: size,
         width: size,

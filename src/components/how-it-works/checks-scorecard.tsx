@@ -185,23 +185,23 @@ function VerdictEntry({
 }) {
   return (
     <li>
+      {/* A white card per trade, on Jon's 2026-09-07 note: "make these
+          larger, the two buys, the yes and the no, with white BG and a green
+          check and red x". White rather than the sheet tint so the pair lifts
+          off the cream row it sits in; the verdict column takes the colour. */}
       <Link
-        className="group -mx-3 grid gap-x-5 gap-y-2.5 rounded-2xl px-3 py-3 outline-none transition-colors @xl:grid-cols-[128px_minmax(0,1fr)] hover:bg-black/[0.035] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.045]"
+        className="group grid gap-x-6 gap-y-3 rounded-2xl border border-hairline bg-white px-5 py-4 outline-none transition-colors @xl:grid-cols-[150px_minmax(0,1fr)] hover:border-brand-brown/30 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-white/[0.08] dark:bg-white/[0.04] dark:hover:border-white/20 sm:px-6 sm:py-5"
         to={filing.path}
       >
-        {/* The verdict, as its own column once the column it sits in is wide
-            enough to spare 128px — a CONTAINER query, not a viewport one, and
-            the difference matters here: at 1440 with the SEO rail this column
-            is about 420px wide, which is a desktop viewport and a phone-sized
-            box. Measured on the real page rather than assumed. Below the
-            threshold the verdict stacks above the trade, which is the phone
-            arrangement and still scans: the marks and the words line up down
-            the same left edge either way. */}
-        <span className="flex items-center gap-2 @xl:items-start @xl:pt-[7px]">
-          <VerdictDisc cleared={cleared} size={17} />
+        {/* The verdict, as its own column once the card is wide enough to
+            spare 150px — a CONTAINER query, not a viewport one: at 1440 with
+            the SEO rail this column is about 560px wide. Below the threshold
+            the verdict stacks above the trade. */}
+        <span className="flex items-center gap-2.5 @xl:items-start @xl:pt-[6px]">
+          <VerdictDisc cleared={cleared} size={26} />
           <span
-            className={`${KICKER} whitespace-nowrap @xl:pt-[3px] ${
-              cleared ? "text-foreground/65" : "text-foreground/45"
+            className={`${KICKER} whitespace-nowrap text-[11.5px] @xl:pt-[6px] ${
+              cleared ? "text-positive" : "text-negative"
             }`}
           >
             {cleared ? "Cleared" : "Not cleared"}
@@ -209,10 +209,10 @@ function VerdictEntry({
         </span>
 
         <span className="block min-w-0">
-          <span className="flex items-start gap-3">
-            <CompanyLogo size={30} ticker={filing.ticker} />
+          <span className="flex items-start gap-3.5">
+            <CompanyLogo size={44} ticker={filing.ticker} />
             <span className="min-w-0">
-              <span className="block text-[16px] font-semibold leading-[1.3] tracking-[-0.01em] text-foreground underline-offset-4 group-hover:underline">
+              <span className="block text-[19px] font-semibold leading-[1.25] tracking-[-0.015em] text-foreground underline-offset-4 group-hover:underline sm:text-[20px]">
                 {filing.name}
                 {filing.role ? (
                   <span className="font-normal text-foreground/60">
@@ -220,18 +220,18 @@ function VerdictEntry({
                   </span>
                 ) : null}
               </span>
-              <span className="mt-1 block text-[14px] leading-[1.45] text-foreground/55">
+              <span className="mt-1 block text-[15px] leading-[1.45] text-foreground/60">
                 bought {filing.value} of {filing.company} ·{" "}
                 {shortDate(filing.date)}
               </span>
             </span>
           </span>
-          {/* Indented to the name, so the logo + name + facts + explanation
-              read as one block hanging off the verdict kicker above them.
-              42px = the 30px logo plus the 12px gap beside it. */}
+          {/* Indented to the name, so logo + name + facts + explanation read
+              as one block hanging off the verdict beside them. 58px = the
+              44px logo plus the 14px gap beside it. */}
           <span
-            className={`mt-2.5 block pl-[42px] text-[15px] leading-[1.6] ${
-              cleared ? "text-foreground/80" : "text-foreground/60"
+            className={`mt-3 block text-[16px] leading-[1.6] sm:pl-[58px] ${
+              cleared ? "text-foreground/85" : "text-foreground/65"
             }`}
           >
             {children}
@@ -257,7 +257,7 @@ export function CheckVerdicts({
   const counter = examples.counters[check.key];
 
   return (
-    <ul className={`@container mt-6 space-y-1 border-t ${RULE} pt-4`}>
+    <ul className="@container mt-6 space-y-3">
       <VerdictEntry cleared filing={examples.specimen}>
         {check.passLine(specimenContext(examples.specimen))}
       </VerdictEntry>
