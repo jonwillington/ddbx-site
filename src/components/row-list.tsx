@@ -41,8 +41,15 @@ export function Row({
   title,
   kicker,
   more,
+  split = "even",
   children,
 }: {
+  /** How the two columns share the row. "even" is the selling-row default
+   *  (5fr/6fr). "description" hands the right column the width (4fr/7fr),
+   *  for rows whose description carries evidence — the /how-it-works checks,
+   *  whose verdict pairs need room for a name, a trade and a date on one
+   *  line. Added 2026-09-07 on Jon's "use the full space when needed". */
+  split?: "even" | "description";
   /** Leading mark — a StepNode, an icon. Sized by the caller. */
   glyph?: ReactNode;
   /** The claim, set large. Keep it to a line's worth of words. */
@@ -58,7 +65,11 @@ export function Row({
 }) {
   return (
     <li
-      className={`grid gap-x-10 gap-y-3 border-b ${RULE} py-7 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-9`}
+      className={`grid gap-x-10 gap-y-3 border-b ${RULE} py-7 sm:py-9 ${
+        split === "description"
+          ? "sm:grid-cols-[minmax(0,4fr)_minmax(0,7fr)]"
+          : "sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
+      }`}
     >
       <div className="flex gap-4">
         {glyph ? <span className="mt-1 shrink-0">{glyph}</span> : null}

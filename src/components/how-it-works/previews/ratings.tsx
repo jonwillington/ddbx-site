@@ -31,3 +31,7 @@ export default function RatingsPreview() {
     </>
   );
 }
+
+/** The page dropped its 860px wrapper, so the preview renders at the real
+ *  content column too. */
+export const wide = true;

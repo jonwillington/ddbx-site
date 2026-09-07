@@ -20,7 +20,25 @@
  *  3. The pulse moved on its own. The page's grammar now forbids anything that
  *     animates without a reader asking for it, and the sequence does not need
  *     a pulse to read as one: a single continuous hairline spine running
- *     behind all six StepNodes says it, statically, in one pixel.
+ *     behind all six rail marks says it, statically, in one pixel.
+ *
+ *  ---------------------------------------------------------------------------
+ *  The rail mark (2026-09-07)
+ *  ---------------------------------------------------------------------------
+ *
+ *  Each row's rail now carries two marks stacked: the stage's icon above its
+ *  sequence numeral. The numeral stays because the numeral is the thing that
+ *  says "third of six" — the page's exclusive mark for a stop in a sequence,
+ *  and no icon can carry an ordinal. The icon is there because six rows of
+ *  identical numbered circles give the eye nothing to tell watch from rate at
+ *  a glance, and the six verbs are concrete enough to draw: an eye, a funnel,
+ *  a balance, a document under a glass, a badge, a rising line. One icon per
+ *  stage, one weight, one colour (the brand accent), all decorative — every
+ *  one is `aria-hidden` and the stage's own label carries the meaning.
+ *
+ *  The spine is drawn per row, in two segments that stop at the marks rather
+ *  than running behind them: an occluding background would have to match the
+ *  document ground exactly, and `bg-sheet` does not.
  *
  *  ---------------------------------------------------------------------------
  *  The one axis
@@ -40,9 +58,12 @@
  *  departure.
  *
  *  Deliberately NOT a second RowList. The checks section (which follows this
- *  one) is the design language's tenet-3 selling row at 24px, and two adjacent
+ *  one) is the design language's tenet-3 selling row, and two adjacent
  *  sections in the same row family is how a page starts reading as a template.
- *  This is a ledger: smaller titles, a spine, a discard margin, no `more`.
+ *  The titles now match that row's size, because the page's type scale says
+ *  22/24px and a ledger of six stages is not the place to run small; what
+ *  keeps the two apart is everything else — an illustrated rail with a spine
+ *  and a numeral, a second column past a wall, and no `more` link.
  *
  *  ---------------------------------------------------------------------------
  *  Numbers
@@ -59,7 +80,16 @@
  */
 import type { ExampleFiling } from "@/lib/methodology-examples";
 import type { CoverageResponse } from "@/types/ddbx";
+import type { ComponentType, SVGProps } from "react";
 
+import {
+  ArrowTrendingUpIcon,
+  CheckBadgeIcon,
+  DocumentMagnifyingGlassIcon,
+  EyeIcon,
+  FunnelIcon,
+  ScaleIcon,
+} from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 
 import {
@@ -72,6 +102,24 @@ import {
 import { SpecimenMark } from "@/components/how-it-works/specimen-mark";
 import { PIPELINE } from "@/lib/methodology";
 import { count } from "@/lib/coverage";
+
+/** One icon per stage, in the order PIPELINE declares them.
+ *
+ *  Chosen for the VERB, not for the noun: triage is a balance because the
+ *  stage weighs a buy against its context, and rate is a badge because the
+ *  stage awards a tier. Keyed by stage id rather than by index so a reordered
+ *  PIPELINE cannot silently hand "analyse" the eye. A stage with no entry
+ *  renders its numeral alone rather than a placeholder glyph. */
+const SPINE = "bg-brand-brown/20 dark:bg-brand-tan/25";
+
+const STAGE_ICON: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
+  watch: EyeIcon,
+  classify: FunnelIcon,
+  triage: ScaleIcon,
+  analyse: DocumentMagnifyingGlassIcon,
+  rate: CheckBadgeIcon,
+  track: ArrowTrendingUpIcon,
+};
 
 /** What leaves the pipe at each stage, and what the stage does instead when
  *  nothing does.
@@ -162,47 +210,63 @@ export function PipelineLedger({
           pipe. The feeds and the cadence are the sources section's to state
           and the watch row's own footnote; saying them here too put the same
           fact on screen three times. */}
-      <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+      <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
         Six stages stand between a filing appearing and a rating existing. Only
         two of them throw filings away; the other four read, score and measure
         what survives.
       </p>
 
       <ol className={`relative mt-8 border-t ${RULE}`}>
-        {/* The spine. One static hairline from the first node's centre to the
-            last node's centre, painted behind the nodes (whose sheet fill
-            occludes it) so the six read as one sequence rather than six
-            entries. Offsets track the rows' own vertical padding: py-7 + half
-            a 24px node = 40px, py-9 + the same = 48px. Nothing travels it. */}
-        <span
-          aria-hidden
-          className="absolute bottom-10 left-3 top-10 w-px bg-brand-brown/20 sm:bottom-12 sm:top-12 dark:bg-brand-tan/25"
-        />
-
         {PIPELINE.map((stage, i) => {
           const gate = GATE[stage.id] ?? { leaves: [], note: "" };
           const items = gate.leaves.length > 0 ? gate.leaves : ["Nothing"];
+          const Icon = STAGE_ICON[stage.id];
 
           return (
             <li
               key={stage.id}
-              className={`grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-4 gap-y-6 border-b ${RULE} py-7 sm:grid-cols-[1.5rem_minmax(0,5fr)_minmax(0,4fr)] sm:gap-x-6 sm:gap-y-0 sm:py-9`}
+              className={`relative grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-4 gap-y-7 border-b ${RULE} py-7 sm:grid-cols-[1.75rem_minmax(0,5fr)_minmax(0,4fr)] sm:gap-x-7 sm:gap-y-0 sm:py-9 lg:grid-cols-[1.75rem_minmax(0,6fr)_minmax(0,4.5fr)] lg:gap-x-12`}
             >
-              {/* Rail. The numeral is the sequence mark, page-wide. */}
-              <div className="col-start-1 row-start-1">
+              {/* The spine, in two segments per row so it never crosses a
+                  mark: one through the row's top padding (absent on the first
+                  row, which has nothing above it) and one growing from under
+                  the numeral to the row's bottom edge (absent on the last).
+                  Drawn from the rows' own padding tokens rather than from
+                  measured offsets, so changing py cannot strand it. */}
+              {i > 0 ? (
+                <span
+                  aria-hidden
+                  className={`absolute left-[13.5px] top-0 h-7 w-px ${SPINE} sm:h-9`}
+                />
+              ) : null}
+              {/* Rail. The stage's icon over its sequence numeral, then the
+                  spine down to the next row. The numeral is the page's
+                  sequence mark and stays; the icon is decoration that tells
+                  the six rows apart at a glance. */}
+              <div className="col-start-1 row-start-1 flex h-full w-7 flex-col items-center gap-2.5">
+                {Icon ? (
+                  <Icon
+                    aria-hidden
+                    className="h-7 w-7 shrink-0 text-brand-brown dark:text-brand-tan"
+                    strokeWidth={1.5}
+                  />
+                ) : null}
                 <StepNode index={i} />
+                {i < PIPELINE.length - 1 ? (
+                  <span aria-hidden className={`w-px flex-1 ${SPINE}`} />
+                ) : null}
               </div>
 
               {/* The stage. */}
               <div className="col-start-2 row-start-1 min-w-0">
                 <p className={EYEBROW}>{stage.label}</p>
-                <h3 className="mt-2 text-balance text-[18px] font-semibold leading-[1.25] tracking-[-0.02em] text-foreground sm:text-[19.5px]">
+                <h3 className="mt-2 text-balance text-[22px] font-semibold leading-[1.2] tracking-[-0.02em] text-foreground sm:text-[24px]">
                   {stage.title}
                 </h3>
-                <p className="mt-2.5 max-w-[58ch] text-[15px] leading-[1.65] text-foreground/75">
+                <p className="mt-3 max-w-[62ch] text-[16px] leading-[1.65] text-foreground/75">
                   {stage.body}
                 </p>
-                <p className="mt-3 text-[12.5px] leading-[1.5] tabular-nums text-foreground/50">
+                <p className="mt-3.5 text-[14px] leading-[1.5] tabular-nums text-foreground/50">
                   {stageFootnote(stage.id, stage.meta, totals)}
                 </p>
               </div>
@@ -217,18 +281,18 @@ export function PipelineLedger({
               >
                 <p className={EYEBROW_QUIET}>What leaves</p>
                 <ul
-                  className={`mt-2.5 border-y ${RULE} divide-y divide-black/[0.06] dark:divide-white/[0.08]`}
+                  className={`mt-3 border-y ${RULE} divide-y divide-black/[0.06] dark:divide-white/[0.08]`}
                 >
                   {items.map((item) => (
                     <li
                       key={item}
-                      className="py-[7px] text-[13.5px] leading-[1.4] text-foreground/70"
+                      className="py-2.5 text-[16px] leading-[1.35] text-foreground/70"
                     >
                       {item}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-3 max-w-[42ch] text-[13px] leading-[1.55] text-foreground/55">
+                <p className="mt-3.5 max-w-[46ch] text-[14px] leading-[1.55] text-foreground/55">
                   {gate.note}
                 </p>
               </div>
@@ -244,7 +308,7 @@ export function PipelineLedger({
       {specimen ? (
         <div className={`mt-7 flex items-start gap-3 border-t ${RULE} pt-5`}>
           <SpecimenMark className="mt-[3px]" />
-          <p className="max-w-[68ch] text-[14px] leading-[1.6] text-foreground/70">
+          <p className="max-w-[68ch] text-[16px] leading-[1.6] text-foreground/70">
             The worked example cleared every gate.{" "}
             <Link
               className="font-medium text-foreground underline underline-offset-4"

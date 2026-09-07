@@ -4,6 +4,10 @@
  *  SeoSection wrapper, counter and intro paragraph — with real UK examples,
  *  and then again with `examples={null}` to prove the SE/NL branch still
  *  composes. Dev-only; deleted with the lab route once the redesign lands.
+ *
+ *  The intro paragraph is at the page-wide body scale (16px / 1.65). The real
+ *  page still sets 15px inline at how-it-works.tsx:295 — that line is outside
+ *  this agent's remit and is listed in the report.
  */
 import {
   ChecksRowList,
@@ -28,7 +32,7 @@ export default function ChecksPreview() {
         title={`The ${CHECK_COUNT_WORD} checks`}
         total={6}
       >
-        <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+        <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
           {INTRO}
         </p>
         <ChecksScorecard examples={examples} />
@@ -47,7 +51,7 @@ export default function ChecksPreview() {
         title={`The ${CHECK_COUNT_WORD} checks`}
         total={6}
       >
-        <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+        <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
           {INTRO}
         </p>
         <ChecksScorecard examples={null} />

@@ -15,14 +15,34 @@
  *                      stroke 2 (inner edge 6, gap 2, disc 4 — identical to
  *                      the HTML box's 8/6/4).
  *
- *    VerdictDisc       a check's result. Filled ink disc = cleared, hollow
- *                      ring = not cleared. Verdict is carried by FILL, never
- *                      by colour: on this page green and red are reserved for
- *                      measured market outcomes, and a pass is not one. Used
- *                      by the checks scorecard, the verdict pairs under each
- *                      check and the ratings ladder's gauge, so the reader
- *                      learns the code once.
+ *    VerdictDisc       a check's result. A ticked ink disc = cleared, a
+ *                      crossed hollow ring = not cleared. Verdict is carried
+ *                      by FILL AND GLYPH, never by colour: on this page green
+ *                      and red are reserved for measured market outcomes, and
+ *                      a pass is not one. Used by the checks scorecard, the
+ *                      verdict pairs under each check and the ratings ladder's
+ *                      gauge, so the reader learns the code once.
+ *
+ *                      The tick is knocked out of the disc with a mask rather
+ *                      than painted white over it, for the same reason the
+ *                      specimen mark leaves its gap unpainted: the mark then
+ *                      drops onto the sheet, the cream page or a tinted band
+ *                      without a second colour to keep in step with the
+ *                      theme. Stroke weights are computed from the rendered
+ *                      size so the glyph stays crisp from the 10px inline
+ *                      mark in a sentence to the 30px disc on the scorecard
+ *                      strip — a fixed viewBox weight would either dissolve at
+ *                      the small end or read as a blob at the large one.
  */
+
+import { useId } from "react";
+
+/** The verdict marks are drawn in a 24-unit box and scaled to `size`. */
+const VIEW = 24;
+/** The tick, sized to sit well inside r12 with room for a round cap. */
+const TICK = "M6.4 12.4 L10 16 L17.6 7.9";
+/** The cross, deliberately small inside its ring. */
+const CROSS = "M8.4 8.4 L15.6 15.6 M15.6 8.4 L8.4 15.6";
 
 /** The worked example. Nothing else on the page uses this mark. */
 export function SpecimenMark({ className = "" }: { className?: string }) {
@@ -64,8 +84,12 @@ export function SpecimenMarkSvg({
   );
 }
 
-/** One check's verdict. Deliberately not a tick and a cross — a tick is
- *  legible only if you already know which way round the page is arguing. */
+/** One check's verdict, drawn at any size.
+ *
+ *  Geometry lives in a 24-unit box; `size` is the rendered edge in px. Stroke
+ *  weights are specified in RENDERED pixels and converted back into user units
+ *  (`* 24 / size`), with a floor so the 10px inline form still has a tick you
+ *  can see. */
 export function VerdictDisc({
   cleared,
   size = 10,
@@ -77,21 +101,82 @@ export function VerdictDisc({
    *  that arrive with their text. */
   delayMs?: number;
 }) {
+  /* Unique per instance: two discs sharing a mask id would knock the tick out
+   * of whichever one the browser resolved first. React's useId comes back as
+   * `:r7:`, and a colon inside a url(#…) fragment is legal but not worth
+   * betting a silently-blank mark on, so it is stripped. */
+  const maskId = `verdict-tick-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+
+  /** px of stroke, expressed in the 24-unit viewBox. */
+  const user = (px: number) => (px * VIEW) / size;
+
+  const tick = user(Math.max(1.6, size * 0.12));
+  const ring = user(Math.max(1.5, size * 0.095));
+  const cross = user(Math.max(1.4, size * 0.09));
+
   return (
     <span
       aria-hidden
-      className={`inline-block shrink-0 rounded-full align-middle ${
+      className={`inline-flex shrink-0 align-middle ${
         delayMs == null ? "" : "board-dot"
-      } ${
-        cleared
-          ? "bg-foreground/85"
-          : "border-2 border-foreground/35 bg-transparent"
-      }`}
+      } ${cleared ? "text-foreground/85" : "text-foreground/40"}`}
       style={{
         height: size,
         width: size,
         ...(delayMs == null ? null : { animationDelay: `${delayMs}ms` }),
       }}
-    />
+    >
+      <svg
+        fill="none"
+        height={size}
+        viewBox={`0 0 ${VIEW} ${VIEW}`}
+        width={size}
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {cleared ? (
+          <>
+            <mask
+              height={VIEW}
+              id={maskId}
+              maskUnits="userSpaceOnUse"
+              width={VIEW}
+              x={0}
+              y={0}
+            >
+              <circle cx={12} cy={12} fill="#fff" r={12} />
+              <path
+                d={TICK}
+                stroke="#000"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={tick}
+              />
+            </mask>
+            <rect
+              fill="currentColor"
+              height={VIEW}
+              mask={`url(#${maskId})`}
+              width={VIEW}
+            />
+          </>
+        ) : (
+          <>
+            <circle
+              cx={12}
+              cy={12}
+              r={12 - ring / 2}
+              stroke="currentColor"
+              strokeWidth={ring}
+            />
+            <path
+              d={CROSS}
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeWidth={cross}
+            />
+          </>
+        )}
+      </svg>
+    </span>
   );
 }

@@ -50,6 +50,7 @@
  *  checklist moves by design, and a hard-coded rung would eventually be
  *  arguing with the filing it links to.
  */
+import type { CSSProperties } from "react";
 import type { Rating } from "@/types/ddbx";
 import type {
   ExampleFiling,
@@ -73,10 +74,41 @@ import {
 import { RatingBadge } from "@/components/rating-badge";
 import { CHECK_COUNT, CHECK_COUNT_WORD, RATING_SCALE } from "@/lib/methodology";
 
-const PANEL = `overflow-hidden ${SHEET}`;
+const PANEL = `@container overflow-hidden ${SHEET}`;
 const MONO = `${KICKER} text-foreground/45`;
+
+/** One column spec for the rungs and the cap band, keyed on the PANEL'S OWN
+ *  width rather than the viewport's.
+ *
+ *  The page dropped its 860px wrapper, so this section is handed the whole
+ *  content column — about 910px at `xl` beside the SEO rail, 1,070px at 1440,
+ *  and 656px at `lg`, where the rail claims 320px and the column FALLS across
+ *  the breakpoint instead of growing. A viewport gate gets that backwards
+ *  twice over; a container gate turns the third column on exactly when there
+ *  is room for it, rail or no rail.
+ *
+ *  The third track is the whole reason for the width. Before it, a rung was a
+ *  badge, one sentence and one filing stacked in a 500px column with 500px of
+ *  empty sheet beside them. Now the MEANING and the FILING THAT EARNED IT sit
+ *  side by side on one line: the definition and its proof, read across, which
+ *  is the comparison the section exists to make. */
 const COLS =
-  "grid gap-x-7 gap-y-4 px-5 py-6 sm:grid-cols-[10.5rem_minmax(0,1fr)] sm:px-7 sm:py-7";
+  "grid gap-x-8 gap-y-5 px-5 py-7 [grid-template-columns:var(--rung-phone)] @min-[540px]:px-7 @min-[540px]:py-8 @min-[540px]:[grid-template-columns:var(--rung-medium)] @min-[840px]:gap-x-9 @min-[840px]:px-8 @min-[840px]:[grid-template-columns:var(--rung-wide)]";
+
+const COL_STYLE = {
+  "--rung-phone": "minmax(0,1fr)",
+  "--rung-medium": "11rem minmax(0,1fr)",
+  "--rung-wide": "11rem minmax(0,1fr) 22rem",
+} as CSSProperties;
+
+/** Anything that runs the whole rung: the specimen band. */
+const FULL = "@min-[540px]:col-span-2 @min-[840px]:col-span-3";
+
+/** The third track, and where it lives before it exists: under the meaning at
+ *  medium, under everything on a phone. Placed rather than duplicated, so the
+ *  filing link appears exactly once in the DOM at every width. */
+const SIDECAR =
+  "min-w-0 @min-[540px]:col-start-2 @min-[840px]:col-start-3 @min-[840px]:row-start-1 @min-[840px]:border-l @min-[840px]:border-black/[0.07] @min-[840px]:pl-9 @min-[840px]:dark:border-white/[0.09]";
 
 /** How loud the left edge bar is, per rung. Not data — the taper IS the
  *  statement, and it has to survive four steps in both themes, so it is
@@ -91,11 +123,14 @@ function CheckGauge({ cleared, label }: { cleared: number; label: string }) {
   return (
     <span
       aria-label={label}
-      className="inline-flex items-center gap-[5px]"
+      className="inline-flex items-center gap-1.5"
       role="img"
     >
+      {/* 12px rather than the default 10: the gauge now sits beside 16px
+          meanings and 17px filing names, and at 10px it read as punctuation
+          instead of as the six checks. */}
       {Array.from({ length: CHECK_COUNT }, (_, i) => (
-        <VerdictDisc key={i} cleared={i < cleared} />
+        <VerdictDisc key={i} cleared={i < cleared} size={12} />
       ))}
     </span>
   );
@@ -106,17 +141,18 @@ function CheckGauge({ cleared, label }: { cleared: number; label: string }) {
  *  inside the link, so the tap target stays the filing and not a paragraph. */
 function ExampleRow({ example }: { example: ExampleFiling }) {
   return (
-    <div className="mt-4">
+    <div>
+      <p className={`${MONO} mb-2.5`}>One that earned it</p>
       <Link
         className="group -mx-2 flex items-center gap-3 rounded-xl px-2 py-2 outline-none transition-colors hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.04]"
         to={example.path}
       >
         <CompanyLogo size={40} ticker={example.ticker} />
         <span className="min-w-0">
-          <span className="block text-[14.5px] font-semibold leading-[1.3] tracking-[-0.01em] text-foreground underline-offset-4 group-hover:underline">
+          <span className="block text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-foreground underline-offset-4 group-hover:underline">
             {example.company}
           </span>
-          <span className="mt-0.5 block text-[12.5px] leading-[1.5] text-foreground/60">
+          <span className="mt-1 block text-[14px] leading-[1.45] text-foreground/60">
             {example.name}
             {example.role ? `, ${example.role.toLowerCase()}` : ""} ·{" "}
             {example.value} · {shortDate(example.date)}
@@ -127,7 +163,7 @@ function ExampleRow({ example }: { example: ExampleFiling }) {
           className="ml-auto h-4 w-4 shrink-0 text-foreground/30 transition-colors group-hover:text-foreground/60"
         />
       </Link>
-      <p className="mt-1.5 max-w-[56ch] text-[13px] leading-[1.6] text-foreground/60">
+      <p className="mt-2 max-w-[56ch] text-[14px] leading-[1.6] text-foreground/60">
         {example.line}
       </p>
     </div>
@@ -139,24 +175,28 @@ function CapBand() {
   return (
     <div
       className={`${COLS} border-t border-black/[0.07] bg-brand-brown/[0.07] dark:border-white/[0.09] dark:bg-brand-tan/[0.10]`}
+      style={COL_STYLE}
     >
       <div>
         <CheckGauge
           cleared={CHECK_COUNT - 1}
           label={`A buy that cleared five of the ${CHECK_COUNT_WORD} checks and missed one.`}
         />
-        <p className={`mt-2.5 ${MONO}`}>Any one missed</p>
+        <p className={`mt-3 ${MONO}`}>Any one missed</p>
       </div>
-      <div className="min-w-0">
-        <p className="max-w-[56ch] text-[15px] leading-[1.65] text-foreground/85">
-          Miss even one of the {CHECK_COUNT_WORD} and the buy is capped below
-          significant, whatever else is in its favour.
-        </p>
-        <p className="mt-1.5 max-w-[56ch] text-[13px] leading-[1.6] text-foreground/55">
-          How far below is a judgement about what the filing is, not a tally of
-          the checks that did clear.
-        </p>
-      </div>
+      <p className="min-w-0 max-w-[46ch] text-[16px] leading-[1.65] text-foreground/85">
+        Miss even one of the {CHECK_COUNT_WORD} and the buy is capped below
+        significant, whatever else is in its favour.
+      </p>
+      {/* The qualifier takes the third track rather than sitting under the
+          claim: it is the answer to the question the claim provokes, and side
+          by side it reads as an answer instead of as small print. */}
+      <p
+        className={`${SIDECAR} max-w-[46ch] text-[14px] leading-[1.6] text-foreground/55`}
+      >
+        How far below is a judgement about what the filing is, not a tally of
+        the checks that did clear.
+      </p>
     </div>
   );
 }
@@ -172,13 +212,13 @@ export function RatingLadder({
 
   return (
     <>
-      <p className="max-w-[62ch] text-[15px] leading-[1.7] text-foreground/80">
+      <p className="max-w-[68ch] text-[16px] leading-[1.65] text-foreground/80">
         Every buy we read properly comes out with one of four labels. Where it
         lands depends on how the {CHECK_COUNT_WORD} checks went, and the top of
         the scale needs all {CHECK_COUNT_WORD}.
       </p>
 
-      <div className={`mt-6 ${PANEL} divide-y ${DIVIDE}`}>
+      <div className={`mt-7 ${PANEL} divide-y ${DIVIDE}`}>
         {RATING_SCALE.map((r, i) => {
           const rating = r.rating as Rating;
           const example = examples?.ratings[rating];
@@ -187,7 +227,7 @@ export function RatingLadder({
 
           return (
             <div key={rating}>
-              <div className={`relative ${COLS}`}>
+              <div className={`relative ${COLS}`} style={COL_STYLE}>
                 {/* The scale, in peripheral vision. Decorative: the order is
                     already carried by the reading order and the badges. */}
                 <span
@@ -199,29 +239,34 @@ export function RatingLadder({
                 <div>
                   <RatingBadge rating={rating} />
                   {top ? (
-                    <div className="mt-4">
+                    <div className="mt-5">
                       <CheckGauge
                         cleared={CHECK_COUNT}
                         label={`All ${CHECK_COUNT_WORD} checks cleared.`}
                       />
-                      <p className={`mt-2.5 ${MONO}`}>
+                      <p className={`mt-3 ${MONO}`}>
                         {CHECK_COUNT_WORD} of {CHECK_COUNT_WORD}
                       </p>
                     </div>
                   ) : null}
                 </div>
 
-                <div className="min-w-0">
-                  <p className="max-w-[56ch] text-[15px] leading-[1.7] text-foreground/80">
-                    {r.meaning}
-                  </p>
-                  {example ? <ExampleRow example={example} /> : null}
-                </div>
+                <p className="min-w-0 max-w-[46ch] text-[16px] leading-[1.65] text-foreground/85">
+                  {r.meaning}
+                </p>
+
+                {example ? (
+                  <div className={SIDECAR}>
+                    <ExampleRow example={example} />
+                  </div>
+                ) : null}
 
                 {specimenHere && specimen ? (
-                  <div className="flex items-start gap-3 rounded-xl border border-hairline bg-brand-brown/[0.05] px-3.5 py-3 dark:border-white/[0.07] dark:bg-brand-tan/[0.07] sm:col-span-2">
-                    <SpecimenMark className="mt-[2px]" />
-                    <p className="text-[13px] leading-[1.6] text-foreground/70">
+                  <div
+                    className={`${FULL} flex items-start gap-3 rounded-xl border border-hairline bg-brand-brown/[0.05] px-4 py-3.5 dark:border-white/[0.07] dark:bg-brand-tan/[0.07]`}
+                  >
+                    <SpecimenMark className="mt-[3px]" />
+                    <p className="text-[14px] leading-[1.6] text-foreground/70">
                       The worked example at the top of this page,{" "}
                       <Link
                         className="font-medium text-foreground underline underline-offset-4"

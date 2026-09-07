@@ -233,10 +233,11 @@ export default function HowItWorksPage() {
         title={title}
         width="wide"
       >
-        {/* The document keeps the 860px measure under a hero that spans the
-            column: `width="wide"` hands the measure to the page, so every
-            section below sits inside this one wrapper. */}
-        <div className="mx-auto w-full max-w-[860px]">
+        {/* No document measure. Jon's 2026-09-07 review: "we are still not
+            using 100% of the screen space" — the sections run the full column
+            the rail leaves free, and each object decides for itself where a
+            prose measure (max-w on a paragraph) is worth an indent. */}
+        <div className="w-full">
           {/* The specimen — one real filing the reader meets before the
             machinery, then follows through it. Introduced here so every
             "this filing" below already means something. */}
@@ -291,7 +292,7 @@ export default function HowItWorksPage() {
             title={`The ${CHECK_COUNT_WORD} checks`}
             total={CONTENTS.length}
           >
-            <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+            <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
               Each check is a yes or no. There is no score to average: a
               purchase clears them or it doesn’t, and the count of what it
               cleared is published on the filing itself, so you can see which
@@ -385,7 +386,7 @@ export default function HowItWorksPage() {
               id="korea-advance-plans"
               title="Trades declared before they happen"
             >
-              <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+              <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
                 Korea is the only market here where the disclosure arrives{" "}
                 <em>before</em> the trade. Officers and major shareholders have
                 to declare a planned purchase in advance, naming themselves, the
@@ -414,7 +415,7 @@ export default function HowItWorksPage() {
                 />
               </dl>
 
-              <p className="mt-5 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+              <p className="mt-5 max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
                 Because the threshold is a share of the company rather than a
                 cash amount, the people who file are mostly controlling
                 shareholders and large holders, not rank-and-file managers. That
@@ -422,7 +423,7 @@ export default function HowItWorksPage() {
                 other market pages, and it is worth reading it as one.
               </p>
 
-              <p className="mt-4 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+              <p className="mt-4 max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
                 We lead this page with the declarations rather than the
                 completed purchases that follow them. The declaration is the
                 moment something is learned; the filing that confirms it, weeks

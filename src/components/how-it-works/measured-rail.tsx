@@ -57,7 +57,6 @@ import type { ExampleFiling } from "@/lib/methodology-examples";
 import type { CoverageResponse } from "@/types/ddbx";
 
 import {
-  CAPTION,
   EYEBROW,
   PANEL,
   RULE,
@@ -136,7 +135,7 @@ export function HorizonRail({
   if (horizons.length === 0) {
     return (
       <p
-        className={`mt-6 ${PANEL} px-5 py-4 text-[14px] leading-[1.65] text-foreground/70`}
+        className={`mt-6 ${PANEL} px-5 py-5 text-[16px] leading-[1.65] text-foreground/70`}
       >
         Not enough data yet. No rated buy has run long enough to be scored
         against the index, so there is nothing here to show. The first figures
@@ -171,12 +170,14 @@ export function HorizonRail({
   const cols = { gridTemplateColumns: `repeat(${days.length}, minmax(0,1fr))` };
 
   return (
-    <div className={`mt-6 ${PANEL} px-4 pb-4 pt-4 sm:px-5 sm:pb-5`}>
+    <div
+      className={`@container mt-7 ${PANEL} px-4 pb-4 pt-5 sm:px-6 sm:pb-5 sm:pt-6`}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className={EYEBROW}>Buys with a measured return</p>
         {/* The frame height, named. Without this the empty part of each column
             is a shape rather than a quantity. */}
-        <p className="text-[11.5px] leading-none text-foreground/45">
+        <p className="text-[14px] leading-none text-foreground/45">
           Each frame is all {count(total)} we have measured
         </p>
       </div>
@@ -190,14 +191,14 @@ export function HorizonRail({
         in all.
       </p>
 
-      <div className="relative mt-9 h-[164px] sm:h-[196px]">
+      <div className="relative mt-10 h-[180px] @min-[620px]:h-[240px]">
         {/* The top of every frame, drawn across the gaps so the five frames
             read as one shared ceiling rather than five separate maxima. */}
         <div
           aria-hidden
           className="absolute inset-x-0 top-0 border-t border-dashed border-black/15 dark:border-white/25"
         />
-        <div className="grid h-full gap-2 sm:gap-3" style={cols}>
+        <div className="grid h-full gap-2.5 @min-[620px]:gap-4" style={cols}>
           {horizons.map((h) => {
             const pct = (h.events / total) * 100;
             // 3px floor: one event in two thousand is a third of a pixel, and
@@ -219,7 +220,7 @@ export function HorizonRail({
                 {/* Pinned to the top of its own fill, not to the panel: the
                     numbers then descend the same staircase the fills do. */}
                 <p
-                  className="absolute inset-x-0 mb-[6px] text-center text-[12px] font-semibold tabular-nums leading-none tracking-[-0.01em] text-foreground"
+                  className="absolute inset-x-0 mb-[7px] text-center text-[14px] font-semibold tabular-nums leading-none tracking-[-0.015em] text-foreground"
                   style={{ bottom: height }}
                 >
                   {count(h.events)}
@@ -231,13 +232,13 @@ export function HorizonRail({
       </div>
 
       <div
-        className={`mt-2 grid gap-2 border-t pt-2 sm:gap-3 ${RULE}`}
+        className={`mt-2.5 grid gap-2.5 border-t pt-2.5 @min-[620px]:gap-4 ${RULE}`}
         style={cols}
       >
         {horizons.map((h) => (
           <p
             key={h.horizon_days}
-            className="text-center text-[11.5px] leading-[1.35] tabular-nums text-foreground/55"
+            className="text-center text-[14px] leading-[1.35] tabular-nums text-foreground/70"
           >
             {h.horizon_days} days
           </p>
@@ -245,22 +246,30 @@ export function HorizonRail({
       </div>
 
       {specimen ? (
-        <div className="mt-2 grid gap-2 sm:gap-3" style={cols}>
+        <div className="mt-2 grid gap-2.5 @min-[620px]:gap-4" style={cols}>
           <div className="flex flex-col items-center" style={markColumn}>
             <span
               aria-hidden
               className="h-2.5 w-px bg-hairline dark:bg-separator"
             />
             <SpecimenMark className="mt-1" />
-            <p className="mt-1 whitespace-nowrap text-[11px] leading-none tabular-nums text-foreground/55">
+            <p className="mt-1.5 whitespace-nowrap text-[13px] leading-none tabular-nums text-foreground/55">
               {age} days
             </p>
           </div>
         </div>
       ) : null}
 
-      <div className={`mt-4 border-t pt-3 ${RULE}`}>
-        <p className="text-[13px] leading-[1.6] text-foreground/70">
+      {/* The caption strip, as two columns once the panel is wide enough for
+          both to be readable at a measure. What the drawing SAYS on the left,
+          how to read it on the right, with a hairline between: the boards'
+          caption strip, and the arrangement that stops a 16px finding running
+          to 130 characters a line on a 1,070px panel. Stacked below the gate,
+          in the same order. */}
+      <div
+        className={`mt-5 grid gap-x-8 gap-y-2.5 border-t pt-4 ${RULE} @min-[680px]:grid-cols-[minmax(0,1fr)_17rem]`}
+      >
+        <p className="max-w-[62ch] text-[16px] leading-[1.6] text-foreground/75">
           Every buy we have measured has a figure at {shortest} days, because
           that is the first horizon the pipeline scores. Only{" "}
           {count(longest.events)}{" "}
@@ -268,7 +277,7 @@ export function HorizonRail({
           {longest.horizon_days} days.{" "}
           {specimen ? specimenLine(specimen, age, days) : ""}
         </p>
-        <p className={`mt-2 ${CAPTION}`}>
+        <p className="text-[13px] leading-[1.6] text-foreground/50 @min-[680px]:border-l @min-[680px]:border-hairline @min-[680px]:pl-8 @min-[680px]:dark:border-separator">
           Columns are to scale against the frame. The shortest are drawn three
           pixels tall so they stay visible; the figure above each one is the
           count.

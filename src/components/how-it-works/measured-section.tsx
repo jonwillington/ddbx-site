@@ -45,7 +45,7 @@ export function MeasuredSection({
           open-market purchase on the two markets, read in full or not, which
           is why the count here is larger than the hero's "read in full". A
           reader holding the two figures side by side needs that said. */}
-      <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+      <p className="max-w-[70ch] text-[16px] leading-[1.65] text-foreground/80">
         The last stage of the pipeline scores buys against the index. On the two
         rated markets, the United Kingdom and the United States, every
         open-market buy gets a figure whether or not it was read in full, which
@@ -65,7 +65,7 @@ export function MeasuredSection({
 
       {/* The sentence a reader must not scroll past stays visible; the
           mechanics fold under it. */}
-      <p className="mt-7 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+      <p className="mt-9 max-w-[70ch] text-[16px] leading-[1.65] text-foreground/80">
         Read honestly, the panel says the short-horizon evidence is real and the
         long-horizon evidence barely exists yet. That is the whole reason
         performance figures on this site are described as a small sample rather

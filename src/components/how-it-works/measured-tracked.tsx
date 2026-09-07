@@ -54,11 +54,13 @@ import { Skeleton } from "@/components/skeleton";
 import { api } from "@/lib/api";
 const ROW_LINK =
   "group relative -mx-2 block rounded-lg px-2 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]";
-/** Mark lane, logo, subject, figure. The figure track only exists from `sm`;
- *  below that it drops under the subject rather than squeezing the name, which
- *  is the one thing in the row that must never truncate. */
+/** Mark lane, logo, subject, figure. The figure track only exists once the row
+ *  is wide enough for it; below that it drops under the subject rather than
+ *  squeezing the name, which is the one thing in the row that must never
+ *  truncate. Container-gated, because the page now hands this section anything
+ *  from 656px to 1,070px depending on whether the SEO rail is beside it. */
 const GRID =
-  "grid grid-cols-[1rem_2.75rem_minmax(0,1fr)] items-start gap-x-3 gap-y-2.5 sm:grid-cols-[1rem_2.75rem_minmax(0,1fr)_11.5rem]";
+  "grid grid-cols-[1rem_3rem_minmax(0,1fr)] items-start gap-x-4 gap-y-3 @min-[540px]:grid-cols-[1rem_3rem_minmax(0,1fr)_13rem]";
 
 interface TrackedLive {
   filing: MethodologyExamples["tracked"][number];
@@ -140,7 +142,7 @@ export function MeasuredExamples({
     if (!threw) return null;
 
     return (
-      <p className="mt-6 max-w-[64ch] text-[14px] leading-[1.65] text-foreground/55">
+      <p className="mt-6 max-w-[70ch] text-[16px] leading-[1.65] text-foreground/55">
         The live figures for the worked filings did not come back this time.
         They are read from the API at the moment you load the page and are never
         stored here, so nothing is shown rather than something out of date.
@@ -153,7 +155,7 @@ export function MeasuredExamples({
 
   return (
     <>
-      <p className="mt-7 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+      <p className="mt-9 max-w-[70ch] text-[16px] leading-[1.65] text-foreground/80">
         Two of those measurements up close. Two rated buys
         {hasSpecimen
           ? ", one of them the worked example threaded through this page"
@@ -162,20 +164,20 @@ export function MeasuredExamples({
         read from the API as you load the page and move with the market:
       </p>
 
-      <div className={`mt-5 border-t ${RULE}`}>
+      <div className={`@container mt-6 border-t ${RULE}`}>
         {rows === null
           ? examples.tracked.map((t) => (
-              <div key={t.id} className={`border-b py-4 ${RULE}`}>
+              <div key={t.id} className={`border-b py-5 ${RULE}`}>
                 <div className={GRID}>
                   <span />
-                  <Skeleton circle h={44} w={44} />
+                  <Skeleton circle h={48} w={48} />
                   <div>
-                    <Skeleton className="rounded" h={16} w="45%" />
-                    <Skeleton className="mt-2 rounded" h={12} w="75%" />
+                    <Skeleton className="rounded" h={24} w="70%" />
+                    <Skeleton className="mt-2.5 rounded" h={14} w="45%" />
                   </div>
-                  <div className="col-start-3 sm:col-start-4 sm:row-start-1">
-                    <Skeleton className="rounded" h={20} w={72} />
-                    <Skeleton className="mt-2 rounded" h={11} w="90%" />
+                  <div className="col-start-3 @min-[540px]:col-start-4 @min-[540px]:row-start-1">
+                    <Skeleton className="rounded" h={28} w={104} />
+                    <Skeleton className="mt-2 rounded" h={13} w="90%" />
                   </div>
                 </div>
               </div>
@@ -203,38 +205,44 @@ function TrackedRow({
 
   return (
     <div className={`border-b ${RULE}`}>
-      <Link className={`${ROW_LINK} py-4`} to={filing.path}>
+      <Link className={`${ROW_LINK} py-5`} to={filing.path}>
         <div className={GRID}>
           {/* The specimen mark's lane. Present on both rows so the logos line
               up whether or not the specimen is one of them. */}
-          <span className="flex h-11 items-center justify-center">
+          <span className="flex h-12 items-center justify-center">
             {isSpecimen ? <SpecimenMark /> : null}
             {isSpecimen ? (
               <span className="sr-only">The worked example. </span>
             ) : null}
           </span>
 
-          <CompanyLogo size={44} ticker={filing.ticker} />
+          <CompanyLogo size={48} ticker={filing.ticker} />
 
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-              <p className="text-[16px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground group-hover:underline group-hover:underline-offset-4">
-                {filing.company}
+            {/* The row leads with the PURCHASE, not the issuer. A line that
+                begins "Vistry Group" reads as a claim about a company, and the
+                figure on the right then looks like the company's return; what
+                is actually being scored is one person's one purchase on one
+                date. So the sentence names the buyer, what they spent and what
+                they bought, in that order, and the company is the object of
+                the verb rather than the subject of the row. */}
+            <p className="text-[22px] font-semibold leading-[1.2] tracking-[-0.02em] text-foreground group-hover:underline group-hover:underline-offset-4 @min-[540px]:text-[24px]">
+              {filing.name} bought {filing.value} of {filing.company}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <p className="text-[14px] leading-[1.5] text-foreground/60">
+                {filing.role ? `${filing.role}, ` : ""}
+                {shortDate(filing.date)}
               </p>
               <RatingBadge rating={rating} />
             </div>
-            <p className="mt-1 text-[12.5px] leading-[1.5] text-foreground/60">
-              {filing.name}
-              {filing.role ? `, ${filing.role.toLowerCase()}` : ""} ·{" "}
-              {filing.value} on {shortDate(filing.date)}
-            </p>
           </div>
 
           {/* The only colour in this section, and the reason the section is
               allowed it: this is a market outcome, measured. */}
-          <div className="col-start-3 sm:col-start-4 sm:row-start-1 sm:text-right">
+          <div className="col-start-3 @min-[540px]:col-start-4 @min-[540px]:row-start-1 @min-[540px]:text-right">
             <p
-              className={`text-[22px] font-semibold tabular-nums leading-none tracking-[-0.02em] ${
+              className={`text-[30px] font-semibold tabular-nums leading-none tracking-[-0.03em] ${
                 alpha > 0
                   ? "text-positive"
                   : alpha < 0
@@ -244,7 +252,7 @@ function TrackedRow({
             >
               {signed}
             </p>
-            <p className="mt-1.5 text-[11.5px] leading-[1.45] text-foreground/45">
+            <p className="mt-2 text-[13px] leading-[1.45] text-foreground/45">
               vs {benchmark} since{" "}
               {basis === "disclosure" ? "disclosure" : "the trade"}, as of{" "}
               {shortDate(asOf)}

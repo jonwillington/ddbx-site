@@ -18,9 +18,10 @@
  *              object, and the provenance line. One species, so the five
  *              captions on the page read as one voice.
  *
- *  Row titles: the tenet-3 selling row (RowList/Row, 21/24px) for the checks
- *  and the limits; the ledger row (18/19.5px) for the pipeline; data rows
- *  (16px, the BoardRow scale) for feeds and tracked filings.
+ *  Row titles (raised 2026-09-07 on Jon's "bigger typography"): the tenet-3
+ *  selling row (RowList/Row, 24/26px) for the checks and the limits; the
+ *  ledger row (22/24px) for the pipeline; data rows (17px names, 16px
+ *  tabular figures) for feeds and tracked filings. Body prose is 16px/1.65.
  */
 import type { ReactNode } from "react";
 
@@ -37,7 +38,7 @@ export const EYEBROW_QUIET =
   "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45";
 export const KICKER =
   "font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em]";
-export const CAPTION = "text-[12.5px] leading-[1.6] text-foreground/50";
+export const CAPTION = "text-[13px] leading-[1.6] text-foreground/50";
 
 /** "15 Jul 2026" — the filing pages' short date. Parsed as UTC on purpose: a
  *  bare `new Date("2026-07-15")` renders as the 14th for every reader west of

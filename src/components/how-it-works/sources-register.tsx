@@ -59,13 +59,7 @@ import type {
 
 import { GB, NL, SE, US } from "country-flag-icons/react/3x2";
 
-import {
-  CAPTION,
-  EYEBROW,
-  Fold,
-  KICKER,
-  RULE,
-} from "@/components/how-it-works/shared";
+import { EYEBROW, Fold, KICKER, RULE } from "@/components/how-it-works/shared";
 import { FEEDS, FEED_ORDER, count, monthLabel } from "@/lib/coverage";
 
 /** Flags identify a FEED, not a country: the congressional corpus flies the US
@@ -93,22 +87,34 @@ const HOME_FEED: Record<string, CoverageMarketId> = {
  *  builds its own: three literal class strings reading three custom
  *  properties, so the two can never disagree about which columns exist.
  *
- *  The widest arrangement waits for `xl` for the reason the boards do — the
- *  SEO rail claims 320px at `lg`, so the content column FALLS across that
- *  breakpoint instead of growing. Below `xl` the stranded quantities join the
- *  row's caption, labelled, rather than being dropped. */
+ *  The gates are CONTAINER queries, not viewport ones, and that is a fix
+ *  rather than a flourish. The page has dropped its 860px wrapper, so this
+ *  object is handed the whole content column: about 910px at `xl` beside the
+ *  SEO rail, 1,070px at 1440, and 656px at `lg` — narrower than at `md`,
+ *  because the rail claims a fixed 320px and the column FALLS across that
+ *  breakpoint instead of growing. A viewport gate has to be pinned to `xl` to
+ *  survive that, which then withholds the columns from every wide layout with
+ *  no rail. Keyed on the register's own width, all seven tracks appear at
+ *  820px of register, wherever that comes from, and the answer to "can six
+ *  columns be columns at lg?" is measured rather than guessed: at 656px they
+ *  cannot, and the register says so by folding them.
+ *
+ *  Below the wide gate the stranded quantities join the row's caption,
+ *  labelled, rather than being dropped. */
 const ROW_GRID =
-  "grid items-start gap-x-4 [grid-template-columns:var(--reg-phone)] sm:[grid-template-columns:var(--reg-medium)] xl:[grid-template-columns:var(--reg-wide)]";
+  "grid items-start gap-x-5 [grid-template-columns:var(--reg-phone)] @min-[520px]:[grid-template-columns:var(--reg-medium)] @min-[820px]:[grid-template-columns:var(--reg-wide)]";
 
 const ROW_STYLE = {
-  "--reg-phone": "2.25rem minmax(0,1fr) 4.75rem",
-  "--reg-medium": "2.25rem minmax(0,1fr) 4.75rem 5.75rem",
-  "--reg-wide": "2.25rem minmax(0,1fr) 4.75rem 5.75rem 4.5rem 4.5rem 5.5rem",
+  "--reg-phone": "2.25rem minmax(0,1fr) 5.25rem",
+  "--reg-medium": "2.25rem minmax(0,1fr) 5.25rem 7.5rem",
+  // 7.5rem on the buys track so "Open-market buys" sets on one line at 13px
+  // and the header row reads as five labels rather than four and a wrap.
+  "--reg-wide": "2.5rem minmax(0,1fr) 5.25rem 7.5rem 4.75rem 4.75rem 5.5rem",
 } as CSSProperties;
 
 /** Anything full-width inside a row: the facts band, the folded quantities,
  *  the note. Starts at column one at every width. */
-const FULL = "col-span-3 sm:col-span-4 xl:col-span-7";
+const FULL = "col-span-3 @min-[520px]:col-span-4 @min-[820px]:col-span-7";
 
 /* ------------------------------------------------------------------- rows -- */
 
@@ -116,16 +122,18 @@ function ColumnHeader() {
   return (
     <div
       aria-hidden
-      className={`${ROW_GRID} items-end border-t ${RULE} pt-3 text-[11px] leading-[1.35] text-foreground/45`}
+      className={`${ROW_GRID} items-end border-t ${RULE} pt-3 text-[13px] leading-[1.35] text-foreground/45`}
       style={ROW_STYLE}
     >
       <span />
       <span>Feed</span>
       <span className="text-right">Records</span>
-      <span className="hidden text-right sm:block">Open-market buys</span>
-      <span className="hidden text-right xl:block">Filers</span>
-      <span className="hidden text-right xl:block">Issuers</span>
-      <span className="hidden text-right xl:block">Records from</span>
+      <span className="hidden text-right @min-[520px]:block">
+        Open-market buys
+      </span>
+      <span className="hidden text-right @min-[820px]:block">Filers</span>
+      <span className="hidden text-right @min-[820px]:block">Issuers</span>
+      <span className="hidden text-right @min-[820px]:block">Records from</span>
     </div>
   );
 }
@@ -143,8 +151,8 @@ function Figure({
     <p
       className={`text-right tabular-nums leading-none ${
         lead
-          ? "text-[17px] font-semibold tracking-[-0.01em] text-foreground"
-          : "text-[13.5px] text-foreground/70"
+          ? "text-[20px] font-semibold tracking-[-0.015em] text-foreground"
+          : "text-[16px] text-foreground/70"
       } ${className}`}
     >
       {value}
@@ -171,7 +179,7 @@ function HostFacts({ copy }: { copy: MarketCopy }) {
       {facts.map((f) => (
         <div key={f.label} className="flex items-baseline gap-2">
           <dt className={`shrink-0 ${KICKER} text-foreground/40`}>{f.label}</dt>
-          <dd className="text-[12.5px] leading-[1.5] text-foreground/75">
+          <dd className="text-[14px] leading-[1.5] text-foreground/75">
             {f.value}
           </dd>
         </div>
@@ -207,7 +215,7 @@ function FeedRow({
   return (
     <li className={`border-t ${RULE}`}>
       <div
-        className={`${ROW_GRID} py-4 ${
+        className={`${ROW_GRID} py-5 ${
           home
             ? "-mx-3 rounded-lg bg-brand-brown/[0.045] px-3 dark:bg-brand-tan/[0.08]"
             : ""
@@ -221,32 +229,38 @@ function FeedRow({
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <h3 className="text-[16px] font-semibold leading-snug tracking-[-0.015em] text-foreground">
+            <h3 className="text-[17px] font-semibold leading-snug tracking-[-0.015em] text-foreground">
               {feed.name}
             </h3>
             {home ? (
               <span
-                className={`rounded-full border ${RULE} px-2 py-[1px] text-[10.5px] leading-[1.5] text-foreground/55`}
+                className={`rounded-full border ${RULE} px-2 py-[2px] text-[11px] leading-[1.5] text-foreground/55`}
               >
                 This site’s market
               </span>
             ) : null}
           </div>
           <p className={`mt-1.5 ${EYEBROW} leading-[1.4]`}>{feed.source}</p>
-          <p className="mt-1.5 text-[12.5px] leading-[1.5] text-foreground/55">
+          <p className="mt-1.5 text-[14px] leading-[1.5] text-foreground/55">
             {feed.filer}
           </p>
         </div>
 
         <Figure lead value={count(row.disclosures)} />
-        <p className="hidden text-right text-[13.5px] tabular-nums leading-none text-foreground/70 sm:block">
+        <p className="hidden text-right text-[16px] tabular-nums leading-none text-foreground/70 @min-[520px]:block">
           {row.open_market_buys != null ? count(row.open_market_buys) : ""}
         </p>
-        <Figure className="hidden xl:block" value={count(row.insiders)} />
-        <Figure className="hidden xl:block" value={count(row.issuers)} />
+        <Figure
+          className="hidden @min-[820px]:block"
+          value={count(row.insiders)}
+        />
+        <Figure
+          className="hidden @min-[820px]:block"
+          value={count(row.issuers)}
+        />
         {/* Empty rather than a dash when the feed reports no first date: rule
             2 of the static pages, and the caption says what the column is. */}
-        <p className="hidden text-right text-[13.5px] tabular-nums leading-none text-foreground/70 xl:block">
+        <p className="hidden text-right text-[16px] tabular-nums leading-none text-foreground/70 @min-[820px]:block">
           {from ?? ""}
         </p>
 
@@ -259,17 +273,17 @@ function FeedRow({
         {/* The quantities with no column at this width. Gone at xl, where
             every one of them has a track and a heading of its own. */}
         <p
-          className={`${FULL} mt-3 text-[12px] leading-[1.5] text-foreground/50 xl:hidden`}
+          className={`${FULL} mt-3 text-[14px] leading-[1.5] text-foreground/50 @min-[820px]:hidden`}
         >
-          <span className="sm:hidden">{folded.join(" · ")}</span>
-          <span className="hidden sm:inline">
+          <span className="@min-[520px]:hidden">{folded.join(" · ")}</span>
+          <span className="hidden @min-[520px]:inline">
             {folded.slice(1).join(" · ")}
           </span>
         </p>
 
         {feed.note ? (
           <p
-            className={`${FULL} mt-2.5 max-w-[62ch] text-[12px] leading-[1.55] text-foreground/45`}
+            className={`${FULL} mt-3 max-w-[68ch] text-[14px] leading-[1.55] text-foreground/45`}
           >
             {feed.note}
           </p>
@@ -310,7 +324,7 @@ export function SourcesRegister({
           well: for the UK `regulatorFullName` already contains the venue, so
           interpolating both put "London Stock Exchange" in one sentence
           twice. */}
-      <p className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+      <p className="max-w-[70ch] text-[16px] leading-[1.65] text-foreground/80">
         Markets don’t disclose the same way, and a pipeline that pretends they
         do gets the vocabulary wrong before it gets anything else wrong. In{" "}
         {copy.regionName} that means reading {copy.regulatorFullName}, filed by
@@ -318,15 +332,15 @@ export function SourcesRegister({
         format, standardised here, and never a third party’s summary of them.
       </p>
 
-      <p className="mt-4 max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80">
+      <p className="mt-4 max-w-[70ch] text-[16px] leading-[1.65] text-foreground/80">
         And it is not one feed but five. They arrive in five formats, name their
         filers five different ways, and hold records reaching back to five
         different starting points, so the rows below are not like-for-like and
         the total is not a count of purchases.
       </p>
 
-      <Fold className="mt-3 max-w-[64ch]" label="How to read the register">
-        <p className="text-[14px] leading-[1.7] text-foreground/65">
+      <Fold className="mt-4 max-w-[70ch]" label="How to read the register">
+        <p className="text-[16px] leading-[1.65] text-foreground/65">
           A US, Swedish or Dutch row is a single transaction line from a filing
           that may hold several, and a congressional row is an amount band
           sorted by fixed rules rather than by a model. Filers and issuers are
@@ -335,7 +349,9 @@ export function SourcesRegister({
         </p>
       </Fold>
 
-      <div className="mt-7">
+      {/* The container the row gates measure. Everything that shares the
+          seven-track spec has to sit inside it, header included. */}
+      <div className="@container mt-8">
         <ColumnHeader />
         <ol className={`border-b ${RULE}`}>
           {rows.map((row) => (
@@ -349,7 +365,10 @@ export function SourcesRegister({
         </ol>
       </div>
 
-      <p className={`mt-4 max-w-[68ch] ${CAPTION}`}>
+      {/* The house caption, one step up from shared.tsx's 12.5px: the whole
+          page moved to a larger scale this round and a caption set to the old
+          number under a 16px body reads as a different document. */}
+      <p className="mt-5 max-w-[74ch] text-[13px] leading-[1.6] text-foreground/50">
         {source === "snapshot" ? (
           <>
             Counted {monthLabel(data.generated_at)}, from a stored reading: the
