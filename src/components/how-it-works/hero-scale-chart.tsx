@@ -26,9 +26,9 @@
  *  The gaps do the explaining
  *  ---------------------------------------------------------------------------
  *
- *  Each column's top level continues right as a hairline. The empty band under
- *  that line, beside the shorter column that follows, is labelled with what
- *  left. So the reader is told what the missing quantity IS, in the place
+ *  Each column's top level continues right as a dashed leader. The empty band
+ *  under that line, beside the shorter column that follows, is annotated with
+ *  what left. So the reader is told what the missing quantity IS, in the place
  *  where it is missing, rather than in a legend:
  *
  *    band 1  grants, vestings, option exercises and sales
@@ -42,6 +42,24 @@
  *  not already assert.
  *
  *  ---------------------------------------------------------------------------
+ *  Colour leads the eye to the small block (2026-09-07)
+ *  ---------------------------------------------------------------------------
+ *
+ *  Jon's review of the first light version: "makes sense now but doesn't look
+ *  good. Maybe it needs some brown in there." It was two grey slabs and a
+ *  brown sliver, and the grey was doing nothing — it said "not the accent"
+ *  when the drawing needed it to say "before the accent". So the three columns
+ *  are one ramp in the brand family: sand, tan, brown (amber on dark), light to
+ *  dark left to right, so the eye is led down the drawing to the smallest
+ *  and darkest block, which is the one the page is about. The survivors'
+ *  figure is set larger and heavier than the other two and in the same brand
+ *  colour as its column, and the specimen mark is drawn INTO the block in the
+ *  ground colour, so "one of these 1,407" is literal: there it is, inside.
+ *
+ *  Still no signed colour anywhere here (the page's census greps this folder
+ *  for it; this file returns nothing). The hero states no market outcome.
+ *
+ *  ---------------------------------------------------------------------------
  *  Two arrangements, one scale
  *  ---------------------------------------------------------------------------
  *
@@ -52,16 +70,15 @@
  *  identical. It exists because the band copy needs a measure: at 448px, five
  *  vertical tracks leave about fifteen characters per line for a sentence that
  *  has to say "option exercises".
- *
- *  Colour: foreground ink at two opacities for the first two columns, the
- *  brand accent for the survivors and for the specimen mark. No signed colour
- *  (the page's census greps this folder for it; this file returns nothing).
  */
 import type { CSSProperties } from "react";
 
 import { useEffect, useState } from "react";
 
-import { SpecimenMark } from "@/components/how-it-works/specimen-mark";
+import {
+  SpecimenMark,
+  SpecimenMarkSvg,
+} from "@/components/how-it-works/specimen-mark";
 import { useMeasuredWidth } from "@/components/boards/use-measured-width";
 import { count } from "@/lib/coverage";
 
@@ -89,20 +106,41 @@ const ROWS_BELOW = 620;
 const NUM_BAND = 64;
 /** Gap between a column's top and the figure standing on it. */
 const FIG_GAP = 14;
-/** How far into the gap the "what leaves" sentence is set. */
-const BAND_INSET = 14;
-/** The sentence's measure in characters. Must match the `max-w-[44ch]`
+/** How far into the gap the "what leaves" annotation is set. */
+const BAND_INSET = 16;
+/** The annotation's measure in characters. Must match the `max-w-[38ch]`
  *  on the band paragraph below — Tailwind cannot read a value out of a
  *  template literal, so the two are kept in step by hand. */
-const BAND_MEASURE = 44;
-/** Clearance kept between that sentence and the figure below it. */
-const BAND_SLACK = 20;
+const BAND_MEASURE = 38;
+/** Clearance kept between that annotation and the figure below it. */
+const BAND_SLACK = 22;
+/** The survivors' figure, as a multiple of the others. */
+const ACCENT_SCALE = 1.3;
+/** The specimen mark is drawn inside the survivors' block only when the block
+ *  reads as a bar: at least MARK_MIN across (the mark is 16px, plus 2px of
+ *  block showing either side) and at least MARK_RUN along. A 24px-by-28px
+ *  block on a phone with the mark filling it read as a checkbox, so there the
+ *  mark stays in the label line only. */
+const MARK_MIN = 20;
+const MARK_RUN = 48;
 
-const RULE = "border-hairline dark:border-white/[0.09]";
+const BASELINE = "border-hairline dark:border-white/[0.12]";
+/** A column's level, carried across the gap it drops into. Dashed and in the
+ *  brand colour so it reads as a leader for the annotation hanging from it,
+ *  not as a grid rule. */
+const LEVEL = "border-dashed border-brand-brown/30 dark:border-brand-tan/35";
 
-/** Fills for the stages that are not the survivors, darkest last. */
-const INK = ["bg-foreground/16", "bg-foreground/32"];
-const ACCENT = "bg-brand-brown dark:bg-brand-tan";
+/** The ramp. One family, light to dark, in the order the reader meets them;
+ *  the last is the one every other element points at. */
+const RAMP = [
+  "bg-brand-tan/35 dark:bg-brand-tan/22",
+  "bg-brand-tan dark:bg-brand-tan/55",
+];
+const ACCENT = "bg-brand-brown dark:bg-brand-amber";
+/** The survivors' figure and the mark-in-block, in the column's own colour
+ *  and the ground colour respectively. */
+const ACCENT_TEXT = "text-brand-brown dark:text-brand-amber";
+const GROUND_ON_ACCENT = "text-sheet dark:text-ink";
 
 /** Mount-in: the columns grow from the baseline once, then nothing on this
  *  page moves again (grammar 5). Reduced motion skips straight to the end. */
@@ -127,7 +165,9 @@ function useDrawn(ready: boolean): boolean {
   return drawn;
 }
 
-/** The count, set at the size the drawing is built around. */
+/** The count, set at the size the drawing is built around. The survivors'
+ *  count is the heaviest thing in the panel after the h1: larger, semibold,
+ *  and in the colour of its block. */
 function Figure({
   stage,
   size,
@@ -145,12 +185,16 @@ function Figure({
           inline, it pushed the figure 50px right of the column it belongs to
           and broke the one alignment the drawing depends on. */}
       {stage.prefix ? (
-        <span className="mb-1 block text-[13px] leading-[1.2] text-foreground/50">
+        <span className="mb-1.5 block font-mono text-[11px] font-semibold uppercase leading-[1.2] tracking-[0.14em] text-foreground/45">
           {stage.prefix}
         </span>
       ) : null}
       <span
-        className="block font-semibold tabular-nums tracking-[-0.035em] text-foreground"
+        className={`block tabular-nums ${
+          stage.accent
+            ? `font-semibold tracking-[-0.045em] ${ACCENT_TEXT}`
+            : "font-medium tracking-[-0.035em] text-foreground/80"
+        }`}
         style={{ fontSize: size, lineHeight: 1 }}
       >
         {count(stage.value)}
@@ -163,7 +207,13 @@ function Figure({
 function StageLabel({ stage }: { stage: ScaleStage }) {
   return (
     <div>
-      <p className="text-[16px] font-medium leading-[1.25] text-foreground/85 sm:text-[18px]">
+      <p
+        className={`text-[16px] leading-[1.25] sm:text-[18px] ${
+          stage.accent
+            ? "font-semibold text-foreground"
+            : "font-medium text-foreground/80"
+        }`}
+      >
         {stage.label}
       </p>
       {stage.sub ? (
@@ -187,13 +237,54 @@ function SpecimenLine({
 }) {
   return (
     <p
-      className={`flex items-start gap-1.5 text-[13.5px] leading-[1.45] text-foreground/55 ${className}`}
+      className={`flex items-start gap-2 text-[13.5px] leading-[1.45] text-foreground/55 ${className}`}
     >
-      <SpecimenMark className="mt-[3px]" />
+      <SpecimenMark className="mt-[2px]" />
       <span>
         <span className="font-semibold text-foreground">{company}</span>, one of
         these {count(survivors)}.
       </span>
+    </p>
+  );
+}
+
+/** The specimen mark drawn inside the survivors' block, in the ground colour,
+ *  so the block visibly contains the filing the label beneath it names. */
+function MarkInBlock({ x, y }: { x: number; y: number }) {
+  return (
+    <svg
+      aria-hidden
+      className={`absolute ${GROUND_ON_ACCENT}`}
+      height={16}
+      style={{ left: x - 8, top: y - 8 }}
+      viewBox="0 0 16 16"
+      width={16}
+    >
+      <SpecimenMarkSvg color="currentColor" cx={8} cy={8} />
+    </svg>
+  );
+}
+
+/** What leaves, written in the band it leaves from. Short, quiet, hung from
+ *  the level line like an annotation on a drawing rather than set like body
+ *  copy. */
+function BandNote({
+  text,
+  size,
+  className = "",
+  style,
+}: {
+  text: string;
+  size: number;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <p
+      className={`max-w-[38ch] leading-[1.5] text-foreground/60 ${className}`}
+      style={{ fontSize: size, ...style }}
+    >
+      {text}
     </p>
   );
 }
@@ -221,8 +312,10 @@ export function HeroScaleChart({
   const drawable = stages.length >= 2 && top > 0;
 
   const rows = W > 0 && W < ROWS_BELOW;
-  const figureSize =
-    W >= 900 ? 48 : W >= 780 ? 42 : W >= 620 ? 36 : W >= 400 ? 32 : 28;
+  const baseSize =
+    W >= 900 ? 44 : W >= 780 ? 40 : W >= 620 ? 34 : W >= 400 ? 30 : 26;
+  const sizeOf = (s: ScaleStage) =>
+    s.accent ? Math.round(baseSize * ACCENT_SCALE) : baseSize;
   const bandSize = W >= 700 ? 14 : 13.5;
 
   const trackTotal = stages.length + (stages.length - 1) * GAP_RATIO;
@@ -232,7 +325,7 @@ export function HeroScaleChart({
 
   // The drawing's height is derived, not chosen. Each band has to hold two
   // things stacked: the next column's figure, sitting on that column's top,
-  // and this column's "what leaves" sentence, hanging from this column's
+  // and this column's "what leaves" annotation, hanging from this column's
   // level line. A height picked from the width alone put the two through each
   // other at 760px, where the band is 34% of a 300px plot and the figure block
   // alone is 56px of it. So: work out what each band needs, divide by the
@@ -243,11 +336,11 @@ export function HeroScaleChart({
   // would falsify the page's thesis before it broke its hero.
   const lineH = bandSize * 1.5;
   const figureBlock = (s: ScaleStage) =>
-    figureSize + (s.prefix ? bandSize * 1.2 + 4 : 0);
+    sizeOf(s) + (s.prefix ? 11 * 1.2 + 6 : 0);
 
   const H = (() => {
     if (W === 0) return 300;
-    let need = W * 0.48;
+    let need = W * 0.5;
 
     for (let i = 0; i < stages.length - 1; i += 1) {
       const drop = (stages[i].value - stages[i + 1].value) / top;
@@ -292,50 +385,61 @@ export function HeroScaleChart({
         <div aria-hidden style={{ height: NUM_BAND + 300 }} />
       ) : rows ? (
         <ol>
-          {stages.map((stage, i) => (
-            <li key={stage.key}>
-              <Figure size={figureSize} stage={stage} style={fade(i)} />
-              <div
-                aria-hidden
-                className={`mt-2.5 w-full border-b ${RULE} pb-0`}
-              >
+          {stages.map((stage, i) => {
+            const barW = Math.max((stage.value / top) * W, 4);
+            const ROW_H = 28;
+
+            return (
+              <li key={stage.key}>
+                <Figure size={sizeOf(stage)} stage={stage} style={fade(i)} />
                 <div
-                  className={`h-[26px] rounded-r-[2px] ${
-                    stage.accent ? ACCENT : INK[Math.min(i, INK.length - 1)]
-                  }`}
-                  style={{
-                    width: `${Math.max((stage.value / top) * 100, 0.8)}%`,
-                    ...grow(i, "X"),
-                  }}
-                />
-              </div>
-              <div className="mt-2.5" style={fade(i)}>
-                <StageLabel stage={stage} />
-                {stage.accent && specimenCompany ? (
-                  <SpecimenLine
-                    className="mt-2"
-                    company={specimenCompany}
-                    survivors={survivors}
+                  aria-hidden
+                  className={`relative mt-3 w-full border-b ${BASELINE}`}
+                  style={{ height: ROW_H }}
+                >
+                  <div
+                    className={`absolute inset-y-0 left-0 rounded-r-[3px] ${
+                      stage.accent ? ACCENT : RAMP[Math.min(i, RAMP.length - 1)]
+                    }`}
+                    style={{ width: barW, ...grow(i, "X") }}
+                  />
+                  {stage.accent &&
+                  specimenCompany &&
+                  ROW_H >= MARK_MIN &&
+                  barW >= MARK_RUN ? (
+                    <div style={fade(i)}>
+                      <MarkInBlock x={barW / 2} y={ROW_H / 2} />
+                    </div>
+                  ) : null}
+                </div>
+                <div className="mt-3" style={fade(i)}>
+                  <StageLabel stage={stage} />
+                  {stage.accent && specimenCompany ? (
+                    <SpecimenLine
+                      className="mt-2"
+                      company={specimenCompany}
+                      survivors={survivors}
+                    />
+                  ) : null}
+                </div>
+                {i < stages.length - 1 ? (
+                  <BandNote
+                    className={`my-6 border-l-2 ${LEVEL} py-0.5 pl-3.5`}
+                    size={bandSize}
+                    style={fade(i)}
+                    text={bands[i]}
                   />
                 ) : null}
-              </div>
-              {i < stages.length - 1 ? (
-                <p
-                  className={`my-5 border-l-2 ${RULE} py-0.5 pl-3 text-[13.5px] leading-[1.5] text-foreground/60`}
-                  style={fade(i)}
-                >
-                  {bands[i]}
-                </p>
-              ) : null}
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ol>
       ) : (
         <>
           <div className="relative" style={{ height: NUM_BAND + H }}>
             <div
               aria-hidden
-              className={`absolute inset-x-0 bottom-0 border-b ${RULE}`}
+              className={`absolute inset-x-0 bottom-0 border-b ${BASELINE}`}
             />
 
             {stages.map((stage, i) => {
@@ -350,7 +454,7 @@ export function HeroScaleChart({
                   {i < stages.length - 1 ? (
                     <div
                       aria-hidden
-                      className={`absolute border-t ${RULE}`}
+                      className={`absolute border-t ${LEVEL}`}
                       style={{
                         left: x + colW,
                         right: 0,
@@ -362,15 +466,15 @@ export function HeroScaleChart({
 
                   <Figure
                     className="absolute"
-                    size={figureSize}
+                    size={sizeOf(stage)}
                     stage={stage}
                     style={{ left: x, bottom: barH + FIG_GAP, ...fade(i) }}
                   />
 
                   <div
                     aria-hidden
-                    className={`absolute rounded-t-[3px] ${
-                      stage.accent ? ACCENT : INK[Math.min(i, INK.length - 1)]
+                    className={`absolute rounded-t-[4px] ${
+                      stage.accent ? ACCENT : RAMP[Math.min(i, RAMP.length - 1)]
                     }`}
                     style={{
                       left: x,
@@ -381,30 +485,41 @@ export function HeroScaleChart({
                     }}
                   />
 
+                  {stage.accent &&
+                  specimenCompany &&
+                  barH >= MARK_MIN &&
+                  colW >= MARK_RUN ? (
+                    <div style={fade(i)}>
+                      <MarkInBlock
+                        x={x + colW * 0.5}
+                        y={NUM_BAND + H - barH / 2}
+                      />
+                    </div>
+                  ) : null}
+
                   {/* What left, written in the band it left from: under this
                       column's level line, in the ground the next column does
                       not reach. */}
                   {i < stages.length - 1 ? (
-                    <p
-                      className="absolute max-w-[44ch] leading-[1.5] text-foreground/60"
+                    <BandNote
+                      className="absolute"
+                      size={bandSize}
                       style={{
                         left: x + colW + BAND_INSET,
                         right: 0,
                         bottom: barH - 12,
-                        fontSize: bandSize,
                         transform: "translateY(100%)",
                         ...fade(i),
                       }}
-                    >
-                      {bands[i]}
-                    </p>
+                      text={bands[i]}
+                    />
                   ) : null}
                 </div>
               );
             })}
           </div>
 
-          <div className="mt-3 flex items-start">
+          <div className="mt-3.5 flex items-start">
             {stages.map((stage, i) => (
               <div
                 key={stage.key}

@@ -53,9 +53,21 @@ import { useMemo } from "react";
 import { HeroScaleChart } from "@/components/how-it-works/hero-scale-chart";
 import { count } from "@/lib/coverage";
 
+/** The panel. The homepage hero-card's warm shadow, so the object sits ON the
+ *  page rather than being drawn on it; relative + clipped so the wash below
+ *  stays inside the rounded edge. */
 const PANEL =
-  "rounded-[28px] border border-hairline bg-sheet px-5 py-8 sm:px-8 sm:py-10 lg:px-12 lg:py-12 dark:border-white/[0.07] dark:bg-surface";
+  "relative overflow-hidden rounded-[28px] border border-hairline bg-sheet px-5 py-8 shadow-[0_26px_64px_-36px_rgba(90,65,40,0.5),0_1px_2px_rgba(90,65,40,0.03)] sm:px-8 sm:py-10 lg:px-12 lg:py-12 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_28px_68px_-36px_rgba(0,0,0,0.85)]";
 const RULE = "border-hairline dark:border-white/[0.09]";
+
+/** The page's one sub-perceptual wash (design language, tenet 4): a static
+ *  pool of the brand warmth under the right-hand end of the drawing, where the
+ *  survivors' block sits, so the ground itself leans toward the thing the eye
+ *  should land on. Radial and masked, so it never presents an edge; the light
+ *  value is the homepage phase layer's tan at a lower alpha, the dark value is
+ *  the amber the dark accent uses. */
+const WASH =
+  "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_58%_60%_at_82%_70%,rgba(173,148,121,0.19)_0%,rgba(173,148,121,0.07)_42%,transparent_72%)] dark:bg-[radial-gradient(ellipse_58%_60%_at_82%_70%,rgba(238,197,132,0.085)_0%,rgba(238,197,132,0.03)_42%,transparent_72%)]";
 
 /** Cardinals to twenty, then the tens, which is as far as this ratio can
  *  plausibly go before "one in n" stops being a sentence a reader parses. */
@@ -181,7 +193,7 @@ export function HeroStage({
       out.length === 3
         ? [
             "Everything in this gap is a grant, a vesting, an option exercise or a sale.",
-            "Most of the rest stop at the sort. They are small, routine, or already explained by something public.",
+            "Most of the rest stop at the sort: small, routine, or already explained by something public.",
           ]
         : [
             "The gap is grants, vestings, option exercises and sales, plus the buys that stop at the sort: small, routine, or already explained.",
@@ -204,7 +216,8 @@ export function HeroStage({
 
   return (
     <section className={PANEL}>
-      <div className="grid gap-x-12 gap-y-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
+      <div aria-hidden className={WASH} />
+      <div className="relative grid gap-x-12 gap-y-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
         <div>
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
             {eyebrow}
@@ -223,7 +236,7 @@ export function HeroStage({
         </div>
       </div>
 
-      <div className="mt-10 lg:mt-12">
+      <div className="relative mt-12 lg:mt-14">
         <HeroScaleChart
           bands={bands}
           specimenCompany={specimenCompany}
@@ -231,16 +244,25 @@ export function HeroStage({
         />
       </div>
 
+      {/* The caption strip: the ratio is the drawing's one-line reading and
+          gets the size to be read as such; the finding follows at prose
+          weight; the provenance sits to the right at the caption size. */}
       <div
-        className={`mt-8 flex flex-col gap-x-10 gap-y-2 border-t ${RULE} pt-4 xl:flex-row xl:items-baseline xl:justify-between`}
+        className={`relative mt-9 grid gap-x-12 gap-y-3 border-t ${RULE} pt-5 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start`}
       >
-        <p className="max-w-[76ch] text-[15px] leading-[1.55] text-foreground/70">
+        <div>
           {ratio ? (
-            <span className="font-semibold text-foreground">{ratio} </span>
+            <p className="text-[19px] font-medium leading-[1.3] tracking-[-0.01em] text-foreground sm:text-[21px]">
+              {ratio}
+            </p>
           ) : null}
-          {finding}
-        </p>
-        <p className="shrink-0 text-[13px] leading-[1.5] text-foreground/40">
+          <p
+            className={`max-w-[66ch] text-[15px] leading-[1.6] text-foreground/65 ${ratio ? "mt-2" : ""}`}
+          >
+            {finding}
+          </p>
+        </div>
+        <p className="text-[13px] leading-[1.5] text-foreground/40 xl:pt-1.5 xl:text-right">
           {caption}
         </p>
       </div>
