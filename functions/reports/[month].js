@@ -12,10 +12,11 @@
 
 import {
   esc,
-  fetchJson,
+  fetchJsonWithStatus,
   noindex,
   page,
   renderInto,
+  unresolved,
 } from "../../shared/prerender.js";
 import { monthLabel, reportPath, slugToMonth } from "../../shared/months.js";
 import { brandTitle, isProductionHost } from "../../shared/seo.js";
@@ -243,12 +244,14 @@ export async function onRequestGet(context) {
   if (!market) return noindex(shell);
 
   const marketParam = market === "US" ? "&market=US" : "";
-  const data = await fetchJson(
+  const { status, data } = await fetchJsonWithStatus(
     `${API_BASE}/monthly-summary?month=${encodeURIComponent(month)}${marketParam}`,
   );
 
-  // No report for that month yet — a real and expected 404, not an error.
-  if (!data?.summary) return noindex(shell);
+  // No report for that month yet — a real and expected 404, not an error. An
+  // error is the other branch of `unresolved`: a published report must not lose
+  // its index entry because the API was down when Googlebot recrawled it.
+  if (!data?.summary) return unresolved(shell, status);
 
   const canonical = `https://${host}${reportPath(month)}`;
   const title = brandTitle(

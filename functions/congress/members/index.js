@@ -20,6 +20,7 @@ import {
   noindex,
   page,
   renderInto,
+  unresolved,
 } from "../../../shared/prerender.js";
 import { brandTitle, isProductionHost } from "../../../shared/seo.js";
 
@@ -88,7 +89,9 @@ export async function onRequestGet(context) {
     },
   });
 
-  if (!res.ok) return noindex(shell);
+  // A 4xx is an answer (no such row); a 5xx or a thrown fetch is not, and
+  // a noindex served on a bad minute outlives the outage by weeks.
+  if (!res.ok) return unresolved(shell, res.status);
   const { members } = await res.json();
 
   // An empty directory is an outage or a cold table, not a page. Advertising a

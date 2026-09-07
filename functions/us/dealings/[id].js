@@ -22,7 +22,12 @@ import {
   displayTicker,
   filingPrerender,
 } from "../../../shared/filing-prerender.js";
-import { apexHost, noindex, renderInto } from "../../../shared/prerender.js";
+import {
+  apexHost,
+  noindex,
+  renderInto,
+  unresolved,
+} from "../../../shared/prerender.js";
 import { brandTitle, isProductionHost } from "../../../shared/seo.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
@@ -53,7 +58,9 @@ export async function onRequestGet(context) {
     },
   });
 
-  if (!res.ok) return noindex(shell);
+  // A 4xx is an answer (no such row); a 5xx or a thrown fetch is not, and
+  // a noindex served on a bad minute outlives the outage by weeks.
+  if (!res.ok) return unresolved(shell, res.status);
   const d = await res.json();
 
   if (!d?.id) return noindex(shell);

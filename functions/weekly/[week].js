@@ -11,6 +11,7 @@ import {
   noindex,
   page,
   renderInto,
+  unresolved,
 } from "../../shared/prerender.js";
 import { brandTitle, isProductionHost } from "../../shared/seo.js";
 import {
@@ -52,7 +53,9 @@ export async function onRequestGet(context) {
     },
   );
 
-  if (!res.ok) return noindex(shell);
+  // A 4xx is an answer (no such row); a 5xx or a thrown fetch is not, and
+  // a noindex served on a bad minute outlives the outage by weeks.
+  if (!res.ok) return unresolved(shell, res.status);
   const { digest } = await res.json();
 
   if (!weekMeetsBar(digest)) return noindex(shell);

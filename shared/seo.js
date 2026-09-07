@@ -191,6 +191,29 @@ export function isForeignResearchPath(pathname, hostname) {
   );
 }
 
+/** Strip trailing slashes from a path. "/companies/" -> "/companies", "/" -> "/".
+ *
+ *  Cloudflare Pages answers a trailing-slash URL with the same document as the
+ *  slashless one, so every route on this site has silently had two addresses.
+ *  Two things went wrong with that. The canonical the middleware emitted echoed
+ *  whichever form was requested, so /brokers/ declared itself canonical and
+ *  competed with /brokers; and on the pre-rendered families the middleware's
+ *  exact-match skip list missed the slashed form, so BOTH the Function and the
+ *  middleware appended a rel=canonical — two conflicting tags, which Google
+ *  discards in favour of a canonical of its own choosing. That is the
+ *  "Duplicate, Google chose different canonical than user" bucket in Search
+ *  Console.
+ *
+ *  The edge now 301s the slashed form away (functions/_middleware.js), and this
+ *  is also applied before any canonical is built so a client-side navigation
+ *  can't reintroduce the split. */
+export function stripTrailingSlash(pathname) {
+  const path = String(pathname ?? "/");
+  const trimmed = path.replace(/\/+$/, "");
+
+  return trimmed || "/";
+}
+
 function normaliseHost(hostname) {
   return String(hostname ?? "")
     .toLowerCase()
@@ -777,7 +800,9 @@ export function canonicalUrlFor(pathname, hostname) {
 
   if (!isProductionHost(host)) return null;
 
-  const path = String(pathname ?? "/");
+  // Slash-normalised before anything reads it: a canonical that echoes the
+  // trailing slash it was asked with is a canonical that endorses a duplicate.
+  const path = stripTrailingSlash(pathname);
   const id = marketIdForPath(path, host);
   // Broker reviews are UK-only editorial ("Compare UK trading platforms"), so
   // they belong to ddbx.uk whichever domain served them.

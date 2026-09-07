@@ -40,6 +40,9 @@ export declare function seoForPath(
   pathname: string,
   hostname?: string,
 ): RouteSeo;
+/** "/companies/" -> "/companies"; "/" stays "/". Every canonical is built from
+ *  the stripped form so a trailing slash can't mint a second address. */
+export declare function stripTrailingSlash(pathname?: string): string;
 export declare function canonicalUrlFor(
   pathname: string,
   hostname?: string,

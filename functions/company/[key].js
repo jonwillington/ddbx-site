@@ -26,10 +26,11 @@
 import {
   apexHost,
   esc,
-  fetchJson,
+  fetchJsonWithStatus,
   noindex,
   page,
   renderInto,
+  unresolved,
 } from "../../shared/prerender.js";
 import { brandTitle } from "../../shared/seo.js";
 import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
@@ -342,13 +343,16 @@ export async function onRequestGet(context) {
   // The SPA shell. React boots from this and takes over whatever we inject.
   const shell = await context.next();
 
-  const data = await fetchJson(
+  const { status, data } = await fetchJsonWithStatus(
     `${API_BASE}/company/${market}/${encodeURIComponent(key)}/page`,
   );
 
   // Unknown company: let the SPA render its own "not found" state, but keep it
-  // out of the index rather than leaving a bare shell to be crawled.
-  if (!data) return noindex(shell);
+  // out of the index rather than leaving a bare shell to be crawled. Only when
+  // the API actually said so, though — see `unresolved`. This page family is
+  // the site's largest, and noindexing 368 live company pages because the
+  // Worker was mid-deploy is not a failure worth risking to tidy a bare shell.
+  if (!data) return unresolved(shell, status);
 
   // The twelve-month window, for the context block. Edge-cached under the same
   // key every sector hub and board uses, so across 368 company pages this is

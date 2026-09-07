@@ -144,6 +144,28 @@ export function noindex(shell) {
     .transform(shell);
 }
 
+/** The shell to serve when a pre-render could not produce content.
+ *
+ *  The distinction this draws is the difference between "there is nothing at
+ *  this URL" and "we could not find out". Only the first deserves a noindex.
+ *
+ *  A 4xx from the API is an answer: the slug is unknown, the row does not
+ *  exist, so noindex it and let the SPA render its own not-found state. A 5xx,
+ *  a timeout or a thrown fetch is not an answer — and a noindex served on a bad
+ *  minute is cached by Google for weeks, so a page that has been indexed for
+ *  months drops out because the Worker was restarting when Googlebot arrived.
+ *  In that case serve the plain shell: React still renders the page for a
+ *  reader, Googlebot renders it too, and the next crawl re-reads the real head.
+ *
+ *  The board Functions reached the same conclusion independently — see the
+ *  `complete ? noindex(shell) : shell` line in best-performing-buys.js. This is
+ *  that rule for the families that fetch a single row.
+ *
+ *  `status` is 0 for a network error or a thrown fetch. */
+export function unresolved(shell, status) {
+  return status >= 400 && status < 500 ? noindex(shell) : shell;
+}
+
 /** Fetch JSON with the cache posture every one of these Functions wants.
  *
  *  cacheTtlByStatus rather than a blanket cacheTtl: `cacheEverything` with a
@@ -152,6 +174,15 @@ export function noindex(shell) {
  *  data for an hour. Returns null rather than throwing; a pre-render failing
  *  should cost the injected content, not the page. */
 export async function fetchJson(url, ttl = 1800) {
+  return (await fetchJsonWithStatus(url, ttl)).data;
+}
+
+/** fetchJson, plus the status that produced the answer.
+ *
+ *  Callers that decide indexability on the result need it: `null` alone cannot
+ *  tell a 404 (noindex this) from a 503 (come back later) — see `unresolved`.
+ *  `status` is 0 when the fetch threw. */
+export async function fetchJsonWithStatus(url, ttl = 1800) {
   try {
     const res = await fetch(url, {
       headers: { accept: "application/json" },
@@ -161,9 +192,9 @@ export async function fetchJson(url, ttl = 1800) {
       },
     });
 
-    return res.ok ? await res.json() : null;
+    return { status: res.status, data: res.ok ? await res.json() : null };
   } catch {
-    return null;
+    return { status: 0, data: null };
   }
 }
 

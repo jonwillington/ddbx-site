@@ -26,6 +26,7 @@ import {
   isIndexable,
   langForPath,
   seoForPath,
+  stripTrailingSlash,
 } from "../shared/seo.js";
 
 function ogImageFor(origin, host) {
@@ -65,15 +66,30 @@ export async function onRequest(context) {
   const { request, next } = context;
   const url = new URL(request.url);
 
-  // The UK/US research pages have no SE/NL equivalent, so on ddbx.eu they were
-  // rendering UK data under UK headings with a Swedish flag in the navbar.
-  // Send them to the host that owns the content instead — same path, so a
-  // shared link still lands where it meant to. 301: the EU URL is not a
-  // distinct page and should not accumulate its own index entry.
-  if (isForeignResearchPath(url.pathname, url.hostname)) {
+  // Two reasons to send a request somewhere else, resolved together so a URL
+  // that needs both gets one hop rather than a chain.
+  //
+  //   1. Trailing slash. Pages serves /companies/ and /companies as the same
+  //      document, so every route on the site has quietly had two addresses.
+  //      That is the duplicate-content split the canonicals exist to prevent,
+  //      and on the pre-rendered families it was worse than a duplicate: the
+  //      skip list below matches the path exactly, so the slashed form fell
+  //      through and picked up a SECOND rel=canonical on top of the one the
+  //      Function had already written. A page with two canonicals has both
+  //      ignored. 301 the slash away and the whole class disappears.
+  //   2. The UK/US research pages have no SE/NL equivalent, so on ddbx.eu they
+  //      were rendering UK data under UK headings with a Swedish flag in the
+  //      navbar. Send them to the host that owns the content instead — same
+  //      path, so a shared link still lands where it meant to. 301: the EU URL
+  //      is not a distinct page and should not accumulate its own index entry.
+  const normalisedPath = stripTrailingSlash(url.pathname);
+  const foreignResearch = isForeignResearchPath(normalisedPath, url.hostname);
+
+  if (normalisedPath !== url.pathname || foreignResearch) {
     const target = new URL(url.toString());
 
-    target.hostname = "ddbx.uk";
+    target.pathname = normalisedPath;
+    if (foreignResearch) target.hostname = "ddbx.uk";
 
     return Response.redirect(target.toString(), 301);
   }
@@ -83,6 +99,14 @@ export async function onRequest(context) {
   // Only the HTML shell needs rewriting; assets pass straight through.
   const contentType = res.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return res;
+  // Lowercased for the match below. Pages resolves /Companies to the same
+  // Function that /companies does, but the exact comparisons in the skip list
+  // are case-sensitive, so the mixed-case form fell through and collected a
+  // second rel=canonical on top of the Function's — the same double-canonical
+  // failure the trailing-slash redirect above closes. Every entry in the list
+  // is a lowercase literal or an anchored pattern, so lowering is safe.
+  const routePath = url.pathname.toLowerCase();
+
   // Routes served by their own pre-render Function own their entire <head> —
   // they set the title, description, canonical and OG tags themselves, from
   // data this module never sees.
@@ -93,41 +117,41 @@ export async function onRequest(context) {
   // tags for the same page — and a page with conflicting canonicals has both
   // ignored, which is worse than having none.
   if (
-    url.pathname.startsWith("/t/") ||
+    routePath.startsWith("/t/") ||
     // The US filing pair, added 2026-08-22 — both own their whole <head>, same
     // as their UK counterparts two lines up and below.
-    url.pathname.startsWith("/us/t/") ||
-    /^\/us\/dealings\/[^/]+$/.test(url.pathname) ||
-    url.pathname.startsWith("/company/") ||
-    url.pathname === "/companies" ||
-    url.pathname.startsWith("/brokers/best-for/") ||
-    url.pathname.startsWith("/brokers/compare/") ||
-    url.pathname === "/reports" ||
-    /^\/reports\/[^/]+$/.test(url.pathname) ||
-    url.pathname === "/sectors" ||
-    /^\/sectors\/[^/]+$/.test(url.pathname) ||
-    url.pathname === "/biggest-buys" ||
-    url.pathname.startsWith("/biggest-buys/") ||
-    url.pathname === "/best-performing-buys" ||
-    url.pathname === "/most-active-companies" ||
-    url.pathname === "/cluster-buys" ||
-    url.pathname === "/roles" ||
-    /^\/roles\/[^/]+$/.test(url.pathname) ||
-    url.pathname === "/market-cap" ||
-    /^\/market-cap\/[^/]+$/.test(url.pathname) ||
-    url.pathname === "/learn" ||
-    /^\/learn\/[^/]+$/.test(url.pathname) ||
+    routePath.startsWith("/us/t/") ||
+    /^\/us\/dealings\/[^/]+$/.test(routePath) ||
+    routePath.startsWith("/company/") ||
+    routePath === "/companies" ||
+    routePath.startsWith("/brokers/best-for/") ||
+    routePath.startsWith("/brokers/compare/") ||
+    routePath === "/reports" ||
+    /^\/reports\/[^/]+$/.test(routePath) ||
+    routePath === "/sectors" ||
+    /^\/sectors\/[^/]+$/.test(routePath) ||
+    routePath === "/biggest-buys" ||
+    routePath.startsWith("/biggest-buys/") ||
+    routePath === "/best-performing-buys" ||
+    routePath === "/most-active-companies" ||
+    routePath === "/cluster-buys" ||
+    routePath === "/roles" ||
+    /^\/roles\/[^/]+$/.test(routePath) ||
+    routePath === "/market-cap" ||
+    /^\/market-cap\/[^/]+$/.test(routePath) ||
+    routePath === "/learn" ||
+    /^\/learn\/[^/]+$/.test(routePath) ||
     // The Congress directory. NOT a bare /congress/ prefix: /congress itself is
     // the market dashboard and still wants this module's head, so only the two
     // sub-families and their detail pages are excluded.
-    /^\/dealings\/[^/]+$/.test(url.pathname) ||
-    url.pathname === "/weekly" ||
-    /^\/weekly\/[^/]+$/.test(url.pathname) ||
-    url.pathname === "/congress/members" ||
-    /^\/congress\/members\/[^/]+$/.test(url.pathname) ||
-    url.pathname === "/congress/committees" ||
-    /^\/congress\/committees\/[^/]+$/.test(url.pathname) ||
-    url.pathname === "/how-it-works"
+    /^\/dealings\/[^/]+$/.test(routePath) ||
+    routePath === "/weekly" ||
+    /^\/weekly\/[^/]+$/.test(routePath) ||
+    routePath === "/congress/members" ||
+    /^\/congress\/members\/[^/]+$/.test(routePath) ||
+    routePath === "/congress/committees" ||
+    /^\/congress\/committees\/[^/]+$/.test(routePath) ||
+    routePath === "/how-it-works"
   ) {
     return res;
   }
@@ -149,8 +173,25 @@ export async function onRequest(context) {
   const alternates = alternatesFor(url.pathname, host);
 
   const setImage = setContent(image);
+  // The backstop for the whole double-canonical class. The skip list above is
+  // hand-maintained and every entry it is missing is a page that gets two
+  // conflicting rel=canonical tags — which Google resolves by discarding both
+  // and picking a canonical of its own, i.e. the "Duplicate, Google chose
+  // different canonical than user" bucket. Rather than trust the list, watch
+  // the stream: if the response already carries a canonical, the Function that
+  // produced it knew more about the page than this module does, and we add
+  // neither our own canonical nor the og:url that would disagree with it.
+  //
+  // Handlers fire in document order and `onEndTag` fires after the element's
+  // children, so a canonical anywhere in <head> is seen before </head>.
+  let hasCanonical = false;
 
   return new HTMLRewriter()
+    .on('link[rel="canonical"]', {
+      element() {
+        hasCanonical = true;
+      },
+    })
     .on("html", {
       element(el) {
         el.setAttribute("lang", lang);
@@ -170,28 +211,36 @@ export async function onRequest(context) {
     // append them once, at the end of <head>.
     .on("head", {
       element(el) {
-        // og:type, twitter:card, twitter:site and the image tags are already
-        // static in index.html — only what's missing or per-route goes here.
-        const tags = [
-          `<meta property="og:url" content="${attr(canonical ?? url.origin + url.pathname)}">`,
-          `<meta property="og:site_name" content="ddbx">`,
-          `<meta name="twitter:title" content="${attr(title)}">`,
-          `<meta name="twitter:description" content="${attr(description)}">`,
-        ];
+        el.onEndTag((end) => {
+          // og:type, twitter:card, twitter:site and the image tags are already
+          // static in index.html — only what's missing or per-route goes here.
+          const tags = [
+            `<meta property="og:site_name" content="ddbx">`,
+            `<meta name="twitter:title" content="${attr(title)}">`,
+            `<meta name="twitter:description" content="${attr(description)}">`,
+          ];
 
-        if (canonical) {
-          tags.push(`<link rel="canonical" href="${attr(canonical)}">`);
-        }
-        // Empty everywhere except the bilingual UK install pages.
-        for (const alt of alternates) {
-          tags.push(
-            `<link rel="alternate" hreflang="${attr(alt.hreflang)}" href="${attr(alt.href)}">`,
-          );
-        }
-        if (!indexable) {
-          tags.push(`<meta name="robots" content="noindex, follow">`);
-        }
-        el.append(tags.join("\n"), { html: true });
+          // og:url travels with the canonical: both name the page's one true
+          // address, so emitting ours over a Function's would contradict it.
+          if (!hasCanonical) {
+            tags.unshift(
+              `<meta property="og:url" content="${attr(canonical ?? url.origin + url.pathname)}">`,
+            );
+            if (canonical) {
+              tags.push(`<link rel="canonical" href="${attr(canonical)}">`);
+            }
+          }
+          // Empty everywhere except the bilingual UK install pages.
+          for (const alt of alternates) {
+            tags.push(
+              `<link rel="alternate" hreflang="${attr(alt.hreflang)}" href="${attr(alt.href)}">`,
+            );
+          }
+          if (!indexable) {
+            tags.push(`<meta name="robots" content="noindex, follow">`);
+          }
+          end.before(tags.join("\n"), { html: true });
+        });
       },
     })
     .transform(res);
