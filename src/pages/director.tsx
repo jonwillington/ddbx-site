@@ -30,10 +30,14 @@
  */
 import type { MarketDealing } from "@/lib/markets/types";
 import type { RelatedCard } from "@/components/seo/related-cards";
+import type { BoardRow as BoardRowModel } from "@/components/boards/board-model";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { ClockIcon } from "@heroicons/react/24/outline";
+
+import { filingPath } from "../../shared/filings.js";
+import { usFilingPath } from "../../shared/filings-us.js";
 
 import { appHrefForMarket } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
@@ -41,7 +45,16 @@ import { BackLink } from "@/components/back-link";
 import { CompanyLogo } from "@/components/company-logo";
 import { Illustration } from "@/components/illustration";
 import { MarketDetailDrawer } from "@/components/market/market-detail-drawer";
-import { MarketRow, MarketRowHeader } from "@/components/market/market-row";
+import {
+  BoardRow,
+  BoardRowHeader,
+  BoardRowList,
+} from "@/components/boards/board-row";
+import { dateLabel, direction } from "@/components/boards/board-model";
+import { BENCHMARK, useBoardPrices } from "@/components/boards/board-prices";
+import { BuySparkline } from "@/components/boards/buy-sparkline";
+import { AlphaCell, PaidWorthNow } from "@/components/boards/paid-worth-now";
+import { RatingBadge } from "@/components/rating-badge";
 import { Skeleton } from "@/components/skeleton";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
@@ -50,7 +63,6 @@ import { SeoSection } from "@/components/seo/section";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { TickerPill } from "@/components/ticker-pill";
 import DefaultLayout from "@/layouts/default";
-import { useDashboardMetricMode } from "@/lib/dashboard-metric-mode";
 import {
   api,
   type DirectorDetail,
@@ -124,6 +136,58 @@ function addDays(iso: string, days: number): string | null {
   return new Date(t + days * 86_400_000).toISOString().slice(0, 10);
 }
 
+/** Days to each horizon's first mark: the clock a "Not enough data yet" tile is
+ *  waiting on, so each one can say when it fills (rule 2). Mirrors the
+ *  90/180/365/730-day rows ddbx-data's `getDirector` averages. */
+const HORIZON_DAYS = { "3m": 90, "6m": 180, "12m": 365, "24m": 730 } as const;
+
+/** A filing as a board row. The director page lists the same purchases the
+ *  boards do, so it states them in the boards' row: company mark, paid → worth
+ *  now, the price since the buy against the index, alpha. The figures come off
+ *  the server's `live_performance`, the same mark /biggest-buys prints, and
+ *  with the same disclosure-first fallback (`buyAlpha` in shared/leaderboard). */
+function toRow(d: MarketDealing, i: number): BoardRowModel {
+  const lp = d.livePerformance;
+  const retPct = lp?.return_pct_disclosed ?? lp?.return_pct_trade ?? null;
+  const alphaPct = lp?.alpha_pct_disclosed ?? lp?.alpha_pct_trade ?? null;
+  const ret = retPct == null ? null : retPct / 100;
+  const alpha = alphaPct == null ? null : alphaPct / 100;
+  const value = d.value ?? 0;
+
+  return {
+    id: d.key,
+    rank: i + 1,
+    entry: 1,
+    ticker: d.ticker,
+    company: d.company,
+    person: d.insiderName,
+    role: d.insiderRole ?? null,
+    tradeDate: d.tradeDate,
+    disclosedDate: d.disclosedDate,
+    value,
+    alpha,
+    ret,
+    worthNow: ret == null || !(value > 0) ? null : value * (1 + ret),
+    dir: direction(alpha),
+    clusterCount: null,
+    raw: d.raw as BoardRowModel["raw"],
+  };
+}
+
+/** The filing's own page, or null where the market has none (SE, NL) and the
+ *  row opens the drawer instead. US rows are folded tranche groups, so the
+ *  page is the primary leg's. */
+function rowHref(d: MarketDealing, marketId: string): string | null {
+  if (marketId === "uk") return d.id ? filingPath(d.id) : null;
+  if (marketId === "us") {
+    const id = (d.raw as { primary?: { id?: string } } | null)?.primary?.id;
+
+    return id ? usFilingPath(id) : null;
+  }
+
+  return null;
+}
+
 /** Per-market adapter for `prior_picks → MarketDealing[]`. UK maps 1:1 from
  *  Dealing; US + SE + NL fold tranche-split legs into RowGroups first, then
  *  map. SE and NL share the EuDealing wire format so they reuse the same
@@ -157,10 +221,10 @@ function toMarketDealings(
  *  question ("is this person any good?") with a symbol that could mean three
  *  things, one of which is damning. Set small on purpose: it is a sentence
  *  standing in for a number, and at 26px it would read as the number. */
-function NotYet() {
+function NotYet({ from }: { from?: string | null }) {
   return (
     <span className="text-[13px] font-medium leading-[1.35] tracking-normal text-foreground/40">
-      Not enough data yet
+      {from ? `From ${from}` : "Not enough data yet"}
     </span>
   );
 }
@@ -173,13 +237,8 @@ export default function DirectorPage() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [d, setD] = useState<AnyDirectorDetail | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const metric = useDashboardMetricMode(market.id);
   const useGating = market.config.useGating;
   const gating = useGating ? useGating() : undefined;
-  const chartMode = useMemo(
-    () => ({ axis: metric.comparison, anchor: metric.anchor }),
-    [metric.comparison, metric.anchor],
-  );
 
   useEffect(() => {
     if (!id) return;
@@ -205,6 +264,16 @@ export default function DirectorPage() {
     () => dealings.find((x) => x.key === selectedKey) ?? null,
     [dealings, selectedKey],
   );
+  const rows = useMemo(() => dealings.map(toRow), [dealings]);
+  // Sparklines need a benchmark series, which exists for UK and US only. SE
+  // and NL rows state their figures without the line rather than draw a
+  // price with nothing to measure it against.
+  const priceMarket =
+    market.id === "uk" ? "UK" : market.id === "us" ? "US" : null;
+  const prices = useBoardPrices(priceMarket ? rows : null, priceMarket ?? "UK");
+  const bench = priceMarket
+    ? prices.get(BENCHMARK[priceMarket].ticker)
+    : undefined;
 
   /** Everything the page needs to decide between "here is the record", "the
    *  record is still maturing" and "we hold nothing yet" — resolved once so
@@ -228,6 +297,7 @@ export default function DirectorPage() {
       : null;
 
     return {
+      earliest: earliest ? earliest.slice(0, 10) : null,
       horizons,
       marked,
       // A date we have already passed is not a promise worth printing: it means
@@ -479,6 +549,16 @@ export default function DirectorPage() {
                   },
                   ...(["3m", "6m", "12m", "24m"] as const).map((h) => {
                     const v = record.horizons[h] ?? null;
+                    // When this horizon's first mark lands: the earliest
+                    // purchase plus the horizon. A date already passed is a
+                    // late mark, not a promise, and says nothing.
+                    const due = record.earliest
+                      ? addDays(record.earliest, HORIZON_DAYS[h])
+                      : null;
+                    const from =
+                      due && due > new Date().toISOString().slice(0, 10)
+                        ? longDate(due, locale)
+                        : null;
 
                     return {
                       label: `Avg ${h}`,
@@ -490,7 +570,7 @@ export default function DirectorPage() {
                             : v < 0
                               ? ("negative" as const)
                               : undefined,
-                      value: v == null ? <NotYet /> : pct(v),
+                      value: v == null ? <NotYet from={from} /> : pct(v),
                     };
                   }),
                 ]}
@@ -514,30 +594,88 @@ export default function DirectorPage() {
                   company.
                 </p>
               ) : (
-                <div className="overflow-hidden rounded-xl bg-sheet dark:bg-surface">
-                  <MarketRowHeader
-                    benchmarkLabel={market.config.benchmarkLabel}
-                    chartMode={chartMode}
+                <>
+                  {/* THE BOARDS' ROW, NOT THE DASHBOARD'S TABLE.
+                      This list used MarketRow, the market dashboard's
+                      eight-column table, which needs the dashboard's width:
+                      at the document measure its CONTRARIAN chip printed over
+                      the value and the company column showed a logo with no
+                      name. The purchases here are the same purchases the
+                      boards list, so they take the boards' row. */}
+                  <BoardRowHeader
+                    className=""
+                    money={priceMarket ? "Paid → worth now" : "Value"}
+                    moneyPair={priceMarket != null}
+                    perf="Alpha"
+                    rail={false}
+                    subject="Company"
+                    visual={
+                      priceMarket ? "Since the buy, vs the index" : undefined
+                    }
                   />
-                  <div className="divide-y divide-black/[0.06] dark:divide-separator">
-                    {dealings.map((dealing) => (
-                      <MarketRow
-                        key={dealing.key}
-                        RowActionCell={market.config.RowActionCell}
-                        benchmarkLabel={market.config.benchmarkLabel}
-                        chartMode={chartMode}
-                        dealing={dealing}
-                        fmt={market.config.priceFormat}
-                        formatTickerDisplay={market.config.formatTickerDisplay}
-                        isMuted={market.config.isRowMuted}
-                        locale={market.config.locale}
-                        selected={selectedKey === dealing.key}
-                        showLogo={market.config.enableLogos !== false}
-                        onSelect={() => setSelectedKey(dealing.key)}
-                      />
-                    ))}
-                  </div>
-                </div>
+                  <BoardRowList>
+                    {dealings.map((dealing, i) => {
+                      const r = rows[i];
+                      const href = rowHref(dealing, market.id);
+                      const ticker = (
+                        market.config.formatTickerDisplay ?? displayTicker
+                      )(dealing.ticker);
+
+                      return (
+                        <BoardRow
+                          key={dealing.key}
+                          badge={<TickerPill ticker={ticker} />}
+                          logo={
+                            market.config.enableLogos !== false ? (
+                              <CompanyLogo size={56} ticker={dealing.ticker} />
+                            ) : undefined
+                          }
+                          money={
+                            priceMarket ? (
+                              <PaidWorthNow
+                                row={r}
+                                symbol={priceMarket === "UK" ? "£" : "$"}
+                              />
+                            ) : dealing.value != null ? (
+                              (
+                                market.config.priceFormat.formatValueCompact ??
+                                market.config.priceFormat.formatValue
+                              )(dealing.value)
+                            ) : undefined
+                          }
+                          moneyPair={priceMarket != null}
+                          name={dealing.company}
+                          perf={<AlphaCell alpha={r.alpha} />}
+                          secondary={
+                            <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                              <span className="tabular-nums">
+                                {dateLabel(dealing.tradeDate, locale)}
+                              </span>
+                              {dealing.rating ? (
+                                <RatingBadge rating={dealing.rating} />
+                              ) : null}
+                            </span>
+                          }
+                          to={href ?? undefined}
+                          visual={
+                            priceMarket ? (
+                              <span className="block max-w-[240px] xl:max-w-none">
+                                <BuySparkline
+                                  bars={prices.get(dealing.ticker)}
+                                  bench={bench}
+                                  row={r}
+                                />
+                              </span>
+                            ) : undefined
+                          }
+                          onSelect={
+                            href ? undefined : () => setSelectedKey(dealing.key)
+                          }
+                        />
+                      );
+                    })}
+                  </BoardRowList>
+                </>
               )}
             </SeoSection>
 

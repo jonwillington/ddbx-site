@@ -181,6 +181,10 @@ export function formatMoney(value, symbol) {
 
     return `${symbol}${m >= 9.95 ? Math.round(m) : m.toFixed(1)}m`;
   }
+  // Under a thousand the figure is stated whole. "k" rounding printed a £400
+  // purchase as "£0k" — a zero, on a row that exists because money was spent.
+  // Boards never reached this; company pages list every purchase and do.
+  if (n < 999.5) return `${symbol}${Math.round(n)}`;
 
   return `${symbol}${Math.round(n / 1000)}k`;
 }

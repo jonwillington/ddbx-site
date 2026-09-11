@@ -1,12 +1,16 @@
 import type { BrokerOffer, CompanyPage as CompanyPageData } from "@/lib/api";
 import type { Dealing, GovDealing, UsDealing } from "@/types/ddbx";
+import type { StatTile } from "@/components/seo/stat-tiles";
+import type { LatestBuyFact } from "@/components/company/latest-buy";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 import { filingPath } from "../../shared/filings.js";
+import { usFilingPath } from "../../shared/filings-us.js";
 import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
+import { buyAlpha, buyReturn } from "../../shared/leaderboard.js";
 import { sectorPath, windowStart } from "../../shared/sectors.js";
 import {
   cadence,
@@ -14,7 +18,25 @@ import {
   sectorStanding,
   standingSentence,
 } from "../../shared/company-context.js";
+import {
+  buysOutcome,
+  INDEX_LABEL,
+  outcomeSentence,
+  shortMoney,
+} from "../../shared/company-verdict.js";
 
+import {
+  BoardRow,
+  BoardRowHeader,
+  BoardRowList,
+} from "@/components/boards/board-row";
+import {
+  dateLabel,
+  direction,
+  signedPp,
+  toBoardRows,
+} from "@/components/boards/board-model";
+import { PaidWorthNow } from "@/components/boards/paid-worth-now";
 import { BrokerVisitLink } from "@/components/brokers/broker-ui";
 import {
   BrokerInline,
@@ -22,15 +44,18 @@ import {
 } from "@/components/brokers/broker-inline";
 import { CompanyLogo } from "@/components/company-logo";
 import { CompanyAppPitch } from "@/components/company/company-app-pitch";
+import { LatestBuyCard } from "@/components/company/latest-buy";
 import { MoreCompanies } from "@/components/company/more-companies";
 import {
   CompanyPriceChart,
   useCompanyPriceBars,
 } from "@/components/company/price-chart";
 import { MarketFaq } from "@/components/market/market-faq";
+import { DeltaBadge } from "@/components/market/market-row";
 import { NewsSourceLogo } from "@/components/news-source-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { SeoRail } from "@/components/seo/seo-rail";
+import { SeoSection } from "@/components/seo/section";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { Skeleton } from "@/components/skeleton";
 import { StoreButtons } from "@/components/store-buttons";
@@ -47,24 +72,49 @@ import {
 import { localeFor, moneyShort, SYMBOL } from "@/lib/company-format";
 import { marketForPath } from "@/lib/markets/registry";
 
-/**
- * Company page layout — the broker-review composition, applied to a company.
+/** Company page layout — the broker-review composition, applied to a company.
  *
  *  Same skeleton as /brokers/:slug so the two read as one section of the site:
- *  breadcrumb on the cream page, the document itself on a single sheet with a
- *  heading-left / content-right grid inside it, a sticky conversion panel
- *  beside the sheet, and the fixed broker rail beyond that. What changes is
- *  the payload — a review argues, this one records — so the sheet carries
- *  tables and stats where the review carries prose.
+ *  breadcrumb on the cream page, the document itself on a single sheet, a
+ *  sticky conversion panel beside the sheet, and the fixed broker rail beyond
+ *  that. What changes is the payload — a review argues, this one records.
+ *
+ *  ---------------------------------------------------------------------------
+ *  Record page, board grammar (2026-09-11)
+ *  ---------------------------------------------------------------------------
+ *
+ *  The boards and /how-it-works had moved on from this page's first draft —
+ *  17px section labels in a 10rem rail, a 13.5px table, a standfirst that
+ *  counted rather than concluded — and the question a searcher arrives with,
+ *  "did the insiders' buying work?", went unanswered on a page whose every row
+ *  carried the server's performance mark. So:
+ *
+ *  - The verdict is said up top, in the tiles and in the standfirst, from
+ *    `shared/company-verdict.js` so the crawler pre-render says the same.
+ *  - The latest purchase is stated in full as a card (the specimen card's
+ *    grammar), which is what makes a one-filing page — most of them — a page.
+ *  - The record is `BoardRow`s: the person at 18/20px, the date in an aligned
+ *    column, paid → worth now in the money track, alpha under the role.
+ *  - The argument (price, record, context) is numbered `SeoSection`s at display
+ *    scale; the reference material (about, stats, news) keeps the rail.
+ *
+ *  The rows carry no sparkline. On a board each row is a different company and
+ *  the line is news; here every row would be the same price line cropped at a
+ *  different point, and the chart above already draws all of them on it.
+ *
+ *  The sticky panel waits for `xl`, not `lg`. At 1024–1279 the fixed rail and
+ *  the panel between them left the sheet a 280px column, too narrow for a row
+ *  with a money pair in it; the rail beside it carries the same broker there.
  */
 const C = {
   sheet:
     "rounded-2xl border border-hairline bg-sheet shadow-[0_1px_2px_rgba(90,65,40,0.03)] dark:border-white/[0.07] dark:bg-surface",
   rule: "border-hairline dark:border-separator",
-  // `tile` and `label` used to live here for the header metrics; those are
-  // `StatTiles` now, which owns the same borderless tint well.
   note: "text-[12px] leading-[1.6] text-foreground/45",
-  prose: "text-[14px] leading-[1.65] text-foreground/70",
+  /** Prose in the argued sections: 16px, per the /how-it-works review. */
+  prose: "text-[16px] leading-[1.65] text-foreground/75",
+  /** Prose in the reference sections, a step down at the rail's measure. */
+  reference: "text-[14.5px] leading-[1.65] text-foreground/70",
 } as const;
 
 function money(
@@ -172,6 +222,47 @@ function directorHref(deal: Dealing | UsDealing): string | null {
   return cik ? `/us/directors/${encodeURIComponent(cik)}` : null;
 }
 
+/** The purchase's own page. Both markets have one now: `/dealings/:id` for
+ *  the UK pipeline, `/us/dealings/:id` for Form 4 rows (App.tsx). */
+function filingHref(deal: Dealing | UsDealing): string | null {
+  if (!deal.id) return null;
+
+  return isUk(deal) ? filingPath(deal.id) : usFilingPath(deal.id);
+}
+
+/** What the insider paid a share. UK in pence, as the filing pages print it
+ *  ("260.6p"), promoted to pounds past £10; US in dollars. Null when the
+ *  filing states no price, and the card drops the cell (rule 2). */
+function pricePaid(deal: Dealing | UsDealing): string | null {
+  if (isUk(deal)) {
+    const p = Number(deal.price_pence);
+
+    if (!(p > 0)) return null;
+    if (p >= 1000) {
+      return `£${(p / 100).toLocaleString("en-GB", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    }
+
+    return `${p.toLocaleString("en-GB", { maximumFractionDigits: 2 })}p`;
+  }
+
+  const p = Number(deal.price);
+
+  return p > 0 ? `$${p.toFixed(2)}` : null;
+}
+
+function signedPct(ratio: number): string {
+  return `${ratio > 0 ? "+" : ratio < 0 ? "−" : ""}${Math.abs(ratio * 100).toFixed(1)}%`;
+}
+
+function toneOf(ratio: number | null): "positive" | "negative" | undefined {
+  const dir = direction(ratio);
+
+  return dir === "pos" ? "positive" : dir === "neg" ? "negative" : undefined;
+}
+
 /** STOCK Act filings disclose a band, never an exact figure — show the band. */
 function govAmount(g: GovDealing): string {
   if (g.amount_min == null && g.amount_max == null) return "—";
@@ -179,6 +270,16 @@ function govAmount(g: GovDealing): string {
   if (g.amount_min == null) return `up to ${moneyShort(g.amount_max, "USD")}`;
 
   return `${moneyShort(g.amount_min, "USD")}–${moneyShort(g.amount_max, "USD")}`;
+}
+
+/** What a tile says when there is nothing to say. Not an em-dash (rule 2), and
+ *  set small because it is a sentence standing in for a number. */
+function NotYet() {
+  return (
+    <span className="text-[13px] font-medium leading-[1.35] tracking-normal text-foreground/40">
+      Not enough data yet
+    </span>
+  );
 }
 
 /** Company-level FAQ, rendered through the same component the market
@@ -251,7 +352,6 @@ function companyFaq(name: string, market: string) {
   ];
 }
 
-/** Heading-left / content-right section — the review's one layout unit. */
 /** The twelve-month window the sector hubs and the boards read, used here to
  *  place this issuer among its sector peers.
  *
@@ -289,34 +389,6 @@ function useSectorWindow(market: "UK" | "US") {
   }, [market]);
 
   return rows;
-}
-
-function Section({
-  id,
-  label,
-  aside,
-  children,
-}: {
-  id?: string;
-  label: string;
-  /** Sub-line under the heading — provenance, caveats, refresh cadence. */
-  aside?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section
-      className={`grid scroll-mt-24 gap-x-10 gap-y-4 border-t ${C.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
-      id={id}
-    >
-      <div>
-        <h2 className="text-[17px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground">
-          {label}
-        </h2>
-        {aside && <p className={`mt-3 ${C.note}`}>{aside}</p>}
-      </div>
-      <div className="min-w-0">{children}</div>
-    </section>
-  );
 }
 
 export default function CompanyPage() {
@@ -378,7 +450,7 @@ export default function CompanyPage() {
             <h1 className="text-2xl font-semibold tracking-tight">
               We don&rsquo;t have dealings for that company
             </h1>
-            <p className={`mt-3 ${C.prose}`}>
+            <p className={`mt-3 ${C.reference}`}>
               It may not have filed a disclosure we&rsquo;ve surfaced yet.
             </p>
             <Link
@@ -411,10 +483,15 @@ export default function CompanyPage() {
   const name = cleanCompanyName(data.company);
   const ticker = displayTicker(data.key);
   const { summary } = data;
+  const currency = summary.currency ?? (market === "UK" ? "GBP" : "USD");
+  const symbol = SYMBOL[currency] ?? "";
+  const locale = localeFor(market);
   // Both null until the window lands, and both stay null when there is nothing
   // computable — the section is dropped rather than rendered empty.
   const standing = sectorStanding(data.deals, sectorWindow, market, data.key);
   const cadenceLine = cadenceSentence(cadence(summary), market);
+  const outcome = buysOutcome(data.deals);
+  const verdict = outcomeSentence(outcome, market, symbol);
   const noun = market === "UK" ? "director dealings" : "insider trading";
   const people =
     market === "UK"
@@ -425,25 +502,44 @@ export default function CompanyPage() {
         ? "insider"
         : "insiders";
 
-  // Four tiles, not five: five never divided evenly into any breakpoint the
-  // page uses (2/2/1 on mobile, 4/1 at sm), so the row was always ragged. "Most
-  // recent" was the one the standfirst below already states in prose, so it
-  // folds in there. Total value carries the primary weight — it's the figure
-  // the page is about.
-  const metrics = [
+  // The verdict in four figures: how much, what it is worth, and against the
+  // market. "Directors buying" and "Rated" were two of the four until
+  // 2026-09-11; both are counts the standfirst states in words, and neither
+  // answered the question the page is visited with.
+  const worthLabel =
+    outcome && outcome.measured < outcome.count
+      ? `Worth now · ${outcome.measured} of ${outcome.count}`
+      : "Worth now";
+  const metrics: StatTile[] = [
     { label: "Disclosed buys", value: String(summary.deals) },
     {
-      label: "Total value",
+      label: "Total paid",
       value: moneyShort(summary.total_value, summary.currency),
       primary: true,
     },
     {
-      label: market === "UK" ? "Directors buying" : "Insiders buying",
-      value: String(summary.people),
+      label: worthLabel,
+      value: outcome ? shortMoney(outcome.worth, symbol) : <NotYet />,
+      tone: outcome ? toneOf(outcome.worth / outcome.paid - 1) : undefined,
     },
-    // "0 of 3" rather than an em dash: the dash reads as missing data, and the
-    // honest statement is that none of these have been written up yet.
-    { label: "Rated", value: `${summary.analysed} of ${summary.deals}` },
+    // One purchase states its alpha; several state how many beat the index,
+    // which a reader takes in at a glance where an average would need a
+    // footnote about weighting.
+    outcome && outcome.compared === 1
+      ? {
+          label: "Vs the index",
+          value: signedPp(outcome.alpha),
+          tone: toneOf(outcome.alpha),
+        }
+      : {
+          label: "Ahead of index",
+          value:
+            outcome && outcome.compared > 0 ? (
+              `${outcome.ahead} of ${outcome.compared}`
+            ) : (
+              <NotYet />
+            ),
+        },
   ];
 
   // Whether this company clears the bar the index applies (see companies.tsx).
@@ -455,6 +551,23 @@ export default function CompanyPage() {
   // sitting beside a 17rem gap.
   const hasPanel =
     !!broker || panelFacts(data.stats, market, ticker).length > 0;
+
+  const latest =
+    data.deals.length > 0
+      ? data.deals.reduce((a, b) => (b.trade_date > a.trade_date ? b : a))
+      : null;
+
+  // The numbered run: the sections that make the argument, in order. Only
+  // numbered when there are two or more — "01 / 01" counts nothing.
+  const run = [
+    !priceSeries.unavailable && "price",
+    data.deals.length > 1 && "buys",
+    (standing || cadenceLine) && "context",
+  ].filter((s): s is string => !!s);
+  const counter = (id: string) =>
+    run.length > 1
+      ? { index: run.indexOf(id) + 1, total: run.length }
+      : { index: undefined, total: undefined };
 
   return (
     // drawerRight reserves lg:mr-80 for the fixed broker rail — the same
@@ -493,19 +606,19 @@ export default function CompanyPage() {
 
         <div
           className={`mt-6 grid items-start gap-10 ${
-            hasPanel ? "lg:grid-cols-[minmax(0,1fr)_17rem]" : ""
+            hasPanel ? "xl:grid-cols-[minmax(0,1fr)_17rem]" : ""
           }`}
         >
           {/* The record: header + sections on one sheet. */}
           <div className={`min-w-0 px-5 py-6 sm:px-8 sm:py-8 ${C.sheet}`}>
             <header>
               <div className="flex items-start gap-4">
-                <CompanyLogo className="mt-0.5" size={48} ticker={data.key} />
+                <CompanyLogo className="mt-0.5" size={56} ticker={data.key} />
                 <div className="min-w-0">
-                  <h1 className="text-[28px] font-bold leading-[1.05] tracking-[-0.022em] text-foreground sm:text-[34px]">
+                  <h1 className="text-[30px] font-bold leading-[1.05] tracking-[-0.024em] text-foreground sm:text-[40px]">
                     {name}
                   </h1>
-                  <p className="mt-1.5 max-w-xl text-[15px] leading-snug text-foreground/65 sm:text-[16px]">
+                  <p className="mt-2 max-w-xl text-[15px] leading-snug text-foreground/65 sm:text-[16px]">
                     <span className="font-mono">{ticker}</span> · {noun}
                   </p>
                 </div>
@@ -514,188 +627,219 @@ export default function CompanyPage() {
               <StatTiles className="mt-7" cols={4} stats={metrics} />
             </header>
 
-            <article className="min-w-0">
-              <p className="max-w-[44em] py-7 text-[16.5px] font-normal leading-[1.6] tracking-[-0.006em] text-foreground/85">
-                {summary.people} {people}{" "}
-                {summary.people === 1 ? "has" : "have"} bought{" "}
-                {moneyShort(summary.total_value, summary.currency)} of {name}{" "}
-                shares across {summary.deals}{" "}
-                {summary.deals === 1
-                  ? "disclosed dealing"
-                  : "disclosed dealings"}
-                {summary.first_trade_date
-                  ? ` since ${monthYear(summary.first_trade_date, market)}`
-                  : ""}
-                {/* The date the header used to spend a fifth tile on. On a
-                    single disclosure "most recently" would be restating the
-                    only date the sentence has, so it just states it. */}
-                {!summary.last_trade_date
-                  ? ""
-                  : summary.deals > 1
-                    ? `, most recently on ${fmtDate(summary.last_trade_date, market)}`
-                    : summary.first_trade_date
-                      ? ""
-                      : ` on ${fmtDate(summary.last_trade_date, market)}`}
-                .
-                {summary.analysed > 0 && (
-                  <>
-                    {" "}
-                    {summary.analysed} of those{" "}
-                    {summary.analysed === 1 ? "has been" : "have been"} scored
-                    against our six-point signal check.
-                  </>
-                )}
-              </p>
-
-              {/* The price, with the buys on it — deliberately ABOVE the
-                  table. The table is the evidence; this is the claim, and a
-                  visitor who reads nothing else should still leave knowing
-                  where the insiders bought relative to where it trades now.
-                  Suppressed entirely for issuers with no cached series (recent
-                  listings, suspended lines): a ruled heading and a caption
-                  about markers, sitting over whitespace, is worse than no
-                  section at all. */}
-              {!priceSeries.unavailable && (
-                <Section
-                  aside="Daily closes for the last 12 months. Each marker is a disclosed buy, plotted at the close on the day it was made."
-                  id="price"
-                  label="Price"
-                >
-                  <CompanyPriceChart
-                    currency={
-                      summary.currency ?? (market === "UK" ? "GBP" : "USD")
-                    }
-                    deals={data.deals}
-                    market={market}
-                    series={priceSeries}
-                    tickerKey={data.key}
-                  />
-                </Section>
+            {/* The standfirst: the count, then the verdict, then the method.
+                The verdict sentence is shared with the crawler pre-render. */}
+            <p className="max-w-[44em] py-7 text-[17px] font-normal leading-[1.6] tracking-[-0.006em] text-foreground/85">
+              {summary.people} {people} {summary.people === 1 ? "has" : "have"}{" "}
+              bought {moneyShort(summary.total_value, summary.currency)} of{" "}
+              {name} shares across {summary.deals}{" "}
+              {summary.deals === 1 ? "disclosed dealing" : "disclosed dealings"}
+              {summary.first_trade_date
+                ? ` since ${monthYear(summary.first_trade_date, market)}`
+                : ""}
+              {/* On a single disclosure "most recently" would be restating
+                  the only date the sentence has, so it just states it. */}
+              {!summary.last_trade_date
+                ? ""
+                : summary.deals > 1
+                  ? `, most recently on ${fmtDate(summary.last_trade_date, market)}`
+                  : summary.first_trade_date
+                    ? ""
+                    : ` on ${fmtDate(summary.last_trade_date, market)}`}
+              .{verdict ? ` ${verdict}` : ""}
+              {summary.analysed > 0 && (
+                <>
+                  {" "}
+                  {summary.analysed} of the {summary.deals}{" "}
+                  {summary.analysed === 1 ? "has been" : "have been"} scored
+                  against our six-point signal check.
+                </>
               )}
+            </p>
 
-              <Section
-                aside={`Every ${market === "UK" ? "PDMR disclosure" : "SEC Form 4"} we’ve surfaced for this issuer.${summary.analysed > 0 ? " Ratings are ours, not the company’s." : ""}`}
-                id="buys"
-                label={market === "UK" ? "Director buys" : "Insider buys"}
+            {latest && (
+              <LatestBuyCard
+                eyebrow={
+                  data.deals.length === 1 ? "The purchase" : "The latest buy"
+                }
+                facts={latestFacts(latest, market, currency)}
+                filingHref={filingHref(latest)}
+                name={personName(latest)}
+                nameHref={directorHref(latest)}
+                rating={latest.analysis?.rating ?? null}
+                role={personRole(latest)}
+                summary={latest.analysis?.summary ?? null}
+              />
+            )}
+
+            {/* The price, with the buys on it — ABOVE the record. The record
+                is the evidence; this is the claim, and a visitor who reads
+                nothing else should still leave knowing where the insiders
+                bought relative to where it trades now. Suppressed entirely for
+                issuers with no cached series (recent listings, suspended
+                lines). */}
+            {!priceSeries.unavailable && (
+              <SeoSection
+                aside="Daily closes for the last 12 months. Each marker is a disclosed buy, plotted at the close on the day it was made."
+                id="price"
+                title="The share price"
+                {...counter("price")}
               >
-                <DealsTable
+                <CompanyPriceChart
+                  currency={currency}
                   deals={data.deals}
                   market={market}
-                  rated={summary.analysed > 0}
+                  series={priceSeries}
+                  tickerKey={data.key}
                 />
-                {summary.analysed > 0 && (
-                  <p className={`mt-3 ${C.note}`}>
-                    The reasoning behind each rating is written up in the app.
+              </SeoSection>
+            )}
+
+            {/* The record, as rows. A single purchase has already been stated
+                in full by the card, and a one-row list under it would state it
+                twice. */}
+            {data.deals.length > 1 && (
+              <SeoSection
+                aside={`Newest first. Paid is what the ${market === "UK" ? "director" : "insider"} spent; worth now is the same stake at the latest close, if still held. Alpha is the gap to ${INDEX_LABEL[market]} since disclosure.${summary.analysed > 0 ? " Ratings are ours, not the company’s." : ""}`}
+                id="buys"
+                title={
+                  market === "UK" ? "Every director buy" : "Every insider buy"
+                }
+                {...counter("buys")}
+              >
+                <BuysList
+                  deals={data.deals}
+                  locale={locale}
+                  market={market}
+                  symbol={symbol}
+                />
+              </SeoSection>
+            )}
+
+            {/* Mobile twin of the rail — the rail is hidden below lg, and
+                this is the high-intent moment: they've just read who bought
+                and how much. */}
+            <BrokerInline
+              broker={broker}
+              className="mt-10 lg:hidden"
+              company={name}
+            />
+
+            {/* CONTEXT — the section that makes a one-filing page a page.
+                Placed straight after the record, because it exists to make
+                that record legible: a single purchase means little until you
+                know it happened in a sector where forty other companies also
+                saw buying, and which of them are nearest. Every field is
+                nullable and the block is dropped wholesale when there is
+                nothing computable, rather than printing a placeholder. */}
+            {(standing || cadenceLine) && (
+              <SeoSection
+                aside="Measured over the last twelve months of disclosed buying, on the same window the sector pages use."
+                id="context"
+                title="In context"
+                {...counter("context")}
+              >
+                {cadenceLine && (
+                  <p className={`max-w-[42em] ${C.prose}`}>{cadenceLine}</p>
+                )}
+                {standing && (
+                  <p
+                    className={`max-w-[42em] ${C.prose} ${cadenceLine ? "mt-3" : ""}`}
+                  >
+                    {name} is classed as{" "}
+                    <Link
+                      className="underline underline-offset-4"
+                      to={sectorPath(standing.sector.slug)}
+                    >
+                      {standing.sector.label.toLowerCase()}
+                    </Link>
+                    . {standingSentence(standing, market)}
                   </p>
                 )}
-              </Section>
-
-              {/* Mobile twin of the rail — the rail is hidden below lg, and
-                  this is the high-intent moment: they've just read who bought
-                  and how much. */}
-              <BrokerInline
-                broker={broker}
-                className="my-8 lg:hidden"
-                company={name}
-              />
-
-              {/* CONTEXT — the section that makes a one-filing page a page.
-                  Placed straight after the record, because it exists to make
-                  that record legible: a single purchase means little until you
-                  know it happened in a sector where forty other companies also
-                  saw buying, and which of them are nearest. Every field is
-                  nullable and the block is dropped wholesale when there is
-                  nothing computable, rather than printing a placeholder. */}
-              {(standing || cadenceLine) && (
-                <Section
-                  aside="Measured over the last twelve months of disclosed buying, on the same window the sector pages use."
-                  id="context"
-                  label="In context"
-                >
-                  {cadenceLine && (
-                    <p className={`max-w-[42em] ${C.prose}`}>{cadenceLine}</p>
-                  )}
-                  {standing && (
-                    <p
-                      className={`max-w-[42em] ${C.prose} ${cadenceLine ? "mt-3" : ""}`}
-                    >
-                      {name} is classed as{" "}
-                      <Link
-                        className="underline underline-offset-4"
-                        to={sectorPath(standing.sector.slug)}
-                      >
-                        {standing.sector.label.toLowerCase()}
-                      </Link>
-                      . {standingSentence(standing, market)}
+                {standing && standing.peers.length > 0 && (
+                  <>
+                    <p className={`mt-6 ${C.note}`}>
+                      {standing.rank == null
+                        ? "The most active companies in the sector"
+                        : "Companies with a comparable amount of disclosed buying"}
                     </p>
-                  )}
-                  {standing && standing.peers.length > 0 && (
-                    <>
-                      <p className={`mt-5 ${C.note}`}>
-                        {standing.rank == null
-                          ? "The most active companies in the sector"
-                          : "Companies with a comparable amount of disclosed buying"}
-                      </p>
-                      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
-                        {standing.peers.map((peer) => (
-                          <li key={peer.key}>
-                            <Link
-                              className="text-[13.5px] text-foreground/75 underline-offset-4 hover:underline"
-                              to={companyPath(peer.ticker)}
-                            >
-                              {cleanCompanyName(peer.company) ||
-                                displayTicker(peer.ticker)}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
-                  {/* Onward into the boards this issuer's filings feed. Real
-                      internal links rather than a nav block: the sitemap was
-                      doing this work and internal links should be. */}
-                  <p className={`mt-5 ${C.note}`}>
-                    See also{" "}
-                    <Link
-                      className="underline underline-offset-4"
-                      to="/biggest-buys"
-                    >
-                      the biggest buys
-                    </Link>
-                    ,{" "}
-                    <Link
-                      className="underline underline-offset-4"
-                      to="/cluster-buys"
-                    >
-                      cluster buying
-                    </Link>{" "}
-                    and{" "}
-                    <Link
-                      className="underline underline-offset-4"
-                      to="/most-active-companies"
-                    >
-                      the most-active companies
-                    </Link>
-                    .
-                  </p>
-                </Section>
-              )}
+                    {/* Peers as logo discs, not a line of grey names: a logo
+                        disc is the family's mark for a named company, and it
+                        is always a link (rule 8). */}
+                    <ul className="mt-3 flex flex-wrap gap-2">
+                      {standing.peers.map((peer) => (
+                        <li key={peer.key}>
+                          <Link
+                            className="group inline-flex items-center gap-2 rounded-full border border-hairline bg-white/70 py-1 pl-1 pr-3 text-[14px] font-medium text-foreground transition-colors hover:border-foreground/25 dark:border-border/60 dark:bg-surface-secondary/40"
+                            to={companyPath(peer.ticker)}
+                          >
+                            <CompanyLogo size={26} ticker={peer.ticker} />
+                            {cleanCompanyName(peer.company) ||
+                              displayTicker(peer.ticker)}
+                            <ArrowRightIcon
+                              aria-hidden
+                              className="h-3 w-3 text-foreground/30 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-foreground/60"
+                            />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {/* Onward into the boards this issuer's filings feed. Real
+                    internal links rather than a nav block: the sitemap was
+                    doing this work and internal links should be. */}
+                <p className={`mt-6 ${C.note}`}>
+                  See also{" "}
+                  <Link
+                    className="underline underline-offset-4"
+                    to="/biggest-buys"
+                  >
+                    the biggest buys
+                  </Link>
+                  ,{" "}
+                  <Link
+                    className="underline underline-offset-4"
+                    to="/cluster-buys"
+                  >
+                    cluster buying
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    className="underline underline-offset-4"
+                    to="/most-active-companies"
+                  >
+                    the most-active companies
+                  </Link>
+                  .
+                </p>
+              </SeoSection>
+            )}
 
+            {/* Reference material from here: the rail variant, outside the
+                numbered run (rule 3). */}
+            <div className="mt-12">
               {data.stats?.description && (
-                <Section id="about" label={`About ${name}`}>
-                  <p className={`max-w-[42em] ${C.prose}`}>
+                <SeoSection id="about" title={`About ${name}`} variant="rail">
+                  <p className={`max-w-[42em] ${C.reference}`}>
                     {data.stats.description}
                   </p>
-                </Section>
+                </SeoSection>
               )}
 
               {data.stats && <StatsSection stats={data.stats} />}
 
               {market === "US" && data.gov.length > 0 && (
-                <Section
-                  aside="Disclosed under the STOCK Act, members report a range, not an exact figure."
+                <SeoSection
+                  aside={
+                    <p className={C.note}>
+                      Disclosed under the STOCK Act, members report a range, not
+                      an exact figure.
+                    </p>
+                  }
                   id="congress"
-                  label="Congress"
+                  title="Congress"
+                  variant="rail"
                 >
                   <CongressTable market={market} rows={data.gov} />
                   <Link
@@ -705,14 +849,19 @@ export default function CompanyPage() {
                     See all congressional trading
                     <ArrowRightIcon className="h-3.5 w-3.5" />
                   </Link>
-                </Section>
+                </SeoSection>
               )}
 
               {data.news.items.length > 0 && (
-                <Section
-                  aside="Headlines from the wider web, for context."
+                <SeoSection
+                  aside={
+                    <p className={C.note}>
+                      Headlines from the wider web, for context.
+                    </p>
+                  }
                   id="news"
-                  label="Recent news"
+                  title="Recent news"
+                  variant="rail"
                 >
                   {/* The publisher's mark sits on the byline, the same
                       treatment the market channel's news strip uses — six
@@ -723,7 +872,7 @@ export default function CompanyPage() {
                     {data.news.items.slice(0, 6).map((n, i) => (
                       <li key={i} className={`border-b ${C.rule} py-3.5`}>
                         <a
-                          className="text-[14px] leading-snug text-foreground/80 underline-offset-4 hover:underline"
+                          className="text-[14.5px] leading-snug text-foreground/80 underline-offset-4 hover:underline"
                           href={n.url}
                           rel="nofollow noopener noreferrer"
                           target="_blank"
@@ -741,18 +890,18 @@ export default function CompanyPage() {
                       </li>
                     ))}
                   </ul>
-                </Section>
+                </SeoSection>
               )}
+            </div>
 
-              {/* There used to be a "Get the alerts" section here: the same
-                  promise, the same store buttons and the same "Free for 7 days"
-                  line that `CompanyAppPitch` carries about 200px further down.
-                  Two identical asks that close together read as a page that
-                  can't stop selling — and with the mobile floating bar and
-                  BrokerInline that made four. The pitch band is the one that
-                  survives; it's the better-designed of the two and it uses this
-                  company's own disclosures as the alert copy. */}
-            </article>
+            {/* There used to be a "Get the alerts" section here: the same
+                promise, the same store buttons and the same "Free for 7 days"
+                line that `CompanyAppPitch` carries about 200px further down.
+                Two identical asks that close together read as a page that
+                can't stop selling — and with the mobile floating bar and
+                BrokerInline that made four. The pitch band is the one that
+                survives; it's the better-designed of the two and it uses this
+                company's own disclosures as the alert copy. */}
           </div>
 
           {/* Conversion panel, sat beside the sheet and sticky as you scroll —
@@ -818,18 +967,119 @@ export default function CompanyPage() {
   );
 }
 
+/** The latest purchase's facts, in the card's order: what, at what price,
+ *  when, and how it has done. A cell with nothing true to say is dropped. */
+function latestFacts(
+  deal: Dealing | UsDealing,
+  market: "UK" | "US",
+  currency: string,
+): LatestBuyFact[] {
+  const price = pricePaid(deal);
+  const ret = buyReturn(deal);
+  const alpha = buyAlpha(deal);
+  const index = market === "UK" ? "FTSE All-Share" : "S&P 500";
+
+  return [
+    { label: "Bought", value: money(dealValue(deal), currency, market) },
+    ...(price ? [{ label: "Price paid", value: price }] : []),
+    { label: "Trade date", value: fmtDate(deal.trade_date, market) },
+    ...(ret != null
+      ? [
+          {
+            label: "Since disclosure",
+            value: signedPct(ret),
+            tone: toneOf(ret),
+            note:
+              alpha != null ? `${signedPp(alpha)} vs the ${index}` : undefined,
+          },
+        ]
+      : []),
+  ];
+}
+
+/** Every purchase, as board rows.
+ *
+ *  The person is the subject — on a company page the company is the page — so
+ *  there is no logo track and no rank rail: the list is newest first, not a
+ *  ranking. One aligned fact (the date), the money pair in the tail, and the
+ *  alpha on the line under the role, where it sits beside the person it
+ *  describes and the row keeps enough width for the name inside the sheet. */
+function BuysList({
+  deals,
+  locale,
+  market,
+  symbol,
+}: {
+  deals: Array<Dealing | UsDealing>;
+  locale: string;
+  market: "UK" | "US";
+  symbol: string;
+}) {
+  const rows = useMemo(
+    () =>
+      toBoardRows(
+        [...deals].sort((a, b) => b.trade_date.localeCompare(a.trade_date)),
+      ),
+    [deals],
+  );
+
+  return (
+    <>
+      <BoardRowHeader
+        moneyPair
+        className=""
+        facts={["Bought"]}
+        logo={false}
+        money="Paid → worth now"
+        rail={false}
+        subject={market === "UK" ? "Director" : "Insider"}
+      />
+      <BoardRowList>
+        {rows.map((r) => {
+          const role = personRole(r.raw);
+          const rating = r.raw.analysis?.rating;
+
+          return (
+            <BoardRow
+              key={r.id}
+              moneyPair
+              badge={rating ? <RatingBadge rating={rating} /> : undefined}
+              facts={[
+                { label: "Bought", value: dateLabel(r.tradeDate, locale) },
+              ]}
+              money={<PaidWorthNow row={r} symbol={symbol} />}
+              name={personName(r.raw)}
+              secondary={
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {role ? (
+                    <span className="max-w-[28ch] truncate" title={role}>
+                      {role}
+                    </span>
+                  ) : null}
+                  {r.alpha != null ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <DeltaBadge suffix="pp" value={r.alpha * 100} />
+                      <span className="text-foreground/45">vs the index</span>
+                    </span>
+                  ) : null}
+                </span>
+              }
+              to={filingHref(r.raw) ?? undefined}
+            />
+          );
+        })}
+      </BoardRowList>
+    </>
+  );
+}
+
 /** Loading state.
  *
- *  The old one was four stacked grey bars on the bare cream page — it shared
- *  no geometry with what actually arrives, so the page visibly re-assembled
- *  itself on load: the sheet appeared, the column narrowed to make room for
- *  the panel, and everything jumped. This is the real skeleton — the sheet,
- *  the logo, the metric tiles, the section rules and the side panel, all at
- *  their true sizes — so the load is a fill rather than a rebuild.
- *
- *  Every block is the house `Skeleton`. It shipped with a private `Bar` whose
- *  tint and tempo were its own, which meant the rail (house animation) and the
- *  document (this one) pulsed out of step on the same screen.
+ *  The real skeleton — the sheet, the logo, the tiles, the standfirst, the
+ *  latest-buy card, the first numbered section and the side panel, all at
+ *  their true sizes — so the load is a fill rather than a rebuild (rule 6).
+ *  Every block is the house `Skeleton`, so the rail and the document pulse in
+ *  step.
  */
 function CompanySkeleton({ ticker }: { ticker?: string }) {
   const marketId =
@@ -844,9 +1094,8 @@ function CompanySkeleton({ ticker }: { ticker?: string }) {
     <DefaultLayout drawerRight>
       {/* The rail is mounted during the load too. `drawerRight` reserves its
           320px whether or not anything is in it, so leaving it out left a bare
-          cream column beside a fully-drawn skeleton — the one part of the page
-          that looked broken rather than loading. It self-loads, so it fills
-          independently of the company. */}
+          cream column beside a fully-drawn skeleton. It self-loads, so it
+          fills independently of the company. */}
       <SeoRail
         marketId={marketId}
         placement="company_rail"
@@ -862,80 +1111,81 @@ function CompanySkeleton({ ticker }: { ticker?: string }) {
           <Skeleton className="h-[12px] w-32" />
         </div>
 
-        <div className="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+        <div className="mt-6 grid items-start gap-10 xl:grid-cols-[minmax(0,1fr)_17rem]">
           <div className={`min-w-0 px-5 py-6 sm:px-8 sm:py-8 ${C.sheet}`}>
             {/* Header: logo + name + ticker line. */}
             <div className="flex items-start gap-4">
-              <Skeleton circle className="mt-0.5 shrink-0" h={48} w={48} />
+              <Skeleton circle className="mt-0.5 shrink-0" h={56} w={56} />
               <div className="min-w-0 flex-1">
-                <Skeleton className="h-[32px] w-2/3 max-w-[22rem]" />
+                <Skeleton className="h-[38px] w-2/3 max-w-[24rem]" />
                 <Skeleton className="mt-3 h-[16px] w-40" />
               </div>
             </div>
 
-            {/* The four metric tiles, at their real height. */}
+            {/* The four tiles, at their real height. */}
             <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {Array.from({ length: 4 }, (_, i) => (
-                <Skeleton key={i} className="w-full rounded-xl" h={64} />
+                <Skeleton key={i} className="w-full rounded-2xl" h={78} />
               ))}
             </div>
 
-            {/* Standfirst. */}
+            {/* Standfirst: three lines at 17px now it carries the verdict. */}
             <div className="max-w-[44em] py-7">
-              <Skeleton className="h-[16px] w-full" />
-              <Skeleton className="mt-2.5 h-[16px] w-5/6" />
+              <Skeleton className="h-[17px] w-full" />
+              <Skeleton className="mt-3 h-[17px] w-full" />
+              <Skeleton className="mt-3 h-[17px] w-3/5" />
             </div>
 
-            {/* Price section — heading left, chart right. */}
-            <div
-              className={`grid gap-x-10 gap-y-4 border-t ${C.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
-            >
-              <div>
-                <Skeleton className="h-[17px] w-16" />
-                <Skeleton className="mt-3 h-[11px] w-28" />
+            {/* The latest-buy card. */}
+            <div className="rounded-2xl border border-hairline px-5 py-6 dark:border-border/60 sm:px-7 sm:py-7">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-[11px] w-28" />
+                <Skeleton className="h-[22px] w-24 rounded-full" />
               </div>
-              <Skeleton className="w-full rounded-xl" h={220} />
-            </div>
-
-            {/* Buys table — heading left, rows right. */}
-            <div
-              className={`grid gap-x-10 gap-y-4 border-t ${C.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
-            >
-              <div>
-                <Skeleton className="h-[17px] w-24" />
-                <Skeleton className="mt-3 h-[11px] w-32" />
+              <div className={`mt-5 border-t ${C.rule} pt-5`}>
+                <Skeleton className="h-[30px] w-56" />
+                <Skeleton className="mt-2.5 h-[16px] w-40" />
               </div>
-              <div>
+              <div
+                className={`mt-6 grid grid-cols-2 gap-4 border-t ${C.rule} pt-6 sm:grid-cols-4`}
+              >
                 {Array.from({ length: 4 }, (_, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-4 border-b ${C.rule} py-3.5`}
-                  >
-                    <Skeleton className="h-[13px] w-20 shrink-0" />
-                    <Skeleton className="h-[13px] flex-1" />
-                    <Skeleton className="h-[13px] w-16 shrink-0" />
-                    <Skeleton className="h-[13px] w-14 shrink-0" />
+                  <div key={i}>
+                    <Skeleton className="h-[10px] w-16" />
+                    <Skeleton className="mt-2.5 h-[22px] w-20" />
                   </div>
                 ))}
               </div>
+              <div className={`mt-6 border-t ${C.rule} pt-6`}>
+                <Skeleton className="h-[16px] w-full" />
+                <Skeleton className="mt-2.5 h-[16px] w-4/5" />
+              </div>
             </div>
 
-            {/* Below lg the loaded page puts BrokerInline here. Reserving its
-                height stops the whole document jumping up by a card the moment
-                the fetch lands — the one shift the skeleton was still causing
-                on the screen size where shifts cost most. */}
-            <div aria-hidden className="my-8 h-[104px] lg:hidden" />
+            {/* The first numbered section: rule, counter, title, aside, chart. */}
+            <div className={`mt-12 border-t ${C.rule} pt-5`}>
+              <div className="flex justify-end">
+                <Skeleton className="h-[11px] w-12" />
+              </div>
+              <Skeleton className="mt-2 h-[34px] w-64" />
+              <Skeleton className="mt-3 h-[15px] w-4/5 max-w-[54ch]" />
+              <Skeleton className="mt-6 w-full rounded-xl" h={260} />
+            </div>
+
+            {/* Below lg the loaded page puts BrokerInline after the record.
+                Reserving its height stops the document jumping by a card the
+                moment the fetch lands. */}
+            <div aria-hidden className="mt-10 h-[104px] lg:hidden" />
           </div>
 
           {/* Side panel — reserving its width is the point: without it the
-              content column loads narrow and then snaps. Sticky, like the real
-              one, so a load that finishes mid-scroll doesn't move it. */}
-          <aside className="hidden lg:sticky lg:top-24 lg:block">
+              content column loads wide and then snaps. */}
+          <aside className="hidden xl:sticky xl:top-24 xl:block">
             <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 dark:border-brand-tan/25 dark:bg-surface-secondary">
               <Skeleton className="w-full rounded-lg" h={44} />
               <Skeleton className="mx-auto mt-2.5 h-[11px] w-2/3" />
               <div className="mt-4">
-                {Array.from({ length: 4 }, (_, i) => (
+                {Array.from({ length: 3 }, (_, i) => (
                   <div
                     key={i}
                     className={`flex items-center justify-between gap-4 border-b ${C.rule} py-2.5 last:border-b-0`}
@@ -987,7 +1237,8 @@ function panelFacts(
  *
  *  Renders nothing when it would hold neither — see `hasPanel` at the call
  *  site, which widens the sheet to the full column in that case rather than
- *  leaving a 17rem hole beside it. */
+ *  leaving a 17rem hole beside it. From `xl` only: below that the fixed rail
+ *  carries the same broker and the sheet needs the width. */
 function CompanyPanel({
   broker,
   market,
@@ -1004,7 +1255,7 @@ function CompanyPanel({
   if (!broker && facts.length === 0) return null;
 
   return (
-    <aside className="hidden lg:sticky lg:top-24 lg:block">
+    <aside className="hidden xl:sticky xl:top-24 xl:block">
       <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-brand-tan/25 dark:bg-surface-secondary">
         {broker ? (
           <>
@@ -1068,143 +1319,6 @@ function CompanyPanel({
   );
 }
 
-/** The disclosure table. Lives on the sheet with plain rules rather than in a
- *  nested card — a box inside the document sheet reads as two surfaces. */
-function DealsTable({
-  deals,
-  market,
-  rated,
-}: {
-  deals: Array<Dealing | UsDealing>;
-  market: string;
-  /** False when nothing on this issuer has been written up — the column would
-   *  be a header over a full run of em dashes, which reads as a broken feature
-   *  rather than as an unrated company. */
-  rated: boolean;
-}) {
-  return (
-    <div className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
-      <table className="w-full text-[13.5px]">
-        <thead>
-          <tr className={`border-b ${C.rule}`}>
-            <th className={`py-2.5 pr-4 text-left font-normal ${C.note}`}>
-              Date
-            </th>
-            <th className={`py-2.5 pr-4 text-left font-normal ${C.note}`}>
-              {market === "UK" ? "Director" : "Insider"}
-            </th>
-            <th className={`py-2.5 pr-4 text-right font-normal ${C.note}`}>
-              Shares
-            </th>
-            <th
-              className={`py-2.5 text-right font-normal ${rated ? "pr-4" : ""} ${C.note}`}
-            >
-              Value
-            </th>
-            {rated && (
-              <th className={`py-2.5 text-right font-normal ${C.note}`}>
-                Rating
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {deals.map((deal, i) => {
-            const href = directorHref(deal);
-
-            return (
-              <tr
-                key={deal.id ?? i}
-                className={`border-b last:border-b-0 ${C.rule}`}
-              >
-                {/* THE DATE IS THE DOOR TO THE FILING.
-                    Every row of this table is one disclosure with a permanent
-                    page of its own, and the table linked the person but never
-                    the purchase — so the issuer's own record was the one place
-                    on the site where you could see a filing and not open it.
-                    The date cell carries it: it is the row's identity, it is
-                    already first, and the person column is spoken for. UK only,
-                    because `/dealings/:id` is a UK pipeline route (see
-                    functions/dealings/[id].js). */}
-                <td className="whitespace-nowrap py-3 pr-4 text-foreground/60">
-                  {market === "UK" && deal.id ? (
-                    <Link
-                      className="group inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline"
-                      to={filingPath(deal.id)}
-                    >
-                      {fmtDate(deal.trade_date, market)}
-                      <ArrowRightIcon
-                        aria-hidden
-                        className="h-3 w-3 text-foreground/25 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-foreground/60"
-                      />
-                    </Link>
-                  ) : (
-                    fmtDate(deal.trade_date, market)
-                  )}
-                </td>
-                {/* Names and long role titles stay on one line — the table
-                  scrolls on narrow screens, which reads far better than a row
-                  wrapping to six. The name links to the person's profile when
-                  we hold an id for them: a reader who has just seen one buy
-                  wants the other companies that director files against, and
-                  this table was the one place on the site that named someone
-                  without a route to them. */}
-                <td className="py-3 pr-4">
-                  {href ? (
-                    <Link
-                      className="block whitespace-nowrap font-medium text-foreground underline-offset-4 hover:underline"
-                      to={href}
-                    >
-                      {personName(deal)}
-                    </Link>
-                  ) : (
-                    <span className="block whitespace-nowrap font-medium text-foreground">
-                      {personName(deal)}
-                    </span>
-                  )}
-                  {personRole(deal) && (
-                    // Truncated, not wrapped: some titles run to sixty
-                    // characters ("Chief Executive Director Renewables & Energy
-                    // Transition Platform") and wrapping them pushed the rating
-                    // column off the sheet. Full text on hover.
-                    <span
-                      className={`mt-0.5 block max-w-[24ch] truncate ${C.note}`}
-                      title={personRole(deal)}
-                    >
-                      {personRole(deal)}
-                    </span>
-                  )}
-                </td>
-                <td className="whitespace-nowrap py-3 pr-4 text-right tabular-nums text-foreground/60">
-                  {Number(deal.shares).toLocaleString(localeFor(market))}
-                </td>
-                <td
-                  className={`whitespace-nowrap py-3 text-right tabular-nums font-medium text-foreground ${rated ? "pr-4" : ""}`}
-                >
-                  {money(
-                    dealValue(deal),
-                    market === "UK" ? "GBP" : "USD",
-                    market,
-                  )}
-                </td>
-                {rated && (
-                  <td className="py-3 text-right">
-                    {deal.analysis?.rating ? (
-                      <RatingBadge rating={deal.analysis.rating} />
-                    ) : (
-                      <span className={C.note}>—</span>
-                    )}
-                  </td>
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 function StatsSection({
   stats,
 }: {
@@ -1226,28 +1340,35 @@ function StatsSection({
           : null,
       ],
       ["Beta", stats.beta != null ? stats.beta.toFixed(2) : null],
-      ["Open", stats.open != null ? `${SYMBOL[cur] ?? ""}${stats.open}` : null],
+      // A zero open is a missing field, not a price the stock opened at: AEG
+      // printed "Open 0" beside a live 0.08p price.
+      ["Open", stats.open ? `${SYMBOL[cur] ?? ""}${stats.open}` : null],
     ] as Array<[string, string | null]>
   ).filter((r): r is [string, string] => r[1] !== null);
 
   if (rows.length === 0) return null;
 
   return (
-    <Section aside="Refreshed daily." id="stats" label="Company stats">
+    <SeoSection
+      aside={<p className={C.note}>Refreshed daily.</p>}
+      id="stats"
+      title="Company stats"
+      variant="rail"
+    >
       <dl className="grid gap-x-10 sm:grid-cols-2">
         {rows.map(([k, v]) => (
           <div
             key={k}
             className={`flex items-baseline justify-between border-b ${C.rule} py-3`}
           >
-            <dt className="text-[13.5px] text-foreground/55">{k}</dt>
-            <dd className="text-[13.5px] font-semibold tabular-nums text-foreground">
+            <dt className="text-[14px] text-foreground/55">{k}</dt>
+            <dd className="text-[14px] font-semibold tabular-nums text-foreground">
               {v}
             </dd>
           </div>
         ))}
       </dl>
-    </Section>
+    </SeoSection>
   );
 }
 

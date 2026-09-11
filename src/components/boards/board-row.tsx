@@ -99,6 +99,10 @@ export const MAX_FACTS = 3;
 const FACTS_AT_MEDIUM = 2;
 
 export interface BoardRowShape {
+  /** False on a list that is not a ranking. A record page (/company/:key, a
+   *  director's filings) lists purchases newest first, and a padded "01" in
+   *  front of the newest reads as a rank it does not hold. */
+  rail?: boolean;
   /** False only where a row's leading mark is not a logo at all. */
   logo?: boolean;
   /** 0 to MAX_FACTS. */
@@ -147,6 +151,7 @@ function tracks(parts: Array<string | null>): string {
  *  1280 and over every slot the board asked for is a column of its own. */
 export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   const facts = Math.max(0, Math.min(MAX_FACTS, shape.facts ?? 0));
+  const rail = shape.rail !== false;
   const logo = shape.logo !== false;
   const money = shape.moneyPair ? TRACK.moneyPair : TRACK.money;
   const tail: BoardRowTail = shape.figure
@@ -158,7 +163,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
         : null;
 
   const phone = tracks([
-    TRACK.railPhone,
+    rail ? TRACK.railPhone : null,
     logo ? TRACK.logo : null,
     TRACK.subject,
     // Always the narrow tail on a phone, even for the money pair: 11.5rem of
@@ -168,7 +173,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   ]);
 
   const medium = tracks([
-    TRACK.rail,
+    rail ? TRACK.rail : null,
     logo ? TRACK.logo : null,
     TRACK.subject,
     ...Array.from<string>({ length: Math.min(facts, FACTS_AT_MEDIUM) }).fill(
@@ -179,7 +184,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   ]);
 
   const wide = tracks([
-    TRACK.rail,
+    rail ? TRACK.rail : null,
     logo ? TRACK.logo : null,
     TRACK.subject,
     ...Array.from<string>({ length: facts }).fill(TRACK.fact),
@@ -189,9 +194,15 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
     shape.figure ? TRACK.figure : null,
   ]);
 
-  const tailClass = logo
-    ? "col-start-4 sm:col-start-auto"
-    : "col-start-3 sm:col-start-auto";
+  // The phone's tail sits after the rail, the logo and the subject, whichever
+  // of the first two the row has. Whole literals, so Tailwind can see them.
+  const tailClass = (
+    [
+      "col-start-2 sm:col-start-auto",
+      "col-start-3 sm:col-start-auto",
+      "col-start-4 sm:col-start-auto",
+    ] as const
+  )[Number(rail) + Number(logo)];
   // A trailing slot that did not win the tail has no column until `xl`; the
   // caption carries it in the meantime.
   const trailing = (slot: Exclude<BoardRowTail, null>) =>
@@ -241,6 +252,7 @@ export function BoardRowHeader({
   money,
   moneyPair,
   perf,
+  rail = true,
   subject,
   visual,
 }: {
@@ -253,6 +265,8 @@ export function BoardRowHeader({
    *  track. */
   moneyPair?: boolean;
   perf?: string;
+  /** Match the rows: false when they carry no `position`. */
+  rail?: boolean;
   subject: string;
   visual?: string;
 }) {
@@ -263,6 +277,7 @@ export function BoardRowHeader({
     money: money != null,
     moneyPair,
     perf: perf != null,
+    rail,
     visual: visual != null,
   });
 
@@ -272,7 +287,7 @@ export function BoardRowHeader({
       className={`${className} pb-2.5 text-[11px] leading-[1.4] text-foreground/50 ${grid.className}`}
       style={grid.style}
     >
-      <span />
+      {rail ? <span /> : null}
       {logo ? <span /> : null}
       <span>{subject}</span>
       {facts.map((label, i) => (
@@ -333,9 +348,15 @@ function RowChevron() {
 }
 
 export interface BoardRowProps {
-  /** Board position. Padded to two digits, full ink for the top three. */
-  position: number;
-  to: string;
+  /** Board position. Padded to two digits, full ink for the top three. Omit
+   *  on a list that is not a ranking, and pass `rail={false}` to the header
+   *  to match: the rail track goes with it. */
+  position?: number;
+  /** Where the row goes. A row with no URL of its own takes `onSelect`
+   *  instead (the director page's drawer, for markets with no filing page),
+   *  and is a button rather than a link to nowhere. */
+  to?: string;
+  onSelect?: () => void;
   /** The leading mark. A node rather than a ticker, because /biggest-buys
    *  puts a repeat glyph here instead of a second copy of the same logo. Pass
    *  `logo={false}` on the shape only where there is no such mark at all. */
@@ -387,6 +408,7 @@ export function BoardRow({
   money,
   moneyPair,
   name,
+  onSelect,
   perf,
   position,
   secondary,
@@ -400,6 +422,7 @@ export function BoardRow({
     money: money != null,
     moneyPair,
     perf: perf != null,
+    rail: position != null,
     visual: visual != null,
   });
 
@@ -479,24 +502,27 @@ export function BoardRow({
       }
       onMouseLeave={linking ? () => linking.setActiveId(null) : undefined}
     >
-      <Link
+      <RowTarget
         className={ROW_LINK}
         to={to}
         onBlur={linking ? () => linking.setActiveId(null) : undefined}
         onFocus={
           linking && hover ? () => linking.setActiveId(hover) : undefined
         }
+        onSelect={onSelect}
       >
         <RowChevron />
         <div className={grid.className} style={grid.style}>
-          <span
-            aria-hidden
-            className={`font-mono text-[15px] leading-[1.35] tabular-nums ${
-              position <= 3 ? "text-foreground" : "text-foreground/35"
-            }`}
-          >
-            {String(position).padStart(2, "0")}
-          </span>
+          {position != null ? (
+            <span
+              aria-hidden
+              className={`font-mono text-[15px] leading-[1.35] tabular-nums ${
+                position <= 3 ? "text-foreground" : "text-foreground/35"
+              }`}
+            >
+              {String(position).padStart(2, "0")}
+            </span>
+          ) : null}
 
           {logo !== undefined ? (
             <span className="flex justify-start pt-0.5">{logo}</span>
@@ -616,7 +642,52 @@ export function BoardRow({
             <span className="col-span-full mt-2.5 block">{meter}</span>
           ) : null}
         </div>
-      </Link>
+      </RowTarget>
     </li>
   );
+}
+
+/** The row's one interactive element: a link when it has a URL, a button when
+ *  it opens something in place, and a plain block when it does neither — which
+ *  no caller does today, but a dead link is the wrong fallback (rule 8). */
+function RowTarget({
+  children,
+  className,
+  onBlur,
+  onFocus,
+  onSelect,
+  to,
+}: {
+  children: ReactNode;
+  className: string;
+  onBlur?: () => void;
+  onFocus?: () => void;
+  onSelect?: () => void;
+  to?: string;
+}) {
+  if (to != null) {
+    return (
+      <Link className={className} to={to} onBlur={onBlur} onFocus={onFocus}>
+        {children}
+      </Link>
+    );
+  }
+
+  if (onSelect) {
+    return (
+      <button
+        // A block link grows by its negative margins; a button does not, so
+        // it is given the width the link would have had.
+        className={`${className} w-[calc(100%+1rem)] text-left`}
+        type="button"
+        onBlur={onBlur}
+        onClick={onSelect}
+        onFocus={onFocus}
+      >
+        {children}
+      </button>
+    );
+  }
+
+  return <div className={className}>{children}</div>;
 }

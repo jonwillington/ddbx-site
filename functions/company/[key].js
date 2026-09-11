@@ -41,6 +41,7 @@ import {
   sectorStanding,
   standingSentence,
 } from "../../shared/company-context.js";
+import { buysOutcome, outcomeSentence } from "../../shared/company-verdict.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -156,8 +157,13 @@ const dealValue = (deal, market) =>
 
 /** The lead sentence, plain text — also the meta description. Templated from
  *  real numbers rather than model-written: at this page count the API spend
- *  would be real, and mass-generated prose is what search engines demote. */
-function leadSentence(d) {
+ *  would be real, and mass-generated prose is what search engines demote.
+ *
+ *  `withVerdict` adds how the buying has done, from shared/company-verdict.js,
+ *  in the place the React standfirst puts it. The body carries it; the meta
+ *  description does not, because it moves with every close and a description
+ *  that changes daily is one a search engine stops trusting. */
+function leadSentence(d, { withVerdict = false } = {}) {
   const { market, summary } = d;
   const name = cleanCompany(d.company);
   const people = summary.people;
@@ -175,8 +181,17 @@ function leadSentence(d) {
 
   let s = `${people} ${noun} ${people === 1 ? "has" : "have"} bought ${moneyShort(summary.total_value, summary.currency)} of ${name} shares across ${summary.deals} ${summary.deals === 1 ? "disclosed dealing" : "disclosed dealings"}${since}.`;
 
+  if (withVerdict) {
+    const verdict = outcomeSentence(
+      buysOutcome(d.deals),
+      market,
+      SYMBOL[summary.currency] ?? (market === "US" ? "$" : "£"),
+    );
+
+    if (verdict) s += ` ${verdict}`;
+  }
   if (summary.analysed) {
-    s += ` ${summary.analysed} of those ${summary.analysed === 1 ? "has been" : "have been"} scored against our six-point signal check.`;
+    s += ` ${summary.analysed} of the ${summary.deals} ${summary.analysed === 1 ? "has been" : "have been"} scored against our six-point signal check.`;
   }
   if (summary.congress_trades) {
     s += ` ${summary.congress_trades} congressional ${summary.congress_trades === 1 ? "trade has" : "trades have"} also been disclosed in this ticker.`;
@@ -320,7 +335,7 @@ function prerender(d, standing) {
   // unilaterally — it's an owner decision, and whichever way it goes both
   // sides have to move together or the pre-render stops matching the page.
   return page(`<h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">${esc(name)} (${esc(ticker)}) ${esc(FILING_NOUN[market])}</h1>
-  <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(leadSentence(d))}</p>
+  <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">${esc(leadSentence(d, { withVerdict: true }))}</p>
   <h2 style="font-size:15px;margin:32px 0 10px">${market === "UK" ? "Director" : "Insider"} buys</h2>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${rows}</tbody></table>
   ${contextBlock(d, standing, name)}

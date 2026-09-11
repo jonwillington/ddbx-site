@@ -44,15 +44,12 @@ import type {
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowRightIcon } from "@heroicons/react/20/solid";
 
 import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
 import { filingPath } from "../../shared/filings.js";
 import {
   archiveYears,
   leaderboardPath,
-  moneyDelta,
-  moneyPair,
   rankBuys,
   rollingAxisStart,
   rollingPeriodLabel,
@@ -74,7 +71,6 @@ import { API_BASE } from "@/lib/api";
 import { companyPath, displayTicker } from "@/lib/company";
 import { ClusterChip } from "@/components/cluster-chip";
 import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
-import { DeltaBadge } from "@/components/market/market-row";
 import { TickerPill } from "@/components/ticker-pill";
 import { leaderboardCta } from "@/components/seo/cta-copy";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
@@ -90,6 +86,7 @@ import {
   timelineFinding,
 } from "@/components/boards/board-timeline";
 import { BuySparkline } from "@/components/boards/buy-sparkline";
+import { AlphaCell, PaidWorthNow } from "@/components/boards/paid-worth-now";
 import { BENCHMARK, useBoardPrices } from "@/components/boards/board-prices";
 import {
   dateLabel,
@@ -623,15 +620,6 @@ function BuyRow({
     marketId === "UK" && r.raw.id
       ? filingPath(r.raw.id)
       : companyPath(r.ticker);
-  const pair =
-    r.worthNow != null ? moneyPair(r.value, r.worthNow, symbol) : null;
-  const delta = moneyDelta(r.value, r.worthNow, symbol);
-  const tone =
-    r.dir === "pos"
-      ? "text-positive"
-      : r.dir === "neg"
-        ? "text-negative"
-        : "text-foreground/60";
 
   return (
     <BoardRow
@@ -660,56 +648,9 @@ function BuyRow({
           <CompanyLogo size={56} ticker={r.ticker} />
         )
       }
-      money={
-        <>
-          {/* Paid, then worth now: the pair is the claim, and neither half
-              means anything alone. Set at the subject's scale rather than
-              above it — rule 5 puts the company first, and this used to be
-              26px against an 18px name. */}
-          <span className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-            <span className="text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground xl:text-[19px]">
-              <span className="sr-only">Value bought: </span>
-              {pair ? pair[0] : money(r.value, symbol)}
-            </span>
-            {pair ? (
-              <>
-                <ArrowRightIcon
-                  aria-hidden
-                  className={`h-3.5 w-3.5 shrink-0 rotate-90 sm:rotate-0 ${
-                    r.dir === "neg" ? "text-negative/60" : "text-positive/60"
-                  }`}
-                />
-                <span
-                  className={`text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] xl:text-[19px] ${tone}`}
-                >
-                  <span className="sr-only">Worth now, if still held: </span>
-                  {pair[1]}
-                </span>
-              </>
-            ) : null}
-          </span>
-          {delta ? (
-            <span
-              className={`mt-1.5 block whitespace-nowrap text-[12.5px] font-medium tabular-nums ${tone}`}
-            >
-              {delta}
-            </span>
-          ) : null}
-        </>
-      }
+      money={<PaidWorthNow row={r} symbol={symbol} />}
       name={r.company}
-      perf={
-        <>
-          <span className="sr-only">Alpha since disclosure: </span>
-          {r.alpha == null ? (
-            <span className="text-[13px] tabular-nums text-foreground/40">
-              no mark yet
-            </span>
-          ) : (
-            <DeltaBadge suffix="pp" value={r.alpha * 100} />
-          )}
-        </>
-      }
+      perf={<AlphaCell alpha={r.alpha} />}
       position={r.rank}
       secondary={
         <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">

@@ -217,7 +217,6 @@ export function CompanyPriceChart({
   const line = pts
     .map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`)
     .join(" ");
-  const area = `${line} L${pts[pts.length - 1][0].toFixed(1)},${H - PAD_B} L${pts[0][0].toFixed(1)},${H - PAD_B} Z`;
 
   // Snap each buy onto the nearest bar at or after its trade date. Buys older
   // than the window simply don't appear — the chart is the last 12 months, and
@@ -268,14 +267,9 @@ export function CompanyPriceChart({
         viewBox={`0 0 ${w} ${H}`}
         width={w}
       >
-        <defs>
-          <linearGradient id={`cpc-${tickerKey}`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopOpacity={0.18} style={{ stopColor: color }} />
-            <stop offset="100%" stopOpacity={0} style={{ stopColor: color }} />
-          </linearGradient>
-        </defs>
-
-        <path d={area} fill={`url(#cpc-${tickerKey})`} />
+        {/* No area fill. The gradient that sat under the line was a fade
+            into the page, which the design language rules out (tenet 1:
+            contained, not blended); the line and the markers carry it. */}
         <path
           d={line}
           fill="none"
