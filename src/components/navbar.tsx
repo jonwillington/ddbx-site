@@ -1,9 +1,15 @@
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { useLocation } from "react-router-dom";
 import { Bars3Icon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { Drawer } from "vaul";
 
+import { Spinner } from "@/components/spinner";
 import { StoreGlyph } from "@/components/store-glyph";
 import { RESEARCH_PATHS, researchNavLinks } from "@/lib/site-nav";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
@@ -199,14 +205,60 @@ function MobileMenu({
 }) {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  // The row a reader tapped, while the browser fetches the next page. The
+  // current page stays painted (sheet and all) until the new one arrives, and
+  // on a phone that gap is long enough to read as a missed tap, so the row
+  // carries a spinner and the rest stop taking taps — the market picker's
+  // pattern.
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
   const research = items.find((i) => i.kind === "research");
   const links = research ? researchNavLinks(location.pathname) : [];
-  const rowClass = (active: boolean) =>
+
+  // Back/forward can restore this page from the bfcache with the spinner still
+  // running, since no navigation ever unmounted it. Clear it when that happens.
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setPendingHref(null);
+    };
+
+    window.addEventListener("pageshow", onShow);
+
+    return () => window.removeEventListener("pageshow", onShow);
+  }, []);
+
+  const rowClass = (active: boolean, href: string) =>
     clsx(
-      "flex w-full items-center rounded-lg px-2 py-3 text-base transition-colors hover:bg-black/5 dark:hover:bg-white/5",
+      "flex w-full items-center rounded-lg px-2 py-3 text-base transition-[color,background-color,opacity] hover:bg-black/5 dark:hover:bg-white/5",
       active
         ? "text-[#5a4128] dark:text-[#d8c4af] font-medium"
         : "text-foreground",
+      pendingHref != null && "pointer-events-none",
+      pendingHref != null && pendingHref !== href && "opacity-40",
+    );
+
+  /** Props for one navigating row: the spinner state on a plain left-click,
+   *  and nothing on a modified click, which opens a tab and leaves this page
+   *  where it is. */
+  const rowProps = (active: boolean, href: string) => ({
+    "aria-disabled": pendingHref != null || undefined,
+    className: rowClass(active, href),
+    href,
+    onClick: (e: ReactMouseEvent<HTMLAnchorElement>) => {
+      if (pendingHref != null) {
+        e.preventDefault();
+
+        return;
+      }
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+        return;
+      }
+      setPendingHref(href);
+    },
+  });
+
+  const rowEnd = (href: string) =>
+    pendingHref === href && (
+      <Spinner className="ml-auto h-4 w-4 shrink-0 text-foreground/60" />
     );
 
   return (
@@ -240,11 +292,9 @@ function MobileMenu({
 
                 return (
                   <li key={item.href}>
-                    <a
-                      className={rowClass(item.match(location.pathname))}
-                      href={item.href}
-                    >
+                    <a {...rowProps(item.match(location.pathname), item.href)}>
                       {item.label}
+                      {rowEnd(item.href)}
                     </a>
                   </li>
                 );
@@ -268,10 +318,13 @@ function MobileMenu({
                       )}
                     >
                       <a
-                        className={rowClass(location.pathname === link.path)}
-                        href={link.href}
+                        {...rowProps(
+                          location.pathname === link.path,
+                          link.href,
+                        )}
                       >
                         {link.label}
+                        {rowEnd(link.href)}
                       </a>
                     </li>
                   ))}
@@ -414,6 +467,14 @@ export const Navbar = () => {
       label: "API",
       href: "/developers",
       match: (p: string) => p === "/developers" || p === "/api",
+    },
+    // The MCP connector is the API's cross-market sibling (same data, asked
+    // through ChatGPT / Claude), so it sits beside it with no market gate.
+    {
+      kind: "link",
+      label: "MCP",
+      href: "/mcp",
+      match: (p: string) => p === "/mcp",
     },
   ];
 
