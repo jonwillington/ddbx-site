@@ -1,6 +1,7 @@
 import type { ComponentType, SVGProps } from "react";
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ArrowTrendingDownIcon,
   FunnelIcon,
@@ -691,6 +692,40 @@ export default function ApiPage() {
           />
 
           <MarketGrid />
+        </section>
+
+        {/* ── The other door: the MCP connector ────────────────────────────── */}
+        {/* Not a numbered section. The four above argue for the API; this is a
+            redirect for the visitor who does not want one. Same one-object
+            geometry as LanguageStrip (no card grid, no rail), so it reads as
+            an aside rather than a fifth pillar. */}
+        <section className={`${SECTION} pt-0 md:pt-0`}>
+          <Reveal>
+            <div className="flex flex-col gap-6 rounded-3xl border border-white/[0.08] bg-white/[0.035] p-6 md:flex-row md:items-center md:justify-between md:p-8">
+              <div className="min-w-0">
+                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
+                  Not building anything?
+                </p>
+                <h2 className="mt-3 text-[22px] font-semibold leading-[1.15] tracking-[-0.02em] text-white sm:text-[26px]">
+                  Ask ChatGPT or Claude instead.
+                </h2>
+                <p className="mt-2.5 max-w-[56ch] text-[14.5px] leading-[1.6] text-white/55">
+                  ddbx is also a free MCP connector. Paste one address into your
+                  assistant and it can look up who bought, how much and how ddbx
+                  rated it, with a link to each filing. The written analysis
+                  stays here; the connector is for asking, the API for building.
+                </p>
+              </div>
+              <Link
+                className={`${BUTTON_RADIUS} shrink-0 bg-white/[0.08] px-6 py-3.5 text-center text-[15px] font-semibold text-white/85 transition-colors hover:bg-white/[0.14]`}
+                data-ga-event="cta_api_to_mcp"
+                data-ga-label="API page MCP strip"
+                to="/mcp"
+              >
+                Set up the connector
+              </Link>
+            </div>
+          </Reveal>
         </section>
 
         {/* ── FAQ ──────────────────────────────────────────────────────────── */}

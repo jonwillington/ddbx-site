@@ -29,6 +29,8 @@ import {
   BuildingLibraryIcon,
   BuildingOffice2Icon,
   CalendarDaysIcon,
+  ChatBubbleLeftRightIcon,
+  CodeBracketIcon,
   DocumentTextIcon,
   ScaleIcon,
   Squares2X2Icon,
@@ -73,6 +75,8 @@ const ICON_FOR: [RegExp, typeof DocumentTextIcon][] = [
   [/^\/weekly/, CalendarDaysIcon],
   [/^\/reports?\b/, DocumentTextIcon],
   [/^\/performance/, ArrowTrendingUpIcon],
+  [/^\/(developers|api)$/, CodeBracketIcon],
+  [/^\/mcp$/, ChatBubbleLeftRightIcon],
 ];
 
 function iconFor(to: string) {

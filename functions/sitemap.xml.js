@@ -89,6 +89,9 @@ const ROUTES_BY_HOST = {
     "/",
     "/brokers",
     "/developers",
+    // The MCP connector page follows /developers: served everywhere,
+    // canonical on ddbx.uk alone.
+    "/mcp",
     "/companies",
     "/sectors",
     "/biggest-buys",

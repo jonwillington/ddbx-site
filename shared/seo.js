@@ -275,6 +275,11 @@ const isApiPath = (path) => path === "/developers" || path === "/api";
 
 const API_CANONICAL_PATH = "/developers";
 
+/** The MCP connector page: the API's sibling for people asking an AI
+ *  assistant rather than building on the data. Market-blind for the same
+ *  reason, and folded onto ddbx.uk the same way. */
+const isMcpPath = (path) => path === "/mcp";
+
 /** Service status. Cross-market like /developers — one API, one page, folded
  *  onto ddbx.uk so the three hosts don't publish three copies of it. */
 const isStatusPath = (path) => path === "/status";
@@ -546,6 +551,10 @@ export function seoForPath(pathname, hostname) {
       return brandTitle(
         "Insider dealing data API — UK, US & EU filings, scored",
       );
+    if (isMcpPath(path))
+      return brandTitle(
+        "Ask ChatGPT or Claude about insider buying — the free MCP connector",
+      );
     // Also market-blind, and for the same reason: one API behind every host.
     if (isStatusPath(path)) return brandTitle("Service status");
     if (isDirectorProfilePath(path))
@@ -676,6 +685,8 @@ export function seoForPath(pathname, hostname) {
   const description = (() => {
     if (isApiPath(path))
       return "One REST API for director and insider share purchases across the UK, US, Sweden and the Netherlands: screened, rated with a written rationale, and benchmarked against the index. Access and pricing on request.";
+    if (isMcpPath(path))
+      return "Connect ddbx to ChatGPT, Claude, Claude Code or Cursor with one address: no sign-in, no key, free. Ask about director and insider share purchases across the UK, US, Sweden, the Netherlands and the US Congress, with ddbx’s rating on every filing.";
     if (isStatusPath(path))
       return "Live availability of the ddbx API and the UK, US, Sweden and Netherlands disclosure feeds, measured in your browser as you read, with the ingest schedule and incident history.";
     if (isDirectorProfilePath(path))
@@ -814,7 +825,7 @@ export function canonicalUrlFor(pathname, hostname) {
   // entries below already avoid. It folds onto ddbx.uk, and only that URL is
   // in the sitemap (see functions/sitemap.xml.js).
   const marketHost =
-    isBrokerPath || isApiPath(path) || isStatusPath(path)
+    isBrokerPath || isApiPath(path) || isMcpPath(path) || isStatusPath(path)
       ? "ddbx.uk"
       : (MARKET_HOST_BY_ID[id] ?? "ddbx.uk");
 

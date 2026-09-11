@@ -332,7 +332,9 @@ export const Navbar = () => {
 
   // Routes that pin their own theme — the switch is hidden on these.
   const isPinnedTheme =
-    location.pathname === "/developers" || location.pathname === "/api";
+    location.pathname === "/developers" ||
+    location.pathname === "/api" ||
+    location.pathname === "/mcp";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 160);

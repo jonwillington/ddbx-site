@@ -6,6 +6,7 @@ import { DocumentTitle } from "@/components/document-title";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import AccountDeletionPage from "@/pages/account-deletion";
 import ApiPage from "@/pages/api";
+import McpPage from "@/pages/mcp";
 import BestPerformingBuysPage from "@/pages/best-performing-buys";
 import BiggestBuysPage from "@/pages/biggest-buys";
 import MarketCapBandPage, { MarketCapIndexPage } from "@/pages/market-cap";
@@ -174,6 +175,11 @@ function App() {
             proxying the worker under this origin. */}
         <Route element={<ApiPage />} path="/developers" />
         <Route element={<ApiPage />} path="/api" />
+        {/* The MCP connector page: the API's sibling for people asking an AI
+            assistant rather than building on the data. Cross-market, not
+            gated, not in the navbar. Top-level rather than /developers/mcp
+            because public/_redirects folds /developers/* onto /developers. */}
+        <Route element={<McpPage />} path="/mcp" />
         {/* Cross-market, like /api: the API it probes is the same one behind
             every domain, so ddbx.us/status and ddbx.eu/status render the same
             page and canonicalise to ddbx.uk/status. */}
