@@ -15,6 +15,14 @@
 //
 // Plain fetch and plain ESM so the browser and the Worker share one
 // implementation.
+//
+// Lite by default (2026-09-11). Every caller is a window aggregate — the
+// sector hubs, the boards, the company page's sector context and their
+// pre-renders — and none of them reads the written analysis, which was 83% of
+// each row. `fields=lite` asks the API to drop it (analysis shrinks to its
+// rating) and is edge-cached there for five minutes: ~200KB gzipped a page
+// instead of 1.1-1.4MB, and a cache hit instead of a 2-4s D1 read. Pass
+// `lite: false` for a caller that ever needs the prose.
 
 const PAGE = 1000;
 /** Hard stop, so a cursor that stops advancing can't loop forever. 10 pages is
@@ -35,6 +43,7 @@ export async function fetchDealingsWindow({
   until = null,
   fetchImpl = fetch,
   cf = null,
+  lite = true,
 }) {
   const feed = FEED[market];
 
@@ -46,6 +55,8 @@ export async function fetchDealingsWindow({
 
   for (let pageIndex = 0; pageIndex < MAX_PAGES; pageIndex++) {
     const qs = new URLSearchParams({ since, limit: String(PAGE) });
+
+    if (lite) qs.set("fields", "lite");
 
     if (cursor) qs.set("before", cursor);
 

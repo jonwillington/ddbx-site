@@ -45,7 +45,6 @@ import type {
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
 import { filingPath } from "../../shared/filings.js";
 import {
   archiveYears,
@@ -67,7 +66,7 @@ import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { RelatedCards } from "@/components/seo/related-cards";
-import { API_BASE } from "@/lib/api";
+import { loadDealingsWindow, peekDealingsWindow } from "@/lib/dealings-window";
 import { companyPath, displayTicker } from "@/lib/company";
 import { ClusterChip } from "@/components/cluster-chip";
 import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
@@ -137,7 +136,17 @@ export default function BiggestBuysPage() {
   const bounds = useMemo(() => (year ? yearBounds(year) : null), [year]);
   const invalidYear = Boolean(year) && !bounds;
 
-  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(null);
+  // Seeded from memory when another page already loaded the same window (see
+  // src/lib/dealings-window.ts), so the board draws on its first frame.
+  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(() =>
+    invalidYear
+      ? null
+      : (peekDealingsWindow({
+          market: market.id,
+          since: bounds ? bounds.since : windowStart(new Date()),
+          until: bounds ? bounds.until : null,
+        })?.dealings ?? null),
+  );
   const [complete, setComplete] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const linking: Linking = useMemo(
@@ -150,8 +159,7 @@ export default function BiggestBuysPage() {
     let live = true;
     const since = bounds ? bounds.since : windowStart(new Date());
 
-    fetchDealingsWindow({
-      apiBase: API_BASE,
+    loadDealingsWindow({
       market: market.id,
       since,
       until: bounds ? bounds.until : null,

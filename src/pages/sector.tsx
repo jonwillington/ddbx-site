@@ -17,7 +17,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
 
-import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
 import { filingPath } from "../../shared/filings.js";
 import {
   dealPerson,
@@ -44,6 +43,11 @@ import {
   useSectorMarket,
 } from "@/components/sector-ui";
 import DefaultLayout from "@/layouts/default";
+import {
+  loadDealingsWindow,
+  peekDealingsWindow,
+  rollingWindow,
+} from "@/lib/dealings-window";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoSection } from "@/components/seo/section";
@@ -56,7 +60,6 @@ import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
 import { TickerPill } from "@/components/ticker-pill";
 import { ClusterChip } from "@/components/cluster-chip";
-import { API_BASE } from "@/lib/api";
 import {
   companyPath,
   cleanCompanyName,
@@ -69,7 +72,11 @@ export default function SectorPage() {
   const { slug } = useParams<{ slug: string }>();
   const sector = useMemo(() => sectorBySlug(slug ?? ""), [slug]);
   const market = useSectorMarket();
-  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(null);
+  // Seeded from memory when another window page already loaded it (see
+  // src/lib/dealings-window.ts): no skeleton on a click between them.
+  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(
+    () => peekDealingsWindow(rollingWindow(market.id))?.dealings ?? null,
+  );
   const [complete, setComplete] = useState(true);
   // Third state, distinct from "below the bar": an outage used to render
   // "fewer than 5 disclosed purchases in this sector", which is a claim about
@@ -89,7 +96,7 @@ export default function SectorPage() {
     // and the UK window crosses that during 2026, at which point a single call
     // silently drops the oldest filings — and a sector page missing the start
     // of its own window states a median drawn from the wrong sample.
-    fetchDealingsWindow({ apiBase: API_BASE, market: market.id, since })
+    loadDealingsWindow({ market: market.id, since })
       .then(
         (r: { dealings: Array<Dealing | UsDealing>; complete: boolean }) => {
           if (!live) return;

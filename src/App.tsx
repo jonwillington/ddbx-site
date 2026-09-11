@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 
 import { BetaTag } from "@/components/market/beta-tag";
 import { CookieBanner } from "@/components/cookie-banner";
+import { DealingsWindowWarmer } from "@/components/dealings-window-warmer";
 import { DocumentTitle } from "@/components/document-title";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import AccountDeletionPage from "@/pages/account-deletion";
@@ -49,6 +50,7 @@ function App() {
     <div className="relative">
       <DocumentTitle />
       <ScrollToTop />
+      <DealingsWindowWarmer />
       <BetaTag />
       <Routes>
         <Route element={<MarketHomePage />} path="/" />

@@ -23,7 +23,6 @@ import type { Linking } from "@/components/boards/board-model";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
 import {
   cleanCompanyName,
   indexLeadSentence,
@@ -36,8 +35,12 @@ import {
 } from "../../shared/sectors.js";
 
 import DefaultLayout from "@/layouts/default";
+import {
+  loadDealingsWindow,
+  peekDealingsWindow,
+  rollingWindow,
+} from "@/lib/dealings-window";
 import { SeoRail } from "@/components/seo/seo-rail";
-import { API_BASE } from "@/lib/api";
 import {
   SectorComparisonHeader,
   SectorComparisonRow,
@@ -66,7 +69,11 @@ const CAVEAT =
 
 export default function SectorsPage() {
   const market = useSectorMarket();
-  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(null);
+  // Seeded from memory when another window page already loaded it (see
+  // src/lib/dealings-window.ts): no skeleton on a click between them.
+  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(
+    () => peekDealingsWindow(rollingWindow(market.id))?.dealings ?? null,
+  );
   const [complete, setComplete] = useState(true);
   // Third state, distinct from "no rows": an outage used to land the reader on
   // "no sector has reached 5 disclosed purchases", which is an editorial claim
@@ -92,7 +99,7 @@ export default function SectorsPage() {
     // and the UK window crosses that during 2026, at which point a single call
     // drops the oldest filings and every total on this page understates itself
     // without saying so.
-    fetchDealingsWindow({ apiBase: API_BASE, market: market.id, since })
+    loadDealingsWindow({ market: market.id, since })
       .then(
         (r: { dealings: Array<Dealing | UsDealing>; complete: boolean }) => {
           if (!live) return;

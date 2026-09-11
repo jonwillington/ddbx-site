@@ -16,10 +16,11 @@ import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { useEffect, useState } from "react";
 
-import { fetchDealingsWindow } from "../../../shared/dealings-feed.js";
-import { windowStart } from "../../../shared/sectors.js";
-
-import { API_BASE } from "@/lib/api";
+import {
+  loadDealingsWindow,
+  peekDealingsWindow,
+  rollingWindow,
+} from "@/lib/dealings-window";
 
 export interface BoardFeed {
   rows: Array<Dealing | UsDealing> | null;
@@ -27,18 +28,18 @@ export interface BoardFeed {
 }
 
 export function useBoardFeed(market: "UK" | "US"): BoardFeed {
-  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(null);
+  // From memory when the page before (or a hover on the link) already loaded
+  // it — see src/lib/dealings-window.ts — so the board draws on its first
+  // frame rather than behind a skeleton.
+  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(
+    () => peekDealingsWindow(rollingWindow(market))?.dealings ?? null,
+  );
   const [complete, setComplete] = useState(true);
 
   useEffect(() => {
     let live = true;
 
-    fetchDealingsWindow({
-      apiBase: API_BASE,
-      market,
-      since: windowStart(new Date()),
-      until: null,
-    })
+    loadDealingsWindow(rollingWindow(market))
       .then(
         (r: { dealings: Array<Dealing | UsDealing>; complete: boolean }) => {
           if (!live) return;

@@ -9,9 +9,8 @@ import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 import { filingPath } from "../../shared/filings.js";
 import { usFilingPath } from "../../shared/filings-us.js";
-import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
 import { buyAlpha, buyReturn } from "../../shared/leaderboard.js";
-import { sectorPath, windowStart } from "../../shared/sectors.js";
+import { sectorPath } from "../../shared/sectors.js";
 import {
   cadence,
   cadenceSentence,
@@ -60,7 +59,12 @@ import { Skeleton } from "@/components/skeleton";
 import { StoreButtons } from "@/components/store-buttons";
 import { BUTTON_RADIUS } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
-import { api, API_BASE } from "@/lib/api";
+import { api } from "@/lib/api";
+import {
+  loadDealingsWindow,
+  peekDealingsWindow,
+  rollingWindow,
+} from "@/lib/dealings-window";
 import { isAffiliateLink } from "@/lib/brokers";
 import {
   cleanCompanyName,
@@ -365,18 +369,17 @@ function companyFaq(name: string, market: string) {
  *  Failure is silent by design — `null` drops the section. A company page must
  *  not break because a context block could not load. */
 function useSectorWindow(market: "UK" | "US") {
-  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(null);
+  // From memory when a board or sector page already loaded the window (see
+  // src/lib/dealings-window.ts), so the context section draws with the page.
+  const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(
+    () => peekDealingsWindow(rollingWindow(market))?.dealings ?? null,
+  );
 
   useEffect(() => {
     let live = true;
 
-    fetchDealingsWindow({
-      apiBase: API_BASE,
-      market,
-      since: windowStart(new Date()),
-      until: null,
-    })
-      .then((r: { dealings: Array<Dealing | UsDealing> }) => {
+    loadDealingsWindow(rollingWindow(market))
+      .then((r) => {
         if (live) setRows(r.dealings);
       })
       .catch(() => {

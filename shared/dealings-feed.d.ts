@@ -14,6 +14,10 @@ export interface DealingsWindowOptions {
   fetchImpl?: typeof fetch;
   /** Cloudflare `cf` request options, when called from a Pages Function. */
   cf?: Record<string, unknown> | null;
+  /** Ask for `fields=lite` rows: `analysis` cut to `{ rating }`, US
+   *  `footnotes` dropped. Default true — every current caller is a window
+   *  aggregate that never reads the prose. */
+  lite?: boolean;
 }
 
 export interface DealingsWindowResult {
