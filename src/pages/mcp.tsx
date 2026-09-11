@@ -119,8 +119,8 @@ const QUESTIONS: { Icon: Icon; q: string; tool: string; note: string }[] = [
   },
   {
     Icon: ChatBubbleLeftRightIcon,
-    q: "Show me Form 4 purchases at Nvidia since June.",
-    tool: "search_dealings · US · NVDA",
+    q: "Show me Form 4 purchases at GameStop since June.",
+    tool: "search_dealings · US · GME",
     note: "Open-market buys only, filtered by ticker and disclosure date.",
   },
 ];
@@ -221,11 +221,11 @@ const FAQ = [
   },
   {
     q: "Which markets does it cover?",
-    a: "Filings from the UK, the US, Sweden, the Netherlands and the US Congress. Company look-ups (one issuer’s recent insider activity) and the daily recap are available for the UK and US, the two markets with a written analysis layer.",
+    a: "Filings from the UK, the US, Sweden, the Netherlands and the US Congress. Company look-ups (one issuer’s recent insider activity) and the daily recap are available for the UK and US, the two markets with company pages and a daily recap.",
   },
   {
     q: "How fresh is it?",
-    a: "As fresh as the site and the apps: it reads from the same pipeline, which checks each regulator’s feed every 15 minutes. A filing appears in the connector the moment it appears on ddbx, and its rating follows once the screen has run.",
+    a: "As fresh as the site and the apps: it reads from the same pipeline, which polls each regulator’s feed through the trading day. A filing appears in the connector the moment it appears on ddbx, and its rating follows once the screen has run.",
   },
   {
     q: "Can I trust what the assistant says?",

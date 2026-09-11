@@ -710,10 +710,11 @@ export default function ApiPage() {
                   Ask ChatGPT or Claude instead.
                 </h2>
                 <p className="mt-2.5 max-w-[56ch] text-[14.5px] leading-[1.6] text-white/55">
-                  ddbx is also a free MCP connector. Paste one address into your
-                  assistant and it can look up who bought, how much and how ddbx
-                  rated it, with a link to each filing. The written analysis
-                  stays here; the connector is for asking, the API for building.
+                  ddbx also works as an MCP connector. Paste one address into
+                  your assistant and it can look up who bought, how much and how
+                  ddbx rated it, with a link to each filing. The written
+                  analysis stays here; the connector is for asking, the API for
+                  building.
                 </p>
               </div>
               <Link

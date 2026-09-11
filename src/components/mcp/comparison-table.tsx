@@ -44,12 +44,12 @@ export const COMPARISON: ComparisonRow[] = [
   {
     label: "What comes back",
     mcp: "Who traded, their role, buy or sell, the trade and disclosure dates, shares, price and value, the ddbx rating label, the sector and whether other insiders bought too. Every filing links to its ddbx page.",
-    api: "The full record: the fields on the left plus the written analysis (thesis, evidence for and against, key risks, checklist), the triage reason, the buy style and the return since disclosure.",
+    api: "The full record: everything the connector returns, plus the written analysis (thesis, evidence for and against, key risks, checklist), the triage reason, the buy style and the return since disclosure.",
   },
   {
     label: "Shape",
     mcp: "Plain-language answers, through your assistant. Six tools it calls for you.",
-    api: "REST over JSON with cursor pagination, a discovery endpoint and an OpenAPI spec.",
+    api: "REST over JSON with cursor pagination and a discovery endpoint.",
   },
   {
     label: "Volume",
