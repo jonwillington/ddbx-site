@@ -31,7 +31,6 @@ import {
   BoardRowList,
 } from "@/components/boards/board-row";
 import {
-  dateLabel,
   direction,
   signedPp,
   toBoardRows,
@@ -93,8 +92,9 @@ import { marketForPath } from "@/lib/markets/registry";
  *    `shared/company-verdict.js` so the crawler pre-render says the same.
  *  - The latest purchase is stated in full as a card (the specimen card's
  *    grammar), which is what makes a one-filing page — most of them — a page.
- *  - The record is `BoardRow`s: the person at 18/20px, the date in an aligned
- *    column, paid → worth now in the money track, alpha under the role.
+ *  - The record is `BoardRow`s: the date leading where a board puts its rank,
+ *    the person at 18/20px, paid → worth now in the money track, alpha under
+ *    the role.
  *  - The argument (price, record, context) is numbered `SeoSection`s at display
  *    scale; the reference material (about, stats, news) keeps the rail.
  *
@@ -1000,10 +1000,11 @@ function latestFacts(
 /** Every purchase, as board rows.
  *
  *  The person is the subject — on a company page the company is the page — so
- *  there is no logo track and no rank rail: the list is newest first, not a
- *  ranking. One aligned fact (the date), the money pair in the tail, and the
- *  alpha on the line under the role, where it sits beside the person it
- *  describes and the row keeps enough width for the name inside the sheet. */
+ *  there is no logo track. The list is newest first, not a ranking, so the
+ *  date leads the row where a board puts its rank: it is what a reader runs
+ *  down. The money pair takes the tail, and the alpha sits on the line under
+ *  the role, beside the person it describes, so the row keeps enough width
+ *  for the name inside the sheet. */
 function BuysList({
   deals,
   locale,
@@ -1028,10 +1029,10 @@ function BuysList({
       <BoardRowHeader
         moneyPair
         className=""
-        facts={["Bought"]}
+        lead="date"
+        leadLabel="Bought"
         logo={false}
         money="Paid → worth now"
-        rail={false}
         subject={market === "UK" ? "Director" : "Insider"}
       />
       <BoardRowList>
@@ -1044,9 +1045,7 @@ function BuysList({
               key={r.id}
               moneyPair
               badge={rating ? <RatingBadge rating={rating} /> : undefined}
-              facts={[
-                { label: "Bought", value: dateLabel(r.tradeDate, locale) },
-              ]}
+              date={{ iso: r.tradeDate, locale }}
               money={<PaidWorthNow row={r} symbol={symbol} />}
               name={personName(r.raw)}
               secondary={

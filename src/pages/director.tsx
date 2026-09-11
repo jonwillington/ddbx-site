@@ -50,7 +50,7 @@ import {
   BoardRowHeader,
   BoardRowList,
 } from "@/components/boards/board-row";
-import { dateLabel, direction } from "@/components/boards/board-model";
+import { direction } from "@/components/boards/board-model";
 import { BENCHMARK, useBoardPrices } from "@/components/boards/board-prices";
 import { BuySparkline } from "@/components/boards/buy-sparkline";
 import { AlphaCell, PaidWorthNow } from "@/components/boards/paid-worth-now";
@@ -604,10 +604,11 @@ export default function DirectorPage() {
                       boards list, so they take the boards' row. */}
                   <BoardRowHeader
                     className=""
+                    lead="date"
+                    leadLabel="Bought"
                     money={priceMarket ? "Paid → worth now" : "Value"}
                     moneyPair={priceMarket != null}
                     perf="Alpha"
-                    rail={false}
                     subject="Company"
                     visual={
                       priceMarket ? "Since the buy, vs the index" : undefined
@@ -625,6 +626,7 @@ export default function DirectorPage() {
                         <BoardRow
                           key={dealing.key}
                           badge={<TickerPill ticker={ticker} />}
+                          date={{ iso: dealing.tradeDate, locale }}
                           logo={
                             market.config.enableLogos !== false ? (
                               <CompanyLogo size={56} ticker={dealing.ticker} />
@@ -647,14 +649,9 @@ export default function DirectorPage() {
                           name={dealing.company}
                           perf={<AlphaCell alpha={r.alpha} />}
                           secondary={
-                            <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                              <span className="tabular-nums">
-                                {dateLabel(dealing.tradeDate, locale)}
-                              </span>
-                              {dealing.rating ? (
-                                <RatingBadge rating={dealing.rating} />
-                              ) : null}
-                            </span>
+                            dealing.rating ? (
+                              <RatingBadge rating={dealing.rating} />
+                            ) : undefined
                           }
                           to={href ?? undefined}
                           visual={

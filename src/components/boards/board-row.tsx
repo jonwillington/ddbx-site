@@ -76,6 +76,10 @@ const ROW_LINK =
 const TRACK = {
   railPhone: "1.75rem",
   rail: "2.5rem",
+  /** A record list's leading date, "12 Sept" in the rank rail's mono, with
+   *  the year under it when it isn't this one. */
+  datePhone: "4rem",
+  date: "4.5rem",
   logo: "3.5rem",
   subject: "minmax(0,1fr)",
   fact: "5rem",
@@ -98,11 +102,17 @@ export const MAX_FACTS = 3;
  *  gone and the subject is down to a name and a ticker. */
 const FACTS_AT_MEDIUM = 2;
 
+/** What leads the row, in the leftmost track.
+ *
+ *  "rank" on a board: the position is what orders it. "date" on a record list
+ *  (/company/:key, a director's filings), which runs newest first — a padded
+ *  "01" in front of the newest reads as a rank it does not hold, and the date
+ *  is the thing a reader scans down to find a purchase. Jon, 2026-09-11: "the
+ *  date is the key guiding item in the row". */
+export type BoardRowLead = "rank" | "date" | "none";
+
 export interface BoardRowShape {
-  /** False on a list that is not a ranking. A record page (/company/:key, a
-   *  director's filings) lists purchases newest first, and a padded "01" in
-   *  front of the newest reads as a rank it does not hold. */
-  rail?: boolean;
+  lead?: BoardRowLead;
   /** False only where a row's leading mark is not a logo at all. */
   logo?: boolean;
   /** 0 to MAX_FACTS. */
@@ -151,8 +161,16 @@ function tracks(parts: Array<string | null>): string {
  *  1280 and over every slot the board asked for is a column of its own. */
 export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   const facts = Math.max(0, Math.min(MAX_FACTS, shape.facts ?? 0));
-  const rail = shape.rail !== false;
+  const lead = shape.lead ?? "rank";
   const logo = shape.logo !== false;
+  const leadPhone =
+    lead === "rank"
+      ? TRACK.railPhone
+      : lead === "date"
+        ? TRACK.datePhone
+        : null;
+  const leadTrack =
+    lead === "rank" ? TRACK.rail : lead === "date" ? TRACK.date : null;
   const money = shape.moneyPair ? TRACK.moneyPair : TRACK.money;
   const tail: BoardRowTail = shape.figure
     ? "figure"
@@ -163,7 +181,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
         : null;
 
   const phone = tracks([
-    rail ? TRACK.railPhone : null,
+    leadPhone,
     logo ? TRACK.logo : null,
     TRACK.subject,
     // Always the narrow tail on a phone, even for the money pair: 11.5rem of
@@ -173,7 +191,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   ]);
 
   const medium = tracks([
-    rail ? TRACK.rail : null,
+    leadTrack,
     logo ? TRACK.logo : null,
     TRACK.subject,
     ...Array.from<string>({ length: Math.min(facts, FACTS_AT_MEDIUM) }).fill(
@@ -184,7 +202,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   ]);
 
   const wide = tracks([
-    rail ? TRACK.rail : null,
+    leadTrack,
     logo ? TRACK.logo : null,
     TRACK.subject,
     ...Array.from<string>({ length: facts }).fill(TRACK.fact),
@@ -194,7 +212,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
     shape.figure ? TRACK.figure : null,
   ]);
 
-  // The phone's tail sits after the rail, the logo and the subject, whichever
+  // The phone's tail sits after the lead, the logo and the subject, whichever
   // of the first two the row has. Whole literals, so Tailwind can see them.
   const tailClass = (
     [
@@ -202,7 +220,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
       "col-start-3 sm:col-start-auto",
       "col-start-4 sm:col-start-auto",
     ] as const
-  )[Number(rail) + Number(logo)];
+  )[Number(lead !== "none") + Number(logo)];
   // A trailing slot that did not win the tail has no column until `xl`; the
   // caption carries it in the meantime.
   const trailing = (slot: Exclude<BoardRowTail, null>) =>
@@ -251,8 +269,9 @@ export function BoardRowHeader({
   logo = true,
   money,
   moneyPair,
+  lead = "rank",
+  leadLabel,
   perf,
-  rail = true,
   subject,
   visual,
 }: {
@@ -265,8 +284,10 @@ export function BoardRowHeader({
    *  track. */
   moneyPair?: boolean;
   perf?: string;
-  /** Match the rows: false when they carry no `position`. */
-  rail?: boolean;
+  /** Match the rows: "date" when they carry `date`, "none" when neither. */
+  lead?: BoardRowLead;
+  /** Heading over a date lead ("Bought", "Disclosed"). A rank needs none. */
+  leadLabel?: string;
   subject: string;
   visual?: string;
 }) {
@@ -277,7 +298,7 @@ export function BoardRowHeader({
     money: money != null,
     moneyPair,
     perf: perf != null,
-    rail,
+    lead,
     visual: visual != null,
   });
 
@@ -287,7 +308,9 @@ export function BoardRowHeader({
       className={`${className} pb-2.5 text-[11px] leading-[1.4] text-foreground/50 ${grid.className}`}
       style={grid.style}
     >
-      {rail ? <span /> : null}
+      {lead !== "none" ? (
+        <span>{lead === "date" ? leadLabel : null}</span>
+      ) : null}
       {logo ? <span /> : null}
       <span>{subject}</span>
       {facts.map((label, i) => (
@@ -348,10 +371,11 @@ function RowChevron() {
 }
 
 export interface BoardRowProps {
-  /** Board position. Padded to two digits, full ink for the top three. Omit
-   *  on a list that is not a ranking, and pass `rail={false}` to the header
-   *  to match: the rail track goes with it. */
+  /** Board position. Padded to two digits, full ink for the top three. */
   position?: number;
+  /** A record list's lead instead of a rank: the purchase date, ISO. Pass
+   *  `lead="date"` to the header to match. */
+  date?: { iso: string; locale: string };
   /** Where the row goes. A row with no URL of its own takes `onSelect`
    *  instead (the director page's drawer, for markets with no filing page),
    *  and is a button rather than a link to nowhere. */
@@ -398,6 +422,7 @@ export interface BoardRowProps {
 export function BoardRow({
   badge,
   className = "",
+  date,
   facts = [],
   figure,
   id,
@@ -422,7 +447,7 @@ export function BoardRow({
     money: money != null,
     moneyPair,
     perf: perf != null,
-    rail: position != null,
+    lead: position != null ? "rank" : date ? "date" : "none",
     visual: visual != null,
   });
 
@@ -522,6 +547,8 @@ export function BoardRow({
             >
               {String(position).padStart(2, "0")}
             </span>
+          ) : date ? (
+            <RowDate iso={date.iso} locale={date.locale} />
           ) : null}
 
           {logo !== undefined ? (
@@ -644,6 +671,34 @@ export function BoardRow({
         </div>
       </RowTarget>
     </li>
+  );
+}
+
+/** The date lead. The rank rail's mono at full ink, because on a record list
+ *  it does the rank's job: it is what the eye runs down. The year drops to a
+ *  second, quieter line only when it isn't this one, so the column stays one
+ *  short token wide. */
+function RowDate({ iso, locale }: { iso: string; locale: string }) {
+  const t = Date.parse(`${iso.slice(0, 10)}T00:00:00Z`);
+
+  if (!Number.isFinite(t)) return <span aria-hidden />;
+  const d = new Date(t);
+  const dayMonth = d.toLocaleDateString(locale, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+  const year = d.getUTCFullYear();
+
+  return (
+    <span className="font-mono text-[15px] font-medium leading-[1.35] tabular-nums text-foreground">
+      <span className="block whitespace-nowrap">{dayMonth}</span>
+      {year !== new Date().getUTCFullYear() ? (
+        <span className="mt-0.5 block text-[11px] font-normal text-foreground/45">
+          {year}
+        </span>
+      ) : null}
+    </span>
   );
 }
 
