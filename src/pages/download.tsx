@@ -24,7 +24,6 @@
 // `DownloadCopyProvider` the child components read. The provider wraps
 // DefaultLayout rather than sitting inside it, so the layout's floating mobile
 // install bar — this page's primary tap target on a phone — is localised too.
-import type { Stat } from "@/components/download/stat-band";
 import type { AppPlatform } from "@/lib/app-screenshots";
 import type {
   DownloadLocale,
@@ -36,28 +35,26 @@ import type { Analysis, Dealing, UsDealing, UsReporter } from "@/types/ddbx";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-import { StoreBadgeImg } from "@/components/app-store-badge";
-import {
-  BUTTON_FILLED,
-  BUTTON_GHOST,
-  BUTTON_RADIUS,
-} from "@/components/button";
-import { CompanyLogo } from "@/components/company-logo";
+import { filingPath } from "../../shared/filings.js";
+import { usFilingPath } from "../../shared/filings-us.js";
+
 import { AppTour } from "@/components/download/app-tour";
 import { DownloadFaq } from "@/components/download/download-faq";
 import { DownloadRail } from "@/components/download/download-rail";
 import {
   DownloadHero,
   StoreUnavailable,
+  type HeroFigure,
 } from "@/components/download/download-hero";
 import { IncludedList, PricingCard } from "@/components/download/pricing-card";
-import { QrInstall } from "@/components/download/qr-install";
-import { CountUp, Reveal } from "@/components/download/reveal";
 import { SectionHeader } from "@/components/download/section-header";
-import { StatBand } from "@/components/download/stat-band";
 import { StoryFilm } from "@/components/download/story-film";
-import { StoreButtons } from "@/components/store-buttons";
-import { FULL_BLEED } from "@/components/full-bleed";
+import {
+  WinnersBoard,
+  type WinnerRowData,
+} from "@/components/download/winners-board";
+import { CAPTION } from "@/components/how-it-works/shared";
+import { AppCtaBand } from "@/components/seo/app-cta-band";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
 import { STORE_LABEL } from "@/lib/app-screenshots";
@@ -66,7 +63,6 @@ import {
   PLAY_STORE_URLS,
   appStoreUrlForMarketId,
   playStoreUrlForMarketId,
-  storeUrlForMarketId,
 } from "@/lib/app-store";
 import { displayCompany } from "@/lib/display-name";
 import {
@@ -76,7 +72,6 @@ import {
   hasLocale,
   landingCopy,
   localeForPath,
-  useDownloadCopy,
 } from "@/lib/download/copy";
 import { marketForPath } from "@/lib/markets/registry";
 import { PRICING } from "@/lib/pricing";
@@ -149,26 +144,12 @@ function isSignal(analysis?: Analysis | null): boolean {
 // Data selection — normalised so the page is market-blind
 // ---------------------------------------------------------------------------
 
-/** A single winner card's data, normalised away from the per-market wire row so
- *  one `WinnerCard` renders both UK `Dealing`s and US `UsDealing`s. */
-interface Winner {
-  id: string;
-  ticker: string;
-  company: string;
-  returnPct: number;
-  asOf?: string | null;
-  buyerName: string;
-  buyerRole?: string;
-  /** e.g. "Bought £4,071 of shares at £0.04" / "Bought $120,000 at $14.20". */
-  metaLine: string;
-  /** Trade date — the bars fetch anchors the trend line here. */
-  tradeDate: string;
-  bars?: { date: string; close: number }[];
-  /** Index into `bars` of the first close on/after the trade date — the moment
-   *  the director bought. Everything left of it is the run-up they bought into
-   *  (drawn grey); everything right is the part that's actually the pitch. */
-  buyIndex?: number;
-}
+/** A single winner row's data, normalised away from the per-market wire row so
+ *  one `WinnersBoard` renders both UK `Dealing`s and US `UsDealing`s. The
+ *  shape is the board's own (`WinnerRowData`); `metaLine` is e.g. "Bought
+ *  £4,071 of shares at £0.04", `tradeDate` anchors the price-history fetch and
+ *  `buyIndex` is the first close on/after it. */
+type Winner = WinnerRowData;
 
 /** ISO date `n` days before today (UTC date part). */
 function isoDaysAgo(n: number): string {
@@ -250,7 +231,7 @@ function feedStats<T>(
     getAnalysis: (x: T) => Analysis | null | undefined;
   },
   nouns: StatNouns,
-): Stat[] {
+): HeroFigure[] {
   const since30 = isoDaysAgo(30);
   const last30 = items.filter((x) => cfg.getDisclosedDate(x) >= since30);
   const companies = new Set(
@@ -267,7 +248,7 @@ function feedStats<T>(
 
 interface MarketData {
   winners: Winner[];
-  stats: Stat[];
+  stats: HeroFigure[];
 }
 
 /** What a loader needs from the locale: the market's own prose (stat nouns,
@@ -400,268 +381,6 @@ async function loadUs(want: number, ctx: LoadCtx): Promise<MarketData> {
 }
 
 // ---------------------------------------------------------------------------
-// Trend chart — the "going up" line
-// ---------------------------------------------------------------------------
-
-/** Area-filled trend line, rebased to 0% at the CLOSE ON THE DAY OF THE BUY, so
- *  the zero line is literally the price the director paid.
- *
- *  The chart is deliberately two-toned. A line that simply starts at the buy
- *  can't show that the buy was a decision — it looks like the stock was born
- *  the day we started drawing it. So the run-up *into* the purchase is drawn as
- *  a flat grey lead-in, the buy is marked, and only the part that happened
- *  after the director committed their own money carries colour and fill. That's
- *  the claim the card is making, drawn rather than asserted.
- *
- *  Pure SVG, no axes — it's a feeling, not a dashboard. `preserveAspectRatio`
- *  is off, so the viewBox stretches horizontally by however much the card is
- *  wider than 320px. Strokes escape that with `vectorEffect`; the buy marker
- *  can't (SVG has no non-scaling radius), so it's an HTML dot positioned in
- *  percentages over the chart instead — round at every card width, where the
- *  ellipse it replaced was only round if the card happened to be exactly as
- *  many times wider than the viewBox as the viewBox is wide relative to tall. */
-function TrendChart({
-  bars,
-  buyIndex = 0,
-  id,
-}: {
-  bars: { date: string; close: number }[];
-  buyIndex?: number;
-  id: string;
-}) {
-  const layout = useMemo(() => {
-    if (!bars || bars.length < 2) return null;
-    const w = 320;
-    const h = 96;
-    const pad = 5;
-    // Clamp: a corrupt index must never produce a NaN path.
-    const bi = Math.min(Math.max(buyIndex, 0), bars.length - 1);
-    const base = bars[bi].close;
-
-    if (!base) return null;
-    const pct = bars.map((b) => ((b.close - base) / base) * 100);
-    const min = Math.min(...pct, 0);
-    const max = Math.max(...pct, 0);
-    const range = Math.max(max - min, 1);
-    const pts = pct.map((p, i) => {
-      const x = pad + (i / (pct.length - 1)) * (w - 2 * pad);
-      const y = pad + (1 - (p - min) / range) * (h - 2 * pad);
-
-      return [x, y] as const;
-    });
-    const path = (from: number, to: number) =>
-      pts
-        .slice(from, to + 1)
-        .map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`)
-        .join(" ");
-
-    // The lead-in stops ON the buy point so the two strokes meet with no gap.
-    const pre = bi > 0 ? path(0, bi) : null;
-    const post = path(bi, pts.length - 1);
-    // Fill only under the post-buy leg — the grey lead-in is context, and
-    // filling it would give the run-up the same visual weight as the result.
-    const postArea = `${post} L${pts[pts.length - 1][0].toFixed(1)},${h} L${pts[bi][0].toFixed(1)},${h} Z`;
-    const up = pct[pct.length - 1] >= 0;
-
-    return { w, h, pre, post, postArea, up, buy: pts[bi] };
-  }, [bars, buyIndex]);
-
-  if (!layout) {
-    return <div aria-hidden className="h-[96px] w-full" />;
-  }
-
-  const { w, h, pre, post, postArea, up, buy } = layout;
-  // Applied via `style`, not as presentation attributes: a var() reference is
-  // only reliably substituted in a CSS declaration, and inline style is one.
-  const color = up ? "var(--positive)" : "var(--negative)";
-
-  return (
-    <div className="relative">
-      <svg
-        aria-hidden="true"
-        className="block w-full"
-        height={h}
-        preserveAspectRatio="none"
-        viewBox={`0 0 ${w} ${h}`}
-        width="100%"
-      >
-        <defs>
-          <linearGradient id={`tg-${id}`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.22 }} />
-            <stop offset="100%" style={{ stopColor: color, stopOpacity: 0 }} />
-          </linearGradient>
-        </defs>
-
-        <path d={postArea} fill={`url(#tg-${id})`} />
-
-        {/* Before the buy — grey, unfilled, quiet. */}
-        {pre ? (
-          <path
-            className="text-ink/25 dark:text-white/25"
-            d={pre}
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.75}
-            vectorEffect="non-scaling-stroke"
-          />
-        ) : null}
-
-        {/* The buy itself, part one: a hairline dropped to the baseline. */}
-        {pre ? (
-          <line
-            className="text-ink/20 dark:text-white/20"
-            stroke="currentColor"
-            strokeDasharray="3 3"
-            strokeWidth={1}
-            vectorEffect="non-scaling-stroke"
-            x1={buy[0]}
-            x2={buy[0]}
-            y1={buy[1]}
-            y2={h}
-          />
-        ) : null}
-
-        {/* After the buy — the pitch. */}
-        <path
-          d={post}
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          style={{ stroke: color }}
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-
-      {/* Part two: the ringed dot on the buy point. HTML rather than an SVG
-          circle, positioned in percentages of the same viewBox coordinates the
-          path uses — the horizontal stretch moves it to the right place and
-          leaves its size alone, so it's round on a 260px card and a 420px one. */}
-      {pre ? (
-        <span
-          aria-hidden
-          className="absolute h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white dark:bg-ink"
-          style={{
-            left: `${(buy[0] / w) * 100}%`,
-            top: `${(buy[1] / h) * 100}%`,
-            borderColor: color,
-          }}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Winner card
-// ---------------------------------------------------------------------------
-
-function WinnerCard({
-  winner,
-  appUrl,
-  gaPrefix,
-  delay,
-}: {
-  winner: Winner;
-  appUrl: string;
-  gaPrefix: string;
-  delay: number;
-}) {
-  const { ticker, company, returnPct, asOf, buyerName, buyerRole, metaLine } =
-    winner;
-  const t = useDownloadCopy();
-
-  // h-full on both the wrapper and the card: <Reveal> is the grid item, so
-  // without it the card stops at its own content height and the "View analysis"
-  // buttons stop lining up across a row.
-  return (
-    <Reveal className="h-full" delay={delay}>
-      <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-3xl border border-hairline bg-white/70 p-5 shadow-sm transition-shadow hover:shadow-md dark:border-border/60 dark:bg-surface-secondary/40">
-        <div className="flex items-center gap-3">
-          <CompanyLogo size={40} ticker={ticker} />
-          <div className="min-w-0">
-            <p className="truncate font-semibold leading-tight">{company}</p>
-            <p className="truncate text-xs text-foreground/50">{ticker}</p>
-          </div>
-          <div className="ml-auto text-right">
-            {/* Counts up on scroll — the number IS the pitch, so it earns the
-                extra beat of attention that motion buys. */}
-            <p className="text-2xl font-semibold text-positive">
-              <CountUp decimals={1} prefix="+" suffix="%" value={returnPct} />
-            </p>
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-              {t.sinceTheBuy}
-            </p>
-          </div>
-        </div>
-
-        <div className="my-4">
-          {winner.bars ? (
-            <TrendChart
-              bars={winner.bars}
-              buyIndex={winner.buyIndex}
-              id={winner.id}
-            />
-          ) : (
-            <div aria-hidden className="h-[96px] w-full" />
-          )}
-          {/* Reads the two-tone line for anyone who doesn't infer it. Only
-              shown when there IS a grey leg to explain. */}
-          {winner.bars && (winner.buyIndex ?? 0) > 0 ? (
-            <p className="mt-2 flex items-center gap-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/40">
-              <span className="flex items-center gap-1.5">
-                <span aria-hidden className="h-px w-3.5 bg-foreground/30" />
-                {t.legendBefore}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span
-                  aria-hidden
-                  className="h-[2px] w-3.5 rounded-full bg-positive"
-                />
-                {t.legendAfter}
-              </span>
-            </p>
-          ) : null}
-        </div>
-
-        <p className="text-sm text-foreground/70">
-          <span className="font-medium text-foreground/90">{buyerName}</span>
-          {buyerRole ? (
-            <span className="text-foreground/55"> · {buyerRole}</span>
-          ) : null}
-        </p>
-        <p className="mt-1 text-sm text-foreground/55">{metaLine}</p>
-        {asOf ? (
-          <p className="mt-2 text-[11px] text-foreground/40">
-            {t.pricesAsOf(formatAsOf(asOf, t.lang))}
-          </p>
-        ) : null}
-
-        {/* The full analysis (the "why") lives in the app — this nudges the tap.
-            Labelled per-ticker so GA shows which winners pull installs.
-            `mt-auto` on the wrapper pins it to the card's bottom edge, so the
-            row's buttons align even when a director's role wraps to two lines. */}
-        <div className="mt-auto pt-4">
-          <a
-            className={`inline-flex items-center gap-1.5 ${BUTTON_RADIUS} ${BUTTON_GHOST} px-3.5 py-2 text-[13px] font-medium transition-colors`}
-            data-ga-event="cta_download_lp"
-            data-ga-label={`${gaPrefix} card analysis · ${ticker}`}
-            href={appUrl}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            {t.viewAnalysis}
-            <span aria-hidden>→</span>
-          </a>
-        </div>
-      </div>
-    </Reveal>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Per-market config
 // ---------------------------------------------------------------------------
 
@@ -740,15 +459,6 @@ export default function DownloadPage({
       ? playStoreUrlForMarketId(market)
       : appStoreUrlForMarketId(market);
   const available = !!storeHref;
-
-  // Where the winner cards' "View analysis" links go: the visitor's real store
-  // if there is one, otherwise this market's own App Store listing — right
-  // product even when it's the wrong platform. Never another market's app.
-  const cardAppUrl =
-    storeHref ??
-    storeUrlForMarketId(market, detected) ??
-    appStoreUrlForMarketId(market) ??
-    APP_STORE_URLS.uk;
 
   // The sibling-platform page keeps the reader's language: an /zh-hk visitor
   // told "there's an Android version" must not be dropped onto the English one.
@@ -884,10 +594,12 @@ export default function DownloadPage({
                 }
               : undefined
           }
+          figures={data ? data.stats : null}
           gaLabel={cfg.gaPrefix}
           headline={cfg.heroHeadline}
           marketId={cfg.marketId}
           platform={platform}
+          sourceLine={cfg.sourceLine}
           storeHref={storeHref}
           sub={cfg.heroSub}
           trialDays={pricing.trialDays}
@@ -910,10 +622,6 @@ export default function DownloadPage({
           }
         />
 
-        {data && data.stats.length > 0 ? (
-          <StatBand sourceLine={cfg.sourceLine} stats={data.stats} />
-        ) : null}
-
         {/* ---- The film ----
              Thirty seconds of the pitch before the tour walks it beat by
              beat. Its own numbered section, not a beat: it is the story
@@ -924,7 +632,7 @@ export default function DownloadPage({
           index={1}
           kicker={t.filmKicker}
           playLabel={t.playFilm}
-          total={5}
+          total={4}
         />
 
         <AppTour
@@ -935,60 +643,36 @@ export default function DownloadPage({
           marketId={cfg.marketId}
           platform={platform}
           sub={cfg.tourSub}
-          total={5}
+          total={4}
         />
 
-        {/* ---- Winners wall ----
-             Full-bleed: the cream band is the page changing surface under you,
-             not a card sitting on it. */}
-        <section
-          className={`${FULL_BLEED} border-y border-hairline bg-sheet dark:border-border/50 dark:bg-surface-secondary/20`}
-        >
-          <div className={SECTION}>
-            <SectionHeader
-              index={3}
-              kicker={cfg.proofKicker}
-              sub={cfg.winnersSub}
-              title={cfg.winnersHeading}
-              total={5}
-            />
-
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {data === null
-                ? Array.from({ length: 6 }, (_, i) => (
-                    <div
-                      key={i}
-                      className="h-[280px] animate-pulse rounded-3xl border border-hairline bg-white/40 dark:border-border/60 dark:bg-surface-secondary/30"
-                    />
-                  ))
-                : data.winners.map((w, i) => (
-                    <WinnerCard
-                      key={w.id}
-                      appUrl={cardAppUrl}
-                      delay={(i % 3) * 90}
-                      gaPrefix={cfg.gaPrefix}
-                      winner={w}
-                    />
-                  ))}
-            </div>
-
-            {available && data && data.winners.length > 0 ? (
-              <Reveal className="mt-12 flex flex-col items-center gap-2.5">
-                <StoreButtons
-                  buttonClassName={`inline-flex items-center justify-center gap-2.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-7 py-3.5 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
-                  gaEvent="cta_download_lp"
-                  gaLabel={`${cfg.gaPrefix} winners`}
-                  glyphClassName="h-[17px] w-[17px] shrink-0"
-                  marketId={cfg.marketId}
-                  platform={platform}
-                />
-                <p className="text-sm text-foreground/55">
-                  {cfg.winnersCtaSub(pricing.trialDays)}
-                </p>
-              </Reveal>
-            ) : null}
-          </div>
-        </section>
+        {/* ---- Winners board ----
+             A ranked list, drawn the way every board on the site is: rows
+             on the page ground, the return as the figure, the price line in
+             the visual track. Rows go to the filing page; the one store CTA
+             sits under the list. */}
+        <WinnersBoard
+          available={available}
+          ctaSub={cfg.winnersCtaSub(pricing.trialDays)}
+          emptyNote={t.winnersEmpty}
+          formatDate={(iso) => formatAsOf(iso, t.lang)}
+          gaPrefix={cfg.gaPrefix}
+          heading={cfg.winnersHeading}
+          index={3}
+          kicker={cfg.proofKicker}
+          labels={{
+            ...t.winnersLabels,
+            sinceTheBuy: t.sinceTheBuy,
+            pricesAsOf: t.pricesAsOf,
+          }}
+          loadingRows={WINNERS_SHOWN}
+          marketId={cfg.marketId}
+          platform={platform}
+          rowHref={market === "us" ? usFilingPath : filingPath}
+          sub={cfg.winnersSub}
+          total={4}
+          winners={data ? data.winners : null}
+        />
 
         {/* ---- Price + objections ----
              Two columns from lg: the card on the left, what it buys on the
@@ -1000,7 +684,7 @@ export default function DownloadPage({
             kicker={t.priceKicker}
             sub={t.priceSub}
             title={t.priceTitle}
-            total={5}
+            total={4}
           />
 
           <div className="mt-10 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
@@ -1008,82 +692,48 @@ export default function DownloadPage({
             <IncludedList benefits={cfg.benefits} />
           </div>
 
-          {/* Answers, not a wall — kept to a readable measure rather than run
-              out to the full two-column width above it. */}
-          <div className="mt-16 max-w-3xl">
-            <DownloadFaq
-              items={t.faq({
-                market,
-                buyerNoun: cfg.buyerNoun,
-                sourceLine: cfg.sourceLine,
-                pricing,
-                platform,
-                otherPath,
-              })}
-            />
-          </div>
+          {/* MarketFaq brings its own top padding and two-column grid, so it
+              takes the section's full width rather than a squeezed measure. */}
+          <DownloadFaq
+            copy={t.faqCopy}
+            items={t.faq({
+              market,
+              buyerNoun: cfg.buyerNoun,
+              sourceLine: cfg.sourceLine,
+              pricing,
+              platform,
+              otherPath,
+            })}
+          />
         </section>
 
-        {/* ---- Final CTA ---- */}
-        <section
-          className={`${FULL_BLEED} bg-ink text-white dark:bg-[oklch(17%_0.02_55)]`}
-        >
-          <div className={SECTION}>
-            <SectionHeader
-              align="center"
-              index={5}
-              kicker={t.getAppKicker}
-              sub={cfg.finalSub(pricing.trialDays)}
-              title={t.finalTitle(cfg.buyerNoun)}
-              tone="dark"
-              total={5}
-            />
+        {/* ---- The ask ----
+             The site's one terminal band, contained in the column like every
+             other page's (it used to run full-bleed and stop dead against
+             the rail). `platform` is the route's, so /download/android shows
+             Play on a desktop; the QR encodes the same store and shows only
+             where there is no store to tap. Unnumbered: the ask is not a
+             section of the argument, it is what the argument is for. */}
+        <div className="mx-auto max-w-6xl px-4 md:px-6">
+          <AppCtaBand
+            body={cfg.finalSub(pricing.trialDays)}
+            gaEvent="cta_download_lp"
+            gaLabel={`${cfg.gaPrefix} footer`}
+            headline={t.finalTitle(cfg.buyerNoun)}
+            kicker={t.getAppKicker}
+            marketId={cfg.marketId}
+            media={available ? "qr" : "none"}
+            note={t.freeForDaysCancel(pricing.trialDays)}
+            platform={platform}
+            qrCaption={t.scanToOpen(STORE_LABEL[platform])}
+          />
 
-            <Reveal delay={120}>
-              {/* One column, not a row. The badge block and the QR block have
-                  no shared baseline and no matching height, so side by side
-                  they read as two things that failed to line up. Centred: this
-                  is the page's last word and there is nothing beside it to
-                  align to. */}
-              <div className="mt-10 flex flex-col items-center gap-8">
-                {available ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <a
-                      aria-label={t.getOnStore(STORE_LABEL[platform])}
-                      className="dl-lift inline-block"
-                      data-ga-event="cta_download_lp"
-                      data-ga-label={`${cfg.gaPrefix} footer · ${platform}`}
-                      href={storeHref}
-                      rel="noopener noreferrer"
-                      target="_blank"
-                    >
-                      <StoreBadgeImg size="lg" store={platform} />
-                    </a>
-                    <p className="text-sm text-white/55">
-                      {t.freeForDaysCancel(pricing.trialDays)}
-                    </p>
-                  </div>
-                ) : null}
-
-                {/* Desktop only: nothing on this page is tappable-to-install
-                    on a laptop, and nobody retypes a URL on their phone. */}
-                {available && detected === null ? (
-                  <div className="hidden sm:block">
-                    <QrInstall
-                      caption={t.scanToOpen(STORE_LABEL[platform])}
-                      captionClassName="text-white/55"
-                      url={storeHref!}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            </Reveal>
-
-            <p className="mx-auto mt-14 max-w-[64ch] text-center text-xs leading-relaxed text-white/35">
-              {t.returnsDisclaimer(cfg.buyerNoun)}
-            </p>
-          </div>
-        </section>
+          {/* Small print reads as the caption of the whole page and belongs
+              at the true bottom, after the ask. */}
+          <p className={`${CAPTION} mt-8 max-w-[72ch]`}>
+            {t.returnsDisclaimer(cfg.buyerNoun)}
+          </p>
+        </div>
       </DefaultLayout>
     </DownloadCopyProvider>
   );

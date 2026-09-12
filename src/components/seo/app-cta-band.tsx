@@ -36,8 +36,17 @@
  *  SEO note: the headline is a `<p>`, not a heading. These pages rank on their
  *  own content, and injecting a second h2-level "Get the app" into every
  *  document's outline dilutes the heading structure that earned the ranking.
+ *
+ *  Three optional props exist for the /download landing pages, which end on
+ *  this same band rather than a second dark object of their own: `platform`
+ *  (those routes declare ios/android in the URL, so the store CTA must follow
+ *  the route rather than the device sniff), `gaEvent` (they keep their own
+ *  `cta_download_lp` funnel events), and `note` (the trial line is a literal
+ *  here but the zh-HK edition needs its own string). Defaults reproduce the
+ *  SEO-page behaviour exactly, so every existing caller is unchanged.
  */
 import type { ReactNode } from "react";
+import type { DevicePlatform } from "@/lib/use-device-platform";
 
 import { QrInstall } from "@/components/download/qr-install";
 import { StoreButtons } from "@/components/store-buttons";
@@ -52,8 +61,12 @@ export function AppCtaBand({
   headline,
   body,
   gaLabel,
+  gaEvent = "cta_seo_band",
   marketId,
   media = "screenshot",
+  platform = null,
+  note = "Free for 7 days, cancel any time.",
+  qrCaption = "Scan to install on your phone",
   className = "",
 }: {
   kicker?: string;
@@ -61,19 +74,35 @@ export function AppCtaBand({
   body: ReactNode;
   /** Distinguishes which SEO family drove the install in GA. */
   gaLabel: string;
+  /** GA event name for the store click. Defaults to the SEO families' shared
+   *  event; the download landing pages pass their own so the two funnels stay
+   *  separable. */
+  gaEvent?: string;
   marketId: "uk" | "us";
   /** Right-hand column. "none" gives a single centred measure — used on the
    *  broker guides, where an affiliate CTA is already competing for the click
    *  and a phone next to it is two asks in one band. */
   media?: CtaMedia;
+  /** Force the store the CTA and QR target, for routes that declare their
+   *  platform (`/download/android` must show Play to a desktop visitor, who
+   *  sniffs as neither). Unset everywhere the device really does decide. */
+  platform?: DevicePlatform | null;
+  /** The small line under the store button. */
+  note?: ReactNode;
+  /** Under the QR code. Localised by the download landing pages. */
+  qrCaption?: string;
   className?: string;
 }) {
-  const platform = useDevicePlatform();
-  const qrUrl = storeUrlForMarketId(marketId, platform);
+  const sniffed = useDevicePlatform();
+  // The QR opens the store the button opens, so it follows the forced platform
+  // where there is one.
+  const qrUrl = storeUrlForMarketId(marketId, platform ?? sniffed);
   // A QR code on the device you'd scan it with is a mirror. On touch, the
-  // store button below is the path, so the column simply isn't rendered.
+  // store button below is the path, so the column simply isn't rendered — and
+  // that stays keyed on the real device, not the route's platform: the QR is
+  // for desktop visitors whatever store the page is selling.
   const showQr =
-    media === "qr" && !!qrUrl && platform !== "ios" && platform !== "android";
+    media === "qr" && !!qrUrl && sniffed !== "ios" && sniffed !== "android";
   const showShot = media === "screenshot";
   const hasMedia = showQr || showShot;
 
@@ -107,13 +136,12 @@ export function AppCtaBand({
               <StoreButtons
                 buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
                 className="items-start"
-                gaEvent="cta_seo_band"
+                gaEvent={gaEvent}
                 gaLabel={gaLabel}
                 marketId={marketId}
+                platform={platform}
               />
-              <p className="text-[12.5px] text-white/50">
-                Free for 7 days, cancel any time.
-              </p>
+              <p className="text-[12.5px] text-white/50">{note}</p>
             </div>
           </div>
 
@@ -144,7 +172,7 @@ export function AppCtaBand({
           {showQr ? (
             <div className="flex justify-center lg:justify-end">
               <QrInstall
-                caption="Scan to install on your phone"
+                caption={qrCaption}
                 captionClassName="text-white/50"
                 url={qrUrl as string}
               />

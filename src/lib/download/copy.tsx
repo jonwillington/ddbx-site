@@ -139,12 +139,13 @@ export interface ChromeCopy {
   altLocaleLabel: string;
   storeUnavailable: string;
   storeUnavailableAlts: { us: string; uk: string };
-  // Winner card
+  // Winners board
   sinceTheBuy: string;
-  legendBefore: string;
-  legendAfter: string;
   pricesAsOf: (date: string) => string;
-  viewAnalysis: string;
+  /** Column headings over the ranked rows. */
+  winnersLabels: { subject: string; bought: string; ret: string };
+  /** Rule 2: what the board says instead of rendering nothing. */
+  winnersEmpty: string;
   // Story film
   filmKicker: string;
   filmLabel: string;
@@ -174,6 +175,9 @@ export interface ChromeCopy {
   freeForDaysCancel: (days: number) => string;
   scanToOpen: (store: string) => string;
   returnsDisclaimer: (buyerNoun: string) => string;
+  /** The FAQ's heading block, which `MarketFaq` would otherwise print in
+   *  English on every edition. */
+  faqCopy: { kicker: string; title: string; lede: string };
   // Rail
   railFreeForDays: (days: number) => string;
   railPerMonth: string;
@@ -220,10 +224,14 @@ export const EN_CHROME: ChromeCopy = {
     uk: "ddbx UK on Google Play",
   },
   sinceTheBuy: "since the buy",
-  legendBefore: "Before",
-  legendAfter: "After the buy",
   pricesAsOf: (date) => `Prices as of ${date}`,
-  viewAnalysis: "View analysis",
+  winnersLabels: {
+    subject: "Company and buyer",
+    bought: "Bought",
+    ret: "Return",
+  },
+  winnersEmpty:
+    "Not enough recent buys with a price history yet. The board fills as directors disclose.",
   filmKicker: "The film",
   filmLabel:
     "ddbx in thirty seconds: a share falls, two more directors buy, the app shows what happened next",
@@ -250,10 +258,18 @@ export const EN_CHROME: ChromeCopy = {
   everythingIncluded: "Everything included",
   getAppKicker: "Get the app",
   finalTitle: (noun) => (
-    <>A {noun} buys tomorrow morning. You’ll know within minutes.</>
+    <>
+      {/^[aeiou]/i.test(noun) ? "An" : "A"} {noun} buys tomorrow morning. You’ll
+      know within minutes.
+    </>
   ),
   freeForDaysCancel: (d) => `Free for ${d} days, cancel any time.`,
   scanToOpen: (store) => `Scan to open ddbx on the ${store}`,
+  faqCopy: {
+    kicker: "Common questions",
+    title: "Before you install",
+    lede: "The reasons people hesitate, answered next to the button.",
+  },
   returnsDisclaimer: (noun) =>
     `Returns shown are the share-price change since each ${noun}’s purchase, as of the latest cached close. Past performance is not a reliable indicator of future results. ddbx is information, not financial advice. Capital is at risk.`,
   railFreeForDays: (d) => `Free for ${d} days`,
@@ -354,10 +370,9 @@ export const ZH_HK_CHROME: ChromeCopy = {
     uk: "Google Play 版 ddbx UK",
   },
   sinceTheBuy: "買入至今",
-  legendBefore: "買入前",
-  legendAfter: "買入後",
   pricesAsOf: (date) => `股價截至 ${date}`,
-  viewAnalysis: "查看分析",
+  winnersLabels: { subject: "公司及買家", bought: "買入日期", ret: "回報" },
+  winnersEmpty: "近期有股價紀錄的董事買入未夠多。董事一披露，榜單就會填上。",
   filmKicker: "短片",
   filmLabel: "三十秒認識 ddbx：股價下跌，再有兩位董事買入，App 展示之後的走勢",
   playFilm: "播放短片",
@@ -384,6 +399,11 @@ export const ZH_HK_CHROME: ChromeCopy = {
   finalTitle: (noun) => <>明早有{noun}買入。幾分鐘內你就會知道。</>,
   freeForDaysCancel: (d) => `免費試用 ${d} 天，隨時取消。`,
   scanToOpen: (store) => `掃描二維碼，在 ${store} 開啟 ddbx`,
+  faqCopy: {
+    kicker: "常見問題",
+    title: "安裝前想知的事",
+    lede: "大家猶豫的原因，逐一在按鈕旁邊解答。",
+  },
   returnsDisclaimer: (noun) =>
     `所示回報為每位${noun}買入後的股價變化，以最近一次快取收市價計算。過往表現並非未來業績的可靠指標。ddbx 提供的是資訊，並非投資建議，投資涉及風險，本金可能虧損。`,
   railFreeForDays: (d) => `免費試用 ${d} 天`,

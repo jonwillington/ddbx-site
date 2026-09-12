@@ -9,7 +9,27 @@ import { PlusIcon } from "@heroicons/react/20/solid";
  *  background. Same accessible idiom as DisclosureSection (keyboard /
  *  screen-reader friendly, no third-party disclosure primitive). Renders
  *  nothing when the market supplies no FAQ. */
-export function MarketFaq({ items }: { items?: MarketFaqItem[] }) {
+export interface MarketFaqCopy {
+  kicker: string;
+  title: string;
+  lede: string;
+}
+
+const EN_COPY: MarketFaqCopy = {
+  kicker: "Common questions",
+  title: "Everything investors ask first",
+  lede: "Still unsure? The app gives the full analysis stream.",
+};
+
+/** `copy` exists for the one non-English caller, the Traditional Chinese
+ *  download page; every market page takes the English default. */
+export function MarketFaq({
+  items,
+  copy = EN_COPY,
+}: {
+  items?: MarketFaqItem[];
+  copy?: MarketFaqCopy;
+}) {
   if (!items || items.length === 0) return null;
 
   return (
@@ -20,13 +40,13 @@ export function MarketFaq({ items }: { items?: MarketFaqItem[] }) {
       <div className="grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)] md:gap-16">
         <div className="md:sticky md:top-24 md:self-start">
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
-            Common questions
+            {copy.kicker}
           </p>
           <h2 className="mt-2 text-[20px] font-semibold leading-[1.2] tracking-[-0.015em] text-foreground sm:text-[22px]">
-            Everything investors ask first
+            {copy.title}
           </h2>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
-            Still unsure? The app gives the full analysis stream.
+            {copy.lede}
           </p>
         </div>
 

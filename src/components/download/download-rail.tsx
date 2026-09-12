@@ -20,6 +20,7 @@
 import type { AppPlatform } from "@/lib/app-screenshots";
 
 import { BUTTON_RADIUS } from "@/components/button";
+import { KICKER } from "@/components/how-it-works/shared";
 import { StoreButtons } from "@/components/store-buttons";
 import { IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
 import { useDownloadCopy } from "@/lib/download/copy";
@@ -71,7 +72,7 @@ export function DownloadRail({
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         <div className="rounded-xl border border-hairline bg-background/40 p-4 dark:border-separator">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
+          <p className={`${KICKER} text-foreground/55`}>
             {t.railFreeForDays(pricing.trialDays)}
           </p>
           <p className="mt-2 text-[22px] font-semibold leading-none tracking-[-0.02em] text-foreground">

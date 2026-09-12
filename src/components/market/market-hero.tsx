@@ -51,7 +51,7 @@ import { StoreButtons } from "@/components/store-buttons";
  *  whose clock never ticks (NL/SE) it rests on phase 0 as a static ambient.
  *  Respects prefers-reduced-motion: no drift, and the clock is frozen
  *  upstream so the cross-fade never fires. */
-function HeroLiveGradient({ tick }: { tick: number }) {
+export function HeroLiveGradient({ tick }: { tick: number }) {
   // Clamped: the radar's tick is -1 until the first alert lands, and markets
   // whose clock never ticks (NL/SE) sit there permanently. Without this they
   // would rest on phase 3 rather than the phase 0 this is tuned around.

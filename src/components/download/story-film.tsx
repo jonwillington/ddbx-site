@@ -26,8 +26,9 @@
  */
 import { useEffect, useRef, useState } from "react";
 
-import { Reveal } from "./reveal";
 import { SectionHeader } from "./section-header";
+
+import { CAPTION, EYEBROW } from "@/components/how-it-works/shared";
 
 export interface FilmBeat {
   /** The caption as it appears on screen in the film. */
@@ -123,78 +124,74 @@ export function StoryFilm({
           fixed at the width the tour gives a handset, so the two sections
           share a right-hand edge. */}
       <div className="mt-12 grid items-center gap-10 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_440px] lg:gap-16">
-        <Reveal>
-          {/* Same rail the tour runs its beats on: a hairline down the copy
-              with the marker sitting on it. Here the marker is the beat's
-              position in the film rather than a clock. */}
-          <ol className="border-l border-hairline dark:border-border/60">
-            {copy.beats.map((b, i) => (
-              <li
-                key={b.title}
-                className={`relative pl-8 ${i === 0 ? "" : "mt-9"}`}
-              >
-                <span
-                  aria-hidden
-                  className="absolute -left-[4.5px] top-[7px] h-[9px] w-[9px] rounded-full bg-brand-brown dark:bg-brand-tan"
-                />
-                <p className="font-mono text-[11px] font-semibold uppercase tabular-nums tracking-[0.16em] text-brand-brown dark:text-brand-tan">
-                  {String(i + 1).padStart(2, "0")}
-                </p>
-                <h3 className="mt-2 max-w-[20ch] text-balance text-[26px] font-semibold leading-[1.1] tracking-[-0.022em] sm:text-[30px]">
-                  {b.title}
-                </h3>
-                <p className="mt-2.5 max-w-[46ch] text-[16.5px] leading-[1.55] text-foreground/65">
-                  {b.body}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </Reveal>
-
-        <Reveal delay={120}>
-          <figure className="mx-auto w-full max-w-[440px] lg:mx-0">
-            {/* The panel. `bg-ink` under the video so the poster's fade-in
-                and any letterbox rounding land on the film's own ground, not
-                on cream. */}
-            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-hairline bg-ink shadow-[0_1px_2px_rgba(0,0,0,0.06)] dark:border-border/60">
-              <video
-                ref={ref}
-                disablePictureInPicture
-                loop
-                muted
-                playsInline
-                aria-label={filmLabel}
-                className="h-full w-full object-cover"
-                controls={reduced}
-                poster={FILM_POSTER}
-                preload="none"
-                src={FILM_SRC}
+        {/* Same rail the tour runs its beats on: a hairline down the copy with
+            the marker sitting on it. Here the marker is the beat's position in
+            the film rather than a clock. */}
+        <ol className="border-l border-hairline dark:border-border/60">
+          {copy.beats.map((b, i) => (
+            <li
+              key={b.title}
+              className={`relative pl-8 ${i === 0 ? "" : "mt-9"}`}
+            >
+              <span
+                aria-hidden
+                className="absolute -left-[4.5px] top-[7px] h-[9px] w-[9px] rounded-full bg-brand-brown dark:bg-brand-tan"
               />
-              {blocked ? (
-                <button
-                  aria-label={playLabel}
-                  className="absolute inset-0 flex items-center justify-center bg-black/20"
-                  type="button"
-                  onClick={() => ref.current?.play()}
-                >
-                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-ink shadow-lg">
-                    <svg
-                      aria-hidden
-                      className="ml-1 h-6 w-6"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </span>
-                </button>
-              ) : null}
-            </div>
-            <figcaption className="mt-4 max-w-[52ch] text-xs leading-relaxed text-foreground/45">
-              {copy.note}
-            </figcaption>
-          </figure>
-        </Reveal>
+              <p className={`${EYEBROW} tabular-nums`}>
+                {String(i + 1).padStart(2, "0")}
+              </p>
+              <h3 className="mt-2 max-w-[20ch] text-balance text-[26px] font-semibold leading-[1.1] tracking-[-0.022em] sm:text-[30px]">
+                {b.title}
+              </h3>
+              <p className="mt-2.5 max-w-[46ch] text-[16.5px] leading-[1.55] text-foreground/65">
+                {b.body}
+              </p>
+            </li>
+          ))}
+        </ol>
+
+        <figure className="mx-auto w-full max-w-[440px] lg:mx-0">
+          {/* The panel. `bg-ink` under the video so the poster's fade-in and
+              any letterbox rounding land on the film's own ground, not on
+              cream. */}
+          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-hairline bg-ink shadow-[0_1px_2px_rgba(0,0,0,0.06)] dark:border-border/60">
+            <video
+              ref={ref}
+              disablePictureInPicture
+              loop
+              muted
+              playsInline
+              aria-label={filmLabel}
+              className="h-full w-full object-cover"
+              controls={reduced}
+              poster={FILM_POSTER}
+              preload="none"
+              src={FILM_SRC}
+            />
+            {blocked ? (
+              <button
+                aria-label={playLabel}
+                className="absolute inset-0 flex items-center justify-center bg-black/20"
+                type="button"
+                onClick={() => ref.current?.play()}
+              >
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-ink shadow-lg">
+                  <svg
+                    aria-hidden
+                    className="ml-1 h-6 w-6"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </span>
+              </button>
+            ) : null}
+          </div>
+          <figcaption className={`mt-4 max-w-[52ch] ${CAPTION}`}>
+            {copy.note}
+          </figcaption>
+        </figure>
       </div>
     </section>
   );

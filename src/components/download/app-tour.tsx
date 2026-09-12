@@ -29,9 +29,13 @@
 import { useState, type ReactNode, type UIEvent } from "react";
 
 import { DeviceFrame } from "./device-frame";
-import { Reveal } from "./reveal";
 import { SectionHeader } from "./section-header";
 
+import {
+  EYEBROW,
+  EYEBROW_QUIET,
+  PANEL,
+} from "@/components/how-it-works/shared";
 import { dealsForMarket } from "@/components/market/hero-deal-data";
 import {
   HeroNotificationStack,
@@ -57,7 +61,7 @@ export interface TourBeat {
   body: string;
 }
 
-/** The tinted well every beat's visual stands in.
+/** The hairline well every beat's visual stands in.
  *
  *  It started as the alert beat's own stage — a notification floating in a
  *  phone-tall empty box read as a layout error — while the handsets sat
@@ -65,10 +69,13 @@ export interface TourBeat {
  *  exception rather than a member of the set, and left the phones drifting on
  *  bare cream with nothing holding them. One stage for every beat: the screens
  *  and the alert are now the same kind of object, framed the same way, and the
- *  section reads as a sequence instead of a pile of loose screenshots. */
+ *  section reads as a sequence instead of a pile of loose screenshots.
+ *
+ *  The frame is the site's shared `PANEL`, not a borderless tint: tenet 1 asks
+ *  for a hairline edge around every visual. */
 function BeatStage({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center justify-center rounded-2xl bg-black/[0.035] p-4 dark:bg-white/[0.05] sm:p-6">
+    <div className={`flex items-center justify-center ${PANEL} p-4 sm:p-6`}>
       {children}
     </div>
   );
@@ -183,61 +190,58 @@ export function AppTour({
           const flip = i % 2 === 1;
 
           return (
-            <Reveal key={b.slot}>
-              <div
-                className={`grid items-center gap-16 border-t border-hairline py-14 dark:border-border/50 ${
-                  flip
-                    ? "lg:grid-cols-[380px_minmax(0,1fr)]"
-                    : "lg:grid-cols-[minmax(0,1fr)_380px]"
-                }`}
-              >
-                {/* Copy. `order` rather than two branches of markup: the DOM
-                    order stays narrative, so a screen reader and the tab order
-                    still run beat-by-beat regardless of which side the screen
-                    is painted on. */}
-                <div className={flip ? "lg:order-2" : "lg:order-1"}>
-                  {/* The rail: a hairline down the copy with the timestamp
-                      sitting on it, dot and all. */}
-                  <div className="border-l border-hairline pl-8 dark:border-border/60">
-                    <div className="relative flex items-center gap-3">
-                      <span
-                        aria-hidden
-                        className="absolute -left-[calc(2rem+4.5px)] h-[9px] w-[9px] rounded-full bg-brand-brown dark:bg-brand-tan"
-                      />
-                      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] tabular-nums text-brand-brown dark:text-brand-tan">
-                        {b.timestamp}
-                      </span>
-                      <span
-                        aria-hidden
-                        className="h-px w-6 bg-hairline dark:bg-border/60"
-                      />
-                      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/40">
-                        {b.kicker}
-                      </span>
-                    </div>
-
-                    {/* The beat's claim is the thing worth reading on this
-                        band — sized to lead it rather than to sit level with
-                        the body copy under it. */}
-                    <h3 className="mt-6 max-w-[18ch] text-balance text-[42px] font-semibold leading-[1.04] tracking-[-0.028em] xl:text-[46px]">
-                      {b.title}
-                    </h3>
-                    <p className="mt-5 max-w-[46ch] text-[17px] leading-[1.6] text-foreground/65">
-                      {b.body}
-                    </p>
+            <div
+              key={b.slot}
+              className={`grid items-center gap-16 border-t border-hairline py-14 dark:border-border/50 ${
+                flip
+                  ? "lg:grid-cols-[380px_minmax(0,1fr)]"
+                  : "lg:grid-cols-[minmax(0,1fr)_380px]"
+              }`}
+            >
+              {/* Copy. `order` rather than two branches of markup: the DOM
+                  order stays narrative, so a screen reader and the tab order
+                  still run beat-by-beat regardless of which side the screen is
+                  painted on. */}
+              <div className={flip ? "lg:order-2" : "lg:order-1"}>
+                {/* The rail: a hairline down the copy with the timestamp
+                    sitting on it, dot and all. */}
+                <div className="border-l border-hairline pl-8 dark:border-border/60">
+                  <div className="relative flex items-center gap-3">
+                    <span
+                      aria-hidden
+                      className="absolute -left-[calc(2rem+4.5px)] h-[9px] w-[9px] rounded-full bg-brand-brown dark:bg-brand-tan"
+                    />
+                    <span className={`${EYEBROW} tabular-nums`}>
+                      {b.timestamp}
+                    </span>
+                    <span
+                      aria-hidden
+                      className="h-px w-6 bg-hairline dark:bg-border/60"
+                    />
+                    <span className={EYEBROW_QUIET}>{b.kicker}</span>
                   </div>
-                </div>
 
-                <div className={flip ? "lg:order-1" : "lg:order-2"}>
-                  <BeatVisual
-                    beat={b}
-                    marketId={marketId}
-                    platform={platform}
-                    tick={tick}
-                  />
+                  {/* The beat's claim is the thing worth reading on this
+                      band — sized to lead it rather than to sit level with the
+                      body copy under it. */}
+                  <h3 className="mt-6 max-w-[18ch] text-balance text-[42px] font-semibold leading-[1.04] tracking-[-0.028em] xl:text-[46px]">
+                    {b.title}
+                  </h3>
+                  <p className="mt-5 max-w-[46ch] text-[17px] leading-[1.6] text-foreground/65">
+                    {b.body}
+                  </p>
                 </div>
               </div>
-            </Reveal>
+
+              <div className={flip ? "lg:order-1" : "lg:order-2"}>
+                <BeatVisual
+                  beat={b}
+                  marketId={marketId}
+                  platform={platform}
+                  tick={tick}
+                />
+              </div>
+            </div>
           );
         })}
       </div>
@@ -355,13 +359,13 @@ function MobileTour({
               shotWidth={SHOT_W}
               tick={tick}
             />
-            <p className="mt-5 flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
+            <p className={`mt-5 flex items-center gap-2.5 ${EYEBROW}`}>
               {b.timestamp}
               <span
                 aria-hidden
                 className="h-px w-5 bg-hairline dark:bg-border/60"
               />
-              <span className="text-foreground/40">{b.kicker}</span>
+              <span className="text-foreground/45">{b.kicker}</span>
             </p>
             <h3 className="mt-2 text-balance text-[22px] font-semibold leading-[1.15] tracking-[-0.02em]">
               {b.title}
@@ -376,7 +380,7 @@ function MobileTour({
 
       <div
         aria-hidden
-        className="mt-5 flex items-center gap-3 font-mono text-[11px] font-semibold tracking-[0.16em] tabular-nums text-foreground/40"
+        className={`mt-5 flex items-center gap-3 ${EYEBROW_QUIET} tabular-nums`}
       >
         <span>
           {String(active + 1).padStart(2, "0")} /{" "}
