@@ -28,7 +28,7 @@ import type { ReactNode } from "react";
 
 import { CheckIcon } from "@heroicons/react/20/solid";
 
-import { useDealRadar } from "./hero-deal-radar";
+import { useDealRadar, type DealRadar } from "./hero-deal-radar";
 import { HeroNotificationStack } from "./hero-notification-stack";
 import { HeroOutcomeBar, HeroOutcomeLine } from "./hero-outcome-line";
 import { HeroPriceChart } from "./hero-price-chart";
@@ -285,6 +285,91 @@ function NotificationPing({ tick }: { tick: number }) {
       <span className="hero-ping-ring" />
       <span className="hero-ping-ring hero-ping-ring-2" />
     </span>
+  );
+}
+
+/** The demo half of the hero card: the alert landing, the price the
+ *  director bought into drawing itself, and the outcome stamping in on the
+ *  bar beneath — one clock, one story per cycle. Exported because the
+ *  download landing page is the same exhibit with a different claim beside
+ *  it; the card CSS it relies on ships with `HeroLiveGradient`, which every
+ *  caller renders first.
+ *
+ *  Alert on top, chart beneath — stacked, not side by side. Side by side gave
+ *  the chart a portrait box and left the alert floating in a half-empty
+ *  column beside it. Stacked, the chart gets the landscape aspect a price
+ *  series wants and the alert sits at a believable notification width.
+ *
+ *  The alert is put AWAY while the next price draws, rather than being
+ *  replaced with a placeholder. Two earlier passes tried standing something in
+ *  for it — the rims of the stack as a "closed pile" — and a contentless dark
+ *  slab in a hero panel reads as a skeleton loader, not as notifications
+ *  waiting. An empty half beside a drawing chart reads as what it is: the
+ *  alert hasn't happened yet. It also makes the landing land. The stack stays
+ *  MOUNTED at zero opacity so the front card is still measured and nothing
+ *  reflows when it comes back. */
+export function HeroShowcaseDemo({ radar }: { radar: DealRadar }) {
+  return (
+    <div className="hero-card-demo">
+      <div
+        className={`hero-alert-col relative shrink-0 transition-opacity duration-500 ${
+          radar.pending ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        {radar.landed && <NotificationPing tick={radar.tick} />}
+        <HeroNotificationStack
+          deals={radar.deals}
+          tick={Math.max(radar.tick, 0)}
+        />
+      </div>
+      {/* Positioned and lifted: the arrival ripple lives in the alert column
+          above, which is a positioned element, so by default its rings
+          painted over this card. The chart is the thing being read — the
+          ripple washes behind it. */}
+      <div className="hero-chart-col relative z-10">
+        <HeroPriceChart
+          key={radar.cycle}
+          deal={radar.deals[radar.chartIndex]}
+        />
+      </div>
+      {/* The payoff, full width under the chart: keyed with it so the pair
+          re-mount together and the bar stamps in the moment the continuation
+          finishes drawing. */}
+      <div className="relative z-10">
+        <HeroOutcomeBar
+          key={radar.cycle}
+          deal={radar.deals[radar.chartIndex]}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** The single-column story, for phones and for any hero too narrow for the
+ *  card: the alert, then the outcome as a line of text beneath it, landing
+ *  on the same clock. No chart. */
+export function HeroShowcaseCompact({ radar }: { radar: DealRadar }) {
+  return (
+    <div className="relative w-full max-w-[400px]">
+      {radar.landed && <NotificationPing tick={radar.tick} />}
+      <div
+        className={`relative transition-opacity duration-500 ${
+          radar.pending ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <HeroNotificationStack
+          deals={radar.deals}
+          tick={Math.max(radar.tick, 0)}
+        />
+        {radar.landed && (
+          <HeroOutcomeLine
+            className="mt-3"
+            deal={radar.deals[radar.activeIndex]}
+            tick={radar.tick}
+          />
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -572,54 +657,7 @@ export function MarketHero({
                     {ctaRowDesktop}
                   </div>
                 </div>
-                <div className="hero-card-demo">
-                  {/* Alert on top, chart beneath — stacked, not side by side.
-                      Side by side gave the chart a portrait box and left the
-                      alert floating in a half-empty column beside it. Stacked,
-                      the chart gets the landscape aspect a price series wants
-                      and the alert sits at a believable notification width.
-
-                      The alert is put AWAY while the next price draws, rather
-                      than being replaced with a placeholder. Two earlier passes
-                      tried standing something in for it — the rims of the stack
-                      as a "closed pile" — and a contentless dark slab in a hero
-                      panel reads as a skeleton loader, not as notifications
-                      waiting. An empty half beside a drawing chart reads as
-                      what it is: the alert hasn't happened yet. It also makes
-                      the landing land. The stack stays MOUNTED at zero opacity
-                      so the front card is still measured and nothing reflows
-                      when it comes back. */}
-                  <div
-                    className={`hero-alert-col relative shrink-0 transition-opacity duration-500 ${
-                      radar.pending ? "opacity-0" : "opacity-100"
-                    }`}
-                  >
-                    {radar.landed && <NotificationPing tick={radar.tick} />}
-                    <HeroNotificationStack
-                      deals={radar.deals}
-                      tick={Math.max(radar.tick, 0)}
-                    />
-                  </div>
-                  {/* Positioned and lifted: the arrival ripple lives in the
-                      alert column above, which is a positioned element, so by
-                      default its rings painted over this card. The chart is the
-                      thing being read — the ripple washes behind it. */}
-                  <div className="hero-chart-col relative z-10">
-                    <HeroPriceChart
-                      key={radar.cycle}
-                      deal={radar.deals[radar.chartIndex]}
-                    />
-                  </div>
-                  {/* The payoff, full width under the chart: keyed with it
-                      so the pair re-mount together and the bar stamps in
-                      the moment the continuation finishes drawing. */}
-                  <div className="relative z-10">
-                    <HeroOutcomeBar
-                      key={radar.cycle}
-                      deal={radar.deals[radar.chartIndex]}
-                    />
-                  </div>
-                </div>
+                <HeroShowcaseDemo radar={radar} />
               </div>
             </div>
 
@@ -637,26 +675,7 @@ export function MarketHero({
               {/* No logo on mobile — the stack is centred on its own. The cap
                   is above a phone's content width, so the card runs the full
                   column and only bounds itself on a tablet. */}
-              <div className="relative w-full max-w-[400px]">
-                {radar.landed && <NotificationPing tick={radar.tick} />}
-                <div
-                  className={`relative transition-opacity duration-500 ${
-                    radar.pending ? "opacity-0" : "opacity-100"
-                  }`}
-                >
-                  <HeroNotificationStack
-                    deals={radar.deals}
-                    tick={Math.max(radar.tick, 0)}
-                  />
-                  {radar.landed && (
-                    <HeroOutcomeLine
-                      className="mt-3"
-                      deal={radar.deals[radar.activeIndex]}
-                      tick={radar.tick}
-                    />
-                  )}
-                </div>
-              </div>
+              <HeroShowcaseCompact radar={radar} />
               {headlineBlock}
               <div className="hidden md:block">
                 <StoreButtons

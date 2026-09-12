@@ -1,40 +1,43 @@
-/** Landing-page hero — the market hero's twin.
+/** Landing-page hero — the market hero's card, with the landing page's claim.
  *
- *  Two columns: the claim on the left, the live notification stack on the
- *  right, over the tick-synced `HeroLiveGradient`. It is deliberately the
- *  same object as `market/market-hero.tsx` so arriving here from a market
- *  page feels like the same room.
+ *  ONE glass card split by a hairline: the claim on the left, the
+ *  demonstration on the right — the alert landing, the price the director
+ *  bought into drawing itself, the outcome stamping in on the bar beneath.
+ *  It is `market/market-hero.tsx`'s exhibit exactly (`HeroShowcaseDemo`, the
+ *  same `.hero-card` sheet), so arriving here from a market page is the same
+ *  room, and the two halves read as one instrument: here's the claim, here's
+ *  the proof. A bare stack beside the copy — the pass before this one — put
+ *  a 460px alert in a half-page of empty cream and undersold both.
  *
- *  NOTHING IS WRAPPED AROUND THE STACK. It had a handset, then a static app
- *  screen behind it, then a bordered tonal panel with two mobile edge
- *  dissolves and a 7s float — three passes, all rejected on the same
- *  argument: the one genuinely live element on the page ends up reading as
- *  decoration inside a frame. Alone at full column width it reads as the
- *  product working. Screens keep their job in the scroll tour below.
+ *  What differs from the market hero is only what's in the message half:
+ *  the page's live figures sit under the standfirst as a dl in the boards'
+ *  `StageFigures` form (light tokens, height reserved while the feed is in
+ *  flight), and the CTA is the route's store rather than the device's.
  *
- *  Motion: the gradient, and only the gradient. It relocates on each advance
- *  of the radar clock, so the header's light moves when an alert lands — the
- *  one sanctioned atmosphere, because it is the stack's own clock made
- *  visible rather than a perpetual bob on a timer of its own
- *  (investigations/2026-08-30-design-language.md, tenet 4).
+ *  Below `xl` — this page carries the fixed install rail, so the card has
+ *  room only from there — it is the market hero's compact story: the alert
+ *  with the outcome as a line of text beneath it, then the centred claim.
  *
- *  The figures live IN the message column as a dl, in the `StageFigures`
- *  form the boards use (mono key over a 26px figure) with light tokens, and
- *  they reserve their height while the feed is in flight. They used to be
- *  three cards under the hero that appeared from nothing when the fetch
- *  landed, which both jumped the page and cost a phone ~450px above the
- *  fold (static-page rules 2 and 6).
+ *  Motion: the gradient and the demo, both on the radar clock. Nothing on a
+ *  timer of its own (investigations/2026-08-30-design-language.md, tenet 4).
  */
 import type { ReactNode } from "react";
+import type { AppPlatform } from "@/lib/app-screenshots";
 
-import { StoreBadgeImg } from "@/components/app-store-badge";
-import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
+import {
+  BUTTON_FILLED,
+  BUTTON_GHOST,
+  BUTTON_RADIUS,
+} from "@/components/button";
 import { CAPTION, EYEBROW } from "@/components/how-it-works/shared";
 import { useDealRadar } from "@/components/market/hero-deal-radar";
-import { HeroNotificationStack } from "@/components/market/hero-notification-stack";
-import { HeroLiveGradient } from "@/components/market/market-hero";
+import {
+  HeroLiveGradient,
+  HeroShowcaseCompact,
+  HeroShowcaseDemo,
+} from "@/components/market/market-hero";
 import { Skeleton } from "@/components/skeleton";
-import { STORE_LABEL, type AppPlatform } from "@/lib/app-screenshots";
+import { StoreButtons } from "@/components/store-buttons";
 import { useDownloadCopy } from "@/lib/download/copy";
 
 /** One figure the page states about its own feed: a short mono key, the
@@ -53,7 +56,7 @@ export interface HeroFigure {
  *  Centred under the claim on a phone, left-set from `lg` where the copy is.
  */
 const DL =
-  "mt-7 flex flex-wrap justify-center gap-x-10 gap-y-5 lg:justify-start lg:gap-x-12";
+  "mt-6 flex flex-wrap justify-center gap-x-9 gap-y-4 xl:justify-start xl:gap-x-10";
 const DT =
   "font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/45";
 const DD =
@@ -115,7 +118,7 @@ function HeroFigures({
       </dl>
       {/* Provenance under the figures it belongs to — it was a stray line
           under three cards before. */}
-      <p className={`mt-4 ${CAPTION}`}>{sourceLine}</p>
+      <p className={`mt-3 ${CAPTION}`}>{sourceLine}</p>
     </>
   );
 }
@@ -156,91 +159,98 @@ export function DownloadHero({
   const radar = useDealRadar(marketId, true);
   const t = useDownloadCopy();
 
+  // The message half. One node, mounted in the card from `xl` and in the
+  // compact column below it — the two layouts differ in where it sits, not
+  // in what it says.
+  const message = (
+    <div className="flex max-w-[560px] flex-col text-center xl:text-left">
+      {/* The trial was a chip here. As the eyebrow it carries the same copy
+          in the page's one eyebrow species, and stops the hero opening on a
+          pill nothing else on the page wears. */}
+      <p className={EYEBROW}>{t.trialChip(trialDays)}</p>
+
+      {/* A step under the market hero's 64px: this page's claim is a full
+          sentence rather than four words, and inside a card half it has to
+          hold to four lines. */}
+      <h1 className="mx-auto mt-4 text-balance text-[34px] font-semibold leading-[1.04] tracking-[-0.028em] sm:text-[40px] xl:mx-0 xl:text-[46px]">
+        {headline}
+      </h1>
+      <p className="mx-auto mt-4 max-w-[460px] text-balance text-[16px] leading-relaxed text-foreground/65 xl:mx-0 xl:text-[17px]">
+        {sub}
+      </p>
+
+      <HeroFigures figures={figures} lang={t.lang} sourceLine={sourceLine} />
+
+      <div className="mt-7 flex flex-col items-center gap-3 xl:items-start">
+        {/* Below `md` the layout's floating install bar is on screen, so a
+            button here is the same tap target twice — hidden from `sm` down.
+            The "not on this store yet" block is NOT hidden: the floating bar
+            falls back to a different app, and that needs explaining. The
+            button is the market hero's filled primary, sized to its content. */}
+        {storeHref ? (
+          <StoreButtons
+            buttonClassName={`inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
+            className="hidden items-center md:flex xl:items-start"
+            gaEvent="cta_download_lp"
+            gaLabel={`${gaLabel} hero`}
+            marketId={marketId}
+            platform={platform}
+          />
+        ) : (
+          unavailableSlot
+        )}
+
+        {/* The language switch. Deliberately a quiet text link under the CTA
+            rather than a navbar control: it exists so a Hong Kong reader who
+            lands on the English page (an ad, a shared link) can find their
+            own, and so the two editions declare each other — but it must
+            never compete with the install button above it. `hreflang` and
+            `lang` so a crawler reads it as an alternate and a screen reader
+            switches voice for the label, which is written in the language it
+            links to. */}
+        {altLocale ? (
+          <a
+            className="mt-1 text-sm font-medium text-foreground/50 underline underline-offset-4 transition-colors hover:text-foreground/80"
+            data-ga-event="cta_download_locale"
+            data-ga-label={`${gaLabel} hero · ${altLocale.label}`}
+            href={altLocale.href}
+            hrefLang={altLocale.lang}
+            lang={altLocale.lang}
+          >
+            {altLocale.label}
+          </a>
+        ) : null}
+      </div>
+    </div>
+  );
+
   return (
-    <header className="relative flex min-h-[62svh] flex-col lg:min-h-[600px]">
+    <header className="relative flex min-h-[58svh] flex-col xl:min-h-[560px]">
       {/* The header's only atmosphere, and its movement is the notification
-          clock made visible. Full-bleed and masked at both edges by its own
-          sheet, so it never presents a seam against the page — which is why
-          there is no panel and no dissolve layer here any more. */}
+          clock made visible. It also carries the `.hero-card` sheet the card
+          below is drawn with. */}
       <HeroLiveGradient tick={radar.tick} />
 
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 items-center gap-10 px-4 py-8 md:px-10 md:py-14 lg:grid-cols-[1fr_460px] lg:gap-14">
-        {/* Copy is first in the DOM at every width — a screen reader and the tab
-            order should meet the claim before the evidence for it — but on
-            mobile the alert is painted above it (`order`). The stack is only
-            ~200px tall, so unlike the full handset this column used to hold it
-            doesn't push the headline below the fold; it lands as the first
-            thing on screen, which is the one element that's actually live. */}
-        <div className="order-2 text-center lg:order-1 lg:text-left">
-          {/* The trial was a chip here. As the eyebrow it carries the same
-              copy in the page's one eyebrow species, and stops the hero
-              opening on a pill nothing else on the page wears. */}
-          <p className={EYEBROW}>{t.trialChip(trialDays)}</p>
-
-          <h1 className="mx-auto mt-5 max-w-[560px] text-balance text-[34px] font-semibold leading-[1.03] tracking-[-0.028em] lg:mx-0 lg:text-[58px]">
-            {headline}
-          </h1>
-          <p className="mx-auto mt-5 max-w-[460px] text-balance text-base leading-relaxed text-foreground/65 lg:mx-0 lg:text-lg">
-            {sub}
-          </p>
-
-          <HeroFigures
-            figures={figures}
-            lang={t.lang}
-            sourceLine={sourceLine}
-          />
-
-          <div className="mt-8 flex flex-col items-center gap-3 lg:items-start">
-            {/* Below `md` the layout's floating install bar is on screen, so a
-                badge here is the same tap target twice — hidden from `sm` down.
-                The "not on this store yet" block is NOT hidden: the floating
-                bar falls back to a different app, and that needs explaining. */}
-            {storeHref ? (
-              <a
-                aria-label={t.getOnStore(STORE_LABEL[platform])}
-                className="hidden md:inline-block"
-                data-ga-event="cta_download_lp"
-                data-ga-label={`${gaLabel} hero · ${platform}`}
-                href={storeHref}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                <StoreBadgeImg size="lg" store={platform} />
-              </a>
-            ) : (
-              unavailableSlot
-            )}
-
-            {/* The language switch. Deliberately a quiet text link under the
-                CTA rather than a navbar control: it exists so a Hong Kong
-                reader who lands on the English page (an ad, a shared link) can
-                find their own, and so the two editions declare each other —
-                but it must never compete with the install button above it.
-                `hreflang` and `lang` so a crawler reads it as an alternate and
-                a screen reader switches voice for the label, which is written
-                in the language it links to. */}
-            {altLocale ? (
-              <a
-                className="mt-1 text-sm font-medium text-foreground/50 underline underline-offset-4 transition-colors hover:text-foreground/80"
-                data-ga-event="cta_download_locale"
-                data-ga-label={`${gaLabel} hero · ${altLocale.label}`}
-                href={altLocale.href}
-                hrefLang={altLocale.lang}
-                lang={altLocale.lang}
-              >
-                {altLocale.label}
-              </a>
-            ) : null}
+      <div className="relative z-10 flex flex-1 flex-col px-4 py-6 md:px-10 md:py-14">
+        {/* The card, from `xl`. This page reserves the 320px install rail, so
+            below that the card would squeeze the claim to a column; the
+            market hero makes the same call with its news rail. Sized by
+            CONTAINER width inside (`.hero-showcase`), so the chart drops out
+            before it cramps. */}
+        <div className="hero-showcase m-auto hidden w-full max-w-6xl xl:flex">
+          <div className="hero-card">
+            <div className="hero-card-msg">{message}</div>
+            <HeroShowcaseDemo radar={radar} />
           </div>
         </div>
 
-        {/* The live alert stack, bare. No handset, no screenshot, no panel,
-            no float — see the file header for the three passes that
-            established that. It leads on mobile (`order-1`) and runs the
-            market hero's stack width on desktop (460px, the widest a
-            notification reads as a banner rather than a toolbar). */}
-        <div className="order-1 mx-auto w-full max-w-[360px] sm:max-w-[420px] lg:order-2 lg:max-w-none">
-          <HeroNotificationStack deals={radar.deals} tick={radar.tick} />
+        {/* Single column below `xl`: the story on top — the alert, then the
+            outcome as a line under it — and the claim beneath. Copy is second
+            in paint order but the h1 is still the first heading in the
+            document; the stack is what's live, so it leads the eye. */}
+        <div className="m-auto flex w-full flex-col items-center gap-7 xl:hidden">
+          <HeroShowcaseCompact radar={radar} />
+          {message}
         </div>
       </div>
     </header>
