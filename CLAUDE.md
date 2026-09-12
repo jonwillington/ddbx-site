@@ -22,6 +22,14 @@ Cloned alongside this one in the same parent dir:
 
 See `~/CLAUDE.md` for the system-wide map.
 
+## Working convention: "I'll make a list" vs "build"
+
+When Jon says "I will make a list" (or similar), he'll add points one
+message at a time — **just record them** in a running numbered list, no
+research or implementation. When he says **"build"**, do the research,
+join the recorded points together, and deliver. Full rule in
+[`~/CLAUDE.md`](../CLAUDE.md) ("Working convention").
+
 ## Editorial house style source
 
 Canonical house-style writing rules are defined in
