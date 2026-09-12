@@ -32,3 +32,6 @@ dist-ssr
 pnpm-lock.yaml
 yarn.lock
 bun.lockb
+# Master cuts of the brand films. The web-weight encodes live in public/film/
+# (see src/components/download/story-film.tsx); the masters are too heavy to ship.
+film-src/

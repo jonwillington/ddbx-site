@@ -36,6 +36,7 @@
  */
 import type { TourBeat } from "@/components/download/app-tour";
 import type { FaqItem } from "@/components/download/download-faq";
+import type { FilmCopy } from "@/components/download/story-film";
 import type { AppPlatform } from "@/lib/app-screenshots";
 import type { MarketPricing } from "@/lib/pricing";
 import type { ReactNode } from "react";
@@ -105,6 +106,10 @@ export interface LandingCopy {
   tourHeading: string;
   tourSub: string;
   beats: TourBeat[];
+  /** The thirty-second film — see `StoryFilm`. The beat titles are the
+   *  captions burned into the film, so they stay in English on every locale;
+   *  the bodies and the note are the page's own. */
+  film: FilmCopy;
   /** The full contents of the subscription, listed under the price. */
   benefits: string[];
   sourceLine: string;
@@ -140,6 +145,10 @@ export interface ChromeCopy {
   legendAfter: string;
   pricesAsOf: (date: string) => string;
   viewAnalysis: string;
+  // Story film
+  filmKicker: string;
+  filmLabel: string;
+  playFilm: string;
   // App tour
   tourKicker: string;
   beatOf: (index: number, total: number) => string;
@@ -215,6 +224,10 @@ export const EN_CHROME: ChromeCopy = {
   legendAfter: "After the buy",
   pricesAsOf: (date) => `Prices as of ${date}`,
   viewAnalysis: "View analysis",
+  filmKicker: "The film",
+  filmLabel:
+    "ddbx in thirty seconds: a share falls, two more directors buy, the app shows what happened next",
+  playFilm: "Play the film",
   tourKicker: "The app",
   beatOf: (i, total) => `Beat ${i} of ${total}`,
   screenAlt: (slot, platform) =>
@@ -345,6 +358,9 @@ export const ZH_HK_CHROME: ChromeCopy = {
   legendAfter: "買入後",
   pricesAsOf: (date) => `股價截至 ${date}`,
   viewAnalysis: "查看分析",
+  filmKicker: "短片",
+  filmLabel: "三十秒認識 ddbx：股價下跌，再有兩位董事買入，App 展示之後的走勢",
+  playFilm: "播放短片",
   tourKicker: "應用程式",
   beatOf: (i, total) => `第 ${i} 節，共 ${total} 節`,
   screenAlt: (slot, platform) =>
@@ -489,6 +505,25 @@ const EN_UK: LandingCopy = {
   tourHeading: "One filing, followed.",
   tourSub:
     "A director buys. Here is everything that happens next, from the second it hits the wire to what the shares had done months later.",
+  film: {
+    heading: "What a director buy looks like.",
+    sub: "A share near its 52-week low. Two more directors buying. Thirty seconds, no sound, on why ddbx exists.",
+    beats: [
+      {
+        title: "Near a 52-week low.",
+        body: "The share price has been falling for weeks, and most people have stopped looking.",
+      },
+      {
+        title: "Two more directors buy.",
+        body: "Then the people who know the business best put their own money into it.",
+      },
+      {
+        title: "Is this a story to follow?",
+        body: "ddbx tells you the day it files, and shows you what the shares did next.",
+      },
+    ],
+    note: "The company and the figures in the film are invented to show how the app works. Nothing in it is a forecast or a recommendation.",
+  },
   beats: [
     {
       slot: "alert",
@@ -588,6 +623,25 @@ const EN_US: LandingCopy = {
   tourHeading: "One filing, followed.",
   tourSub:
     "A director buys. Here is everything that happens next, from the second it hits the wire to what the shares had done months later.",
+  film: {
+    heading: "What an insider buy looks like.",
+    sub: "A share near its 52-week low. Two more insiders buying. Thirty seconds, no sound, on why ddbx exists.",
+    beats: [
+      {
+        title: "Near a 52-week low.",
+        body: "The share price has been falling for weeks, and most people have stopped looking.",
+      },
+      {
+        title: "Two more directors buy.",
+        body: "Then the people who know the business best put their own money into it. In the US that is a Form 4, and it works the same way.",
+      },
+      {
+        title: "Is this a story to follow?",
+        body: "ddbx tells you the day it files, and shows you what the shares did next.",
+      },
+    ],
+    note: "The company and the figures in the film are invented to show how the app works. Nothing in it is a forecast or a recommendation.",
+  },
   beats: [
     {
       slot: "alert",
@@ -682,6 +736,25 @@ const ZH_HK_UK: LandingCopy = {
   tourHeading: "一宗披露，跟到底。",
   tourSub:
     "一位董事買入。以下是接下來發生的每一件事，由消息上線那一秒，到幾個月後股價的去向。",
+  film: {
+    heading: "董事買入，是怎樣一回事。",
+    sub: "股價接近 52 週低位，再有兩位董事買入。三十秒，無聲，說明 ddbx 為何存在。",
+    beats: [
+      {
+        title: "Near a 52-week low.",
+        body: "股價已連跌數週，大多數人早已不再理會。",
+      },
+      {
+        title: "Two more directors buy.",
+        body: "然後，最了解這盤生意的人，拿自己的錢入市。",
+      },
+      {
+        title: "Is this a story to follow?",
+        body: "ddbx 在披露當日就通知你，並展示之後的股價走勢。",
+      },
+    ],
+    note: "短片中的公司及數字均屬虛構，只為示範 App 的運作。並非預測，亦非投資建議。",
+  },
   beats: [
     {
       slot: "alert",

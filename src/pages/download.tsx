@@ -55,6 +55,7 @@ import { QrInstall } from "@/components/download/qr-install";
 import { CountUp, Reveal } from "@/components/download/reveal";
 import { SectionHeader } from "@/components/download/section-header";
 import { StatBand } from "@/components/download/stat-band";
+import { StoryFilm } from "@/components/download/story-film";
 import { StoreButtons } from "@/components/store-buttons";
 import { FULL_BLEED } from "@/components/full-bleed";
 import DefaultLayout from "@/layouts/default";
@@ -913,15 +914,28 @@ export default function DownloadPage({
           <StatBand sourceLine={cfg.sourceLine} stats={data.stats} />
         ) : null}
 
+        {/* ---- The film ----
+             Thirty seconds of the pitch before the tour walks it beat by
+             beat. Its own numbered section, not a beat: it is the story
+             told once, whole; the tour is the same story taken apart. */}
+        <StoryFilm
+          copy={cfg.film}
+          filmLabel={t.filmLabel}
+          index={1}
+          kicker={t.filmKicker}
+          playLabel={t.playFilm}
+          total={5}
+        />
+
         <AppTour
           beats={cfg.beats}
           heading={cfg.tourHeading}
-          index={1}
+          index={2}
           kicker={t.tourKicker}
           marketId={cfg.marketId}
           platform={platform}
           sub={cfg.tourSub}
-          total={4}
+          total={5}
         />
 
         {/* ---- Winners wall ----
@@ -932,11 +946,11 @@ export default function DownloadPage({
         >
           <div className={SECTION}>
             <SectionHeader
-              index={2}
+              index={3}
               kicker={cfg.proofKicker}
               sub={cfg.winnersSub}
               title={cfg.winnersHeading}
-              total={4}
+              total={5}
             />
 
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -982,11 +996,11 @@ export default function DownloadPage({
              otherwise empty screen with a nine-item list trailing off it. */}
         <section className={SECTION}>
           <SectionHeader
-            index={3}
+            index={4}
             kicker={t.priceKicker}
             sub={t.priceSub}
             title={t.priceTitle}
-            total={4}
+            total={5}
           />
 
           <div className="mt-10 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
@@ -1017,12 +1031,12 @@ export default function DownloadPage({
           <div className={SECTION}>
             <SectionHeader
               align="center"
-              index={4}
+              index={5}
               kicker={t.getAppKicker}
               sub={cfg.finalSub(pricing.trialDays)}
               title={t.finalTitle(cfg.buyerNoun)}
               tone="dark"
-              total={4}
+              total={5}
             />
 
             <Reveal delay={120}>
