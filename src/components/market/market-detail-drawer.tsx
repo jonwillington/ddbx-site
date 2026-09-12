@@ -347,6 +347,8 @@ export function MarketDetailDrawer<W>({
                 {showLogo && (
                   <CompanyLogo
                     className={`transition-opacity duration-200 ${scrolled || gated ? "opacity-100" : "opacity-0"}`}
+                    domain={active?.logoDomain}
+                    monogramText={active?.logoMonogram}
                     size={32}
                     ticker={rawTicker}
                   />
@@ -417,7 +419,12 @@ export function MarketDetailDrawer<W>({
                       <div>
                         <div className="flex items-center gap-4">
                           {showLogo && (
-                            <CompanyLogo size={56} ticker={rawTicker} />
+                            <CompanyLogo
+                              domain={active?.logoDomain}
+                              monogramText={active?.logoMonogram}
+                              size={56}
+                              ticker={rawTicker}
+                            />
                           )}
                           <h1 className="text-3xl font-bold leading-tight tracking-tight flex-1 min-w-0">
                             {company}

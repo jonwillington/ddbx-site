@@ -736,6 +736,9 @@ export function MarketPage<W>({
   // The one-time intro strip rides on top of this day's rows — the first
   // place the badges appear without context. Skipped-only days don't count.
   const introDayKey = useMemo(() => {
+    // A market with no analysis layer has nothing for the banner to
+    // introduce — its copy promises a six-point check that never ran.
+    if (config.hideIntroBanner) return null;
     for (const m of monthBuckets) {
       for (const d of m.days) {
         if (d.suggested.length > 0) return d.key;
@@ -743,7 +746,7 @@ export function MarketPage<W>({
     }
 
     return null;
-  }, [monthBuckets]);
+  }, [monthBuckets, config.hideIntroBanner]);
 
   // Once dismissed, the intro banner hides AND the grouped panel unwraps
   // back into a plain day-group (no tint/ring/inset). Lifted here so the
@@ -1323,8 +1326,12 @@ export function MarketPage<W>({
               formatValue={
                 config.priceFormat?.formatValue ?? ((v: number) => String(v))
               }
+              locale={config.locale}
               subtitle={config.plans.subtitle}
               title={config.plans.title}
+              /* The declarations table shares the dealings table's column
+                 geometry, so it has to share the market's value width too. */
+              valueColumnClass={config.priceFormat?.valueColumnClass}
             />
           ) : null}
 
@@ -1930,8 +1937,10 @@ export function MarketPage<W>({
             formatValue={
               config.priceFormat?.formatValue ?? ((v: number) => String(v))
             }
+            locale={config.locale}
             subtitle={config.plans.subtitle}
             title={config.plans.title}
+            valueColumnClass={config.priceFormat?.valueColumnClass}
           />
         ) : null}
 

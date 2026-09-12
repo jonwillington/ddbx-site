@@ -574,7 +574,14 @@ export function MarketClusterRow<W>({
           <ChevronDownIcon
             className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           />
-          {showLogo && <CompanyLogo size={28} ticker={rawTicker} />}
+          {showLogo && (
+            <CompanyLogo
+              domain={representative.logoDomain}
+              monogramText={representative.logoMonogram}
+              size={28}
+              ticker={rawTicker}
+            />
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary shrink-0">
@@ -602,7 +609,14 @@ export function MarketClusterRow<W>({
             <ChevronDownIcon
               className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             />
-            {showLogo && <CompanyLogo size={28} ticker={rawTicker} />}
+            {showLogo && (
+              <CompanyLogo
+                domain={representative.logoDomain}
+                monogramText={representative.logoMonogram}
+                size={28}
+                ticker={rawTicker}
+              />
+            )}
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-medium truncate leading-tight">
                 {company}
@@ -1019,7 +1033,14 @@ export function MarketRow<W>({
           a noisy ~0%, so leading with it undersold every fresh day.) */}
       <div className="md:hidden px-3.5 py-2.5 flex items-center gap-2.5">
         {indent && <div aria-hidden className="w-4 shrink-0" />}
-        {showLogo && <CompanyLogo size={28} ticker={rawTicker} />}
+        {showLogo && (
+          <CompanyLogo
+            domain={dealing.logoDomain}
+            monogramText={dealing.logoMonogram}
+            size={28}
+            ticker={rawTicker}
+          />
+        )}
         <span className="flex-1 min-w-0 truncate text-[15px] font-semibold leading-tight">
           {company}
         </span>
@@ -1057,7 +1078,14 @@ export function MarketRow<W>({
         </div>
         <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
           {indent && <div aria-hidden className="w-4 shrink-0" />}
-          {showLogo && <CompanyLogo size={28} ticker={rawTicker} />}
+          {showLogo && (
+            <CompanyLogo
+              domain={dealing.logoDomain}
+              monogramText={dealing.logoMonogram}
+              size={28}
+              ticker={rawTicker}
+            />
+          )}
           <div className="flex-1 min-w-0">
             <div className="text-[13px] font-medium truncate leading-tight">
               {company}
@@ -1132,7 +1160,11 @@ export function MarketRow<W>({
         )}
         {!hiddenColumns.has("action") && (
           <div className="w-40 shrink-0 px-2 py-2.5 flex flex-col items-center justify-center gap-1">
-            {DISCRETION_ENABLED ? (
+            {/* The gate's "View analysis" call to action only where there is
+                analysis to view. An unrated row (every Korean row; UK rows
+                that never cleared triage) would otherwise promise a thesis
+                that does not exist. */}
+            {DISCRETION_ENABLED && dealing.rating ? (
               <ViewAnalysisCta />
             ) : (
               <RowActionCell dealing={dealing} />

@@ -28,12 +28,48 @@ export function domainLogoUrl(domain: string, _sizePx?: number): string {
   return `${API_BASE}/logo/domain/${encodeURIComponent(domain)}`;
 }
 
-function monogram(ticker: string): string {
+/** The fallback glyph. Three characters of the ticker works wherever the
+ *  ticker is a word — VOD, AAPL — and fails wherever it is a number: a KRX
+ *  code renders "006", which reads as a broken cell rather than a company.
+ *  Those markets pass `monogramText` (the company name) instead. */
+function monogram(ticker: string, monogramText?: string | null): string {
+  const named = monogramText?.trim();
+
+  if (named) {
+    const words = named.split(/\s+/).filter(Boolean);
+
+    // Initials of a multi-word name ("Samsung Electronics" → SE), or the
+    // opening of a single word ("Hyundai" → HYU). Hangul falls through the
+    // same path and yields its own first syllables, which is right: a reader
+    // who cannot parse the name still gets a stable, distinguishing mark.
+    //
+    // Uppercased because the ticker path always was, and a lone "Sys" in a
+    // column of DCC / STI / OCL reads as a different kind of object. Hangul
+    // is unaffected — it has no case.
+    const initials =
+      words.length > 1
+        ? words
+            .slice(0, 3)
+            .map((w) => w[0])
+            .join("")
+        : words[0].slice(0, 3);
+
+    return initials.toUpperCase();
+  }
+
   return ticker.replace(/\.L$/, "").slice(0, 3);
 }
 
 interface CompanyLogoProps {
   ticker: string;
+  /** Company website domain ("samsung.com"). When present the logo is
+   *  looked up by domain rather than ticker — the ticker provider knows
+   *  nothing about KRX codes, but DART publishes every issuer's homepage.
+   *  The monogram fallback still comes from `ticker`. */
+  domain?: string | null;
+  /** Overrides the monogram fallback with initials drawn from this text —
+   *  for markets whose ticker is a number and makes a meaningless glyph. */
+  monogramText?: string | null;
   /** Rendered diameter in px. Defaults to 40. */
   size?: number;
   className?: string;
@@ -46,11 +82,13 @@ interface CompanyLogoProps {
  */
 export function CompanyLogo({
   ticker,
+  domain,
+  monogramText,
   size = 40,
   className,
 }: CompanyLogoProps) {
   const [failed, setFailed] = useState(false);
-  const src = logoUrl(ticker, size);
+  const src = domain ? domainLogoUrl(domain, size) : logoUrl(ticker, size);
 
   useEffect(() => {
     setFailed(false);
@@ -67,7 +105,7 @@ export function CompanyLogo({
           className="font-mono font-semibold text-muted leading-none"
           style={{ fontSize: Math.max(9, Math.round(size * 0.32)) }}
         >
-          {monogram(ticker)}
+          {monogram(ticker, monogramText)}
         </span>
       ) : (
         <img

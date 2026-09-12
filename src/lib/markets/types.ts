@@ -63,6 +63,15 @@ export interface MarketDealing<W = unknown> {
   /** Optional insider avatar (member portrait for Congress). Person-grouped
    *  views anchor the group on it; falls back to initials when absent. */
   insiderPhotoUrl?: string;
+  /** Company homepage as a bare domain ("samsung.com"). When present the
+   *  logo is looked up by domain instead of by ticker — for markets whose
+   *  symbols the ticker-keyed logo provider does not know (Korea's 6-digit
+   *  KRX codes). Omit and nothing changes: the ticker path is still used. */
+  logoDomain?: string | null;
+  /** Text for the logo's monogram fallback, when the ticker would make a
+   *  poor one. "006340" says nothing; the company's initials do. Omit and
+   *  the fallback stays the first three characters of the ticker. */
+  logoMonogram?: string | null;
   /** Optional political party ("D" | "R" | "I"), for markets where the actor
    *  has one (Congress). Drives the party chip + party filter. Undefined when
    *  unknown / not applicable. */
@@ -199,6 +208,9 @@ export interface MarketPlan {
   company: string;
   insiderName: string;
   insiderRole?: string;
+  /** Company homepage as a bare domain, for logo lookup. Same field and same
+   *  reason as MarketDealing.logoDomain. */
+  logoDomain?: string | null;
   /** What the filer is to the company — "Effective controlling shareholder",
    *  "Shareholder holding 10% or more". Usually more informative than the
    *  job title, because the filing threshold selects for ownership. */
@@ -645,6 +657,11 @@ export interface MarketConfig<W = unknown> {
    *  "today" is usually empty) read better without it; today's filings, when
    *  any, just fall into the chronological month list as a normal day. */
   hideTodayHero?: boolean;
+  /** Suppress the "Worth a closer look" intro banner that wraps the first
+   *  day with rated rows. For a market with no analysis layer (Korea) the
+   *  banner's copy — a six-point check, rows grouped by rating — describes a
+   *  product the page does not ship. */
+  hideIntroBanner?: boolean;
 
   /** Default value for the top-level "Filter: Signal / All" dropdown. All four
    *  markets currently set this to "all" so the reader sees every disclosure

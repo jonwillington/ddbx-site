@@ -127,6 +127,11 @@ export interface KrPlanWire {
   stock_code: string | null;
   company: string;
   company_en: string | null;
+  /** Issuer homepage as a bare domain ("samsung.com", no scheme), from DART's
+   *  company register. The logo provider knows nothing about 6-digit KRX
+   *  codes, so this is what `CompanyLogo` resolves a Korean logo by. Null
+   *  when DART states no homepage. */
+  website: string | null;
   /** "KOSPI" | "KOSDAQ" | "KONEX". The listing board, which is the closest
    *  thing Korea has to a size tier — a 6-digit stock code tells a non-Korean
    *  reader nothing on its own. */
@@ -167,6 +172,9 @@ export interface KrDealingWire {
   stock_code: string | null;
   company: string;
   company_en: string | null;
+  /** Issuer homepage as a bare domain ("samsung.com", no scheme). See the
+   *  same field on KrPlanWire — it is how a Korean row gets a real logo. */
+  website: string | null;
   venue: string | null;
   reporter_name: string;
   reporter_name_en: string | null;

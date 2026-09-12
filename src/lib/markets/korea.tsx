@@ -22,15 +22,26 @@
 //
 // WHAT KOREA DOES NOT HAVE, and what the shell is told about it:
 //
-//   - No rating, triage or analysis layer. So: no Action column, its own FAQ
-//     rather than buildMarketFaq() (whose answers promise a thesis, a
-//     six-point score and Contrarian/Momentum tags that do not exist here),
-//     and no claim anywhere on the page that a filing has been screened.
-//   - No price coverage. /api/prices returns nothing for a 6-digit KRX code
-//     and /api/logo/ticker 404s on every one. So: enableLivePrices off,
-//     enableLogos off, and the Trend / vs KOSPI columns hidden rather than
-//     rendered as sixty em-dashes.
-//   - No Korean app, so no comment counts. Column hidden.
+//   - No rating, triage or analysis layer. So: its own FAQ rather than
+//     buildMarketFaq() (whose answers promise a thesis, a six-point score and
+//     Contrarian/Momentum tags that do not exist here), no claim anywhere on
+//     the page that a filing has been screened, and an Action column that
+//     carries a plain fact about the filing rather than a verdict on it.
+//   - No Korean app, so no comment counts. Column hidden — and the count is
+//     synthetic anyway ("N people are discussing this in the app"), so it
+//     would point at a conversation that cannot exist.
+//
+// WHAT KOREA NOW HAS, and did not when this file was written:
+//
+//   - Price coverage. /api/prices knows KRX under a VENUE SUFFIX — `.KS` for
+//     KOSPI, `.KQ` for KOSDAQ and KONEX — and the KOSPI itself as ^KS11, all
+//     stored as native won. So `ticker` is the suffixed symbol and the
+//     suffix is stripped for display; Trend and Return are live columns.
+//   - Logos by DOMAIN. The logo provider still 404s on a 6-digit stock code,
+//     but DART publishes every issuer's homepage, so a Korean row resolves
+//     its logo through `website` rather than its ticker. Rows whose filing
+//     states no homepage fall back to a monogram of the company name —
+//     "006340" would have been meaningless, "SEC" is not.
 //
 // Data: ddbx-data /api/kr-plans and /api/kr-dealings. Korea is data-side only
 // there — it is deliberately NOT in MARKETS or MARKET_CONFIG, so neither app
@@ -47,6 +58,7 @@ import type {
 
 import { Link } from "react-router-dom";
 
+import { chip } from "@/components/chip";
 import { api, type KrDealingWire, type KrPlanWire } from "@/lib/api";
 import { HOW_IT_WORKS_PATH } from "@/lib/methodology";
 
@@ -106,6 +118,25 @@ const holderStatus = (raw: string | null): string | undefined => {
   return HOLDER_STATUS[raw] ?? raw;
 };
 
+/* ─── Symbols ────────────────────────────────────────────────────────── */
+
+/** A 6-digit KRX stock code is not a symbol anything outside Korea can price.
+ *  The quote provider keys KRX on the code plus a VENUE suffix: `.KS` for the
+ *  main board, `.KQ` for KOSDAQ — and KONEX, whose few names are carried on
+ *  the KOSDAQ feed rather than one of their own.
+ *
+ *  This is the ticker the row holds, because the price and history fetches
+ *  read `dealing.ticker` verbatim. `formatTickerDisplay` puts the bare code
+ *  back for the reader, who has no use for the suffix. */
+const priceSymbol = (
+  stockCode: string | null,
+  venue: string | null,
+): string => {
+  if (!stockCode) return "";
+
+  return `${stockCode}.${venue === "KOSPI" ? "KS" : "KQ"}`;
+};
+
 /* ─── Money ──────────────────────────────────────────────────────────── */
 
 const won = new Intl.NumberFormat("en-GB", {
@@ -144,6 +175,9 @@ function toPlan(w: KrPlanWire): MarketPlan {
     id: w.rcept_no,
     ticker: w.stock_code ?? "",
     company: displayName(w.company_en, w.company),
+    // The issuer homepage, which is how a Korean logo resolves — see the
+    // header note. Null on filings where DART states none.
+    logoDomain: w.website,
     venue: w.venue,
     insiderName: displayName(w.reporter_name_en, w.reporter_name),
     insiderRole: roleLabel(null, w.position),
@@ -168,11 +202,18 @@ function toPlan(w: KrPlanWire): MarketPlan {
 }
 
 function toDealing(w: KrDealingWire): MarketDealing<KrDealingWire> {
+  const company = displayName(w.company_en, w.company);
+
   return {
     key: w.id,
     id: w.id,
-    ticker: w.stock_code ?? "",
-    company: displayName(w.company_en, w.company),
+    // Venue-suffixed, because this is what the price fetches are keyed on.
+    ticker: priceSymbol(w.stock_code, w.venue),
+    company,
+    logoDomain: w.website,
+    // A KRX code makes a nonsense monogram ("006"), so the name supplies the
+    // fallback glyph when the logo lookup comes back empty.
+    logoMonogram: company,
     insiderName: displayName(w.reporter_name_en, w.reporter_name),
     insiderRole: roleLabel(w.role, w.position),
     disclosedDate: iso(w.disclosed_date),
@@ -236,11 +277,87 @@ async function fetchDealings(): Promise<{
 
 /* ─── Config ─────────────────────────────────────────────────────────── */
 
-/** Korea ships no rating, triage or analysis layer, so a row has no action to
- *  offer beyond what the table already shows. The column itself is hidden via
- *  `hiddenColumns`; this stays as the slot the shell requires. */
-function KrRowActionCell() {
-  return null;
+/** Listing board, beside the insider line. A 6-digit code carries no tier the
+ *  way a `.L` or a NASDAQ symbol does, so KOSPI / KOSDAQ / KONEX is the only
+ *  thing on the row that says how large a company this is. Quiet on purpose:
+ *  it is an attribute of the issuer, not a judgement on the filing. */
+function KrRowNameBadge({
+  dealing,
+}: {
+  dealing: MarketDealing<KrDealingWire>;
+}) {
+  const venue = dealing.raw.venue;
+
+  if (!venue) return null;
+
+  return (
+    <span
+      className={`${chip()} shrink-0 bg-black/[0.04] text-muted dark:bg-white/[0.06]`}
+    >
+      {venue}
+    </span>
+  );
+}
+
+/** Korea ships no rating, triage or analysis layer, so this column cannot
+ *  hold a verdict the way the UK and US ones do. What it holds instead is the
+ *  one fact about a Korean purchase that the money columns cannot state: how
+ *  much of the insider's OWN position it was.
+ *
+ *  `stake_change_pct` is the purchase as a percentage of the holding they
+ *  already had — `(shares_change / shares_before) * 100`, computed in
+ *  ddbx-data's pipeline/kr/roles.ts. It is NOT percentage points of the
+ *  company, and the chip must not read as though it were: "Holding +33%"
+ *  means they added a third to what they held, and says nothing about what
+ *  fraction of the company that is.
+ *
+ *  Deliberately NOT a signal. ddbx-data refuted the hypothesis that stake
+ *  growth orders returns (it was composition, and it vanishes once drawdown
+ *  is held fixed). The chip is here because "bought 12,677 shares" means
+ *  nothing on its own, not because the number predicts anything — so it gets
+ *  the neutral tint, never the rating palette. */
+function KrRowActionCell({
+  dealing,
+}: {
+  dealing: MarketDealing<KrDealingWire>;
+}) {
+  const label = stakeChangeLabel(dealing.raw.stake_change_pct);
+
+  if (!label) return null;
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-1">
+      <span
+        className={`${chip()} bg-transparent text-[#b0a898] dark:text-foreground/45`}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/** The chip's text, or null when there is nothing honest to put in it.
+ *
+ *  Three ways this is nothing: the filing states no before-holding (the
+ *  server already returns null for a zero or missing one, so there is no
+ *  division by zero to undo here); the figure is absurd, which happens when
+ *  a filer's stated prior holding is a token number and a real purchase
+ *  divides into it to give four-figure percentages; and a change too small
+ *  to round to a readable figure.
+ *
+ *  One decimal below 10% so a 3.4% addition does not render as "3%", whole
+ *  numbers above it where the decimal is noise. */
+function stakeChangeLabel(pct: number | null): string | null {
+  if (pct == null) return null;
+  const abs = Math.abs(pct);
+
+  // An insider who multiplied their holding elevenfold is nearly always a
+  // filing whose prior-holding field is wrong, not a real eleven-bagger.
+  if (abs > 1000) return null;
+  // Below this the chip would round to "+0.0%", which says less than nothing.
+  if (abs < 0.05) return null;
+
+  return `Holding ${pct > 0 ? "+" : "−"}${abs < 10 ? abs.toFixed(1) : Math.round(abs)}%`;
 }
 
 /** The filing's own record, in the reader's units.
@@ -274,11 +391,19 @@ function KrDetailBody({ dealing }: { dealing: MarketDealing<KrDealingWire> }) {
           sub={gbp ?? undefined}
           value={w.value_krw != null ? won.format(w.value_krw) : "—"}
         />
+        {/* Growth of the filer's OWN holding, not percentage points of the
+            company — the two read identically and mean entirely different
+            things, so the label says which. */}
         <DetailPair
-          label="Stake change"
+          label="Added to holding"
+          sub={
+            w.shares_before != null && w.shares_before > 0
+              ? `from ${w.shares_before.toLocaleString("en-GB")} shares`
+              : undefined
+          }
           value={
             w.stake_change_pct != null
-              ? `${w.stake_change_pct}pp`
+              ? `${w.stake_change_pct > 0 ? "+" : "−"}${Math.abs(w.stake_change_pct)}%`
               : "Not stated"
           }
         />
@@ -595,7 +720,12 @@ export const KoreaMarket: MarketConfig<KrDealingWire> = {
     formatValue: (n) => won.format(n),
     formatValueCompact: compactWon,
     quoteToValue: 1,
-    valueColumnClass: "w-28",
+    /* Won is the widest figure in the product: no minor unit, so a mid-sized
+       purchase is ten digits and three separators. ₩1,553,806,100 appears in
+       the completed feed and declarations run to ₩29,999,985,850, both of
+       which crossed the company column's hairline at w-28. The declarations
+       table reads this same value off the config, so the two stay aligned. */
+    valueColumnClass: "w-36",
   },
   // Bars are stored as native won, matching SEK. No scaling.
   normalizeLivePrice: (close_pence: number) => close_pence,
@@ -603,27 +733,39 @@ export const KoreaMarket: MarketConfig<KrDealingWire> = {
   benchmarkTicker: "^KS11",
   benchmarkLabel: "KOSPI",
 
-  /* Nothing behind these columns. /api/prices has no KRX coverage (a 6-digit
-     code returns no latest price and an empty bar series), there is no Korean
-     app so no comment counts, and there is no rating to put in an Action
-     cell. Rendered, they were four permanently empty columns out of eight. */
-  hiddenColumns: ["trend", "performance", "comments", "action"],
-  enableLivePrices: false,
-  // /api/logo/ticker 404s on every Korean stock code, so every row drew a
-  // monogram bubble reading "051". Sweden precedent.
-  enableLogos: false,
+  /* The bare 6-digit code, for the reader. The suffix is a routing detail of
+     the quote provider and means nothing to anyone looking at a filing. */
+  formatTickerDisplay: (ticker) => ticker.replace(/\.(KS|KQ)$/, ""),
+
+  /* Comments only. There is no Korean app, so the count would be a synthetic
+     nudge towards an install that cannot happen — see the header note. Trend,
+     Return and Action all carry real content now that KRX prices resolve
+     under a venue suffix. */
+  hiddenColumns: ["comments"],
+  enableLivePrices: true,
+  // By DOMAIN, not by ticker: the provider 404s on a 6-digit stock code but
+  // knows the issuer's homepage, which DART publishes. See `logoDomain`.
+  enableLogos: true,
   showLegCount: false,
 
   columnHelp: {
     disclosed:
       "The date the purchase was disclosed to DART. Korean filings often arrive days or weeks after the trade — the trade date is shown beneath it when the two differ.",
     ticker: "The KRX stock code. Six digits, not a letter symbol.",
-    company: "The company bought, and the insider who bought it.",
+    company:
+      "The company bought, the insider who bought it, and the board it trades on.",
     value:
       "Consideration as filed, in won, with an approximate sterling reading beneath it.",
+    trend:
+      "The share price over the past year, in won, marked where this purchase falls.",
+    performance:
+      "How the price has moved since, from whichever anchor the metric toggle is on — the disclosure date, or the settlement date the filing states. On the vs-market view it is that move net of the KOSPI.",
+    action:
+      "How much this purchase added to the insider's own holding. Not a rating: Korean filings are published here as filed, and nothing on this page has been screened.",
   },
 
   RowActionCell: KrRowActionCell,
+  RowNameBadge: KrRowNameBadge,
   DetailBody: KrDetailBody,
 
   views: [{ id: "signal", label: "Buys" }],
@@ -656,6 +798,12 @@ export const KoreaMarket: MarketConfig<KrDealingWire> = {
     subtitle:
       "Completed buys as filed with DART, newest disclosure first. Separate from the declarations above — these have happened.",
   },
+
+  /* The shared intro banner ("Each day we score new insider buys against a
+     six-point check") wraps the first day with rated rows. Korea has no
+     rated rows and no check, and with every row a buy the shell was
+     wrapping the first day anyway. */
+  hideIntroBanner: true,
 
   explainer: <KoreaExplainer />,
   explainerSubtitle: "Korea Exchange · DART",
