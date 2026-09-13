@@ -6,12 +6,18 @@ import App from "./App.tsx";
 import { Provider } from "./provider.tsx";
 
 import { bootstrapAnalytics } from "@/lib/cookie-consent";
+import { bootstrapSmartBanner } from "@/lib/smart-banner";
 import "@/styles/globals.css";
 
 // GA4 loads on every visit, but under Consent Mode with storage denied until
 // the banner is accepted (see lib/cookie-consent.ts). Runs before React mounts
 // so gtag is defined when DocumentTitle fires the initial page_view.
 bootstrapAnalytics();
+
+// Apple's Smart App Banner, when the trial flag is on (lib/smart-banner.ts).
+// Before React mounts for the same reason as the line above: Safari wants this
+// tag as early in the document's life as a client-rendered SPA can offer it.
+bootstrapSmartBanner();
 
 // Tells the head script in index.html that the bundle made it: the crawler
 // pre-render it hid at first paint can stay hidden. Without this mark the

@@ -134,6 +134,49 @@ Two things to know before touching them:
   (screen only, no device chrome — the bezel is CSS) and they light up with no
   code change. See `src/lib/app-screenshots.ts`.
 
+## Smart App Banner (install trial)
+
+Apple's system install bar, trialled from 2026-09-13 as an alternative to the
+floating mobile CTA, which was not converting. All logic in
+`src/lib/smart-banner.ts`; injected client-side from `src/main.tsx` before
+React mounts.
+
+**Three modes**, set by `VITE_SMART_BANNER` in `.env.production` (code default
+`off`, production currently ships `on`):
+
+- `off` — no banner.
+- `on` — banner **and** the floating bar.
+- `solo` — banner **instead of** the floating bar, for browsers that draw one
+  (`rendersSmartBanner()`: iOS Safari, excluding CriOS/FxiOS/EdgiOS and the
+  in-app WKWebViews in X/Facebook/Instagram/LinkedIn). This is the real A/B.
+  A wrong sniff here leaves a phone with **no** install CTA at all.
+
+**Toggle precedence** — same shape as discretion mode, deliberately:
+1. URL: `?banner=on|off|solo|reset` (`reset` clears; the rest stick via
+   localStorage `ddbx.smartbanner.override`)
+2. localStorage
+3. Env: `VITE_SMART_BANNER`
+
+**Things that are load-bearing:**
+
+- **The app id is derived from `APP_STORE_URLS`** (`/id(\d+)/`), never written
+  down twice — a drifted id installs the wrong market's app.
+- **No banner without a live listing.** SE/NL/KR resolve to no app id and get
+  no tag. The UK-app fallback that `storeUrlForMarketId` is allowed to make for
+  a button the visitor pressed is *not* allowed for chrome we inject.
+- **`app-argument` only on routes our AASA claims** — `/t/*` and `/us/t/*`, per
+  `public/.well-known/apple-app-site-association`. Extend `DEEP_LINKED` and the
+  AASA together or the app gets a URL it has no route for.
+- **There is no click signal.** Taps on Apple's banner never reach the page, so
+  `store_click` cannot see them. The trial is read from two GA user properties
+  set in `src/lib/cookie-consent.ts`: `smart_banner_mode` and
+  `smart_banner_shown`. Compare `cta_floating_trial` / `store_click` rates
+  between the `smart_banner_shown=yes` cohort and the rest.
+- **Client-side injection is a bet.** Safari prefers this tag at parse time.
+  If a device check shows it not rendering, the escape hatch is to emit the tag
+  from `functions/_middleware.js` — at the cost of splitting the config between
+  a Vite env file and a Cloudflare dashboard variable.
+
 ## Discretion mode (web gating)
 
 The public website intentionally shows only a sliver of the data so the iOS

@@ -23,6 +23,7 @@ import { footerGroups } from "@/lib/site-nav";
 import { FooterTrail } from "@/components/footer-trail";
 import { setRailPresent } from "@/lib/rail-presence";
 import { useFloatingCtaSuppressed } from "@/lib/floating-cta";
+import { smartBannerReplacesFloatingCta } from "@/lib/smart-banner";
 
 /** Shared styling for the floating mobile download CTA — solid pill, rendered
  *  as an `<a>` (direct App Store link) or a `<button>` (chooser fallback). */
@@ -432,6 +433,12 @@ export default function DefaultLayout({
   // A surface with its own app ask (the winners interstitial) holds the
   // floating trial button away while it is on screen — see lib/floating-cta.
   const floatingCtaSuppressed = useFloatingCtaSuppressed();
+  // …and in `solo` mode the whole bar stands down for Apple's Smart App
+  // Banner, which is the point of that mode: two install bars sandwiching a
+  // phone screen is the thing the trial is meant to avoid, not add to. Resolved
+  // once (module-level flag + a UA sniff, neither of which changes mid-session)
+  // so this can't flip between renders and animate the bar out.
+  const [bannerOwnsInstallCta] = useState(smartBannerReplacesFloatingCta);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -494,7 +501,9 @@ export default function DefaultLayout({
       // the footer's last line finished flush under the caption with nothing
       // between them, so the page never looked scrolled-to-the-end. 7rem
       // leaves a clear gap at the bottom of the scroll.
-      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
+      // …and in `solo` mode there is no bar to clear, so the reservation goes
+      // with it — otherwise every page ends in 7rem of empty ground.
+      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
     >
       {/* First focusable thing on every page. Off-screen until it takes focus,
           then it parks itself over the navbar — otherwise a keyboard visitor
@@ -719,7 +728,7 @@ export default function DefaultLayout({
        *  stays legible. Hidden from `md` up, where the footer CTA and hero
        *  suffice. */}
       <div
-        className={`pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden transition-[opacity,transform,visibility] duration-300 ease-out ${hideMobileCta ? "hidden" : ""} ${
+        className={`pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden transition-[opacity,transform,visibility] duration-300 ease-out ${hideMobileCta || bannerOwnsInstallCta ? "hidden" : ""} ${
           // Slid away, not removed: it comes back the moment the suppressing
           // surface scrolls off, and a button that pops in is worse than one
           // that returns. `invisible` so the slid-away button can't be tapped

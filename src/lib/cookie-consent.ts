@@ -30,6 +30,7 @@
 import { useEffect, useState } from "react";
 
 import { marketForPath } from "@/lib/markets/registry";
+import { SMART_BANNER_MODE, smartBannerActive } from "@/lib/smart-banner";
 
 const STORAGE_KEY = "ddbx.cookies.consent";
 const EVENT_NAME = "ddbx:cookies:change";
@@ -142,7 +143,26 @@ export function bootstrapAnalytics(): void {
       accept_incoming: true,
     },
   });
-  window.gtag("set", "user_properties", { market, host });
+  // Two properties, not one, because the Smart App Banner trial cannot be
+  // measured the way every other CTA is. Taps on Apple's banner never reach
+  // this page — no click, no event, no `store_click`. All we can do is label
+  // the session and read the trial as a difference between cohorts:
+  //   smart_banner_mode  — what the flag was set to (off/on/solo). Splits the
+  //                        whole audience, including the majority who could
+  //                        never see a banner.
+  //   smart_banner_shown — whether THIS browser is one that draws it on a
+  //                        market with a live listing. This is the cohort the
+  //                        trial is actually about; compare its store_click
+  //                        and cta_floating_trial rates against the rest.
+  // A drop in cta_floating_trial with flat or better installs is the banner
+  // working. A drop in both is the banner cannibalising a CTA we could count
+  // for one we cannot.
+  window.gtag("set", "user_properties", {
+    market,
+    host,
+    smart_banner_mode: SMART_BANNER_MODE,
+    smart_banner_shown: smartBannerActive() ? "yes" : "no",
+  });
   bootstrapClickTracking();
   // The initial page_view is fired by DocumentTitle's mount effect (gtag is
   // defined by the time React mounts, since this runs at module load), so we
