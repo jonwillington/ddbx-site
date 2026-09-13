@@ -174,7 +174,68 @@ export function bootstrapAnalytics(): void {
   script.src =
     "https://www.googletagmanager.com/gtag/js?id=" +
     encodeURIComponent(measurementId);
+  // gtag.js drains the queued dataLayer commands during its own execution, so
+  // by the time `load` fires the `config` above has run and any incoming `_gl`
+  // has been read out of the URL and into the cookie. That is the moment the
+  // parameter becomes safe to remove — see lib/linker-param.ts.
+  script.addEventListener("load", settleAnalytics);
+  // Blocked by an extension, or simply never arriving. Nothing is going to
+  // read `_gl` in that case either, so don't hold the cleanup for ever on
+  // account of a request that already failed.
+  script.addEventListener("error", settleAnalytics);
   document.head.appendChild(script);
+}
+
+// --- "gtag.js has had its turn" ------------------------------------------
+//
+// One signal, fired once per page: gtag.js loaded (or provably won't). The
+// only consumer today is the `_gl` cleanup, which must not run before the tag
+// has read the parameter and must not wait for ever if the tag never lands.
+
+const ANALYTICS_SETTLE_TIMEOUT_MS = 5000;
+
+let analyticsSettled = false;
+let analyticsFallbackTimer: number | undefined;
+let analyticsWaiters: Array<() => void> = [];
+
+function settleAnalytics(): void {
+  if (analyticsSettled) return;
+  analyticsSettled = true;
+  if (analyticsFallbackTimer !== undefined) {
+    window.clearTimeout(analyticsFallbackTimer);
+    analyticsFallbackTimer = undefined;
+  }
+
+  const waiters = analyticsWaiters;
+
+  analyticsWaiters = [];
+  for (const waiter of waiters) waiter();
+}
+
+/** Run `cb` once gtag.js has loaded and processed the queued `config` — or
+ *  once it's clear it never will. Fires synchronously if that already
+ *  happened. Returns an unsubscribe, for effects that unmount first.
+ *
+ *  The timer is armed here rather than alongside the script because
+ *  `bootstrapAnalytics` returns early when it has already run: a waiter
+ *  registering after that must still get its answer. */
+export function onAnalyticsSettled(cb: () => void): () => void {
+  if (analyticsSettled) {
+    cb();
+
+    return () => {};
+  }
+  analyticsWaiters.push(cb);
+  if (analyticsFallbackTimer === undefined && typeof window !== "undefined") {
+    analyticsFallbackTimer = window.setTimeout(
+      settleAnalytics,
+      ANALYTICS_SETTLE_TIMEOUT_MS,
+    );
+  }
+
+  return () => {
+    analyticsWaiters = analyticsWaiters.filter((waiter) => waiter !== cb);
+  };
 }
 
 /** Global delegated click tracking for GA4.

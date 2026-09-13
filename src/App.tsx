@@ -4,6 +4,7 @@ import { BetaTag } from "@/components/market/beta-tag";
 import { CookieBanner } from "@/components/cookie-banner";
 import { DealingsWindowWarmer } from "@/components/dealings-window-warmer";
 import { DocumentTitle } from "@/components/document-title";
+import { LinkerParamCleanup } from "@/components/linker-param-cleanup";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import AccountDeletionPage from "@/pages/account-deletion";
 import ApiPage from "@/pages/api";
@@ -49,6 +50,7 @@ function App() {
   return (
     <div className="relative">
       <DocumentTitle />
+      <LinkerParamCleanup />
       <ScrollToTop />
       <DealingsWindowWarmer />
       <BetaTag />

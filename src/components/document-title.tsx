@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { seoForPath } from "../../shared/seo.js";
 
 import { siteConfig } from "@/config/site";
+import { withoutLinkerParam } from "@/lib/linker-param";
 import { marketForPath } from "@/lib/markets/registry";
 
 // `window.gtag` is declared in src/lib/cookie-consent.ts; it's only defined
@@ -17,7 +18,15 @@ import { marketForPath } from "@/lib/markets/registry";
  *  edge pass is what crawlers read; this one is what a user seeing the tab
  *  change on a client-side navigation reads. One table, so they agree. */
 export function DocumentTitle() {
-  const { pathname, search, hash } = useLocation();
+  const { pathname, search: rawSearch, hash } = useLocation();
+  // Google's `_gl` is stripped before the query string is used for anything:
+  // it has no business in og:url or twitter:url, and in page_location it makes
+  // every cross-domain arrival its own row in the landing-page report, since
+  // the value is unique per session. Doing it here also means LinkerParamCleanup
+  // taking the parameter out of the URL is not a query-string change as far as
+  // this effect is concerned, so it doesn't fire a second page_view for the
+  // page we just counted. See lib/linker-param.ts.
+  const search = withoutLinkerParam(rawSearch);
 
   useEffect(() => {
     const market = marketForPath(pathname);
