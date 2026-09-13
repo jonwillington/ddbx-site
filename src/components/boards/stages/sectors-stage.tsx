@@ -6,8 +6,8 @@
  *  Eleven lanes answer both at once. In "Where the money went" each lane is a
  *  strip of dots on a log money scale, so a sector's spread is visible next to
  *  its neighbours' and the £11m purchase and the £11 purchase are both on the
- *  picture. In "Whether it worked" the same dots slide onto alpha, the lanes
- *  re-sort by their median, and each lane gains a median tick. The figure the
+ *  picture. In "Whether it worked" the same dots are on alpha, the lanes
+ *  re-sorted by their median, and each lane gains a median tick. The figure the
  *  tick is worth is stated in the gutter beside the sector's name, not over
  *  the swarm: a lane of 363 dots has no room inside it for a sentence.
  *
@@ -31,7 +31,14 @@ import type { StageContext, StageMode, StagePad } from "../stage-panel";
 import type { ReactNode } from "react";
 import type { SectorMarket } from "@/components/sector-ui";
 
-import { useEffect, useMemo } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { buyAlpha } from "../../../../shared/leaderboard.js";
 import {
@@ -60,6 +67,7 @@ import {
 } from "../stage-marks";
 
 import { displayTicker } from "@/lib/company";
+import { SectorGlyphMark } from "@/components/sector-icon";
 
 type Mode = "value" | "outcome";
 
@@ -77,9 +85,28 @@ const GUTTER_FROM = 640;
 const LABEL_STRIP = 14;
 
 /** Wide enough for "Consumer Discretionary" — the longest published sector
- *  name — set at 13px semibold, plus the 14 the labels are inset by. A gutter
- *  that fits ten of the eleven names is a clipped name, not a narrow gutter. */
-const GUTTER = 190;
+ *  name — set at 13px semibold, plus the sector's glyph and the gap before it,
+ *  plus the 14 the labels are inset by. A gutter that fits ten of the eleven
+ *  names is a clipped name, not a narrow gutter. */
+const GUTTER = 208;
+
+/** The move between the two arrangements is a dissolve, not a journey.
+ *
+ *  It used to be the journey: every dot travelling 900ms onto the other scale
+ *  while the lanes re-sorted underneath them. With eleven lanes and up to 374
+ *  purchases in one of them that is not a transition anybody can follow —
+ *  nothing the reader was looking at holds still, and a thousand marks
+ *  crossing the plot reads as the page coming apart rather than as an argument
+ *  being made. So the marks fade out where they are, the layout is committed
+ *  while there is nothing on screen, and the new arrangement fades back in a
+ *  lane at a time from the top. Nothing is ever seen moving, and the re-sort
+ *  still registers, because the order the lanes arrive in is the new one. */
+const FADE_OUT = 180;
+const FADE_IN = 420;
+
+/** Per lane, top first. Eleven lanes at 26ms is 286ms of arrival on top of the
+ *  fade — enough to read as composed, short enough not to be a wait. */
+const LANE_STAGGER = 26;
 
 const PAD = (W: number): StagePad => ({
   l: W < GUTTER_FROM ? 24 : GUTTER,
@@ -402,103 +429,183 @@ function StageBody({
   locale: string;
   summary: ReturnType<typeof summarise>;
 }) {
-  const { W, H, pad, mode } = ctx;
-  const outcome = mode === "outcome";
+  const { W, H, pad, mode, reduced } = ctx;
+  // The arrangement the marks are DRAWN in, which lags the toggle by one fade
+  // out. Everything below reads `shown`; `mode` is only ever the destination.
+  const [shown, setShown] = useState<Mode>(mode);
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    if (mode === shown) return;
+    // Under reduced motion the arrangement is cut to, not faded: the panel is
+    // already placed rather than travelled, and a dissolve is still motion.
+    if (reduced) {
+      setShown(mode);
+
+      return;
+    }
+    setHidden(true);
+    const t = setTimeout(() => {
+      setShown(mode);
+      setHidden(false);
+    }, FADE_OUT + 20);
+
+    return () => clearTimeout(t);
+  }, [mode, shown, reduced]);
+
+  const outcome = shown === "outcome";
   const L = useMemo(
-    () => buildLayout(rows, buys, W, H, pad, mode, market.symbol, locale),
-    [rows, buys, W, H, pad, mode, market.symbol, locale],
+    () => buildLayout(rows, buys, W, H, pad, shown, market.symbol, locale),
+    [rows, buys, W, H, pad, shown, market.symbol, locale],
   );
   const wide = W >= GUTTER_FROM;
   const clipLabel = `${Math.round(L.clip * 100)}%`;
 
+  // Where each gutter name starts, so the sector's glyph can sit immediately
+  // to its left. Measured rather than estimated: the names run from "Energy"
+  // to "Consumer Discretionary", and a per-character guess would put the mark
+  // in a slightly different place on every lane.
+  const nameRefs = useRef(new Map<string, SVGTextElement | null>());
+  const [nameW, setNameW] = useState<Record<string, number>>({});
+  const measure = useCallback(() => {
+    setNameW((prev) => {
+      const next: Record<string, number> = {};
+      let changed = false;
+
+      nameRefs.current.forEach((el, slug) => {
+        if (!el || typeof el.getComputedTextLength !== "function") return;
+        const w = el.getComputedTextLength();
+
+        next[slug] = w;
+        if (Math.abs((prev[slug] ?? -1) - w) > 0.5) changed = true;
+      });
+
+      // Same widths, same object: a fresh record every render would re-enter
+      // this effect for ever.
+      return changed || Object.keys(next).length !== Object.keys(prev).length
+        ? next
+        : prev;
+    });
+  }, []);
+
+  // Before paint, so the glyph lands with the name rather than a frame after
+  // it.
+  useLayoutEffect(measure);
+  // A name measured before the webfont arrives is measured in the fallback,
+  // and on a page that has finished rendering nothing else would re-render to
+  // correct it.
+  useEffect(() => {
+    const fonts = document.fonts;
+
+    if (!fonts?.ready) return;
+    let live = true;
+
+    fonts.ready.then(() => {
+      if (live) measure();
+    });
+
+    return () => {
+      live = false;
+    };
+  }, [measure]);
+
+  /** The dissolve, applied per lane so the board re-assembles top-first. */
+  const dissolve = (i: number) => ({
+    opacity: hidden ? 0 : 1,
+    transition: reduced
+      ? undefined
+      : hidden
+        ? `opacity ${FADE_OUT}ms ease-in`
+        : `opacity ${FADE_IN}ms ease-out ${i * LANE_STAGGER}ms`,
+  });
+
   return (
     <>
-      {/* Money furniture. Faded rather than mounted, so the dots travel over
-          it as it arrives. */}
-      <g
-        className="transition-opacity duration-700"
-        style={{ opacity: outcome ? 0 : 1 }}
-      >
-        <StageAxis
-          plot={L.plot}
-          x={L.moneyAt}
-          xLabel="value of each purchase →"
-        />
-      </g>
+      {/* All the furniture, on the same dissolve as the lanes. The two sets
+          below no longer cross-fade against each other: the swap happens while
+          this wrapper is at zero, so a second transition inside it would only
+          slow the arrival down. */}
+      <g style={dissolve(0)}>
+        {/* Money furniture. */}
+        <g style={{ opacity: outcome ? 0 : 1 }}>
+          <StageAxis
+            plot={L.plot}
+            x={L.moneyAt}
+            xLabel="value of each purchase →"
+          />
+        </g>
 
-      {/* Outcome furniture: the level line, the two bands, and the strip for
-          the purchases that have no mark yet. */}
-      <g
-        className="transition-opacity duration-700"
-        style={{ opacity: outcome ? 1 : 0 }}
-      >
-        {/* The bands are collapsed to nothing and replaced by the two rules
+        {/* Outcome furniture: the level line, the two bands, and the strip for
+            the purchases that have no mark yet. */}
+        <g style={{ opacity: outcome ? 1 : 0 }}>
+          {/* The bands are collapsed to nothing and replaced by the two rules
             below. A tint over half the plot is a field, and the design
             language asks for the colour to be contained: here it is the dots,
             the level line and the two labels that carry the sides. */}
-        <SignedAxis
-          bands={{ from: L.plot.y0, to: L.plot.y0 }}
-          labelGutter={L.plot.y1 + 30}
-          negLabel={`${summary.behind} behind`}
-          orientation="vertical"
-          plot={L.plot}
-          // Centred over its half, so on a phone the long form runs off the
-          // panel. What it counts is the same sentence either way.
-          posLabel={
-            wide
-              ? `${summary.ahead} of ${rows.length} sector medians ahead`
-              : `${summary.ahead} of ${rows.length} ahead`
-          }
-          scale={L.xAlpha}
-          tickLabel={pctTick}
-          ticks={alphaTicks(-L.clip, L.clip)}
-        />
-        {/* One hairline under each label, the width of the side it names. */}
-        <rect
-          fill="var(--stage-neg)"
-          fillOpacity={0.55}
-          height={2}
-          width={Math.max(0, L.xAlpha(0) - L.plot.x0)}
-          x={L.plot.x0}
-          y={L.plot.y0 - 6}
-        />
-        <rect
-          fill="var(--stage-pos)"
-          fillOpacity={0.55}
-          height={2}
-          width={Math.max(0, L.plot.x1 - L.xAlpha(0))}
-          x={L.xAlpha(0)}
-          y={L.plot.y0 - 6}
-        />
-        {/* The gutter's second line changes what it counts between the two
+          <SignedAxis
+            bands={{ from: L.plot.y0, to: L.plot.y0 }}
+            labelGutter={L.plot.y1 + 30}
+            negLabel={`${summary.behind} behind`}
+            orientation="vertical"
+            plot={L.plot}
+            // Centred over its half, so on a phone the long form runs off the
+            // panel. What it counts is the same sentence either way.
+            posLabel={
+              wide
+                ? `${summary.ahead} of ${rows.length} sector medians ahead`
+                : `${summary.ahead} of ${rows.length} ahead`
+            }
+            scale={L.xAlpha}
+            tickLabel={pctTick}
+            ticks={alphaTicks(-L.clip, L.clip)}
+          />
+          {/* One hairline under each label, the width of the side it names. */}
+          <rect
+            fill="var(--stage-neg)"
+            fillOpacity={0.55}
+            height={2}
+            width={Math.max(0, L.xAlpha(0) - L.plot.x0)}
+            x={L.plot.x0}
+            y={L.plot.y0 - 6}
+          />
+          <rect
+            fill="var(--stage-pos)"
+            fillOpacity={0.55}
+            height={2}
+            width={Math.max(0, L.plot.x1 - L.xAlpha(0))}
+            x={L.xAlpha(0)}
+            y={L.plot.y0 - 6}
+          />
+          {/* The gutter's second line changes what it counts between the two
             arrangements, so the column says which one it is showing. */}
-        {wide ? (
-          <text
-            className="font-mono uppercase"
-            fill="rgba(255,255,255,0.4)"
-            fontSize={10}
-            letterSpacing="0.12em"
-            textAnchor="end"
-            x={L.plot.x0 - 14}
-            y={L.plot.y0 - 10}
-          >
-            median
-          </text>
-        ) : null}
-        {L.strip ? (
-          <text
-            className="font-mono"
-            fill="rgba(255,255,255,0.45)"
-            fontSize={10}
-            x={L.strip.labelX}
-            y={L.strip.y + 3.5}
-          >
-            no mark yet · {L.strip.count}
-          </text>
-        ) : null}
+          {wide ? (
+            <text
+              className="font-mono uppercase"
+              fill="rgba(255,255,255,0.4)"
+              fontSize={10}
+              letterSpacing="0.12em"
+              textAnchor="end"
+              x={L.plot.x0 - 14}
+              y={L.plot.y0 - 10}
+            >
+              median
+            </text>
+          ) : null}
+          {L.strip ? (
+            <text
+              className="font-mono"
+              fill="rgba(255,255,255,0.45)"
+              fontSize={10}
+              x={L.strip.labelX}
+              y={L.strip.y + 3.5}
+            >
+              no mark yet · {L.strip.count}
+            </text>
+          ) : null}
+        </g>
       </g>
 
-      {L.lanes.map((lane) => {
+      {L.lanes.map((lane, i) => {
         const row = lane.row;
         const slug = row.sector.slug;
         const cy = lane.centre - lane.top;
@@ -520,233 +627,253 @@ function StageBody({
             : `median ${formatSignedPct(row.medianAlpha)}`;
 
         return (
-          <StageMark
-            key={slug}
-            anchor={{ x: lane.anchorX, y: lane.centre, r: lane.height / 2 }}
-            ariaLabel={`${row.sector.label}, ${row.buys} purchases across ${row.companies} companies, ${formatMoney(row.value, market.symbol)}${
-              row.medianAlpha == null
-                ? ""
-                : `, median ${formatSignedPct(row.medianAlpha)} from ${row.alphaCount} buys`
-            }`}
-            hit={{
-              shape: "rect",
-              x: L.plot.x0,
-              y: 0,
-              w: L.plot.x1 - L.plot.x0,
-              h: lane.height,
-            }}
-            href={sectorPath(slug)}
-            id={slug}
-            x={0}
-            y={lane.top}
-          >
-            <DotField dots={lane.dots} fill={NEUTRAL} r={DOT_R} />
+          // The lane's own step of the dissolve. Outside StageMark rather than
+          // on it, so it multiplies with the dim the mark applies on hover
+          // instead of fighting it.
+          <g key={slug} style={dissolve(i)}>
+            <StageMark
+              anchor={{ x: lane.anchorX, y: lane.centre, r: lane.height / 2 }}
+              ariaLabel={`${row.sector.label}, ${row.buys} purchases across ${row.companies} companies, ${formatMoney(row.value, market.symbol)}${
+                row.medianAlpha == null
+                  ? ""
+                  : `, median ${formatSignedPct(row.medianAlpha)} from ${row.alphaCount} buys`
+              }`}
+              hit={{
+                shape: "rect",
+                x: L.plot.x0,
+                y: 0,
+                w: L.plot.x1 - L.plot.x0,
+                h: lane.height,
+              }}
+              href={sectorPath(slug)}
+              id={slug}
+              move={false}
+              x={0}
+              y={lane.top}
+            >
+              {/* Placed, not travelled — see FADE_OUT. */}
+              <DotField
+                dots={lane.dots}
+                fill={NEUTRAL}
+                move={false}
+                r={DOT_R}
+              />
 
-            {/* The sector's own name: in the gutter where there is one, inside
+              {/* The sector's own name: in the gutter where there is one, inside
                 the lane where there isn't. */}
-            {wide ? (
-              <>
-                <text
-                  fill="rgba(255,255,255,0.9)"
-                  fontSize={13}
-                  fontWeight={600}
-                  textAnchor="end"
-                  x={L.plot.x0 - 14}
-                  y={cy - 2}
-                >
-                  {row.sector.label}
-                </text>
-                {/* One line, two facts, crossfaded: what the lane is made of
-                    while the money is on show, what its middle came to once
-                    the dots are on outcome. */}
-                <g
-                  className="transition-opacity duration-500"
-                  style={{ opacity: outcome ? 0 : 1 }}
-                >
+              {wide ? (
+                <>
+                  {/* The sector's own mark, immediately left of a right-aligned
+                    name — the same glyph the ranked list under the stage and
+                    the onward cards draw. Held back until the name has been
+                    measured: a mark placed on a guess sits a few pixels
+                    differently on every lane, which is more obvious down a
+                    column of eleven than no mark at all. */}
+                  {nameW[slug] != null ? (
+                    <SectorGlyphMark
+                      fill="rgba(255,255,255,0.5)"
+                      size={13}
+                      slug={slug}
+                      x={L.plot.x0 - 14 - nameW[slug] - 20}
+                      y={cy - 13}
+                    />
+                  ) : null}
                   <text
-                    className="font-mono"
-                    fill="rgba(255,255,255,0.45)"
-                    fontSize={10}
-                    textAnchor="end"
-                    x={L.plot.x0 - 14}
-                    y={cy + 12}
-                  >
-                    {row.buys} buys · {row.companies} companies
-                  </text>
-                </g>
-                <g
-                  className="transition-opacity duration-500"
-                  style={{ opacity: outcome ? 1 : 0 }}
-                >
-                  <text
-                    className="font-mono"
-                    fill={
-                      row.medianAlpha == null
-                        ? "rgba(255,255,255,0.4)"
-                        : "rgba(255,255,255,0.75)"
-                    }
-                    fontSize={10.5}
-                    textAnchor="end"
-                    x={L.plot.x0 - 14}
-                    y={cy + 12}
-                  >
-                    {medianText}
-                  </text>
-                </g>
-              </>
-            ) : (
-              <>
-                <g
-                  className="transition-opacity duration-500"
-                  style={{ opacity: outcome ? 0 : 1 }}
-                >
-                  <text
+                    ref={(el) => {
+                      nameRefs.current.set(slug, el);
+                    }}
                     fill="rgba(255,255,255,0.9)"
-                    fontSize={11.5}
+                    fontSize={13}
                     fontWeight={600}
-                    x={L.plot.x0}
-                    y={10}
-                    {...HALO}
+                    textAnchor="end"
+                    x={L.plot.x0 - 14}
+                    y={cy - 2}
                   >
                     {row.sector.label}
-                    <tspan
+                  </text>
+                  {/* One line, two facts: what the lane is made of while the
+                    money is on show, what its middle came to once the dots are
+                    on outcome. */}
+                  <g style={{ opacity: outcome ? 0 : 1 }}>
+                    <text
                       className="font-mono"
                       fill="rgba(255,255,255,0.45)"
-                      fontSize={9.5}
-                      fontWeight={400}
+                      fontSize={10}
+                      textAnchor="end"
+                      x={L.plot.x0 - 14}
+                      y={cy + 12}
                     >
-                      {" "}
-                      · {row.buys} buys · {row.companies} companies
-                    </tspan>
-                  </text>
-                </g>
-                <g
-                  className="transition-opacity duration-500"
-                  style={{ opacity: outcome ? 1 : 0 }}
-                >
-                  <text
-                    fill="rgba(255,255,255,0.9)"
-                    fontSize={11.5}
-                    fontWeight={600}
-                    x={L.plot.x0}
-                    y={10}
-                    {...HALO}
-                  >
-                    {row.sector.label}
-                    <tspan
+                      {row.buys} buys · {row.companies} companies
+                    </text>
+                  </g>
+                  <g style={{ opacity: outcome ? 1 : 0 }}>
+                    <text
                       className="font-mono"
-                      fill="rgba(255,255,255,0.55)"
-                      fontSize={9.5}
-                      fontWeight={400}
+                      fill={
+                        row.medianAlpha == null
+                          ? "rgba(255,255,255,0.4)"
+                          : "rgba(255,255,255,0.75)"
+                      }
+                      fontSize={10.5}
+                      textAnchor="end"
+                      x={L.plot.x0 - 14}
+                      y={cy + 12}
                     >
-                      {" "}
-                      · {medianStrip}
-                    </tspan>
-                  </text>
-                </g>
-              </>
-            )}
+                      {medianText}
+                    </text>
+                  </g>
+                </>
+              ) : (
+                <>
+                  {/* No gutter to put it in, so the mark leads the lane's own
+                    label strip. */}
+                  <SectorGlyphMark
+                    fill="rgba(255,255,255,0.5)"
+                    size={11}
+                    slug={slug}
+                    x={L.plot.x0}
+                    y={0.5}
+                  />
+                  <g style={{ opacity: outcome ? 0 : 1 }}>
+                    <text
+                      fill="rgba(255,255,255,0.9)"
+                      fontSize={11.5}
+                      fontWeight={600}
+                      x={L.plot.x0 + 15}
+                      y={10}
+                      {...HALO}
+                    >
+                      {row.sector.label}
+                      <tspan
+                        className="font-mono"
+                        fill="rgba(255,255,255,0.45)"
+                        fontSize={9.5}
+                        fontWeight={400}
+                      >
+                        {" "}
+                        · {row.buys} buys · {row.companies} companies
+                      </tspan>
+                    </text>
+                  </g>
+                  <g style={{ opacity: outcome ? 1 : 0 }}>
+                    <text
+                      fill="rgba(255,255,255,0.9)"
+                      fontSize={11.5}
+                      fontWeight={600}
+                      x={L.plot.x0 + 15}
+                      y={10}
+                      {...HALO}
+                    >
+                      {row.sector.label}
+                      <tspan
+                        className="font-mono"
+                        fill="rgba(255,255,255,0.55)"
+                        fontSize={9.5}
+                        fontWeight={400}
+                      >
+                        {" "}
+                        · {medianStrip}
+                      </tspan>
+                    </text>
+                  </g>
+                </>
+              )}
 
-            {/* The one issuer that is most of a lane, named on the lane rather
+              {/* The one issuer that is most of a lane, named on the lane rather
                 than in a footnote under it. */}
-            <g
-              className="transition-opacity duration-500"
-              style={{ opacity: outcome ? 0 : 1 }}
-            >
-              {lane.concentration ? (
-                <g
-                  className="board-stage-move"
-                  style={{
-                    transform: `translate(${lane.concentration.x}px, ${cy}px)`,
-                  }}
-                >
-                  <LogoDisc
-                    clipId={`sector-lane-${slug}`}
-                    edge={NEUTRAL}
-                    r={9}
-                    ticker={lane.concentration.ticker}
-                  />
-                  <StageLabel
-                    r={9}
-                    side="left"
-                    text={`${displayTicker(lane.concentration.ticker)} · ${Math.round(lane.concentration.share * 100)}%`}
-                    visible={!outcome}
-                  />
-                </g>
-              ) : null}
-            </g>
+              <g style={{ opacity: outcome ? 0 : 1 }}>
+                {lane.concentration ? (
+                  <g
+                    className="board-stage-move"
+                    style={{
+                      transform: `translate(${lane.concentration.x}px, ${cy}px)`,
+                    }}
+                  >
+                    <LogoDisc
+                      clipId={`sector-lane-${slug}`}
+                      edge={NEUTRAL}
+                      r={9}
+                      ticker={lane.concentration.ticker}
+                    />
+                    <StageLabel
+                      r={9}
+                      side="left"
+                      text={`${displayTicker(lane.concentration.ticker)} · ${Math.round(lane.concentration.share * 100)}%`}
+                      visible={!outcome}
+                    />
+                  </g>
+                ) : null}
+              </g>
 
-            {/* The middle of the drawn dots, with the sample it came from. */}
-            <g
-              className="transition-opacity duration-500"
-              style={{ opacity: outcome ? 1 : 0 }}
-            >
-              {lane.medianX != null ? (
-                <line
-                  stroke="var(--stage-bg)"
-                  strokeWidth={5}
-                  x1={lane.medianX}
-                  x2={lane.medianX}
-                  y1={cy - tickH / 2}
-                  y2={cy + tickH / 2}
-                />
-              ) : null}
-              {lane.medianX != null ? (
-                <line
-                  stroke="rgba(255,255,255,0.9)"
-                  strokeWidth={2}
-                  x1={lane.medianX}
-                  x2={lane.medianX}
-                  y1={cy - tickH / 2}
-                  y2={cy + tickH / 2}
-                />
-              ) : null}
+              {/* The middle of the drawn dots, with the sample it came from. */}
+              <g style={{ opacity: outcome ? 1 : 0 }}>
+                {lane.medianX != null ? (
+                  <line
+                    stroke="var(--stage-bg)"
+                    strokeWidth={5}
+                    x1={lane.medianX}
+                    x2={lane.medianX}
+                    y1={cy - tickH / 2}
+                    y2={cy + tickH / 2}
+                  />
+                ) : null}
+                {lane.medianX != null ? (
+                  <line
+                    stroke="rgba(255,255,255,0.9)"
+                    strokeWidth={2}
+                    x1={lane.medianX}
+                    x2={lane.medianX}
+                    y1={cy - tickH / 2}
+                    y2={cy + tickH / 2}
+                  />
+                ) : null}
 
-              {/* The axis ends are a clip, not a maximum, so the purchases
+                {/* The axis ends are a clip, not a maximum, so the purchases
                   past it are counted where they were cut off. */}
-              {lane.beyondPos > 0 ? (
-                <g>
-                  <path
-                    d={`M${L.plot.x1 - 9},${cy - 4} l4,4 l-4,4`}
-                    fill="none"
-                    stroke="rgba(255,255,255,0.65)"
-                    strokeWidth={1.4}
-                  />
-                  <text
-                    className="font-mono"
-                    fill="rgba(255,255,255,0.5)"
-                    fontSize={9.5}
-                    textAnchor="end"
-                    x={L.plot.x1 - 15}
-                    y={cy + 3.5}
-                    {...EDGE_HALO}
-                  >
-                    {lane.beyondPos} beyond +{clipLabel}
-                  </text>
-                </g>
-              ) : null}
-              {lane.beyondNeg > 0 ? (
-                <g>
-                  <path
-                    d={`M${L.plot.x0 + 9},${cy - 4} l-4,4 l4,4`}
-                    fill="none"
-                    stroke="rgba(255,255,255,0.65)"
-                    strokeWidth={1.4}
-                  />
-                  <text
-                    className="font-mono"
-                    fill="rgba(255,255,255,0.5)"
-                    fontSize={9.5}
-                    x={L.plot.x0 + 15}
-                    y={cy + 3.5}
-                    {...EDGE_HALO}
-                  >
-                    {lane.beyondNeg} beyond −{clipLabel}
-                  </text>
-                </g>
-              ) : null}
-            </g>
-          </StageMark>
+                {lane.beyondPos > 0 ? (
+                  <g>
+                    <path
+                      d={`M${L.plot.x1 - 9},${cy - 4} l4,4 l-4,4`}
+                      fill="none"
+                      stroke="rgba(255,255,255,0.65)"
+                      strokeWidth={1.4}
+                    />
+                    <text
+                      className="font-mono"
+                      fill="rgba(255,255,255,0.5)"
+                      fontSize={9.5}
+                      textAnchor="end"
+                      x={L.plot.x1 - 15}
+                      y={cy + 3.5}
+                      {...EDGE_HALO}
+                    >
+                      {lane.beyondPos} beyond +{clipLabel}
+                    </text>
+                  </g>
+                ) : null}
+                {lane.beyondNeg > 0 ? (
+                  <g>
+                    <path
+                      d={`M${L.plot.x0 + 9},${cy - 4} l-4,4 l4,4`}
+                      fill="none"
+                      stroke="rgba(255,255,255,0.65)"
+                      strokeWidth={1.4}
+                    />
+                    <text
+                      className="font-mono"
+                      fill="rgba(255,255,255,0.5)"
+                      fontSize={9.5}
+                      x={L.plot.x0 + 15}
+                      y={cy + 3.5}
+                      {...EDGE_HALO}
+                    >
+                      {lane.beyondNeg} beyond −{clipLabel}
+                    </text>
+                  </g>
+                ) : null}
+              </g>
+            </StageMark>
+          </g>
         );
       })}
     </>

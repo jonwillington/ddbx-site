@@ -39,6 +39,7 @@ import {
 } from "../../shared/congress.js";
 import { sectorPath, sectorByLabel } from "../../shared/sectors.js";
 
+import { SectorIcon } from "@/components/sector-icon";
 import { FilingsBoard, MemberRow, R } from "@/components/congress/congress-ui";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
@@ -267,9 +268,13 @@ export default function CongressCommitteePage() {
                     <li key={sec}>
                       {s ? (
                         <a
-                          className="inline-flex rounded-full border border-hairline px-3 py-1.5 text-[13px] text-foreground/75 transition-colors hover:text-foreground dark:border-separator"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1.5 text-[13px] text-foreground/75 transition-colors hover:text-foreground dark:border-separator"
                           href={sectorPath(s.slug)}
                         >
+                          <SectorIcon
+                            className="h-[13px] w-[13px] shrink-0 text-foreground/35"
+                            slug={s.slug}
+                          />
                           {sec}
                         </a>
                       ) : (

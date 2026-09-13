@@ -111,6 +111,7 @@ import {
 import { filingFamily } from "../../shared/filing-family.js";
 import { sectorByLabel, sectorPath } from "../../shared/sectors.js";
 
+import { SectorIcon } from "@/components/sector-icon";
 import {
   ContextCards,
   RatingChecks,
@@ -591,9 +592,13 @@ export default function FilingPage({
               ) : null}
               {sector ? (
                 <Link
-                  className={`${R.label} underline-offset-4 hover:underline`}
+                  className={`inline-flex items-center gap-1.5 ${R.label} underline-offset-4 hover:underline`}
                   to={sectorPath(sector.slug)}
                 >
+                  <SectorIcon
+                    className="h-[13px] w-[13px] shrink-0 text-foreground/35"
+                    slug={sector.slug}
+                  />
                   {sector.label}
                 </Link>
               ) : null}

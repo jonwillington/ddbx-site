@@ -15,6 +15,7 @@ import {
 } from "../../shared/sectors.js";
 
 import { marketForPath } from "@/lib/markets/registry";
+import { SectorIcon } from "@/components/sector-icon";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { DeltaBadge } from "@/components/market/market-row";
 
@@ -130,13 +131,24 @@ export function SectorComparisonRow({
 
   return (
     <div className={`${COMPARISON_GRID} items-baseline`}>
-      <div className="min-w-0">
-        <span className="text-[16px] font-semibold tracking-[-0.01em] text-foreground">
-          {row.sector.label}
-        </span>
-        <span className={`mt-0.5 block ${R.label}`}>
-          {row.buys} buys · {row.companies} companies
-        </span>
+      {/* The sector's own mark, left of its name and the same one the stage
+          draws in its gutter. Eleven rows of plain text made the reader read
+          the list to find a sector in it; the glyph is what lets them scan
+          it. Aligned to the name's optical centre rather than the row's, so
+          the meta line under it doesn't drag the mark down. */}
+      <div className="flex min-w-0 items-start gap-2.5">
+        <SectorIcon
+          className="mt-[3px] h-[15px] w-[15px] shrink-0 text-foreground/35"
+          slug={row.sector.slug}
+        />
+        <div className="min-w-0">
+          <span className="text-[16px] font-semibold tracking-[-0.01em] text-foreground">
+            {row.sector.label}
+          </span>
+          <span className={`mt-0.5 block ${R.label}`}>
+            {row.buys} buys · {row.companies} companies
+          </span>
+        </div>
       </div>
 
       {/* The figure alone. The bar that used to sit under it scaled every

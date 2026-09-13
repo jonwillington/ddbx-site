@@ -18,6 +18,7 @@
  *  logo, a pair of broker marks) still passes `media` and wins.
  */
 import type { ReactNode } from "react";
+import type { SectorGlyph } from "@/components/sector-icon";
 
 import { Link } from "react-router-dom";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
@@ -37,6 +38,8 @@ import {
   TrophyIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
+
+import { sectorGlyph, sectorSlugFromPath } from "@/components/sector-icon";
 
 export interface RelatedCard {
   to: string;
@@ -79,8 +82,14 @@ const ICON_FOR: [RegExp, typeof DocumentTextIcon][] = [
   [/^\/mcp$/, ChatBubbleLeftRightIcon],
 ];
 
-function iconFor(to: string) {
+function iconFor(to: string): SectorGlyph {
   const path = to.split(/[?#]/)[0];
+  // A sector's own mark before the coarse table gets a look at it. "Other
+  // sectors" is ten cards whose only difference is the word on them, and ten
+  // copies of the same grid-of-squares was the table's answer to all of them.
+  const sector = sectorSlugFromPath(path);
+
+  if (sector) return sectorGlyph(sector, "line");
 
   return ICON_FOR.find(([re]) => re.test(path))?.[1] ?? DocumentTextIcon;
 }
