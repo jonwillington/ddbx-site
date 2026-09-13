@@ -31,14 +31,7 @@ import type { StageContext, StageMode, StagePad } from "../stage-panel";
 import type { ReactNode } from "react";
 import type { SectorMarket } from "@/components/sector-ui";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { buyAlpha } from "../../../../shared/leaderboard.js";
 import {
@@ -85,10 +78,29 @@ const GUTTER_FROM = 640;
 const LABEL_STRIP = 14;
 
 /** Wide enough for "Consumer Discretionary" — the longest published sector
- *  name — set at 13px semibold, plus the sector's glyph and the gap before it,
- *  plus the 14 the labels are inset by. A gutter that fits ten of the eleven
- *  names is a clipped name, not a narrow gutter. */
-const GUTTER = 208;
+ *  name — set at 13px semibold, plus the mark column to its left, plus the 14
+ *  the labels are inset by. A gutter that fits ten of the eleven names is a
+ *  clipped name, not a narrow gutter. */
+const GUTTER = 220;
+
+/** The gutter's mark column: the sector's glyph on the panel's own left edge,
+ *  lined up down the lanes rather than tucked against the name.
+ *
+ *  It sat immediately left of each right-aligned name at 13px until 2026-09-13,
+ *  which made the mark a prefix to the word — so it moved with the word, was
+ *  the size of the word, and was the first thing the eye dropped. A column is
+ *  the thing that can actually be scanned: one x for eleven lanes, and big
+ *  enough to be read as a picture rather than as punctuation. The x is the
+ *  panel's own `sm:px-8`, so the column starts under the h1 rather than
+ *  somewhere of its own. */
+const GLYPH_X = 32;
+
+/** Sized off the lane it sits in, clamped either side: a 440px-tall board
+ *  gives each of eleven lanes ~34px and a 660px one ~50px, and a mark that
+ *  overflowed its lane would collide with its neighbours' names. */
+function glyphSize(laneH: number, labelInset: number): number {
+  return Math.round(Math.min(30, Math.max(18, (laneH - labelInset) * 0.66)));
+}
 
 /** The move between the two arrangements is a dissolve, not a journey.
  *
@@ -461,54 +473,6 @@ function StageBody({
   const wide = W >= GUTTER_FROM;
   const clipLabel = `${Math.round(L.clip * 100)}%`;
 
-  // Where each gutter name starts, so the sector's glyph can sit immediately
-  // to its left. Measured rather than estimated: the names run from "Energy"
-  // to "Consumer Discretionary", and a per-character guess would put the mark
-  // in a slightly different place on every lane.
-  const nameRefs = useRef(new Map<string, SVGTextElement | null>());
-  const [nameW, setNameW] = useState<Record<string, number>>({});
-  const measure = useCallback(() => {
-    setNameW((prev) => {
-      const next: Record<string, number> = {};
-      let changed = false;
-
-      nameRefs.current.forEach((el, slug) => {
-        if (!el || typeof el.getComputedTextLength !== "function") return;
-        const w = el.getComputedTextLength();
-
-        next[slug] = w;
-        if (Math.abs((prev[slug] ?? -1) - w) > 0.5) changed = true;
-      });
-
-      // Same widths, same object: a fresh record every render would re-enter
-      // this effect for ever.
-      return changed || Object.keys(next).length !== Object.keys(prev).length
-        ? next
-        : prev;
-    });
-  }, []);
-
-  // Before paint, so the glyph lands with the name rather than a frame after
-  // it.
-  useLayoutEffect(measure);
-  // A name measured before the webfont arrives is measured in the fallback,
-  // and on a page that has finished rendering nothing else would re-render to
-  // correct it.
-  useEffect(() => {
-    const fonts = document.fonts;
-
-    if (!fonts?.ready) return;
-    let live = true;
-
-    fonts.ready.then(() => {
-      if (live) measure();
-    });
-
-    return () => {
-      live = false;
-    };
-  }, [measure]);
-
   /** The dissolve, applied per lane so the board re-assembles top-first. */
   const dissolve = (i: number) => ({
     opacity: hidden ? 0 : 1,
@@ -610,6 +574,7 @@ function StageBody({
         const slug = row.sector.slug;
         const cy = lane.centre - lane.top;
         const tickH = (lane.height - L.labelInset) * 0.8;
+        const glyph = glyphSize(lane.height, L.labelInset);
         // The figure the tick is worth, stated where there is room for it: the
         // gutter beside the name, or the lane's own label strip on a phone.
         const medianText =
@@ -663,25 +628,18 @@ function StageBody({
                 the lane where there isn't. */}
               {wide ? (
                 <>
-                  {/* The sector's own mark, immediately left of a right-aligned
-                    name — the same glyph the ranked list under the stage and
-                    the onward cards draw. Held back until the name has been
-                    measured: a mark placed on a guess sits a few pixels
-                    differently on every lane, which is more obvious down a
-                    column of eleven than no mark at all. */}
-                  {nameW[slug] != null ? (
-                    <SectorGlyphMark
-                      fill="rgba(255,255,255,0.5)"
-                      size={13}
-                      slug={slug}
-                      x={L.plot.x0 - 14 - nameW[slug] - 20}
-                      y={cy - 13}
-                    />
-                  ) : null}
+                  {/* The mark column, on the lane's own centre rather than the
+                      name's baseline — it is a column, not a prefix. The same
+                      glyph the ranked list under the stage and the onward
+                      cards draw. */}
+                  <SectorGlyphMark
+                    fill="rgba(255,255,255,0.42)"
+                    size={glyph}
+                    slug={slug}
+                    x={GLYPH_X}
+                    y={cy - glyph / 2}
+                  />
                   <text
-                    ref={(el) => {
-                      nameRefs.current.set(slug, el);
-                    }}
                     fill="rgba(255,255,255,0.9)"
                     fontSize={13}
                     fontWeight={600}
@@ -729,10 +687,10 @@ function StageBody({
                     label strip. */}
                   <SectorGlyphMark
                     fill="rgba(255,255,255,0.5)"
-                    size={11}
+                    size={12}
                     slug={slug}
                     x={L.plot.x0}
-                    y={0.5}
+                    y={0}
                   />
                   <g style={{ opacity: outcome ? 0 : 1 }}>
                     <text

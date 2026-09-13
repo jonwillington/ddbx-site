@@ -131,14 +131,15 @@ export function SectorComparisonRow({
 
   return (
     <div className={`${COMPARISON_GRID} items-baseline`}>
-      {/* The sector's own mark, left of its name and the same one the stage
-          draws in its gutter. Eleven rows of plain text made the reader read
-          the list to find a sector in it; the glyph is what lets them scan
-          it. Aligned to the name's optical centre rather than the row's, so
-          the meta line under it doesn't drag the mark down. */}
-      <div className="flex min-w-0 items-start gap-2.5">
+      {/* The sector's own mark, in a column of its own left of the name and
+          the same glyph the stage draws in its gutter. Eleven rows of plain
+          text made the reader read the list to find a sector in it; a column
+          of marks is what lets them scan it — which is why the mark is set
+          against the whole row rather than lined up with the name as a
+          prefix to it. */}
+      <div className="flex min-w-0 items-center gap-4">
         <SectorIcon
-          className="mt-[3px] h-[15px] w-[15px] shrink-0 text-foreground/35"
+          className="h-7 w-7 shrink-0 text-foreground/30"
           slug={row.sector.slug}
         />
         <div className="min-w-0">
@@ -182,7 +183,9 @@ export function SectorComparisonRow({
       </div>
 
       {concentrated && row.topCompany && (
-        <p className="order-4 col-span-2 mt-1 flex items-start gap-1.5 text-[12px] leading-[1.5] text-foreground/45 sm:col-span-3">
+        /* Indented past the mark column, so it hangs off the sector's name
+           rather than off a glyph it has nothing to do with. */
+        <p className="order-4 col-span-2 mt-1 flex items-start gap-1.5 pl-11 text-[12px] leading-[1.5] text-foreground/45 sm:col-span-3">
           {/* The caveat is the reason not to read the number beside it at face
               value, so it gets the site's key-risk amber rather than dissolving
               into the same grey as the row's own small print. */}
