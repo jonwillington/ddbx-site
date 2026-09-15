@@ -12,11 +12,12 @@ import { MonthlyNarrative } from "./monthly-narrative";
 import { MonthlyPerformanceSection } from "./monthly-performance";
 import { Prose } from "./monthly-prose";
 import { MonthlySection } from "./monthly-section";
-import { monthLabel } from "./monthly-utils";
+import { monthLabel, reportPath } from "./monthly-utils";
 
 import { api } from "@/lib/api";
 import { AppModal } from "@/components/app-modal";
 import { StoreBadges } from "@/components/app-store-badge";
+import { ShareRow } from "@/components/share-row";
 
 /** The monthly recap report. Opened from the hero's "View {month} Report" CTA
  *  or a month header's "View Report" link. Fetches the full article for the
@@ -182,17 +183,34 @@ export function MonthlyRecapModal({
             </div>
           </div>
 
-          <footer className="mt-5 flex shrink-0 items-center justify-between gap-4 border-t border-black/[0.06] pt-5 dark:border-white/[0.08] md:pt-6">
-            <p className="text-[11px] leading-snug text-muted">
+          {/* The share row lives in the footer rather than under the headline
+              because this article has no single headline block to sit under:
+              on lg+ it is two independently-scrolling columns, and the footer
+              is the one strip that stays in view the whole read. It shares
+              /reports/{month} — the permanently-addressed archive page — not
+              the /report/{month} deep link that reopens this modal, so a
+              recipient lands on a real page with its own og: card. */}
+          <footer className="mt-5 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-black/[0.06] pt-5 dark:border-white/[0.08] md:pt-6">
+            <p className="min-w-[200px] flex-1 text-[11px] leading-snug text-muted">
               A look back at the month, drafted with AI assistance. Not
               investment advice.
             </p>
-            <StoreBadges
-              className="shrink-0"
-              marketId={market ?? "uk"}
-              placement="Monthly recap"
-              size="md"
-            />
+            <div className="flex shrink-0 items-center gap-4">
+              {selectedMonth ? (
+                <ShareRow
+                  context="monthly-recap"
+                  size="sm"
+                  title={summary.headline}
+                  url={reportPath(selectedMonth)}
+                />
+              ) : null}
+              <StoreBadges
+                className="shrink-0"
+                marketId={market ?? "uk"}
+                placement="Monthly recap"
+                size="md"
+              />
+            </div>
           </footer>
         </div>
       )}

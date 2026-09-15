@@ -109,6 +109,7 @@ import {
   shares,
 } from "../../shared/filings.js";
 import { filingFamily } from "../../shared/filing-family.js";
+import { shareNotificationLine } from "../../shared/share-notification.js";
 import { sectorByLabel, sectorPath } from "../../shared/sectors.js";
 
 import { SectorIcon } from "@/components/sector-icon";
@@ -130,6 +131,7 @@ import { ShareArrivalCard } from "@/components/filing/share-arrival";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoPageShell } from "@/components/seo/page-shell";
+import { ShareRow } from "@/components/share-row";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { Skeleton } from "@/components/skeleton";
@@ -542,6 +544,23 @@ export default function FilingPage({
           ) : undefined
         }
         loading={status === "loading"}
+        // Always /t/{id}, on BOTH routes — the canonical page's readers are
+        // sharing the filing, not the URL they happen to be reading it at, and
+        // the share route is the one with the unfurl card and the Universal
+        // Link. `sharePath` per market, so /us/dealings/{id} hands out
+        // /us/t/{id}. The text is the same sentence the unfurl carries, so a
+        // tweet and its preview agree.
+        share={
+          deal && id ? (
+            <ShareRow
+              context={us ? "filing-us" : "filing"}
+              title={
+                shareNotificationLine(deal, market) ?? fam.leadSentence(deal)
+              }
+              url={fam.sharePath(id)}
+            />
+          ) : undefined
+        }
         skeleton={
           <>
             <Skeleton className="mt-7 h-[168px] w-full rounded-2xl" />

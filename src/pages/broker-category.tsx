@@ -64,6 +64,7 @@ import { BrokerAside } from "@/components/brokers/broker-aside";
 import DefaultLayout from "@/layouts/default";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
+import { ShareRow } from "@/components/share-row";
 import { brokerGuideCta } from "@/components/seo/cta-copy";
 import { Skeleton } from "@/components/skeleton";
 import { api } from "@/lib/api";
@@ -158,6 +159,14 @@ export default function BrokerCategoryPage() {
         // Above the fold, before any commercial link — and outside the loading
         // boundary, so it is never the thing that arrives late.
         notice={<BrokerDisclosure />}
+        share={
+          <ShareRow
+            context="broker-category"
+            label="Share"
+            title={category.h1}
+            url={categoryPath(category.slug)}
+          />
+        }
         skeleton={<CategorySkeleton rows={category.order.length} />}
         standfirst={category.intro[0]}
         standfirstSize="lede"

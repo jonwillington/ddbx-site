@@ -59,6 +59,17 @@ const UK = {
   host: "ddbx.uk",
   currency: "GBP",
   path: filingPath,
+  /** The address a filing is SHARED at, as distinct from `path`.
+   *
+   *  /dealings/{id} is the canonical, indexable page; /t/{id} is the same page
+   *  in share mode and is the one a link should carry, for two reasons that
+   *  only apply to a link leaving the site: it is claimed by the Universal
+   *  Link association (public/.well-known/apple-app-site-association), so an
+   *  iPhone with the app installed opens the filing in the app instead of the
+   *  browser; and functions/t/[id].js pre-renders the unfurl card for it.
+   *  /dealings/{id} has neither. The share route canonicalises back, so this
+   *  costs the indexable page nothing. */
+  sharePath: (id) => `/t/${id}`,
   idFromPath: filingIdFromPath,
   /** The consideration, in the market's canonical field. UK rows carry the
    *  FX-converted `value_gbp`; `currency` on a UK row describes the RNS, not
@@ -80,6 +91,8 @@ const US = {
   host: "ddbx.us",
   currency: "USD",
   path: usFilingPath,
+  /** As UK's — /us/t/{id}, pre-rendered by functions/us/t/[id].js. */
+  sharePath: (id) => `/us/t/${id}`,
   idFromPath: usFilingIdFromPath,
   value: (d) => d?.value ?? null,
   money: usMoney,

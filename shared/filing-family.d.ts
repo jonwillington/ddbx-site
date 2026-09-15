@@ -12,6 +12,9 @@ export interface FilingFamily {
   host: string;
   currency: "GBP" | "USD";
   path: (id: string) => string;
+  /** The address a filing is shared at — /t/{id}, /us/t/{id}. Distinct from
+   *  `path`: that is the canonical, indexable page. See the .js. */
+  sharePath: (id: string) => string;
   idFromPath: (path: string) => string | null;
   /** The consideration, from whichever field this market stores it in.
    *  Null when the filing does not state one. */

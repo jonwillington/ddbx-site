@@ -62,6 +62,7 @@ import { BrokerAside } from "@/components/brokers/broker-aside";
 import DefaultLayout from "@/layouts/default";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
+import { ShareRow } from "@/components/share-row";
 import { brokerGuideCta } from "@/components/seo/cta-copy";
 import { Skeleton } from "@/components/skeleton";
 import { api } from "@/lib/api";
@@ -262,6 +263,14 @@ export default function BrokerComparisonPage() {
         eyebrow="Broker guide"
         loading={brokers === null}
         notice={<BrokerDisclosure />}
+        share={
+          <ShareRow
+            context="broker-comparison"
+            label="Share"
+            title={comparison.title}
+            url={comparisonPath(comparison.slug)}
+          />
+        }
         skeleton={<ComparisonSkeleton />}
         standfirst={comparison.intro}
         standfirstSize="lede"

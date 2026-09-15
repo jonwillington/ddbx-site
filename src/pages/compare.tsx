@@ -18,6 +18,7 @@ import {
   Tick,
 } from "@/components/brokers/broker-ui";
 import DefaultLayout from "@/layouts/default";
+import { ShareRow } from "@/components/share-row";
 import { Skeleton } from "@/components/skeleton";
 import { api, type BrokerOffer } from "@/lib/api";
 import {
@@ -256,6 +257,18 @@ export default function ComparePage() {
             hidden below 1024px, so every phone visitor was being served
             affiliate links with no disclosure on screen. */}
         <BrokerDisclosure className="mb-5" />
+
+        {/* Same slot the SeoPageShell family puts it in — after the standfirst
+            AND the disclosure, above the first section — so the control sits
+            in one place across the four broker pages even though this one
+            draws its own header. */}
+        <ShareRow
+          className="mb-6"
+          context="broker-compare"
+          label="Share"
+          title="Compare UK trading platforms"
+          url="/compare"
+        />
 
         {/* The raw `err` string used to be interpolated here. It's a fetch or
             status message written for a log, not for a reader, and it never

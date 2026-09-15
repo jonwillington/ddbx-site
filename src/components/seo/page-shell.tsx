@@ -55,6 +55,7 @@ export function SeoPageShell({
   standfirst,
   standfirstSize = "body",
   notice,
+  share,
   cta,
   width = "article",
   stage,
@@ -101,6 +102,18 @@ export function SeoPageShell({
   standfirstSize?: "body" | "lede";
   /** TrackingNotice / truncation caveat slot, directly under the standfirst. */
   notice?: ReactNode;
+  /** A `<ShareRow />`, rendered as the last item of the header furniture —
+   *  under the standfirst and the notice, above the first content section.
+   *
+   *  The slot exists so the control lands in the SAME place on every page in
+   *  the family rather than wherever each page happened to put it; that is the
+   *  whole argument for it being a shell slot and not a component a page drops
+   *  into `children`. Suppressed while `loading`, for the reason the terminal
+   *  band is: a share control for a record that has not arrived can only offer
+   *  the wrong link or a blank one, and it would be shoved down the page by
+   *  the data anyway. A page with `titleInHero` renders its own — the shell
+   *  draws no header furniture at all in that mode. */
+  share?: ReactNode;
   /** The terminal AppCtaBand. Omit only for error / empty boards that should
    *  not ask (e.g. an invalid year on /biggest-buys). Broker guides pass a
    *  quiet band with `media: "none"` so the affiliate ask stays primary. */
@@ -246,6 +259,8 @@ export function SeoPageShell({
                   {notice}
                 </div>
               ) : null}
+
+              {share && !handoff ? <div className="mt-6">{share}</div> : null}
             </>
           )}
         </div>

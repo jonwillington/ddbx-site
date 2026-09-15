@@ -25,6 +25,7 @@ import {
 import { CostBars, R, SourceNote } from "@/components/brokers/broker-page-ui";
 import { BUTTON_SELECTED } from "@/components/button";
 import DefaultLayout from "@/layouts/default";
+import { ShareRow } from "@/components/share-row";
 import { RelatedCards } from "@/components/seo/related-cards";
 import appShots from "@/data/broker-app-screenshots.json";
 import { api, type BrokerOffer } from "@/lib/api";
@@ -489,6 +490,17 @@ function ReviewHeader({
           </div>
         ))}
       </dl>
+
+      {/* Last item of the header furniture, as on the three sibling broker
+          pages. The title shared is the review, not the broker: "Interactive
+          Investor review" is what a recipient is being handed. */}
+      <ShareRow
+        className="mt-6"
+        context="broker-detail"
+        label="Share"
+        title={`${b.name} review`}
+        url={`/brokers/${b.slug}`}
+      />
     </header>
   );
 }
