@@ -337,6 +337,27 @@ export default function DirectorPage() {
         });
     });
 
+    // WITHIN a group, order by the date the column actually shows.
+    //
+    // The list arrives ordered by DISCLOSED date, which is the right spine for
+    // a feed and the date this page measures returns from — but the rows print
+    // the TRADE date under a heading that says "Bought". While the company
+    // column separated them that mismatch was invisible; grouping puts a
+    // director's filings for one issuer side by side, and Katie Bickerstaffe's
+    // Barratt Redrow pair then read "6 Mar" above "15 Apr", which looks like a
+    // sorting bug rather than what it is: a purchase disclosed 172 days late.
+    //
+    // So rows sort by what they display. GROUPS keep first-appearance order,
+    // which is still disclosure order, so the most recently disclosed issuer
+    // still leads. For the 96.7% of directors with one issuer the two orders
+    // differ only where a filing was late, which is exactly the case worth
+    // getting right.
+    for (const g of groups.values()) {
+      g.items.sort((a, b) =>
+        b.dealing.tradeDate.localeCompare(a.dealing.tradeDate),
+      );
+    }
+
     return [...groups.values()];
   }, [dealings, rows]);
   // Sparklines need a benchmark series, which exists for UK and US only. SE
