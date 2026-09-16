@@ -33,6 +33,7 @@ import {
   shortCommittee,
   unmodelledLaneNote,
 } from "../../../shared/congress.js";
+import { stockPath } from "../../../shared/congress-stocks.js";
 import { apexHost, esc, noindex, page, renderInto } from "../../../shared/prerender.js";
 import { brandTitle, isProductionHost } from "../../../shared/seo.js";
 
@@ -114,7 +115,7 @@ function prerender(member, detail, lanes, host) {
     .slice(0, 15)
     .map(
       (t) =>
-        `<li style="margin:0 0 4px"><a href="https://${esc(host)}/company/${esc(String(t.ticker).toLowerCase())}">${esc(t.company || t.ticker)}</a> — ${t.count} ${t.count === 1 ? "filing" : "filings"}${s.jurisdiction_modelled && t.in_lane ? " (in lane)" : ""}</li>`,
+        `<li style="margin:0 0 4px"><a href="https://${esc(host)}${esc(stockPath(t.ticker))}">${esc(t.company || t.ticker)}</a> — ${t.count} ${t.count === 1 ? "filing" : "filings"}${s.jurisdiction_modelled && t.in_lane ? " (in lane)" : ""}</li>`,
     )
     .join("");
 

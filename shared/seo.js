@@ -465,6 +465,20 @@ const isCongressMembersIndexPath = (path) => path === "/congress/members";
 const isCongressCommitteesIndexPath = (path) =>
   path === "/congress/committees";
 
+const isCongressStocksIndexPath = (path) => path === "/congress/stocks";
+
+/** "/congress/stocks/nvda" -> "NVDA". The SPA fallback only: the Function at
+ *  functions/congress/stocks/[ticker].js replaces the head with the issuer's
+ *  name, but it cannot run on a client-side navigation. */
+const congressStockFromPath = (path) => {
+  if (!path.startsWith("/congress/stocks/")) return null;
+  const slug = decodeURIComponent(path.slice("/congress/stocks/".length));
+
+  if (!slug || slug.includes("/")) return null;
+
+  return slug.toUpperCase();
+};
+
 /** "/congress/members/nancy-pelosi-p000197" -> "Nancy Pelosi".
  *
  *  Title-cased from the slug with the bioguide dropped. Imperfect on names the
@@ -577,6 +591,7 @@ export function seoForPath(pathname, hostname) {
   const congressMember = congressMemberNameFromPath(path);
   const congressCommittee = congressCommitteeNameFromPath(path);
   const daily = dailyFromSeoPath(path);
+  const congressStock = congressStockFromPath(path);
   const period = leaderboard?.year
     ? `in ${leaderboard.year}`
     : "of the last twelve months";
@@ -686,6 +701,12 @@ export function seoForPath(pathname, hostname) {
       );
     if (isCongressCommitteesIndexPath(path))
       return brandTitle("Congressional committees and the sectors they oversee");
+    if (congressStock)
+      return brandTitle(
+        `${congressStock} stock purchases by members of Congress`,
+      );
+    if (isCongressStocksIndexPath(path))
+      return brandTitle("The stocks members of Congress buy");
     // Market-specific, unlike /developers: the regulator, the exchange and the
     // noun for the filer all change, so ddbx.uk and ddbx.us publish genuinely
     // different documents rather than one page twice. ddbx.eu 301s to ddbx.uk.
@@ -811,6 +832,10 @@ export function seoForPath(pathname, hostname) {
       return `Members of the House ${congressCommittee} committee who have disclosed stock purchases, the sectors the committee oversees, and which of those purchases fall inside its jurisdiction.`;
     if (isCongressCommitteesIndexPath(path))
       return "Which House committees oversee which sectors, and which members of each have disclosed stock purchases in the industries they legislate on.";
+    if (congressStock)
+      return `Every disclosed purchase of ${congressStock} by a member of Congress: who bought, when, in what value bands, and which of them sit on a committee that oversees the sector.`;
+    if (isCongressStocksIndexPath(path))
+      return "The stocks members of Congress have bought most widely under the STOCK Act, with a page per name: who bought it, when, in what bands, and the committee jurisdiction behind each buyer.";
     if (isSectorsIndexPath(path))
       return `Where ${market.label} insiders are buying, broken down by sector — disclosed volume and value, and the median performance of each sector's buys against the market.`;
     if (isReportsIndexPath(path))

@@ -179,10 +179,10 @@ export default function CongressMembersPage() {
                       "Which committees oversee which sectors, and who on them has been buying.",
                   },
                   {
-                    to: "/congress",
-                    title: "Latest congressional filings",
+                    to: "/congress/stocks",
+                    title: "By stock",
                     description:
-                      "The live feed of purchases as they are disclosed, rated.",
+                      "The names bought most widely, and who in Congress bought each.",
                   },
                   {
                     to: "/learn/stock-act",

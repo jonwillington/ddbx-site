@@ -39,6 +39,8 @@ import CongressCommitteePage from "@/pages/congress-committee";
 import CongressCommitteesPage from "@/pages/congress-committees";
 import CongressMemberPage from "@/pages/congress-member";
 import CongressMembersPage from "@/pages/congress-members";
+import CongressStockPage from "@/pages/congress-stock";
+import CongressStocksPage from "@/pages/congress-stocks";
 import DjtPreviewPage from "@/pages/djt-preview";
 import MarketHomePage from "@/pages/market-home";
 import KoreaPreviewPage from "@/pages/korea-preview";
@@ -127,6 +129,14 @@ function App() {
         <Route
           element={<CongressCommitteePage />}
           path="/congress/committees/:slug"
+        />
+        {/* Congress by stock: the same filings grouped by issuer. Same
+            two-prefix shape as members/committees, same Function directory
+            convention (functions/congress/stocks/). */}
+        <Route element={<CongressStocksPage />} path="/congress/stocks" />
+        <Route
+          element={<CongressStockPage />}
+          path="/congress/stocks/:ticker"
         />
         <Route element={<DjtPreviewPage />} path="/djt" />
         <Route element={<SwedenPreviewPage />} path="/se-preview" />

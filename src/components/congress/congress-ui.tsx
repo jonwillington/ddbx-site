@@ -31,6 +31,7 @@ import {
   shortCommittee,
   usd,
 } from "../../../shared/congress.js";
+import { stockPath } from "../../../shared/congress-stocks.js";
 
 import { PartyChip } from "@/components/party-chip";
 import { ChamberChip } from "@/components/chamber-chip";
@@ -460,9 +461,13 @@ export function IssuerList({
           className={`flex items-center gap-4 border-b ${RULE} py-2.5`}
         >
           <CompanyLogo className="shrink-0" size={24} ticker={it.ticker} />
+          {/* The Congress-by-stock page, not /company/: most of these tickers
+              are not in the Form 4 company index (NVDA is not), so that link
+              resolved to a page that noindexed itself. The stock page exists
+              for every ticker with a purchase on record. */}
           <Link
             className="min-w-0 flex-1 truncate text-[13.5px] underline-offset-4 hover:underline"
-            to={companyPath(it.ticker)}
+            to={stockPath(it.ticker)}
           >
             {it.company || it.ticker}
           </Link>

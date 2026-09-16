@@ -39,6 +39,12 @@ import {
   directorMeetsBar,
   directorPath,
 } from "../shared/directors.js";
+import {
+  publishedRoster,
+  STOCKS_INDEX_PATH,
+  stockPath,
+} from "../shared/congress-stocks.js";
+import { ROSTER } from "../shared/congress-stocks-roster.js";
 import { filingPath } from "../shared/filings.js";
 import { weekPath } from "../shared/weeks.js";
 import { entriesForHost, learnPath } from "../shared/glossary.js";
@@ -570,6 +576,27 @@ async function congressEntries(host) {
   }
 }
 
+/** Congress by stock: the tickers that clear their bar.
+ *
+ *  ddbx.us only, like congressEntries. No fetch: the list is the generated
+ *  roster the index page renders, so the sitemap and the hub agree by
+ *  construction. The bar is the one shared/congress-stocks.js defines and the
+ *  pre-render applies to the live rows, and a roster entry above it is above
+ *  it live too (the roster is a sum of the same rows), so a ticker is never
+ *  advertised here and noindexed on arrival. `lastmod` is the ticker's most
+ *  recent filing, which is exactly when its page last changed. */
+function congressStockEntries(host) {
+  if (host !== "ddbx.us") return [];
+  const published = publishedRoster(ROSTER);
+
+  if (published.length === 0) return [];
+
+  return [
+    { path: STOCKS_INDEX_PATH, lastmod: null },
+    ...published.map((e) => ({ path: stockPath(e.t), lastmod: e.last || null })),
+  ];
+}
+
 /** The insider directory: the people who clear the publishing bar.
  *
  *  Per host, because each market's directory belongs to its own domain — UK on
@@ -788,6 +815,7 @@ export async function onRequestGet(context) {
   paths.push(...(await capBandEntries(host)));
   paths.push(...(await sectorEntries(host)));
   paths.push(...(await congressEntries(host)));
+  paths.push(...congressStockEntries(host));
   paths.push(...(await directorEntries(host)));
   paths.push(...(await filingEntries(host)));
   paths.push(...(await weeklyEntries(host)));

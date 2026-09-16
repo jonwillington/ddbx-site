@@ -106,6 +106,18 @@ export function congressMemberCta(name: string): {
   };
 }
 
+/** One stock's Congress page. The ask is about the next filing on this
+ *  name, which is the one thing the page cannot show. */
+export function congressStockCta(company: string): {
+  headline: string;
+  body: string;
+} {
+  return {
+    headline: `Know the next time a member files on ${company}.`,
+    body: "Congressional filings can arrive up to 45 days after the trade and are published without notice. The app picks up each new disclosure the day it posts, with the committee context attached.",
+  };
+}
+
 /** The member directory and the committee pages. */
 export const congressIndexCta = {
   headline: "Every congressional filing, the day it posts.",

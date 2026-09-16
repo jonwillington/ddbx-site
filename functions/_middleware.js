@@ -157,6 +157,9 @@ export async function onRequest(context) {
     /^\/congress\/members\/[^/]+$/.test(routePath) ||
     routePath === "/congress/committees" ||
     /^\/congress\/committees\/[^/]+$/.test(routePath) ||
+    // Congress by stock, added 2026-09-16. Same posture as the two above.
+    routePath === "/congress/stocks" ||
+    /^\/congress\/stocks\/[^/]+$/.test(routePath) ||
     routePath === "/how-it-works" ||
     // Daily editions (functions/daily/*, functions/us/daily/*) and the /today
     // redirects (functions/today.js, functions/us/today.js), added 2026-09-16.
