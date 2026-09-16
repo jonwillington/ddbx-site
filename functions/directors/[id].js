@@ -52,6 +52,7 @@ function toSummary(d) {
     company: d.company,
     buys: (d.prior_picks ?? []).length,
     resolved: d.resolved_count ?? 0,
+    benchmarked: d.benchmarked_count ?? 0,
   };
 }
 
@@ -107,8 +108,8 @@ function prerender(s, detail, host) {
   <h2 style="font-size:15px;margin:32px 0 8px">How their buying has done</h2>
   ${
     rate
-      ? `<p style="font-size:14px;line-height:1.6;max-width:66ch">Hit rate ${Math.round(detail.hit_rate_pct)}%. ${esc(rate)}</p>`
-      : `<p style="font-size:14px;line-height:1.6;max-width:66ch">Not enough resolved purchases to state a hit rate yet. Returns are measured from the disclosure-day close at 3, 6, 12 and 24 months, so a recent filing has nothing to report until the clock has run.</p>`
+      ? `<p style="font-size:14px;line-height:1.6;max-width:66ch">Beat the index on ${Math.round(detail.beat_rate_pct ?? 0)}% of them. ${esc(rate)} ${Math.round(detail.hit_rate_pct)}% simply rose; beating the benchmark over the same window is the stricter test.</p>`
+      : `<p style="font-size:14px;line-height:1.6;max-width:66ch">Not enough resolved purchases to state a rate yet. Returns are measured from the disclosure-day close at 3, 6, 12 and 24 months, so a recent filing has nothing to report until the clock has run.</p>`
   }
 
   <h2 style="font-size:15px;margin:32px 0 8px">Their filings</h2>

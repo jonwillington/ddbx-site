@@ -92,13 +92,14 @@ export function directorLeadSentence(d) {
 }
 
 /** Sentence for the figure a director page leads on, or null when there is no
- *  figure to state. Mirrors MIN_RESOLVED_FOR_RATE on the React page: a hit rate
- *  over one or two resolved purchases is an anecdote with a percent sign on it,
- *  so the pre-render withholds it exactly where the page does. */
-export const MIN_RESOLVED_FOR_RATE = 3;
+ *  figure to state. Mirrors MIN_RESOLVED_FOR_RATE on the React page: a rate
+ *  over a handful of purchases is an anecdote with a percent sign on it, so the
+ *  pre-render withholds it exactly where the page does. Gated on the BENCHMARK
+ *  count, because the figure it introduces is the beat rate. */
+export const MIN_RESOLVED_FOR_RATE = 4;
 
 export function directorRateSentence(d) {
-  if (!d || (d.resolved ?? 0) < MIN_RESOLVED_FOR_RATE) return null;
+  if (!d || (d.benchmarked ?? 0) < MIN_RESOLVED_FOR_RATE) return null;
 
-  return `Across ${d.resolved} purchases whose horizon has resolved.`;
+  return `Across ${d.benchmarked} purchases whose horizon has resolved.`;
 }

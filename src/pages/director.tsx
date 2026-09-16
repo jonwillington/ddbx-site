@@ -93,7 +93,7 @@ type AnyDirectorDetail = DirectorDetail | UsDirectorDetail | EuDirectorDetail;
  *  `getDirector`, which averages the 90-day performance rows. */
 const FIRST_HORIZON_DAYS = 90;
 
-/** Resolved picks required before a hit rate is published as a PERCENTAGE.
+/** Resolved picks required before a rate is published as a PERCENTAGE.
  *
  *  `hit_rate_pct` is a fraction of however many picks happen to carry a mark,
  *  so one resolved purchase that went up renders "HIT RATE 100%" against a
@@ -102,10 +102,12 @@ const FIRST_HORIZON_DAYS = 90;
  *  August, pointing the other way, and pooling a person's name variants (which
  *  the API now does) makes it more reachable rather than less.
  *
- *  Three is the floor at which a rate describes a pattern instead of an
- *  anecdote. Below it the count is still shown — "2 resolved purchases" is a
- *  fact we have — but never divided into a percentage. */
-const MIN_RESOLVED_FOR_RATE = 3;
+ *  Four, raised from three on 2026-09-16. Beating the index is roughly a coin
+ *  flip across the whole record (55.7% UK, 61.8% US), so a perfect score over
+ *  three purchases happens by chance about one time in six; over four it is one
+ *  in ten. Below the floor the count is still shown — "3 resolved purchases" is
+ *  a fact we have — but never divided into a percentage. */
+const MIN_RESOLVED_FOR_RATE = 4;
 
 function isUsDetail(d: AnyDirectorDetail): d is UsDirectorDetail {
   // UsDirectorDetail.prior_picks carries UsDealing rows (filing_id +
@@ -385,8 +387,14 @@ export default function DirectorPage() {
     // predating the field falls back to the old "any horizon resolved" test,
     // which is weaker but never worse than what shipped before it.
     const resolved = d?.resolved_count ?? null;
+    // The beat rate has its own denominator: a resolved purchase with no
+    // benchmark for its window cannot be scored against one, and counting it as
+    // a miss would report a data gap as underperformance.
+    const benchmarked = d?.benchmarked_count ?? null;
     const rateIsPublishable =
       resolved != null ? resolved >= MIN_RESOLVED_FOR_RATE : marked;
+    const beatIsPublishable =
+      benchmarked != null && benchmarked >= MIN_RESOLVED_FOR_RATE;
     // Earliest disclosure we hold for this person: the clock the first return
     // figure is waiting on.
     const earliest = dealings
@@ -402,6 +410,8 @@ export default function DirectorPage() {
       horizons,
       marked,
       rateIsPublishable,
+      beatIsPublishable,
+      benchmarked,
       resolved,
       // A date we have already passed is not a promise worth printing: it means
       // the mark is late or the price series is thin, and "available after a
@@ -700,20 +710,32 @@ export default function DirectorPage() {
                 note={
                   record.resolved == null || record.resolved === 0
                     ? undefined
-                    : record.rateIsPublishable
-                      ? `Hit rate and averages are measured over ${record.resolved} purchase${record.resolved === 1 ? "" : "s"} whose horizon has resolved.`
-                      : `${record.resolved} purchase${record.resolved === 1 ? "" : "s"} ${record.resolved === 1 ? "has" : "have"} a resolved horizon so far — too few to state as a rate. The hit rate appears at ${MIN_RESOLVED_FOR_RATE}.`
+                    : record.beatIsPublishable
+                      ? `Measured over ${record.resolved} purchase${record.resolved === 1 ? "" : "s"} whose horizon has resolved. ${d.hit_rate_pct.toFixed(0)}% of them rose; beating the index over the same window is the stricter test, and the one that says something about the buyer rather than about the market.`
+                      : `${record.resolved} purchase${record.resolved === 1 ? "" : "s"} ${record.resolved === 1 ? "has" : "have"} a resolved horizon so far — too few to state as a rate. Rates appear at ${MIN_RESOLVED_FOR_RATE}.`
                 }
                 stats={[
                   {
-                    label: "Hit rate",
+                    label: "Beat the index",
                     primary: true,
                     // NOT `hit_rate_pct` on its own. The API returns a literal
                     // 0 when no pick carries a mark, and "0%" is a claim — and
                     // a rate over one or two marks is a different claim that is
                     // just as unfounded. See MIN_RESOLVED_FOR_RATE.
-                    value: record.rateIsPublishable ? (
-                      `${d.hit_rate_pct.toFixed(0)}%`
+                    // BEATING THE INDEX, NOT GOING UP.
+                    //
+                    // The hit rate — did the price rise — was the headline
+                    // here until 2026-09-16, and it mostly described the
+                    // market: two thirds of all disclosed purchases rose over
+                    // this period, so "100%" over a handful of them was very
+                    // often just 2026. Beating the benchmark over the identical
+                    // window is roughly a coin flip across the whole record,
+                    // which is what makes a score on it worth printing. Both
+                    // numbers are on the wire; the plain rise rate moves to the
+                    // note below, where it reads as context rather than as a
+                    // verdict.
+                    value: record.beatIsPublishable ? (
+                      `${(d.beat_rate_pct ?? 0).toFixed(0)}%`
                     ) : (
                       <NotYet />
                     ),

@@ -682,6 +682,28 @@ export interface DirectorDetail extends DirectorSummary {
   prior_picks: Dealing[];
   hit_rate_pct: number;
   avg_return_by_horizon: Record<string, number | null>;
+  /** Share of resolved purchases that BEAT their benchmark over the identical
+   *  window, as a percentage. This is the figure a consumer should lead on.
+   *
+   *  `hit_rate_pct` above asks "did the price go up", which 66% (UK) / 69% (US)
+   *  of disclosed purchases did over this period — so it mostly describes the
+   *  market. This asks the question a reader already believes the hit rate
+   *  answers, and its base rate is 55.7% / 61.8%: close enough to a coin flip
+   *  that the number says something about the buyer.
+   *
+   *  Taken over the purchases that HAVE a benchmark leg, which is not always
+   *  every resolved one — `outcomes` flags `no_bench` windows, and scoring
+   *  those as misses would report a data gap as underperformance. Optional on
+   *  the wire for clients predating the field. */
+  beat_rate_pct?: number;
+  /** Resolved purchases that carry a benchmark leg — the denominator
+   *  `beat_rate_pct` is taken over, and the guard against publishing a bare 0%
+   *  that actually means "no benchmark for these windows". */
+  benchmarked_count?: number;
+  /** Average return MINUS the benchmark's over the same window, per horizon, as
+   *  a ratio (0.0092 = +0.92 percentage points). Same keys as
+   *  `avg_return_by_horizon`, null where nothing has resolved. */
+  avg_abnormal_by_horizon?: Record<string, number | null>;
   /** How many of `prior_picks` carry a resolved horizon. `hit_rate_pct` is
    *  computed over exactly these, and returns a bare 0 when this is 0 — so a
    *  consumer must read this before publishing the hit rate as a figure.
@@ -1568,11 +1590,33 @@ export interface UsDirectorDetail {
   /** Fraction of resolved prior picks with a positive longest-horizon return,
    *  expressed as a percentage. 0 when no horizons have resolved. */
   hit_rate_pct: number;
-  /** How many prior picks carry a resolved horizon — the denominator
-   *  `hit_rate_pct` is computed over. Always 0 while US horizon aggregates are
-   *  unimplemented, which is exactly why a consumer must read it: the rate
-   *  alone cannot distinguish "picks badly" from "nothing has resolved". */
+  /** How many prior picks carry a resolved horizon — the denominator both
+   *  rates are computed over. Read it before publishing either as a figure:
+   *  the rate alone cannot distinguish "picks badly" from "nothing has
+   *  resolved yet". */
   resolved_count?: number;
+  /** Share of resolved purchases that BEAT their benchmark over the identical
+   *  window, as a percentage. This is the figure a consumer should lead on.
+   *
+   *  `hit_rate_pct` above asks "did the price go up", which 66% (UK) / 69% (US)
+   *  of disclosed purchases did over this period — so it mostly describes the
+   *  market. This asks the question a reader already believes the hit rate
+   *  answers, and its base rate is 55.7% / 61.8%: close enough to a coin flip
+   *  that the number says something about the buyer.
+   *
+   *  Taken over the purchases that HAVE a benchmark leg, which is not always
+   *  every resolved one — `outcomes` flags `no_bench` windows, and scoring
+   *  those as misses would report a data gap as underperformance. Optional on
+   *  the wire for clients predating the field. */
+  beat_rate_pct?: number;
+  /** Resolved purchases that carry a benchmark leg — the denominator
+   *  `beat_rate_pct` is taken over, and the guard against publishing a bare 0%
+   *  that actually means "no benchmark for these windows". */
+  benchmarked_count?: number;
+  /** Average return MINUS the benchmark's over the same window, per horizon, as
+   *  a ratio (0.0092 = +0.92 percentage points). Same keys as
+   *  `avg_return_by_horizon`, null where nothing has resolved. */
+  avg_abnormal_by_horizon?: Record<string, number | null>;
   /** Average return at each horizon across resolved prior picks. Each value
    *  is null while that horizon has not resolved for any pick (the common
    *  case during the first 3 months of US coverage). Keyed "3m" | "6m" |
@@ -1776,10 +1820,16 @@ export interface EuDirectorDetail {
    *  expressed as a percentage. 0 when no horizons have resolved (the case
    *  during the first 3 months of SE coverage). */
   hit_rate_pct: number;
-  /** How many prior picks carry a resolved horizon — the denominator
-   *  `hit_rate_pct` is computed over, and 0 whenever that rate is a bare 0
-   *  rather than a measurement. Read it before publishing the rate. */
+  /** How many prior picks carry a resolved horizon — the denominator both
+   *  rates are computed over, and 0 whenever they are bare zeros rather than
+   *  measurements. Read it before publishing either. */
   resolved_count?: number;
+  /** Always 0 on this market: SE and NL compute no return horizons, so nothing
+   *  can beat an index. Present for shape parity, and read by the same gate
+   *  that stops the other markets publishing a rate they cannot support. */
+  beat_rate_pct?: number;
+  benchmarked_count?: number;
+  avg_abnormal_by_horizon?: Record<string, number | null>;
   /** Average return at each horizon across resolved prior picks. Null when
    *  the horizon has not resolved for any pick. Keyed "3m" | "6m" | "12m" |
    *  "24m" to match UK/US. */

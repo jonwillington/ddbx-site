@@ -24,6 +24,9 @@ export interface DirectorBarInput {
   company?: string;
   buys?: number;
   resolved?: number;
+  /** Resolved purchases carrying a benchmark leg — what the beat rate is taken
+   *  over, and what `directorRateSentence` gates on. */
+  benchmarked?: number;
 }
 
 export const MIN_DIRECTOR_BUYS: number;
