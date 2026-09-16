@@ -152,6 +152,14 @@ export function roleCta(plural?: string): {
   };
 }
 
+/** The Insider Index — undated and dated. The page is a barometer of the
+ *  whole market; the ask is the filings the barometer is made of, one at a
+ *  time, as they land. */
+export const insiderIndexCta = {
+  headline: "The index is the total. The app is each purchase in it.",
+  body: "Every reading here is a count of disclosures that already went out. The app pushes each one the morning it files, rated, so you see the buying before it is a number on a line.",
+};
+
 /** Broker guides — deliberately quiet (`media: "none"`): these pages already
  *  carry an affiliate ask, and a phone screenshot next to a "visit broker"
  *  button is two competing asks in one viewport. */

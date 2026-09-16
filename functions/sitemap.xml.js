@@ -73,6 +73,11 @@ import {
 } from "../shared/sectors.js";
 import { HOST_DEFAULT_MARKET } from "../shared/seo.js";
 import { dailyIndexPath, dailyPath, sitemapDays } from "../shared/days.js";
+import {
+  indexPath,
+  publishable,
+  series as indexSeries,
+} from "../shared/insider-index.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -679,6 +684,51 @@ async function dailyEntries(host) {
   }
 }
 
+/** The Insider Index: the undated page plus every published trading day.
+ *
+ *  ddbx.uk only — the index is computed over the UK feed and canonicalises
+ *  there whichever host serves it (shared/seo.js). The bar is the module's
+ *  own (`publishable`), which the two pre-render Functions apply, so a day is
+ *  never advertised here and then noindexed on arrival. One reading a trading
+ *  day: roughly 250 URLs a year.
+ *
+ *  `lastmod` on a dated reading is its own date. Readings are recomputed from
+ *  the full record and a late filing can move one by a point, but a lastmod
+ *  that tracked every recompute would tell crawlers eighty pages changed
+ *  every morning. The undated page carries the latest reading's date, which
+ *  is exactly when it last changed.
+ *
+ *  A partial window would rank every reading against too few earlier ones;
+ *  emitting nothing is better than advertising readings the pre-render will
+ *  compute differently once the record is whole. Failure posture matches the
+ *  other API-backed sections: an outage costs URLs, not the document. */
+async function insiderIndexEntries(host) {
+  if (host !== "ddbx.uk") return [];
+  try {
+    const { dealings, complete } = await fetchDealingsWindow({
+      apiBase: API_BASE,
+      market: "UK",
+      since: windowStart(new Date()),
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
+    });
+
+    if (!complete) return [];
+    const published = publishable(indexSeries(dealings, "UK"));
+
+    if (published.length === 0) return [];
+
+    return [
+      { path: indexPath(), lastmod: published[published.length - 1].date },
+      ...published.map((r) => ({ path: indexPath(r.date), lastmod: r.date })),
+    ];
+  } catch {
+    return [];
+  }
+}
+
 const xmlEscape = (s) =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -742,6 +792,7 @@ export async function onRequestGet(context) {
   paths.push(...(await filingEntries(host)));
   paths.push(...(await weeklyEntries(host)));
   paths.push(...(await dailyEntries(host)));
+  paths.push(...(await insiderIndexEntries(host)));
   // Glossary entries appear only in their owning host's sitemap — the whole
   // point of the ownership rule is that no entry exists at two URLs.
   paths.push(...entriesForHost(host).map((e) => learnPath(e.slug)));

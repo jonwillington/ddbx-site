@@ -129,7 +129,7 @@ export function prefetchDealingsWindow(market = hostWindowMarket()): void {
 /** Paths whose page reads the rolling window. Year boards
  *  (/biggest-buys/2026) read a calendar year instead and are not prefetched. */
 const WINDOW_PATH =
-  /^\/(?:sectors(?:\/[^/]+)?|biggest-buys|best-performing-buys|cluster-buys|most-active-companies|roles(?:\/[^/]+)?|company\/[^/]+)\/?$/;
+  /^\/(?:sectors(?:\/[^/]+)?|biggest-buys|best-performing-buys|cluster-buys|most-active-companies|roles(?:\/[^/]+)?|company\/[^/]+|insider-index(?:\/[^/]+)?)\/?$/;
 
 export function readsDealingsWindow(pathname: string): boolean {
   return WINDOW_PATH.test(pathname);

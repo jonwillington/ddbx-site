@@ -48,6 +48,7 @@ import UsPreviewPage from "@/pages/us-preview";
 import UkPreviewPage from "@/pages/uk-preview";
 import DailyEditionPage, { DailyIndexPage, TodayRedirect } from "@/pages/daily";
 import TapePage from "@/pages/tape";
+import InsiderIndexPage, { InsiderIndexDatePage } from "@/pages/insider-index";
 
 function App() {
   return (
@@ -272,6 +273,10 @@ function App() {
             /developers, canonical on ddbx.uk (shared/seo.js), pre-rendered by
             functions/tape.js. */}
         <Route element={<TapePage />} path="/tape" />
+        {/* The Insider Index: the latest reading, and one page per trading
+            day. UK on every host; see shared/insider-index.js. */}
+        <Route element={<InsiderIndexPage />} path="/insider-index" />
+        <Route element={<InsiderIndexDatePage />} path="/insider-index/:date" />
       </Routes>
       <CookieBanner />
     </div>

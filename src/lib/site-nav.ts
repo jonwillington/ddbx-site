@@ -90,6 +90,7 @@ export const RESEARCH_PATHS = [
   "/cluster-buys",
   "/most-active-companies",
   "/reports",
+  "/insider-index",
 ] as const;
 
 const uk = () => MARKETS.find((m) => m.id === "uk")!;
@@ -158,6 +159,17 @@ function researchLinks(
       "Daily editions",
       MARKET_HOST_BY_ID[home.id] === "ddbx.us" ? "/us/daily" : "/daily",
     ),
+    // UK-pinned on every host, like the broker links: the index is computed
+    // over the UK feed alone and canonicalises to ddbx.uk (shared/seo.js), so
+    // a same-host link on ddbx.us would advertise a URL that canonicalises
+    // elsewhere. Appended after the archive rather than filed with the
+    // standing rankings so the divider keeps its one meaning.
+    {
+      label: "Insider Index",
+      path: "/insider-index",
+      href: ukHref("/insider-index", hostname),
+      nav: true,
+    },
   ];
 }
 

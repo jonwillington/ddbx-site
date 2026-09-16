@@ -169,7 +169,11 @@ export async function onRequest(context) {
     routePath === "/us/daily" ||
     /^\/us\/daily\/[^/]+$/.test(routePath) ||
     // The global tape, added 2026-09-16: functions/tape.js owns its head.
-    routePath === "/tape"
+    routePath === "/tape" ||
+    // The Insider Index and its dated readings, added 2026-09-16. Both own
+    // their whole head (functions/insider-index/*).
+    routePath === "/insider-index" ||
+    /^\/insider-index\/[^/]+$/.test(routePath)
   ) {
     return res;
   }

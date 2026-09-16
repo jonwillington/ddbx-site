@@ -29,6 +29,11 @@ import { roleBySlug } from "./roles.js";
 import { sectorBySlug } from "./sectors.js";
 import { weekFromPath, weekLabel } from "./weeks.js";
 import { dailyFromPath, dayLabel } from "./days.js";
+import {
+  dateLabel as indexDateLabel,
+  indexDateFromPath,
+  INDEX_PATH,
+} from "./insider-index.js";
 
 export const BRAND = "ddbx";
 export const SITE_NAME = "Director Dealings";
@@ -182,6 +187,9 @@ const UK_US_ONLY_PREFIXES = [
   // host (shared/days.js), so ddbx.uk is the right destination.
   "/daily",
   "/today",
+  // The Insider Index is computed over the UK feed alone (see
+  // shared/insider-index.js) and canonicalises to ddbx.uk on every host.
+  "/insider-index",
 ];
 
 /** True when `pathname` is a UK/US-only research page being served on a host
@@ -424,6 +432,16 @@ const dailyFromSeoPath = (path) => dailyFromPath(path);
  *  shared/weeks.js so a mid-week date never resolves. */
 const weekFromSeoPath = (path) => weekFromPath(path);
 
+/** The Insider Index, undated. UK-only and folded onto ddbx.uk like the
+ *  broker guides — see canonicalUrlFor. */
+const isInsiderIndexPath = (path) => path === INDEX_PATH;
+
+/** "/insider-index/2026-07-02" -> the date, or null. Validated through
+ *  shared/insider-index.js so a weekend never resolves. The pre-render
+ *  Function replaces the head with the day's reading; this is the SPA's
+ *  fallback, which has the date and nothing else to say. */
+const indexDateFromSeoPath = (path) => indexDateFromPath(path);
+
 /** One filing, at either of its two addresses.
  *
  *  /dealings/{id} is the canonical page; /t/{id} is the share link a tweet
@@ -555,6 +573,7 @@ export function seoForPath(pathname, hostname) {
   const capBand = bandFromPath(path);
   const learnEntry = learnEntryFromPath(path);
   const weekStart = weekFromSeoPath(path);
+  const indexDate = indexDateFromSeoPath(path);
   const congressMember = congressMemberNameFromPath(path);
   const congressCommittee = congressCommitteeNameFromPath(path);
   const daily = dailyFromSeoPath(path);
@@ -641,6 +660,14 @@ export function seoForPath(pathname, hostname) {
       );
     if (isWeeklyIndexPath(path))
       return brandTitle(`${market.label} insider buying, week by week`);
+    // UK whichever host served it: the index is computed over the UK feed
+    // alone and canonicalises to ddbx.uk.
+    if (indexDate)
+      return brandTitle(`UK Insider Index, ${indexDateLabel(indexDate)}`);
+    if (isInsiderIndexPath(path))
+      return brandTitle(
+        "The UK Insider Index — how much directors are buying, daily",
+      );
     if (isFilingPath(path))
       return brandTitle(`${market.label} insider purchase — the filing in full`);
     if (congressMember)
@@ -766,6 +793,10 @@ export function seoForPath(pathname, hostname) {
       return `What ${market.label} insiders bought in the week of ${weekLabel(weekStart)}: how much in total, the biggest single purchase, where the money went by sector, and which buys cleared the rating bar.`;
     if (isWeeklyIndexPath(path))
       return `A short read on each week of disclosed ${market.label} insider buying: the totals, the biggest cheque, the sectors it went into and the buys that cleared the bar.`;
+    if (indexDate)
+      return `The UK Insider Index reading for ${indexDateLabel(indexDate)}: how much UK directors were buying over the twenty trading days to that date, ranked against every earlier window on record, with the purchases and companies behind it.`;
+    if (isInsiderIndexPath(path))
+      return "One daily number for how much UK directors are buying in their own companies: the last twenty trading days of open-market purchases ranked against the record, from 0 (quietest) to 100 (busiest), with the formula published.";
     if (isFilingPath(path))
       return `One disclosed insider purchase in full: who bought, how many shares, at what price, how long the disclosure took, and how the shares have done against the market since.`;
     if (congressMember)
@@ -876,12 +907,17 @@ export function canonicalUrlFor(pathname, hostname) {
   // three duplicates competing with each other — the same trap the glossary
   // entries below already avoid. It folds onto ddbx.uk, and only that URL is
   // in the sitemap (see functions/sitemap.xml.js).
+  // The Insider Index folds the same way: it is computed over the UK feed
+  // alone (shared/insider-index.js), so ddbx.us/insider-index is the UK page.
+  const isInsiderIndex =
+    isInsiderIndexPath(path) || indexDateFromSeoPath(path) !== null;
   const marketHost =
     isBrokerPath ||
     isApiPath(path) ||
     isMcpPath(path) ||
     isStatusPath(path) ||
-    isTapePath(path)
+    isTapePath(path) ||
+    isInsiderIndex
       ? "ddbx.uk"
       : (MARKET_HOST_BY_ID[id] ?? "ddbx.uk");
 
