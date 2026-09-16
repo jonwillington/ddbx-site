@@ -561,34 +561,41 @@ async function congressEntries(host) {
   }
 }
 
-/** The UK insider directory: the people who clear the publishing bar.
+/** The insider directory: the people who clear the publishing bar.
  *
- *  ddbx.uk only. /us, /se and /nl director pages exist and resolve, but those
- *  markets compute no performance horizons, so every one of them fails the bar
- *  — they are omitted because they would not qualify, not because the family is
- *  UK-shaped. Add them here and add a pre-render Function in the same change.
+ *  Per host, because each market's directory belongs to its own domain — UK on
+ *  ddbx.uk, SEC Form 4 on ddbx.us, the same rel=canonical split every other
+ *  family uses. /se and /nl director pages exist and resolve but their markets
+ *  compute no performance horizons, so every one of them fails the bar; they
+ *  are absent because they would not qualify, not because the family is
+ *  two-market-shaped.
  *
- *  The bar is the one `shared/directors.js` defines and the pre-render Function
- *  applies, so a director is never advertised here and then noindexed on
+ *  The bar is the one `shared/directors.js` defines and the pre-render
+ *  Functions apply, so a person is never advertised here and then noindexed on
  *  arrival. `lastmod` is their most recent disclosure, which is exactly when
  *  their page last changed.
  *
- *  Ids are grouped by the API, which returns one row per PERSON keyed on the
- *  same `canonical_id` the detail route reports — so the sitemap lists du Toit
- *  once rather than listing three URLs that serve identical content.
+ *  UK ids are grouped by the API on the same `canonical_id` the detail route
+ *  reports, so du Toit is listed once rather than as three URLs serving
+ *  identical content. US ids are SEC CIKs and need no such care.
  *
  *  Failure posture matches brokerPaths, sectorEntries and congressEntries: an
  *  outage costs URLs, not the document. */
 async function directorEntries(host) {
-  if (host !== "ddbx.uk") return [];
+  const market = host === "ddbx.uk" ? "uk" : host === "ddbx.us" ? "us" : null;
+
+  if (!market) return [];
   try {
-    const res = await fetch(`${API_BASE}/directors-index`, {
-      headers: { accept: "application/json" },
-      cf: {
-        cacheEverything: true,
-        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+    const res = await fetch(
+      `${API_BASE}/directors-index${market === "us" ? "?market=us" : ""}`,
+      {
+        headers: { accept: "application/json" },
+        cf: {
+          cacheEverything: true,
+          cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+        },
       },
-    });
+    );
 
     if (!res.ok) return [];
 
@@ -602,10 +609,12 @@ async function directorEntries(host) {
     // rather than advertising a directory whose children are all missing.
     if (published.length === 0) return [];
 
-    const entries = [{ path: DIRECTORS_INDEX_PATH, lastmod: null }];
+    const hub = market === "us" ? "/us/directors" : DIRECTORS_INDEX_PATH;
+    const entries = [{ path: hub, lastmod: null }];
+
     for (const d of published) {
       entries.push({
-        path: directorPath(d.id),
+        path: directorPath(d.id, market),
         lastmod: d.last_disclosed || null,
       });
     }

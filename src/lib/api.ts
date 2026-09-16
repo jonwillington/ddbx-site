@@ -279,8 +279,10 @@ export const api = {
    *  Worker's `/api/directors/:id` route, which matches it with id="directors"
    *  and answers "not found". Same trap that sent the Congress directory to
    *  `/gov-members`. */
-  directorsIndex: () =>
-    get<{ directors: DirectorIndexRow[] }>(`/directors-index`),
+  directorsIndex: (market: "uk" | "us" = "uk") =>
+    get<{ directors: DirectorIndexRow[] }>(
+      market === "us" ? `/directors-index?market=us` : `/directors-index`,
+    ),
   director: (id: string) => get<DirectorDetail>(`/directors/${id}`),
   usDirector: (id: string) => get<UsDirectorDetail>(`/directors/us/${id}`),
   seDirector: (nameOrKey: string) =>

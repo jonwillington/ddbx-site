@@ -25,6 +25,8 @@ import type {
 
 import { useEffect, useMemo, useState } from "react";
 
+import { usInsiderDisplayName } from "../../../shared/us-names.js";
+
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { buildMarketFaq } from "@/lib/markets/faq";
 import { AnalysisSection } from "@/components/analysis-section";
@@ -36,7 +38,7 @@ import { MiniPriceChart } from "@/components/mini-price-chart";
 import { PositionCard, type PriceFormat } from "@/components/position-card";
 import { RatingBadge } from "@/components/rating-badge";
 import { api } from "@/lib/api";
-import { displayCompany, normalisedDisplayName } from "@/lib/display-name";
+import { displayCompany } from "@/lib/display-name";
 import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { useDiscretion } from "@/lib/discretion";
 
@@ -288,7 +290,12 @@ export function toMarketDealing(group: UsRowGroup): MarketDealing<UsRowGroup> {
     id: group.key,
     ticker: row.ticker,
     company: displayCompany(row.company, row.ticker),
-    insiderName: normalisedDisplayName(reporter.name),
+    // EDGAR files a natural person SURNAME-FIRST ("HOLDING FRANK B JR").
+    // `normalisedDisplayName` fixes the shouting but cannot fix the order — it
+    // is shared with UK, SE and NL, whose sources already file in reading
+    // order. `usInsiderDisplayName` is the US-only reorder, and it declines
+    // wherever the order is ambiguous rather than guessing at someone's name.
+    insiderName: usInsiderDisplayName(reporter.name),
     insiderRole: reporter.role,
     disclosedDate: row.disclosed_date,
     tradeDate: row.trade_date,

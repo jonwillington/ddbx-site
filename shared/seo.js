@@ -424,7 +424,8 @@ const isFilingPath = (path) =>
 /** The UK insider directory hub. Reclaimed from the Congress preview on
  *  2026-09-16 — see marketForPath above. The DETAIL pages own their own head
  *  via functions/directors/[id].js; only this hub reaches here. */
-const isDirectorsIndexPath = (path) => path === "/directors";
+const isDirectorsIndexPath = (path) =>
+  path === "/directors" || path === "/us/directors";
 
 const isCongressMembersIndexPath = (path) => path === "/congress/members";
 
@@ -625,7 +626,11 @@ export function seoForPath(pathname, hostname) {
     if (congressMember)
       return brandTitle(`${congressMember} stock trades — filings and committees`);
     if (isDirectorsIndexPath(path))
-      return brandTitle("UK directors who buy shares in their own companies");
+      return brandTitle(
+        path === "/us/directors"
+          ? "US insiders who buy shares in their own companies"
+          : "UK directors who buy shares in their own companies",
+      );
     if (isCongressMembersIndexPath(path))
       return brandTitle("Members of Congress who file stock purchases");
     if (congressCommittee)
@@ -734,7 +739,9 @@ export function seoForPath(pathname, hostname) {
     if (congressMember)
       return `Every stock purchase ${congressMember} has disclosed under the STOCK Act — the value bands, the companies, the accounts they were filed for, and which of their committees oversee the sectors involved.`;
     if (isDirectorsIndexPath(path))
-      return "Every UK director and senior manager with a disclosed open-market purchase in their own company — what they bought, what they paid, and how each purchase has performed since it was disclosed.";
+      return path === "/us/directors"
+        ? "Every officer, director and ten-percent owner with a disclosed open-market purchase on SEC Form 4 — what they bought, what they paid, and how each purchase has performed since it was disclosed."
+        : "Every UK director and senior manager with a disclosed open-market purchase in their own company — what they bought, what they paid, and how each purchase has performed since it was disclosed.";
     if (isCongressMembersIndexPath(path))
       return "Every member of Congress with a disclosed stock purchase on record, with the value bands, the companies and the committee jurisdiction behind each one.";
     if (congressCommittee)

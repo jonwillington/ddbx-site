@@ -152,6 +152,7 @@ export async function onRequest(context) {
     // this module can't produce, so it keeps this module's pass. Matching the
     // bare /directors here would strip the hub's canonical for nothing.
     /^\/directors\/[^/]+$/.test(routePath) ||
+    /^\/us\/directors\/[^/]+$/.test(routePath) ||
     routePath === "/congress/members" ||
     /^\/congress\/members\/[^/]+$/.test(routePath) ||
     routePath === "/congress/committees" ||

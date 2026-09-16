@@ -104,6 +104,7 @@ function App() {
         {/* US Congress (STOCK Act) preview — distinct from /directors/:id
             (per-market insider detail). */}
         <Route element={<DirectorsIndexPage />} path="/directors" />
+        <Route element={<DirectorsIndexPage />} path="/us/directors" />
         <Route element={<CongressPreviewPage />} path="/congress" />
         {/* Congress directory. Mounted under /congress/members/ and
             /congress/committees/ rather than a bare /congress/:slug, which
