@@ -194,3 +194,12 @@ export const tapeCta = {
   headline: "The tape is public. The alert is not.",
   body: "This page reads five markets once a minute. The app tells you the moment a rated filing lands in a company or market you follow, whichever time zone it was filed in, with the reasoning attached.",
 };
+
+/** Living studies. Everything a study measures is months old by
+ *  construction, so the ask is about the purchases that have not had time to
+ *  be measured yet: the ones the app pushes the day they file. No claim about
+ *  returns, per house style. */
+export const studyCta = {
+  headline: "Every purchase in these studies was a push notification first.",
+  body: "A finding here is months old by the time it can be stated. The app tells you the day a purchase like these is filed, with the buyer’s role, the size and any cluster already attached.",
+};

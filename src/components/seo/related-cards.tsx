@@ -26,6 +26,7 @@ import {
   AcademicCapIcon,
   ArrowTrendingUpIcon,
   BanknotesIcon,
+  BeakerIcon,
   BookOpenIcon,
   BuildingLibraryIcon,
   BuildingOffice2Icon,
@@ -80,6 +81,7 @@ const ICON_FOR: [RegExp, typeof DocumentTextIcon][] = [
   [/^\/performance/, ArrowTrendingUpIcon],
   [/^\/(developers|api)$/, CodeBracketIcon],
   [/^\/mcp$/, ChatBubbleLeftRightIcon],
+  [/^\/research/, BeakerIcon],
 ];
 
 function iconFor(to: string): SectorGlyph {

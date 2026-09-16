@@ -51,6 +51,7 @@ import UkPreviewPage from "@/pages/uk-preview";
 import DailyEditionPage, { DailyIndexPage, TodayRedirect } from "@/pages/daily";
 import TapePage from "@/pages/tape";
 import InsiderIndexPage, { InsiderIndexDatePage } from "@/pages/insider-index";
+import StudyPage, { ResearchIndexPage } from "@/pages/research";
 
 function App() {
   return (
@@ -287,6 +288,11 @@ function App() {
             day. UK on every host; see shared/insider-index.js. */}
         <Route element={<InsiderIndexPage />} path="/insider-index" />
         <Route element={<InsiderIndexDatePage />} path="/insider-index/:date" />
+        {/* Living studies. Evergreen questions recomputed from the live
+            corpus on every load; functions/research/[[route]].js pre-renders
+            the same verdict for crawlers. See shared/studies.js. */}
+        <Route element={<ResearchIndexPage />} path="/research" />
+        <Route element={<StudyPage />} path="/research/:slug" />
       </Routes>
       <CookieBanner />
     </div>

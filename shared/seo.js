@@ -34,6 +34,7 @@ import {
   indexDateFromPath,
   INDEX_PATH,
 } from "./insider-index.js";
+import { studyBySlug } from "./studies.js";
 
 export const BRAND = "ddbx";
 export const SITE_NAME = "Director Dealings";
@@ -190,6 +191,9 @@ const UK_US_ONLY_PREFIXES = [
   // The Insider Index is computed over the UK feed alone (see
   // shared/insider-index.js) and canonicalises to ddbx.uk on every host.
   "/insider-index",
+  // The living studies compute from the UK and US feeds' performance marks,
+  // which SE and NL do not carry. See shared/studies.js.
+  "/research",
 ];
 
 /** True when `pathname` is a UK/US-only research page being served on a host
@@ -392,6 +396,15 @@ const roleFromPath = (path, marketId) => {
 
 const isHowItWorksPath = (path) => path === "/how-it-works";
 
+/** The living studies: /research is the index, /research/<slug> one study.
+ *  A slug the module does not know resolves to null, so the index branch
+ *  cannot claim it and the page's own not-found state gets the shell title. */
+const isResearchIndexPath = (path) => path === "/research";
+const studyFromPath = (path) =>
+  path.startsWith("/research/")
+    ? studyBySlug(decodeURIComponent(path.slice("/research/".length)))
+    : null;
+
 const isLearnIndexPath = (path) => path === "/learn";
 
 const learnEntryFromPath = (path) =>
@@ -592,6 +605,7 @@ export function seoForPath(pathname, hostname) {
   const congressCommittee = congressCommitteeNameFromPath(path);
   const daily = dailyFromSeoPath(path);
   const congressStock = congressStockFromPath(path);
+  const study = studyFromPath(path);
   const period = leaderboard?.year
     ? `in ${leaderboard.year}`
     : "of the last twelve months";
@@ -766,6 +780,11 @@ export function seoForPath(pathname, hostname) {
           : `${daily.market} insider buying, day by day`,
       );
     }
+    if (study) return brandTitle(`${study.title} (${market.label})`);
+    if (isResearchIndexPath(path))
+      return brandTitle(
+        `What ${market.label} insider buying says, once there is enough of it`,
+      );
 
     return market.documentTitle;
   })();
@@ -871,6 +890,11 @@ export function seoForPath(pathname, hostname) {
         ? `Every open-market purchase ${daily.market} insiders disclosed on ${dayLabel(daily.date)}: what was bought, what it was worth, the verdict on each, the day’s biggest buy and any cluster, with the close-of-day read.`
         : `${daily.market} insider buying one trading day at a time: every filing disclosed that day, the verdict on each, the biggest buy, cluster activity and the close-of-day summary.`;
     }
+
+    if (study)
+      return `${study.summary} Answered from the live ${market.label} disclosures, and published only once the sample can carry it.`;
+    if (isResearchIndexPath(path))
+      return `Three research questions about ${market.label} insider buying, recomputed from the live disclosures on every load and each published only once the sample can carry it: CEO against CFO, purchase size, and the cluster effect.`;
 
     return `Analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;
   })();

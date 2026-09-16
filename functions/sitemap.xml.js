@@ -85,6 +85,7 @@ import {
   indexWindow,
   series as indexSeries,
 } from "../shared/insider-index.js";
+import { studyPath, STUDY_SLUGS } from "../shared/studies.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -838,6 +839,13 @@ export async function onRequestGet(context) {
   paths.push(...(await weeklyEntries(host)));
   paths.push(...(await dailyEntries(host)));
   paths.push(...(await insiderIndexEntries(host)));
+  // The living studies exist in every state — under the floor the page's
+  // content is the not-yet state, which the pre-render renders and indexes —
+  // so no fetch decides whether to list them. UK and US only, per
+  // UK_US_ONLY_PREFIXES.
+  if (COMPANY_MARKET_BY_HOST[host]) {
+    paths.push(studyPath(), ...STUDY_SLUGS.map((slug) => studyPath(slug)));
+  }
   // Glossary entries appear only in their owning host's sitemap — the whole
   // point of the ownership rule is that no entry exists at two URLs.
   paths.push(...entriesForHost(host).map((e) => learnPath(e.slug)));

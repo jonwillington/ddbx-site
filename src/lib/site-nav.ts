@@ -91,6 +91,7 @@ export const RESEARCH_PATHS = [
   "/most-active-companies",
   "/reports",
   "/insider-index",
+  "/research",
 ] as const;
 
 const uk = () => MARKETS.find((m) => m.id === "uk")!;
@@ -170,6 +171,10 @@ function researchLinks(
       href: ukHref("/insider-index", hostname),
       nav: true,
     },
+    // After the divider with the archive: a study is the record read as a
+    // whole rather than a ranking over it, which is the same side of the
+    // rule the reports sit on.
+    link("Living studies", "/research", { nav: true }),
   ];
 }
 

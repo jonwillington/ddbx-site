@@ -176,7 +176,11 @@ export async function onRequest(context) {
     // The Insider Index and its dated readings, added 2026-09-16. Both own
     // their whole head (functions/insider-index/*).
     routePath === "/insider-index" ||
-    /^\/insider-index\/[^/]+$/.test(routePath)
+    /^\/insider-index\/[^/]+$/.test(routePath) ||
+    // The living studies, added 2026-09-16: index and study pages both own
+    // their head, from functions/research/[[route]].js.
+    routePath === "/research" ||
+    /^\/research\/[^/]+$/.test(routePath)
   ) {
     return res;
   }
