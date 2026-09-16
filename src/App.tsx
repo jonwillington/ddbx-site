@@ -47,6 +47,7 @@ import SwedenPreviewPage from "@/pages/sweden-preview";
 import UsPreviewPage from "@/pages/us-preview";
 import UkPreviewPage from "@/pages/uk-preview";
 import DailyEditionPage, { DailyIndexPage, TodayRedirect } from "@/pages/daily";
+import TapePage from "@/pages/tape";
 
 function App() {
   return (
@@ -267,6 +268,10 @@ function App() {
           element={<DailyEditionPage market="US" />}
           path="/us/daily/:date"
         />
+        {/* The global tape: five markets, one list. Cross-market like
+            /developers, canonical on ddbx.uk (shared/seo.js), pre-rendered by
+            functions/tape.js. */}
+        <Route element={<TapePage />} path="/tape" />
       </Routes>
       <CookieBanner />
     </div>

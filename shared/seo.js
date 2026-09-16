@@ -288,6 +288,10 @@ const isMcpPath = (path) => path === "/mcp";
  *  onto ddbx.uk so the three hosts don't publish three copies of it. */
 const isStatusPath = (path) => path === "/status";
 
+/** The global tape: five markets on one list. Market-blind by construction
+ *  and folded onto ddbx.uk like /developers, /mcp and /status. */
+const isTapePath = (path) => path === "/tape";
+
 const isBrokerIndexPath = (path) => path === "/brokers" || path === "/compare";
 
 /** "/brokers/best-for/isa" -> the category, or null. */
@@ -573,6 +577,10 @@ export function seoForPath(pathname, hostname) {
       );
     // Also market-blind, and for the same reason: one API behind every host.
     if (isStatusPath(path)) return brandTitle("Service status");
+    if (isTapePath(path))
+      return brandTitle(
+        "The global insider tape — UK, US, Sweden, Netherlands and Korea, newest first",
+      );
     if (isDirectorProfilePath(path))
       return brandTitle(`Director (${market.label}) — ${SITE_NAME}`);
     // Both of these sit under /brokers/ and so must be tested before the
@@ -721,6 +729,8 @@ export function seoForPath(pathname, hostname) {
       return "Connect ddbx to ChatGPT, Claude, Claude Code or Cursor with one address: no sign-in, no key, free. Ask about director and insider share purchases across the UK, US, Sweden, the Netherlands and the US Congress, with ddbx’s rating on every filing.";
     if (isStatusPath(path))
       return "Live availability of the ddbx API and the UK, US, Sweden and Netherlands disclosure feeds, measured in your browser as you read, with the ingest schedule and incident history.";
+    if (isTapePath(path))
+      return "Every insider filing ddbx reads, from Seoul to New York, merged into one list and ordered by when it was disclosed. Five exchanges, their local clocks, native currency on every row and a verdict where the market has one.";
     if (isDirectorProfilePath(path))
       return `${market.label} director profile with dealing history and signal context on ddbx.`;
     if (brokerCategory) return brokerCategory.description;
@@ -867,7 +877,11 @@ export function canonicalUrlFor(pathname, hostname) {
   // entries below already avoid. It folds onto ddbx.uk, and only that URL is
   // in the sitemap (see functions/sitemap.xml.js).
   const marketHost =
-    isBrokerPath || isApiPath(path) || isMcpPath(path) || isStatusPath(path)
+    isBrokerPath ||
+    isApiPath(path) ||
+    isMcpPath(path) ||
+    isStatusPath(path) ||
+    isTapePath(path)
       ? "ddbx.uk"
       : (MARKET_HOST_BY_ID[id] ?? "ddbx.uk");
 

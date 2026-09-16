@@ -167,7 +167,9 @@ export async function onRequest(context) {
     routePath === "/daily" ||
     /^\/daily\/[^/]+$/.test(routePath) ||
     routePath === "/us/daily" ||
-    /^\/us\/daily\/[^/]+$/.test(routePath)
+    /^\/us\/daily\/[^/]+$/.test(routePath) ||
+    // The global tape, added 2026-09-16: functions/tape.js owns its head.
+    routePath === "/tape"
   ) {
     return res;
   }

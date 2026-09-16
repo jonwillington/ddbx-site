@@ -106,6 +106,8 @@ const ROUTES_BY_HOST = {
     // Same rule as /developers above: cross-market page, canonicalises to
     // ddbx.uk, so it rides this host alone rather than joining COMMON_ROUTES.
     "/status",
+    // The global tape: cross-market, canonical on ddbx.uk, same rule again.
+    "/tape",
     // Traditional Chinese edition of the install pages (Hong Kong). NOT a
     // COMMON_ROUTE: they sell the UK app and canonicalise to ddbx.uk on every
     // host, so listing them under ddbx.us would contradict their own

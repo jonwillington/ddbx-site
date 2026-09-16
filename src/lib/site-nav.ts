@@ -188,10 +188,16 @@ export function footerGroups(pathname: string, hostname?: string): NavGroup[] {
   const current = marketForPath(pathname, hostname);
   const home = MARKETS.find((m) => m.id === current.id) ?? uk();
 
-  const markets: NavLink[] = MARKETS.filter((m) => !m.hidden).map((m) => ({
-    label: m.id === "usg" ? "US Congress" : `${m.label} dealings`,
-    href: marketHref(m, marketDashboardPath(m), hostname),
-  }));
+  const markets: NavLink[] = [
+    ...MARKETS.filter((m) => !m.hidden).map((m) => ({
+      label: m.id === "usg" ? "US Congress" : `${m.label} dealings`,
+      href: marketHref(m, marketDashboardPath(m), hostname),
+    })),
+    // The five markets on one list. Cross-market and canonical on ddbx.uk
+    // (shared/seo.js), so it is pinned there from every host, as the broker
+    // links are.
+    { label: "Global tape", href: ukHref("/tape", hostname) },
+  ];
 
   // All nine — the footer takes the full list where the masthead dropdown
   // takes a curated seven. Longer than it was, and still navigation rather

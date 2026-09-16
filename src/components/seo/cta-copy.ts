@@ -167,3 +167,10 @@ export const dailyCta = {
   headline: "Tomorrow’s edition, one filing at a time.",
   body: "This page is the day once it has closed. The app is the same day as it happens: each disclosure pushed within minutes of filing, already rated, and the recap when the market shuts.",
 };
+
+/** The global tape. The page's claim is breadth and the clock; the ask is
+ *  the one thing a public page cannot do, which is find the reader. */
+export const tapeCta = {
+  headline: "The tape is public. The alert is not.",
+  body: "This page reads five markets once a minute. The app tells you the moment a rated filing lands in a company or market you follow, whichever time zone it was filed in, with the reasoning attached.",
+};
