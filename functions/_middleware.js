@@ -147,6 +147,11 @@ export async function onRequest(context) {
     /^\/dealings\/[^/]+$/.test(routePath) ||
     routePath === "/weekly" ||
     /^\/weekly\/[^/]+$/.test(routePath) ||
+    // The UK insider family, added 2026-09-16. Only the DETAIL pages own their
+    // head — /directors itself is the directory, which has no per-request data
+    // this module can't produce, so it keeps this module's pass. Matching the
+    // bare /directors here would strip the hub's canonical for nothing.
+    /^\/directors\/[^/]+$/.test(routePath) ||
     routePath === "/congress/members" ||
     /^\/congress\/members\/[^/]+$/.test(routePath) ||
     routePath === "/congress/committees" ||

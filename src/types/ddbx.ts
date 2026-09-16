@@ -641,6 +641,36 @@ export interface TrackRecordPoint {
   resolved_count: number;
 }
 
+/** One PERSON in the insider directory — `GET /api/directors-index`.
+ *
+ *  One row per canonical director, with their spellings already pooled, so a
+ *  consumer can build a directory or apply a publishing bar without fetching
+ *  hundreds of details. `id` is always the `canonical_id` the detail response
+ *  reports for that person, so a directory can never link somewhere whose own
+ *  page disagrees about who it covers.
+ *
+ *  Counts follow the same visibility rule as `/api/dealings`: open-market buys,
+ *  not quarantined, in a terminal state. A directory advertising figures the
+ *  profile page then contradicts is worse than no directory. */
+export interface DirectorIndexRow {
+  id: string;
+  name: string;
+  /** Their primary issuer, for a directory row that means something to a
+   *  reader who has never heard of them. */
+  company: string;
+  ticker: string;
+  /** Publishable open-market buys across every spelling. */
+  buys: number;
+  /** How many of those carry a resolved performance horizon. The honest
+   *  denominator for any figure a directory prints, and half of the bar a
+   *  consumer should apply before advertising the page. */
+  resolved: number;
+  first_disclosed: string;
+  last_disclosed: string;
+  /** Filed spellings pooled into this person. 1 for almost everyone. */
+  spellings: number;
+}
+
 export interface DirectorDetail extends DirectorSummary {
   profile?: {
     biography: string;

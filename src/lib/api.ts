@@ -6,6 +6,7 @@ import type {
   DailySummaryResponse,
   Dealing,
   DirectorDetail,
+  DirectorIndexRow,
   EuDealing,
   EuDirectorDetail,
   GovCommitteesResponse,
@@ -272,6 +273,14 @@ export const api = {
   dealing: (id: string) => get<Dealing>(`/dealings/${id}`),
   portfolio: (fy?: number) =>
     get<Portfolio>(fy != null ? `/portfolio?fy=${fy}` : `/portfolio`),
+  /** The UK insider directory — one row per PERSON, spellings already pooled.
+   *
+   *  `/directors-index`, NOT `/directors`: the latter is swallowed by the
+   *  Worker's `/api/directors/:id` route, which matches it with id="directors"
+   *  and answers "not found". Same trap that sent the Congress directory to
+   *  `/gov-members`. */
+  directorsIndex: () =>
+    get<{ directors: DirectorIndexRow[] }>(`/directors-index`),
   director: (id: string) => get<DirectorDetail>(`/directors/${id}`),
   usDirector: (id: string) => get<UsDirectorDetail>(`/directors/us/${id}`),
   seDirector: (nameOrKey: string) =>

@@ -34,6 +34,11 @@ import {
   memberSlug,
   membersOnCommittee,
 } from "../shared/congress.js";
+import {
+  DIRECTORS_INDEX_PATH,
+  directorMeetsBar,
+  directorPath,
+} from "../shared/directors.js";
 import { filingPath } from "../shared/filings.js";
 import { weekPath } from "../shared/weeks.js";
 import { entriesForHost, learnPath } from "../shared/glossary.js";
@@ -556,6 +561,61 @@ async function congressEntries(host) {
   }
 }
 
+/** The UK insider directory: the people who clear the publishing bar.
+ *
+ *  ddbx.uk only. /us, /se and /nl director pages exist and resolve, but those
+ *  markets compute no performance horizons, so every one of them fails the bar
+ *  — they are omitted because they would not qualify, not because the family is
+ *  UK-shaped. Add them here and add a pre-render Function in the same change.
+ *
+ *  The bar is the one `shared/directors.js` defines and the pre-render Function
+ *  applies, so a director is never advertised here and then noindexed on
+ *  arrival. `lastmod` is their most recent disclosure, which is exactly when
+ *  their page last changed.
+ *
+ *  Ids are grouped by the API, which returns one row per PERSON keyed on the
+ *  same `canonical_id` the detail route reports — so the sitemap lists du Toit
+ *  once rather than listing three URLs that serve identical content.
+ *
+ *  Failure posture matches brokerPaths, sectorEntries and congressEntries: an
+ *  outage costs URLs, not the document. */
+async function directorEntries(host) {
+  if (host !== "ddbx.uk") return [];
+  try {
+    const res = await fetch(`${API_BASE}/directors-index`, {
+      headers: { accept: "application/json" },
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
+    });
+
+    if (!res.ok) return [];
+
+    const { directors } = await res.json();
+
+    if (!directors?.length) return [];
+
+    const published = directors.filter(directorMeetsBar);
+
+    // The hub rides with its entries: if nothing qualifies we publish neither,
+    // rather than advertising a directory whose children are all missing.
+    if (published.length === 0) return [];
+
+    const entries = [{ path: DIRECTORS_INDEX_PATH, lastmod: null }];
+    for (const d of published) {
+      entries.push({
+        path: directorPath(d.id),
+        lastmod: d.last_disclosed || null,
+      });
+    }
+
+    return entries;
+  } catch {
+    return [];
+  }
+}
+
 const xmlEscape = (s) =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -615,6 +675,7 @@ export async function onRequestGet(context) {
   paths.push(...(await capBandEntries(host)));
   paths.push(...(await sectorEntries(host)));
   paths.push(...(await congressEntries(host)));
+  paths.push(...(await directorEntries(host)));
   paths.push(...(await filingEntries(host)));
   paths.push(...(await weeklyEntries(host)));
   // Glossary entries appear only in their owning host's sitemap — the whole

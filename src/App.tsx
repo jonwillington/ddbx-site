@@ -33,6 +33,7 @@ import SectorsPage from "@/pages/sectors";
 import StatusPage from "@/pages/status";
 import ReportsPage from "@/pages/reports";
 import DirectorPage from "@/pages/director";
+import DirectorsIndexPage from "@/pages/directors";
 import CongressPreviewPage from "@/pages/congress-preview";
 import CongressCommitteePage from "@/pages/congress-committee";
 import CongressCommitteesPage from "@/pages/congress-committees";
@@ -102,7 +103,7 @@ function App() {
         <Route element={<UsPreviewPage />} path="/us" />
         {/* US Congress (STOCK Act) preview — distinct from /directors/:id
             (per-market insider detail). */}
-        <Route element={<CongressPreviewPage />} path="/directors" />
+        <Route element={<DirectorsIndexPage />} path="/directors" />
         <Route element={<CongressPreviewPage />} path="/congress" />
         {/* Congress directory. Mounted under /congress/members/ and
             /congress/committees/ rather than a bare /congress/:slug, which

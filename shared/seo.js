@@ -240,15 +240,13 @@ export function marketIdForPath(pathname, hostname) {
   if (path === "/se" || path.startsWith("/se/")) return "se";
   if (path === "/nl" || path.startsWith("/nl/")) return "nl";
   if (path === "/kr" || path.startsWith("/kr/")) return "kr";
-  // Congress: canonical /congress plus the legacy exact /directors path.
-  // `/directors/:id` is a UK director profile, so only the bare /directors
-  // maps here. Before the host default so it wins on ddbx.us.
-  if (
-    path === "/congress" ||
-    path.startsWith("/congress/") ||
-    path === "/directors"
-  )
-    return "usg";
+  // Congress lives at /congress. It ALSO answered on the bare /directors until
+  // 2026-09-16, when that path was reclaimed for the UK insider directory —
+  // which is what a reader typing it expects, and what /directors/:id has
+  // always meant. /congress had been a live alias for months, so nothing moved
+  // that did not already have a home. Before the host default so it wins on
+  // ddbx.us.
+  if (path === "/congress" || path.startsWith("/congress/")) return "usg";
   if (path === "/djt" || path.startsWith("/djt/")) return "djt";
 
   if (host && HOST_DEFAULT_MARKET[host]) return HOST_DEFAULT_MARKET[host];
@@ -422,6 +420,11 @@ const weekFromSeoPath = (path) => weekFromPath(path);
  *  one place a reader would notice. */
 const isFilingPath = (path) =>
   /^\/(?:dealings|t)\/[A-Za-z0-9_-]{4,64}$/.test(path);
+
+/** The UK insider directory hub. Reclaimed from the Congress preview on
+ *  2026-09-16 — see marketForPath above. The DETAIL pages own their own head
+ *  via functions/directors/[id].js; only this hub reaches here. */
+const isDirectorsIndexPath = (path) => path === "/directors";
 
 const isCongressMembersIndexPath = (path) => path === "/congress/members";
 
@@ -621,6 +624,8 @@ export function seoForPath(pathname, hostname) {
       return brandTitle(`${market.label} insider purchase — the filing in full`);
     if (congressMember)
       return brandTitle(`${congressMember} stock trades — filings and committees`);
+    if (isDirectorsIndexPath(path))
+      return brandTitle("UK directors who buy shares in their own companies");
     if (isCongressMembersIndexPath(path))
       return brandTitle("Members of Congress who file stock purchases");
     if (congressCommittee)
@@ -728,6 +733,8 @@ export function seoForPath(pathname, hostname) {
       return `One disclosed insider purchase in full: who bought, how many shares, at what price, how long the disclosure took, and how the shares have done against the market since.`;
     if (congressMember)
       return `Every stock purchase ${congressMember} has disclosed under the STOCK Act — the value bands, the companies, the accounts they were filed for, and which of their committees oversee the sectors involved.`;
+    if (isDirectorsIndexPath(path))
+      return "Every UK director and senior manager with a disclosed open-market purchase in their own company — what they bought, what they paid, and how each purchase has performed since it was disclosed.";
     if (isCongressMembersIndexPath(path))
       return "Every member of Congress with a disclosed stock purchase on record, with the value bands, the companies and the committee jurisdiction behind each one.";
     if (congressCommittee)
@@ -796,7 +803,8 @@ const DASHBOARD_ALIASES = new Set([
   "/nl",
   "/nl-preview",
   "/congress",
-  "/directors",
+  // NOT "/directors": it renders the UK insider directory now, not a market
+  // dashboard, so it must not fold onto Congress's canonical.
   "/djt",
 ]);
 

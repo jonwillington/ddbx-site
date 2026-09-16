@@ -112,6 +112,12 @@ export const congressIndexCta = {
   body: "This directory is the record to date. The app watches the House Clerk and Senate feeds directly, so a new disclosure reaches you without you checking anything.",
 };
 
+/** The UK insider directory and the per-insider pages. */
+export const directorIndexCta = {
+  headline: "Hear about the next purchase, not this list.",
+  body: "Everything here has already been disclosed and already moved. The app picks up each new UK director purchase the morning it files, with the rating and the price context attached.",
+};
+
 /** Best-performing buys. The ask is deliberately the opposite of the page's
  *  subject: everything ranked here is already priced in, so the promise is
  *  about the next one rather than about repeating these. */
