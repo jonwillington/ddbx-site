@@ -93,6 +93,20 @@ type AnyDirectorDetail = DirectorDetail | UsDirectorDetail | EuDirectorDetail;
  *  `getDirector`, which averages the 90-day performance rows. */
 const FIRST_HORIZON_DAYS = 90;
 
+/** Resolved picks required before a hit rate is published as a PERCENTAGE.
+ *
+ *  `hit_rate_pct` is a fraction of however many picks happen to carry a mark,
+ *  so one resolved purchase that went up renders "HIT RATE 100%" against a
+ *  named person — a claim about their judgement resting on a single trade.
+ *  That is the same defect as the "HIT RATE 0%" this page was rebuilt to fix in
+ *  August, pointing the other way, and pooling a person's name variants (which
+ *  the API now does) makes it more reachable rather than less.
+ *
+ *  Three is the floor at which a rate describes a pattern instead of an
+ *  anecdote. Below it the count is still shown — "2 resolved purchases" is a
+ *  fact we have — but never divided into a percentage. */
+const MIN_RESOLVED_FOR_RATE = 3;
+
 function isUsDetail(d: AnyDirectorDetail): d is UsDirectorDetail {
   // UsDirectorDetail.prior_picks carries UsDealing rows (filing_id +
   // transaction_code); Dealing / EuDealing rows don't.
@@ -221,6 +235,21 @@ function toMarketDealings(
  *  question ("is this person any good?") with a symbol that could mean three
  *  things, one of which is damning. Set small on purpose: it is a sentence
  *  standing in for a number, and at 26px it would read as the number. */
+/** "A", "A and B", "A, B and C" — names set a shade darker than the sentence
+ *  around them so they read as the content rather than as small print. */
+function NameList({ names }: { names: { id: string; name: string }[] }) {
+  return (
+    <>
+      {names.map((n, i) => (
+        <span key={n.id}>
+          {i > 0 ? (i === names.length - 1 ? " and " : ", ") : ""}
+          <span className="text-foreground/70">{n.name}</span>
+        </span>
+      ))}
+    </>
+  );
+}
+
 function NotYet({ from }: { from?: string | null }) {
   return (
     <span className="text-[13px] font-medium leading-[1.35] tracking-normal text-foreground/40">
@@ -265,6 +294,51 @@ export default function DirectorPage() {
     [dealings, selectedKey],
   );
   const rows = useMemo(() => dealings.map(toRow), [dealings]);
+
+  /** The filings, grouped by issuer.
+   *
+   *  A director page listed the company on every row, which for 96.7% of
+   *  directors means the same logo and the same name repeated down the whole
+   *  list — thirteen copies of "Ninety One" under a heading that already says
+   *  Ninety One. The company is said ONCE per run instead: by the page header
+   *  when there is only one (the overwhelming majority), and by a subhead per
+   *  issuer when there is more than one.
+   *
+   *  Multi-company directors are a real minority rather than a rounding error
+   *  — 26 of 787, and a coherent group: plural NEDs and investment-trust
+   *  directors sitting on several boards (Katie Bickerstaffe files against
+   *  four). So this groups rather than assuming one issuer and hardcoding it.
+   *
+   *  Groups keep first-appearance order, so the newest filing still leads the
+   *  section and the sections themselves run newest-first. */
+  const filingGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        ticker: string;
+        company: string;
+        items: {
+          dealing: (typeof dealings)[number];
+          row: (typeof rows)[number];
+        }[];
+      }
+    >();
+
+    dealings.forEach((dealing, i) => {
+      const key = dealing.ticker;
+      const g = groups.get(key);
+
+      if (g) g.items.push({ dealing, row: rows[i] });
+      else
+        groups.set(key, {
+          ticker: dealing.ticker,
+          company: dealing.company,
+          items: [{ dealing, row: rows[i] }],
+        });
+    });
+
+    return [...groups.values()];
+  }, [dealings, rows]);
   // Sparklines need a benchmark series, which exists for UK and US only. SE
   // and NL rows state their figures without the line rather than draw a
   // price with nothing to measure it against.
@@ -286,6 +360,12 @@ export default function DirectorPage() {
     // averages are taken from, so all-null averages and a meaningless hit rate
     // are the same condition.
     const marked = Object.values(horizons).some((v) => v != null);
+    // The denominator behind `hit_rate_pct`. Optional on the wire: a response
+    // predating the field falls back to the old "any horizon resolved" test,
+    // which is weaker but never worse than what shipped before it.
+    const resolved = d?.resolved_count ?? null;
+    const rateIsPublishable =
+      resolved != null ? resolved >= MIN_RESOLVED_FOR_RATE : marked;
     // Earliest disclosure we hold for this person: the clock the first return
     // figure is waiting on.
     const earliest = dealings
@@ -300,6 +380,8 @@ export default function DirectorPage() {
       earliest: earliest ? earliest.slice(0, 10) : null,
       horizons,
       marked,
+      rateIsPublishable,
+      resolved,
       // A date we have already passed is not a promise worth printing: it means
       // the mark is late or the price series is thin, and "available after a
       // date in the past" reads as a bug.
@@ -309,6 +391,40 @@ export default function DirectorPage() {
           : null,
     };
   }, [d, dealings]);
+
+  /** Spellings OTHER than the one in the URL whose filings are counted into
+   *  this record.
+   *
+   *  The API pools a person's name variants, so the list below can contain
+   *  filings the reader will notice are filed under a different string —
+   *  "Steve Mogford" on a page titled "Steven Mogford", or a joint
+   *  "Hendrik du Toit / Kim McFarland" on du Toit's own page. Left unsaid that
+   *  reads as a bug or as sloppiness about whose trades these are. Said plainly
+   *  it is the page explaining its own arithmetic. */
+  const otherSpellings = useMemo(() => {
+    const aliases =
+      (
+        d as {
+          aliases?: {
+            id: string;
+            name: string;
+            buys: number;
+            joint: boolean;
+          }[];
+        } | null
+      )?.aliases ?? [];
+    const others = aliases.filter((a) => a.name !== d?.name && a.buys > 0);
+
+    // A JOINT filing is not another spelling of this person's name.
+    // "Hendrik du Toit and Kim McFarland" names two people. Those purchases are
+    // genuinely his and belong in his record, but describing that string as
+    // "the same person, spelled differently" tells the reader that Kim
+    // McFarland is really Hendrik du Toit. Two different facts, two sentences.
+    return {
+      variants: others.filter((a) => !a.joint),
+      joint: others.filter((a) => a.joint),
+    };
+  }, [d]);
 
   /** The issuer this person files against, taken from their own most recent
    *  filing. `DirectorDetail.company` is a name string with no ticker on it, so
@@ -449,6 +565,26 @@ export default function DirectorPage() {
               </div>
             ) : null}
 
+            {otherSpellings.variants.length > 0 ||
+            otherSpellings.joint.length > 0 ? (
+              <p className="mt-3 text-[12.5px] leading-[1.6] text-foreground/45">
+                {otherSpellings.variants.length > 0 ? (
+                  <>
+                    Includes filings made as{" "}
+                    <NameList names={otherSpellings.variants} />. The same
+                    person, spelled differently by the filer.{" "}
+                  </>
+                ) : null}
+                {otherSpellings.joint.length > 0 ? (
+                  <>
+                    Includes purchases disclosed jointly as{" "}
+                    <NameList names={otherSpellings.joint} />, where {d.name} is
+                    named alongside another PDMR.
+                  </>
+                ) : null}
+              </p>
+            ) : null}
+
             {d.profile && (
               <div className="mt-6 space-y-3 rounded-2xl border border-hairline bg-white/70 p-5 dark:border-border/60 dark:bg-surface-secondary/40">
                 <div>
@@ -535,13 +671,27 @@ export default function DirectorPage() {
 
               <StatTiles
                 cols={5}
+                // SAY WHAT THE RATE IS OVER.
+                // A percentage with no denominator invites the reader to
+                // supply their own, and they will supply a large one. When
+                // there are too few marks to publish a rate at all, the count
+                // is the honest thing to show in its place.
+                note={
+                  record.resolved == null || record.resolved === 0
+                    ? undefined
+                    : record.rateIsPublishable
+                      ? `Hit rate and averages are measured over ${record.resolved} purchase${record.resolved === 1 ? "" : "s"} whose horizon has resolved.`
+                      : `${record.resolved} purchase${record.resolved === 1 ? "" : "s"} ${record.resolved === 1 ? "has" : "have"} a resolved horizon so far — too few to state as a rate. The hit rate appears at ${MIN_RESOLVED_FOR_RATE}.`
+                }
                 stats={[
                   {
                     label: "Hit rate",
                     primary: true,
                     // NOT `hit_rate_pct` on its own. The API returns a literal
-                    // 0 when no pick carries a mark, and "0%" is a claim.
-                    value: record.marked ? (
+                    // 0 when no pick carries a mark, and "0%" is a claim — and
+                    // a rate over one or two marks is a different claim that is
+                    // just as unfounded. See MIN_RESOLVED_FOR_RATE.
+                    value: record.rateIsPublishable ? (
                       `${d.hit_rate_pct.toFixed(0)}%`
                     ) : (
                       <NotYet />
@@ -602,76 +752,133 @@ export default function DirectorPage() {
                       the value and the company column showed a logo with no
                       name. The purchases here are the same purchases the
                       boards list, so they take the boards' row. */}
+                  {/* THE COMPANY IS SAID ONCE PER RUN, NOT ONCE PER ROW.
+                      A single-issuer director (96.7% of them) gets no subhead
+                      at all — the page header above already carries the logo,
+                      the name and the count, and repeating it here would be
+                      the same redundancy one line further down. A plural NED
+                      gets one subhead per issuer. Either way the ROWS carry no
+                      company, so the subject slot holds the only thing that
+                      varies between them: the rating. */}
                   <BoardRowHeader
                     className=""
                     lead="date"
                     leadLabel="Bought"
                     money={priceMarket ? "Paid → worth now" : "Value"}
                     moneyPair={priceMarket != null}
+                    named={false}
                     perf="Alpha"
-                    subject="Company"
+                    // A LABEL OVER AN EMPTY TRACK IS A RULE THAT DOES NOT
+                    // FINISH. Only analysed filings carry a rating, and plenty
+                    // of directors have none — Katie Bickerstaffe's five
+                    // purchases are all unrated — which left a "Rating" heading
+                    // over five blank cells. The track is content-sized, so
+                    // with nothing in it the column collapses; the heading has
+                    // to go with it.
+                    subject={
+                      dealings.some((x) => x.rating) ? "Rating" : undefined
+                    }
                     visual={
                       priceMarket ? "Since the buy, vs the index" : undefined
                     }
                   />
-                  <BoardRowList>
-                    {dealings.map((dealing, i) => {
-                      const r = rows[i];
-                      const href = rowHref(dealing, market.id);
-                      const ticker = (
-                        market.config.formatTickerDisplay ?? displayTicker
-                      )(dealing.ticker);
+                  {filingGroups.map((group) => {
+                    const groupTicker = (
+                      market.config.formatTickerDisplay ?? displayTicker
+                    )(group.ticker);
+                    // Same rule as the header's issuer link: company pages
+                    // exist for UK and US only, and a dead link is worse than
+                    // a plain name.
+                    const companyHref =
+                      market.id === "uk" || market.id === "us"
+                        ? companyPath(group.ticker)
+                        : null;
 
-                      return (
-                        <BoardRow
-                          key={dealing.key}
-                          badge={<TickerPill ticker={ticker} />}
-                          date={{ iso: dealing.tradeDate, locale }}
-                          logo={
-                            market.config.enableLogos !== false ? (
-                              <CompanyLogo size={56} ticker={dealing.ticker} />
-                            ) : undefined
-                          }
-                          money={
-                            priceMarket ? (
-                              <PaidWorthNow
-                                row={r}
-                                symbol={priceMarket === "UK" ? "£" : "$"}
+                    return (
+                      <div key={group.ticker}>
+                        {filingGroups.length > 1 ? (
+                          <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-hairline pt-5 first:mt-0 first:border-t-0 first:pt-0 dark:border-border/60">
+                            {market.config.enableLogos !== false ? (
+                              <CompanyLogo
+                                className="shrink-0"
+                                size={32}
+                                ticker={group.ticker}
                               />
-                            ) : dealing.value != null ? (
-                              (
-                                market.config.priceFormat.formatValueCompact ??
-                                market.config.priceFormat.formatValue
-                              )(dealing.value)
-                            ) : undefined
-                          }
-                          moneyPair={priceMarket != null}
-                          name={dealing.company}
-                          perf={<AlphaCell alpha={r.alpha} />}
-                          secondary={
-                            dealing.rating ? (
-                              <RatingBadge rating={dealing.rating} />
-                            ) : undefined
-                          }
-                          to={href ?? undefined}
-                          visual={
-                            priceMarket ? (
-                              <span className="block max-w-[240px] xl:max-w-none">
-                                <BuySparkline
-                                  bars={prices.get(dealing.ticker)}
-                                  bench={bench}
-                                  row={r}
-                                />
+                            ) : null}
+                            {companyHref ? (
+                              <Link
+                                className="text-[15px] font-semibold text-foreground underline-offset-4 hover:underline"
+                                to={companyHref}
+                              >
+                                {group.company}
+                              </Link>
+                            ) : (
+                              <span className="text-[15px] font-semibold text-foreground">
+                                {group.company}
                               </span>
-                            ) : undefined
-                          }
-                          onSelect={
-                            href ? undefined : () => setSelectedKey(dealing.key)
-                          }
-                        />
-                      );
-                    })}
-                  </BoardRowList>
+                            )}
+                            <TickerPill ticker={groupTicker} />
+                            <span className="text-[12.5px] text-foreground/45">
+                              {group.items.length}{" "}
+                              {group.items.length === 1
+                                ? "purchase"
+                                : "purchases"}
+                            </span>
+                          </div>
+                        ) : null}
+                        <BoardRowList>
+                          {group.items.map(({ dealing, row: r }) => {
+                            const href = rowHref(dealing, market.id);
+
+                            return (
+                              <BoardRow
+                                key={dealing.key}
+                                date={{ iso: dealing.tradeDate, locale }}
+                                money={
+                                  priceMarket ? (
+                                    <PaidWorthNow
+                                      row={r}
+                                      symbol={priceMarket === "UK" ? "£" : "$"}
+                                    />
+                                  ) : dealing.value != null ? (
+                                    (
+                                      market.config.priceFormat
+                                        .formatValueCompact ??
+                                      market.config.priceFormat.formatValue
+                                    )(dealing.value)
+                                  ) : undefined
+                                }
+                                moneyPair={priceMarket != null}
+                                perf={<AlphaCell alpha={r.alpha} />}
+                                secondary={
+                                  dealing.rating ? (
+                                    <RatingBadge rating={dealing.rating} />
+                                  ) : undefined
+                                }
+                                to={href ?? undefined}
+                                visual={
+                                  priceMarket ? (
+                                    <span className="block max-w-[240px] xl:max-w-none">
+                                      <BuySparkline
+                                        bars={prices.get(dealing.ticker)}
+                                        bench={bench}
+                                        row={r}
+                                      />
+                                    </span>
+                                  ) : undefined
+                                }
+                                onSelect={
+                                  href
+                                    ? undefined
+                                    : () => setSelectedKey(dealing.key)
+                                }
+                              />
+                            );
+                          })}
+                        </BoardRowList>
+                      </div>
+                    );
+                  })}
                 </>
               )}
             </SeoSection>

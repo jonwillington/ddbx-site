@@ -123,6 +123,12 @@ export interface BoardRowShape {
   moneyPair?: boolean;
   perf?: boolean;
   figure?: boolean;
+  /** False when the row has no NAME in the subject slot — the company is
+   *  constant for the whole list and has been said once above it, so the slot
+   *  carries only the row's mark (a rating badge) and is sized to that instead
+   *  of holding a name-width column open with nothing in it. The director
+   *  page's filings list is the case: thirteen rows, one issuer. */
+  named?: boolean;
 }
 
 /** Which trailing quantity a board leads on. */
@@ -172,6 +178,13 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   const leadTrack =
     lead === "rank" ? TRACK.rail : lead === "date" ? TRACK.date : null;
   const money = shape.moneyPair ? TRACK.moneyPair : TRACK.money;
+  // `TRACK.subject` is the greedy track that takes the leftover width, because
+  // rule 5 says the subject is what the row is about. A row with no name is not
+  // about its subject cell, so the cell is sized to the badge it holds and the
+  // slack goes to the visual — which on that list IS the thing the page is
+  // about. Keeping the greedy track here instead left a 20rem gutter between
+  // the date and the sparkline.
+  const subject = shape.named === false ? "auto" : TRACK.subject;
   const tail: BoardRowTail = shape.figure
     ? "figure"
     : shape.money
@@ -183,7 +196,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   const phone = tracks([
     leadPhone,
     logo ? TRACK.logo : null,
-    TRACK.subject,
+    subject,
     // Always the narrow tail on a phone, even for the money pair: 11.5rem of
     // a 343px screen leaves the company name nothing, and the pair already
     // knows how to stack.
@@ -193,7 +206,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   const medium = tracks([
     leadTrack,
     logo ? TRACK.logo : null,
-    TRACK.subject,
+    subject,
     ...Array.from<string>({ length: Math.min(facts, FACTS_AT_MEDIUM) }).fill(
       TRACK.fact,
     ),
@@ -204,7 +217,7 @@ export function BOARD_ROW_GRID(shape: BoardRowShape): BoardRowGrid {
   const wide = tracks([
     leadTrack,
     logo ? TRACK.logo : null,
-    TRACK.subject,
+    subject,
     ...Array.from<string>({ length: facts }).fill(TRACK.fact),
     shape.visual ? TRACK.visual : null,
     shape.money ? money : null,
@@ -271,6 +284,7 @@ export function BoardRowHeader({
   moneyPair,
   lead = "rank",
   leadLabel,
+  named = true,
   perf,
   subject,
   visual,
@@ -288,7 +302,11 @@ export function BoardRowHeader({
   lead?: BoardRowLead;
   /** Heading over a date lead ("Bought", "Disclosed"). A rank needs none. */
   leadLabel?: string;
-  subject: string;
+  /** Match the rows: false when they carry no `name`, so the heading sits over
+   *  the same content-sized subject track they do. */
+  named?: boolean;
+  /** Omit to match rows that carry no name. */
+  subject?: string;
   visual?: string;
 }) {
   const grid = BOARD_ROW_GRID({
@@ -299,6 +317,7 @@ export function BoardRowHeader({
     moneyPair,
     perf: perf != null,
     lead,
+    named,
     visual: visual != null,
   });
 
@@ -386,8 +405,10 @@ export interface BoardRowProps {
    *  `logo={false}` on the shape only where there is no such mark at all. */
   logo?: ReactNode;
   /** The company or the person: 18/20px semibold, the largest type on the
-   *  row. Nothing else may be set larger. */
-  name: ReactNode;
+   *  row. Nothing else may be set larger. Omit it only when every row in the
+   *  list shares one subject that the page has already named — see `named` on
+   *  BoardRowShape. */
+  name?: ReactNode;
   /** Sits beside the name. Usually a `TickerPill`. */
   badge?: ReactNode;
   /** The second line, allowed to WRAP. /cluster-buys learned the hard way
@@ -448,6 +469,7 @@ export function BoardRow({
     moneyPair,
     perf: perf != null,
     lead: position != null ? "rank" : date ? "date" : "none",
+    named: name != null,
     visual: visual != null,
   });
 
@@ -563,14 +585,18 @@ export function BoardRow({
                   "Jardine Matheson Hold…" is the subject not being first. Two
                   lines is the cap: past that the rows stop being scannable
                   down, which is the whole point of the aligned columns. */}
-              <span className="line-clamp-2 min-w-0 text-[18px] font-semibold leading-[1.3] tracking-[-0.014em] text-foreground xl:text-[20px]">
-                {name}
-              </span>
+              {name != null ? (
+                <span className="line-clamp-2 min-w-0 text-[18px] font-semibold leading-[1.3] tracking-[-0.014em] text-foreground xl:text-[20px]">
+                  {name}
+                </span>
+              ) : null}
               {badge}
             </span>
 
             {secondary != null ? (
-              <span className="mt-1.5 block text-[12.5px] leading-[1.45] text-foreground/60">
+              <span
+                className={`block text-[12.5px] leading-[1.45] text-foreground/60 ${name != null ? "mt-1.5" : ""}`}
+              >
                 {secondary}
               </span>
             ) : null}

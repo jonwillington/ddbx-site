@@ -591,15 +591,81 @@ export interface LivePerformance {
   as_of: string | null;
 }
 
+/** One filed spelling that resolves to the same human as `DirectorDetail.id`.
+ *
+ *  UK director ids are derived from the FILED name (`directorIdFromName`), so a
+ *  person the RNS spells three ways owns three ids. `entity_key` already groups
+ *  them (see DirectorSummary) — this is that grouping made explicit on the wire
+ *  so a consumer can render "also files as …" and canonicalise its URLs without
+ *  re-deriving the match itself. */
+export interface DirectorAlias {
+  /** The director id for this spelling. Stays a working URL forever — share
+   *  links and app deep links cannot be recalled once they are in the field. */
+  id: string;
+  /** The name exactly as filed under this id. */
+  name: string;
+  /** Open-market buys we hold filed under this spelling. Drives which alias
+   *  wins `canonical_id`. */
+  buys: number;
+  /** This spelling names more than one PDMR ("Hendrik du Toit and Kim
+   *  McFarland"). Those filings are genuinely this person's purchases and count
+   *  toward their record, but the spelling is NOT another way of writing their
+   *  name — a consumer that calls it one tells the reader a stranger's name is
+   *  really theirs. It also disqualifies the alias from `canonical_id`. */
+  joint: boolean;
+}
+
+/** One pick, in the order the decisions were made, carrying the record as it
+ *  stood *after* that pick resolved.
+ *
+ *  Deliberately NOT a cumulative NAV curve: a NAV needs a daily price series
+ *  for every holding and would state a precision we do not have. This is the
+ *  per-pick series plus running aggregates, all derived from `prior_picks`,
+ *  which the same response already carries. Nothing here is stored. */
+export interface TrackRecordPoint {
+  dealing_id: string;
+  trade_date: string;              // ISO YYYY-MM-DD
+  disclosed_date: string;          // ISO
+  ticker: string;
+  company: string;
+  /** Return at this horizon, or null when the horizon has not resolved. */
+  return_3m: number | null;
+  return_12m: number | null;
+  /** Hit rate across every RESOLVED pick up to and including this one, as a
+   *  percentage. Null until at least one has resolved — never a bare 0, which
+   *  reads as "this person picks badly" rather than "the clock has not run". */
+  running_hit_rate: number | null;
+  running_avg_12m: number | null;
+  /** How many picks are counted into the running figures at this point. The
+   *  honest denominator: a 100% hit rate over one pick is not a track record. */
+  resolved_count: number;
+}
+
 export interface DirectorDetail extends DirectorSummary {
   profile?: {
     biography: string;
     track_record_summary: string;
     flags: string[];
   };
+  /** Every open-market buy by this PERSON — pooled across all ids sharing an
+   *  entity with them, not just the id in the URL. */
   prior_picks: Dealing[];
   hit_rate_pct: number;
   avg_return_by_horizon: Record<string, number | null>;
+  /** How many of `prior_picks` carry a resolved horizon. `hit_rate_pct` is
+   *  computed over exactly these, and returns a bare 0 when this is 0 — so a
+   *  consumer must read this before publishing the hit rate as a figure.
+   *  Optional on the wire for clients predating this field. */
+  resolved_count?: number;
+  /** Every spelling that resolves to this person, including the requested id.
+   *  Single-entry for the overwhelming majority. */
+  aliases?: DirectorAlias[];
+  /** The alias a consumer should treat as this person's home URL: the one with
+   *  the most buys, preferring a solo filing over a joint one on a tie. Every
+   *  other alias keeps resolving — this only says where rel=canonical points. */
+  canonical_id?: string;
+  /** Chronological per-pick record. Absent when there are no picks. */
+  track_record?: TrackRecordPoint[];
 }
 
 /** Macro market overview attached to a daily summary. Numbers are the headline
@@ -1472,6 +1538,11 @@ export interface UsDirectorDetail {
   /** Fraction of resolved prior picks with a positive longest-horizon return,
    *  expressed as a percentage. 0 when no horizons have resolved. */
   hit_rate_pct: number;
+  /** How many prior picks carry a resolved horizon — the denominator
+   *  `hit_rate_pct` is computed over. Always 0 while US horizon aggregates are
+   *  unimplemented, which is exactly why a consumer must read it: the rate
+   *  alone cannot distinguish "picks badly" from "nothing has resolved". */
+  resolved_count?: number;
   /** Average return at each horizon across resolved prior picks. Each value
    *  is null while that horizon has not resolved for any pick (the common
    *  case during the first 3 months of US coverage). Keyed "3m" | "6m" |
@@ -1675,6 +1746,10 @@ export interface EuDirectorDetail {
    *  expressed as a percentage. 0 when no horizons have resolved (the case
    *  during the first 3 months of SE coverage). */
   hit_rate_pct: number;
+  /** How many prior picks carry a resolved horizon — the denominator
+   *  `hit_rate_pct` is computed over, and 0 whenever that rate is a bare 0
+   *  rather than a measurement. Read it before publishing the rate. */
+  resolved_count?: number;
   /** Average return at each horizon across resolved prior picks. Null when
    *  the horizon has not resolved for any pick. Keyed "3m" | "6m" | "12m" |
    *  "24m" to match UK/US. */
