@@ -28,6 +28,7 @@ import { bandBySlug } from "./cap-bands.js";
 import { roleBySlug } from "./roles.js";
 import { sectorBySlug } from "./sectors.js";
 import { weekFromPath, weekLabel } from "./weeks.js";
+import { dailyFromPath, dayLabel } from "./days.js";
 
 export const BRAND = "ddbx";
 export const SITE_NAME = "Director Dealings";
@@ -176,6 +177,11 @@ const UK_US_ONLY_PREFIXES = [
   // description of something those markets don't do — the one failure mode a
   // methodology page cannot have. Send it to the host that does it.
   "/how-it-works",
+  // The daily editions are built on the UK and US dealings feeds and their
+  // daily summaries; SE and NL have neither. /daily is the UK family on every
+  // host (shared/days.js), so ddbx.uk is the right destination.
+  "/daily",
+  "/today",
 ];
 
 /** True when `pathname` is a UK/US-only research page being served on a host
@@ -405,6 +411,11 @@ const sectorFromPath = (path) =>
  *  fallback says what KIND of page it is rather than inventing a subject. */
 const isWeeklyIndexPath = (path) => path === "/weekly";
 
+/** "/daily" -> the UK index; "/us/daily/2026-09-15" -> one US day. The market
+ *  is the PATH'S, whichever host served it (shared/days.js explains why), so
+ *  the branch below reads `daily.market` rather than the host's `id`. */
+const dailyFromSeoPath = (path) => dailyFromPath(path);
+
 /** "/weekly/2026-07-27" -> the week start, or null. Validated through
  *  shared/weeks.js so a mid-week date never resolves. */
 const weekFromSeoPath = (path) => weekFromPath(path);
@@ -542,6 +553,7 @@ export function seoForPath(pathname, hostname) {
   const weekStart = weekFromSeoPath(path);
   const congressMember = congressMemberNameFromPath(path);
   const congressCommittee = congressCommitteeNameFromPath(path);
+  const daily = dailyFromSeoPath(path);
   const period = leaderboard?.year
     ? `in ${leaderboard.year}`
     : "of the last twelve months";
@@ -688,6 +700,16 @@ export function seoForPath(pathname, hostname) {
           : `Get the app${on} — follow UK director share buys · 7-day free trial`,
       );
     }
+    // Daily editions, last because nothing above claims /daily or /us/daily.
+    // The SPA's fallback only: functions/daily/* replace the head with the
+    // day's own numbers, but cannot run on a client-side navigation.
+    if (daily) {
+      return brandTitle(
+        daily.date
+          ? `${daily.market} insider buying, ${dayLabel(daily.date)}`
+          : `${daily.market} insider buying, day by day`,
+      );
+    }
 
     return market.documentTitle;
   })();
@@ -777,6 +799,11 @@ export function seoForPath(pathname, hostname) {
       return id === "us"
         ? `See which US insiders are buying their own stock — with live performance tracking. Start your 7-day free trial on ${app}.`
         : `See which UK directors are buying shares in their own companies — with live performance tracking. Start your 7-day free trial on ${app}.`;
+    }
+    if (daily) {
+      return daily.date
+        ? `Every open-market purchase ${daily.market} insiders disclosed on ${dayLabel(daily.date)}: what was bought, what it was worth, the verdict on each, the day’s biggest buy and any cluster, with the close-of-day read.`
+        : `${daily.market} insider buying one trading day at a time: every filing disclosed that day, the verdict on each, the biggest buy, cluster activity and the close-of-day summary.`;
     }
 
     return `Analysed ${market.label} insider dealings and director transactions, updated throughout the trading day.`;

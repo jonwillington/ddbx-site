@@ -72,6 +72,7 @@ import {
   windowStart,
 } from "../shared/sectors.js";
 import { HOST_DEFAULT_MARKET } from "../shared/seo.js";
+import { dailyIndexPath, dailyPath, fetchArchive } from "../shared/days.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -625,6 +626,49 @@ async function directorEntries(host) {
   }
 }
 
+/** Daily editions: the index plus every trading day with at least one
+ *  disclosed filing since the market's archive floor.
+ *
+ *  Enumerated from the dealings feed, not from the summary table: there is
+ *  no list endpoint for daily summaries, and the summary is a lead an edition
+ *  may or may not carry (UK summaries begin 2026-05-11, the filings in
+ *  March). The bar is `editionMeetsBar` — at least one filing — which is what
+ *  `groupByDay` already applies, so a day is never advertised here and then
+ *  noindexed by functions/daily/[date].js.
+ *
+ *  UK on ddbx.uk at /daily, US on ddbx.us at /us/daily: the path carries the
+ *  market (shared/days.js), and each host lists only the family whose
+ *  canonical it owns.
+ *
+ *  A partial window can only lose the OLDEST days, and every one of those is a
+ *  real page, so unlike the boards we publish what we have rather than
+ *  nothing; the index rides with them. `lastmod` is the day itself: the
+ *  facts are fixed at disclosure and the summary lands the same evening. */
+async function dailyEntries(host) {
+  const market = COMPANY_MARKET_BY_HOST[host];
+
+  if (!market) return [];
+  try {
+    const { days } = await fetchArchive({
+      apiBase: API_BASE,
+      market,
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
+    });
+
+    if (!days.length) return [];
+
+    return [
+      { path: dailyIndexPath(market), lastmod: days[0].date },
+      ...days.map((d) => ({ path: dailyPath(market, d.date), lastmod: d.date })),
+    ];
+  } catch {
+    return [];
+  }
+}
+
 const xmlEscape = (s) =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -687,6 +731,7 @@ export async function onRequestGet(context) {
   paths.push(...(await directorEntries(host)));
   paths.push(...(await filingEntries(host)));
   paths.push(...(await weeklyEntries(host)));
+  paths.push(...(await dailyEntries(host)));
   // Glossary entries appear only in their owning host's sitemap — the whole
   // point of the ownership rule is that no entry exists at two URLs.
   paths.push(...entriesForHost(host).map((e) => learnPath(e.slug)));

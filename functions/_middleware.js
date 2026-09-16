@@ -157,7 +157,17 @@ export async function onRequest(context) {
     /^\/congress\/members\/[^/]+$/.test(routePath) ||
     routePath === "/congress/committees" ||
     /^\/congress\/committees\/[^/]+$/.test(routePath) ||
-    routePath === "/how-it-works"
+    routePath === "/how-it-works" ||
+    // Daily editions (functions/daily/*, functions/us/daily/*) and the /today
+    // redirects (functions/today.js, functions/us/today.js), added 2026-09-16.
+    // The index and the day pages own their head; the redirects have no head
+    // to rewrite and would only be delayed by the pass.
+    routePath === "/today" ||
+    routePath === "/us/today" ||
+    routePath === "/daily" ||
+    /^\/daily\/[^/]+$/.test(routePath) ||
+    routePath === "/us/daily" ||
+    /^\/us\/daily\/[^/]+$/.test(routePath)
   ) {
     return res;
   }

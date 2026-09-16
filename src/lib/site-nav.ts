@@ -148,6 +148,11 @@ function researchLinks(
     link("Cluster buying", "/cluster-buys", { nav: true }),
     link("Most active", "/most-active-companies", { nav: true }),
     link("Monthly reports", "/reports", { nav: true, divider: true }),
+    // Footer only, after the archive it belongs beside. The path carries the
+    // market itself (/daily is UK, /us/daily is US on every host, per
+    // shared/days.js), so it is built from `home` rather than resolved by the
+    // host the way the other research paths are.
+    link("Daily editions", home.id === "us" ? "/us/daily" : "/daily"),
   ];
 }
 

@@ -159,3 +159,11 @@ export const brokerGuideCta = {
   headline: "See which directors are buying, on whichever platform you pick.",
   body: "ddbx records every disclosed director purchase and rates the ones that matter. Whichever broker you open an account with, the app tells you what insiders are doing the day they do it.",
 };
+
+/** Daily editions — the archive index and a single day. The edition IS the
+ *  day after the fact, so the ask names the one thing the page cannot be:
+ *  early. The push is the product; the page is its record. */
+export const dailyCta = {
+  headline: "Tomorrow’s edition, one filing at a time.",
+  body: "This page is the day once it has closed. The app is the same day as it happens: each disclosure pushed within minutes of filing, already rated, and the recap when the market shuts.",
+};

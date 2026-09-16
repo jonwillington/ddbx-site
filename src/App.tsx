@@ -46,6 +46,7 @@ import NetherlandsPreviewPage from "@/pages/netherlands-preview";
 import SwedenPreviewPage from "@/pages/sweden-preview";
 import UsPreviewPage from "@/pages/us-preview";
 import UkPreviewPage from "@/pages/uk-preview";
+import DailyEditionPage, { DailyIndexPage, TodayRedirect } from "@/pages/daily";
 
 function App() {
   return (
@@ -251,6 +252,21 @@ function App() {
         <Route element={<RolePage />} path="/roles/:slug" />
         <Route element={<SectorsPage />} path="/sectors" />
         <Route element={<SectorPage />} path="/sectors/:slug" />
+        {/* Daily editions. /daily is the ARCHIVE INDEX; every trading day
+            lives at its own dated URL; /today redirects to the latest one
+            (functions/today.js does the same at the edge). The market is the
+            ROUTE'S, not the host's: /daily is UK and /us/daily is US on every
+            domain, as /dealings/:id and /us/dealings/:id are. See the header
+            of shared/days.js. */}
+        <Route element={<TodayRedirect market="UK" />} path="/today" />
+        <Route element={<DailyIndexPage market="UK" />} path="/daily" />
+        <Route element={<DailyEditionPage market="UK" />} path="/daily/:date" />
+        <Route element={<TodayRedirect market="US" />} path="/us/today" />
+        <Route element={<DailyIndexPage market="US" />} path="/us/daily" />
+        <Route
+          element={<DailyEditionPage market="US" />}
+          path="/us/daily/:date"
+        />
       </Routes>
       <CookieBanner />
     </div>
