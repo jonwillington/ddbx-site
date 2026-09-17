@@ -24,6 +24,7 @@ import type { Dealing, UsDealing } from "@/types/ddbx";
 import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
 import { indexWindow } from "../../shared/insider-index.js";
 import { windowStart } from "../../shared/sectors.js";
+import { parseResearchPath, studyWindow } from "../../shared/studies.js";
 
 import { API_BASE } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
@@ -37,6 +38,8 @@ export interface WindowRequest {
   market: "UK" | "US";
   since: string;
   until?: string | null;
+  /** US only: "all" for the whole Form 4 record. See shared/dealings-feed.js. */
+  view?: "all" | null;
   /** Which date bounds the window (shared/dealings-feed.js). The boards read
    *  "trade", the default; the Insider Index reads "disclosed". Part of the
    *  cache key, so the two never share an entry. */
@@ -56,8 +59,8 @@ interface Entry {
 
 const entries = new Map<string, Entry>();
 
-const keyOf = ({ market, since, until, windowOn }: WindowRequest) =>
-  `${market}|${since}|${until ?? ""}|${windowOn ?? "trade"}`;
+const keyOf = ({ market, since, until, view, windowOn }: WindowRequest) =>
+  `${market}|${since}|${until ?? ""}|${view ?? ""}|${windowOn ?? "trade"}`;
 
 function fresh(entry: Entry | undefined): entry is Entry {
   return !!entry && Date.now() - entry.at < TTL_MS;
@@ -81,6 +84,7 @@ export function loadDealingsWindow(
       market: req.market,
       since: req.since,
       until: req.until ?? null,
+      view: req.view ?? null,
       windowOn: req.windowOn ?? "trade",
     }) as Promise<DealingsWindow>,
   };
@@ -124,10 +128,16 @@ export function rollingWindow(market: "UK" | "US"): WindowRequest {
   return { market, since: windowStart(new Date()) };
 }
 
-/** Start the rolling window now, ignoring the result. Safe to call on every
- *  hover: an in-flight or fresh entry is reused, not refetched. */
-export function prefetchDealingsWindow(market = hostWindowMarket()): void {
-  loadDealingsWindow(rollingWindow(market)).catch(() => {
+/** Start a window now, ignoring the result. Safe to call on every hover: an
+ *  in-flight or fresh entry is reused, not refetched. With no argument, the
+ *  host's rolling window; pass `windowRequestForPath`'s answer to warm what a
+ *  specific page reads. */
+export function prefetchDealingsWindow(
+  req: WindowRequest | "UK" | "US" = hostWindowMarket(),
+): void {
+  const request = typeof req === "string" ? rollingWindow(req) : req;
+
+  loadDealingsWindow(request).catch(() => {
     /* the page's own load will surface the failure */
   });
 }
@@ -137,16 +147,25 @@ export function prefetchDealingsWindow(market = hostWindowMarket()): void {
 const WINDOW_PATH =
   /^\/(?:sectors(?:\/[^/]+)?|biggest-buys|best-performing-buys|cluster-buys|most-active-companies|roles(?:\/[^/]+)?|company\/[^/]+|insider-index(?:\/[^/]+)?)\/?$/;
 
-export function readsDealingsWindow(pathname: string): boolean {
-  return WINDOW_PATH.test(pathname);
-}
-
 /** The Insider Index reads its own window: UK on every host (it
  *  canonicalises to ddbx.uk) and bounded by disclosure date. */
 const INDEX_WINDOW_PATH = /^\/insider-index(?:\/[^/]+)?\/?$/;
 
-/** The window the page at `pathname` reads, or null when it reads none. */
-export function dealingsWindowFor(pathname: string): WindowRequest | null {
+export function readsDealingsWindow(pathname: string): boolean {
+  return WINDOW_PATH.test(pathname) || parseResearchPath(pathname) != null;
+}
+
+/** The window the page at `pathname` reads, or null when it reads none.
+ *
+ *  Not always the rolling one. The living studies (/research, /us/research)
+ *  read the whole record from the tracking start, bounded on the disclosure
+ *  date, and for the US the whole Form 4 record (`view=all`), and their market
+ *  comes from the path rather than the host. Warming the rolling window for a
+ *  hover on a study link would download the wrong object. */
+export function windowRequestForPath(pathname: string): WindowRequest | null {
+  const research = parseResearchPath(pathname);
+
+  if (research) return studyWindow(research.market);
   if (!WINDOW_PATH.test(pathname)) return null;
 
   return INDEX_WINDOW_PATH.test(pathname)

@@ -81,7 +81,7 @@ const ICON_FOR: [RegExp, typeof DocumentTextIcon][] = [
   [/^\/performance/, ArrowTrendingUpIcon],
   [/^\/(developers|api)$/, CodeBracketIcon],
   [/^\/mcp$/, ChatBubbleLeftRightIcon],
-  [/^\/research/, BeakerIcon],
+  [/^\/(us\/)?research/, BeakerIcon],
 ];
 
 function iconFor(to: string): SectorGlyph {

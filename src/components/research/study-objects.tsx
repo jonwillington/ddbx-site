@@ -19,13 +19,14 @@ import { useState } from "react";
 
 import {
   longDate,
+  measurementLine,
   pct,
   signedPp,
   stateLabel,
   verdictDetail,
   verdictHeadline,
   MIN_CELL,
-  MIN_HORIZON_DAYS,
+  MIN_COMPANIES,
 } from "../../../shared/studies.js";
 
 const RULE = "border-hairline dark:border-separator";
@@ -88,9 +89,7 @@ export function VerdictPanel({
         {verdictDetail(result, market)}
       </p>
       <p className="mt-5 font-mono text-[11px] tabular-nums tracking-[0.06em] text-foreground/45">
-        Computed {longDate(result.computedOn)}
-        {result.asOf ? ` · prices to ${longDate(result.asOf)}` : ""} · at least{" "}
-        {MIN_HORIZON_DAYS} days on the clock · rates from {MIN_CELL} purchases
+        {measurementLine(result)}
       </p>
     </section>
   );
@@ -126,10 +125,10 @@ export function CellsTable({ result }: { result: StudyResult }) {
               95% interval
             </th>
             <th className={numHead} scope="col">
-              Median alpha
+              Median abnormal
             </th>
             <th className={numHead} scope="col">
-              Mean alpha
+              Mean abnormal
             </th>
           </tr>
         </thead>
@@ -174,7 +173,7 @@ function CellTableRow({
         {cell.label}
         {compared ? (
           <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.12em] text-brand-brown dark:text-brand-tan">
-            compared
+            tested
           </span>
         ) : null}
       </th>
@@ -198,7 +197,8 @@ function CellTableRow({
           className="py-3 text-right align-top text-[13px] text-foreground/55"
           colSpan={4}
         >
-          Not enough yet. Rates appear at {MIN_CELL}
+          Not enough yet. Rates appear at {MIN_CELL} purchases across{" "}
+          {MIN_COMPANIES} companies
           {cell.clearance?.clearsOn
             ? `; expected ${longDate(cell.clearance.clearsOn)}`
             : ""}
@@ -241,7 +241,16 @@ export function CitationBlock({ cite }: { cite: Citation }) {
         </dt>
         <dd className="text-foreground">
           {cite.computedOn}
-          {cite.asOf ? `, from prices to ${cite.asOf}` : ""}
+          {cite.asOf ? `, from outcomes resolved to ${cite.asOf}` : ""}
+        </dd>
+        <dt className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-foreground/45">
+          Dataset
+        </dt>
+        <dd className="font-mono text-[12.5px] text-foreground">
+          {cite.version}
+          <span className="ml-2 font-sans text-[12.5px] text-foreground/55">
+            {cite.sample.toLocaleString("en-GB")} purchases
+          </span>
         </dd>
         <dt className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-foreground/45">
           Accessed
@@ -292,14 +301,21 @@ export function RuleList({ lines }: { lines: string[] }) {
 
 /** The boards where the filings behind a study’s cells are listed by name.
  *  A study never names a person; this is where the reader goes to check. */
-export function BehindTheCells({ study }: { study: Study }) {
+export function BehindTheCells({
+  study,
+  hrefFor = (path) => path,
+}: {
+  study: Study;
+  /** The board's href in the study's market, which may be another domain. */
+  hrefFor?: (path: string) => string;
+}) {
   return (
     <p className="text-[13px] leading-[1.6] text-foreground/60">
       The purchases behind these cells are listed, by company and buyer, on{" "}
       {study.boards.map((b, i) => (
         <span key={b.to}>
           {i > 0 ? (i === study.boards.length - 1 ? " and " : ", ") : ""}
-          <Link className="underline underline-offset-4" to={b.to}>
+          <Link className="underline underline-offset-4" to={hrefFor(b.to)}>
             {b.title}
           </Link>
         </span>

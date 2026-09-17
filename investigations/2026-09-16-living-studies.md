@@ -189,3 +189,60 @@ Second, cheaper: `/api/coverage` already reports per-horizon event counts across
 - Colour: one hue on the chart; `text-positive`/`text-negative` only on signed alpha in the table; the one contrasting object is the app band.
 - Everything specific is a link: study rows on the index, the boards behind each cell, the other studies, the glossary and method links.
 - No em dashes in reader-facing copy; curly apostrophes throughout.
+
+---
+
+## Review round, 17 September 2026
+
+An external review raised seven findings. All seven were checked against the code and the live data before anything changed; all seven held. §3, §4, §5 and §8 above describe the first build and are superseded by this section where they disagree.
+
+### What changed, in one paragraph
+
+Every purchase is now scored on one fixed window: 90 days from the disclosure-day close, against the index over the identical 90 days, read per purchase from ddbx-data's `outcomes` table through a new additive endpoint, `/api/outcomes` (branch `feat/study-horizon-alpha`, not deployed). The two-proportion z-test is gone. Every comparison is an OLS of the 0/1 beat indicator on one regressor with a cluster-robust (CR1) variance clustered on the issuer and a t reference on G − 1 degrees of freedom; for the size study the regressor is the band index, the clustered equivalent of Cochran–Armitage. Cells need 30 resolved purchases **and** 20 companies. Studies read the whole record from `TRACKING_SINCE_DATE` (US `view=all`), are path-based (`/research` UK, `/us/research` US, any host), carry a dataset version in the citation, and are noindexed and left out of the sitemap while waiting.
+
+### The findings
+
+1. **Wrong normal CDF: confirmed, fixed.** `normCdf` fed x to A&S 7.1.26 where erf needs x/√2, so every p was Φ(x√2)-based. On the old code and today's feed: UK size p 0.021 → 0.101, UK cluster 0.029 → 0.122, US size 0.048 → 0.162, US cluster 0.0003 → 0.011. The reviewer's 0.01 → 0.069 was the 16 September sample; the arithmetic matches. Tested: Φ(1.96) = 0.9750021, Φ(1) = 0.8413447.
+2. **Correlated observations: confirmed, fixed** as above. `clusteredSlope` matches statsmodels 0.14 (`cov_type="cluster"`, `use_t=True`) to 1e-6 on the estimate, clustered SE, naive SE, p and interval, on three datasets including the live UK cluster study. On a synthetic cell where one company contributes 40 identical beats, the clustered SE is 0.144 against a naive 0.072. Per-cell intervals are Wilson on the effective sample (n / design effect). `sampleForGap` is inflated by the observed design effect and stated in companies too. **Episodes:** clustering on the issuer nests every cluster-buying episode (an episode is one company), so it is at least as conservative as clustering on episodes. It does not handle cross-company correlation in the same weeks (a sector's good quarter); that is printed as a limit.
+3. **Unequal horizons: confirmed, fixed.** There was no honest no-server-change design. `Dealing.performance[]` carries 90/180d rows on 10 of 400 UK rows and none on US, with no benchmark leg; `live_performance` is to the latest close. The `outcomes` table already holds the right number. `/api/outcomes?market=UK|US&horizon=90|180|365|730&anchor=disclosed|trade` serves one slice as rows (one indexed read, no joins, edge-cached per slice under a synthetic key, rate-limited like `/api/coverage`, strict 400s). The site joins on `event_id` (UK `dealings.id`; US `filing_id|P|reporter.cik`, verified: 599/599 elapsed UK eligible purchases and 609/642 US events match). The page states the horizon, the date outcomes resolve to, the resolved count, the pending count and the excluded counts.
+4. **Citation stability: confirmed, fixed.** `datasetVersion` = latest exit date + a cyrb53 hash (12 hex) of the sorted `key:cells:abnormal%(4dp)` lines, e.g. `2026-09-16.894130858aaa`. Shown in the cite block and in the copied line. Waiting ⇒ `noindex` (pre-render) and out of the sitemap; the index is noindexed and unlisted while no study has a result.
+5. **Open decisions (§9): all decided.**
+   - **LS1:** clustered linear trend across all bands. The size verdict is now a trend claim and says a trend is the ladder's overall lean, not that every step rises.
+   - **LS4:** 30 purchases **and** 20 companies per cell. Thirty keeps the independent-case reasoning; twenty is the company floor because a cluster-robust variance over-rejects with few clusters (Cameron & Miller 2015 put the danger zone at roughly 20 to 50), and two cells of 20 put at least 40 companies into every test. The old §9.4 worry (39 purchases across 25 companies in the UK top band) is now visible in the interval: its design effect is 3.2 and its interval runs 37% to 84%.
+   - **LS5:** studies read `studyWindow(market)`: since `TRACKING_SINCE_DATE`, bounded on the disclosure date, US `view=all`.
+   - **LS2:** US pages exist at `/us/research` and state "not enough data yet" with a date where one is computable. `ddbx.us/research/*` 301s to `/us/research/*`.
+6. **Hover prefetch: confirmed, fixed.** `windowRequestForPath` returns the request a page actually reads (studies: the whole-record window, not the rolling one) and the warmer also warms the outcomes slice. `WindowRequest` gained `view` and `windowOn`, both in the cache key.
+7. **Copy: rewritten.** Verdicts say "have beaten the index more often … over 90 days" only when the clustered test clears; "too close to call" states the interval and that it includes zero; p is described as "if there were no real difference, a gap at least this large would turn up about one time in N", not as the chance the gap is luck. New shared limits: one window, yes/no outcome, uneven exclusion of stopped series, not a cause.
+
+### Horizon
+
+90 days. On 17 September the disclosed-anchor slices held UK 634 at 90d / 104 at 180d / 0 at 365d, and US 714 / 0 / 0. 180 days clears nothing in either market. The disclosed anchor matches `buyAlpha`'s preference and the reader's framing; no trade-anchor fallback, so there is one definition.
+
+**US size bands re-cut** for the whole record, whose median resolved purchase is about $30,000: under $25k, $25k–$100k, $100k–$500k, $500k and over. Set from band counts and companies (84/62, 109/82, 152/108, 65/47 clean resolved purchases/companies on the snapshot); the snapshot printed the rates alongside, so this is not a blind cut, and is said here.
+
+### Verdicts, old → new (17 September 2026)
+
+Old = first build on today's rolling feed, buggy CDF. New = this build (snapshot of `/api/outcomes` from D1 with the endpoint's SQL, live feeds).
+
+| Market | Study | Old | New | New numbers |
+|---|---|---|---|---|
+| UK | CEO vs CFO | Waiting (CFO 22) | **Waiting** | CFO 22 purchases / 20 companies, needs 8 more; expected 28 Oct 2026. CEO 61% of 70 (57 cos), 48–74% |
+| UK | Size | Answered, 68% vs 53%, p = 0.021 | **Too close to call** | 49 / 59 / 61 / 63% (n 141/271/139/41); trend +5.1pp per band, 95% −1.6 to +11.8, p = 0.13 clustered (0.03 naive), G = 322 |
+| UK | Cluster | Answered, 63% vs 56%, p = 0.029 | **Too close to call** | 62% of 170 (61 cos) vs 59% of 281 (218 cos); gap +3.0pp, 95% −11.7 to +17.8, p = 0.69 (0.52 naive); design effect 2.5 |
+| US | CEO vs CFO | Waiting (CFO 14) | **Waiting** | CFO 20 / 20 companies, needs 10 more; expected 2 Nov 2026. CEO 60% of 63 (46 cos) |
+| US | Size | Answered, 47% vs 59%, p = 0.048 | **Too close to call** | 53 / 61 / 68 / 49% (n 83/108/136/57); trend +1.2pp, 95% −6.4 to +8.8, p = 0.75 |
+| US | Cluster | Answered, 50% vs 65%, p = 0.0003 | **Too close to call** | 65% of 134 (47 cos) vs 60% of 167 (137 cos); gap +5.0pp, 95% −12.6 to +22.7, p = 0.57 |
+
+Every "answered" in the first build is gone. The UK size study is the instructive one: naive p = 0.03 on the new outcomes, clustered p = 0.13. The US cluster study flipped sign once horizons were fixed (it was lone > cluster on the rolling mark).
+
+### Data-side findings (ddbx-data, not fixed here)
+
+- **US price series stop.** 278 of 714 US 90d disclosed outcomes are `stale_exit`; 238 of those tickers have no price after mid-July to August. They are refresh gaps, not delistings. Excluded here, and the exclusion is uneven: 25% of US lone purchases with an outcome are flagged against 12% of cluster purchases (UK 2% vs 0%). Printed as a limit; the fix is upstream.
+- **Stale rows are never recomputed.** `refreshOutcomes` skips rows already at `OUTCOMES_VERSION`, so 40 US rows written stale still say stale although their prices now extend. A version bump or a `force` pass over `stale_exit` rows would recover them.
+- `src/types/ddbx.ts` needs `npm run sync:types` after the ddbx-data branch merges (`OutcomeEvent`, `OutcomesResponse`); until then `shared/studies.d.ts` declares the shape.
+
+### Verified / not verified
+
+Verified: `npm test` (21 pass, 13 new in `tests/studies.test.mjs`: CDF, t, clustered vs naive SE against statsmodels, CA on a known table, fixed-horizon admission, outcome-not-live-mark, company floor, hash order-stability, waiting ⇒ not indexable, pre-render noindex with a stub `HTMLRewriter`, paths); `npx tsc --noEmit`; `npm run build`; ddbx-data `tsc --noEmit`; canonicals and redirects via `shared/seo.js` under node; render pass at 1440 and 520 of `/research/the-cluster-effect` and `/us/research/ceo-vs-cfo` through a local proxy serving the D1 snapshot.
+
+Not verified: `/api/outcomes` has not run in a Worker (the SQL was run against D1 read-only and its output shaped as the route shapes it); the pages cannot load in production until it is deployed, and render "couldn't load" rather than a study until then. `wrangler pages dev` for the two Functions and the sitemap. Dark mode. The meter label on an under-floor row can sit across the reference line (visible on the US CFO row); cosmetic, not changed.

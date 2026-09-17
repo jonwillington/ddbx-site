@@ -34,7 +34,7 @@ import {
   indexDateFromPath,
   INDEX_PATH,
 } from "./insider-index.js";
-import { studyBySlug } from "./studies.js";
+import { parseResearchPath } from "./studies.js";
 
 export const BRAND = "ddbx";
 export const SITE_NAME = "Director Dealings";
@@ -191,8 +191,9 @@ const UK_US_ONLY_PREFIXES = [
   // The Insider Index is computed over the UK feed alone (see
   // shared/insider-index.js) and canonicalises to ddbx.uk on every host.
   "/insider-index",
-  // The living studies compute from the UK and US feeds' performance marks,
-  // which SE and NL do not carry. See shared/studies.js.
+  // The living studies compute from the UK and US outcome slices, which SE
+  // and NL do not have. See shared/studies.js. /us/research needs no entry:
+  // it resolves to the US market on every host, like /us/directors.
   "/research",
 ];
 
@@ -207,6 +208,19 @@ export function isForeignResearchPath(pathname, hostname) {
   return UK_US_ONLY_PREFIXES.some(
     (prefix) => path === prefix || path.startsWith(`${prefix}/`),
   );
+}
+
+/** The living studies were host-based while unreleased: ddbx.us/research was
+ *  the US edition. They are path-based now (/research is UK and /us/research
+ *  is US on any host), so a ddbx.us/research link would otherwise land on the
+ *  UK study. Returns the US path to 301 to, or null. */
+export function legacyResearchRedirect(pathname, hostname) {
+  if (normaliseHost(hostname) !== "ddbx.us") return null;
+  const path = String(pathname ?? "/");
+
+  return path === "/research" || path.startsWith("/research/")
+    ? `/us${path}`
+    : null;
 }
 
 /** Strip trailing slashes from a path. "/companies/" -> "/companies", "/" -> "/".
@@ -266,6 +280,10 @@ export function marketIdForPath(pathname, hostname) {
   // ddbx.us.
   if (path === "/congress" || path.startsWith("/congress/")) return "usg";
   if (path === "/djt" || path.startsWith("/djt/")) return "djt";
+  // The living studies are path-based: /research is the UK edition on every
+  // host (/us/research is caught by the /us/ branch above). Before the host
+  // default, or ddbx.us/research would claim the US market for a UK page.
+  if (path === "/research" || path.startsWith("/research/")) return "uk";
 
   if (host && HOST_DEFAULT_MARKET[host]) return HOST_DEFAULT_MARKET[host];
 
@@ -396,14 +414,12 @@ const roleFromPath = (path, marketId) => {
 
 const isHowItWorksPath = (path) => path === "/how-it-works";
 
-/** The living studies: /research is the index, /research/<slug> one study.
- *  A slug the module does not know resolves to null, so the index branch
- *  cannot claim it and the page's own not-found state gets the shell title. */
-const isResearchIndexPath = (path) => path === "/research";
-const studyFromPath = (path) =>
-  path.startsWith("/research/")
-    ? studyBySlug(decodeURIComponent(path.slice("/research/".length)))
-    : null;
+/** The living studies: /research (UK) and /us/research (US) are the index,
+ *  /<base>/<slug> one study. A slug the module does not know resolves to null,
+ *  so the index branch cannot claim it and the page's own not-found state
+ *  gets the shell title. */
+const isResearchIndexPath = (path) => parseResearchPath(path)?.study === null;
+const studyFromPath = (path) => parseResearchPath(path)?.study ?? null;
 
 const isLearnIndexPath = (path) => path === "/learn";
 

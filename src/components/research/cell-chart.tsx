@@ -19,9 +19,15 @@
  *
  *  A cell under the floor gets no dot and no interval, in line with the
  *  director pages: the count is shown, the rate is not. What it gets instead
- *  is a meter of its count toward the floor, drawn on a lighter step of the
- *  same hue, which is a quantity a reader can read off (rule 9): 21 of 30 is
- *  70% of the way to a rate, and that is what the row says.
+ *  is a meter toward the floor, drawn on a lighter step of the same hue, which
+ *  is a quantity a reader can read off (rule 9). There are two floors,
+ *  purchases and companies, and the meter shows the one the cell is further
+ *  from: 26 purchases across 14 companies is 70% of the way, because 14 of 20
+ *  companies is the binding one.
+ *
+ *  The interval on a stated cell is the company-clustered one from
+ *  shared/studies.js, so a cell of many purchases in few companies draws a
+ *  wide line, which is the point.
  *
  *  HTML, not SVG. Every row is a grid line with a label column and a track,
  *  and the marks are positioned by percentage inside the track, so the chart
@@ -29,7 +35,7 @@
  */
 import type { StudyCell } from "../../../shared/studies";
 
-import { MIN_CELL, pct } from "../../../shared/studies.js";
+import { MIN_CELL, MIN_COMPANIES, pct } from "../../../shared/studies.js";
 
 const TICKS = [0, 25, 50, 75, 100];
 
@@ -107,7 +113,9 @@ function CellRow({
   const stated = cell.beatRate != null && cell.interval != null;
   const title = stated
     ? `${cell.label}: ${pct(cell.beatRate)} of ${cell.n} beat the index (95% interval ${pct(cell.interval!.lo)} to ${pct(cell.interval!.hi)})`
-    : `${cell.label}: ${cell.n} of the ${MIN_CELL} purchases needed before a rate is stated`;
+    : `${cell.label}: ${cell.n} purchases across ${cell.companies} companies, of the ${MIN_CELL} and ${MIN_COMPANIES} needed before a rate is stated`;
+  /** Progress toward the binding floor, 0 to 1. */
+  const toward = Math.min(1, cell.n / MIN_CELL, cell.companies / MIN_COMPANIES);
 
   return (
     <div
@@ -129,7 +137,7 @@ function CellRow({
         <p className="mt-0.5 font-mono text-[10.5px] tabular-nums tracking-[0.04em] text-foreground/45">
           {stated
             ? `n ${cell.n} · ${cell.companies} ${cell.companies === 1 ? "company" : "companies"}`
-            : `${cell.n} of ${MIN_CELL} needed`}
+            : `${cell.n} of ${MIN_CELL} · ${cell.companies} of ${MIN_COMPANIES} companies`}
         </p>
       </div>
 
@@ -193,13 +201,13 @@ function CellRow({
           <>
             {/* Under the floor: the count toward it, on a lighter step of
                 the same hue, from the same zero the axis starts at. Its scale
-                is the floor, not the axis: 30 purchases is the full track. */}
+                is the binding floor, not the axis: the full track is both. */}
             <span
               aria-hidden
               className="absolute top-1/2 h-[7px] -translate-y-1/2 rounded-[3px] bg-brand-brown/[0.14] dark:bg-brand-tan/[0.18]"
               style={{
                 left: 0,
-                width: `${Math.min(100, (cell.n / MIN_CELL) * 100)}%`,
+                width: `${toward * 100}%`,
               }}
             />
             {/* Placed after the meter's end while there is room, and before
@@ -207,13 +215,13 @@ function CellRow({
                 one thing a phone-width chart must not do. */}
             <span
               className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap text-[12px] text-foreground/55 ${
-                cell.n / MIN_CELL > 0.5 ? "-translate-x-full pr-2.5" : "pl-2.5"
+                toward > 0.5 ? "-translate-x-full pr-2.5" : "pl-2.5"
               }`}
               style={{
-                left: `${Math.min(100, (cell.n / MIN_CELL) * 100)}%`,
+                left: `${toward * 100}%`,
               }}
             >
-              rate appears at {MIN_CELL}
+              {Math.round(toward * 100)}% of the way to a rate
             </span>
           </>
         )}

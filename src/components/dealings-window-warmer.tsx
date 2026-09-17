@@ -4,7 +4,9 @@
  *  src/lib/dealings-window.ts, so neither can cause a second download:
  *
  *  - INTENT. A pointer over, a finger on, or keyboard focus on any link to a
- *    page that reads the window (the sector pages, the boards, a company).
+ *    page that reads a window (the sector pages, the boards, a company, the
+ *    living studies). Each page's own window: a study reads the whole record
+ *    and its outcomes slice, not the rolling twelve months.
  *    Hover gives a desktop click a few hundred milliseconds' head start and
  *    touchstart gives a tap about a hundred — against a ~200KB edge-cached
  *    response, usually enough for the page to open on its data.
@@ -19,11 +21,13 @@
  */
 import { useEffect } from "react";
 
+import { parseResearchPath } from "../../shared/studies.js";
+
 import {
-  dealingsWindowFor,
-  loadDealingsWindow,
   prefetchDealingsWindow,
+  windowRequestForPath,
 } from "@/lib/dealings-window";
+import { prefetchStudyOutcomes } from "@/lib/study-inputs";
 
 /** After the first page has had its own requests to itself. */
 const IDLE_DELAY_MS = 2500;
@@ -63,13 +67,14 @@ export function DealingsWindowWarmer() {
   useEffect(() => {
     const onIntent = (event: Event) => {
       const path = linkPath(event.target);
-      const req = path ? dealingsWindowFor(path) : null;
+      const req = path ? windowRequestForPath(path) : null;
 
-      if (req) {
-        loadDealingsWindow(req).catch(() => {
-          /* the page's own load will surface the failure */
-        });
-      }
+      if (!path || !req) return;
+      prefetchDealingsWindow(req);
+      // A study also reads its outcomes slice; warm that alongside.
+      const research = parseResearchPath(path);
+
+      if (research) prefetchStudyOutcomes(research.market);
     };
 
     document.addEventListener("pointerover", onIntent, { passive: true });

@@ -288,11 +288,17 @@ function App() {
             day. UK on every host; see shared/insider-index.js. */}
         <Route element={<InsiderIndexPage />} path="/insider-index" />
         <Route element={<InsiderIndexDatePage />} path="/insider-index/:date" />
-        {/* Living studies. Evergreen questions recomputed from the live
-            corpus on every load; functions/research/[[route]].js pre-renders
-            the same verdict for crawlers. See shared/studies.js. */}
-        <Route element={<ResearchIndexPage />} path="/research" />
-        <Route element={<StudyPage />} path="/research/:slug" />
+        {/* Living studies. Evergreen questions recomputed from the record on
+            every load; functions/research/[[route]].js and its /us twin
+            pre-render the same verdict for crawlers. Path-based: /research is
+            UK and /us/research is US on any host. See shared/studies.js. */}
+        <Route element={<ResearchIndexPage market="UK" />} path="/research" />
+        <Route element={<StudyPage market="UK" />} path="/research/:slug" />
+        <Route
+          element={<ResearchIndexPage market="US" />}
+          path="/us/research"
+        />
+        <Route element={<StudyPage market="US" />} path="/us/research/:slug" />
       </Routes>
       <CookieBanner />
     </div>

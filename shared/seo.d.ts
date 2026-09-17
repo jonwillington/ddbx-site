@@ -32,6 +32,11 @@ export declare function isForeignResearchPath(
   pathname?: string,
   hostname?: string,
 ): boolean;
+/** The /us/research path a legacy ddbx.us/research URL 301s to, or null. */
+export declare function legacyResearchRedirect(
+  pathname?: string,
+  hostname?: string,
+): string | null;
 export declare function marketIdForPath(
   pathname: string,
   hostname?: string,

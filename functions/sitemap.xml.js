@@ -85,7 +85,13 @@ import {
   indexWindow,
   series as indexSeries,
 } from "../shared/insider-index.js";
-import { studyPath, STUDY_SLUGS } from "../shared/studies.js";
+import {
+  computeStudy,
+  fetchOutcomes,
+  studyPath,
+  studyWindow,
+  STUDIES,
+} from "../shared/studies.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -196,6 +202,55 @@ async function brokerPaths() {
 
 /** Market whose company pages belong on each host. */
 const COMPANY_MARKET_BY_HOST = { "ddbx.uk": "UK", "ddbx.us": "US" };
+
+/** The living studies a host owns that have a result.
+ *
+ *  Path-based: ddbx.uk lists /research, ddbx.us lists /us/research, each the
+ *  canonical of its edition. A WAITING study is noindexed by its pre-render,
+ *  so it is left out here, and the index rides with its studies: listed only
+ *  when at least one has a result. That needs the same computation the page
+ *  does, from the same edge-cached fetches the pre-render makes.
+ *
+ *  Failure posture matches the other families: an outage costs URLs, not the
+ *  document. */
+async function studyEntries(host) {
+  const market = COMPANY_MARKET_BY_HOST[host];
+
+  if (!market) return [];
+  const cf = {
+    cacheEverything: true,
+    cacheTtlByStatus: { "200-299": 1800, "400-499": 60, "500-599": 0 },
+  };
+
+  try {
+    const [feed, out] = await Promise.all([
+      fetchDealingsWindow({
+        apiBase: API_BASE,
+        ...studyWindow(market),
+        until: null,
+        cf,
+      }),
+      fetchOutcomes({ apiBase: API_BASE, market, cf }),
+    ]);
+
+    if (!out.ok || (feed.dealings.length === 0 && !feed.complete)) return [];
+    const today = new Date();
+    const ready = STUDIES.filter(
+      (s) =>
+        computeStudy(s, feed.dealings, out.body.outcomes, market, today)
+          .indexable,
+    );
+
+    if (ready.length === 0) return [];
+
+    return [
+      studyPath(null, market),
+      ...ready.map((s) => studyPath(s.slug, market)),
+    ];
+  } catch {
+    return [];
+  }
+}
 
 /** The monthly report archive for a host.
  *
@@ -839,13 +894,8 @@ export async function onRequestGet(context) {
   paths.push(...(await weeklyEntries(host)));
   paths.push(...(await dailyEntries(host)));
   paths.push(...(await insiderIndexEntries(host)));
-  // The living studies exist in every state — under the floor the page's
-  // content is the not-yet state, which the pre-render renders and indexes —
-  // so no fetch decides whether to list them. UK and US only, per
-  // UK_US_ONLY_PREFIXES.
-  if (COMPANY_MARKET_BY_HOST[host]) {
-    paths.push(studyPath(), ...STUDY_SLUGS.map((slug) => studyPath(slug)));
-  }
+  // The living studies, only those with a result. See studyEntries.
+  paths.push(...(await studyEntries(host)));
   // Glossary entries appear only in their owning host's sitemap — the whole
   // point of the ownership rule is that no entry exists at two URLs.
   paths.push(...entriesForHost(host).map((e) => learnPath(e.slug)));

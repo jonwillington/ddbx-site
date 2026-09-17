@@ -25,6 +25,7 @@ import {
   isForeignResearchPath,
   isIndexable,
   langForPath,
+  legacyResearchRedirect,
   seoForPath,
   stripTrailingSlash,
 } from "../shared/seo.js";
@@ -82,13 +83,18 @@ export async function onRequest(context) {
   //      navbar. Send them to the host that owns the content instead — same
   //      path, so a shared link still lands where it meant to. 301: the EU URL
   //      is not a distinct page and should not accumulate its own index entry.
+  //   3. The living studies moved from host-based to path-based on 2026-09-17:
+  //      /research is UK and /us/research is US on any host. ddbx.us/research
+  //      used to be the US edition, so it goes to /us/research rather than
+  //      quietly serving the UK study on the US domain.
   const normalisedPath = stripTrailingSlash(url.pathname);
   const foreignResearch = isForeignResearchPath(normalisedPath, url.hostname);
+  const legacyResearch = legacyResearchRedirect(normalisedPath, url.hostname);
 
-  if (normalisedPath !== url.pathname || foreignResearch) {
+  if (normalisedPath !== url.pathname || foreignResearch || legacyResearch) {
     const target = new URL(url.toString());
 
-    target.pathname = normalisedPath;
+    target.pathname = legacyResearch ?? normalisedPath;
     if (foreignResearch) target.hostname = "ddbx.uk";
 
     return Response.redirect(target.toString(), 301);
@@ -178,9 +184,8 @@ export async function onRequest(context) {
     routePath === "/insider-index" ||
     /^\/insider-index\/[^/]+$/.test(routePath) ||
     // The living studies, added 2026-09-16: index and study pages both own
-    // their head, from functions/research/[[route]].js.
-    routePath === "/research" ||
-    /^\/research\/[^/]+$/.test(routePath)
+    // their head, from functions/research/[[route]].js and its /us twin.
+    /^(\/us)?\/research(\/[^/]+)?$/.test(routePath)
   ) {
     return res;
   }

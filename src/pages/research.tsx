@@ -1,11 +1,16 @@
-/** Living studies — /research (index) and /research/:slug.
+/** Living studies — /research and /us/research, each an index and /:slug.
  *
- *  Evergreen research questions recomputed from the live corpus on every
- *  load, written to be cited. The questions, the cells, the thresholds, the
+ *  Evergreen research questions recomputed from the record on every load,
+ *  written to be cited. The questions, the cells, the thresholds, the
  *  statistics and every sentence that states a number live in
- *  shared/studies.js, which functions/research/[[route]].js renders for
- *  crawlers from the same fetch: a study whose pre-rendered verdict differs
- *  from its hydrated one is worse than no study.
+ *  shared/studies.js, which shared/research-prerender.js renders for crawlers
+ *  from the same fetch: a study whose pre-rendered verdict differs from its
+ *  hydrated one is worse than no study.
+ *
+ *  Path-based, not host-based: the market is a prop from the route (/research
+ *  is UK, /us/research is US, on any host), because a study is cited by URL
+ *  and a URL whose meaning depends on the domain it was pasted under is not a
+ *  citation.
  *
  *  The one rule the family is built around: a conclusion is published only
  *  once the sample makes it defensible. Under the floor the page still exists
@@ -35,21 +40,25 @@ import {
   citation,
   computeStudy,
   datasetSentence,
-  longDate,
+  floorLine,
+  indexRules,
+  measurementLine,
+  num,
   pct,
   studyBySlug,
   studyPath,
   verdictHeadline,
   ARRIVAL_WEEKS,
+  HORIZON_DAYS,
   METHODOLOGY,
   MIN_CELL,
-  MIN_HORIZON_DAYS,
+  MIN_COMPANIES,
+  SHARED_LIMITS,
   STUDIES,
   STUDY_FLOOR,
 } from "../../shared/studies.js";
-import { MARKET_HOST_BY_ID } from "../../shared/seo.js";
 
-import { R, useSectorMarket } from "@/components/sector-ui";
+import { R, type SectorMarket } from "@/components/sector-ui";
 import DefaultLayout from "@/layouts/default";
 import { BackLink } from "@/components/back-link";
 import { SeoRail } from "@/components/seo/seo-rail";
@@ -62,7 +71,8 @@ import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { studyCta } from "@/components/seo/cta-copy";
 import { Skeleton } from "@/components/skeleton";
 import { RowList, Row } from "@/components/row-list";
-import { useBoardFeed } from "@/components/boards/board-feed";
+import { MARKETS, marketHref } from "@/lib/markets/registry";
+import { useStudyInputs, type StudyInputs } from "@/lib/study-inputs";
 import { CellChart } from "@/components/research/cell-chart";
 import {
   BehindTheCells,
@@ -82,16 +92,42 @@ const CAVEAT =
  *  per week entering the studies’ universe, from the last ARRIVAL_WEEKS. */
 const perWeek = (n: number) => (n >= 10 ? Math.round(n) : n.toFixed(1));
 
+type StudyMarketId = "UK" | "US";
+
+const MARKET: Record<StudyMarketId, SectorMarket> = {
+  UK: { id: "UK", label: "UK", noun: "directors", symbol: "£" },
+  US: { id: "US", label: "US", noun: "insiders", symbol: "$" },
+};
+
+/** A board or explainer in the study's market. Boards are host-based, so on
+ *  a host that is not the market's own this is an absolute URL to its domain;
+ *  on localhost and previews it stays relative. */
+function marketPath(market: StudyMarketId, path: string): string {
+  const entry = MARKETS.find((m) => m.id === market.toLowerCase());
+
+  return entry
+    ? marketHref(
+        entry,
+        path,
+        typeof window === "undefined" ? undefined : window.location.hostname,
+      )
+    : path;
+}
+
 function useStudyResults(
-  rows: ReturnType<typeof useBoardFeed>["rows"],
-  market: "UK" | "US",
+  inputs: StudyInputs,
+  market: StudyMarketId,
 ): StudyResult[] | null {
+  const { rows, outcomes } = inputs;
+
   return useMemo(
     () =>
-      rows === null
+      rows === null || outcomes === null
         ? null
-        : STUDIES.map((s) => computeStudy(s, rows, market, new Date())),
-    [rows, market],
+        : STUDIES.map((s) =>
+            computeStudy(s, rows, outcomes, market, new Date()),
+          ),
+    [rows, outcomes, market],
   );
 }
 
@@ -99,8 +135,8 @@ function useStudyResults(
 function CouldNotLoad() {
   return (
     <p className={`mt-10 max-w-[62ch] ${R.body}`}>
-      We couldn’t load the filings just now. It’s a network problem rather than
-      a finding about the market. Try a refresh in a moment.
+      We couldn’t load the filings or their outcomes just now. It’s a network
+      problem rather than a finding about the market. Try a refresh in a moment.
     </p>
   );
 }
@@ -109,12 +145,16 @@ function CouldNotLoad() {
 // Index
 // ---------------------------------------------------------------------------
 
-export function ResearchIndexPage() {
-  const market = useSectorMarket();
-  const { rows, complete } = useBoardFeed(market.id);
+export function ResearchIndexPage({
+  market: marketKey = "UK",
+}: {
+  market?: StudyMarketId;
+}) {
+  const market = MARKET[marketKey];
+  const inputs = useStudyInputs(market.id);
+  const { rows, complete, failed } = inputs;
   const marketId = market.id === "US" ? "us" : "uk";
-  const results = useStudyResults(rows, market.id);
-  const failed = rows !== null && rows.length === 0 && !complete;
+  const results = useStudyResults(inputs, market.id);
 
   // The dataset figures on the index come from the widest universe, which is
   // the size study’s (no floor). Every study reads the same fetch, so this is
@@ -125,29 +165,30 @@ export function ResearchIndexPage() {
     <>
       Three questions people ask about {market.noun} buying their own shares,
       answered from the disclosures themselves and recomputed on every load.
-      Each is published only once there are enough marked purchases to carry it;
-      until then the page says what is missing and when it should exist.
+      Each is published only once there are enough resolved purchases, from
+      enough companies, to carry it; until then the page says what is missing
+      and when it should exist.
     </>
   );
 
   const related: RelatedCard[] = [
     {
-      to: "/how-it-works",
+      to: marketPath(market.id, "/how-it-works"),
       title: "How the rating works",
       description: "The six checks, and what we can measure",
     },
     {
-      to: "/best-performing-buys",
+      to: marketPath(market.id, "/best-performing-buys"),
       title: "The best-performing buys",
       description: "Ranked on alpha, not return",
     },
     {
-      to: "/roles",
+      to: marketPath(market.id, "/roles"),
       title: "Buying by role",
       description: "The purchases behind the role cells",
     },
     {
-      to: "/cluster-buys",
+      to: marketPath(market.id, "/cluster-buys"),
       title: "Cluster buying",
       description: "Where several insiders bought at once",
     },
@@ -168,7 +209,7 @@ export function ResearchIndexPage() {
           marketId,
         }}
         eyebrow="Living studies"
-        loading={rows === null}
+        loading={rows === null && !failed}
         notice={<TrackingNotice marketId={market.id} />}
         skeleton={<IndexSkeleton />}
         standfirst={standfirst}
@@ -205,7 +246,7 @@ export function ResearchIndexPage() {
                     title={
                       <Link
                         className="group inline-flex items-start gap-2 outline-none focus-visible:underline"
-                        to={studyPath(study.slug)}
+                        to={studyPath(study.slug, market.id)}
                       >
                         <span>{study.title}</span>
                         <span
@@ -224,10 +265,7 @@ export function ResearchIndexPage() {
                       {verdictHeadline(result)}
                     </p>
                     <p className="mt-1.5 font-mono text-[11px] tabular-nums tracking-[0.06em] text-foreground/45">
-                      Computed {longDate(result.computedOn)}
-                      {result.asOf
-                        ? ` · prices to ${longDate(result.asOf)}`
-                        : ""}
+                      {measurementLine(result)}
                     </p>
                   </Row>
                 );
@@ -244,33 +282,27 @@ export function ResearchIndexPage() {
               title="How a living study works"
               variant="rail"
             >
-              <RuleList
-                lines={[
-                  `A study is a question with two cells to compare. Each cell is a kind of purchase, never a person: a role, a size band, whether the purchase was made inside a cluster.`,
-                  `A purchase counts once it has a performance mark and at least ${MIN_HORIZON_DAYS} days between the close it is measured from and the latest close on file. Newer purchases are in the queue, not the sample.`,
-                  `A cell states its beat rate, the share of its purchases that beat the index, only once it holds ${MIN_CELL} of them. Below that it shows its count and the date it should reach the floor.`,
-                  `The two cells are compared with a standard test for two proportions. When the gap is one that chance would produce at this sample, the page says so rather than picking a winner.`,
-                  `Everything is recomputed on every load from the live corpus, and each page prints the day it was computed and the day its prices run to, so a citation carries its own date.`,
-                ]}
-              />
+              <RuleList lines={indexRules()} />
             </SeoSection>
 
             <SeoSection
               aside="What the three studies are computed from today."
               title="The dataset"
             >
-              {widest && widest.universe.scored >= MIN_CELL ? (
+              {widest &&
+              widest.universe.scored >= MIN_CELL &&
+              widest.universe.companies >= MIN_COMPANIES ? (
                 <StatTiles
                   note={datasetSentence(widest, market.id)}
                   stats={[
                     {
                       label: "Purchases in sample",
                       primary: true,
-                      value: String(widest.universe.scored),
+                      value: num(widest.universe.scored),
                     },
                     {
                       label: "Companies",
-                      value: String(widest.universe.companies),
+                      value: num(widest.universe.companies),
                     },
                     {
                       label: "Beat the index",
@@ -285,7 +317,8 @@ export function ResearchIndexPage() {
               ) : (
                 <p className={`max-w-[62ch] ${R.body}`}>
                   Not enough data yet. The sample opens once {MIN_CELL}{" "}
-                  purchases have had {MIN_HORIZON_DAYS} days on the clock.
+                  purchases across {MIN_COMPANIES} companies have had their{" "}
+                  {HORIZON_DAYS} days.
                 </p>
               )}
             </SeoSection>
@@ -299,7 +332,7 @@ export function ResearchIndexPage() {
                 day it was disclosed, and rates the ones that clear{" "}
                 <Link
                   className="underline underline-offset-4"
-                  to="/how-it-works"
+                  to={marketPath(market.id, "/how-it-works")}
                 >
                   six checks
                 </Link>
@@ -307,7 +340,10 @@ export function ResearchIndexPage() {
                 what the whole record says about a kind of purchase, and hold
                 the answer back until the record can carry it. The terms are
                 defined in{" "}
-                <Link className="underline underline-offset-4" to="/learn">
+                <Link
+                  className="underline underline-offset-4"
+                  to={marketPath(market.id, "/learn")}
+                >
                   the glossary
                 </Link>
                 .
@@ -357,15 +393,19 @@ function IndexSkeleton() {
 
 const SECTIONS = ["cells", "method", "limits", "dataset", "cite"] as const;
 
-export function StudyPage() {
+export function StudyPage({
+  market: marketKey = "UK",
+}: {
+  market?: StudyMarketId;
+}) {
   const { slug } = useParams<{ slug: string }>();
   const study = studyBySlug(slug);
-  const market = useSectorMarket();
-  const { rows, complete } = useBoardFeed(market.id);
+  const market = MARKET[marketKey];
+  const inputs = useStudyInputs(market.id);
+  const { rows, complete, failed } = inputs;
   const marketId = market.id === "US" ? "us" : "uk";
-  const results = useStudyResults(rows, market.id);
+  const results = useStudyResults(inputs, market.id);
   const result = results?.find((r) => r.slug === study?.slug) ?? null;
-  const failed = rows !== null && rows.length === 0 && !complete;
 
   if (!study) {
     return (
@@ -376,7 +416,10 @@ export function StudyPage() {
           ukHeading="Start investing"
         />
         <SeoPageShell
-          crumbs={[{ label: "Research", to: "/research" }, { label: "Study" }]}
+          crumbs={[
+            { label: "Research", to: studyPath(null, market.id) },
+            { label: "Study" },
+          ]}
           eyebrow={EYEBROW}
           standfirst="That study doesn’t exist, or it has been renamed. The three that do are listed below."
           title="We haven’t run that one"
@@ -385,7 +428,7 @@ export function StudyPage() {
             className="mt-8"
             cols={3}
             items={STUDIES.map((s) => ({
-              to: studyPath(s.slug),
+              to: studyPath(s.slug, market.id),
               title: s.short,
               description: s.summary,
             }))}
@@ -419,33 +462,32 @@ function StudyDocument({
 }: {
   study: Study;
   result: StudyResult | null;
-  rows: ReturnType<typeof useBoardFeed>["rows"];
+  rows: StudyInputs["rows"];
   complete: boolean;
   failed: boolean;
-  market: ReturnType<typeof useSectorMarket>;
+  market: SectorMarket;
   marketId: "uk" | "us";
 }) {
-  const host = MARKET_HOST_BY_ID[marketId] ?? "ddbx.uk";
   const cite = useMemo(
-    () => (result ? citation(study, result, host, new Date()) : null),
-    [study, result, host],
+    () => (result ? citation(study, result, new Date()) : null),
+    [study, result],
   );
   const step = (id: (typeof SECTIONS)[number]) => SECTIONS.indexOf(id) + 1;
   const floor = study.floor ? STUDY_FLOOR[market.id] : null;
 
   const others: RelatedCard[] = [
     ...STUDIES.filter((s) => s.slug !== study.slug).map((s) => ({
-      to: studyPath(s.slug),
+      to: studyPath(s.slug, market.id),
       title: s.short,
       description: s.summary,
     })),
     {
-      to: "/research",
+      to: studyPath(null, market.id),
       title: "All living studies",
       description: "The three questions, and how each is answered",
     },
     {
-      to: "/how-it-works",
+      to: marketPath(market.id, "/how-it-works"),
       title: "How the rating works",
       description: "The six checks, and what we can measure",
     },
@@ -461,7 +503,7 @@ function StudyDocument({
       <SeoPageShell
         back={<BackLink />}
         crumbs={[
-          { label: "Research", to: "/research" },
+          { label: "Research", to: studyPath(null, market.id) },
           { label: study.short },
         ]}
         cta={{
@@ -471,7 +513,7 @@ function StudyDocument({
           marketId,
         }}
         eyebrow={`${EYEBROW} · ${market.label}`}
-        loading={rows === null}
+        loading={rows === null && !failed}
         notice={
           <>
             <TrackingNotice marketId={market.id} />
@@ -526,7 +568,11 @@ function StudyDocument({
             </nav>
 
             <SeoSection
-              aside="Each cell is a kind of purchase. The two the verdict compares are marked."
+              aside={
+                result.kind === "trend"
+                  ? "Each cell is a kind of purchase. The verdict tests the trend across every band marked."
+                  : "Each cell is a kind of purchase. The two the verdict compares are marked."
+              }
               id="cells"
               index={step("cells")}
               title="The cells"
@@ -542,7 +588,10 @@ function StudyDocument({
                 <CellsTable result={result} />
               </div>
               <div className="mt-4">
-                <BehindTheCells study={study} />
+                <BehindTheCells
+                  hrefFor={(path) => marketPath(market.id, path)}
+                  study={study}
+                />
               </div>
             </SeoSection>
 
@@ -561,11 +610,7 @@ function StudyDocument({
             >
               <RuleList
                 lines={[
-                  ...(floor != null
-                    ? [
-                        `Purchases under ${market.symbol}${floor.toLocaleString("en-GB")} are left out. That is the pipeline’s own co-buyer floor, the line under which a purchase does not count toward a cluster anywhere on the site, and the role study uses the same line so the two share a universe.`,
-                      ]
-                    : []),
+                  ...(floor != null ? [floorLine(market.id, floor)] : []),
                   ...study.method,
                   ...METHODOLOGY,
                 ]}
@@ -580,11 +625,7 @@ function StudyDocument({
               total={SECTIONS.length}
             >
               <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
-                {[
-                  ...study.caveats,
-                  `The mark runs to the latest close, so purchases in the sample have had anywhere from ${MIN_HORIZON_DAYS} days to the whole record on the clock. A cell whose purchases are older has had more time in whichever direction the market went.`,
-                  "Beating the index is a yes or no. A purchase that beat it by half a point counts the same as one that beat it by forty, which is why the median alpha sits beside every rate, and why a rate is not a return.",
-                ].map((line) => (
+                {[...study.caveats, ...SHARED_LIMITS].map((line) => (
                   <p
                     key={line}
                     className="max-w-[54ch] text-[14.5px] leading-[1.65] text-foreground/75"
@@ -608,8 +649,8 @@ function StudyDocument({
               variant="rail"
             >
               <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
-                <Fact k="In sample" v={result.universe.scored} />
-                <Fact k="Companies" v={result.universe.companies} />
+                <Fact k="In sample" v={num(result.universe.scored)} />
+                <Fact k="Companies" v={num(result.universe.companies)} />
                 <Fact
                   k="Beat the index"
                   v={
@@ -619,12 +660,14 @@ function StudyDocument({
                   }
                 />
                 <Fact
-                  k={`Per week, last ${ARRIVAL_WEEKS}`}
-                  v={perWeek(result.universe.arrivalsWeekly)}
+                  k={`Waiting for ${HORIZON_DAYS} days`}
+                  v={num(result.universe.pending)}
                 />
               </dl>
               <p className="mt-5 max-w-[62ch] text-[13.5px] leading-[1.65] text-foreground/65">
-                {datasetSentence(result, market.id)}
+                {datasetSentence(result, market.id)} Purchases arriving in scope
+                over the last {ARRIVAL_WEEKS} weeks:{" "}
+                {perWeek(result.universe.arrivalsWeekly)} a week.
               </p>
             </SeoSection>
 
@@ -637,10 +680,13 @@ function StudyDocument({
             >
               {cite ? <CitationBlock cite={cite} /> : null}
               <p className="mt-4 max-w-[62ch] text-[13px] leading-[1.6] text-foreground/55">
-                The numbers on this page change as purchases mature and new ones
-                are filed, so a citation without the computed date is a citation
-                of a page that no longer exists. The line above carries both
-                dates.
+                The numbers on this page change as purchases reach their{" "}
+                {HORIZON_DAYS} days and new ones are filed, so a citation
+                without a version is a citation of a page that no longer exists.
+                The dataset version above is the date the outcomes run to and a
+                fingerprint of exactly which purchases and outcomes were
+                counted: a reader who later sees the same version is looking at
+                the same study.
               </p>
             </SeoSection>
 
@@ -651,14 +697,18 @@ function StudyDocument({
                 it was disclosed, and rates the ones that clear{" "}
                 <Link
                   className="underline underline-offset-4"
-                  to="/how-it-works"
+                  to={marketPath(market.id, "/how-it-works")}
                 >
                   six checks
                 </Link>
                 . A living study asks what the whole record says about one kind
                 of purchase, and holds the answer until the record can carry it.
-                Alpha, clusters and open-market purchases are defined in{" "}
-                <Link className="underline underline-offset-4" to="/learn">
+                Abnormal return, clusters and open-market purchases are defined
+                in{" "}
+                <Link
+                  className="underline underline-offset-4"
+                  to={marketPath(market.id, "/learn")}
+                >
                   the glossary
                 </Link>
                 .

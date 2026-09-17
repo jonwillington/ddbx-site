@@ -92,6 +92,7 @@ export const RESEARCH_PATHS = [
   "/reports",
   "/insider-index",
   "/research",
+  "/us/research",
 ] as const;
 
 const uk = () => MARKETS.find((m) => m.id === "uk")!;
@@ -173,8 +174,15 @@ function researchLinks(
     },
     // After the divider with the archive: a study is the record read as a
     // whole rather than a ranking over it, which is the same side of the
-    // rule the reports sit on.
-    link("Living studies", "/research", { nav: true }),
+    // rule the reports sit on. Path-based rather than host-based, so the US
+    // edition is /us/research (on ddbx.us, via marketHref like the rest).
+    link(
+      "Living studies",
+      home.id === "us" || home.id === "usg" || home.id === "djt"
+        ? "/us/research"
+        : "/research",
+      { nav: true },
+    ),
   ];
 }
 
