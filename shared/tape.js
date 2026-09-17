@@ -38,14 +38,26 @@
 // them. The alternative, inventing a filing hour per market, would be stating
 // a number we do not have.
 //
-// SIDE. The UK default feed and the US `view=interesting` feed are purchases
-// only (200/200 and 100/100 sampled, even with `view=all` on US). The EU raw
-// feed carries every MAR nature: SE runs ~78% acquisitions, 10% disposals and
-// the rest grants, exercises and pledges; NL is an even split of acquisitions
-// and disposals. Korea's default feed is acquisitions. So "buy / sell" on the
-// tape is a per-row fact and a market that only ever shows buys is a fact
-// about its FEED, stated in the coverage section, not a claim that nobody in
-// London ever sells.
+// SIDE AND POPULATION. No line on the tape is "every filing" except the two
+// EU ones, and the page says so market by market (`included` below):
+//
+//   - UK     /api/dealings: open-market purchases only (250/250 buys sampled
+//            on 2026-09-17). The API hides placings, subscriptions and option
+//            exercises, quarantined prices, and a filing still waiting on its
+//            analysis (for up to two days), so a UK row lands once it is rated
+//            or set aside.
+//   - US     view=interesting: the mechanical set, not every Form 4. Code P,
+//            direct holding, non-derivative, not under a 10b5-1 plan, $50,000
+//            or more (250/250 sampled, minimum exactly $50,000).
+//   - SE, NL every MAR nature: SE runs ~78% acquisitions, 10% disposals and the
+//            rest grants, exercises and pledges; NL is an even split of
+//            acquisitions and disposals.
+//   - KR     purchases only (reason code 01, shares up), individuals only (the
+//            API drops institutional filers), ₩43.75m (about £25,000) or more.
+//
+// So "buy / sell" on the tape is a per-row fact and a market that only ever
+// shows buys is a fact about its FEED, not a claim that nobody in London ever
+// sells.
 //
 // VALUE. Native currency per row, never converted. UK carries `value_gbp`
 // and a `currency` that is GBP on ~95% of rows; the rest are London filings
@@ -58,12 +70,35 @@
 // ₩4,999,995,000 on sight.
 //
 // LEGS. The US API already collapses tranche-split rows into one per
-// (filing, code, reporter, date) with `leg_count`. The EU feeds do not:
-// argenx's Global Head of Quality appears twice on one AFM notification, an
-// exchange leg and a sale leg. Legs are merged here on (issuer, reporter,
-// security, nature, day, PCA, programme, amendment), the same key the /se and
-// /nl dashboards use, so the tape and the dashboards agree on how many rows
-// one notification is.
+// (filing, code, reporter, date) with `leg_count`. The EU feeds do not: one
+// notification arrives as one row per transaction. Only legs of the SAME
+// notification merge here, because two notifications from one person on one
+// day are two decisions and summing them overstates both (see `euLegKey`,
+// measured on 500 rows per market on 2026-09-17):
+//
+//   - NL     AFM's notification id (meldingid) is carried inside the row id,
+//            "mar-nl-{meldingid}-{leg}". Griffith at Tetragon is one
+//            notification with two purchase legs; Borgions at argenx filed two
+//            notifications the same day, and until this key they read as one.
+//   - SE     FI publishes no notification id. Every leg of one notification
+//            carries the same publication instant to the second, and in 500
+//            rows no instant was shared by two (issuer, reporter) pairs, so
+//            the instant is the notification. Helmersson at ITAB is one
+//            notification covering buys on three days; Arnhult at Corem filed
+//            at 17:45 and again at 23:44, which is two rows, not one.
+//
+// A leg's trade date is NOT in the key: one notification may report several
+// days of buying, and that is still one filing.
+//
+// SUPERSEDED. FI keeps a corrected notification's original on the register
+// with status "Reviderad" and publishes the correction as a new row, flagged
+// as an amendment. 43 of 500 SE rows were revised originals; summed with
+// their corrections they double a Skanska grant. Revised rows are dropped.
+// The AFM publishes corrections as new notifications and has no such status.
+//
+// The /se and /nl dashboards group more loosely (no day, no notification,
+// deliberately a person's run of buying); the tape is a list of filings, so
+// the two counts differ by design.
 //
 // RATINGS. The brief assumed UK and US have ratings and the rest do not. The
 // data disagreed: of 300 Swedish rows, 41 carried a rating (21 significant,
@@ -108,7 +143,8 @@ export const TAPE_MARKETS = [
     ratings: "none",
     /** Which rows the feed carries. Stated on the page, because a tape that
      *  never shows a Korean sale is a fact about this line, not about Korea. */
-    included: "Purchases of about £25,000 or more, read from DART once a day",
+    included:
+      "Purchases of about £25,000 or more by individual officers and major holders, read from DART once a day. No sales, and no filings by institutions",
     cadence: "Read once a day at 20:00 Seoul, after DART's afternoon filings",
     timeKind: "day",
   },
@@ -124,7 +160,8 @@ export const TAPE_MARKETS = [
     source: "Finansinspektionen's insider register",
     filers: "Persons discharging managerial responsibilities and their close associates",
     ratings: "layer",
-    included: "Every notification: purchases, sales, grants, exercises",
+    included:
+      "Every notification: purchases, sales, grants, exercises. A notification FI has since corrected is shown once, as corrected",
     cadence: "Published with the time of day, as filings arrive",
     timeKind: "published",
   },
@@ -156,7 +193,8 @@ export const TAPE_MARKETS = [
     source: "RNS notices to the London Stock Exchange",
     filers: "Directors and PDMRs of LSE-listed companies",
     ratings: "layer",
-    included: "Purchases; the morning wave of RNS notices lands from 07:00 London",
+    included:
+      "Open-market purchases only. No sales, placings, subscriptions or option exercises, and a filing appears once it has been rated or set aside",
     cadence: "Read through the trading day; the row shows when it was seen",
     timeKind: "seen",
   },
@@ -172,21 +210,24 @@ export const TAPE_MARKETS = [
     source: "SEC EDGAR Form 4 filings",
     filers: "Officers, directors and 10% holders of SEC registrants",
     ratings: "layer",
-    included: "Open-market purchases of $50,000 or more, not under a 10b5-1 plan",
+    included:
+      "Open-market purchases of $50,000 or more, held directly and not under a 10b5-1 plan: the US dashboard’s set, not every Form 4. No sales, grants or exercises",
     cadence: "Read as EDGAR indexes them, mostly after the New York close",
     timeKind: "seen",
   },
 ];
 
+import { isProductionHost, MARKET_HOST_BY_ID } from "./seo.js";
 import { usInsiderDisplayName } from "./us-names.js";
 
-/** Rows asked for per market. The EU and Korea endpoints cap a page at 200
- *  whatever is asked; the UK and US honour up to 1,000. 250 on those two is
- *  enough that the binding feed covers more than a week, and the EU pages at
- *  200 are what actually cut the tape today (Sweden runs ~25 notifications a
- *  day). A feed that returns exactly what it was asked for is treated as
- *  truncated, which is why the number asked for has to be the number the
- *  endpoint can return. */
+/** Rows asked for per market. The Korea endpoint caps a page at 200 whatever
+ *  is asked; the UK and US honour up to 1,000, and the EU endpoint returned
+ *  500 for 500 on 2026-09-17 (the 200 cap the first build measured is gone).
+ *  250 on UK and US is enough that the binding feed covers more than a week,
+ *  and Sweden's 200 is what actually cuts the tape today (~25 notifications a
+ *  day), which is an open decision rather than an endpoint limit. A feed that
+ *  returns exactly what it was asked for is treated as truncated, which is
+ *  why the number asked for must never exceed what the endpoint can return. */
 export const TAPE_LIMITS = { UK: 250, US: 250, SE: 200, NL: 200, KR: 200 };
 export const TAPE_LIMIT = 250;
 
@@ -508,19 +549,42 @@ function euRole(market, role) {
   return parts.map((p) => table[norm(p)] ?? p).join(" · ");
 }
 
+/** The notification a leg belongs to (see LEGS in the header). Where the
+ *  row carries no proof of one, the row is its own notification: two rows
+ *  that cannot be shown to be one filing are never summed. */
+function euNotification(market, d) {
+  if (market === "NL") {
+    const m = /^mar-nl-(.+)-\d+$/.exec(String(d.id ?? ""));
+
+    if (m) return m[1];
+  }
+  if (market === "SE" && /T\d{2}:\d{2}:\d{2}/.test(String(d.disclosed_date ?? ""))) {
+    return String(d.disclosed_date);
+  }
+
+  return `row:${d.id}`;
+}
+
+/** One notification, split by what cannot be summed inside it: a security, a
+ *  direction, and the PCA / programme / amendment flags that change what the
+ *  filing means. An AFM exchange pair (a sale of one leg, a purchase of the
+ *  other) is one notification and two rows. */
 function euLegKey(market, d) {
   return [
     market,
+    euNotification(market, d),
     d.lei ?? "",
     d.reporter?.name ?? "",
     d.isin ?? "",
     norm(d.nature),
-    isoDay(d.disclosed_date),
     d.reporter?.is_closely_associated ? "pca" : "self",
     d.is_share_programme ? "prg" : "outright",
     d.is_amendment ? "amd" : "ok",
   ].join("|");
 }
+
+/** FI's status for an original that a later correction replaced. */
+const SUPERSEDED = /^reviderad$/i;
 
 /** Group the market's raw rows into one tape row per notification leg-set. */
 function fromEu(market, rows) {
@@ -528,6 +592,7 @@ function fromEu(market, rows) {
 
   for (const d of rows ?? []) {
     if (!d || !d.reporter) continue;
+    if (SUPERSEDED.test(String(d.status ?? "").trim())) continue;
     const key = euLegKey(market, d);
     let g = groups.get(key);
 
@@ -541,8 +606,13 @@ function fromEu(market, rows) {
   const out = [];
 
   for (const g of groups.values()) {
-    // Newest leg first; it names the row.
-    g.legs.sort((a, b) => String(b.disclosed_date).localeCompare(String(a.disclosed_date)));
+    // Every leg shares the notification's publication; the latest trade names
+    // the row, and the id breaks ties so both renderers pick the same leg.
+    g.legs.sort(
+      (a, b) =>
+        String(b.trade_date).localeCompare(String(a.trade_date)) ||
+        String(a.id).localeCompare(String(b.id)),
+    );
     const p = g.legs[0];
     const [side, action] = euNature(market, p.nature);
     let volume = 0;
@@ -671,7 +741,9 @@ function fromKr(w) {
       ...(w.plan_report_date ? ["Pre-declared"] : []),
       ...(w.price_suspect ? ["Price looks wrong"] : []),
     ],
-    href: null,
+    // Korea's filings have no page of their own; the dashboard lists the same
+    // filing, which is the nearest real destination.
+    href: "/kr",
     legs: 1,
     hasRatingLayer: false,
   });
@@ -933,6 +1005,28 @@ export function todayIn(timeZone, now = new Date()) {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
+/** Where a row links, read from a page served on `hostname`.
+ *
+ *  `row.href` is the site path ("/us/dealings/…"), and one SPA answers every
+ *  path on every domain: ddbx.uk/us/dealings/… renders, but it is a noindexed
+ *  copy of the page ddbx.us owns. So a row goes to its market's owning domain
+ *  from MARKET_HOST_BY_ID, the map `marketHref` in src/lib/markets/registry.ts
+ *  reads for the same job (that one is .ts and cannot be imported by the
+ *  Function), and stays relative only when that domain is the one serving
+ *  the tape. Local and preview hosts have no domain routing and keep the
+ *  path, as marketHref does.
+ *
+ *  Keyed on the ROW's market, not the path: "/dealings/…" carries no market
+ *  prefix, and on ddbx.us a path-based lookup would resolve it to the US. */
+export function tapeRowHref(row, hostname) {
+  if (!row?.href) return null;
+  if (!isProductionHost(hostname)) return row.href;
+  const owner = MARKET_HOST_BY_ID[String(row.market).toLowerCase()];
+  const host = String(hostname).toLowerCase().replace(/^www\./, "");
+
+  return !owner || owner === host ? row.href : `https://${owner}${row.href}`;
+}
+
 /** The time-of-day line for a row: "12:14 Stockholm", "seen 07:18 London",
  *  or null for a row that carries only a date. */
 export function rowClock(row) {
@@ -950,7 +1044,8 @@ export const TAPE_METHODOLOGY = [
   "Rows are ordered by the best instant each filing can honestly claim. Sweden publishes the time of day. For the UK and US the row shows when ddbx first saw it, marked \"seen\". The Netherlands and Korea record only the day, and those rows sit under the timed ones on the same date.",
   "Values are in the currency the filing was made in and are never converted. A London filing made in dollars is shown in dollars. Korean rows carry an approximate sterling reading beside the won because the server already computes it.",
   "The tape is cut at the oldest day every market's page of filings still covers in full. Older days would show only the markets whose feeds reach further back, which reads as quiet where it is only unread.",
-  "The UK feed and the US feed carry purchases; the US feed is the mechanical set of open-market buys of $50,000 or more outside a 10b5-1 plan, the same set the US dashboard shows. Sweden and the Netherlands carry every notification, sales and grants included. Korea carries purchases of about £25,000 or more, read once a day.",
+  "The tape is not every insider filing in five countries. The UK line carries open-market purchases only, once each has been rated or set aside. The US line is the set the US dashboard shows: open-market purchases of $50,000 or more, held directly and outside a 10b5-1 plan. Korea carries purchases of about £25,000 or more by individuals, read once a day. Sweden and the Netherlands carry every notification, sales and grants included.",
+  "A European notification often reports several transactions. Those are one row, with the legs counted on it; two notifications from the same person on the same day are two rows. When Sweden’s regulator corrects a notification, only the corrected version is shown.",
   "A verdict is shown only where the rating layer has reached the filing. Korea has no rating layer, so every Korean row is marked as an unrated market rather than as an unrated filing.",
   "The page refreshes its feeds every minute. New filings are counted at the top and merged only when you ask, so the list never moves under you.",
 ];

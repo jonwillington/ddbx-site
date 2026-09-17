@@ -730,7 +730,7 @@ export function seoForPath(pathname, hostname) {
     if (isStatusPath(path))
       return "Live availability of the ddbx API and the UK, US, Sweden and Netherlands disclosure feeds, measured in your browser as you read, with the ingest schedule and incident history.";
     if (isTapePath(path))
-      return "Every insider filing ddbx reads, from Seoul to New York, merged into one list and ordered by when it was disclosed. Five exchanges, their local clocks, native currency on every row and a verdict where the market has one.";
+      return "Insider filings from five markets on one list, newest first: every Swedish and Dutch notification, UK open-market purchases, US purchases of $50,000 or more and Korean purchases above about £25,000. Local clocks, native currency and a verdict where one exists.";
     if (isDirectorProfilePath(path))
       return `${market.label} director profile with dealing history and signal context on ddbx.`;
     if (brokerCategory) return brokerCategory.description;

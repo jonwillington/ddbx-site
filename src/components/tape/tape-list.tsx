@@ -25,6 +25,7 @@ import {
   formatNative,
   rowClock,
   tapeMarket,
+  tapeRowHref,
 } from "../../../shared/tape.js";
 
 import {
@@ -171,10 +172,10 @@ function Row({ row }: { row: TapeRow }) {
           ) : null}
         </>
       }
-      // Korea's filings have no page of their own; the dashboard lists the
-      // same filing, which is the nearest real destination. Every other
-      // market links to the filing or the person.
-      to={row.href ?? (row.market === "KR" ? "/kr" : undefined)}
+      // On the market's own domain: a US filing read from ddbx.uk opens on
+      // ddbx.us, not on the noindexed copy of it that ddbx.uk would render.
+      // Router's Link draws an absolute URL as a plain anchor.
+      to={tapeRowHref(row, window.location.hostname) ?? undefined}
     />
   );
 }

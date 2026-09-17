@@ -66,7 +66,7 @@ const CROSS_LINKS: RelatedCard[] = [
   {
     to: "/mcp",
     title: "Ask an assistant",
-    description: "The same five feeds, in ChatGPT or Claude",
+    description: "UK, US and European insider buying, in ChatGPT or Claude",
   },
   {
     to: "/developers",
@@ -200,10 +200,19 @@ export default function TapePage() {
             ) : null}
             {tape.failed.length > 0 && !tape.down ? (
               <p className={CAVEAT}>
-                The {list(tape.failed)} feed did not load, so{" "}
+                The {list(tape.failed)}{" "}
+                {tape.failed.length === 1 ? "feed" : "feeds"} did not load, so{" "}
                 {list(tape.failed)} {tape.failed.length === 1 ? "is" : "are"}{" "}
-                missing from the tape until the next refresh. That is a network
-                problem, not a quiet market.
+                missing from the tape. That is a network problem, not a quiet
+                market. The page retries every minute.
+              </p>
+            ) : null}
+            {tape.recovered.length > 0 ? (
+              <p className={CAVEAT}>
+                {list(tape.recovered)}{" "}
+                {tape.recovered.length === 1 ? "is" : "are"} back after failing
+                to load. {tape.recovered.length === 1 ? "Its" : "Their"} filings
+                are counted in the new-filings button, not yet in the list.
               </p>
             ) : null}
             {tape.stale.length > 0 ? (
@@ -217,11 +226,12 @@ export default function TapePage() {
         }
         standfirst={
           <>
-            Every insider filing ddbx reads, from Seoul to New York, merged into
-            one list and ordered by when it was disclosed. The clocks show which
-            exchanges are trading now. Korea files while London sleeps, and a
-            product that reads five markets sees a day a single-market product
-            misses.
+            Insider filings from Seoul to New York, merged into one list and
+            ordered by when each was disclosed. Sweden and the Netherlands show
+            every notification; the UK, US and Korea show purchases only, the US
+            and Korea above a size floor. The clocks show which exchanges are
+            trading now. Korea files while London sleeps, and a product that
+            reads five markets sees a day a single-market product misses.
           </>
         }
         standfirstSize="lede"
@@ -258,8 +268,8 @@ export default function TapePage() {
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
             We couldn’t reach any of the five feeds just now. It’s a network
             problem rather than a quiet day across five countries. The page
-            retries every minute; a refresh in a moment should bring the tape
-            back.
+            retries every minute, and the tape appears here as soon as a feed
+            answers.
           </p>
         ) : tape.rows.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
@@ -269,10 +279,11 @@ export default function TapePage() {
         ) : (
           <>
             <p className={`mt-6 max-w-[62ch] ${R.body}`}>
-              {tape.rows.length} filings from {markets}{" "}
-              {markets === 1 ? "market" : "markets"}, newest first. Each row
-              states its side, its size in the currency it was filed in, and the
-              verdict where one exists.
+              {tape.rows.length} {tape.rows.length === 1 ? "filing" : "filings"}{" "}
+              from {markets} {markets === 1 ? "market" : "markets"}, newest
+              first. A European notification that reports several transactions
+              is one row. Each row states its side, its size in the currency it
+              was filed in, and the verdict where one exists.
             </p>
             <TapeList
               lastSeenAt={tape.lastSeenAt}
@@ -298,8 +309,10 @@ export default function TapePage() {
             through its own regulator, in its own format, in its own currency
             and on its own clock. ddbx reads five of those feeds, screens and
             rates the filings in the markets where it runs an analysis layer,
-            and publishes them by market. This page is the same five feeds with
-            the walls taken down: one row shape, one order, the whole day.
+            and publishes them by market. This page is those five lines with the
+            walls taken down: one row shape, one order, the whole day. Each line
+            carries what its market page carries, which is not every filing
+            everywhere; the coverage below says what each one holds.
           </p>
           <p className={`mt-4 max-w-[62ch] ${R.body}`}>
             The point of the merge is the clock. A director in Seoul files
@@ -351,14 +364,15 @@ export default function TapePage() {
                 Bought or sold, in colour, from the regulator’s own transaction
                 type. Grants, exercises and pledges are shown in words with no
                 colour: they are disclosures, not decisions to buy at the market
-                price. The UK and US feeds here carry{" "}
+                price. The UK, US and Korean lines carry{" "}
                 <Link
                   className="underline underline-offset-4"
                   to="/learn/open-market-buy"
                 >
                   open-market purchases
-                </Link>
-                ; Sweden and the Netherlands carry everything.
+                </Link>{" "}
+                only, so a sale never appears for those three; Sweden and the
+                Netherlands carry every notification.
               </dd>
             </div>
             <div>

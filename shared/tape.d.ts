@@ -55,6 +55,8 @@ export interface TapeRow {
   triage: string | null;
   cluster: { count: number; windowDays: number } | null;
   flags: string[];
+  /** Site path of the row's destination. Link through `tapeRowHref`, which
+   *  makes it absolute when another domain owns the market. */
   href: string | null;
   legs: number;
   hasRatingLayer: boolean;
@@ -114,3 +116,7 @@ export declare function formatDayShort(isoDate: string): string;
 export declare function formatSessionHours(m: TapeMarket): string;
 export declare function todayIn(timeZone: string, now?: Date): string;
 export declare function rowClock(row: TapeRow): string | null;
+export declare function tapeRowHref(
+  row: Pick<TapeRow, "market" | "href">,
+  hostname: string | null | undefined,
+): string | null;

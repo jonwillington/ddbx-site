@@ -208,3 +208,114 @@ footer's Markets column.
    masthead's Research dropdown is UK/US research; the market switcher lists
    markets. A cross-market page fits neither and probably wants a slot of its
    own once there are two of them.
+
+---
+
+## Review round, 17 September 2026
+
+An outside review raised five findings. I checked each one against the code and
+the live API before changing anything. All five were right. Findings 1 and 4
+went further than the review said.
+
+### 1. EU transaction identity: fixed
+
+**What was wrong.** `euLegKey` grouped rows by issuer, reporter, ISIN, nature,
+disclosed day, PCA, programme and amendment. Two separate notifications from
+one person on the same day therefore became one row, with their volume and
+value added together. §2 and §3.8 above said this was "the dashboards' key".
+It wasn't: the dashboards leave out the day. It also isn't the right key for a
+list of filings.
+
+**What a real notification looks like** (500 rows per market, `view=all`):
+
+- **NL.** The row id is `mar-nl-{meldingid}-{leg}`, and the meldingid is the
+  AFM's own notification id. Griffith at Tetragon (1 Sept) is one meldingid
+  with two purchase legs (5,767 @ 14.05 and 6,141 @ 14.10 USD). Borgions at
+  argenx (7 Sept) filed **two** meldingids on the same day. Each one is an
+  exercise pair: a purchase leg at 309.20 and a sale leg (1,500 @ 862.12 and
+  47 @ 881.35). The old key showed this as two rows of 1,547 shares. It is
+  really four rows.
+- **SE.** FI publishes no notification id. Every leg of one notification
+  shares the same publication time, to the second. Across 324 distinct
+  timestamps, no timestamp was shared by two (issuer, reporter) pairs.
+  Helmersson at ITAB is one notification (15:31:14) reporting buys on the 11th,
+  14th and 16th. Arnhult at Corem filed at 17:45:32 (310,000 shares, traded on
+  the 4th) and again at 23:44:20 (64,697 + 125,000, traded on the 7th and 8th).
+  That is two rows. The old key showed one row of 499,697 shares.
+- **Also found:** FI keeps a corrected notification's original with status
+  `Reviderad`. The correction arrives as a new row with `is_amendment`. 43 of
+  500 SE rows were revised originals. On 16 Sept a Skanska grant of 252 shares
+  showed up as 504 (the correction plus its own original), next to a separate
+  252 from the first version.
+
+**What changed.** The grouping key is now the notification (NL: meldingid; SE:
+the publication time) plus ISIN, nature, PCA, programme and amendment. Trade
+date is deliberately not part of the key, because one notification can cover
+several days. A row with no provable notification is never merged with
+anything. `Reviderad` rows are dropped. The latest trade date names the row.
+All of this is written up in the `LEGS` / `SUPERSEDED` header of
+`shared/tape.js`, and the real rows are fixtures in `tests/tape.test.mjs`.
+
+**What this affects.** Sweden's 200 raw rows now make 132 tape rows. The day
+rule counts, the "N filings from M markets" line, the clock panel's "filings
+today", the pre-render's description count and the "N legs" flag all count
+notifications now. The /se and /nl dashboards still group more loosely, on
+purpose; they were not edited.
+
+### 2. Links on non-owning domains: fixed
+
+Rows now link through `tapeRowHref(row, hostname)`. It uses the row's market to
+look up `MARKET_HOST_BY_ID` in `shared/seo.js`, the same map `marketHref` uses.
+The link stays relative only on the domain that owns that market, and stays a
+path on local and preview hosts. It is keyed on the market rather than the
+path, because `canonicalUrlFor("/dealings/x", "ddbx.us")` resolves to ddbx.us
+while `functions/dealings/[id].js` only indexes that page on ddbx.uk. The
+pre-render uses the same helper and always writes absolute URLs. Korean rows
+now carry `/kr` from the normaliser, so the pre-render links them as well.
+
+### 3. Outage recovery: fixed
+
+The poll logic has moved into `shared/tape-state.js` as pure functions, and
+`use-tape.ts` now only runs the timer and the fetches. If a poll brings rows
+while the page is empty, it draws them straight away. That covers the first
+load, recovery after a full outage, and a first load where every feed came
+back empty. When one market is down, the page names it as missing. If it comes
+back after rows are already showing, its filings go into the pending count
+and the market is named as "back" until the reader shows them. If a feed fails
+after it has loaded, it keeps its rows and is named as stale.
+
+### 4. Completeness wording: fixed
+
+The page no longer says "Every insider filing". The standfirst, the
+pre-render, the meta description, each market's `included` line, the reading
+section and the methodology now say what each line carries:
+
+- UK: open-market purchases only, shown once rated or set aside. This is
+  newly stated: `/api/dealings` holds a filing back while it waits on
+  analysis, for up to two days.
+- US: the dashboard's set of direct, off-plan purchases of $50k or more.
+- Korea: purchases of about £25k or more, by individuals only. Also newly
+  stated: the API leaves out institutional filers.
+- Sweden and the Netherlands: every notification.
+
+The MCP card also claimed "the same five feeds". The connector has no Korea,
+so the card now says "UK, US and European insider buying".
+
+### 5. Other figures: checked
+
+See the "What this affects" paragraph under finding 1. Separately, the
+`TAPE_LIMITS` comment and §3.3 above said the EU endpoint caps a page at 200.
+On 17 Sept it returned 500 when asked for 500 (Korea still caps at 200). The
+tape still asks for 200 from Sweden, so GT4 (Sweden binds at about 7 days) is
+unchanged. It is now an open decision rather than an endpoint limit.
+
+### Still open
+
+- The Netherlands has **no rows** on the tape today. Its newest filing is from
+  7 Sept, and the floor is 12 Sept (see §5.3). The clock cell shows the date,
+  but the standfirst names the Netherlands as a market on the tape.
+- GT2 (Korea floor), GT3 (Korea links to `/kr`) and GT4 are unchanged.
+- Not verified: the pre-render under `wrangler pages dev` (only covered by the
+  unit tests on the helper), absolute links in a browser on a production host,
+  and the recovered/stale notices on screen (covered by state tests, not a
+  render).

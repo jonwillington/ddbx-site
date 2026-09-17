@@ -28,6 +28,7 @@ import {
   mergeTape,
   rowClock,
   tapeMarket,
+  tapeRowHref,
   TAPE_MARKETS,
   TAPE_METHODOLOGY,
 } from "../shared/tape.js";
@@ -66,7 +67,7 @@ function verdict(row) {
 function leadSentence(rows, floor) {
   const markets = new Set(rows.map((r) => r.market)).size;
   const top = rows[0];
-  const opener = `${rows.length} insider filings from ${markets} markets since ${formatDayShort(floor ?? rows[rows.length - 1].disclosedDate)}, newest first`;
+  const opener = `${rows.length} insider filings on the tape from ${markets} markets since ${formatDayShort(floor ?? rows[rows.length - 1].disclosedDate)}, newest first`;
 
   if (!top) return `${opener}.`;
   const m = tapeMarket(top.market);
@@ -97,8 +98,13 @@ function prerender(rows, floor, binding, failed, host) {
           : "";
 
       lastDay = r.disclosedDate;
-      const subject = r.href
-        ? `<a href="https://${esc(host)}${esc(r.href)}">${esc(r.company)}</a>`
+      // Always absolute here, and on the market's own domain: a crawler that
+      // follows a US row from ddbx.uk should land on ddbx.us, where the filing
+      // is canonical, not on the noindexed copy ddbx.uk would serve.
+      const to = tapeRowHref(r, host);
+      const href = to && to.startsWith("/") ? `https://${host}${to}` : to;
+      const subject = href
+        ? `<a href="${esc(href)}">${esc(r.company)}</a>`
         : esc(r.company);
 
       return `${dayRule}<tr>
@@ -130,9 +136,9 @@ function prerender(rows, floor, binding, failed, host) {
 
   return page(`<p style="${eyebrow}">Global tape</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">Five markets, one tape</h1>
-  <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">Every insider filing ddbx reads, from Seoul to New York, merged into one list and ordered by when it was disclosed. Korea files while London sleeps, and a product that reads five markets sees a day a single-market product misses.</p>
+  <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">Insider filings from Seoul to New York, merged into one list and ordered by when each was disclosed. Sweden and the Netherlands show every notification; the UK, US and Korea show purchases only, the US and Korea above a size floor. Korea files while London sleeps, and a product that reads five markets sees a day a single-market product misses.</p>
   ${floor ? `<p style="font-size:13px;color:#6b6154;max-width:62ch">The tape holds every filing from ${esc(formatDayShort(floor))}: the span each market’s feed covers in full, set by ${esc(list(binding))}.</p>` : ""}
-  ${failed.length ? `<p style="font-size:13px;color:#6b6154;max-width:62ch">The ${esc(list(failed))} feed did not load when this page was rendered, so ${esc(list(failed))} is missing from the list below. That is a network problem, not a quiet market.</p>` : ""}
+  ${failed.length ? `<p style="font-size:13px;color:#6b6154;max-width:62ch">The ${esc(list(failed))} ${failed.length === 1 ? "feed" : "feeds"} did not load when this page was rendered, so ${esc(list(failed))} ${failed.length === 1 ? "is" : "are"} missing from the list below. That is a network problem, not a quiet market.</p>` : ""}
   <h2 style="font-size:15px;margin:28px 0 10px">Five exchanges</h2>
   <ul style="font-size:14px;line-height:1.7;color:#4a4034;max-width:72ch;padding-left:18px">${TAPE_MARKETS.map((m) => `<li>${esc(m.city)} trades ${esc(formatSessionHours(m))} local time</li>`).join("")}</ul>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>
@@ -144,11 +150,11 @@ function prerender(rows, floor, binding, failed, host) {
     <th style="text-align:left;padding:8px 12px">Verdict</th>
   </tr></thead><tbody>${body}</tbody></table>
   <h2 style="font-size:15px;margin:32px 0 10px">What this is</h2>
-  <p style="font-size:14px;line-height:1.7;color:#4a4034;max-width:64ch">Company insiders in most developed markets must tell the public when they trade their own company’s shares. Each country publishes that through its own regulator, in its own format, in its own currency and on its own clock. ddbx reads five of those feeds, screens and rates the filings in the markets where it runs an analysis layer, and publishes them by market. This page is the same five feeds with the walls taken down: one row shape, one order, the whole day.</p>
+  <p style="font-size:14px;line-height:1.7;color:#4a4034;max-width:64ch">Company insiders in most developed markets must tell the public when they trade their own company’s shares. Each country publishes that through its own regulator, in its own format, in its own currency and on its own clock. ddbx reads five of those feeds, screens and rates the filings in the markets where it runs an analysis layer, and publishes them by market. This page is those five lines with the walls taken down: one row shape, one order, the whole day. Each line carries what its market page carries, which is not every filing everywhere; the coverage below says what each one holds.</p>
   <h2 style="font-size:15px;margin:32px 0 10px">Market coverage</h2>
   <ul style="font-size:14px;line-height:1.6;max-width:72ch;padding-left:18px">${coverage}</ul>
   <h2 style="font-size:15px;margin:32px 0 10px">Reading the tape</h2>
-  <p style="font-size:14px;line-height:1.7;color:#4a4034;max-width:64ch"><strong>Side</strong> is bought or sold from the regulator’s own transaction type; grants, exercises and pledges are shown in words. <strong>Disclosed</strong> is the time of day in the market’s own city where the regulator publishes one; Sweden does, the UK and US rows show when ddbx first saw the filing, and the Netherlands and Korea record only the day. <strong>Size</strong> is shares times price in the currency the filing was made in, never converted. <strong>Verdict</strong> is the same rating the filing page carries, from <a href="https://${esc(host)}/how-it-works">six published checks</a>; “unrated market” means Korea, where no rating layer runs.</p>
+  <p style="font-size:14px;line-height:1.7;color:#4a4034;max-width:64ch"><strong>Side</strong> is bought or sold from the regulator’s own transaction type; grants, exercises and pledges are shown in words. The UK, US and Korean lines carry open-market purchases only, so a sale never appears for those three; Sweden and the Netherlands carry every notification. <strong>Disclosed</strong> is the time of day in the market’s own city where the regulator publishes one; Sweden does, the UK and US rows show when ddbx first saw the filing, and the Netherlands and Korea record only the day. <strong>Size</strong> is shares times price in the currency the filing was made in, never converted. <strong>Verdict</strong> is the same rating the filing page carries, from <a href="https://${esc(host)}/how-it-works">six published checks</a>; “unrated market” means Korea, where no rating layer runs.</p>
   <h2 style="font-size:15px;margin:32px 0 10px">How this is put together</h2>
   <ul style="font-size:14px;line-height:1.7;color:#4a4034;max-width:64ch">${method}</ul>
   <p style="margin-top:24px;font-size:14px"><a href="https://${esc(host)}/how-it-works">How a filing is rated</a> · <a href="https://${esc(host)}/cluster-buys">Cluster buying</a> · <a href="https://${esc(host)}/mcp">Ask an assistant</a> · <a href="https://${esc(host)}/developers">The API</a></p>`);
