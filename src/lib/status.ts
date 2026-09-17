@@ -338,6 +338,19 @@ async function runProbe(spec: ProbeSpec): Promise<ProbeResult> {
   }
 }
 
+/** One probe, confirmed. A slow or failed reading is re-taken once straight
+ *  away and only the second one counts. A single request can spike for
+ *  reasons that say nothing about the service (a cold edge connection on the
+ *  page's first round, a phone switching networks), and one such spike was
+ *  enough to paint the whole page amber. The repeat is a real request and its
+ *  timing is what the row shows, so nothing here is smoothed or invented; a
+ *  service that is actually slow or down fails both and is reported as such. */
+async function confirmedProbe(spec: ProbeSpec): Promise<ProbeResult> {
+  const first = await runProbe(spec);
+
+  return first.state === "operational" ? first : runProbe(spec);
+}
+
 export type OverallState = ProbeState | "checking";
 
 /** The banner's verdict. Any single hard failure outranks any amount of
@@ -380,7 +393,7 @@ export function useStatusProbes(): StatusFeed {
     inFlight.current = true;
     setRunning(true);
 
-    const settled = await Promise.all(PROBES.map(runProbe));
+    const settled = await Promise.all(PROBES.map(confirmedProbe));
 
     if (!mounted.current) {
       inFlight.current = false;

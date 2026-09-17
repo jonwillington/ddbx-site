@@ -189,7 +189,9 @@ export default function StatusPage() {
               when it isn’t. An endpoint that answers in under{" "}
               {(DEGRADED_MS / 1000).toFixed(1)} seconds is operational; slower
               than that is reported as slow; no answer within 10 seconds is
-              reported as not responding.
+              reported as not responding. A slow or failed check is repeated
+              once straight away, and only the repeat counts, so one stray
+              request cannot mark a healthy service as slow.
             </p>
             <p>
               The line under each endpoint is the timestamp on the most recent
