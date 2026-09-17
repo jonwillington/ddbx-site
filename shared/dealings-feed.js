@@ -44,6 +44,15 @@ const MAX_PAGES = 10;
 
 const FEED = { UK: "dealings", US: "us-dealings" };
 
+/** The ISO calendar day after `iso`. */
+function addDay(iso) {
+  const d = new Date(`${iso}T00:00:00Z`);
+
+  d.setUTCDate(d.getUTCDate() + 1);
+
+  return d.toISOString().slice(0, 10);
+}
+
 /** Fetch every disclosed row in [since, until], paging as needed.
  *
  *  Returns `{ dealings, complete }`. `complete` is false when the page budget
@@ -91,13 +100,21 @@ export async function fetchDealingsWindow({
       break;
     }
 
-    // De-dupe by id: `before` is an exclusive bound on disclosed_date, not on
-    // row identity, so several rows sharing the oldest date in a page can come
-    // back again on the next one.
+    // `before` is an EXCLUSIVE, date-only bound (`disclosed_date < before`).
+    // Paging with `before=<oldest date on the page>` would skip every row on
+    // that date the page had no room for, so the cursor is the day AFTER the
+    // oldest date: the boundary day is read again whole and the id de-dupe
+    // absorbs the repeats. (Lost rows measured 2026-09-17: UK 13 March read 8
+    // of 10; US view=all 19 August read 17 of 52.)
+    let added = 0;
+
     for (const row of rows) {
       const key = row.id ?? `${row.ticker}-${row.trade_date}-${row.shares}`;
 
-      if (!seen.has(key)) seen.set(key, row);
+      if (!seen.has(key)) {
+        seen.set(key, row);
+        added += 1;
+      }
     }
 
     if (rows.length < PAGE) {
@@ -106,23 +123,21 @@ export async function fetchDealingsWindow({
     }
 
     const oldest = rows
-      .map((r) => r.disclosed_date)
+      .map((r) => String(r.disclosed_date ?? "").slice(0, 10))
       .filter(Boolean)
       .sort()[0];
 
-    // No usable cursor, or it didn't move — stop rather than re-request the
-    // same page until the budget runs out.
-    if (!oldest || oldest === cursor) {
-      complete = true;
-      break;
-    }
-    cursor = oldest;
+    // No usable cursor, or a full page that added nothing new (one day holds
+    // more rows than a page): stop, and do NOT call the window complete.
+    if (!oldest || added === 0) break;
 
-    // Already past the start of the window.
-    if (cursor <= since) {
+    // The page reached before the start of the window, so every day from
+    // `since` onward has been read whole.
+    if (oldest < since) {
       complete = true;
       break;
     }
+    cursor = addDay(oldest);
   }
 
   let dealings = [...seen.values()];

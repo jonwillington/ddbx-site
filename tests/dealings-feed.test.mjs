@@ -53,3 +53,51 @@ test("no view by default keeps the curated US feed", async () => {
   await fetchDealingsWindow({ apiBase: "x", market: "US", since: "2026-09-01", fetchImpl: fakeFetch([], calls) });
   assert.doesNotMatch(calls[0], /view=/);
 });
+
+/** An API that behaves like /api/dealings: disclosed_date DESC, `since`
+ *  inclusive, `before` EXCLUSIVE and date-only, `limit` capped. */
+function fakeApi(all, pageCap) {
+  const calls = [];
+  const impl = async (url) => {
+    calls.push(url);
+    const q = new URL(url, "http://x").searchParams;
+    const since = q.get("since");
+    const before = q.get("before");
+    const limit = Math.min(Number(q.get("limit")), pageCap);
+    const rows = all
+      .filter((d) => d.disclosed_date.slice(0, 10) >= since)
+      .filter((d) => !before || d.disclosed_date.slice(0, 10) < before)
+      .sort((a, b) => b.disclosed_date.localeCompare(a.disclosed_date) || a.id.localeCompare(b.id))
+      .slice(0, limit);
+    return { ok: true, json: async () => ({ dealings: rows }) };
+  };
+  return { impl, calls };
+}
+
+function day(date, n, prefix = date) {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `${prefix}-${i}`, trade_date: date, disclosed_date: date,
+  }));
+}
+
+test("paging does not lose the rows of a day split across a page break", async (t) => {
+  // PAGE is 1000 in the module; build >1000 rows with a heavy boundary day.
+  const all = [...day("2026-09-10", 700), ...day("2026-09-09", 600), ...day("2026-09-08", 400)];
+  const { impl } = fakeApi(all, 1000);
+  const { dealings, complete } = await fetchDealingsWindow({
+    apiBase: "http://x", market: "UK", since: "2026-09-01", windowOn: "disclosed", fetchImpl: impl,
+  });
+  assert.equal(dealings.length, 1700);
+  assert.equal(dealings.filter((d) => d.disclosed_date === "2026-09-09").length, 600);
+  assert.equal(complete, true);
+});
+
+test("a single day larger than a page stops and says incomplete", async () => {
+  const all = [...day("2026-09-10", 1200)];
+  const { impl, calls } = fakeApi(all, 1000);
+  const { complete } = await fetchDealingsWindow({
+    apiBase: "http://x", market: "UK", since: "2026-09-01", windowOn: "disclosed", fetchImpl: impl,
+  });
+  assert.equal(complete, false);
+  assert.ok(calls.length <= 3);
+});
