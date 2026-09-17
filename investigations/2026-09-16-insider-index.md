@@ -559,3 +559,14 @@ returns "UK" for index paths. `readsDealingsWindow` is kept.
 - Changed: `publishFrom(all, market?)`, and `readingSummary(dealings, date)`
   **returns null for a session before 7am London the next day**. An edition for
   today gets no index slot until the next morning.
+
+### The reading at 7am on 17 September
+
+Computed after rebasing onto `944897a` (the fix that stops page breaks dropping
+rows). The window returns 1,039 UK rows, 1,025 of them eligible; D1 counts 1,030
+eligible since March. Before 7am London, the latest reading is 15 September:
+**3, very quiet**, 90 purchases across 66 companies, "less than on 97% of
+earlier trading days on record". From 7am it is 16 September: **2, very
+quiet**, 90 purchases across 64 companies, "less than on 98% of earlier
+trading days on record", up 2 on the week, 74 published readings. The next
+reading, for 17 September, lands at 7am on 18 September.
