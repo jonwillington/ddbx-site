@@ -29,6 +29,11 @@
 //    the sitemap enumerate DAYS WITH FILINGS from the feed (one paged window,
 //    edge-cached like every board), and the summary is a lead that a day may
 //    or may not have. A day without one still gets its page; it says so.
+//    Both read the same population with the same day key: every row the API
+//    holds (US `view=all`, not the curated $50k+ feed), bucketed by the day
+//    it was DISCLOSED. The archive once post-filtered on trade date and so
+//    dropped late disclosures of old trades that the dated page still showed
+//    (BMA on 16 Sep 2026: traded in March, filed in September).
 //
 // 2. THE MARKET COMES FROM THE PATH, NOT THE HOST. /daily/* is UK and
 //    /us/daily/* is US on every domain, exactly as /dealings/:id and
@@ -38,77 +43,43 @@
 //    (The weekly family chose host-based routing; see the investigation doc
 //    for the trade-off.)
 //
-// 3. THE CALENDAR IS STATIC. src/lib/bank-holidays.ts fetches gov.uk at
-//    runtime, which a Pages Function and a sitemap cannot do per request
-//    without a cache we do not have. The LSE observes the England and Wales
-//    bank holidays; the NYSE list is published years ahead. Both are short
-//    and are seeded here to 2028 / 2027. When the year rolls over, add a
-//    year — the same chore src/lib/markets/us.tsx already has.
+// 3. THE CALENDAR IS STATIC, AND THERE IS ONE OF IT. src/lib/bank-holidays.ts
+//    fetches gov.uk at runtime, which a Pages Function and a sitemap cannot
+//    do per request without a cache we do not have. The closure maps live in
+//    shared/exchange-calendar.js, which the Insider Index reads too; the
+//    yearly chore of adding a year is done there.
 //
 // 4. /today REDIRECTS. An undated page that changes at midnight is a canonical
 //    that rots daily (the weekly module's argument). /today and /us/today 302
 //    to the latest trading day's dated URL and are never indexed.
 
 import { fetchDealingsWindow } from "./dealings-feed.js";
-import { buyValue } from "./leaderboard.js";
+import {
+  addDays,
+  closureReason,
+  isDateSlug,
+  isTradingDay,
+  nextTradingDay,
+  prevTradingDay,
+  UK_CLOSURES,
+  US_CLOSURES,
+} from "./exchange-calendar.js";
+import { buyValue, isInsiderFiler } from "./leaderboard.js";
 import { filingFamily } from "./filing-family.js";
 import { TRACKING_SINCE_DATE } from "./tracking.js";
 
+// The calendar lives in shared/exchange-calendar.js, shared with the Insider
+// Index. Re-exported so the page and the pre-render keep one import site.
+export {
+  addDays,
+  closureReason,
+  isDateSlug,
+  isTradingDay,
+  nextTradingDay,
+  prevTradingDay,
+};
+
 /* ─── Markets ────────────────────────────────────────────────────────────── */
-
-/** England and Wales bank holidays (gov.uk/bank-holidays.json, read
- *  2026-09-16). The LSE closes on these and on weekends; there is no other
- *  scheduled closure. */
-const UK_CLOSURES = {
-  "2026-01-01": "New Year’s Day",
-  "2026-04-03": "Good Friday",
-  "2026-04-06": "Easter Monday",
-  "2026-05-04": "the early May bank holiday",
-  "2026-05-25": "the spring bank holiday",
-  "2026-08-31": "the summer bank holiday",
-  "2026-12-25": "Christmas Day",
-  "2026-12-28": "Boxing Day",
-  "2027-01-01": "New Year’s Day",
-  "2027-03-26": "Good Friday",
-  "2027-03-29": "Easter Monday",
-  "2027-05-03": "the early May bank holiday",
-  "2027-05-31": "the spring bank holiday",
-  "2027-08-30": "the summer bank holiday",
-  "2027-12-27": "Christmas Day",
-  "2027-12-28": "Boxing Day",
-  "2028-01-03": "New Year’s Day",
-  "2028-04-14": "Good Friday",
-  "2028-04-17": "Easter Monday",
-  "2028-05-01": "the early May bank holiday",
-  "2028-05-29": "the spring bank holiday",
-  "2028-08-28": "the summer bank holiday",
-  "2028-12-25": "Christmas Day",
-  "2028-12-26": "Boxing Day",
-};
-
-/** NYSE holidays. Mirrors US_EXCHANGE_HOLIDAYS in src/lib/markets/us.tsx. */
-const US_CLOSURES = {
-  "2026-01-01": "New Year’s Day",
-  "2026-01-19": "Martin Luther King Jr. Day",
-  "2026-02-16": "Presidents’ Day",
-  "2026-04-03": "Good Friday",
-  "2026-05-25": "Memorial Day",
-  "2026-06-19": "Juneteenth",
-  "2026-07-03": "Independence Day (observed)",
-  "2026-09-07": "Labor Day",
-  "2026-11-26": "Thanksgiving",
-  "2026-12-25": "Christmas Day",
-  "2027-01-01": "New Year’s Day",
-  "2027-01-18": "Martin Luther King Jr. Day",
-  "2027-02-15": "Presidents’ Day",
-  "2027-03-26": "Good Friday",
-  "2027-05-31": "Memorial Day",
-  "2027-06-18": "Juneteenth (observed)",
-  "2027-07-05": "Independence Day (observed)",
-  "2027-09-06": "Labor Day",
-  "2027-11-25": "Thanksgiving",
-  "2027-12-24": "Christmas Day (observed)",
-};
 
 export const DAILY_MARKETS = {
   UK: {
@@ -153,64 +124,7 @@ export function dailyMarket(market) {
 
 /* ─── Dates ──────────────────────────────────────────────────────────────── */
 
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
-
-/** "2026-09-15" -> true only for a real calendar date in that exact form. */
-export function isDateSlug(slug) {
-  const s = String(slug ?? "");
-
-  if (!ISO.test(s)) return false;
-  const d = new Date(`${s}T00:00:00Z`);
-
-  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
-}
-
-/** ISO date `days` after `iso` (negative for before). Calendar days. */
-export function addDays(iso, days) {
-  const d = new Date(`${iso}T00:00:00Z`);
-
-  d.setUTCDate(d.getUTCDate() + days);
-
-  return d.toISOString().slice(0, 10);
-}
-
 const dow = (iso) => new Date(`${iso}T00:00:00Z`).getUTCDay();
-
-/** Why the market was shut on `iso`, or null on a trading day. */
-export function closureReason(iso, market) {
-  const m = dailyMarket(market);
-  const day = dow(iso);
-
-  if (day === 0 || day === 6) return { kind: "weekend" };
-  const name = m.closures[iso];
-
-  return name ? { kind: "holiday", name } : null;
-}
-
-export const isTradingDay = (iso, market) => closureReason(iso, market) == null;
-
-/** The trading day before `iso`. Bounded so a bad calendar can't spin. */
-export function prevTradingDay(iso, market) {
-  let d = iso;
-
-  for (let i = 0; i < 14; i++) {
-    d = addDays(d, -1);
-    if (isTradingDay(d, market)) return d;
-  }
-
-  return null;
-}
-
-export function nextTradingDay(iso, market) {
-  let d = iso;
-
-  for (let i = 0; i < 14; i++) {
-    d = addDays(d, 1);
-    if (isTradingDay(d, market)) return d;
-  }
-
-  return null;
-}
 
 /** Today's date in the market's own time zone. Intl is available in the
  *  browser and in Workers, and "en-CA" formats as ISO without locale
@@ -361,14 +275,30 @@ const RATED = new Set(["significant", "noteworthy", "minor"]);
  *  the purchase is not informative, so it does not count. */
 export const isRated = (d) => RATED.has(d?.analysis?.rating);
 
+/** The US analysis floor. Triage reads the curated population
+ *  (INTERESTING_MIN_VALUE_USD in ddbx-data worker/db/us-queries.ts, $50k and
+ *  up) plus a handful of strategy matches below it, so an unscreened US row
+ *  under this line is not waiting for anything: it will not be screened.
+ *  The UK has no floor; every row is triaged. */
+export const US_SCREEN_FLOOR = 50_000;
+
+/** True for an unscreened row that never will be, as opposed to one the
+ *  pipeline has not reached yet. */
+const belowFloor = (d, market) =>
+  dailyMarket(market).id === "US" &&
+  !d?.triage?.verdict &&
+  !d?.analysis?.rating &&
+  buyValue(d) < US_SCREEN_FLOOR;
+
 /** One line per filing, from the rating alone.
  *
  *  Short on purpose. The rating's meaning is published in full on
  *  /how-it-works (RATING_SCALE in src/lib/methodology.ts); this is the
  *  one-clause version a row can carry. The unrated cases say WHY there is no
- *  rating rather than leaving the slot blank — "not analysed" and "not yet
- *  analysed" are different facts and a reader can act on the difference. */
-export function verdictLine(d) {
+ *  rating rather than leaving the slot blank — "not analysed", "below the
+ *  floor" and "not yet analysed" are different facts and a reader can act on
+ *  the difference. */
+export function verdictLine(d, market = "UK") {
   const rating = d?.analysis?.rating;
 
   if (rating === "significant") return "Significant. Cleared all six checks.";
@@ -381,18 +311,29 @@ export function verdictLine(d) {
   if (triage === "skip") return "Not analysed. Screened out at triage.";
   if (triage === "maybe" || triage === "promising")
     return "Cleared triage. Analysis pending.";
+  if (belowFloor(d, market))
+    return "Not screened. Below the $50k analysis floor.";
 
   return "Not yet screened.";
 }
 
 /** The word alone, for a fact cell. */
-export function verdictWord(d) {
+export function verdictWord(d, market = "UK") {
   const rating = d?.analysis?.rating;
 
   if (rating) return rating.charAt(0).toUpperCase() + rating.slice(1);
+  if (d?.triage?.verdict === "skip") return "Skipped";
 
-  return d?.triage?.verdict === "skip" ? "Skipped" : "Pending";
+  return belowFloor(d, market) ? "Unscreened" : "Pending";
 }
+
+/** A US Form 4 filed by someone whose only relationship to the company is a
+ *  10% stake: usually an investment vehicle, not someone running the business.
+ *  The edition lists them (it reads the whole record) but marks them, and the
+ *  biggest-buy slot is for insiders only, the same test the boards apply
+ *  (`isInsiderFiler`, shared/leaderboard.js). Always false for the UK. */
+export const isHolderOnly = (d, market) =>
+  !isInsiderFiler(d, dailyMarket(market).id);
 
 /* ─── The model ──────────────────────────────────────────────────────────── */
 
@@ -407,21 +348,31 @@ export function filingHref(d, market) {
   return d?.id ? filingFamily(market).path(d.id) : null;
 }
 
+/** The day a row belongs to: its disclosed_date as a calendar day. Some feeds
+ *  carry a time on it (shared/dealings-feed.js), so the edition, the archive
+ *  and the sitemap all key on the first ten characters through this one
+ *  function rather than comparing the raw field three different ways. */
+export const disclosedDay = (d) => String(d?.disclosed_date ?? "").slice(0, 10);
+
 /** Everything an edition states, computed once from the day's rows.
  *
  *  `filings` is the day's rows largest first — a day is read by its biggest
- *  cheque. `biggest` is that first row. `clusters` groups the rows the
+ *  cheque. `biggest` is the largest filed by an insider: a US 10%-holder's
+ *  purchase stays on the list, marked, but does not take the slot
+ *  (`isHolderOnly`). `holders` counts those rows so the sentences can say
+ *  they are in the totals. `clusters` groups the rows the
  *  pipeline annotated as part of a cluster by issuer, carrying the row's OWN
  *  annotation (`cluster.count` is a rolling per-row count, not a cluster
  *  identity — see the header of shared/boards.js — so the page states what the
  *  row states and never sums it). */
 export function editionModel(dealings, market, date) {
   const m = dailyMarket(market);
-  const rows = (dealings ?? []).filter((d) => d?.disclosed_date === date);
+  const rows = (dealings ?? []).filter((d) => disclosedDay(d) === date);
   const filings = [...rows].sort((a, b) => buyValue(b) - buyValue(a));
   const value = filings.reduce((sum, d) => sum + buyValue(d), 0);
   const rated = filings.filter(isRated).length;
   const companies = new Set(filings.map((d) => d.ticker ?? d.company)).size;
+  const holders = filings.filter((d) => isHolderOnly(d, m.id)).length;
 
   const byIssuer = new Map();
 
@@ -457,15 +408,32 @@ export function editionModel(dealings, market, date) {
     value,
     rated,
     companies,
-    biggest: filings[0] ?? null,
+    holders,
+    biggest: filings.find((d) => !isHolderOnly(d, m.id)) ?? null,
     clusters: [...byIssuer.values()].sort((a, b) => b.count - a.count),
   };
 }
 
-/** A day earns an indexable page by having at least one disclosed filing.
- *  A trading day with nothing filed is a fact worth a sentence on the nearest
- *  edition, not a document of its own. */
-export const editionMeetsBar = (model) => (model?.count ?? 0) > 0;
+/** Filings a day needs, alongside at least one rated row, to be indexable
+ *  without a close-of-day summary. */
+export const INDEX_MIN_FILINGS = 3;
+
+/** Whether a day earns an indexable page.
+ *
+ *  A day is a document when it has the close-of-day summary (a written read
+ *  of the day), or when it has enough filings to be read on its own: at least
+ *  INDEX_MIN_FILINGS, one of them rated. One unrated filing is a row on the
+ *  archive, not a page for a search engine. Thinner days still render and
+ *  are still linked from the archive and their neighbours; they are noindexed
+ *  and left out of the sitemap, and cross the bar on their own when the
+ *  summary lands or a rated filing does.
+ *
+ *  Takes an EditionModel or an ArchiveDay (both carry `count` and `rated`). */
+export function editionMeetsBar(day, hasSummary = false) {
+  if (hasSummary) return true;
+
+  return (day?.count ?? 0) >= INDEX_MIN_FILINGS && (day?.rated ?? 0) >= 1;
+}
 
 /** The index narrative on a summary, as plain text.
  *
@@ -477,6 +445,74 @@ export function overviewNarrative(summary) {
   const text = summary?.market_overview?.narrative;
 
   return text ? String(text).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim() : "";
+}
+
+/** The summary body with the filing ids taken out.
+ *
+ *  The US read cites its filings inline by id ("(IDs
+ *  f4-0001628280-26-062057-1-0 and f4-...-1-1)", 2026-09-15). An accession
+ *  number in a paragraph is for the pipeline, not a reader, and the cited
+ *  filings are listed and linked under the read (`citedFilings`), so a
+ *  parenthesis made only of ids goes, and a bare id left in a sentence
+ *  goes with it. */
+const FILING_ID = String.raw`(?:f4-[\w-]+|d-[0-9a-f]{16})`;
+const ID_PAREN = new RegExp(
+  String.raw`\s*\((?:IDs?:?\s*)?${FILING_ID}(?:(?:,\s*|\s+and\s+|,\s*and\s+)${FILING_ID})*\)`,
+  "g",
+);
+const BARE_ID = new RegExp(String.raw`\s*\b${FILING_ID}\b`, "g");
+
+export function summaryBody(summary) {
+  return String(summary?.body ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(ID_PAREN, "")
+    .replace(BARE_ID, "");
+}
+
+/** The filings a summary cites, as rows an edition can link.
+ *
+ *  `cited` is hydrated per filing LEG (a US tranche purchase is cited as
+ *  -1-0 and -1-1), while the edition's rows are collapsed to one per trade.
+ *  So each cited leg is matched to the edition row it belongs to (by id, then
+ *  by filing, reporter and trade date) and each row is listed once, in the
+ *  order the summary cites them, carrying the collapsed total. A cited row
+ *  that is not on the day's list (a summary can name an earlier purchase) is
+ *  kept as the cited row itself, so every citation still links somewhere.
+ *
+ *  Returns `{ rows, ids }`: `ids` is the set of edition row ids that were
+ *  cited, for marking them on the full list. */
+export function citedFilings(model, cited) {
+  const filings = model?.filings ?? [];
+  const byId = new Map(filings.map((d) => [d.id, d]));
+  const groupKey = (d) =>
+    d?.filing_id
+      ? `${d.filing_id}|${d.reporter?.cik ?? ""}|${d.trade_date ?? ""}`
+      : null;
+  const byGroup = new Map();
+
+  for (const d of filings) {
+    const k = groupKey(d);
+
+    if (k && !byGroup.has(k)) byGroup.set(k, d);
+  }
+
+  const rows = [];
+  const seen = new Set();
+
+  for (const c of cited ?? []) {
+    const k = groupKey(c);
+    const row = byId.get(c?.id) ?? (k ? byGroup.get(k) : null) ?? c;
+    const key = row?.id ?? k;
+
+    if (!row || !key || seen.has(key)) continue;
+    seen.add(key);
+    rows.push(row);
+  }
+
+  return {
+    rows,
+    ids: new Set(rows.filter((r) => byId.has(r.id)).map((r) => r.id)),
+  };
 }
 
 /** The buyers on a cluster group, each named once. Two tranches of one
@@ -518,7 +554,14 @@ export function editionLeadSentence(model, status = "past") {
       ? `, ${plural(model.rated, "of them rated", "of them rated")}`
       : ", none of them rated";
 
-  return `${plural(model.count, "open-market purchase", "open-market purchases")} disclosed by ${m.label} ${m.noun} on ${when}${sofar}: ${dayMoney(model.value, model.currency)} across ${plural(model.companies, "company", "companies")}${ratedBit}.`;
+  // US totals include 10%-holder filings (the edition reads the whole record),
+  // so the sentence that states the totals says so.
+  const holdersBit =
+    (model.holders ?? 0) > 0
+      ? ` ${model.holders === model.count ? (model.count === 1 ? "It was" : "All were") : `${model.holders} ${model.holders === 1 ? "was" : "were"}`} filed by ${model.holders === 1 ? "a 10% holder" : "10% holders"} with no board seat or office.`
+      : "";
+
+  return `${plural(model.count, "open-market purchase", "open-market purchases")} disclosed by ${m.label} ${m.noun} on ${when}${sofar}: ${dayMoney(model.value, model.currency)} across ${plural(model.companies, "company", "companies")}${ratedBit}.${holdersBit}`;
 }
 
 /** The archive index's opening sentence. */
@@ -536,7 +579,7 @@ export function archiveLeadSentence(days, market) {
         ? `${monthOf(first)} to ${monthOf(last)} ${yearOf(last)}`
         : `${monthOf(first)} ${yearOf(first)} to ${monthOf(last)} ${yearOf(last)}`;
 
-  return `${plural(days.length, "trading day", "trading days")} of ${m.label} insider buying, ${filings} disclosed purchases in total, covering ${span}.`;
+  return `${plural(days.length, "trading day", "trading days")} of ${m.label} insider buying, ${filings.toLocaleString("en-GB")} disclosed purchases in total, covering ${span}.`;
 }
 
 /** Why a day has no edition, for the signpost page. */
@@ -571,9 +614,9 @@ export function groupByDay(dealings, market) {
   let stranded = 0;
 
   for (const d of dealings ?? []) {
-    const date = d?.disclosed_date;
+    const date = disclosedDay(d);
 
-    if (!date || !isDateSlug(date) || date < m.since) continue;
+    if (!isDateSlug(date) || date < m.since) continue;
     if (!isTradingDay(date, market)) {
       stranded += 1;
       continue;
@@ -601,6 +644,13 @@ export function groupByDay(dealings, market) {
 
 const FEED = { UK: "dealings", US: "us-dealings" };
 
+/** The population an edition reads, as query parameters. The US route serves
+ *  the curated $50k-and-up set when no view is named; an edition is the day's
+ *  whole record, so it names `all`. The UK has no server view. Both fetches
+ *  below take it from here so the edition and the archive cannot read two
+ *  different populations again. */
+export const EDITION_VIEW = { UK: null, US: "all" };
+
 /** One day's rows plus its summary, in one call shape for both renderers.
  *
  *  The day window is `since=date&before=date+1`: both are disclosed_date
@@ -625,12 +675,17 @@ export async function fetchEdition({
     headers: { accept: "application/json" },
     ...(cf ? { cf } : {}),
   };
+  const qs = new URLSearchParams({
+    since: date,
+    before: addDays(date, 1),
+    fields: "lite",
+    limit: "1000",
+  });
+
+  if (EDITION_VIEW[m.id]) qs.set("view", EDITION_VIEW[m.id]);
 
   const [dealingsRes, summaryRes] = await Promise.all([
-    fetchImpl(
-      `${apiBase}/${feed}?since=${date}&before=${addDays(date, 1)}&fields=lite&limit=1000`,
-      init,
-    ).catch(() => null),
+    fetchImpl(`${apiBase}/${feed}?${qs}`, init).catch(() => null),
     fetchImpl(
       `${apiBase}/daily-summary?market=${m.id}&date=${date}`,
       init,
@@ -679,8 +734,14 @@ export async function fetchEdition({
 }
 
 /** Every day with filings since the market's archive floor. One paged walk
- *  of the feed, the same one the boards make; `complete` is false when the
- *  page budget ran out, in which case the OLDEST days are the ones missing. */
+ *  of the feed, the same one the boards make, but over the edition's
+ *  population (`EDITION_VIEW`) and windowed on the DISCLOSED day, so a day on
+ *  the archive counts exactly the rows its dated page lists.
+ *
+ *  `complete` is false when the page budget ran out, in which case the OLDEST
+ *  days are the ones missing. `failed` is true when nothing came back and the
+ *  walk did not finish: that is an outage, not an empty archive, and the
+ *  callers must not say "no editions yet" over it. */
 export async function fetchArchive({
   apiBase,
   market,
@@ -688,19 +749,130 @@ export async function fetchArchive({
   cf = null,
 }) {
   const m = dailyMarket(market);
-  // `since` on fetchDealingsWindow is applied to trade_date as well as sent to
-  // the API as a disclosed_date bound. Asking from a month earlier than the
-  // archive floor stops a filing traded in late February and disclosed in
-  // March falling out of the March days; groupByDay applies the real floor
-  // on disclosed_date.
+  // The walk's page cursors, recorded on the way past. See the refill below.
+  const cursors = new Set();
+  const recording = (url, init) => {
+    const before = new URL(url).searchParams.get("before");
+
+    if (before) cursors.add(before);
+
+    return fetchImpl(url, init);
+  };
   const { dealings, complete } = await fetchDealingsWindow({
     apiBase,
     market: m.id,
-    since: addDays(m.since, -31),
-    fetchImpl,
+    since: m.since,
+    view: EDITION_VIEW[m.id],
+    windowOn: "disclosed",
+    fetchImpl: recording,
     cf,
   });
-  const { days, stranded } = groupByDay(dealings, m.id);
 
-  return { days, stranded, complete };
+  // Refill the page-boundary days. fetchDealingsWindow advances its cursor to
+  // the oldest disclosed_date on a full page and asks for `before` that date,
+  // which the API applies as an EXCLUSIVE bound, so rows on the boundary day
+  // that did not fit on the earlier page are never read. Measured 2026-09-17:
+  // US 19 Aug listed 17 of its 52 filings, UK 13 Mar 8 of 10; every other day
+  // agreed with its dated page. Each boundary day is re-read whole with the
+  // edition's own day window and merged by id. Remove once the shared walk
+  // re-reads the boundary day itself (reported on the growth/shared-window
+  // branch); until then this is what keeps an archive row equal to its page.
+  const byId = new Map(dealings.map((d) => [d.id, d]));
+  let refilled = true;
+
+  for (const date of [...cursors].filter((d) => d >= m.since)) {
+    const qs = new URLSearchParams({
+      since: date,
+      before: addDays(date, 1),
+      fields: "lite",
+      limit: "1000",
+    });
+
+    if (EDITION_VIEW[m.id]) qs.set("view", EDITION_VIEW[m.id]);
+    const res = await fetchImpl(`${apiBase}/${FEED[m.id]}?${qs}`, {
+      headers: { accept: "application/json" },
+      ...(cf ? { cf } : {}),
+    }).catch(() => null);
+    const body = res?.ok ? await res.json().catch(() => null) : null;
+
+    if (!Array.isArray(body?.dealings)) {
+      refilled = false;
+      continue;
+    }
+    for (const d of body.dealings) if (d?.id && !byId.has(d.id)) byId.set(d.id, d);
+  }
+
+  const rows = [...byId.values()];
+  const { days, stranded } = groupByDay(rows, m.id);
+  const done = complete && refilled;
+
+  return { days, stranded, complete: done, failed: !done && rows.length === 0 };
+}
+
+/** Whether a close-of-day summary exists for a date: true, false, or null
+ *  when the answer could not be had (a 5xx or a thrown fetch). */
+export async function summaryExists({
+  apiBase,
+  market,
+  date,
+  fetchImpl = fetch,
+  cf = null,
+}) {
+  const m = dailyMarket(market);
+
+  try {
+    const res = await fetchImpl(
+      `${apiBase}/daily-summary?market=${m.id}&date=${date}`,
+      { headers: { accept: "application/json" }, ...(cf ? { cf } : {}) },
+    );
+
+    if (res.status === 404) return false;
+    if (!res.ok) return null;
+    const body = await res.json().catch(() => null);
+
+    return body?.summary ? true : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The days the sitemap may advertise: every archive day that meets
+ *  `editionMeetsBar`, so no URL is listed that its pre-render then noindexes.
+ *
+ *  The filings half of the bar is known from the archive walk. The summary
+ *  half has no list endpoint, so it is asked per day, and only of the days
+ *  that need it: thin days, and today. Today is never listed on filings
+ *  alone — an in-progress edition read by a crawler at 09:00 is two rows and
+ *  no read — and joins once its summary lands. A summary check that fails is
+ *  treated as "no": leaving a day out of one sitemap generation costs nothing,
+ *  listing a noindexed one is the thing the sitemap must not do.
+ *
+ *  Returns `{ days, complete, failed }` with `days` newest first. */
+export async function sitemapDays({
+  apiBase,
+  market,
+  now = new Date(),
+  fetchImpl = fetch,
+  cf = null,
+  summaryCf = cf,
+}) {
+  const m = dailyMarket(market);
+  const today = todayInMarket(m.id, now);
+  const archive = await fetchArchive({ apiBase, market: m.id, fetchImpl, cf });
+  const checks = archive.days.map(async (day) => {
+    if (day.date > today) return null;
+    if (day.date !== today && editionMeetsBar(day)) return day;
+    const has = await summaryExists({
+      apiBase,
+      market: m.id,
+      date: day.date,
+      fetchImpl,
+      cf: summaryCf,
+    });
+
+    return has === true ? day : null;
+  });
+  const days = (await Promise.all(checks)).filter(Boolean);
+
+  return { days, complete: archive.complete, failed: archive.failed };
 }

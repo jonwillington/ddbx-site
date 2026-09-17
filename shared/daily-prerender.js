@@ -11,6 +11,7 @@
 
 import {
   archiveLeadSentence,
+  citedFilings,
   closedSentence,
   dailyIndexPath,
   dailyMarket,
@@ -26,12 +27,14 @@ import {
   filingHref,
   insiderOf,
   isDateSlug,
+  isHolderOnly,
   latestEditionDate,
   monthHeading,
   nearestEditionDate,
   nextTradingDay,
   overviewNarrative,
   prevTradingDay,
+  summaryBody,
   verdictLine,
 } from "./days.js";
 import {
@@ -102,13 +105,22 @@ function proseHtml(markdown) {
     .join("");
 }
 
-function editionBody({ model, summary, summaryStatus, status, market, host }) {
+function editionBody({ model, summary, cited, summaryStatus, status, market, host }) {
   const m = dailyMarket(market);
   const prev = prevTradingDay(model.date, market);
   const next = nextTradingDay(model.date, market);
   const latest = latestEditionDate(market);
   const link = (iso, text) =>
     `<a href="https://${esc(host)}${esc(dailyPath(market, iso))}">${esc(text)}</a>`;
+  const filingLink = (d) => {
+    const href = filingHref(d, market);
+    const name = cleanCompany(d.company) || displayTicker(d.ticker);
+
+    return href ? `<a href="https://${esc(host)}${esc(href)}">${esc(name)}</a>` : esc(name);
+  };
+  const holder = (d) =>
+    isHolderOnly(d, market) ? " · No board seat or office" : "";
+  const citations = citedFilings(model, cited);
 
   const numbers =
     model.count === 0
@@ -117,7 +129,13 @@ function editionBody({ model, summary, summaryStatus, status, market, host }) {
 
   const read =
     summary
-      ? `<h3 style="font-size:18px;margin:0 0 8px">${esc(summary.headline)}</h3>${proseHtml(summary.body)}${
+      ? `<h3 style="font-size:18px;margin:0 0 8px">${esc(summary.headline)}</h3>${proseHtml(summaryBody(summary))}${
+          citations.rows.length
+            ? `<p style="font-size:14px;max-width:62ch"><strong>Filings this read cites:</strong> ${citations.rows
+                .map((d) => `${filingLink(d)} (${esc(cleanInsider(insiderOf(d, market).name))}, ${esc(dayMoney(rowValue(d), m.currency))})`)
+                .join("; ")}.</p>`
+            : ""
+        }${
           summary.market_overview && Number.isFinite(summary.market_overview.pct)
             ? `<p style="${QUIET}">${esc(summary.market_overview.label)} ${summary.market_overview.pct > 0 ? "+" : ""}${esc(summary.market_overview.pct.toFixed(2))}%${overviewNarrative(summary) ? ` · ${esc(overviewNarrative(summary))}` : ""}</p>`
             : ""
@@ -132,8 +150,10 @@ function editionBody({ model, summary, summaryStatus, status, market, host }) {
 
   const big = model.biggest;
   const money =
-    big
-      ? `<p style="font-size:14px;max-width:62ch"><strong>Biggest buy:</strong> ${esc(cleanInsider(insiderOf(big, market).name))}${insiderOf(big, market).role ? `, ${esc(insiderOf(big, market).role)}` : ""} at <a href="https://${esc(host)}${esc(filingHref(big, market) ?? "")}">${esc(cleanCompany(big.company) || displayTicker(big.ticker))}</a>, ${esc(dayMoney(rowValue(big), m.currency))}. ${esc(verdictLine(big))}</p>` +
+    model.count
+      ? (big
+          ? `<p style="font-size:14px;max-width:62ch"><strong>Biggest buy by an insider:</strong> ${esc(cleanInsider(insiderOf(big, market).name))}${insiderOf(big, market).role ? `, ${esc(insiderOf(big, market).role)}` : ""} at ${filingLink(big)}, ${esc(dayMoney(rowValue(big), m.currency))}. ${esc(verdictLine(big, market))}</p>`
+          : `<p style="${QUIET}">No purchase on this day was filed by an officer or director; every filing was a 10% holder’s.</p>`) +
         (model.clusters.length
           ? `<p style="font-size:14px;max-width:62ch"><strong>Cluster activity:</strong> ${model.clusters
               .map(
@@ -152,8 +172,8 @@ function editionBody({ model, summary, summaryStatus, status, market, host }) {
 
       return `<tr>
       <td style="${CELL}">${i + 1}</td>
-      <td style="${CELL}">${href ? `<a href="https://${esc(host)}${esc(href)}">${esc(name)}</a>` : esc(name)}<span style="display:block;font-size:12px;color:#6b6154;margin-top:2px">${esc(cleanInsider(who.name))}${who.role ? `, ${esc(who.role)}` : ""}</span></td>
-      <td style="${CELL}">${esc(verdictLine(d))}</td>
+      <td style="${CELL}">${href ? `<a href="https://${esc(host)}${esc(href)}">${esc(name)}</a>` : esc(name)}<span style="display:block;font-size:12px;color:#6b6154;margin-top:2px">${esc(cleanInsider(who.name))}${who.role ? `, ${esc(who.role)}` : ""}${esc(holder(d))}${d.id && citations.ids.has(d.id) ? " · cited in the read" : ""}</span></td>
+      <td style="${CELL}">${esc(verdictLine(d, market))}</td>
       <td style="${CELL}">${esc(dayMoney(rowValue(d), m.currency))}</td>
     </tr>`;
     })
@@ -190,7 +210,7 @@ function editionBody({ model, summary, summaryStatus, status, market, host }) {
   <p style="${QUIET}">Largest first. Each row is the filing’s own page.</p>
   ${table}
   <h2 style="${H2}">What this is</h2>
-  <p style="font-size:14px;line-height:1.6;color:#4a4034;max-width:64ch">One page per trading day, permanent: every open-market purchase ${esc(m.label)} ${esc(m.noun)} disclosed that day, the verdict our six checks reached on each, the day’s largest cheque and any company where more than one insider was buying. Values are as filed. Nothing here is advice. <a href="https://${esc(host)}/how-it-works">How the rating is reached</a>.</p>
+  <p style="font-size:14px;line-height:1.6;color:#4a4034;max-width:64ch">One page per trading day, permanent: every open-market purchase ${esc(m.label)} ${esc(m.noun)} disclosed that day${m.id === "US" ? " (made directly, not under a pre-arranged 10b5-1 plan; filings by 10% holders are included and marked)" : ""}, the verdict our six checks reached on each, the day’s largest cheque and any company where more than one insider was buying. Values are as filed. Nothing here is advice. <a href="https://${esc(host)}/how-it-works">How the rating is reached</a>.</p>
   <p style="margin-top:24px;font-size:14px">${nav}</p>`);
 }
 
@@ -315,10 +335,15 @@ export async function handleEdition(context, market) {
   // noindex served on a bad minute outlives the outage by weeks.
   if (edition.status.dealings !== "ok")
     return unresolved(shell, edition.status.http);
-  // A trading day with nothing filed (or today, before anything has) is a
-  // sentence on the nearest edition, not a document. It crosses the bar on
-  // its own once a filing lands.
-  if (!editionMeetsBar(edition.model)) return noindex(shell);
+  // A thin day is a row on the archive, not a document (editionMeetsBar has
+  // the bar). If the filings alone miss it and the summary could not be
+  // loaded, the answer is unknown, and a noindex served on a bad minute
+  // outlives the outage, so leave the shell alone.
+  const hasSummary = edition.status.summary === "ok";
+
+  if (!editionMeetsBar(edition.model, hasSummary)) {
+    return edition.status.summary === "failed" ? shell : noindex(shell);
+  }
 
   const canonical = `https://${host}${dailyPath(m.id, slug)}`;
 
@@ -333,6 +358,7 @@ export async function handleEdition(context, market) {
     body: editionBody({
       model: edition.model,
       summary: edition.summary,
+      cited: edition.cited,
       summaryStatus: edition.status.summary,
       status,
       market: m.id,

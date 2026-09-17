@@ -72,7 +72,7 @@ import {
   windowStart,
 } from "../shared/sectors.js";
 import { HOST_DEFAULT_MARKET } from "../shared/seo.js";
-import { dailyIndexPath, dailyPath, fetchArchive } from "../shared/days.js";
+import { dailyIndexPath, dailyPath, sitemapDays } from "../shared/days.js";
 
 const API_BASE = "https://api.ddbx.uk/api";
 
@@ -626,15 +626,17 @@ async function directorEntries(host) {
   }
 }
 
-/** Daily editions: the index plus every trading day with at least one
- *  disclosed filing since the market's archive floor.
+/** Daily editions: the index plus every trading day that meets the edition
+ *  bar since the market's archive floor.
  *
  *  Enumerated from the dealings feed, not from the summary table: there is
  *  no list endpoint for daily summaries, and the summary is a lead an edition
  *  may or may not carry (UK summaries begin 2026-05-11, the filings in
- *  March). The bar is `editionMeetsBar` — at least one filing — which is what
- *  `groupByDay` already applies, so a day is never advertised here and then
- *  noindexed by functions/daily/[date].js.
+ *  March). The bar is `editionMeetsBar` — a close-of-day summary, or three
+ *  filings with one rated — applied by `sitemapDays`, which asks for the
+ *  summary only on the days that need it, so a day is never advertised here
+ *  and then noindexed by functions/daily/[date].js. Today is listed only once
+ *  its summary has landed.
  *
  *  UK on ddbx.uk at /daily, US on ddbx.us at /us/daily: the path carries the
  *  market (shared/days.js), and each host lists only the family whose
@@ -649,12 +651,18 @@ async function dailyEntries(host) {
 
   if (!market) return [];
   try {
-    const { days } = await fetchArchive({
+    const { days } = await sitemapDays({
       apiBase: API_BASE,
       market,
       cf: {
         cacheEverything: true,
         cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
+      // A summary's 404 must not be held for long: today's lands in the
+      // evening and should reach the next sitemap generation.
+      summaryCf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 86400, "400-499": 300, "500-599": 0 },
       },
     });
 

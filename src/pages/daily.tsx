@@ -15,6 +15,7 @@
  *  header of shared/days.js has the argument.
  */
 import type {
+  AnyRow,
   ArchiveDay,
   DayStatus,
   EditionFetch,
@@ -30,6 +31,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import {
   DAILY_MARKETS,
   archiveLeadSentence,
+  citedFilings,
   closedSentence,
   clusterBuyers,
   overviewNarrative,
@@ -47,11 +49,13 @@ import {
   filingHref,
   insiderOf,
   isDateSlug,
+  isHolderOnly,
   latestEditionDate,
   monthHeading,
   nearestEditionDate,
   nextTradingDay,
   prevTradingDay,
+  summaryBody,
   verdictLine,
   verdictWord,
 } from "../../shared/days.js";
@@ -81,6 +85,15 @@ import {
 import { insiderIndexReading } from "@/lib/insider-index-slot";
 
 type MarketId = "UK" | "US";
+
+/** The row's consideration in the market's canonical field: `value_gbp` on a
+ *  UK row, `value` (dollars) on a US one. */
+const rowValue = (d: AnyRow) =>
+  Number(
+    (d as { value_gbp?: number }).value_gbp ??
+      (d as { value?: number }).value ??
+      0,
+  );
 
 const R = {
   body: "text-[14px] leading-[1.65] text-foreground/70",
@@ -114,9 +127,11 @@ export function DailyIndexPage({ market }: { market: MarketId }) {
     fetchArchive({ apiBase: API_BASE, market: m.id })
       .then((r) => {
         if (!live) return;
+        // An empty walk that did not finish is an outage, not an empty
+        // archive (static-page rule 2): say so rather than "none yet".
         setDays(r.days);
         setComplete(r.complete);
-        setFailed(false);
+        setFailed(r.failed);
       })
       .catch(() => {
         if (!live) return;
@@ -159,7 +174,7 @@ export function DailyIndexPage({ market }: { market: MarketId }) {
         loading={days === null}
         skeleton={<SeoSkeleton rows={14} variant="ruled-list" />}
         standfirst={
-          rows.length > 0
+          rows.length > 0 && complete
             ? archiveLeadSentence(rows, m.id)
             : `Every trading day of disclosed ${m.label} insider buying: what was filed, what it was worth, and which purchases cleared the rating bar.`
         }
@@ -173,7 +188,9 @@ export function DailyIndexPage({ market }: { market: MarketId }) {
           </p>
         ) : rows.length === 0 ? (
           <p className={`mt-10 max-w-[62ch] ${R.body}`}>
-            No editions published yet for {m.label}.
+            No editions yet for {m.label}. An edition appears here on the first
+            trading day a purchase is disclosed; the feed is read every fifteen
+            minutes through the session.
           </p>
         ) : (
           <>
@@ -622,6 +639,7 @@ function EditionBody({
   // nothing filed drops the last two rather than saying "nothing" three
   // times over.
   const empty = model.count === 0;
+  const citations = citedFilings(model, edition.cited);
   const total = (empty ? 2 : 4) + (reading ? 1 : 0);
   let n = 0;
   const step = () => ++n;
@@ -643,7 +661,9 @@ function EditionBody({
         {model.count === 0 ? (
           <p className={`max-w-[62ch] ${R.body}`}>
             {today
-              ? `Nothing disclosed yet. Most UK announcements land between 7am and 6pm London time; the page fills in as they file.`
+              ? m.id === "US"
+                ? "Nothing filed yet. Form 4s reach the SEC through the day and into the evening, New York time; the page fills in as they land."
+                : "Nothing disclosed yet. Most UK announcements land between 7am and 6pm London time; the page fills in as they file."
               : `No open-market purchases were disclosed by ${m.label} ${m.noun} on this day. That is a fact about the market, not a gap in the record.`}
           </p>
         ) : (
@@ -677,6 +697,7 @@ function EditionBody({
         total={total}
       >
         <TheRead
+          cited={citations.rows}
           market={market}
           status={status}
           summary={edition.summary}
@@ -712,7 +733,7 @@ function EditionBody({
             title="Every filing"
             total={total}
           >
-            <FilingsList market={market} model={model} />
+            <FilingsList cited={citations.ids} market={market} model={model} />
           </SeoSection>
         </>
       )}
@@ -729,11 +750,13 @@ function EditionBody({
 /* ─── The read ───────────────────────────────────────────────────────────── */
 
 function TheRead({
+  cited,
   market,
   status,
   summary,
   summaryStatus,
 }: {
+  cited: AnyRow[];
   market: MarketId;
   status: DayStatus;
   summary: DailySummary | null;
@@ -759,8 +782,7 @@ function TheRead({
     );
   }
 
-  const paragraphs = summary.body
-    .replace(/\r\n/g, "\n")
+  const paragraphs = summaryBody(summary)
     .split(/\n\n+/)
     .map((p) => p.trim())
     .filter(Boolean);
@@ -776,9 +798,51 @@ function TheRead({
           <p key={i}>{inlineBold(p)}</p>
         ))}
       </div>
+      {cited.length > 0 ? (
+        <div className="mt-6">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
+            Filings this read cites
+          </p>
+          <ul className={`mt-2 border-t ${R.rule}`}>
+            {cited.map((d, i) => {
+              const who = insiderOf(d, market);
+              const href = filingHref(d, market);
+              const name =
+                cleanCompanyName(d.company ?? "") ||
+                displayTicker(d.ticker ?? "");
+
+              return (
+                <li
+                  key={d.id ?? i}
+                  className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-0.5 border-b ${R.rule} py-2.5 text-[13.5px]`}
+                >
+                  <span className="min-w-0">
+                    {href ? (
+                      <Link className={`font-medium ${R.link}`} to={href}>
+                        {name}
+                      </Link>
+                    ) : (
+                      <span className="font-medium text-foreground">
+                        {name}
+                      </span>
+                    )}
+                    <span className="text-foreground/55">
+                      {" · "}
+                      {cleanInsiderName(who.name)}
+                    </span>
+                  </span>
+                  <span className={`tabular-nums ${R.label}`}>
+                    {dayMoney(rowValue(d), m.currency)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
       {overview && Number.isFinite(overview.pct) ? (
         <p
-          className={`mt-5 border-t ${R.rule} pt-3 text-[13px] leading-[1.55] text-foreground/60`}
+          className={`${cited.length > 0 ? "mt-4" : `mt-5 border-t ${R.rule} pt-3`} text-[13px] leading-[1.55] text-foreground/60`}
         >
           <span className="font-semibold text-foreground/80">
             {overview.label}
@@ -873,51 +937,30 @@ function MoneySection({
   market: MarketId;
   model: EditionModel;
 }) {
-  const m = dailyMarket(market);
   const big = model.biggest;
-
-  if (!big) {
-    return (
-      <p className={`max-w-[62ch] ${R.body}`}>
-        Nothing to rank: no purchases were disclosed.
-      </p>
-    );
-  }
-  const who = insiderOf(big, market);
-  const href = filingHref(big, market);
-  const bigValue = Number(
-    (big as { value_gbp?: number }).value_gbp ??
-      (big as { value?: number }).value ??
-      0,
-  );
 
   return (
     <div className="space-y-8">
       <div>
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-          Biggest buy
+          Biggest buy by an insider
         </p>
-        <BoardRowList className="mt-3">
-          <BoardRow
-            badge={<TickerPill ticker={displayTicker(big.ticker ?? "")} />}
-            facts={[{ label: "Verdict", value: verdictWord(big) }]}
-            logo={<CompanyLogo size={56} ticker={big.ticker ?? ""} />}
-            money={dayMoney(bigValue, m.currency)}
-            name={
-              cleanCompanyName(big.company ?? "") ||
-              displayTicker(big.ticker ?? "")
-            }
-            secondary={
-              <>
-                {cleanInsiderName(who.name)}
-                {who.role ? `, ${who.role}` : ""}
-                {" · "}
-                {verdictLine(big)}
-              </>
-            }
-            to={href ?? undefined}
-          />
-        </BoardRowList>
+        {big ? (
+          <BiggestBuy big={big} market={market} />
+        ) : (
+          <p className={`mt-3 max-w-[62ch] ${R.body}`}>
+            None. Every purchase disclosed on this day was filed by a 10% holder
+            with no board seat or office, and this slot is for the people
+            running the company. Their filings are listed below.
+          </p>
+        )}
+        {model.holders > 0 && big ? (
+          <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.5]`}>
+            Filings by 10% holders with no board seat or office are listed below
+            and counted in the totals, but not ranked here: they are usually
+            investment vehicles, not people running the business.
+          </p>
+        ) : null}
       </div>
 
       <div>
@@ -984,12 +1027,44 @@ function MoneySection({
   );
 }
 
+/** The day's largest insider purchase, as one board row. */
+function BiggestBuy({ big, market }: { big: AnyRow; market: MarketId }) {
+  const m = dailyMarket(market);
+  const who = insiderOf(big, market);
+  const href = filingHref(big, market);
+
+  return (
+    <BoardRowList className="mt-3">
+      <BoardRow
+        badge={<TickerPill ticker={displayTicker(big.ticker ?? "")} />}
+        facts={[{ label: "Verdict", value: verdictWord(big, market) }]}
+        logo={<CompanyLogo size={56} ticker={big.ticker ?? ""} />}
+        money={dayMoney(rowValue(big), m.currency)}
+        name={
+          cleanCompanyName(big.company ?? "") || displayTicker(big.ticker ?? "")
+        }
+        secondary={
+          <>
+            {cleanInsiderName(who.name)}
+            {who.role ? `, ${who.role}` : ""}
+            {" · "}
+            {verdictLine(big, market)}
+          </>
+        }
+        to={href ?? undefined}
+      />
+    </BoardRowList>
+  );
+}
+
 /* ─── Every filing ───────────────────────────────────────────────────────── */
 
 function FilingsList({
+  cited,
   market,
   model,
 }: {
+  cited: Set<string>;
   market: MarketId;
   model: EditionModel;
 }) {
@@ -1011,17 +1086,13 @@ function FilingsList({
         {model.filings.map((d, i) => {
           const who = insiderOf(d, market);
           const href = filingHref(d, market);
-          const value = Number(
-            (d as { value_gbp?: number }).value_gbp ??
-              (d as { value?: number }).value ??
-              0,
-          );
+          const value = rowValue(d);
 
           return (
             <BoardRow
               key={d.id ?? `${d.ticker}-${i}`}
               badge={<TickerPill ticker={displayTicker(d.ticker ?? "")} />}
-              facts={[{ label: "Verdict", value: verdictWord(d) }]}
+              facts={[{ label: "Verdict", value: verdictWord(d, market) }]}
               logo={<CompanyLogo size={56} ticker={d.ticker ?? ""} />}
               money={dayMoney(value, m.currency)}
               name={
@@ -1034,7 +1105,9 @@ function FilingsList({
                   {cleanInsiderName(who.name)}
                   {who.role ? `, ${who.role}` : ""}
                   {" · "}
-                  {verdictLine(d)}
+                  {verdictLine(d, market)}
+                  {isHolderOnly(d, market) ? " · No board seat or office" : ""}
+                  {d.id && cited.has(d.id) ? " · Cited in the read" : ""}
                 </>
               }
               to={href ?? undefined}
@@ -1062,10 +1135,13 @@ function WhatThisIs({ market }: { market: MarketId }) {
           <p>
             One page per trading day, permanent. It lists every open-market
             purchase {m.label} {m.noun} disclosed that day as the{" "}
-            {us ? "SEC" : "exchange"} published it, with the verdict our method
-            reached on each, the day’s largest cheque, and any company where
-            more than one insider was buying. The read at the top is the summary
-            the team publishes after the close.
+            {us ? "SEC" : "exchange"} published it
+            {us
+              ? ", made directly and not under a pre-arranged 10b5-1 plan, whatever its size"
+              : ""}
+            , with the verdict our method reached on each, the day’s largest
+            cheque, and any company where more than one insider was buying. The
+            read at the top is the summary the team publishes after the close.
           </p>
           <p>
             {us
@@ -1108,9 +1184,25 @@ function WhatThisIs({ market }: { market: MarketId }) {
               The rating our six checks reached: significant, noteworthy, minor
               or routine. A filing marked “not analysed” was screened out at
               triage as unlikely to be informative; one marked “pending” has
-              cleared triage and is being read.
+              cleared triage or has not reached it yet.
+              {us
+                ? " A US purchase under $50k is not screened unless it matches one of our strategy patterns, so it is marked “unscreened”: listed, not rated."
+                : ""}
             </dd>
           </div>
+          {us ? (
+            <div>
+              <dt className="font-semibold text-foreground">10% holder</dt>
+              <dd className="mt-1">
+                Anyone holding 10% of a company files the same Form 4 as its
+                officers and directors, and is usually an investment vehicle
+                rather than someone running the business. Their purchases are
+                listed and counted in the day’s totals, marked, and left out of
+                the biggest-buy slot, as the boards leave them out of their
+                rankings.
+              </dd>
+            </div>
+          ) : null}
           <div>
             <dt className="font-semibold text-foreground">Cluster</dt>
             <dd className="mt-1">

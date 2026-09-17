@@ -46,6 +46,9 @@ export interface EditionModel {
   value: number;
   rated: number;
   companies: number;
+  /** US rows filed by a 10% holder with no board seat or office. */
+  holders: number;
+  /** The largest purchase filed by an insider (never a holder-only row). */
   biggest: AnyRow | null;
   clusters: ClusterGroup[];
 }
@@ -73,6 +76,8 @@ export interface ArchiveFetch {
   days: ArchiveDay[];
   stranded: number;
   complete: boolean;
+  /** Nothing came back and the walk did not finish: an outage. */
+  failed: boolean;
 }
 
 export declare const DAILY_MARKETS: Record<DailyMarketId, DailyMarket>;
@@ -101,14 +106,22 @@ export declare function dayShort(iso: string): string;
 export declare function monthHeading(iso: string): string;
 export declare function dayMoney(value: number, currency: string): string;
 
+export declare const US_SCREEN_FLOOR: number;
+export declare const INDEX_MIN_FILINGS: number;
+export declare const EDITION_VIEW: Record<DailyMarketId, string | null>;
 export declare function isRated(d: AnyRow | null | undefined): boolean;
-export declare function verdictLine(d: AnyRow | null | undefined): string;
-export declare function verdictWord(d: AnyRow | null | undefined): string;
+export declare function verdictLine(d: AnyRow | null | undefined, market?: string): string;
+export declare function verdictWord(d: AnyRow | null | undefined, market?: string): string;
+export declare function isHolderOnly(d: AnyRow | null | undefined, market: string): boolean;
+export declare function disclosedDay(d: AnyRow | null | undefined): string;
 export declare function insiderOf(d: AnyRow, market: string): { name: string; role: string | null };
 export declare function filingHref(d: AnyRow, market: string): string | null;
 
 export declare function editionModel(dealings: AnyRow[], market: string, date: string): EditionModel;
-export declare function editionMeetsBar(model: EditionModel | null | undefined): boolean;
+export declare function editionMeetsBar(
+  day: Pick<EditionModel, "count" | "rated"> | ArchiveDay | null | undefined,
+  hasSummary?: boolean,
+): boolean;
 export declare function editionLeadSentence(model: EditionModel, status?: DayStatus): string;
 export declare function archiveLeadSentence(days: ArchiveDay[], market: string): string;
 export declare function closedSentence(iso: string, market: string, status: DayStatus): string;
@@ -128,6 +141,29 @@ export declare function fetchArchive(opts: {
   fetchImpl?: typeof fetch;
   cf?: unknown;
 }): Promise<ArchiveFetch>;
+
+export declare function summaryExists(opts: {
+  apiBase: string;
+  market: string;
+  date: string;
+  fetchImpl?: typeof fetch;
+  cf?: unknown;
+}): Promise<boolean | null>;
+
+export declare function sitemapDays(opts: {
+  apiBase: string;
+  market: string;
+  now?: Date;
+  fetchImpl?: typeof fetch;
+  cf?: unknown;
+  summaryCf?: unknown;
+}): Promise<{ days: ArchiveDay[]; complete: boolean; failed: boolean }>;
+
+export declare function summaryBody(summary: DailySummary | null | undefined): string;
+export declare function citedFilings(
+  model: EditionModel | null | undefined,
+  cited: AnyRow[] | null | undefined,
+): { rows: AnyRow[]; ids: Set<string> };
 
 export declare function overviewNarrative(summary: DailySummary | null | undefined): string;
 export declare function clusterBuyers(

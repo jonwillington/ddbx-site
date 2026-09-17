@@ -34,6 +34,7 @@ import {
   comparisonPath,
 } from "../../shared/broker-comparisons.js";
 import { entriesForHost, learnPath } from "../../shared/glossary.js";
+import { MARKET_HOST_BY_ID } from "../../shared/seo.js";
 
 import {
   MARKETS,
@@ -150,9 +151,13 @@ function researchLinks(
     link("Monthly reports", "/reports", { nav: true, divider: true }),
     // Footer only, after the archive it belongs beside. The path carries the
     // market itself (/daily is UK, /us/daily is US on every host, per
-    // shared/days.js), so it is built from `home` rather than resolved by the
-    // host the way the other research paths are.
-    link("Daily editions", home.id === "us" ? "/us/daily" : "/daily"),
+    // shared/days.js), so it is chosen by the family `home` belongs to: every
+    // market ddbx.us owns (US, Congress, DJT) gets the US edition, not only
+    // the one whose id is "us".
+    link(
+      "Daily editions",
+      MARKET_HOST_BY_ID[home.id] === "ddbx.us" ? "/us/daily" : "/daily",
+    ),
   ];
 }
 

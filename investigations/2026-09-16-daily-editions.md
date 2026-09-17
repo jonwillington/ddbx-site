@@ -283,3 +283,142 @@ with no site change.
 5. **The static holiday calendar** (§2.4) is now the third copy of the NYSE
    list and the first static copy of the UK one. A yearly reminder, or a
    build-time fetch into `shared/`, is the fix; neither is done.
+
+---
+
+## Review round, 17 September 2026
+
+Seven findings from an external review. I checked each one against the code
+and the live API before fixing it. This section overrides the parts above
+that it contradicts: the "one filing" bar (§0, §2.3), the US "curated feed"
+caveat (§1.4), open decisions 2, 3 and 5 (§7), and the calendar location
+(§2.4).
+
+### 1. The archive disagreed with the dated edition: fixed (two causes, not one)
+
+Checked every archive day against its own edition on the live API
+(`api.ddbx.uk`). Before the fix, 4 days disagreed. After it, none did (UK
+127 days, US 87 days, counts and rated counts both).
+
+- **Cause A, the 13 vs 14 case.** `fetchArchive` walked
+  `fetchDealingsWindow`, which by default drops rows by **trade date** (it
+  used the archive floor minus 31 days). A late disclosure of an old trade
+  showed up on the dated page (a disclosed-date window) but was missing from
+  the archive. US 16 Sep: BMA, traded 2026-03-19, filed 2026-09-16. UK
+  24 Aug: PCTN.L, traded 2024-03-13. Fix: `windowOn: "disclosed"` and the
+  real floor.
+- **Cause B, found while checking the fix.** `fetchDealingsWindow` sets its
+  next page cursor to the oldest `disclosed_date` on a full page, and asks
+  for rows `before` that date. The API treats `before` as **exclusive**
+  (`d.disclosed_date < ?`), so any row on the boundary day that didn't fit on
+  the earlier page is never read. The code comment saying those rows "come
+  back again" is wrong. Measured with the whole US record: 19 Aug listed 17
+  of its 52 filings, 8 Jul 12 of 29, 19 May 5 of 39. UK 13 Mar listed 8 of
+  10. **The same walk feeds the boards**, so any board window over 1,000
+  rows loses rows the same way. The shared file was off limits for this
+  change, so `fetchArchive` records the walk's cursors and re-reads each
+  boundary day whole with the edition's own day window, then merges by id.
+  The right fix is in `shared/dealings-feed.js`: set the next cursor to
+  `addDays(oldest, 1)` and stop when a page adds no new ids. Once that lands,
+  delete the refill.
+- The edition, the archive and the sitemap now all bucket rows by
+  `disclosedDay()` (the first ten characters of `disclosed_date`).
+
+### 2. US claimed the whole record but read the curated feed: fixed
+
+`EDITION_VIEW = { UK: null, US: "all" }` now drives both fetches. What
+`view=all` actually holds (probed 1 to 16 Sep, 537 rows): every row is
+`P/A/D`, not under a 10b5-1 plan, and not a derivative. The ingest already
+stores only open-market direct purchases, so "every open-market purchase"
+is true. The US "What this is" copy now says "made directly and not under a
+pre-arranged 10b5-1 plan, whatever its size". 15 Sep grows from 13 filings
+to 67, and the US archive from 959 to 3,218 purchases.
+
+Two copy problems came in with the wider population, and both are fixed:
+
+- 316 of the 537 rows have no triage. Most are under the $50k triage floor
+  and will never be screened, so "Not yet screened" was false for them.
+  `verdictLine`/`verdictWord` now say "Not screened. Below the $50k analysis
+  floor." / "Unscreened", and the Terms section explains the floor. A
+  $50k-plus row with no triage still says "Not yet screened". Some of those
+  are probably penny or placement fills that won't be screened either, and
+  the lite rows don't carry `is_open_market_buy`, so the page can't tell them
+  apart.
+- **DE2 resolved as Jon decided.** Filers who are only 10% holders
+  (`isHolderOnly`, which is `!isInsiderFiler`, the boards' own test) stay on
+  the list and in the totals, marked "No board seat or office". The
+  biggest-buy slot is now "Biggest buy by an insider" and skips them. If a
+  day has only holder filings, the slot says so. The lead sentence reports
+  them ("7 were filed by 10% holders with no board seat or office") because
+  its totals include them.
+
+### 3. Outage vs empty archive: fixed
+
+`fetchArchive` now returns `failed` (the walk didn't finish and returned
+nothing). The index shows the fault message for it, and "No editions yet"
+only for a finished walk that found nothing. A partial walk keeps its
+"oldest days may be missing" note, and the lead sentence (which states a
+total) is held back. Rendered against an unreachable API: the fault message
+shows, not the empty state.
+
+### 4. Summary citations: fixed
+
+`citedFilings(model, cited)` matches each cited leg to its edition row (by
+id, else by filing, reporter and trade date), removes duplicates, and keeps
+the order the summary cites them in. A citation that isn't on that day's list
+still links to its own row. The read now has a "Filings this read cites"
+list, each entry linking to the filing page. On the full list, cited rows are
+marked "Cited in the read". The pre-render carries both. `summaryBody()`
+strips the inline accession ids the US read writes into its prose ("(IDs
+f4-…-1-0 and f4-…-1-1)"), since the list now does that job.
+
+### 5. Indexability bar: fixed, and DE3 resolved
+
+`editionMeetsBar(day, hasSummary)`: a day is indexable if it has a summary,
+or 3+ filings with at least 1 rated. If the filings alone miss the bar and
+the summary fetch failed, the pre-render serves the plain shell rather than a
+noindex. `sitemapDays()` asks for the summary only for thin days and today.
+Today goes in only once its summary exists, and a failed check counts as
+"no". Under `wrangler pages dev`: 121 UK days plus the index, 86 US days plus
+the index. 4 Sep (2 filings, has a summary) is in the sitemap and indexed.
+15 Apr (8 filings, none rated) and 10 Mar are noindexed and not in the
+sitemap. The US sitemap took about 10s locally, cold, because `view=all` is
+not edge-cached by the API.
+
+### 6. US nav mismatch: fixed
+
+The footer link now picks `/us/daily` for any market `MARKET_HOST_BY_ID`
+assigns to ddbx.us (US, Congress, DJT), not just id `us`. I reasoned this
+through and didn't render the Congress or DJT footer.
+
+### 7. One calendar: done
+
+`shared/days.js` imports the closures and date helpers from
+`shared/exchange-calendar.js` and re-exports them. Its own copies are gone.
+
+### Tests
+
+`tests/days.test.mjs` (9 tests) covers: a late disclosure stays on its
+announcement day; the archive and the edition agree across a page boundary
+that falls mid-day (1,300 rows; the walk alone returns 1,217); a timestamped
+`disclosed_date` buckets the same in both; US fetches send `view=all`; an
+outage vs an empty archive; the bar; the sitemap leaves out thin days and
+leaves out today until its summary lands; holders are excluded from biggest
+buy; id stripping and citation merging. `npm test` 17/17, `tsc` clean,
+`npm run build` clean (the HeroUI slider CSS warnings were already there).
+
+### Still open
+
+- **Fix the paging bug in `shared/dealings-feed.js`** (above). The boards are
+  exposed to it today.
+- **The US archive will hit the page budget.** `view=all` adds about 1,400
+  rows a month and `MAX_PAGES` is 10 (10,000 rows). The archive is 4 pages
+  now, so it will go `complete: false` around next spring. It is also 4 to 7
+  uncached D1 reads for the index page and the sitemap. The lasting fix is a
+  per-day counts endpoint in ddbx-data (it could also cover the
+  summary-existence check, alongside the list endpoint in §5.1).
+- A single day over 1,000 rows would get cut off in `fetchEdition`. The
+  busiest day seen is 67, so this is not handled.
+- Dark mode not screenshotted. Pages rendered: `/daily`,
+  `/daily/2026-09-15`, `/us/daily`, `/us/daily/2026-09-15` at 1440 and 520,
+  plus `/daily` at 520 during an outage.
