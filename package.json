@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "sync:types": "scripts/sync-ddbx-types.sh",
     "check:types": "scripts/check-ddbx-types.sh",
-    "shots": "scripts/app-shots.sh"
+    "shots": "scripts/app-shots.sh",
+    "test": "node --test tests/"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

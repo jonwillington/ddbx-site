@@ -23,6 +23,19 @@
 // rating) and is edge-cached there for five minutes: ~200KB gzipped a page
 // instead of 1.1-1.4MB, and a cache hit instead of a 2-4s D1 read. Pass
 // `lite: false` for a caller that ever needs the prose.
+//
+// Two opt-ins (2026-09-17), both defaulting to the boards' behaviour:
+//
+// - `view` passes through to `/api/us-dealings`. With no view that route serves
+//   the curated population ($50k and over, no 10b5-1 plans): right for a board
+//   ranking the interesting buys, wrong for anything that says "every filing".
+//   `view: "all"` asks for the record. UK has no server view and ignores it.
+// - `windowOn` picks which date the returned window is bounded by. The API's
+//   `since`/`before` are disclosed_date bounds, but the boards rank by trade
+//   date, so by default the rows are post-filtered on trade_date. A page keyed
+//   on the day a filing was ANNOUNCED (a dated edition, a daily index) must
+//   filter on disclosed_date instead, or a late disclosure of an old trade
+//   drops out of the window while still appearing on the dated page.
 
 const PAGE = 1000;
 /** Hard stop, so a cursor that stops advancing can't loop forever. 10 pages is
@@ -44,6 +57,8 @@ export async function fetchDealingsWindow({
   fetchImpl = fetch,
   cf = null,
   lite = true,
+  view = null,
+  windowOn = "trade",
 }) {
   const feed = FEED[market];
 
@@ -57,6 +72,8 @@ export async function fetchDealingsWindow({
     const qs = new URLSearchParams({ since, limit: String(PAGE) });
 
     if (lite) qs.set("fields", "lite");
+
+    if (view && market === "US") qs.set("view", view);
 
     if (cursor) qs.set("before", cursor);
 
@@ -109,9 +126,14 @@ export async function fetchDealingsWindow({
   }
 
   let dealings = [...seen.values()];
+  // disclosed_date carries a time on some feeds; the window is by calendar day.
+  const dateOf =
+    windowOn === "disclosed"
+      ? (d) => String(d.disclosed_date ?? "").slice(0, 10)
+      : (d) => d.trade_date ?? "";
 
-  if (until) dealings = dealings.filter((d) => (d.trade_date ?? "") <= until);
-  dealings = dealings.filter((d) => (d.trade_date ?? "") >= since);
+  if (until) dealings = dealings.filter((d) => dateOf(d) <= until);
+  dealings = dealings.filter((d) => dateOf(d) >= since);
 
   return { dealings, complete };
 }

@@ -7,7 +7,7 @@ export interface DealingsWindowOptions {
   /** `/api` base — API_BASE in the app, the absolute Worker URL in Functions. */
   apiBase: string;
   market: "UK" | "US";
-  /** Inclusive ISO YYYY-MM-DD lower bound on trade date. */
+  /** Inclusive ISO YYYY-MM-DD lower bound, on the date `windowOn` names. */
   since: string;
   /** Inclusive upper bound, or null for "up to now". */
   until?: string | null;
@@ -18,6 +18,12 @@ export interface DealingsWindowOptions {
    *  `footnotes` dropped. Default true — every current caller is a window
    *  aggregate that never reads the prose. */
   lite?: boolean;
+  /** US only: `/api/us-dealings` view. Omitted = the curated population
+   *  ($50k+, no 10b5-1). `"all"` for anything that claims the whole record. */
+  view?: "interesting" | "signal" | "all" | null;
+  /** Which date bounds the returned window. Default `"trade"` (the boards).
+   *  `"disclosed"` for pages keyed on the day a filing was announced. */
+  windowOn?: "trade" | "disclosed";
 }
 
 export interface DealingsWindowResult {
