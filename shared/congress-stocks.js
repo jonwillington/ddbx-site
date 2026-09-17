@@ -25,11 +25,14 @@
 // the disclosed band itself, never by a midpoint.
 //
 // RULE 2 — DISTINGUISH WHAT WE DON'T MODEL FROM WHAT DIDN'T HAPPEN. The lane
-// is modelled for House committees only, and only where we hold a sector for
-// the issuer. `laneRollup()` keeps three counts apart — in lane, out of lane,
-// and not computed — and `laneSentence()` is the only place allowed to phrase
-// them. A page must never say "none of these members oversee the sector" when
-// the honest sentence is "we did not ask".
+// is modelled for House committees only, and only where we hold an industry
+// code for the issuer. The lane itself is NOT computed here: it arrives per
+// buyer on /api/gov-stocks, from the helper the rating engine scores with, so
+// this page and a member page cannot disagree about one issuer. `stockRollup()`
+// keeps the counts apart — in lane, out of lane, not computed — and
+// `laneSentence()` is the only place allowed to phrase them. A page must never
+// say "none of these members oversee the sector" when the honest sentence is
+// "we did not ask".
 //
 // RULE 3 — JURISDICTION, NEVER KNOWLEDGE. "Sits on a committee overseeing the
 // sector" is a fact of public record. Nothing here may say or imply that a
@@ -59,10 +62,6 @@ export const MIN_STOCK_MEMBERS = 5;
  *  on its own as filings arrive. */
 export const MIN_STOCK_ROWS = 10;
 
-/** Tickers bought by fewer members than this are not in the roster at all.
- *  Their pages still resolve live; they are just not listed on the index. */
-export const ROSTER_MIN_MEMBERS = 2;
-
 /** Cap on the purchases table. The rollup above it always covers every row. */
 export const STOCK_ROWS = 40;
 
@@ -74,14 +73,24 @@ export const ROLL_CALL_ROWS = 18;
  *  (NVDA, the most-bought, has 109 rows) but the page checks and says so. */
 export const STOCK_FETCH_LIMIT = 500;
 
-/** Takes either a rollup (members as a list) or a roster entry shape
- *  ({ members: n, rows: n }); the sitemap and the page apply one bar. */
-export function stockMeetsBar(s) {
-  if (!s) return false;
-  const members = Array.isArray(s.members) ? s.members.length : s.members;
+/** The bar, applied to a /api/gov-stocks entry. The hub, the sitemap and the
+ *  ticker page (both renderers) all read the same entry, so a ticker is never
+ *  advertised and then noindexed on arrival. The bar lives here rather than in
+ *  the Worker, the /api/companies posture: it is an SEO judgement, and moving
+ *  it should not need a Worker deploy. */
+export function stockMeetsBar(entry) {
+  if (!entry) return false;
 
-  return members >= MIN_STOCK_MEMBERS && s.rows >= MIN_STOCK_ROWS;
+  return (
+    entry.members >= MIN_STOCK_MEMBERS && entry.purchases >= MIN_STOCK_ROWS
+  );
 }
+
+/** Advertised: over the bar and an issuer rather than a fund. An ETF is not a
+ *  company any committee oversees, so the lane question means nothing for it.
+ *  Its page still resolves (and still gets a verdict over the bar), but it is
+ *  kept out of the hub, the sitemap and the index. */
+export const stockPublished = (entry) => stockMeetsBar(entry) && !entry.is_fund;
 
 /* ─── Slugs ──────────────────────────────────────────────────────────────── */
 
@@ -94,13 +103,16 @@ export const stockSlug = (ticker) => String(ticker ?? "").toLowerCase();
  *  and character-limited so "/congress/stocks/nancy-pelosi" is a clean
  *  not-found rather than a feed query. */
 export function tickerFromSlug(slug) {
-  const t = String(slug ?? "").trim().toUpperCase();
+  const t = String(slug ?? "")
+    .trim()
+    .toUpperCase();
 
   return /^[A-Z0-9][A-Z0-9.\-]{0,9}$/.test(t) ? t : null;
 }
 
 export const STOCKS_INDEX_PATH = "/congress/stocks";
-export const stockPath = (ticker) => `${STOCKS_INDEX_PATH}/${stockSlug(ticker)}`;
+export const stockPath = (ticker) =>
+  `${STOCKS_INDEX_PATH}/${stockSlug(ticker)}`;
 
 /* ─── Names ──────────────────────────────────────────────────────────────── */
 
@@ -157,34 +169,34 @@ export function median(values) {
 const mostCommon = (counts) =>
   [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
-/** One member's relationship to the issuer's sector.
+/** One member's lane for this issuer, as /api/gov-stocks states it.
  *
- *  "in"          sits on a mapped committee whose sectors include the issuer's
- *  "out"         sits on at least one mapped committee; none covers the sector
- *  "unmodelled"  none of their full committees is one we map (every senator)
- *  "nosector"    we hold no sector for the issuer, so nobody was asked
+ *  "in"           sits on a committee whose jurisdiction covers the issuer
+ *  "out"          sits on at least one modelled committee; none covers it
+ *  "unmodelled"   none of their committees is one we model (every senator)
+ *  "unclassified" we hold no industry code for the issuer, so nobody was asked
+ *  "pending"      the purchase is newer than the roster we read (it is cached
+ *                 for an hour), so the check has not reached this member yet
  *
- *  Four values, not a boolean, because rule 2 is about the difference between
- *  the last three. */
-export function memberLane(committees, sector, lanes) {
-  if (!sector) return { lane: "nosector", via: [] };
-  const mapped = fullCommittees(committees).filter((c) => lanes.has(c));
+ *  Five values, not a boolean, because rule 2 is about the difference between
+ *  the last four. */
+function buyerLane(entry, id) {
+  const b = (entry?.buyers ?? []).find((x) => x.id === id);
 
-  if (mapped.length === 0) return { lane: "unmodelled", via: [] };
-  const via = mapped.filter((c) => (lanes.get(c) ?? []).includes(sector));
+  if (!b) return { lane: "pending", via: [] };
 
-  return { lane: via.length ? "in" : "out", via };
+  return { lane: b.lane, via: b.lane === "in" && b.via ? [b.via] : [] };
 }
 
 /** Everything the page says about one ticker, from its purchase rows.
  *
  *  `rows` is /api/gov-dealings?view=all&ticker=X — every purchase we hold for
- *  the ticker, newest first. `lanes` is committee -> sectors from
- *  /api/gov-committees; pass an empty Map and every member is "unmodelled",
- *  which is the honest reading when the lane map failed to load.
+ *  the ticker, newest first. `entry` is the ticker's /api/gov-stocks entry, or
+ *  null when the roster has no entry for it yet; it supplies the lane, and the
+ *  lane is never recomputed here.
  *
  *  Returns null for no rows: nothing here can be said about an empty set. */
-export function stockRollup(ticker, rows, lanes) {
+export function stockRollup(ticker, rows, entry) {
   const all = (rows ?? []).filter((r) => r && r.ticker === ticker);
 
   if (all.length === 0) return null;
@@ -200,12 +212,14 @@ export function stockRollup(ticker, rows, lanes) {
   let selfCount = 0;
   let optionRows = 0;
   let clustered = 0;
-  const marks = [];
 
   for (const r of all) {
     names.set(r.company, (names.get(r.company) ?? 0) + 1);
     if (r.sector_normalized) {
-      sectors.set(r.sector_normalized, (sectors.get(r.sector_normalized) ?? 0) + 1);
+      sectors.set(
+        r.sector_normalized,
+        (sectors.get(r.sector_normalized) ?? 0) + 1,
+      );
     }
     filings.add(r.filing_id);
     if (r.is_late) lateFilings.add(r.filing_id);
@@ -217,16 +231,6 @@ export function stockRollup(ticker, rows, lanes) {
     const lag = daysBetween(r.trade_date, r.disclosed_date);
 
     if (lag != null && lag >= 0) lags.push(lag);
-    const perf = r.live_performance;
-
-    if (perf && perf.return_pct_disclosed != null) {
-      marks.push({
-        ret: perf.return_pct_disclosed,
-        alpha: perf.alpha_pct_disclosed,
-        as_of: perf.as_of,
-      });
-    }
-
     const id = r.reporter?.id ?? r.reporter?.name ?? "unknown";
     const m = byMember.get(id) ?? {
       id,
@@ -258,13 +262,12 @@ export function stockRollup(ticker, rows, lanes) {
     byMember.set(id, m);
   }
 
-  const sector = mostCommon(sectors);
-  const laneMap = lanes instanceof Map ? lanes : new Map();
+  const sector = entry?.sector_normalized ?? mostCommon(sectors);
   const members = [...byMember.values()]
     .map((m) => ({
       ...m,
       filings: m.filings.size,
-      ...memberLane(m.committees, sector, laneMap),
+      ...buyerLane(entry, m.id),
     }))
     .sort((a, b) => b.rows - a.rows || (a.last < b.last ? 1 : -1));
 
@@ -273,21 +276,24 @@ export function stockRollup(ticker, rows, lanes) {
   const first = all[all.length - 1].disclosed_date;
   const last = all[0].disclosed_date;
 
+  const count = (lane) => members.filter((m) => m.lane === lane).length;
+  const vias = [...new Set(members.flatMap((m) => m.via))];
   const lane = {
-    sectorKnown: !!sector,
-    in: members.filter((m) => m.lane === "in").length,
-    out: members.filter((m) => m.lane === "out").length,
-    unmodelled: members.filter((m) => m.lane === "unmodelled").length,
-    /** Mapped committees covering the sector, with who sits on them. */
-    committees: [...laneMap.entries()]
-      .filter(([, sectors]) => sector && sectors.includes(sector))
-      .map(([committee]) => ({
-        committee,
-        members: members.filter((m) => m.via.includes(committee)),
-      })),
+    /** False only when every buyer came back "unclassified": no industry
+     *  code for the issuer, so the question was never asked. */
+    classified: members.some((m) => m.lane !== "unclassified"),
+    in: count("in"),
+    out: count("out"),
+    unmodelled: count("unmodelled"),
+    pending: count("pending"),
+    /** The committees the in-lane buyers sit on, as the server named them,
+     *  with who. Only committees with a buyer: listing every committee that
+     *  might cover the issuer would mean recomputing the lane here. */
+    committees: vias.map((committee) => ({
+      committee,
+      members: members.filter((m) => m.via.includes(committee)),
+    })),
   };
-
-  const alphas = marks.filter((m) => m.alpha != null);
 
   return {
     ticker,
@@ -310,16 +316,6 @@ export function stockRollup(ticker, rows, lanes) {
     lag: { median: median(lags), n: lags.length },
     lane,
     bands: bandLadder(all),
-    outcome:
-      marks.length === 0
-        ? null
-        : {
-            measured: marks.length,
-            median_return_pct: median(marks.map((m) => m.ret)),
-            compared: alphas.length,
-            ahead: alphas.filter((m) => m.alpha > 0).length,
-            as_of: marks.map((m) => m.as_of).filter(Boolean).sort().pop() ?? null,
-          },
     /** True when the feed handed back its ceiling, so the figures are a floor. */
     truncated: all.length >= STOCK_FETCH_LIMIT,
   };
@@ -385,9 +381,6 @@ export function longDate(iso) {
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-/** Sector as it reads in a sentence: "health care", "technology". */
-const sectorWord = (s) => String(s ?? "").toLowerCase();
-
 /* ─── The sentences ──────────────────────────────────────────────────────── */
 
 /** Opening sentence and meta description, one function so the crawler and
@@ -401,25 +394,35 @@ export function stockLeadSentence(s) {
   return `${plural(s.members.length, "member", "members")} of Congress ${s.members.length === 1 ? "has" : "have"} disclosed ${plural(s.rows, "purchase", "purchases")} of ${s.company} (${s.ticker}) ${span}, worth ${band(s.total_min, s.total_max)} at the disclosed bands.`;
 }
 
-/** The jurisdiction sentence. RULE 2 LIVES HERE: the three "no" cases are
- *  three different sentences, and only one of them is about the members. */
+/** The jurisdiction sentence. RULE 2 LIVES HERE: the "no" cases are
+ *  different sentences, and only one of them is about the members.
+ *
+ *  "Covers the company", not "oversees the sector": the server decides the
+ *  lane on the issuer's SEC industry code first, which is finer than the
+ *  sector, so a sector-level phrase could name a sector the check never
+ *  used. */
 export function laneSentence(s) {
   const L = s.lane;
   const modelled = L.in + L.out;
 
-  if (!L.sectorKnown) {
-    return `We hold no sector for ${s.company}, so no committee lane is computed for any of these purchases.`;
+  if (!L.classified) {
+    return `We hold no industry code for ${s.company}, so no committee lane is computed for any of these purchases.`;
   }
-  if (modelled === 0) {
-    return `None of the ${plural(s.members.length, "buyer", "buyers")} sits on a House committee we map a sector jurisdiction for, so no lane is computed. That is a fact about our coverage, not about them.`;
-  }
-  const tail =
-    L.unmodelled > 0
-      ? ` For the other ${plural(L.unmodelled, "member", "members")} no lane is computed, because we map House committees only.`
+  const pending =
+    L.pending > 0
+      ? ` ${plural(L.pending, "member's purchase is", "members' purchases are")} newer than our last committee check and not yet counted.`
       : "";
 
+  if (modelled === 0) {
+    return `None of the ${plural(s.members.length - L.pending, "buyer", "buyers")} sits on a House committee we map a jurisdiction for, so no lane is computed. That is a fact about our coverage, not about them.${pending}`;
+  }
+  const tail =
+    (L.unmodelled > 0
+      ? ` For the other ${plural(L.unmodelled, "member", "members")} no lane is computed, because we map House committees only.`
+      : "") + pending;
+
   if (L.in === 0) {
-    return `${modelled === s.members.length ? "None of the" : `None of the ${modelled}`} ${modelled === 1 ? "member" : "members"} whose committees we map ${modelled === 1 ? "sits" : "sit"} on one that oversees ${sectorWord(s.sector)}.${tail}`;
+    return `${modelled === s.members.length ? "None of the" : `None of the ${modelled}`} ${modelled === 1 ? "member" : "members"} whose committees we map ${modelled === 1 ? "sits" : "sit"} on one whose jurisdiction covers ${s.company}.${tail}`;
   }
   const who = listSentence(
     s.members.filter((m) => m.lane === "in").map((m) => m.name),
@@ -430,7 +433,7 @@ export function laneSentence(s) {
       .map((c) => shortCommitteeName(c.committee)),
   );
 
-  return `${plural(L.in, "member", "members")} of the ${modelled} whose committees we map ${L.in === 1 ? "sits" : "sit"} on one that oversees ${sectorWord(s.sector)}: ${who}, via ${via}.${tail}`;
+  return `${plural(L.in, "member", "members")} of the ${modelled} whose committees we map ${L.in === 1 ? "sits" : "sit"} on one whose jurisdiction covers ${s.company}: ${who}, via ${via}.${tail}`;
 }
 
 /** "Energy and Commerce" from the full committee name. Local copy of
@@ -443,19 +446,21 @@ export function shortCommitteeName(committee) {
     .replace(/^Permanent\s+Select\s+Committee\s+on\s+/i, "");
 }
 
-/** One member's lane, as a row caption. Same four cases as memberLane. */
-export function memberLaneLine(m, sector) {
+/** One member's lane, as a row caption. Same five cases as buyerLane. */
+export function memberLaneLine(m) {
   switch (m.lane) {
     case "in":
-      return `Sits on ${listSentence(m.via.map(shortCommitteeName))}, which oversees ${sectorWord(sector)}.`;
+      return `Sits on ${listSentence(m.via.map(shortCommitteeName))}, whose jurisdiction covers this company.`;
     case "out":
-      return `Committees mapped; none oversees ${sectorWord(sector)}.`;
+      return "Committees mapped; none covers this company.";
     case "unmodelled":
       return m.chamber === "senate"
         ? "No lane computed: we map House committees only."
         : "No lane computed: none of their committees is one we map.";
+    case "pending":
+      return "No lane yet: this purchase is newer than our last committee check.";
     default:
-      return "No lane computed: we hold no sector for this issuer.";
+      return "No lane computed: we hold no industry code for this company.";
   }
 }
 
@@ -471,39 +476,17 @@ export function concentrationSentence(s) {
   return `${share}% of the purchases (${top.rows} of ${s.rows}) come from one member, ${top.name}, so this is closer to one member's habit than a pattern across Congress.`;
 }
 
-/** How the purchases have done since disclosure, over the ones with a mark.
- *  Null when none has one, and the renderer says so rather than nothing. */
-export function outcomeSentence(s) {
-  const o = s.outcome;
-
-  if (!o) return null;
-  const med = o.median_return_pct;
-  const medBit =
-    med == null
-      ? ""
-      : Math.abs(med) < 0.05
-        ? " the median purchase is flat"
-        : ` the median purchase is ${Math.abs(med).toFixed(1)}% ${med > 0 ? "up" : "down"}`;
-  const subject =
-    o.measured === s.rows
-      ? `all ${o.measured} purchases`
-      : `the ${o.measured} of ${s.rows} purchases with a price mark`;
-  const ahead =
-    o.compared === 0
-      ? ""
-      : o.compared === o.ahead
-        ? ` and ${o.compared === 1 ? "it is" : "all of them are"} ahead of the S&P 500`
-        : o.ahead === 0
-          ? ` and ${o.compared === 1 ? "it is not" : "none of them is"} ahead of the S&P 500`
-          : ` and ${o.ahead} of the ${o.compared} compared ${o.ahead === 1 ? "is" : "are"} ahead of the S&P 500`;
-
-  return `Measured from the close on the day each filing was published, across ${subject},${medBit}${ahead}.`;
-}
-
 /** The verdict: one paragraph, in the company-verdict pattern. Says what
  *  the pattern is, what the lane says, who filed it, how long disclosure
- *  took, how the purchases have done, and what the latest was. Every clause
- *  is computed; a clause with nothing behind it is dropped, never padded. */
+ *  took, and what the latest was. Every clause is computed; a clause with
+ *  nothing behind it is dropped, never padded.
+ *
+ *  No return. A median "since filing" across these purchases would average a
+ *  buy filed last week with one filed two years ago, which is not one
+ *  measurement, and a verdict is the last place for a number that moves with
+ *  the market every day. The purchases table states each row's return with its
+ *  own holding period; a fixed-horizon figure per stock needs the server
+ *  (investigation, "Review round, 17 September 2026"). */
 export function stockVerdict(s) {
   const parts = [];
   const conc = concentrationSentence(s);
@@ -546,13 +529,6 @@ export function stockVerdict(s) {
     );
   }
 
-  const outcome = outcomeSentence(s);
-
-  parts.push(
-    outcome ??
-      "No purchase here carries a price mark yet, so we say nothing about how they have done.",
-  );
-
   if (s.latest) {
     parts.push(
       `The most recent was filed on ${longDate(s.latest.disclosed_date)} by ${memberNoun(s.latest.reporter?.chamber)} ${s.latest.reporter?.name ?? "an unnamed filer"}.`,
@@ -593,44 +569,88 @@ export function clusterNote(s) {
 export const PURCHASES_ONLY_NOTE =
   "These pages show purchases only. Congressional filings disclose sales too, but we do not yet hold them, so nothing here says whether a member later sold.";
 
-/* ─── The roster (index and sitemap) ─────────────────────────────────────── */
+/* ─── The roster (index, sitemap, publishing bar) ─────────────────────────── */
 
-/** Roster entries that clear the bar, in roster order (members, then rows). */
-export const publishedRoster = (roster) =>
-  (roster ?? []).filter((e) => stockMeetsBar({ members: e.m, rows: e.r }));
+/** Where the roster comes from. One ticker per entry, every ticker a member
+ *  has a purchase of, with each buyer's lane. See GovStocksResponse. */
+export const STOCKS_API_PATH = "/gov-stocks";
 
-/** Roster entry for a ticker, or null. */
-export const rosterEntry = (roster, ticker) =>
-  (roster ?? []).find((e) => e.t === ticker) ?? null;
+/** Read a /api/gov-stocks body into one of three states. "failed" and
+ *  "empty" are different pages (static-page rule 2): a failed fetch must
+ *  never render as a hub with nothing in it, and an empty one must never be
+ *  advertised.
+ *
+ *    { state: "failed" }                        no body, or not the shape
+ *    { state: "empty", roster }                 a real answer with no page
+ *    { state: "ok", roster, published }         at least one page to list */
+export function readStocks(body) {
+  if (
+    !body ||
+    !Array.isArray(body.stocks) ||
+    !body.corpus ||
+    typeof body.corpus.purchases !== "number"
+  ) {
+    return { state: "failed" };
+  }
+  const roster = {
+    as_of: body.as_of ?? null,
+    corpus: body.corpus,
+    stocks: body.stocks.filter(
+      (e) => e && typeof e.ticker === "string" && typeof e.members === "number",
+    ),
+  };
+  const published = publishedStocks(roster.stocks);
+
+  return published.length === 0
+    ? { state: "empty", roster }
+    : { state: "ok", roster, published };
+}
+
+/** Entries that clear the bar and are issuers, in roster order (members,
+ *  then purchases). */
+export const publishedStocks = (stocks) =>
+  (stocks ?? []).filter(stockPublished);
+
+/** The roster entry for a ticker, or null. */
+export const stockEntry = (stocks, ticker) =>
+  (stocks ?? []).find((e) => e.ticker === ticker) ?? null;
+
+/** Funds in the roster: counted and named on the hub as left out, never
+ *  listed. */
+export const fundCount = (stocks) =>
+  (stocks ?? []).filter((e) => e.is_fund).length;
 
 /** Related tickers: the published names bought by the most of the same
  *  members, then the same sector. Never the ticker itself; up to `n`. */
-export function relatedTickers(roster, ticker, n = 4) {
-  const me = rosterEntry(roster, ticker);
-  const published = publishedRoster(roster).filter((e) => e.t !== ticker);
+export function relatedTickers(stocks, ticker, n = 4) {
+  const me = stockEntry(stocks, ticker);
+  const published = publishedStocks(stocks).filter((e) => e.ticker !== ticker);
 
   if (!me) return published.slice(0, n);
-  const mine = new Set(me.ids ?? []);
+  const mine = new Set(me.buyers.map((b) => b.id));
 
   return published
     .map((e) => ({
       e,
-      shared: (e.ids ?? []).filter((id) => mine.has(id)).length,
-      sector: me.s && e.s === me.s ? 1 : 0,
+      shared: e.buyers.filter((b) => mine.has(b.id)).length,
+      sector:
+        me.sector_normalized && e.sector_normalized === me.sector_normalized
+          ? 1
+          : 0,
     }))
     .sort(
       (a, b) =>
-        b.shared - a.shared || b.sector - a.sector || b.e.m - a.e.m,
+        b.shared - a.shared || b.sector - a.sector || b.e.members - a.e.members,
     )
     .slice(0, n)
-    .map((x) => x.e);
+    .map((x) => ({ ...x.e, shared: x.shared }));
 }
 
 /** Index lead sentence and meta description. */
-export function stocksIndexLead(roster, corpus) {
-  const published = publishedRoster(roster).length;
-
+export function stocksIndexLead(roster) {
+  const published = publishedStocks(roster.stocks).length;
   const n = (v) => Number(v).toLocaleString("en-US");
+  const c = roster.corpus;
 
-  return `${n(corpus.tickers)} stocks appear in the ${n(corpus.rows)} purchases disclosed by ${corpus.members} members of Congress on record. ${published} of them have been bought by at least ${MIN_STOCK_MEMBERS} members and have a page here: who bought, when, in what bands, and which buyers sit on a committee that oversees the sector.`;
+  return `${n(c.tickers)} stocks and funds appear in the ${n(c.purchases)} purchases disclosed by ${c.members} members of Congress on record. ${published} companies have been bought by at least ${MIN_STOCK_MEMBERS} members and have a page here: who bought, when, in what bands, and which buyers sit on a committee whose jurisdiction covers the company.`;
 }

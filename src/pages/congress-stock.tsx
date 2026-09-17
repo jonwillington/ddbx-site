@@ -20,9 +20,16 @@
  *  allowed to render as an empty page. Below the publishing bar the page
  *  still renders (with the members and the rows, which are facts) but withholds
  *  the verdict and the charts, and the pre-render marks it noindex.
+ *
+ *  Two fetches, both required. The rows say what happened; the ticker's
+ *  /api/gov-stocks entry decides the bar (the one the hub and the sitemap
+ *  apply) and carries each buyer's committee lane as the rating engine
+ *  computed it. Neither is recomputed here, so an outage of either is the
+ *  failed state rather than a page that guesses.
  */
 import type { CompanyIndexEntry } from "@/lib/api";
-import type { GovCommitteesResponse, GovDealing } from "@/types/ddbx";
+import type { StocksRead } from "../../shared/congress-stocks";
+import type { GovDealing } from "@/types/ddbx";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -36,16 +43,19 @@ import {
 } from "../../shared/congress.js";
 import {
   belowBarSentence,
+  cleanIssuer,
   clusterNote,
   laneSentence,
   MIN_STOCK_MEMBERS,
   MIN_STOCK_ROWS,
   optionsNote,
   PURCHASES_ONLY_NOTE,
+  readStocks,
   relatedTickers,
   STOCK_FETCH_LIMIT,
   STOCK_ROWS,
   STOCKS_INDEX_PATH,
+  stockEntry,
   stockLeadSentence,
   stockMeetsBar,
   stockPath,
@@ -54,7 +64,6 @@ import {
   tickerFromSlug,
   truncatedNote,
 } from "../../shared/congress-stocks.js";
-import { ROSTER } from "../../shared/congress-stocks-roster.js";
 import { sectorByLabel, sectorPath } from "../../shared/sectors.js";
 
 import { BackLink } from "@/components/back-link";
@@ -85,8 +94,8 @@ export default function CongressStockPage() {
   const { ticker: slug } = useParams<{ ticker: string }>();
   const ticker = useMemo(() => tickerFromSlug(slug ?? ""), [slug]);
 
-  const [rows, setRows] = useState<GovDealing[]>([]);
-  const [lanes, setLanes] = useState<GovCommitteesResponse | null>(null);
+  const [rows, setRows] = useState<GovDealing[] | null>(null);
+  const [roster, setRoster] = useState<StocksRead | null>(null);
   const [usCompanies, setUsCompanies] = useState<CompanyIndexEntry[] | null>(
     null,
   );
@@ -103,21 +112,16 @@ export default function CongressStockPage() {
     let live = true;
 
     setStatus("loading");
+    setRows(null);
+    setRoster(null);
     api
       .govDealings({ view: "all", ticker, limit: STOCK_FETCH_LIMIT })
-      .then((r) => {
-        if (!live) return;
-        setRows(r.dealings);
-        setStatus(r.dealings.length === 0 ? "missing" : "ok");
-      })
+      .then((r) => live && setRows(r.dealings))
       .catch(() => live && setStatus("failed"));
-
-    // Furniture, not subject: a missing lane map degrades every member to
-    // "no lane computed", which is the honest reading of not knowing.
     api
-      .govCommittees()
-      .then((c) => live && setLanes(c))
-      .catch(() => {});
+      .govStocks()
+      .then((body) => live && setRoster(readStocks(body)))
+      .catch(() => live && setRoster({ state: "failed" }));
     // The Form 4 company index decides whether a company page exists to
     // link to. Most Congress tickers are not in it (NVDA is not), and a link
     // to a page that noindexes itself is a dead link.
@@ -131,20 +135,29 @@ export default function CongressStockPage() {
     };
   }, [ticker]);
 
-  const laneMap = useMemo(
-    () =>
-      new Map((lanes?.committees ?? []).map((c) => [c.committee, c.sectors])),
-    [lanes],
-  );
+  // Settle the status once both have answered. An empty set of rows is an
+  // answer (missing); a roster that failed is not, and neither is guessed.
+  useEffect(() => {
+    if (status !== "loading" || rows === null || roster === null) return;
+    if (roster.state === "failed") setStatus("failed");
+    else setStatus(rows.length === 0 ? "missing" : "ok");
+  }, [status, rows, roster]);
+
+  const stocks =
+    roster && roster.state !== "failed" ? roster.roster.stocks : [];
+  const entry = ticker ? stockEntry(stocks, ticker) : null;
 
   const s = useMemo(
-    () => (ticker && rows.length ? stockRollup(ticker, rows, laneMap) : null),
-    [ticker, rows, laneMap],
+    () =>
+      ticker && rows?.length && status === "ok"
+        ? stockRollup(ticker, rows, entry)
+        : null,
+    [ticker, rows, entry, status],
   );
 
   const related = useMemo(
-    () => (ticker ? relatedTickers(ROSTER, ticker, 4) : []),
-    [ticker],
+    () => (ticker ? relatedTickers(stocks, ticker, 4) : []),
+    [ticker, stocks],
   );
 
   const hasCompanyPage =
@@ -197,10 +210,11 @@ export default function CongressStockPage() {
     );
   }
 
-  const publishable = stockMeetsBar(s);
+  const publishable = stockMeetsBar(entry);
   const notes = s ? [optionsNote(s), clusterNote(s), truncatedNote(s)] : [];
   const sectorEntry = s?.sector ? sectorByLabel(s.sector) : null;
-  const shown = rows.slice(0, STOCK_ROWS);
+  const all = rows ?? [];
+  const shown = all.slice(0, STOCK_ROWS);
 
   return (
     <DefaultLayout drawerRight>
@@ -296,8 +310,7 @@ export default function CongressStockPage() {
                   <RollCall
                     first={s.first_disclosed}
                     members={s.members}
-                    rows={rows}
-                    sector={s.sector}
+                    rows={all}
                   />
                 </SeoSection>
 
@@ -307,7 +320,7 @@ export default function CongressStockPage() {
                   title="The members"
                   total={5}
                 >
-                  <StockMemberList members={s.members} sector={s.sector} />
+                  <StockMemberList members={s.members} />
                 </SeoSection>
 
                 <SeoSection
@@ -324,7 +337,7 @@ export default function CongressStockPage() {
                         .
                       </>
                     ) : (
-                      "Whether any buyer sits on a committee that oversees the sector."
+                      "Whether any buyer sits on a committee whose jurisdiction covers the company."
                     )
                   }
                   index={3}
@@ -336,6 +349,7 @@ export default function CongressStockPage() {
                     committees={s.lane.committees}
                     laneLine={laneSentence(s)}
                     out={s.lane.out}
+                    pending={s.lane.pending}
                     unmodelled={s.lane.unmodelled}
                   />
                 </SeoSection>
@@ -351,8 +365,8 @@ export default function CongressStockPage() {
 
                 <SeoSection
                   aside={
-                    rows.length > STOCK_ROWS
-                      ? `Most recent ${STOCK_ROWS} of ${rows.length}. Every figure above covers all ${rows.length}.`
+                    all.length > STOCK_ROWS
+                      ? `Most recent ${STOCK_ROWS} of ${all.length}. Every figure above covers all ${all.length}.`
                       : "Every purchase on record, newest first."
                   }
                   index={5}
@@ -361,12 +375,14 @@ export default function CongressStockPage() {
                 >
                   <PurchasesTable rows={shown} />
                   <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
-                    “Since filing” is the return from the closing price on the
-                    day the filing was published, the first price a reader could
-                    have paid, marked to the latest cached close. “Lag” is the
-                    days from the trade to its filing; the STOCK Act allows 45.
-                    Past performance is not a reliable indicator of future
-                    results.
+                    “Since filing” runs from the close on the day each filing
+                    was published, the first price a reader could have paid, to
+                    the latest close we hold, and the line beneath each figure
+                    gives that span. Every row is measured over its own holding
+                    period, so the figures do not compare with each other and do
+                    not add up to a track record. “Lag” is the days from the
+                    trade to its filing; the STOCK Act allows 45. Past
+                    performance is not a reliable indicator of future results.
                   </p>
                 </SeoSection>
               </>
@@ -376,7 +392,7 @@ export default function CongressStockPage() {
                   aside={`${s.members.length} ${s.members.length === 1 ? "member" : "members"} on record.`}
                   title="The members"
                 >
-                  <StockMemberList members={s.members} sector={s.sector} />
+                  <StockMemberList members={s.members} />
                 </SeoSection>
                 <SeoSection
                   aside="Every purchase on record, newest first."
@@ -409,11 +425,14 @@ export default function CongressStockPage() {
                   verdict on three filings is a guess wearing a paragraph.
                 </p>
                 <p>
-                  “Lane” is committee jurisdiction: we map the sectors eleven
-                  House committees oversee and check each buyer against them.
-                  Sitting on such a committee is a matter of public record and
-                  is stated as one. It is not evidence that a purchase was
-                  informed by it, and nothing here says otherwise.{" "}
+                  “Lane” is committee jurisdiction: we map the industries eleven
+                  House committees oversee, by the company’s SEC industry code
+                  where we hold one, and check each buyer against them. It is
+                  the same check our ratings use, so this page and a member’s
+                  page give the same answer. Sitting on such a committee is a
+                  matter of public record and is stated as one. It is not
+                  evidence that a purchase was informed by it, and nothing here
+                  says otherwise.{" "}
                   <Link
                     className="underline underline-offset-4"
                     to="/learn/stock-act"
@@ -430,13 +449,10 @@ export default function CongressStockPage() {
                 cols={2}
                 items={[
                   ...related.map((e) => ({
-                    to: stockPath(e.t),
-                    title: e.c,
-                    description: `${e.m} members, ${e.r} purchases. Bought by ${sharedMembers(
-                      e,
-                      s.members.map((m) => m.id),
-                    )} of the same members.`,
-                    media: <CompanyLogo size={28} ticker={e.t} />,
+                    to: stockPath(e.ticker),
+                    title: cleanIssuer(e.company),
+                    description: `${e.members} members, ${e.purchases} purchases. Bought by ${e.shared} of the same members.`,
+                    media: <CompanyLogo size={28} ticker={e.ticker} />,
                   })),
                   ...(hasCompanyPage && ticker
                     ? [
@@ -476,12 +492,4 @@ export default function CongressStockPage() {
       </SeoPageShell>
     </DefaultLayout>
   );
-}
-
-/** How many of the current page's buyers also bought the related name. */
-function sharedMembers(e: { ids?: string[] }, mine: string[]): string {
-  const set = new Set(e.ids ?? []);
-  const n = mine.filter((id) => set.has(id)).length;
-
-  return String(n);
 }

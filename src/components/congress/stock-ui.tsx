@@ -128,12 +128,10 @@ export function RollCall({
   members,
   rows,
   first,
-  sector,
 }: {
   members: StockMember[];
   rows: GovDealing[];
   first: string;
-  sector: string | null;
 }) {
   const [ref, width] = useMeasuredWidth<HTMLDivElement>();
 
@@ -314,8 +312,8 @@ export function RollCall({
         Marks sit on the day each purchase was disclosed, sized by the floor of
         its band; the largest here is {band(maxFloor, maxFloor)} and up. Hollow
         marks are options positions.
-        {sector && drawn.inLane > 0
-          ? ` “Lane” marks a member who sits on a committee that oversees ${sector.toLowerCase()}.`
+        {drawn.inLane > 0
+          ? " “Lane” marks a member who sits on a committee whose jurisdiction covers this company."
           : null}
       </p>
     </div>
@@ -352,13 +350,7 @@ export function BandLadder({ tiers }: { tiers: BandTier[] }) {
 /** Ranked by purchases. The subject is the person, so the row leads with the
  *  portrait and the name at board scale; the lane is the second line, in
  *  words, from the same function the crawler's copy uses. */
-export function StockMemberList({
-  members,
-  sector,
-}: {
-  members: StockMember[];
-  sector: string | null;
-}) {
+export function StockMemberList({ members }: { members: StockMember[] }) {
   return (
     <>
       <BoardRowHeader
@@ -384,7 +376,7 @@ export function StockMemberList({
             logo={<MemberPortrait member={m} size={56} />}
             name={m.name}
             position={i + 1}
-            secondary={memberLaneLine(m, sector as never)}
+            secondary={memberLaneLine(m)}
             to={memberPathFor(m)}
           />
         ))}
@@ -409,7 +401,12 @@ function lagDays(r: GovDealing): number | null {
 }
 
 /** Newest first. Every money cell is a band. The lag column is the page's
- *  finding made visible per row; a late filing says so in words. */
+ *  finding made visible per row; a late filing says so in words.
+ *
+ *  "Since filing" is a live mark, so each purchase is measured over its own
+ *  span, from its filing to the latest close. The span is printed under the
+ *  figure, because a return without its holding period invites comparison
+ *  with the row above it, which was held for a different length of time. */
 export function PurchasesTable({ rows }: { rows: GovDealing[] }) {
   if (rows.length === 0) {
     return <p className={`mt-4 ${R.body}`}>No purchases to show.</p>;
@@ -431,6 +428,10 @@ export function PurchasesTable({ rows }: { rows: GovDealing[] }) {
         <tbody>
           {rows.map((d) => {
             const perf = d.live_performance?.return_pct_disclosed ?? null;
+            const asOf = d.live_performance?.as_of ?? null;
+            const held = asOf
+              ? Math.round((utc(asOf) - utc(d.disclosed_date)) / DAY)
+              : null;
             const lag = lagDays(d);
 
             return (
@@ -475,15 +476,23 @@ export function PurchasesTable({ rows }: { rows: GovDealing[] }) {
                   </span>
                 </Td>
                 <Td className="text-right tabular-nums">
-                  {perf == null ? (
+                  {perf == null || held == null || !asOf ? (
                     <span className="text-foreground/30">no mark</span>
                   ) : (
-                    <span
-                      className={perf >= 0 ? "text-positive" : "text-negative"}
-                    >
-                      {perf >= 0 ? "+" : ""}
-                      {perf.toFixed(1)}%
-                    </span>
+                    <>
+                      <span
+                        className={
+                          perf >= 0 ? "text-positive" : "text-negative"
+                        }
+                      >
+                        {perf >= 0 ? "+" : ""}
+                        {perf.toFixed(1)}%
+                      </span>
+                      <span className={`block ${R.label}`}>
+                        {held} {held === 1 ? "day" : "days"}, to{" "}
+                        {dateLabel(asOf, LOCALE)}
+                      </span>
+                    </>
                   )}
                 </Td>
               </tr>
@@ -529,20 +538,23 @@ function Td({
 /* ─── The lane panel ─────────────────────────────────────────────────────── */
 
 /** The jurisdiction story, as a ruled list under the lane sentence: each
- *  mapped committee whose sectors include the issuer's, with the buyers who
- *  sit on it. Renders the counts of "out" and "not computed" beneath, so a
- *  reader can see that "no lane" has more than one meaning. */
+ *  committee an in-lane buyer sits on, as /api/gov-stocks named it, with
+ *  those buyers. Renders the counts of "out", "not computed" and "not yet
+ *  checked" beneath, so a reader can see that "no lane" has more than one
+ *  meaning. Nothing here computes a lane. */
 export function StockLanePanel({
   laneLine,
   committees,
   out,
   unmodelled,
+  pending,
   committeeHref,
 }: {
   laneLine: string;
   committees: { committee: string; members: StockMember[] }[];
   out: number;
   unmodelled: number;
+  pending: number;
   committeeHref: (committee: string) => string;
 }) {
   return (
@@ -562,21 +574,22 @@ export function StockLanePanel({
                 {c.committee.replace(/^House Committee on /, "")}
               </Link>
               <span className={R.label}>
-                {c.members.length === 0
-                  ? "none of the buyers sit on it"
-                  : c.members.map((m) => m.name).join(", ")}
+                {c.members.map((m) => m.name).join(", ")}
               </span>
             </li>
           ))}
         </ul>
       ) : null}
-      {out > 0 || unmodelled > 0 ? (
+      {out > 0 || unmodelled > 0 || pending > 0 ? (
         <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
           {out > 0
-            ? `${out} ${out === 1 ? "buyer sits" : "buyers sit"} on mapped committees that do not oversee this sector. `
+            ? `${out} ${out === 1 ? "buyer sits" : "buyers sit"} on mapped committees, none of which covers this company. `
             : null}
           {unmodelled > 0
-            ? `For ${unmodelled} ${unmodelled === 1 ? "buyer" : "buyers"} no lane is computed at all: we map House committees only, and only eleven of those.`
+            ? `For ${unmodelled} ${unmodelled === 1 ? "buyer" : "buyers"} no lane is computed at all: we map House committees only, and only eleven of those. `
+            : null}
+          {pending > 0
+            ? `${pending} ${pending === 1 ? "buyer’s purchase is" : "buyers’ purchases are"} newer than our last committee check.`
             : null}
         </p>
       ) : null}

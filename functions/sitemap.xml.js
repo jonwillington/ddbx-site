@@ -40,11 +40,11 @@ import {
   directorPath,
 } from "../shared/directors.js";
 import {
-  publishedRoster,
+  readStocks,
+  STOCKS_API_PATH,
   STOCKS_INDEX_PATH,
   stockPath,
 } from "../shared/congress-stocks.js";
-import { ROSTER } from "../shared/congress-stocks-roster.js";
 import { filingPath } from "../shared/filings.js";
 import { weekPath } from "../shared/weeks.js";
 import { entriesForHost, learnPath } from "../shared/glossary.js";
@@ -576,25 +576,42 @@ async function congressEntries(host) {
   }
 }
 
-/** Congress by stock: the tickers that clear their bar.
+/** Congress by stock: the issuers that clear their bar.
  *
- *  ddbx.us only, like congressEntries. No fetch: the list is the generated
- *  roster the index page renders, so the sitemap and the hub agree by
- *  construction. The bar is the one shared/congress-stocks.js defines and the
- *  pre-render applies to the live rows, and a roster entry above it is above
- *  it live too (the roster is a sum of the same rows), so a ticker is never
+ *  ddbx.us only, like congressEntries. The list is /api/gov-stocks, the same
+ *  body the hub renders and each ticker page's pre-render applies the bar to
+ *  (`stockPublished`: over the bar, and not a fund), so a ticker is never
  *  advertised here and noindexed on arrival. `lastmod` is the ticker's most
- *  recent filing, which is exactly when its page last changed. */
-function congressStockEntries(host) {
+ *  recent filing, which is exactly when its page last changed.
+ *
+ *  Failure posture matches congressEntries: an outage costs URLs, not the
+ *  document, and the hub rides with its entries. */
+async function congressStockEntries(host) {
   if (host !== "ddbx.us") return [];
-  const published = publishedRoster(ROSTER);
+  try {
+    const res = await fetch(`${API_BASE}${STOCKS_API_PATH}`, {
+      headers: { accept: "application/json" },
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },
+      },
+    });
 
-  if (published.length === 0) return [];
+    if (!res.ok) return [];
+    const read = readStocks(await res.json());
 
-  return [
-    { path: STOCKS_INDEX_PATH, lastmod: null },
-    ...published.map((e) => ({ path: stockPath(e.t), lastmod: e.last || null })),
-  ];
+    if (read.state !== "ok") return [];
+
+    return [
+      { path: STOCKS_INDEX_PATH, lastmod: null },
+      ...read.published.map((e) => ({
+        path: stockPath(e.ticker),
+        lastmod: e.last_disclosed || null,
+      })),
+    ];
+  } catch {
+    return [];
+  }
 }
 
 /** The insider directory: the people who clear the publishing bar.
@@ -815,7 +832,7 @@ export async function onRequestGet(context) {
   paths.push(...(await capBandEntries(host)));
   paths.push(...(await sectorEntries(host)));
   paths.push(...(await congressEntries(host)));
-  paths.push(...congressStockEntries(host));
+  paths.push(...(await congressStockEntries(host)));
   paths.push(...(await directorEntries(host)));
   paths.push(...(await filingEntries(host)));
   paths.push(...(await weeklyEntries(host)));

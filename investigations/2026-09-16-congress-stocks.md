@@ -325,3 +325,142 @@ Edited (appended at the end of lists):
    from the member directory's Read next, every member page's issuer list,
    and the sitemap. A "By stock" entry in the Congress dashboard would need
    `src/lib/markets/congress.tsx`, which I did not touch.
+
+---
+
+## Review round, 17 September 2026
+
+An external review raised four findings. All four held up when checked. This
+section records what changed. Where it contradicts §2 to §9 above, this
+section wins.
+
+### 1. The roster snapshot is gone (§8.1 built, §9.1 decided)
+
+The hub, its pre-render, the sitemap and the ticker page's bar now read
+**`GET /api/gov-stocks`**, a new additive route in ddbx-data (branch
+`feat/congress-stock-roster`, not merged or deployed).
+`shared/congress-stocks-roster.js`, its `.d.ts` and
+`scripts/congress-stocks-roster.mjs` are deleted.
+
+- **Contract.** No params. It returns `{ as_of, corpus: { members, purchases,
+  tickers }, stocks: GovStockSummary[] }`, with one entry per ticker that has
+  a purchase: `ticker, company, sector_normalized, members, purchases,
+  filings, in_lane_members, first_disclosed, last_disclosed, is_fund, buyers:
+  [{ id, purchases, lane, via }]`. Stocks are sorted by members, then
+  purchases, then ticker. `lane` is `in | out | unmodelled | unclassified`.
+  It is edge-cached for an hour under the synthetic key
+  `gov-stocks.ddbx.internal/v1`, with fresh `Cache-Control: max-age=3600` on
+  a hit. The body is 447 KB raw and 36 KB gzipped.
+- **The bar stays in the site.** The route returns counts, and
+  `stockMeetsBar` / `stockPublished` in `shared/congress-stocks.js` apply
+  5 members and 10 purchases. `/api/companies` does the same: the bar is an
+  SEO judgement and should move without a Worker deploy.
+- **One entry decides everything.** The ticker page's indexability now
+  comes from the ticker's roster entry (`stockPublished(entry)`), not from
+  the live rows. So the hub, the sitemap and the page cannot disagree. Counts
+  only grow, so a stale hour can hold a newly qualifying ticker back as a
+  stub. It can never advertise a ticker that then noindexes.
+- **Failed is not empty.** `readStocks(body)` returns `failed`, `empty` or
+  `ok`. The React hub renders "Couldn't load the stock list" on `failed` and
+  "Not enough data yet" on `empty`. The pre-render serves the plain shell on
+  `failed` (any status, because a 404 from a list route is an outage, not an
+  answer) and noindexes on `empty`. The sitemap drops the family on either.
+  The ticker page needs both fetches: if the roster fails, the page shows its
+  failed state rather than guessing a bar or a lane.
+- **Types.** The consumed shape is declared in `shared/congress-stocks.d.ts`,
+  because `check:types` diffs against the sibling checkout. Once ddbx-data
+  merges, run `npm run sync:types` and swap those declarations for imports.
+
+Measured through `wrangler dev --remote` against production D1 (read-only):
+76 members, 5,118 purchases and 1,082 tickers as of 14 September. 98
+entries clear the bar, the same set the snapshot had, and none is a fund.
+MSFT has 26 members, 100 purchases and 5 in lane. NVDA has 22, 109 and 0.
+UNH has 19, 42 and 5. The endpoint's purchase count equals
+`/api/gov-dealings?view=all&ticker=` for NVDA, UNH, V and IBIT.
+
+### 2. One lane calculation (§4, §9.3)
+
+The site no longer computes a lane. `memberLane()` and its
+`/api/gov-committees` read are gone. Each buyer's lane comes from
+`buyers[].lane` / `via`, which ddbx-data computes with
+`committeeJurisdictionDetail` (SIC first, ICB fallback, in lane at a score of
+0.5 or more), the same rule the member detail's `in_lane` uses. Consequences:
+
+- The fourth state is renamed from `nosector` to `unclassified` (neither a
+  SIC nor a sector is held). A fifth, site-only state, `pending`, covers a
+  buyer whose purchase is newer than the cached roster. The page says the
+  check has not reached that buyer yet and does not guess.
+- The copy changed from "oversees technology" to "whose jurisdiction covers
+  {company}". A SIC-level match is finer than the sector, so the sector
+  phrase could name a sector the check never used.
+- The lane panel lists only the committees the in-lane buyers are matched
+  through. It no longer lists every committee whose sectors include the
+  issuer, because that list was the sector-level recomputation.
+- One reading worth knowing: Visa is `Industrials` by its SIC mapping, so the
+  ICB fallback puts five buyers in lane via Transportation and Armed
+  Services. That is the scorer's answer and it now shows on the page. If it
+  looks wrong, the fix is in ddbx-data's SIC map, not here.
+
+### 3. Returns out of the headline
+
+- The verdict has no outcome clause. `outcomeSentence` and `rollup.outcome`
+  are deleted, and a test asserts the verdict carries no return.
+- The "Since filing" column in the purchases table stays, because it sits
+  beside each row's filed date. Each figure now prints its span underneath
+  ("136 days, to Sep 14"). The caption says rows are measured over different
+  holding periods and are not a track record. The pre-render's footer says
+  the same.
+- **Not done: fixed horizons per stock.** `GovDealing` carries no
+  `performance` rows, and fixed-horizon returns exist for Congress only per
+  member (`gov_member_performance`, 30 and 90 days, matured only, computed by
+  cron). A per-ticker version would be a cron-materialised table, not a
+  request-path query. Until it exists the page states no aggregate return.
+
+### 4. ETFs (CS5)
+
+`is_fund` is decided server-side by `worker/pipeline/us-gov/funds.ts`. The
+test is whether the majority of a ticker's filed names read as a fund. The
+filer prefixes "Portfolio Rebalance" and "ETF " are stripped, and any name
+saying "common stock" counts as a stock. It flags 34 tickers (IBIT, IVV,
+SPYM, the iShares bond ETFs, the SPDR sector funds) and none of the single
+stocks that the looser `congress-board.ts` regex catches ("Invesco Ltd
+Common Stock", "ETF Ford Motor Company"). Funds are left out of the hub list,
+the "Filed most recently" strip and the sitemap, and their pages noindex.
+They still render, with a verdict if they clear the bar. The hub names how
+many were left out. `congress-board.ts` still uses its own looser regex;
+aligning it is a follow-up for whoever owns the weekly board.
+
+CS2 (the floor) and CS4 (the title) are unchanged. Canonicals were checked:
+`/congress/stocks*` resolves to the `usg` market, so it canonicalises to
+ddbx.us like the member pages, and the Functions hardcode the same
+`OWNING_HOST`.
+
+### Verification
+
+- Site: `npm test` passes 19 of 19, including 11 new tests in
+  `tests/congress-stocks.test.mjs` covering floor admission, ETF exclusion,
+  failed vs empty, the server lane with the pending state, and a verdict
+  with no return. `npx tsc --noEmit` and `npm run build` are clean, and
+  ESLint shows 0 errors on the touched TSX.
+- Data: `npm run typecheck` is clean. ddbx-data has no test suite.
+- Render pass (headless Chrome, Vite on 5204):
+  - Hub and UNH ticker page at 1440 and 520, with Vite pointed at
+    `wrangler dev --remote` on 8794 so the endpoint existed. Server lanes
+    show via Financial Services, the recent strip has no ETFs, and each
+    purchase row shows its holding period.
+  - The hub's failure state at 1440 and 520, against the production API,
+    where `/api/gov-stocks` is a 404 today.
+- Not verified: the Functions under `wrangler pages dev`, because they
+  hardcode `api.ddbx.uk`, where the route does not exist yet. Dark mode and
+  the live ddbx.us host were also not checked.
+
+### Post-merge order
+
+1. Merge and deploy ddbx-data (`npm run deploy`). Check that
+   `https://api.ddbx.uk/api/gov-stocks` returns 200.
+2. In ddbx-site, run `npm run sync:types` and `npm run check:types`, then
+   replace the local wire declarations in `shared/congress-stocks.d.ts` with
+   imports.
+3. Ship the site. **Not before step 1:** until the route exists, the hub
+   shows its failure state and every ticker page shows "Couldn't load this
+   stock".

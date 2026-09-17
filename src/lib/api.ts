@@ -418,6 +418,12 @@ export const api = {
    *  sectors each oversees. Read rather than hand-copied so the site states the
    *  same lane the scorer applies. */
   govCommittees: () => get<GovCommitteesResponse>("/gov-committees"),
+  /** Every ticker Congress has a purchase of, with each buyer's committee
+   *  lane. Typed `unknown`: read it through `readStocks` in
+   *  shared/congress-stocks.js, which tells a failed body from an empty one.
+   *  Its wire type is declared there until ddbx-data's GovStocksResponse is
+   *  synced into src/types/ddbx.ts. */
+  govStocks: () => get<unknown>("/gov-stocks"),
   usDealings: (
     opts: {
       limit?: number;
