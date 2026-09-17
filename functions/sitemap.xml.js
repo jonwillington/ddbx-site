@@ -76,6 +76,7 @@ import { dailyIndexPath, dailyPath, sitemapDays } from "../shared/days.js";
 import {
   indexPath,
   publishable,
+  indexWindow,
   series as indexSeries,
 } from "../shared/insider-index.js";
 
@@ -707,8 +708,7 @@ async function insiderIndexEntries(host) {
   try {
     const { dealings, complete } = await fetchDealingsWindow({
       apiBase: API_BASE,
-      market: "UK",
-      since: windowStart(new Date()),
+      ...indexWindow(new Date(), "UK"),
       cf: {
         cacheEverything: true,
         cacheTtlByStatus: { "200-299": 3600, "400-499": 60, "500-599": 0 },

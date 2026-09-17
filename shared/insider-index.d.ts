@@ -14,6 +14,11 @@ export declare const MIN_HISTORY: number;
 export declare const LOOKBACK: number;
 export declare const VALUE_CAP: Record<IndexMarket, number>;
 export declare const INDEX_MARKETS: IndexMarket[];
+/** fetchDealingsWindow options for the index's rows. */
+export declare function indexWindow(
+  now?: Date,
+  market?: IndexMarket,
+): { market: IndexMarket; since: string; windowOn: "disclosed" };
 export declare const INDEX_PATH: string;
 export declare const FEED_GAP_LIMIT: number;
 /** London hour on the day after a session at which its reading publishes. */

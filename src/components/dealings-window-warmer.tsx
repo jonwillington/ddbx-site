@@ -20,7 +20,8 @@
 import { useEffect } from "react";
 
 import {
-  dealingsWindowMarketFor,
+  dealingsWindowFor,
+  loadDealingsWindow,
   prefetchDealingsWindow,
 } from "@/lib/dealings-window";
 
@@ -62,9 +63,13 @@ export function DealingsWindowWarmer() {
   useEffect(() => {
     const onIntent = (event: Event) => {
       const path = linkPath(event.target);
-      const market = path ? dealingsWindowMarketFor(path) : null;
+      const req = path ? dealingsWindowFor(path) : null;
 
-      if (market) prefetchDealingsWindow(market);
+      if (req) {
+        loadDealingsWindow(req).catch(() => {
+          /* the page's own load will surface the failure */
+        });
+      }
     };
 
     document.addEventListener("pointerover", onIntent, { passive: true });

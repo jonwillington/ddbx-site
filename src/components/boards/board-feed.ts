@@ -13,6 +13,7 @@
  *  when it breaks out on a bad response.
  */
 import type { Dealing, UsDealing } from "@/types/ddbx";
+import type { WindowRequest } from "@/lib/dealings-window";
 
 import { useEffect, useState } from "react";
 
@@ -28,18 +29,26 @@ export interface BoardFeed {
 }
 
 export function useBoardFeed(market: "UK" | "US"): BoardFeed {
+  return useWindowFeed(rollingWindow(market));
+}
+
+/** The same, for a window other than the boards' (the Insider Index reads
+ *  one bounded by disclosure date). Refetches when the request's fields
+ *  change, not when a caller rebuilds an equal object. */
+export function useWindowFeed(req: WindowRequest): BoardFeed {
+  const { market, since, until, windowOn } = req;
   // From memory when the page before (or a hover on the link) already loaded
   // it — see src/lib/dealings-window.ts — so the board draws on its first
   // frame rather than behind a skeleton.
   const [rows, setRows] = useState<Array<Dealing | UsDealing> | null>(
-    () => peekDealingsWindow(rollingWindow(market))?.dealings ?? null,
+    () => peekDealingsWindow(req)?.dealings ?? null,
   );
   const [complete, setComplete] = useState(true);
 
   useEffect(() => {
     let live = true;
 
-    loadDealingsWindow(rollingWindow(market))
+    loadDealingsWindow({ market, since, until, windowOn })
       .then(
         (r: { dealings: Array<Dealing | UsDealing>; complete: boolean }) => {
           if (!live) return;
@@ -56,7 +65,7 @@ export function useBoardFeed(market: "UK" | "US"): BoardFeed {
     return () => {
       live = false;
     };
-  }, [market]);
+  }, [market, since, until, windowOn]);
 
   return { rows, complete };
 }

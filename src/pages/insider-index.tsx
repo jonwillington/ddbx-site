@@ -33,6 +33,7 @@ import {
   FEED_GAP_LIMIT,
   indexPath,
   INDEX_METHODOLOGY,
+  indexWindow,
   isIndexSlug,
   latestReading,
   LOOKBACK,
@@ -63,7 +64,7 @@ import { RelatedCards } from "@/components/seo/related-cards";
 import { insiderIndexCta } from "@/components/seo/cta-copy";
 import { BackLink } from "@/components/back-link";
 import { RowList, Row } from "@/components/row-list";
-import { useBoardFeed } from "@/components/boards/board-feed";
+import { useWindowFeed } from "@/components/boards/board-feed";
 import { StageNotice } from "@/components/boards/stage-notice";
 import { IndexStage } from "@/components/insider-index/index-stage";
 
@@ -129,7 +130,10 @@ const TIER_MEANING: Record<string, string> = {
 /* ─── Shared document ───────────────────────────────────────────────────── */
 
 function IndexDocument({ date }: { date: string | null }) {
-  const { rows, complete } = useBoardFeed(MARKET.id);
+  // The index's own window, bounded by disclosure date: not the boards'
+  // trade-date window, which would drop a late disclosure of an old trade.
+  const request = useMemo(() => indexWindow(new Date(), MARKET.id), []);
+  const { rows, complete } = useWindowFeed(request);
   // The last session with a published reading. Filings for later days are
   // still arriving, so nothing on the page reads past it.
   const through = publishedThrough();

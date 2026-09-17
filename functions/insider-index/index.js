@@ -17,6 +17,7 @@ import {
   feedGap,
   FEED_GAP_LIMIT,
   indexLeadSentence,
+  indexWindow,
   indexPath,
   INDEX_METHODOLOGY,
   latestReading,
@@ -28,7 +29,6 @@ import {
   windowSentence,
 } from "../../shared/insider-index.js";
 import { esc, noindex, page, renderInto } from "../../shared/prerender.js";
-import { windowStart } from "../../shared/sectors.js";
 import { brandTitle, isProductionHost } from "../../shared/seo.js";
 import { trackingNotice } from "../../shared/tracking.js";
 
@@ -66,8 +66,7 @@ export function readingRows(rows) {
 export async function loadSeries() {
   const { dealings, complete } = await fetchDealingsWindow({
     apiBase: API_BASE,
-    market: MARKET,
-    since: windowStart(new Date()),
+    ...indexWindow(new Date(), MARKET),
     until: null,
     cf: {
       cacheEverything: true,

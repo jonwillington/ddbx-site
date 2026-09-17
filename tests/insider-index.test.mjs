@@ -247,3 +247,34 @@ test("dates that are not sessions are not index slugs", () => {
   assert.equal(readingForDate(rows, "2026-02-31", "UK", LATER), null);
   assert.equal(readingSummary(rows, "2026-02-31", "UK", LATER), null);
 });
+
+test("a late disclosure of an old trade counts on its disclosure session, through the index's own fetch", async () => {
+  const { fetchDealingsWindow } = await import("../shared/dealings-feed.js");
+  const { indexWindow } = await import("../shared/insider-index.js");
+  const history = synthetic("2026-03-02", "2026-09-16", 4);
+  // Traded in June, told to the market on 15 September.
+  const late = { ...buy("2026-09-15", "LATE.L", 40_000), id: "late", trade_date: "2026-06-02" };
+  const rows = [...history, late];
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ dealings: rows }) });
+  const now = new Date("2026-09-17T08:00:00Z");
+  // The rolling window starts after the trade: a trade-date window drops it.
+  const req = indexWindow(new Date("2027-06-10T12:00:00Z"), "UK");
+
+  assert.equal(req.windowOn, "disclosed");
+  assert.ok(late.trade_date < req.since && late.disclosed_date >= req.since);
+
+  const byDisclosure = await fetchDealingsWindow({ apiBase: "x", ...req, fetchImpl });
+  const byTrade = await fetchDealingsWindow({ apiBase: "x", ...req, windowOn: "trade", fetchImpl });
+
+  assert.ok(byDisclosure.dealings.some((d) => d.id === "late"));
+  assert.ok(!byTrade.dealings.some((d) => d.id === "late"));
+
+  // And in the series it lands on 15 September, not on the trade date.
+  const opts = { now, from: "2026-03-02" };
+  const withLate = series(rows, "UK", opts);
+  const without = series(history, "UK", opts);
+  const on = (all, date) => all.find((r) => r.date === date);
+
+  assert.equal(on(withLate, "2026-09-15").count, on(without, "2026-09-15").count + 1);
+  assert.equal(on(withLate, "2026-06-02").count, on(without, "2026-06-02").count);
+});

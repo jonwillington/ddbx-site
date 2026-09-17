@@ -112,6 +112,7 @@
 // endpoint that would freeze readings if that trade-off is ever wanted.
 
 import { buyValue, isEligibleBuy } from "./leaderboard.js";
+import { windowStart } from "./sectors.js";
 import { TRACKING_SINCE_DATE } from "./tracking.js";
 import {
   addDays,
@@ -146,6 +147,16 @@ export const PUBLISH_HOUR = 7;
  *  figure is the same percentile on that feed and is inert until the market
  *  is switched on. */
 export const VALUE_CAP = { UK: 250_000, US: 1_000_000 };
+
+/** The rows the index is computed from, as fetchDealingsWindow options: the
+ *  rolling twelve months bounded by DISCLOSURE date. The boards' window is
+ *  bounded by trade date, which would drop a late disclosure of an old trade
+ *  from the window while the index counts it on the day it was announced.
+ *  Every renderer (the page, both pre-renders, the sitemap, the daily edition)
+ *  fetches with this, so they rank the same rows. */
+export function indexWindow(now = new Date(), market = "UK") {
+  return { market, since: windowStart(now), windowOn: "disclosed" };
+}
 
 /** Markets the index is published for. */
 export const INDEX_MARKETS = ["UK"];

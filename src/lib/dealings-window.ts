@@ -22,6 +22,7 @@
 import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
+import { indexWindow } from "../../shared/insider-index.js";
 import { windowStart } from "../../shared/sectors.js";
 
 import { API_BASE } from "@/lib/api";
@@ -36,6 +37,10 @@ export interface WindowRequest {
   market: "UK" | "US";
   since: string;
   until?: string | null;
+  /** Which date bounds the window (shared/dealings-feed.js). The boards read
+   *  "trade", the default; the Insider Index reads "disclosed". Part of the
+   *  cache key, so the two never share an entry. */
+  windowOn?: "trade" | "disclosed";
 }
 
 /** Matches the API's edge TTL: a page held longer than the edge holds it
@@ -51,8 +56,8 @@ interface Entry {
 
 const entries = new Map<string, Entry>();
 
-const keyOf = ({ market, since, until }: WindowRequest) =>
-  `${market}|${since}|${until ?? ""}`;
+const keyOf = ({ market, since, until, windowOn }: WindowRequest) =>
+  `${market}|${since}|${until ?? ""}|${windowOn ?? "trade"}`;
 
 function fresh(entry: Entry | undefined): entry is Entry {
   return !!entry && Date.now() - entry.at < TTL_MS;
@@ -76,6 +81,7 @@ export function loadDealingsWindow(
       market: req.market,
       since: req.since,
       until: req.until ?? null,
+      windowOn: req.windowOn ?? "trade",
     }) as Promise<DealingsWindow>,
   };
 
@@ -135,14 +141,15 @@ export function readsDealingsWindow(pathname: string): boolean {
   return WINDOW_PATH.test(pathname);
 }
 
-/** The Insider Index reads the UK window on every host (it canonicalises to
- *  ddbx.uk), so a hover on ddbx.us must warm the UK window, not the host's. */
-const UK_WINDOW_PATH = /^\/insider-index(?:\/[^/]+)?\/?$/;
+/** The Insider Index reads its own window: UK on every host (it
+ *  canonicalises to ddbx.uk) and bounded by disclosure date. */
+const INDEX_WINDOW_PATH = /^\/insider-index(?:\/[^/]+)?\/?$/;
 
-/** Which market's window the page at `pathname` reads, or null when it reads
- *  none. */
-export function dealingsWindowMarketFor(pathname: string): "UK" | "US" | null {
+/** The window the page at `pathname` reads, or null when it reads none. */
+export function dealingsWindowFor(pathname: string): WindowRequest | null {
   if (!WINDOW_PATH.test(pathname)) return null;
 
-  return UK_WINDOW_PATH.test(pathname) ? "UK" : hostWindowMarket();
+  return INDEX_WINDOW_PATH.test(pathname)
+    ? (indexWindow(new Date(), "UK") as WindowRequest)
+    : rollingWindow(hostWindowMarket());
 }
