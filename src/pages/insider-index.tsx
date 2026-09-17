@@ -35,13 +35,17 @@ import {
   INDEX_METHODOLOGY,
   isIndexSlug,
   latestReading,
+  LOOKBACK,
+  METHOD_LABEL,
   MIN_HISTORY,
+  nextPublication,
   publishable,
+  publishedThrough,
   publishFrom,
+  publishLabel,
   readingSentence,
   series,
   TIERS,
-  todayLondon,
   VALUE_CAP,
   weekChange,
   WINDOW_DAYS,
@@ -112,21 +116,24 @@ const RECENT = 15;
  *  module because they are page prose, not the formula. */
 const TIER_MEANING: Record<string, string> = {
   "very-quiet":
-    "Fewer purchases, from fewer companies, than in four out of five windows on record. Closed periods before results season and the summer both look like this.",
+    "Less buying, on the three measures together, than on four earlier trading days in five. Closed periods before results season and the summer both look like this.",
   quiet:
-    "Below the middle of the record on most of the three measures. Not unusual; a few quiet weeks in a row is.",
+    "Less buying than on most earlier days, but not unusually little. A few quiet weeks in a row is what to notice.",
   normal:
     "Around the middle of the record. Directors are buying at about the rate they usually do.",
-  busy: "More purchases, and more companies bought, than in most windows on record. Often the weeks after a results season, when closed periods lift together.",
+  busy: "More buying than on most earlier days. Often the weeks after a results season, when closed periods lift together.",
   "very-busy":
-    "More buying than in four out of five windows on record. Historically the pattern that follows a broad sell-off, when many boards buy at once.",
+    "More buying than on four earlier trading days in five. Historically the pattern that follows a broad sell-off, when many boards buy at once.",
 };
 
 /* ─── Shared document ───────────────────────────────────────────────────── */
 
 function IndexDocument({ date }: { date: string | null }) {
   const { rows, complete } = useBoardFeed(MARKET.id);
-  const today = todayLondon();
+  // The last session with a published reading. Filings for later days are
+  // still arriving, so nothing on the page reads past it.
+  const through = publishedThrough();
+  const next = nextPublication();
 
   const all = useMemo(() => (rows ? series(rows, MARKET.id) : null), [rows]);
   const published = useMemo(() => publishable(all), [all]);
@@ -139,7 +146,7 @@ function IndexDocument({ date }: { date: string | null }) {
   const focusIdx = focus && all ? all.indexOf(focus) : -1;
   const sentence = all && focusIdx >= 0 ? readingSentence(all, focusIdx) : null;
   const change = all && focusIdx >= 0 ? weekChange(all, focusIdx) : null;
-  const gap = rows ? feedGap(rows, today, MARKET.id) : 0;
+  const gap = rows ? feedGap(rows, through, MARKET.id) : 0;
   const notYet = all ? publishFrom(all) : null;
 
   const loading = rows === null;
@@ -147,6 +154,8 @@ function IndexDocument({ date }: { date: string | null }) {
   // A dated page whose date has no reading: before the index published,
   // a future date, or a weekend that slipped past the slug check.
   const missing = !loading && !failed && !!date && !focus;
+  // …of which a session whose reading has not published yet, and will.
+  const pending = !!date && isIndexSlug(date) && date > through;
 
   const pubIdx = focus ? published.indexOf(focus) : -1;
   const older = pubIdx > 0 ? published[pubIdx - 1] : null;
@@ -161,10 +170,10 @@ function IndexDocument({ date }: { date: string | null }) {
 
   const standfirst = (
     <>
-      One number for how much UK directors are buying, updated every trading
-      day: the last {WINDOW_DAYS} trading days of open-market purchases, ranked
-      against every earlier window on record. 50 is normal, 100 is the busiest
-      it has been, 0 the quietest.
+      One number for how much UK directors are buying, published every trading
+      day: the last {WINDOW_DAYS} sessions of open-market purchases, ranked
+      against every earlier day on record. 50 is normal, 100 is busier than
+      every earlier day, 0 quieter.
     </>
   );
 
@@ -212,13 +221,13 @@ function IndexDocument({ date }: { date: string | null }) {
       </span>
       <span className="text-white/45">
         {published.length} readings since{" "}
-        {dayMonthLabel(published[0]?.date ?? "")}
+        {dayMonthLabel(published[0]?.date ?? "")} · method {METHOD_LABEL}
       </span>
     </>
   ) : notYet ? (
     <span>
-      Not enough readings yet. The index needs {MIN_HISTORY} trading days to
-      rank against and will first publish on {dateLabel(notYet)}.
+      Not enough readings yet. The index needs {MIN_HISTORY} sessions to rank
+      against and will first publish at {publishLabel(notYet)}.
     </span>
   ) : null;
 
@@ -278,7 +287,9 @@ function IndexDocument({ date }: { date: string | null }) {
         standfirst={missing || failed ? undefined : standfirst}
         title={
           missing
-            ? "No reading for that day"
+            ? pending
+              ? "No reading for that day yet"
+              : "No reading for that day"
             : failed
               ? "Couldn’t load the index"
               : title
@@ -294,14 +305,27 @@ function IndexDocument({ date }: { date: string | null }) {
           </p>
         ) : missing ? (
           <>
-            <p className={`mt-10 max-w-[62ch] ${R.body}`}>
-              The index publishes one reading per trading day, from{" "}
-              {published[0]
-                ? dateLabel(published[0].date)
-                : "the first day it has enough history"}{" "}
-              to {latest ? dateLabel(latest.date) : "today"}. That date is
-              outside the record, a weekend, or not yet reached.
-            </p>
+            {pending && date ? (
+              <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+                The reading for {dateLabel(date)} lands at {publishLabel(date)},
+                once that day’s filings are in. Until then the latest reading is{" "}
+                {latest
+                  ? `${latest.score} on ${dateLabel(latest.date)}`
+                  : "the previous session’s"}
+                .
+              </p>
+            ) : (
+              <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+                The index publishes one reading per London Stock Exchange
+                session, from{" "}
+                {published[0]
+                  ? dateLabel(published[0].date)
+                  : "the first day it has enough history"}{" "}
+                to {latest ? dateLabel(latest.date) : "the last full session"}.
+                That date is outside the record, or a weekend or bank holiday,
+                when the exchange is shut.
+              </p>
+            )}
             <SeoSection aside="Where to go from here." title="The index">
               <RelatedCards
                 cols={2}
@@ -335,6 +359,13 @@ function IndexDocument({ date }: { date: string | null }) {
                 Buying against its own record, not net of selling. How it is
                 calculated ↓
               </a>
+              <p className={`mt-2 ${R.label}`}>
+                Method {METHOD_LABEL}. Readings may be revised when a late
+                filing or a backfill reaches the record.
+                {isLatest && next
+                  ? ` The next reading, for ${dayMonthLabel(next.session)}, lands at ${publishLabel(next.session)}.`
+                  : ""}
+              </p>
               {!complete && (
                 <p className={`mt-3 ${CAVEAT}`}>
                   We couldn’t load the whole record, so readings may be ranked
@@ -364,7 +395,7 @@ function IndexDocument({ date }: { date: string | null }) {
             <SeoSection
               aside={
                 focus
-                  ? `The three measures behind the reading of ${focus.score}, each with its rank against every earlier ${WINDOW_DAYS}-day window on record.`
+                  ? `The three measures behind the reading of ${focus.score}, each with its rank against every earlier ${WINDOW_DAYS}-session window on record.`
                   : "The three measures behind every reading."
               }
               index={1}
@@ -385,7 +416,7 @@ function IndexDocument({ date }: { date: string | null }) {
                 <p className={`max-w-[62ch] ${R.body}`}>
                   Not enough data yet.{" "}
                   {notYet
-                    ? `The first reading will be published on ${dateLabel(notYet)}, once ${MIN_HISTORY} earlier windows exist to rank it against.`
+                    ? `The first reading will be published at ${publishLabel(notYet)}, once ${MIN_HISTORY} earlier windows exist to rank it against.`
                     : "The index needs eight weeks of readings before it can rank a window."}
                 </p>
               )}
@@ -393,7 +424,7 @@ function IndexDocument({ date }: { date: string | null }) {
 
             {/* 02: the tiers, as selling rows. */}
             <SeoSection
-              aside="Five tiers, a fifth of the scale each. Because every reading is a rank, about a fifth of days land in each."
+              aside="Five tiers, a fifth of the scale each. Every reading is a rank of days, so over a long record about a fifth of days land in each."
               index={2}
               title="How to read it"
               total={4}
@@ -427,8 +458,8 @@ function IndexDocument({ date }: { date: string | null }) {
             <SeoSection
               aside={
                 date
-                  ? "The trading days either side of this one."
-                  : "One reading per trading day, newest first. Every day has its own page."
+                  ? "The sessions either side of this one, then every reading on record."
+                  : "One reading per session, newest first, then every reading on record. Every day has its own page."
               }
               index={3}
               title={date ? "Days either side" : "Recent readings"}
@@ -443,7 +474,7 @@ function IndexDocument({ date }: { date: string | null }) {
                           {
                             to: indexPath(newer.date),
                             title: `${dateLabel(newer.date)}: ${newer.score}, ${newer.tier?.phrase}`,
-                            description: "The trading day after this one.",
+                            description: "The session after this one.",
                           },
                         ]
                       : []),
@@ -452,7 +483,7 @@ function IndexDocument({ date }: { date: string | null }) {
                           {
                             to: indexPath(older.date),
                             title: `${dateLabel(older.date)}: ${older.score}, ${older.tier?.phrase}`,
-                            description: "The trading day before this one.",
+                            description: "The session before this one.",
                           },
                         ]
                       : []),
@@ -470,6 +501,12 @@ function IndexDocument({ date }: { date: string | null }) {
                   No readings published yet.
                 </p>
               )}
+              {published.length > 0 ? (
+                <ReadingArchive
+                  focusDate={focus?.date ?? null}
+                  rows={published}
+                />
+              ) : null}
             </SeoSection>
 
             {/* 04: the formula. */}
@@ -573,23 +610,25 @@ function Figure({ value, pct }: { value: string; pct: number }) {
 function Formula() {
   return (
     <div className="rounded-2xl border border-hairline bg-sheet px-4 py-3.5 font-mono text-[12.5px] leading-[1.7] text-foreground/80 dark:border-white/[0.07] dark:bg-surface">
-      <p>window(d) = the {WINDOW_DAYS} trading days ending on d, inclusive</p>
+      <p>window(d) = the {WINDOW_DAYS} LSE sessions ending on d, inclusive</p>
       <p>count(d) = open-market purchases disclosed in window(d)</p>
       <p>breadth(d) = distinct companies bought in window(d)</p>
       <p>
         value(d) = Σ min(purchase, {formatMoney(VALUE_CAP.UK, "£")}) over
         window(d)
       </p>
+      <p>pool(d) = d and the sessions before it, up to {LOOKBACK} in all</p>
       <p>
-        rank(x, d) = share of earlier windows (up to 250) that x(d) exceeds,
-        ties half
+        rank(x, e) = share of the other days in pool(d) that x(e) exceeds, ties
+        half
       </p>
-      <p className="text-foreground">
-        index(d) = round( (rank(count) + rank(breadth) + rank(value)) / 3 )
+      <p>
+        combined(e) = (rank(count, e) + rank(breadth, e) + rank(value, e)) / 3
       </p>
+      <p className="text-foreground">index(d) = round( rank(combined, d) )</p>
       <p className="text-foreground/55">
-        published once {MIN_HISTORY} earlier windows exist; 0 to 100; 50 is the
-        middle of the record
+        method {METHOD_LABEL}; published at 7am London the day after d, once{" "}
+        {MIN_HISTORY} earlier readings exist; 0 to 100
       </p>
     </div>
   );
@@ -622,6 +661,76 @@ function ReadingList({ rows }: { rows: Reading[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Every published reading, by month, as links: the keyboard and
+ *  screen-reader way into any day on the line above, and a crawlable one.
+ *  Newest month first; days in date order inside it, as a calendar reads. */
+function ReadingArchive({
+  rows,
+  focusDate,
+}: {
+  rows: Reading[];
+  focusDate: string | null;
+}) {
+  const months = useMemo(() => {
+    const byMonth = new Map<string, Reading[]>();
+
+    for (const r of rows) {
+      const key = r.date.slice(0, 7);
+      const list = byMonth.get(key) ?? [];
+
+      list.push(r);
+      byMonth.set(key, list);
+    }
+
+    return [...byMonth.entries()].reverse();
+  }, [rows]);
+
+  return (
+    <div className="mt-8">
+      <h3 className="text-[13px] font-medium text-foreground">Every reading</h3>
+      <div className={`mt-3 border-t ${R.rule}`}>
+        {months.map(([key, list]) => (
+          <div
+            key={key}
+            className={`grid gap-x-6 gap-y-2 border-b py-3 sm:grid-cols-[132px_minmax(0,1fr)] ${R.rule}`}
+          >
+            <p className={`pt-1.5 ${R.label}`}>
+              {dateLabel(`${key}-01`).replace(/^1 /, "")}
+            </p>
+            <ol className="flex flex-wrap gap-1.5">
+              {list.map((r) => {
+                const current = r.date === focusDate;
+
+                return (
+                  <li key={r.date}>
+                    <Link
+                      aria-current={current ? "page" : undefined}
+                      aria-label={`${dateLabel(r.date)}: ${r.score}, ${r.tier?.phrase ?? ""}`}
+                      className={`flex w-[46px] flex-col items-center rounded-lg border py-1 leading-tight transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-brown dark:focus-visible:outline-brand-tan ${
+                        current
+                          ? "border-brand-brown bg-brand-brown/[0.06] dark:border-brand-tan dark:bg-brand-tan/[0.08]"
+                          : "border-hairline hover:bg-foreground/[0.03] dark:border-separator"
+                      }`}
+                      to={indexPath(r.date)}
+                    >
+                      <span className="text-[10.5px] tabular-nums text-foreground/45">
+                        {Number(r.date.slice(8, 10))}
+                      </span>
+                      <span className="text-[13.5px] font-semibold tabular-nums text-foreground">
+                        {r.score}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

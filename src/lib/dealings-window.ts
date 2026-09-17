@@ -134,3 +134,15 @@ const WINDOW_PATH =
 export function readsDealingsWindow(pathname: string): boolean {
   return WINDOW_PATH.test(pathname);
 }
+
+/** The Insider Index reads the UK window on every host (it canonicalises to
+ *  ddbx.uk), so a hover on ddbx.us must warm the UK window, not the host's. */
+const UK_WINDOW_PATH = /^\/insider-index(?:\/[^/]+)?\/?$/;
+
+/** Which market's window the page at `pathname` reads, or null when it reads
+ *  none. */
+export function dealingsWindowMarketFor(pathname: string): "UK" | "US" | null {
+  if (!WINDOW_PATH.test(pathname)) return null;
+
+  return UK_WINDOW_PATH.test(pathname) ? "UK" : hostWindowMarket();
+}

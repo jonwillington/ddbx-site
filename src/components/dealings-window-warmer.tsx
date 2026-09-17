@@ -20,8 +20,8 @@
 import { useEffect } from "react";
 
 import {
+  dealingsWindowMarketFor,
   prefetchDealingsWindow,
-  readsDealingsWindow,
 } from "@/lib/dealings-window";
 
 /** After the first page has had its own requests to itself. */
@@ -62,8 +62,9 @@ export function DealingsWindowWarmer() {
   useEffect(() => {
     const onIntent = (event: Event) => {
       const path = linkPath(event.target);
+      const market = path ? dealingsWindowMarketFor(path) : null;
 
-      if (path && readsDealingsWindow(path)) prefetchDealingsWindow();
+      if (market) prefetchDealingsWindow(market);
     };
 
     document.addEventListener("pointerover", onIntent, { passive: true });

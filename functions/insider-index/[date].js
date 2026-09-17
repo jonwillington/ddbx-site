@@ -2,9 +2,10 @@
 // /insider-index/2026-07-02.
 //
 // Same module, same fetch, same words as functions/insider-index/index.js;
-// only the day differs. A slug that is not a trading day is noindexed rather
-// than resolved to the nearest one: the URL names a day and the page must
-// show that day.
+// only the day differs. A slug that is not an LSE session (a weekend, a bank
+// holiday, 31 February) is noindexed rather than resolved to the nearest one:
+// the URL names a day and the page must show that day. So is a session whose
+// reading has not published yet; loadSeries stops at publishedThrough().
 
 import {
   dateLabel,
@@ -18,7 +19,13 @@ import {
 import { esc, noindex, page, renderInto } from "../../shared/prerender.js";
 import { brandTitle, isProductionHost } from "../../shared/seo.js";
 import { trackingNotice } from "../../shared/tracking.js";
-import { caveats, loadSeries, methodologyHtml, readingRows } from "./index.js";
+import {
+  caveats,
+  loadSeries,
+  methodNote,
+  methodologyHtml,
+  readingRows,
+} from "./index.js";
 
 const HOST = "ddbx.uk";
 const MARKET = "UK";
@@ -76,6 +83,7 @@ export async function onRequestGet(context) {
   <p style="font-size:44px;font-weight:600;line-height:1;margin:16px 0 4px">${esc(r.score)}<span style="font-size:14px;font-weight:400;color:#6b6154"> / 100 · ${esc(r.tier.label)}</span></p>
   <p style="font-size:16px;line-height:1.6;color:#4a4034;max-width:62ch">${esc(readingSentence(all, i, MARKET))} ${esc(windowSentence(r, MARKET))}</p>
   <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(trackingNotice(MARKET))} The index is buying against its own record, not net of selling: the record holds purchases only.</p>
+  ${methodNote()}
   ${caveats(complete, gap)}
   ${
     neighbours.length

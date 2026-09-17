@@ -391,3 +391,171 @@ those; a one-line addition each).
 Today a permalink can move by a point after a backfill (§1.6). Honest, and
 stated. The alternative needs §7. My recommendation is to leave it until the
 daily editions have quoted a reading that later moved and it mattered.
+
+---
+
+## Review round, 17 September 2026
+
+An external review raised seven findings. Each was checked before it was
+fixed; all seven held, one of them (hover prefetch) only in part. Method is
+now **v1**, printed on the page, on every dated reading and in the pre-render.
+
+### R1. The late-August trough: a real lull, not an ingest gap
+
+Read-only SELECTs against D1 (`director-dealings`), 17 September, 05:30 UTC.
+
+**When rows arrived.** For every eligible UK purchase disclosed since 8 April
+(the first `pipeline_runs` row is 7 April), compare `created_at` (converted to
+London) with `disclosed_date`:
+
+| Arrived | Rows |
+|---|---|
+| Same London day as disclosure | 820 |
+| Next day | 3 |
+| Two days later | 2 |
+| Backfilled on 15 Sep, 05:57 to 06:05 UTC | 35 (37 since March) |
+
+Same-day arrivals run from 07:00 to 18:59 London; none later. The 15 September
+backfill is the multi-director extraction fix in ddbx-data (`26dad96`,
+"one announcement, one director"): co-buyers that the old prompt dropped. It
+added rows disclosed from 18 March to **21 August** and **none** in the trough.
+Rows created per week, split by whether they were disclosed in an earlier
+week: 42/0, 42/0, 37/0, 31/0, 19/0, 15/0, 28/0 for the weeks of 27 July to
+7 September, then 62/38 in the week of 14 September (the backfill). So the
+"55 created against 18 disclosed" in §8.1 was the backfill landing, not the
+trough filling in.
+
+**An independent count of the market.** `uk_filing_volume` and `dealings_nsm`
+hold the FCA National Storage Mechanism's own count of Director/PDMR
+Shareholding notices, every type (buys, sells, grants), scraped separately
+from our Investegate pipeline:
+
+| Week of | NSM DSH notices | Our eligible buys | NSM notices with a matching dealing (±2 days) |
+|---|---|---|---|
+| 3 Aug | 176 | 42 | 30% |
+| 10 Aug | 157 | 36 | 27% |
+| 17 Aug | 127 | 32 | 26% |
+| **24 Aug** | **91** | **17** | 20% |
+| **31 Aug** (4 sessions) | **83** | **10** | 22% |
+| 7 Sep | 124 | 26 | 22% |
+| 14 Sep (3 sessions) | 83 | 22 | 30% |
+
+The whole market's filings fell by 40 to 50% in the same fortnight.
+
+**Pipeline health.** 15-minute runs in every week, with no gaps. The runs
+with errors in the window were one Anthropic 524 and one 529 on company
+profiles (not ingest), then Investegate 5xx from 21:00 on 11 September to
+00:15 on 13 September, all outside market hours and cleared by the next run.
+There was one more 502 at 14:01 on 16 September, cleared 15 minutes later. The
+listing page itself was shorter: 3 to 13 items a scrape from 23 August to
+8 September against 14 to 20 before. The 63 zero-item runs on 31 August and
+1 September are the bank holiday, status ok.
+
+**Verdict.** The trough is real: a late-summer lull plus the bank holiday.
+Rows arrived on time, the backfill did not touch it, and an independent
+census fell with it. There is one soft signal: the NSM match share dipped from
+26 to 35% to 20 to 22%, which could be a sell-heavy mix around interim results
+or a few missed buys. It is not big enough to move the tier. Nothing is
+suppressed. The page now says readings may be revised after a late filing or a
+backfill, which is what happened on 15 September.
+
+One thing to confirm data-side: did the 15 September re-extraction cover every
+multi-director filing since March, or only a sample? If it was a sample, the
+`count` component steps up from 15 September (new filings now give one row per
+co-buyer) against a history that only partly does. `breadth` is unaffected.
+
+### R2. In-progress days no longer get a reading
+
+`publishedThrough(now)`: session D publishes at `PUBLISH_HOUR` (7am London) on
+the calendar day after D. From R1, that covers 820 of 825 live arrivals; the
+other five revise the reading after it is published. `series()` never runs
+past it, even with an explicit `to`. `readingForDate` and `readingSummary`
+return null for a later session. The undated page says "The next reading, for
+17 September, lands at 7am on 18 September". A permalink for a pending session
+is titled "No reading for that day yet" and says when it lands. The pre-render
+noindexes it. `feedGap` measures to `publishedThrough`, not today.
+
+### R3. The score is now a percentile of days
+
+The old index was `round(mean(countPct, breadthPct, valuePct))`. An average of
+percentiles bunches towards 50, so "lower than on 95% of days" was not a count
+of anything. v1:
+
+1. pool(d) = d plus up to 249 sessions before it (nothing after d).
+2. Inside the pool, rank each component for every day, ties half, and average
+   each day's three ranks into its combined measure.
+3. index(d) = the share of the other days in the pool whose combined measure is
+   lower, ties half, rounded.
+
+It still publishes after 40 earlier readings, so the first published date does
+not move. Copy changed to match: the sentence is now "UK directors are buying
+less than on 97% of earlier trading days on record". It says "in the past
+year" once the pool is capped. The tier aside says "over a long record about a
+fifth of days". The tier meanings, the formula panel and the methodology list
+were rewritten. The component tiles still show each component's own rank
+("above only 3% of windows"), which was always a true percentile.
+
+On the live record the latest reading moved from 2 to 3. Across the 73
+published readings the tiers split 24/9/10/15/15. That is not a fifth each,
+because the record is short and made of overlapping windows. The synthetic
+test shows the method gives fifths over four independent 28-month records.
+
+### R4. LSE sessions
+
+Windows are 20 sessions from `shared/exchange-calendar.js`. Weekends and
+bank holidays get no reading and do not count as quiet days. A disclosure
+dated on a closed day counts on the next session (there are none on record).
+`isWeekday`, `prevWeekday`, `nextWeekday` and `weekdaysBetween` are removed.
+`isIndexDay(iso, market)` and the calendar helpers replace them.
+
+### R5. Date validation
+
+`isIndexSlug` = `isDateSlug` and an LSE session. It rejects 31 February, 31
+September, Saturdays and the summer bank holiday. `indexDateFromPath` also
+survives a malformed percent-escape.
+
+### R6. Keyboard
+
+- The chart is one tab stop with a visible amber focus ring. Left and right
+  arrows move the crosshair and tooltip, Home and End jump to the ends, Enter
+  opens the day, Escape clears. A polite live region reads out the day.
+- Section 03 on both pages now ends with **Every reading**: every published
+  reading, grouped by month, each a real link with an `aria-label` ("15
+  September 2026: 3, very quiet") and a visible focus outline. On a permalink
+  the current day is marked with `aria-current="page"`. This replaces the old
+  fallback of 15 dates.
+
+### R7. Hover prefetch (partial)
+
+The route was already in `WINDOW_PATH`. The bug was the market: the warmer
+prefetched the host's market, so on ddbx.us a hover on an index link warmed
+the US window, and the page reads UK. New `dealingsWindowMarketFor(path)`
+returns "UK" for index paths. `readsDealingsWindow` is kept.
+
+### Tests
+
+`tests/insider-index.test.mjs`, 8 tests (`npm test`: 16 of 16 pass):
+
+- the index equals a brute-force count over the pool, including when the pool
+  is capped at 250, and the sentence's percentage is that count
+- the tiers each hold 15 to 25% of days over four seeded records, and the old
+  average has thinner outer tiers on the same data
+- the publication cutoff at 06:30 and 07:30 London, a forced `to`, and Friday
+  to Saturday
+- a bank holiday has no reading, a window skips it, and a disclosure on it
+  counts on the next session
+- `MIN_HISTORY`, and date validation
+
+`npx tsc --noEmit` and `npm run build` pass.
+
+### Export changes (for the daily-editions branch)
+
+- Removed: `isWeekday`, `prevWeekday`, `nextWeekday`, `weekdaysBetween`. The
+  daily branch does not import them.
+- Added: `METHOD_VERSION`, `METHOD_LABEL`, `PUBLISH_HOUR`, `isIndexDay`,
+  `publishedThrough`, `publishesAt`, `nextPublication`, `publishLabel`,
+  `combinedMeasures`. `Reading` gains `combined` and `pct`, and
+  `ReadingSummary` gains `method`.
+- Changed: `publishFrom(all, market?)`, and `readingSummary(dealings, date)`
+  **returns null for a session before 7am London the next day**. An edition for
+  today gets no index slot until the next morning.

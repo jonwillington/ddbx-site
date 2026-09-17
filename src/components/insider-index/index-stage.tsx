@@ -25,9 +25,11 @@
  *
  *  Every point on the line is a link: hovering shows the day's reading in a
  *  tooltip, clicking goes to that day's permalink. That is the eighth
- *  static-page rule (everything specific is a link) applied to a chart. The
- *  table under the panel is the WCAG twin of the picture: the same readings,
- *  as rows, reachable without a pointer.
+ *  static-page rule (everything specific is a link) applied to a chart. From
+ *  the keyboard the chart is one tab stop: the arrow keys walk the days with
+ *  the same tooltip, Home and End jump to the ends, Enter opens the day. The
+ *  "Every reading" list under the panel is the WCAG twin of the picture: the
+ *  same readings, each a real link, reachable without a pointer or a chart.
  */
 import type { Reading } from "../../../shared/insider-index";
 import type { ReactNode } from "react";
@@ -254,6 +256,9 @@ function Chart({
   const navigate = useNavigate();
   const [ref, width] = useMeasuredWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
+  // Set while the keyboard, not the pointer, is driving the crosshair, so the
+  // focused day is announced and a pointer leaving does not clear it.
+  const [keyed, setKeyed] = useState(false);
 
   const W = Math.max(300, width);
   const H = chartHeight(W);
@@ -325,18 +330,55 @@ function Chart({
   return (
     <div ref={ref} className="relative">
       <svg
-        aria-label={`The index, one reading per trading day, ${rows.length} readings from ${dateLabel(rows[0].date)} to ${dateLabel(rows[rows.length - 1].date)}. Hover or tap a point for the day, or use the table below.`}
-        className="block w-full touch-pan-y select-none"
+        aria-describedby={keyed && tip ? "index-chart-focus" : undefined}
+        aria-label={`The index, one reading per session, ${rows.length} readings from ${dateLabel(rows[0].date)} to ${dateLabel(rows[rows.length - 1].date)}. Use the left and right arrow keys to move between days and Enter to open one, or the list of every reading below.`}
+        className="block w-full touch-pan-y select-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-amber)]"
         height={H}
         role="img"
+        tabIndex={0}
         width={W}
+        onBlur={() => {
+          setKeyed(false);
+          setHover(null);
+        }}
         onClick={(e) => {
           const i = nearest(e.clientX, e.currentTarget);
 
           navigate(indexPath(rows[i].date));
         }}
-        onPointerLeave={() => setHover(null)}
-        onPointerMove={(e) => setHover(nearest(e.clientX, e.currentTarget))}
+        onKeyDown={(e) => {
+          const last = rows.length - 1;
+          const from = hover ?? (focusIdx >= 0 ? focusIdx : last);
+          let to: number | null = null;
+
+          if (e.key === "ArrowLeft") to = keyed ? Math.max(0, from - 1) : from;
+          else if (e.key === "ArrowRight")
+            to = keyed ? Math.min(last, from + 1) : from;
+          else if (e.key === "Home") to = 0;
+          else if (e.key === "End") to = last;
+          else if (e.key === "Enter" && hover != null) {
+            e.preventDefault();
+            navigate(indexPath(rows[hover].date));
+
+            return;
+          } else if (e.key === "Escape") {
+            setKeyed(false);
+            setHover(null);
+
+            return;
+          }
+          if (to == null) return;
+          e.preventDefault();
+          setKeyed(true);
+          setHover(to);
+        }}
+        onPointerLeave={() => {
+          if (!keyed) setHover(null);
+        }}
+        onPointerMove={(e) => {
+          setKeyed(false);
+          setHover(nearest(e.clientX, e.currentTarget));
+        }}
       >
         {/* Tier rules: solid hairlines, one step off the ground, and the
             band names in the right gutter where there is one. */}
@@ -474,11 +516,20 @@ function Chart({
           </p>
           <p className="mt-1 text-white/65">
             {tip.r.count} purchases · {tip.r.breadth} companies ·{" "}
-            {formatMoney(tip.r.value, symbol)} capped, over {WINDOW_DAYS} days
+            {formatMoney(tip.r.value, symbol)} capped, over {WINDOW_DAYS}{" "}
+            sessions
           </p>
-          <p className="mt-1 text-white/45">Click for this day’s page</p>
+          <p className="mt-1 text-white/45">
+            {keyed ? "Enter for this day’s page" : "Click for this day’s page"}
+          </p>
         </div>
       ) : null}
+      {/* What the keyboard has landed on, for a screen reader. */}
+      <p aria-live="polite" className="sr-only" id="index-chart-focus">
+        {keyed && tip && tip.r.tier
+          ? `${dateLabel(tip.r.date)}: ${tip.r.score}, ${tip.r.tier.phrase}. ${tip.r.count} purchases across ${tip.r.breadth} companies.`
+          : ""}
+      </p>
     </div>
   );
 }

@@ -20,10 +20,11 @@ import {
   indexPath,
   INDEX_METHODOLOGY,
   latestReading,
+  METHOD_LABEL,
   publishable,
+  publishedThrough,
   readingSentence,
   series,
-  todayLondon,
   windowSentence,
 } from "../../shared/insider-index.js";
 import { esc, noindex, page, renderInto } from "../../shared/prerender.js";
@@ -78,8 +79,13 @@ export async function loadSeries() {
   return {
     all,
     complete,
-    gap: feedGap(dealings, todayLondon(), MARKET),
+    gap: feedGap(dealings, publishedThrough(), MARKET),
   };
+}
+
+/** The method and the revision posture, said on every reading. */
+export function methodNote() {
+  return `<p style="font-size:13px;color:#6b6154;max-width:62ch">Method ${esc(METHOD_LABEL)}. A day’s reading publishes at 7am London time the next morning. Readings may be revised when a late filing or a backfill reaches the record.</p>`;
 }
 
 export function caveats(complete, gap) {
@@ -100,11 +106,12 @@ function prerender(all, latest, complete, gap) {
 
   return page(`<p style="${EYEBROW}">Insider Index</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">The UK Insider Index</h1>
-  <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">One number for how much UK directors are buying, updated every trading day: the last twenty trading days of open-market purchases, ranked against every earlier window on record. 50 is normal, 100 is the busiest it has been, 0 the quietest.</p>
+  <p style="font-size:16px;line-height:1.6;color:#5a4d3a;max-width:62ch">One number for how much UK directors are buying, published every trading day: the last twenty sessions of open-market purchases, ranked against every earlier day on record. 50 is normal, 100 is busier than every earlier day, 0 quieter.</p>
   <p style="font-size:44px;font-weight:600;line-height:1;margin:24px 0 4px">${esc(latest.score)}<span style="font-size:14px;font-weight:400;color:#6b6154"> / 100 · ${esc(latest.tier.label)}</span></p>
   <p style="font-size:13px;color:#6b6154;margin:0 0 12px">Reading for ${esc(dateLabel(latest.date))}</p>
   <p style="font-size:16px;line-height:1.6;color:#4a4034;max-width:62ch">${esc(readingSentence(all, i, MARKET))} ${esc(windowSentence(latest, MARKET))}</p>
   <p style="font-size:13px;color:#6b6154;max-width:62ch">${esc(trackingNotice(MARKET))} The index is buying against its own record, not net of selling: the record holds purchases only.</p>
+  ${methodNote()}
   ${caveats(complete, gap)}
   <h2 style="font-size:15px;margin:32px 0 10px">Recent readings</h2>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>
