@@ -82,7 +82,7 @@ function leadSentence(rows, floor, states) {
   // exercise leads without a size clause.
   const verb = top.side === "buy" ? "bought" : top.side === "sell" ? "sold" : null;
 
-  return `${summary} Newest: ${top.insider.name}${top.insider.role ? `, ${top.insider.role}` : ""} at ${top.company} in ${m.name}${verb && size ? `, who ${verb} ${size}` : ""}.`;
+  return `${summary} Newest: ${top.insider.name}${top.insider.role ? `, ${top.insider.role}` : ""} at ${top.company} in ${/^(United |Netherlands)/.test(m.name) ? `the ${m.name}` : m.name}${verb && size ? `, who ${verb} ${size}` : ""}.`;
 }
 
 function prerender(rows, allRows, floor, binding, failed, states, host) {
