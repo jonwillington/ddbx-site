@@ -33,7 +33,13 @@ import {
   COMPARISONS,
   comparisonPath,
 } from "../../shared/broker-comparisons.js";
-import { entriesForHost, learnPath } from "../../shared/glossary.js";
+import {
+  START_HERE,
+  entriesForHost,
+  entryBySlug,
+  groupEntries,
+  learnPath,
+} from "../../shared/glossary.js";
 import { MARKET_HOST_BY_ID } from "../../shared/seo.js";
 
 import {
@@ -203,6 +209,49 @@ export function researchNavLinks(
   return researchLinks(home, hostname).filter((l) => l.nav);
 }
 
+/** The masthead's Learn dropdown: the market's START_HERE guides, then the
+ *  methodology page, then the whole glossary behind a rule.
+ *
+ *  It replaced a plain "Method" link. A newcomer who clicked that wanted to
+ *  know what this world is and got how we score a filing, while the essay
+ *  that answers their question was reachable only from the footer. Folding
+ *  both under one item keeps the masthead at six rather than growing it at
+ *  the 768px breakpoint where the row first appears.
+ *
+ *  The navbar shows it on UK and US only — the markets that publish
+ *  /how-it-works and own glossary entries — so `home` is one of those two.
+ *  "How it works" is the footer's label for the same page, kept verbatim. */
+export function learnNavLinks(
+  pathname: string,
+  hostname?: string,
+): ResearchLink[] {
+  const current = marketForPath(pathname, hostname);
+  const home = MARKETS.find((m) => m.id === current.id) ?? uk();
+  const owner = home.id === "us" ? "us" : "uk";
+
+  const link = (
+    label: string,
+    path: string,
+    extra?: Omit<ResearchLink, "label" | "path" | "href">,
+  ): ResearchLink => ({
+    label,
+    path,
+    href: marketHref(home, path, hostname),
+    ...extra,
+  });
+
+  const guides = START_HERE[owner]
+    .map((slug) => entryBySlug(slug))
+    .filter((e) => e !== null)
+    .map((e) => link(e.term, learnPath(e.slug)));
+
+  return [
+    ...guides,
+    link("How it works", "/how-it-works"),
+    link("All guides", "/learn", { divider: true }),
+  ];
+}
+
 /** Footer link groups for the current route and host.
  *
  *  Deliberately not exhaustive — a footer listing every URL on the site stops
@@ -273,8 +322,11 @@ export function footerGroups(pathname: string, hostname?: string): NavGroup[] {
   ];
 
   // Only entries this domain owns — linking to another host's copy would
-  // advertise a URL that canonicalises elsewhere.
-  const learn: NavLink[] = entriesForHost(hostname ?? "")
+  // advertise a URL that canonicalises elsewhere. Taken in index order (the
+  // host's START_HERE guides and their group first), so the column opens on
+  // what a newcomer should read rather than on four legal terms.
+  const learn: NavLink[] = groupEntries(entriesForHost(hostname ?? ""))
+    .flatMap((g) => g.entries)
     .slice(0, 5)
     .map((e) => ({ label: e.term, href: learnPath(e.slug) }));
 

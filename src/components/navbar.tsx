@@ -11,7 +11,12 @@ import { Drawer } from "vaul";
 
 import { Spinner } from "@/components/spinner";
 import { StoreGlyph } from "@/components/store-glyph";
-import { RESEARCH_PATHS, researchNavLinks } from "@/lib/site-nav";
+import {
+  RESEARCH_PATHS,
+  learnNavLinks,
+  researchNavLinks,
+  type ResearchLink,
+} from "@/lib/site-nav";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
@@ -29,9 +34,9 @@ import {
   marketHref,
 } from "@/lib/markets/registry";
 
-/** A masthead entry. Four of the five are a plain anchor; one is the Research
- *  disclosure, which carries no href of its own — its `match` is what decides
- *  whether the trigger reads as active. */
+/** A masthead entry. Most are a plain anchor; Research and Learn are
+ *  disclosures, which carry no href of their own — their `match` is what
+ *  decides whether the trigger reads as active. */
 type NavItem =
   | {
       kind: "link";
@@ -39,18 +44,25 @@ type NavItem =
       href: string;
       match: (p: string) => boolean;
     }
-  | { kind: "research"; match: (p: string) => boolean };
+  | {
+      kind: "menu";
+      id: "research" | "learn";
+      label: string;
+      links: ResearchLink[];
+      match: (p: string) => boolean;
+    };
 
 /** The masthead item's two states, shared by the plain links and by the
- *  Research disclosure trigger so a <button> in the row can't drift away from
- *  the <a>s beside it. */
+ *  disclosure triggers so a <button> in the row can't drift away from the
+ *  <a>s beside it. */
 const navItemClass = (active: boolean) =>
   clsx("text-sm transition-colors", {
     "text-[#5a4128] dark:text-[#d8c4af] font-medium": active,
     "text-foreground hover:text-[#5a4128]": !active,
   });
 
-/** Research dropdown — the site's content axis, folded into one masthead item.
+/** A masthead dropdown. Built for Research — the site's content axis, folded
+ *  into one masthead item — and reused for Learn.
  *
  *  Modelled on the market picker's DesktopDropdown (components/market-switcher)
  *  and sharing its panel recipe so the two menus read as one material, with
@@ -69,12 +81,21 @@ const navItemClass = (active: boolean) =>
  *  /companies in here costs it its site-wide top-level link; keeping the seven
  *  anchors in the DOM on every page is what replaces it, and the hub-and-spoke
  *  the pre-render Functions exist to build depends on them being there. */
-function ResearchMenu({ active }: { active: boolean }) {
+function NavMenu({
+  id,
+  label,
+  links,
+  active,
+}: {
+  id: string;
+  label: string;
+  links: ResearchLink[];
+  active: boolean;
+}) {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const links = researchNavLinks(location.pathname);
 
   useEffect(() => {
     if (!open) return;
@@ -115,13 +136,13 @@ function ResearchMenu({ active }: { active: boolean }) {
     >
       <button
         ref={triggerRef}
-        aria-controls="nav-research"
+        aria-controls={`nav-${id}`}
         aria-expanded={open}
         className={clsx(navItemClass(active), "flex items-center gap-1")}
         type="button"
         onClick={() => setOpen((v) => !v)}
       >
-        Research
+        {label}
         <ChevronDownIcon
           className={clsx("w-3 h-3 transition-transform", open && "rotate-180")}
         />
@@ -137,7 +158,7 @@ function ResearchMenu({ active }: { active: boolean }) {
           !open && "hidden",
         )}
         hidden={!open}
-        id="nav-research"
+        id={`nav-${id}`}
       >
         <ul>
           {links.map((link) => {
@@ -184,10 +205,10 @@ function ResearchMenu({ active }: { active: boolean }) {
  *
  *  Two shapes differ from the desktop row:
  *
- *  - Research is flattened. A disclosure nested inside a sheet is two taps
- *    for one destination, so the seven links sit under an eyebrow at the foot
- *    of the list, after the plain rows — a heading mid-list would claim the
- *    rows beneath it as its own.
+ *  - Research and Learn are flattened. A disclosure nested inside a sheet is
+ *    two taps for one destination, so each menu's links sit under an eyebrow
+ *    at the foot of the list, after the plain rows — a heading mid-list would
+ *    claim the rows beneath it as its own.
  *  - The download CTA rides along. Desktop reveals it on scroll; here it is a
  *    standing row at the sheet's foot, because a menu is where a reader who
  *    has come looking for something expects to find the app.
@@ -211,8 +232,9 @@ function MobileMenu({
   // carries a spinner and the rest stop taking taps — the market picker's
   // pattern.
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const research = items.find((i) => i.kind === "research");
-  const links = research ? researchNavLinks(location.pathname) : [];
+  const menus = items.filter(
+    (i): i is Extract<NavItem, { kind: "menu" }> => i.kind === "menu",
+  );
 
   // Back/forward can restore this page from the bfcache with the spinner still
   // running, since no navigation ever unmounted it. Clear it when that happens.
@@ -288,7 +310,7 @@ function MobileMenu({
 
             <ul>
               {items.map((item) => {
-                if (item.kind === "research") return null;
+                if (item.kind === "menu") return null;
 
                 return (
                   <li key={item.href}>
@@ -301,15 +323,15 @@ function MobileMenu({
               })}
             </ul>
 
-            {research && (
-              <>
+            {menus.map((menu) => (
+              <div key={menu.id}>
                 <div className="my-1.5 border-t border-separator/60" />
                 <div className="px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-foreground/45">
-                  Research
+                  {menu.label}
                 </div>
                 <ul>
-                  {links.map((link) => (
-                    // Same rule the desktop dropdown draws above the archive.
+                  {menu.links.map((link) => (
+                    // Same rule the desktop dropdown draws above its last row.
                     <li
                       key={link.path}
                       className={clsx(
@@ -329,8 +351,8 @@ function MobileMenu({
                     </li>
                   ))}
                 </ul>
-              </>
-            )}
+              </div>
+            ))}
           </div>
 
           <div className="shrink-0 border-t border-separator/60 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3">
@@ -415,16 +437,45 @@ export const Navbar = () => {
       href: dashboardHref,
       match: (p: string) => p === dashboardHref || p === "/",
     },
+    // Learn sits second, ahead of Research: it is the item a reader who has
+    // never followed director buying needs first, and the four after it
+    // (Research, Brokers, API, MCP) all assume they already do. It took the
+    // place of a plain "Method" link, which is now its "How it works" row —
+    // see learnNavLinks for why the two were folded rather than added.
+    //
+    // Gated to the two markets that publish /how-it-works and own glossary
+    // entries: SE/NL run no analysis layer for it to describe — on ddbx.eu the
+    // route 301s to ddbx.uk (see isForeignResearchPath in shared/seo.js), so
+    // linking it there would put a cross-domain redirect in the primary nav.
+    // Congress and Trump Media ride the US domain but score on their own
+    // model, so they're out too.
+    ...(market.id === "uk" || market.id === "us"
+      ? [
+          {
+            kind: "menu" as const,
+            id: "learn" as const,
+            label: "Learn",
+            links: learnNavLinks(location.pathname),
+            match: (p: string) =>
+              p === "/how-it-works" ||
+              p === "/learn" ||
+              p.startsWith("/learn/"),
+          },
+        ]
+      : []),
     // "Companies" used to sit here as its own item; it is now the first row of
-    // the Research menu. The masthead stays at five items rather than growing
-    // to six at exactly the 768px breakpoint where the list first appears, and
+    // the Research menu. The masthead holds its item count rather than growing
+    // it at exactly the 768px breakpoint where the list first appears, and
     // the whole content axis gains an entry point instead of one page having
     // one. Same market gate as before — the dropdown appears wherever the
     // companies index did.
     ...(showCompanies
       ? [
           {
-            kind: "research" as const,
+            kind: "menu" as const,
+            id: "research" as const,
+            label: "Research",
+            links: researchNavLinks(location.pathname),
             match: (p: string) =>
               RESEARCH_PATHS.some((x) => p === x || p.startsWith(`${x}/`)) ||
               p.startsWith("/company/"),
@@ -439,22 +490,6 @@ export const Navbar = () => {
             href: "/brokers",
             match: (p: string) =>
               p.startsWith("/brokers") || p.startsWith("/compare"),
-          },
-        ]
-      : []),
-    // Gated to the two markets that publish it: /how-it-works describes six
-    // checks, four ratings and a written analysis, and SE/NL run no analysis
-    // layer for it to describe — on ddbx.eu the route 301s to ddbx.uk (see
-    // isForeignResearchPath in shared/seo.js), so linking it there would put a
-    // cross-domain redirect in the primary nav. Congress and Trump Media ride
-    // the US domain but score on their own model, so they're out too.
-    ...(market.id === "uk" || market.id === "us"
-      ? [
-          {
-            kind: "link" as const,
-            label: "Method",
-            href: "/how-it-works",
-            match: (p: string) => p === "/how-it-works",
           },
         ]
       : []),
@@ -511,9 +546,14 @@ export const Navbar = () => {
                 const active = item.match(location.pathname);
 
                 return (
-                  <li key={item.kind === "research" ? "research" : item.href}>
-                    {item.kind === "research" ? (
-                      <ResearchMenu active={active} />
+                  <li key={item.kind === "menu" ? item.id : item.href}>
+                    {item.kind === "menu" ? (
+                      <NavMenu
+                        active={active}
+                        id={item.id}
+                        label={item.label}
+                        links={item.links}
+                      />
                     ) : (
                       <a className={navItemClass(active)} href={item.href}>
                         {item.label}

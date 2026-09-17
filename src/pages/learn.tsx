@@ -33,12 +33,12 @@ import { Link, useParams } from "react-router-dom";
 import {
   canonicalUrlForEntry,
   entriesForHost,
+  entriesForOwner,
   entryBySlug,
   formatUpdated,
   groupEntries,
   learnPath,
   ownerForHost,
-  ENTRIES,
 } from "../../shared/glossary.js";
 import {
   isEligibleBuy,
@@ -113,11 +113,14 @@ function useRailMarketId(): string {
   );
 }
 
-/** Entries this host publishes, or all of them where nothing is owned. */
+/** Entries this host publishes, or all of them where nothing is owned — UK's
+ *  first, so localhost and preview builds read in the ddbx.uk order. */
 function useEntries(host: string): GlossaryEntry[] {
   const owned = entriesForHost(host);
 
-  return owned.length > 0 ? owned : ENTRIES;
+  return owned.length > 0
+    ? owned
+    : [...entriesForOwner("uk"), ...entriesForOwner("us")];
 }
 
 /** The index's grouped list, also used by the not-found state — a reader who

@@ -64,6 +64,24 @@ export const GROUPS = [
   { id: "reading", label: "Reading them" },
 ];
 
+/** What a newcomer should read first on each host, in reading order.
+ *
+ *  Array order alone put the UK index, the footer’s Learn column and anything
+ *  else that lists entries on PDMR, MAR Article 19, closed periods and RNS —
+ *  four legal terms a reader who has never followed director buying has no
+ *  reason to open — with the one essay written for that reader last of seven.
+ *  The law is needed later; the first question is why a purchase is worth
+ *  watching at all.
+ *
+ *  These lead `entriesForHost`, which is what reorders the index, its
+ *  pre-render and the footer, and they are the guides the masthead’s Learn
+ *  menu names. US leads with Form 4 because on that host the filing is the
+ *  unfamiliar object; the “why watch” essay is UK-owned and linked across. */
+export const START_HERE = {
+  uk: ["what-a-director-buy-signals", "open-market-buy"],
+  us: ["form-4", "rule-10b5-1"],
+};
+
 export const ENTRIES = [
   {
     slug: "pdmr",
@@ -327,12 +345,26 @@ export const ENTRY_SLUGS = ENTRIES.map((e) => e.slug);
 /** Split an already-resolved entry list into the index’s two groups, dropping
  *  any group nothing landed in. Takes the list rather than the host because
  *  the SPA index falls back to every entry off a non-owning host and the
- *  pre-render never does — same grouping, two different inputs. */
+ *  pre-render never does — same grouping, two different inputs.
+ *
+ *  Groups come out in the order their first entry appears in the list, not in
+ *  GROUPS order, so whichever group holds the host’s START_HERE guide leads:
+ *  “Reading them” on ddbx.uk, “The filings” (Form 4) on ddbx.us. */
 export function groupEntries(entries) {
-  return GROUPS.map((g) => ({
-    ...g,
-    entries: (entries ?? []).filter((e) => e.group === g.id),
-  })).filter((g) => g.entries.length > 0);
+  const list = entries ?? [];
+  const first = (id) => {
+    const i = list.findIndex((e) => e.group === id);
+
+    return i === -1 ? Infinity : i;
+  };
+
+  return [...GROUPS]
+    .sort((a, b) => first(a.id) - first(b.id))
+    .map((g) => ({
+      ...g,
+      entries: list.filter((e) => e.group === g.id),
+    }))
+    .filter((g) => g.entries.length > 0);
 }
 
 export function entryBySlug(slug) {
@@ -383,11 +415,28 @@ export function ownerForHost(host) {
   return null;
 }
 
+/** Entries one market owns, its START_HERE guides first and the rest in array
+ *  order. */
+export function entriesForOwner(owner) {
+  const start = START_HERE[owner] ?? [];
+  const rank = (e) => {
+    const i = start.indexOf(e.slug);
+
+    return i === -1 ? start.length : i;
+  };
+
+  // Array.prototype.sort is stable, so everything outside START_HERE keeps
+  // its array order.
+  return ENTRIES.filter((e) => e.owner === owner).sort(
+    (a, b) => rank(a) - rank(b),
+  );
+}
+
 /** Entries published on a given host. */
 export function entriesForHost(host) {
   const owner = ownerForHost(host);
 
-  return owner ? ENTRIES.filter((e) => e.owner === owner) : [];
+  return owner ? entriesForOwner(owner) : [];
 }
 
 /** Absolute canonical URL for an entry — always its owning host, so a request

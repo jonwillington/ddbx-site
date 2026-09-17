@@ -53,6 +53,9 @@ export interface GlossaryGroup {
 export declare const OWNER_HOST: Record<GlossaryOwner, string>;
 export declare const GROUPS: GlossaryGroup[];
 export declare const ENTRIES: GlossaryEntry[];
+/** Slugs a newcomer should read first on each host, in reading order. */
+export declare const START_HERE: Record<GlossaryOwner, string[]>;
+export declare function entriesForOwner(owner: GlossaryOwner): GlossaryEntry[];
 export declare const ENTRY_SLUGS: string[];
 export declare function groupEntries(
   entries: GlossaryEntry[],
