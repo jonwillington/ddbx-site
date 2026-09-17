@@ -26,9 +26,13 @@ import {
   formatNative,
   formatSessionHours,
   mergeTape,
+  joinMarketNames,
   rowClock,
+  tapeCoverageNow,
   tapeMarket,
+  tapeMarketStates,
   tapeRowHref,
+  tapeSummary,
   TAPE_MARKETS,
   TAPE_METHODOLOGY,
 } from "../shared/tape.js";
@@ -64,22 +68,24 @@ function verdict(row) {
   }
 }
 
-function leadSentence(rows, floor) {
-  const markets = new Set(rows.map((r) => r.market)).size;
+/** The count with its per-market parts (so a round total cannot read as a
+ *  cap), any quiet market with the date of its last filing, then the newest
+ *  row. `rows` is the whole merged tape, not the 80 the table prints. */
+function leadSentence(rows, floor, states) {
+  const summary = tapeSummary(rows, states, floor);
   const top = rows[0];
-  const opener = `${rows.length} insider filings on the tape from ${markets} markets since ${formatDayShort(floor ?? rows[rows.length - 1].disclosedDate)}, newest first`;
 
-  if (!top) return `${opener}.`;
+  if (!top) return summary;
   const m = tapeMarket(top.market);
   const size = formatNative(top.value, top.currency);
   // "who bought £99k" reads; "who exercise SEK 2k" does not. A grant or an
   // exercise leads without a size clause.
   const verb = top.side === "buy" ? "bought" : top.side === "sell" ? "sold" : null;
 
-  return `${opener}, led by ${top.insider.name}${top.insider.role ? `, ${top.insider.role}` : ""} at ${top.company} in ${m.name}${verb && size ? `, who ${verb} ${size}` : ""}.`;
+  return `${summary} Newest: ${top.insider.name}${top.insider.role ? `, ${top.insider.role}` : ""} at ${top.company} in ${m.name}${verb && size ? `, who ${verb} ${size}` : ""}.`;
 }
 
-function prerender(rows, floor, binding, failed, host) {
+function prerender(rows, allRows, floor, binding, failed, states, host) {
   const cell = "padding:8px 12px;border-bottom:1px solid #ece1cf;vertical-align:top";
   const quiet = "display:block;font-size:12px;color:#6b6154;margin-top:2px";
   const eyebrow =
@@ -119,8 +125,8 @@ function prerender(rows, floor, binding, failed, host) {
     .join("");
 
   const coverage = TAPE_MARKETS.map(
-    (m) => `<li style="margin-bottom:14px"><strong>${esc(m.name)}</strong> · ${esc(m.city)} · ${esc(formatSessionHours(m))} local · ${esc(m.currency)}<br>
-      <span style="color:#4a4034">Source: ${esc(m.source)}. Who files: ${esc(m.filers)}. On the tape: ${esc(m.included)}. Timing: ${esc(m.cadence)}. Verdicts: ${
+    (m, i) => `<li style="margin-bottom:14px"><strong>${esc(m.name)}</strong> · ${esc(m.city)} · ${esc(formatSessionHours(m))} local · ${esc(m.currency)}<br>
+      <span style="color:#4a4034">Right now: ${esc(tapeCoverageNow(states[i], floor))}. Source: ${esc(m.source)}. Who files: ${esc(m.filers)}. On the tape: ${esc(m.included)}. Timing: ${esc(m.cadence)}. Verdicts: ${
         m.ratings === "layer"
           ? "rated where the analysis layer has reached the filing; the rest are shown unrated."
           : "none yet; every row is marked as an unrated market, not an unrated filing."
@@ -131,8 +137,7 @@ function prerender(rows, floor, binding, failed, host) {
     (line) => `<li style="margin-bottom:8px">${esc(line)}</li>`,
   ).join("");
 
-  const names = { KR: "Korea", SE: "Sweden", NL: "the Netherlands", UK: "the UK", US: "the US" };
-  const list = (ids) => ids.map((id) => names[id] ?? id).join(", ");
+  const list = joinMarketNames;
 
   return page(`<p style="${eyebrow}">Global tape</p>
   <h1 style="font-size:30px;line-height:1.15;letter-spacing:-0.4px;margin:0 0 12px">Five markets, one tape</h1>
@@ -141,6 +146,7 @@ function prerender(rows, floor, binding, failed, host) {
   ${failed.length ? `<p style="font-size:13px;color:#6b6154;max-width:62ch">The ${esc(list(failed))} ${failed.length === 1 ? "feed" : "feeds"} did not load when this page was rendered, so ${esc(list(failed))} ${failed.length === 1 ? "is" : "are"} missing from the list below. That is a network problem, not a quiet market.</p>` : ""}
   <h2 style="font-size:15px;margin:28px 0 10px">Five exchanges</h2>
   <ul style="font-size:14px;line-height:1.7;color:#4a4034;max-width:72ch;padding-left:18px">${TAPE_MARKETS.map((m) => `<li>${esc(m.city)} trades ${esc(formatSessionHours(m))} local time</li>`).join("")}</ul>
+  <p style="font-size:14px;line-height:1.7;color:#4a4034;max-width:64ch">${esc(tapeSummary(allRows, states, floor))}${allRows.length > rows.length ? ` The newest ${rows.length} are listed here.` : ""}</p>
   <table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>
     <th style="text-align:left;padding:8px 12px">Disclosed</th>
     <th style="text-align:left;padding:8px 12px">Market</th>
@@ -188,14 +194,15 @@ export async function onRequestGet(context) {
   if (rows.length === 0) return noindex(shell);
 
   const shown = rows.slice(0, ROWS);
+  const states = tapeMarketStates(feeds, rows);
 
   return renderInto(shell, {
     title: brandTitle(
       "The global insider tape — UK, US, Sweden, Netherlands and Korea, newest first",
     ),
-    description: leadSentence(rows, floor),
+    description: leadSentence(rows, floor, states),
     canonical: CANONICAL,
     breadcrumbs: [{ name: "Global tape", item: CANONICAL }],
-    body: prerender(shown, floor, binding, failed, host),
+    body: prerender(shown, rows, floor, binding, failed, states, host),
   });
 }

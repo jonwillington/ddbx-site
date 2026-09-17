@@ -218,7 +218,7 @@ export const TAPE_MARKETS = [
 ];
 
 import { isProductionHost, MARKET_HOST_BY_ID } from "./seo.js";
-import { usInsiderDisplayName } from "./us-names.js";
+import { recaseIfShouted, usInsiderDisplayName } from "./us-names.js";
 
 /** Rows asked for per market. The Korea endpoint caps a page at 200 whatever
  *  is asked; the UK and US honour up to 1,000, and the EU endpoint returned
@@ -388,7 +388,9 @@ function fromUs(d) {
   return finish({
     key: `US|${d.id}`,
     market: "US",
-    company: cleanName(d.company) || String(d.ticker ?? ""),
+    // EDGAR issuer names arrive shouted ("TERAWULF INC."); recased the way
+    // the US directory and its pre-render recase them.
+    company: recaseIfShouted(cleanName(d.company)) || String(d.ticker ?? ""),
     ticker: d.ticker && d.ticker !== "NONE" ? d.ticker : null,
     logoTicker: d.ticker && d.ticker !== "NONE" ? d.ticker : null,
     logoDomain: null,
@@ -1035,6 +1037,93 @@ export function rowClock(row) {
   const clock = formatLocalClock(row.at, m.timeZone);
 
   return row.atKind === "seen" ? `seen ${clock} ${m.city}` : `${clock} ${m.city}`;
+}
+
+// ---------------------------------------------------------------------------
+// Where each market stands on the tape, said the same way by both renderers
+// ---------------------------------------------------------------------------
+
+/** Market names as they sit inside a sentence. */
+export const TAPE_MARKET_NAMES = {
+  KR: "Korea",
+  SE: "Sweden",
+  NL: "the Netherlands",
+  UK: "the UK",
+  US: "the US",
+};
+
+/** "Sweden", "Sweden and the UK", "Korea, Sweden and the UK". */
+export function joinMarketNames(ids) {
+  const names = ids.map((id) => TAPE_MARKET_NAMES[id] ?? id);
+
+  if (names.length <= 1) return names.join("");
+
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+const sentenceCase = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** Each market, in strip order, as the tape stands: "on" with a count of the
+ *  rows it has on the tape, "quiet" when its feed answered but nothing it
+ *  holds reaches the tape's span (the Netherlands on 17 September: newest
+ *  filing the 7th, floor the 12th), or "failed". `latest` is the newest day
+ *  the feed holds, read from the data, so a quiet market can say since when.
+ *
+ *  `rows` is what is on the page: the merged rows for the pre-render, the
+ *  held rows for the React page, which may reach below today's floor. */
+export function tapeMarketStates(feeds, rows) {
+  return TAPE_MARKETS.map((m) => {
+    const feed = feeds?.[m.id];
+    const count = (rows ?? []).filter((r) => r.market === m.id).length;
+    const latest =
+      feed?.status === "ok"
+        ? feed.rows.reduce(
+            (max, r) => (max == null || r.disclosedDate > max ? r.disclosedDate : max),
+            null,
+          )
+        : null;
+    const state = feed?.status !== "ok" ? "failed" : count > 0 ? "on" : "quiet";
+
+    return { id: m.id, name: TAPE_MARKET_NAMES[m.id], state, count, latest };
+  });
+}
+
+/** The count line above the tape and the head of the pre-render's meta
+ *  description. The total is followed by its per-market parts, so a round
+ *  number reads as the count it is rather than as a cap, and every covered
+ *  market is accounted for: a quiet one is named with the date of its newest
+ *  filing. A failed one is left to the failure notice, which names it. */
+export function tapeSummary(rows, states, floor) {
+  const total = rows.length;
+  const on = states.filter((s) => s.state === "on").sort((a, b) => b.count - a.count);
+  const since = floor ?? rows.reduce((min, r) => (min == null || r.disclosedDate < min ? r.disclosedDate : min), null);
+  const parts = on.map((s) => `${s.count} from ${s.name}`);
+  const head = `${total} ${total === 1 ? "filing" : "filings"} from ${on.length} of ${states.length} markets${since ? ` since ${formatDayShort(since)}` : ""}, newest first`;
+  const breakdown =
+    parts.length > 1
+      ? `: ${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`
+      : "";
+  const quiet = states
+    .filter((s) => s.state === "quiet")
+    .map((s) =>
+      s.latest
+        ? `${sentenceCase(s.name)} has had no filings since ${formatDayShort(s.latest)}, so it has no rows in this span.`
+        : `${sentenceCase(s.name)} has no filings on its feed.`,
+    );
+
+  return [`${head}${breakdown}.`, ...quiet].join(" ");
+}
+
+/** One market's line in the coverage section: where it stands right now. */
+export function tapeCoverageNow(state, floor) {
+  if (state.state === "failed") return "The feed did not load, so this market is missing from the tape";
+  if (state.state === "quiet") {
+    return state.latest
+      ? `No filings since ${formatDayShort(state.latest)}, so none in the tape’s span${floor ? `, which starts ${formatDayShort(floor)}` : ""}`
+      : "No filings on the feed";
+  }
+
+  return `${state.count} ${state.count === 1 ? "filing" : "filings"} on the tape${floor ? ` since ${formatDayShort(floor)}` : ""}`;
 }
 
 /** What the page publishes about how the tape is put together. Rendered by

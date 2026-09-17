@@ -1,7 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { mergeTape, normaliseFeed, tapeRowHref, TAPE_MARKETS } from "../shared/tape.js";
+import {
+  mergeTape,
+  normaliseFeed,
+  tapeCoverageNow,
+  tapeMarketStates,
+  tapeRowHref,
+  tapeSummary,
+  TAPE_MARKETS,
+} from "../shared/tape.js";
 import {
   applyTapeFeeds,
   failTapePoll,
@@ -307,4 +315,50 @@ test("the grouping change flows through the merge: the tape counts notifications
   );
 
   assert.equal(merged.length, 2 + 1 + 2 + 1 + 4);
+});
+
+// ---------------------------------------------------------------------------
+// Market states: every covered market accounted for, in both renderers
+// ---------------------------------------------------------------------------
+
+test("a quiet market is named with the date of its newest filing, and the count says 'of 5'", () => {
+  const nl = { ...row("NL", "old", "2026-09-07"), disclosedDate: "2026-09-07" };
+  const f = feeds({
+    SE: [row("SE", "a", "2026-09-15"), row("SE", "b", "2026-09-14")],
+    UK: [row("UK", "c", "2026-09-15")],
+    US: [row("US", "d", "2026-09-13")],
+    KR: [row("KR", "e", "2026-09-16")],
+    NL: [nl],
+  });
+  // Rows at or after a floor of 12 Sept: the Dutch row is below it.
+  const onTape = ["SE", "UK", "US", "KR"].flatMap((id) => f[id].rows);
+  const states = tapeMarketStates(f, onTape);
+  const summary = tapeSummary(onTape, states, "2026-09-12");
+
+  assert.equal(
+    summary,
+    "5 filings from 4 of 5 markets since 12 Sept, newest first: 2 from Sweden, 1 from Korea, 1 from the UK and 1 from the US. The Netherlands has had no filings since 7 Sept, so it has no rows in this span.",
+  );
+  const nlState = states.find((s) => s.id === "NL");
+
+  assert.equal(nlState.state, "quiet");
+  assert.equal(nlState.latest, "2026-09-07");
+  assert.match(tapeCoverageNow(nlState, "2026-09-12"), /^No filings since 7 Sept/);
+  assert.equal(tapeCoverageNow(states.find((s) => s.id === "SE"), "2026-09-12"), "2 filings on the tape since 12 Sept");
+});
+
+test("a failed market is not counted and not called quiet", () => {
+  const f = feeds({ UK: [row("UK", "a")] });
+  const states = tapeMarketStates(f, f.UK.rows);
+
+  assert.equal(states.find((s) => s.id === "SE").state, "failed");
+  assert.equal(tapeSummary(f.UK.rows, states, null), "1 filing from 1 of 5 markets since 16 Sept, newest first.");
+});
+
+test("shouted EDGAR issuer names are recased", () => {
+  const [us] = normaliseFeed("US", {
+    dealings: [{ id: "u1", company: "TERAWULF INC.", ticker: "WULF", transaction_code: "P", reporter: { name: "BUCELLA MICHAEL C" }, disclosed_date: "2026-09-16" }],
+  });
+
+  assert.equal(us.company, "Terawulf Inc.");
 });

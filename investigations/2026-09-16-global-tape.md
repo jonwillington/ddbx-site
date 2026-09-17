@@ -312,8 +312,15 @@ unchanged. It is now an open decision rather than an endpoint limit.
 ### Still open
 
 - The Netherlands has **no rows** on the tape today. Its newest filing is from
-  7 Sept, and the floor is 12 Sept (see §5.3). The clock cell shows the date,
-  but the standfirst names the Netherlands as a market on the tape.
+  7 Sept, and the floor is 12 Sept (see §5.3). **Follow-up, same day:** the
+  count line in both renderers now reads "N filings from 4 of 5 markets since
+  <floor>: <count per market>. The Netherlands has had no filings since
+  <its newest date>". Each market's coverage row also has a "Right now" line.
+  Both come from `tapeMarketStates` / `tapeSummary` in `shared/tape.js`, using
+  live data. The per-market parts are there because a total of exactly 200
+  (108 + 46 + 24 + 22 on 17 Sept) looked like a cap when it is a count. The
+  pre-render's description counts the whole merged tape, not the 80 rows it
+  prints. US issuer names are now recased with `recaseIfShouted`.
 - GT2 (Korea floor), GT3 (Korea links to `/kr`) and GT4 are unchanged.
 - Not verified: the pre-render under `wrangler pages dev` (only covered by the
   unit tests on the helper), absolute links in a browser on a production host,

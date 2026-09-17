@@ -23,7 +23,7 @@
  *  by the reader pressing the "new filings" pill.
  */
 import type { RelatedCard } from "@/components/seo/related-cards";
-import type { TapeMarket } from "../../shared/tape";
+import type { TapeMarket, TapeMarketState } from "../../shared/tape";
 
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
@@ -31,8 +31,12 @@ import { Link } from "react-router-dom";
 import {
   formatDayShort,
   formatSessionHours,
+  joinMarketNames as list,
   TAPE_MARKETS,
   TAPE_METHODOLOGY,
+  tapeCoverageNow,
+  tapeMarketStates,
+  tapeSummary,
   todayIn,
 } from "../../shared/tape.js";
 
@@ -75,22 +79,6 @@ const CROSS_LINKS: RelatedCard[] = [
   },
 ];
 
-const MARKET_NAMES: Record<string, string> = {
-  KR: "Korea",
-  SE: "Sweden",
-  NL: "the Netherlands",
-  UK: "the UK",
-  US: "the US",
-};
-
-function list(ids: string[]): string {
-  const names = ids.map((id) => MARKET_NAMES[id] ?? id);
-
-  if (names.length <= 1) return names.join("");
-
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-}
-
 /** The skeleton stands at the shape that arrives: a day rule, then rows of
  *  a 56px disc, two lines, and a size on the right. */
 function TapeSkeleton() {
@@ -118,7 +106,14 @@ function TapeSkeleton() {
   );
 }
 
-function CoverageRow({ market }: { market: TapeMarket }) {
+function CoverageRow({
+  market,
+  now,
+}: {
+  market: TapeMarket;
+  /** Where the market stands on the tape, once the feeds have answered. */
+  now: string | null;
+}) {
   const Flag = TAPE_FLAGS[market.id];
 
   return (
@@ -137,6 +132,12 @@ function CoverageRow({ market }: { market: TapeMarket }) {
         </p>
       </div>
       <dl className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13.5px] leading-[1.55]">
+        {now ? (
+          <>
+            <dt className="text-foreground/45">Right now</dt>
+            <dd className="font-medium text-foreground">{now}</dd>
+          </>
+        ) : null}
         <dt className="text-foreground/45">Source</dt>
         <dd className="text-foreground/80">{market.source}</dd>
         <dt className="text-foreground/45">Who files</dt>
@@ -168,7 +169,8 @@ export default function TapePage() {
 
   const loading = tape.feeds === null && !tape.down;
   const ready = !loading && !tape.down;
-  const markets = new Set(tape.rows.map((r) => r.market)).size;
+  const states: TapeMarketState[] | null =
+    tape.feeds && !tape.down ? tapeMarketStates(tape.feeds, tape.rows) : null;
 
   return (
     <DefaultLayout drawerRight>
@@ -279,11 +281,10 @@ export default function TapePage() {
         ) : (
           <>
             <p className={`mt-6 max-w-[62ch] ${R.body}`}>
-              {tape.rows.length} {tape.rows.length === 1 ? "filing" : "filings"}{" "}
-              from {markets} {markets === 1 ? "market" : "markets"}, newest
-              first. A European notification that reports several transactions
-              is one row. Each row states its side, its size in the currency it
-              was filed in, and the verdict where one exists.
+              {tapeSummary(tape.rows, states ?? [], tape.floor)} A European
+              notification that reports several transactions is one row. Each
+              row states its side, its size in the currency it was filed in, and
+              the verdict where one exists.
             </p>
             <TapeList
               lastSeenAt={tape.lastSeenAt}
@@ -338,7 +339,18 @@ export default function TapePage() {
         >
           <ol className={`mt-6 border-t ${R.rule}`}>
             {(TAPE_MARKETS as TapeMarket[]).map((m) => (
-              <CoverageRow key={m.id} market={m} />
+              <CoverageRow
+                key={m.id}
+                market={m}
+                now={
+                  states
+                    ? tapeCoverageNow(
+                        states.find((s) => s.id === m.id)!,
+                        tape.floor,
+                      )
+                    : null
+                }
+              />
             ))}
           </ol>
         </SeoSection>

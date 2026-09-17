@@ -120,3 +120,27 @@ export declare function tapeRowHref(
   row: Pick<TapeRow, "market" | "href">,
   hostname: string | null | undefined,
 ): string | null;
+
+export interface TapeMarketState {
+  id: TapeMarketId;
+  name: string;
+  state: "on" | "quiet" | "failed";
+  count: number;
+  latest: string | null;
+}
+
+export declare const TAPE_MARKET_NAMES: Record<TapeMarketId, string>;
+export declare function joinMarketNames(ids: string[]): string;
+export declare function tapeMarketStates(
+  feeds: Partial<TapeFeeds> | null | undefined,
+  rows: TapeRow[],
+): TapeMarketState[];
+export declare function tapeSummary(
+  rows: TapeRow[],
+  states: TapeMarketState[],
+  floor: string | null,
+): string;
+export declare function tapeCoverageNow(
+  state: TapeMarketState,
+  floor: string | null,
+): string;
