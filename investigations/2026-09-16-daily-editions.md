@@ -307,20 +307,17 @@ Checked every archive day against its own edition on the live API
   the archive. US 16 Sep: BMA, traded 2026-03-19, filed 2026-09-16. UK
   24 Aug: PCTN.L, traded 2024-03-13. Fix: `windowOn: "disclosed"` and the
   real floor.
-- **Cause B, found while checking the fix.** `fetchDealingsWindow` sets its
-  next page cursor to the oldest `disclosed_date` on a full page, and asks
-  for rows `before` that date. The API treats `before` as **exclusive**
-  (`d.disclosed_date < ?`), so any row on the boundary day that didn't fit on
-  the earlier page is never read. The code comment saying those rows "come
-  back again" is wrong. Measured with the whole US record: 19 Aug listed 17
-  of its 52 filings, 8 Jul 12 of 29, 19 May 5 of 39. UK 13 Mar listed 8 of
-  10. **The same walk feeds the boards**, so any board window over 1,000
-  rows loses rows the same way. The shared file was off limits for this
-  change, so `fetchArchive` records the walk's cursors and re-reads each
-  boundary day whole with the edition's own day window, then merges by id.
-  The right fix is in `shared/dealings-feed.js`: set the next cursor to
-  `addDays(oldest, 1)` and stop when a page adds no new ids. Once that lands,
-  delete the refill.
+- **Cause B, found while checking the fix.** `fetchDealingsWindow` set its
+  next page cursor to the oldest `disclosed_date` on a full page and asked for
+  rows `before` that date. The API treats `before` as **exclusive**, so any
+  row on the boundary day that didn't fit on the earlier page was never read.
+  With the whole US record: 19 Aug listed 17 of its 52 filings, 8 Jul 12 of
+  29, 19 May 5 of 39. UK 13 Mar listed 8 of 10. The boards were exposed too.
+  Fixed in the shared walk on `growth/shared-window` (944897a): the cursor is
+  now `addDays(oldest, 1)`, and a full page that adds no new ids stops with
+  `complete: false`. This branch is rebased onto it. The stopgap refill that
+  briefly lived in `fetchArchive` is gone, and the check still finds 0
+  mismatches across 127 UK and 87 US days.
 - The edition, the archive and the sitemap now all bucket rows by
   `disclosedDay()` (the first ten characters of `disclosed_date`).
 
@@ -404,13 +401,11 @@ that falls mid-day (1,300 rows; the walk alone returns 1,217); a timestamped
 `disclosed_date` buckets the same in both; US fetches send `view=all`; an
 outage vs an empty archive; the bar; the sitemap leaves out thin days and
 leaves out today until its summary lands; holders are excluded from biggest
-buy; id stripping and citation merging. `npm test` 17/17, `tsc` clean,
+buy; id stripping and citation merging. `npm test` 19/19 after the rebase, `tsc` clean,
 `npm run build` clean (the HeroUI slider CSS warnings were already there).
 
 ### Still open
 
-- **Fix the paging bug in `shared/dealings-feed.js`** (above). The boards are
-  exposed to it today.
 - **The US archive will hit the page budget.** `view=all` adds about 1,400
   rows a month and `MAX_PAGES` is 10 (10,000 rows). The archive is 4 pages
   now, so it will go `complete: false` around next spring. It is also 4 to 7
@@ -422,3 +417,23 @@ buy; id stripping and citation merging. `npm test` 17/17, `tsc` clean,
 - Dark mode not screenshotted. Pages rendered: `/daily`,
   `/daily/2026-09-15`, `/us/daily`, `/us/daily/2026-09-15` at 1440 and 520,
   plus `/daily` at 520 during an outage.
+
+### Insider Index slot, revised contract (same day)
+
+The index branch changed `readingSummary`: it is now null for day D until
+7am London on D+1, it takes `{ now }`, it returns `method`, and the index
+window is bounded by disclosed day (`indexWindow`). `src/lib/insider-index-slot.ts`
+now returns `{ kind: "reading" }` or `{ kind: "pending", landsAt }`, or null
+for nothing to show:
+
+- **Pending** is decided before any fetch, when the date is after
+  `publishedThrough(now)`. The section says "The Insider Index reading for
+  17 September 2026 lands at 7am on 18 September…", using the module's own
+  `publishLabel`, and links to `/insider-index`. It is not treated as a
+  failure or a missing number.
+- **Reading** fetches `indexWindow(now, "UK")` through `fetchDealingsWindow`
+  (disclosed-day window) and renders the module's `sentence` and
+  `windowSentence` unchanged, plus `Method v1`.
+- Checked with the index module temporarily copied into this tree (not
+  committed): `/daily/2026-09-16` rendered the reading (2, Very quiet) and
+  `/daily/2026-09-17` rendered the pending notice.

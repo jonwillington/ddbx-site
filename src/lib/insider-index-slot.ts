@@ -8,27 +8,29 @@
  *  the moment the module lands on disk the same glob resolves to a lazy chunk
  *  and the slot lights up with no code change here.
  *
- *  Contract, as agreed with the index's author (2026-09-16):
+ *  Contract, as the index's author has it (revised 2026-09-17):
  *
- *    readingSummary(dealings, date, "UK") -> null | {
+ *    readingSummary(dealings, date, "UK", { now }) -> null | {
  *      score, tier: { label, phrase }, sentence, windowSentence,
- *      weekChange, path, ...
+ *      weekChange, path, method, ...
  *    }
+ *    indexWindow(now, "UK")   -> fetchDealingsWindow options (disclosed-day
+ *                                window, the rows every renderer ranks)
+ *    publishedThrough(now)    -> the last date with a published reading
+ *    publishLabel(date)       -> "7am on 18 September"
  *
- *  `dealings` is the ROLLING TWELVE-MONTH UK WINDOW — the same rows every
- *  board reads (src/lib/dealings-window.ts) — not the day's rows: a reading is
- *  a 20-trading-day window ranked against every earlier window since March,
- *  so it needs the whole record. Lite rows are fine. UK only: the US feed is
- *  a curated subset and the index's author asks that no US reading be
- *  printed. Null means "no published reading" (weekend, before 2026-05-29,
- *  future, or feed too thin) and the slot renders nothing.
+ *  A day's reading is published at 7am London on the calendar day after it,
+ *  so readingSummary is null for today's edition by design. That null is not
+ *  a failure and not a missing number: the slot says when the reading lands,
+ *  in the module's own words for the time. Any other null (a weekend, before
+ *  the first full window, the module absent, the window failed) renders
+ *  nothing. The sentence is the module's; nothing here restates it.
  *
- *  The window is only fetched when the module exists, so a build without it
- *  costs the edition page no extra request.
+ *  UK only: the index's author asks that no US reading be printed.
  */
-import type { Dealing, UsDealing } from "@/types/ddbx";
+import { fetchDealingsWindow } from "../../shared/dealings-feed.js";
 
-import { loadDealingsWindow, rollingWindow } from "@/lib/dealings-window";
+import { API_BASE } from "@/lib/api";
 
 export interface InsiderIndexReading {
   score: number;
@@ -37,13 +39,28 @@ export interface InsiderIndexReading {
   windowSentence?: string;
   weekChange?: number | null;
   path?: string;
+  method?: string;
 }
 
-type ReadingSummary = (
-  dealings: Array<Dealing | UsDealing>,
-  date: string,
-  market: string,
-) => InsiderIndexReading | null;
+/** What the edition renders in the slot. */
+export type InsiderIndexSlot =
+  | { kind: "reading"; reading: InsiderIndexReading }
+  /** The day's reading is not published yet; `landsAt` is the module's
+   *  label for when it will be ("7am on 18 September"). */
+  | { kind: "pending"; landsAt: string };
+
+interface IndexModule {
+  readingSummary?: (
+    dealings: unknown[],
+    date: string,
+    market: string,
+    opts?: { now?: Date },
+  ) => InsiderIndexReading | null;
+  indexWindow?: (now: Date, market: string) => Record<string, unknown>;
+  publishedThrough?: (now: Date, market: string) => string;
+  publishLabel?: (date: string) => string;
+  isIndexDay?: (date: string, market: string) => boolean;
+}
 
 // TODO(insider-index): remove the glob indirection once
 // shared/insider-index.js has merged and import it directly.
@@ -56,31 +73,52 @@ const modules = import.meta.glob("../../shared/insider-index.js") as Record<
 /** Whether the index module is present in this build. */
 export const INSIDER_INDEX_AVAILABLE = MODULE_PATH in modules;
 
-/** The reading for a UK trading day, or null when there is none — or when the
- *  module is absent, the window failed, or the market is not UK. Never
- *  throws: the slot is a bonus on the page, not the page. */
-export async function insiderIndexReading(
+/** The slot for a UK trading day: a reading, a "lands at" notice for a day
+ *  whose reading is not out yet, or null for nothing to show. Never throws:
+ *  the slot is a bonus on the page, not the page. */
+export async function insiderIndexSlot(
   market: "UK" | "US",
   date: string,
-): Promise<InsiderIndexReading | null> {
+  now: Date = new Date(),
+): Promise<InsiderIndexSlot | null> {
   if (market !== "UK") return null;
   const load = modules[MODULE_PATH];
 
   if (!load) return null;
   try {
-    const mod = (await load()) as { readingSummary?: ReadingSummary };
+    const mod = (await load()) as IndexModule;
 
     if (typeof mod.readingSummary !== "function") return null;
-    const { dealings, complete } = await loadDealingsWindow(
-      rollingWindow("UK"),
-    );
+    if (mod.isIndexDay && !mod.isIndexDay(date, "UK")) return null;
+
+    // Not published yet. Decided before the window is fetched: today's
+    // edition needs no twelve months of rows to say "tomorrow at 7am".
+    if (
+      mod.publishedThrough &&
+      mod.publishLabel &&
+      date > mod.publishedThrough(now, "UK")
+    ) {
+      return { kind: "pending", landsAt: mod.publishLabel(date) };
+    }
+
+    if (typeof mod.indexWindow !== "function") return null;
+    const { dealings, complete } = await fetchDealingsWindow({
+      apiBase: API_BASE,
+      ...(mod.indexWindow(now, "UK") as {
+        market: "UK";
+        since: string;
+        windowOn?: "trade" | "disclosed";
+      }),
+    });
 
     // A partial window under-counts every earlier window the day is ranked
     // against, which would print a wrong percentile as a right one.
     if (!complete) return null;
-    const reading = mod.readingSummary(dealings, date, "UK");
+    const reading = mod.readingSummary(dealings, date, "UK", { now });
 
-    return reading && Number.isFinite(reading.score) ? reading : null;
+    return reading && Number.isFinite(reading.score)
+      ? { kind: "reading", reading }
+      : null;
   } catch {
     return null;
   }

@@ -749,64 +749,18 @@ export async function fetchArchive({
   cf = null,
 }) {
   const m = dailyMarket(market);
-  // The walk's page cursors, recorded on the way past. See the refill below.
-  const cursors = new Set();
-  const recording = (url, init) => {
-    const before = new URL(url).searchParams.get("before");
-
-    if (before) cursors.add(before);
-
-    return fetchImpl(url, init);
-  };
   const { dealings, complete } = await fetchDealingsWindow({
     apiBase,
     market: m.id,
     since: m.since,
     view: EDITION_VIEW[m.id],
     windowOn: "disclosed",
-    fetchImpl: recording,
+    fetchImpl,
     cf,
   });
+  const { days, stranded } = groupByDay(dealings, m.id);
 
-  // Refill the page-boundary days. fetchDealingsWindow advances its cursor to
-  // the oldest disclosed_date on a full page and asks for `before` that date,
-  // which the API applies as an EXCLUSIVE bound, so rows on the boundary day
-  // that did not fit on the earlier page are never read. Measured 2026-09-17:
-  // US 19 Aug listed 17 of its 52 filings, UK 13 Mar 8 of 10; every other day
-  // agreed with its dated page. Each boundary day is re-read whole with the
-  // edition's own day window and merged by id. Remove once the shared walk
-  // re-reads the boundary day itself (reported on the growth/shared-window
-  // branch); until then this is what keeps an archive row equal to its page.
-  const byId = new Map(dealings.map((d) => [d.id, d]));
-  let refilled = true;
-
-  for (const date of [...cursors].filter((d) => d >= m.since)) {
-    const qs = new URLSearchParams({
-      since: date,
-      before: addDays(date, 1),
-      fields: "lite",
-      limit: "1000",
-    });
-
-    if (EDITION_VIEW[m.id]) qs.set("view", EDITION_VIEW[m.id]);
-    const res = await fetchImpl(`${apiBase}/${FEED[m.id]}?${qs}`, {
-      headers: { accept: "application/json" },
-      ...(cf ? { cf } : {}),
-    }).catch(() => null);
-    const body = res?.ok ? await res.json().catch(() => null) : null;
-
-    if (!Array.isArray(body?.dealings)) {
-      refilled = false;
-      continue;
-    }
-    for (const d of body.dealings) if (d?.id && !byId.has(d.id)) byId.set(d.id, d);
-  }
-
-  const rows = [...byId.values()];
-  const { days, stranded } = groupByDay(rows, m.id);
-  const done = complete && refilled;
-
-  return { days, stranded, complete: done, failed: !done && rows.length === 0 };
+  return { days, stranded, complete, failed: !complete && dealings.length === 0 };
 }
 
 /** Whether a close-of-day summary exists for a date: true, false, or null

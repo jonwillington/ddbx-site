@@ -23,7 +23,7 @@ import type {
 } from "../../shared/days";
 import type { DailySummary } from "@/types/ddbx";
 import type { RelatedCard } from "@/components/seo/related-cards";
-import type { InsiderIndexReading } from "@/lib/insider-index-slot";
+import type { InsiderIndexSlot as IndexSlot } from "@/lib/insider-index-slot";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
@@ -82,7 +82,7 @@ import {
   cleanInsiderName,
   displayTicker,
 } from "@/lib/company";
-import { insiderIndexReading } from "@/lib/insider-index-slot";
+import { insiderIndexSlot } from "@/lib/insider-index-slot";
 
 type MarketId = "UK" | "US";
 
@@ -296,7 +296,7 @@ export default function DailyEditionPage({ market }: { market: MarketId }) {
         ? { kind: "loading" }
         : { kind: "signpost", status: status! },
   );
-  const [reading, setReading] = useState<InsiderIndexReading | null>(null);
+  const [indexSlot, setIndexSlot] = useState<IndexSlot | null>(null);
 
   useEffect(() => {
     if (!valid || !date) {
@@ -315,7 +315,7 @@ export default function DailyEditionPage({ market }: { market: MarketId }) {
     let live = true;
 
     setState({ kind: "loading" });
-    setReading(null);
+    setIndexSlot(null);
     fetchEdition({ apiBase: API_BASE, market: m.id, date })
       .then((edition) => {
         if (!live) return;
@@ -328,8 +328,8 @@ export default function DailyEditionPage({ market }: { market: MarketId }) {
       .catch(() => live && setState({ kind: "failed", status: s }));
 
     // The Insider Index slot. Its absence costs the section, not the page.
-    insiderIndexReading(m.id, date)
-      .then((r) => live && setReading(r))
+    insiderIndexSlot(m.id, date)
+      .then((r) => live && setIndexSlot(r))
       .catch(() => {});
 
     return () => {
@@ -493,11 +493,11 @@ export default function DailyEditionPage({ market }: { market: MarketId }) {
         {model && edition ? (
           <EditionBody
             edition={edition}
+            indexSlot={indexSlot}
             market={m.id}
             model={model}
             nav={nav}
             neighbours={neighbourCards(m.id, prev, next)}
-            reading={reading}
             status={dayState}
           />
         ) : null}
@@ -621,7 +621,7 @@ function EditionBody({
   model,
   nav,
   neighbours,
-  reading,
+  indexSlot,
   status,
 }: {
   edition: EditionFetch;
@@ -629,7 +629,7 @@ function EditionBody({
   model: EditionModel;
   nav: React.ReactNode;
   neighbours: RelatedCard[];
-  reading: InsiderIndexReading | null;
+  indexSlot: IndexSlot | null;
   status: DayStatus;
 }) {
   const m = dailyMarket(market);
@@ -640,7 +640,7 @@ function EditionBody({
   // times over.
   const empty = model.count === 0;
   const citations = citedFilings(model, edition.cited);
-  const total = (empty ? 2 : 4) + (reading ? 1 : 0);
+  const total = (empty ? 2 : 4) + (indexSlot ? 1 : 0);
   let n = 0;
   const step = () => ++n;
 
@@ -705,14 +705,14 @@ function EditionBody({
         />
       </SeoSection>
 
-      {reading ? (
+      {indexSlot ? (
         <SeoSection
           aside="How busy the buying is, against its own record."
           index={step()}
           title="Insider Index"
           total={total}
         >
-          <InsiderIndexSlot reading={reading} />
+          <InsiderIndexSlot date={edition.model.date} slot={indexSlot} />
         </SeoSection>
       ) : null}
 
@@ -888,9 +888,26 @@ function inlineBold(text: string) {
 
 /* ─── Insider Index ──────────────────────────────────────────────────────── */
 
-/** The slot. Renders only when src/lib/insider-index-slot.ts produced a
- *  reading; the module behind it is built on another branch. */
-function InsiderIndexSlot({ reading }: { reading: InsiderIndexReading }) {
+/** The slot. Renders only when src/lib/insider-index-slot.ts produced
+ *  something; the module behind it is built on another branch. A day whose
+ *  reading is not published yet (every edition until 7am the next morning)
+ *  says when it lands rather than showing nothing or yesterday's number. */
+function InsiderIndexSlot({ date, slot }: { date: string; slot: IndexSlot }) {
+  if (slot.kind === "pending") {
+    return (
+      <p className={`max-w-[62ch] ${R.body}`}>
+        The Insider Index reading for {dateLabel(date)} lands at {slot.landsAt},
+        once the day’s filings are all in. Each reading is published the morning
+        after the session it covers.{" "}
+        <Link className={R.link} to="/insider-index">
+          The latest reading
+        </Link>
+        .
+      </p>
+    );
+  }
+  const { reading } = slot;
+
   return (
     <div className="max-w-[62ch]">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -914,6 +931,7 @@ function InsiderIndexSlot({ reading }: { reading: InsiderIndexReading }) {
       <p className={`mt-3 ${R.label}`}>
         Buying intensity against its own record, not net of selling: the feeds
         carry no disposals.
+        {reading.method ? ` Method ${reading.method}.` : ""}
         {reading.path ? (
           <>
             {" "}
