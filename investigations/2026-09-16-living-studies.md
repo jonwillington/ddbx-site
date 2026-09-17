@@ -222,22 +222,23 @@ Every purchase is now scored on one fixed window: 90 days from the disclosure-da
 
 ### Verdicts, old → new (17 September 2026)
 
-Old = first build on today's rolling feed, buggy CDF. New = this build (snapshot of `/api/outcomes` from D1 with the endpoint's SQL, live feeds).
+Old = first build on today's rolling feed, buggy CDF. New = this build (snapshot of `/api/outcomes` from D1 with the endpoint's SQL, live feeds), recomputed after the feed paging fix (growth/shared-window `944897a`, which had been dropping each page's boundary-day overflow: UK window 1,042 → 1,044 rows, US `view=all` 3,132 → 3,218). No state changed with the fix; the numbers below are post-fix. p is company-clustered, with the naive p in brackets.
 
 | Market | Study | Old | New | New numbers |
 |---|---|---|---|---|
-| UK | CEO vs CFO | Waiting (CFO 22) | **Waiting** | CFO 22 purchases / 20 companies, needs 8 more; expected 28 Oct 2026. CEO 61% of 70 (57 cos), 48–74% |
-| UK | Size | Answered, 68% vs 53%, p = 0.021 | **Too close to call** | 49 / 59 / 61 / 63% (n 141/271/139/41); trend +5.1pp per band, 95% −1.6 to +11.8, p = 0.13 clustered (0.03 naive), G = 322 |
-| UK | Cluster | Answered, 63% vs 56%, p = 0.029 | **Too close to call** | 62% of 170 (61 cos) vs 59% of 281 (218 cos); gap +3.0pp, 95% −11.7 to +17.8, p = 0.69 (0.52 naive); design effect 2.5 |
-| US | CEO vs CFO | Waiting (CFO 14) | **Waiting** | CFO 20 / 20 companies, needs 10 more; expected 2 Nov 2026. CEO 60% of 63 (46 cos) |
-| US | Size | Answered, 47% vs 59%, p = 0.048 | **Too close to call** | 53 / 61 / 68 / 49% (n 83/108/136/57); trend +1.2pp, 95% −6.4 to +8.8, p = 0.75 |
-| US | Cluster | Answered, 50% vs 65%, p = 0.0003 | **Too close to call** | 65% of 134 (47 cos) vs 60% of 167 (137 cos); gap +5.0pp, 95% −12.6 to +22.7, p = 0.57 |
+| UK | CEO vs CFO | Waiting (CFO 22) | **Waiting** | CFO 22 purchases / 20 companies, needs 8 more; expected 28 Oct 2026. CEO 62% of 71 (57 cos), 48–74% |
+| UK | Size | Answered, 68% vs 53%, p = 0.021 | **Too close to call** | 49 / 59 / 61 / 63% (n 142/271/140/41); trend +5.3pp per band, 95% −1.3 to +12.0, p = 0.12 (0.025), G = 322 |
+| UK | Cluster | Answered, 63% vs 56%, p = 0.029 | **Too close to call** | 62% of 171 (61 cos) vs 59% of 281 (218 cos); gap +3.3pp, 95% −11.5 to +18.0, p = 0.66 (0.49); design effect 2.5 |
+| US | CEO vs CFO | Waiting (CFO 14) | **Waiting** | CFO 20 / 20 companies, needs 10 more; expected 2 Nov 2026. CEO 61% of 64 (47 cos), 46–74% |
+| US | Size | Answered, 47% vs 59%, p = 0.048 | **Too close to call** | 54 / 63 / 69 / 51% (n 91/117/140/59); trend +1.2pp per band, 95% −6.3 to +8.7, p = 0.75 (0.62), G = 220 |
+| US | Cluster | Answered, 50% vs 65%, p = 0.0003 | **Too close to call** | 66% of 140 (48 cos) vs 61% of 176 (144 cos); gap +5.6pp, 95% −11.5 to +22.8, p = 0.52 (0.30); design effect 2.5 |
 
-Every "answered" in the first build is gone. The UK size study is the instructive one: naive p = 0.03 on the new outcomes, clustered p = 0.13. The US cluster study flipped sign once horizons were fixed (it was lone > cluster on the rolling mark).
+Every "answered" in the first build is gone. The UK size study is the instructive one: naive p = 0.025 on the new outcomes, clustered p = 0.12. The US cluster study flipped sign once horizons were fixed (it was lone > cluster on the rolling mark).
 
 ### Data-side findings (ddbx-data, not fixed here)
 
-- **US price series stop.** 278 of 714 US 90d disclosed outcomes are `stale_exit`; 238 of those tickers have no price after mid-July to August. They are refresh gaps, not delistings. Excluded here, and the exclusion is uneven: 25% of US lone purchases with an outcome are flagged against 12% of cluster purchases (UK 2% vs 0%). Printed as a limit; the fix is upstream.
+- **US price series stop.** 278 of 714 US 90d disclosed outcomes are `stale_exit`; 238 of those tickers have no price after mid-July to August. They are refresh gaps, not delistings. Excluded here, and the exclusion is uneven: 25% of US lone purchases with an outcome are flagged against 11% of cluster purchases (post-paging-fix; UK 2% vs 0%). Printed as a limit; the fix is upstream.
+- **Open issue: uneven exclusion of flagged US outcomes (25% lone vs 11% cluster).** Not resolved by this round. The cluster study compares cells whose missing outcomes are not missing at the same rate, and stopped price series are plausibly the worse outcomes, so the US lone cell may be flattered relative to the cluster cell (or the reverse, if the gaps are refresh artefacts unrelated to outcome). Until ddbx-data refreshes those series and recomputes the stale rows, a US cluster verdict should be read with that caveat, and an "answered" US cluster result should be re-checked against the flagged rows before it is published.
 - **Stale rows are never recomputed.** `refreshOutcomes` skips rows already at `OUTCOMES_VERSION`, so 40 US rows written stale still say stale although their prices now extend. A version bump or a `force` pass over `stale_exit` rows would recover them.
 - `src/types/ddbx.ts` needs `npm run sync:types` after the ddbx-data branch merges (`OutcomeEvent`, `OutcomesResponse`); until then `shared/studies.d.ts` declares the shape.
 
