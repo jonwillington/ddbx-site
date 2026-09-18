@@ -79,6 +79,13 @@
     --nav-h: 72px;
   }
 }
+/* Experimental sidebar masthead (lib/nav-mode): from xl there is no bar
+   across the top, so flush-seated sticky bars seat at the viewport edge. */
+@media (min-width: 1280px) {
+  :root.nav-sidebar {
+    --nav-h: 0px;
+  }
+}
 
 /* ─── Warm light theme ───────────────────────────────────────────────────────
    Light mode ran on HeroUI's stock tokens, which are COLD greys (hue ≈286):

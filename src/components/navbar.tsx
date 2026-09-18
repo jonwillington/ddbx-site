@@ -38,7 +38,7 @@ import {
 /** A masthead entry. Most are a plain anchor; Research and Learn are
  *  disclosures, which carry no href of their own — their `match` is what
  *  decides whether the trigger reads as active. */
-type NavItem =
+export type NavItem =
   | {
       kind: "link";
       label: string;
@@ -56,7 +56,7 @@ type NavItem =
 /** The masthead item's two states, shared by the plain links and by the
  *  disclosure triggers so a <button> in the row can't drift away from the
  *  <a>s beside it. */
-const navItemClass = (active: boolean) =>
+export const navItemClass = (active: boolean) =>
   clsx("text-sm transition-colors", {
     "text-[#5a4128] dark:text-[#d8c4af] font-medium": active,
     "text-foreground hover:text-[#5a4128]": !active,
@@ -426,13 +426,14 @@ function MobileMenu({
   );
 }
 
-export const Navbar = () => {
+/** Everything both masthead shapes need: the item list, where the logo goes,
+ *  and the download handoff. Shared so the top bar and the experimental
+ *  sidebar (components/side-nav, behind lib/nav-mode) can't drift apart on
+ *  which items a market gets. */
+export function useNavModel() {
   const location = useLocation();
   const market = marketForPath(location.pathname);
   const platform = useDevicePlatform();
-  // The same breakpoint that shows the link row (`md:flex` below). Under it the
-  // row is display:none and the hamburger is the only way to the sections.
-  const isDesktop = useMediaQuery("(min-width: 768px)");
   // Dashboard stays in-app; secondary nav action now points to the market's
   // store listing for the visitor's device (App Store on iOS/desktop, Play on
   // Android), with the UK app as the fallback where a market-specific listing
@@ -444,24 +445,11 @@ export const Navbar = () => {
   // the direct store link.
   const handoff = useAppHandoff(market.id, downloadHref, `Nav ${market.id}`);
 
-  // Scroll-revealed download CTA: fades in once the user scrolls past the hero,
-  // fades back out at the top.
-  const [scrolled, setScrolled] = useState(false);
-
   // Routes that pin their own theme — the switch is hidden on these.
   const isPinnedTheme =
     location.pathname === "/developers" ||
     location.pathname === "/api" ||
     location.pathname === "/mcp";
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 160);
-
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   // Broker comparison is UK-only content — don't surface it while browsing
   // other markets (the dashboard promos are likewise config.id === "uk").
@@ -644,6 +632,30 @@ export const Navbar = () => {
   // there, so a lone link is pure chrome. (Preserves the previous behaviour for
   // SE/NL, which used to render an empty list.)
   const showNav = navItems.length > 1;
+
+  return { market, dashboardHref, handoff, isPinnedTheme, navItems, showNav };
+}
+
+export const Navbar = () => {
+  const location = useLocation();
+  const { market, dashboardHref, handoff, isPinnedTheme, navItems, showNav } =
+    useNavModel();
+  // The same breakpoint that shows the link row (`md:flex` below). Under it the
+  // row is display:none and the hamburger is the only way to the sections.
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+
+  // Scroll-revealed download CTA: fades in once the user scrolls past the hero,
+  // fades back out at the top.
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 160);
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     /* Floating glass bar — a detached rounded capsule over the page rather

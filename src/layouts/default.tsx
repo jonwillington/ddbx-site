@@ -5,6 +5,8 @@ import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 import { AppDrawer } from "@/components/app-drawer";
 import { StoreGlyph } from "@/components/store-glyph";
 import { Navbar } from "@/components/navbar";
+import { SideNav } from "@/components/side-nav";
+import { NAV_SIDEBAR } from "@/lib/nav-mode";
 import { StoreBadgeImg } from "@/components/app-store-badge";
 import {
   MarketChooserModal,
@@ -503,7 +505,7 @@ export default function DefaultLayout({
       // leaves a clear gap at the bottom of the scroll.
       // …and in `solo` mode there is no bar to clear, so the reservation goes
       // with it — otherwise every page ends in 7rem of empty ground.
-      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""}`}
+      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? "xl:pl-[264px]" : ""}`}
     >
       {/* First focusable thing on every page. Off-screen until it takes focus,
           then it parks itself over the navbar — otherwise a keyboard visitor
@@ -518,7 +520,10 @@ export default function DefaultLayout({
       {/* The navbar floats: the sticky wrapper carries the inset (so the bar
           detaches from the viewport edges and page content scrolls beneath it
           through the gutters) and the Navbar itself is the glass capsule. */}
-      <div className="sticky top-0 z-40 px-3 pt-3 md:px-6 md:pt-4">
+      {NAV_SIDEBAR && <SideNav />}
+      <div
+        className={`sticky top-0 z-40 px-3 pt-3 md:px-6 md:pt-4 ${NAV_SIDEBAR && !ticker ? "xl:hidden" : ""}`}
+      >
         {/* The bar floats, so the inset above it is a window onto the page —
             rows slid through that 12/16px slot and were read as a stripe of
             chopped content pinned to the top of the screen. Cap the slot with
@@ -533,7 +538,9 @@ export default function DefaultLayout({
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 h-3 bg-[#f5f0e8] dark:bg-background md:h-4"
         />
-        <Navbar />
+        <div className={NAV_SIDEBAR ? "xl:hidden" : undefined}>
+          <Navbar />
+        </div>
         {ticker && (
           <div className="mx-auto mt-2 max-w-[1280px] rounded-xl border border-black/[0.07] bg-[#f5f0e8]/60 backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60">
             <div className="flex items-stretch px-4 md:px-5">{ticker}</div>
