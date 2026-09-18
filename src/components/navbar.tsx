@@ -184,16 +184,49 @@ function NavMenu({
                 <a
                   className={clsx(
                     "flex w-full px-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors",
-                    wide
-                      ? "items-start py-2 text-[13.5px] leading-[1.45]"
-                      : "items-center py-1.5 text-sm",
+                    link.row
+                      ? "flex-col items-start gap-1 py-2.5"
+                      : wide
+                        ? "items-start py-2 text-[13.5px] leading-[1.45]"
+                        : "items-center py-1.5 text-sm",
                     current
                       ? "text-[#5a4128] dark:text-[#d8c4af] font-medium"
                       : "text-foreground",
                   )}
                   href={link.href}
                 >
-                  {link.label}
+                  {link.row ? (
+                    <>
+                      {/* The record line: what it is about, whether it went
+                          anywhere, and when we published it. */}
+                      <span className="flex w-full items-baseline gap-2">
+                        <span className="rounded bg-hairline px-1.5 font-mono text-[11px] font-semibold tabular-nums text-foreground/70 dark:bg-surface-secondary">
+                          {link.row.ticker}
+                        </span>
+                        {link.row.deltaPct != null ? (
+                          <span
+                            className={clsx(
+                              "font-mono text-[12px] font-semibold tabular-nums",
+                              link.row.deltaPct >= 0
+                                ? "text-[#1e6b18] dark:text-[#5cd84a]"
+                                : "text-[#8b2020] dark:text-[#e84d4d]",
+                            )}
+                          >
+                            {link.row.deltaPct >= 0 ? "+" : ""}
+                            {link.row.deltaPct.toFixed(2)}%
+                          </span>
+                        ) : null}
+                        <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-foreground/40">
+                          {link.row.date}
+                        </span>
+                      </span>
+                      <span className="line-clamp-2 text-[13px] leading-[1.4] text-foreground/75">
+                        {link.label}
+                      </span>
+                    </>
+                  ) : (
+                    link.label
+                  )}
                 </a>
               </li>
             );
@@ -462,6 +495,16 @@ export const Navbar = () => {
           href: `/stories/${st.id}`,
           label: st.headline,
           path: `/stories/${st.id}`,
+          row: {
+            date: st.published_at
+              ? new Date(st.published_at.replace(" ", "T")).toLocaleDateString(
+                  "en-GB",
+                  { day: "numeric", month: "short" },
+                )
+              : "",
+            deltaPct: st.return_pct,
+            ticker: (st.subject_ticker ?? "").replace(/\.L$/, ""),
+          },
         }));
 
         // "View all" only earns its row once the menu is actually a sample of

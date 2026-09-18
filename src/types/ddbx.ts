@@ -2713,6 +2713,10 @@ export interface StoryListItem {
   subject_tickers: string[];
   published_at: string | null;
   source_count: number;
+  /** Return from the anchoring buy's trade-date close to the latest close.
+   *  The list's one figure: a headline plus a ticker says what the piece is
+   *  about, and this says whether it went anywhere. */
+  return_pct: number | null;
 }
 
 export interface StoriesResponse {

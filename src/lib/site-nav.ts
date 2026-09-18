@@ -62,7 +62,19 @@ export interface NavGroup {
 
 /** A research destination, carrying the two extra facts the masthead needs
  *  and the footer ignores. */
+/** Structured row data for a menu whose rows are records rather than section
+ *  links. The Stories menu lists articles, and a reader picking one wants the
+ *  company, whether it went anywhere, and when we published, not four
+ *  wrapped sentences. */
+export interface MenuRow {
+  ticker: string;
+  deltaPct: number | null;
+  date: string;
+}
+
 export interface ResearchLink extends NavLink {
+  /** Present only on rows that render as a record. */
+  row?: MenuRow;
   /** The site-relative path, before marketHref() may make it host-absolute.
    *  `href` is what you follow; this is what you compare the current route
    *  against — matching on `href` would break the moment a link goes
