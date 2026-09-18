@@ -16,6 +16,8 @@ import type {
   LatestPrice,
   MonthlySummariesResponse,
   MonthlySummaryResponse,
+  StoriesResponse,
+  Story,
   Portfolio,
   Rating,
   UkNewsItem,
@@ -323,6 +325,11 @@ export const api = {
     get<MonthlySummaryResponse>(
       `/monthly-summary?month=${month}${market ? `&market=${market}` : ""}`,
     ),
+  /** Published story articles, newest first. Drafts are never served. */
+  stories: (market?: string) =>
+    get<StoriesResponse>(`/stories${market ? `?market=${market}` : ""}`),
+  /** One story by slug. */
+  story: (id: string) => get<Story>(`/stories/${encodeURIComponent(id)}`),
   ukNews: () =>
     get<{ items: UkNewsItem[]; fetched_at: string | null }>("/news/uk"),
   usNews: () =>
@@ -546,6 +553,8 @@ export type {
   LatestPrice,
   MonthlySummariesResponse,
   MonthlySummaryResponse,
+  StoriesResponse,
+  Story,
   Portfolio,
   Rating,
   UkNewsItem,

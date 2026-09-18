@@ -2688,3 +2688,81 @@ export interface CoverageResponse {
     last_filing: string | null;
   } | null;
 }
+
+// ---------------------------------------------------------------------------
+// Story articles (migration 083). A researched follow-up on filings we already
+// hold: what the price did, why, and how the call we published at the time
+// reads now.
+//
+// CROSS-REPO CONTRACT. Mirrored into ddbx-site by `npm run sync:types` (CI runs
+// check:types), and by hand into the iOS and Android wire files when those
+// consumers land.
+// ---------------------------------------------------------------------------
+
+export type StoryKind =
+  | "winner"
+  | "sector_cluster"
+  | "accumulation"
+  | "scorecard"
+  | "forensic"
+  | "underwater";
+
+/** An external citation. Every causal claim in a story body resolves to one of
+ *  these; claims about our own records link with `ddbx://` instead. */
+export interface StorySource {
+  url: string;
+  title: string;
+  publisher?: string | null;
+  date?: string | null;
+}
+
+/** A story as served to a consumer.
+ *
+ *  `body_md` is markdown whose internal links use the `ddbx://` scheme rather
+ *  than absolute URLs, so each client resolves them natively:
+ *
+ *    ddbx://filing/UK/<dealing_id>   -> web /t/<id>, app filing detail
+ *    ddbx://filing/US/<filing_id>    -> web /us/t/<id>, app filing detail
+ *    ddbx://company/UK/<key>         -> web /company/<key>, app company screen
+ *
+ *  Anything `https://` is an external citation and opens in a browser. A story
+ *  body never contains an absolute ddbx.uk URL: it would throw an app reader
+ *  out to Safari for a page the app already has. */
+export interface Story {
+  id: string;
+  market: Market;
+  kind: StoryKind;
+  headline: string;
+  standfirst: string | null;
+  /** An optional human-written line above the article. The human gate on a
+   *  story is the act of approving it, not this field: an article stands on its
+   *  own reporting, and requiring a hand-written lede on every one would make
+   *  the gate a bottleneck rather than a check. */
+  take: string | null;
+  body_md: string;
+  sources: StorySource[];
+  /** Dealing / filing ids the body links to, for building related cards. */
+  filings: string[];
+  subject_ticker: string | null;
+  subject_tickers: string[];
+  published_at: string | null;
+  created_at: string;
+}
+
+/** List item for the archive index: everything needed to render a card without
+ *  shipping the whole body. */
+export interface StoryListItem {
+  id: string;
+  market: Market;
+  kind: StoryKind;
+  headline: string;
+  standfirst: string | null;
+  subject_ticker: string | null;
+  subject_tickers: string[];
+  published_at: string | null;
+  source_count: number;
+}
+
+export interface StoriesResponse {
+  stories: StoryListItem[];
+}

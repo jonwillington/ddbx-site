@@ -32,6 +32,8 @@ import SectorPage from "@/pages/sector";
 import SectorsPage from "@/pages/sectors";
 import StatusPage from "@/pages/status";
 import ReportsPage from "@/pages/reports";
+import StoriesPage from "@/pages/stories";
+import StoryPage from "@/pages/story";
 import DirectorPage from "@/pages/director";
 import DirectorsIndexPage from "@/pages/directors";
 import CongressPreviewPage from "@/pages/congress-preview";
@@ -76,6 +78,11 @@ function App() {
         <Route element={<WeeklyWeekPage />} path="/weekly/:week" />
         <Route element={<ReportsPage />} path="/reports" />
         <Route element={<ReportPage />} path="/reports/:month" />
+        {/* Case articles. Same archive-plus-permanent-URL shape as /reports:
+            a story keeps its own address forever so a link to it does not rot
+            when the next one publishes. Only approved stories are served. */}
+        <Route element={<StoriesPage />} path="/stories" />
+        <Route element={<StoryPage />} path="/stories/:id" />
         {/* One disclosure, one permanent URL. Was the UK dashboard, which
             meant every shared filing link landed on the same generic page. */}
         <Route element={<FilingPage />} path="/dealings/:id" />
