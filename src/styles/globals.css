@@ -88,15 +88,19 @@
    Geometry lives in two variables so every fixed thing that has to line up
    with the sheet (the frame mask, the sticky page header, the cookie banner)
    reads one source:
-     --shell-l  sheet's left edge  = 12 gutter + 216 nav panel + 12 gap
-     --shell-r  sheet's right edge = 12, or 12 + 280 rail + 12 with a rail
+     --shell-l  sheet's left edge  = 12 edge + 216 nav panel + 20 gutter
+     --shell-r  sheet's right edge = 12, or 12 + 280 rail + 20 with a rail
+   The gutter between panels is wider than the 12px edge inset on purpose:
+   at 12 the three panels read as one slab with seams. DefaultLayout's
+   padding (xl:pl / min-[1440px]:pr) is these values less the sheet's 12px
+   margin, so change them together.
    `.shell-rail` on <html> is written by DefaultLayout from `drawerRight`. */
 @custom-variant shell (&:where(.nav-sidebar *));
 
 @media (min-width: 1280px) {
   :root.nav-sidebar {
     --nav-h: 12px;
-    --shell-l: 240px;
+    --shell-l: 248px;
     --shell-r: 12px;
   }
   /* 1280-1439: two side panels would leave the sheet ~730px, too narrow for
@@ -111,7 +115,7 @@
 }
 @media (min-width: 1440px) {
   :root.nav-sidebar.shell-rail {
-    --shell-r: 304px;
+    --shell-r: 312px;
   }
   :root.nav-sidebar .page-rail {
     display: flex !important;

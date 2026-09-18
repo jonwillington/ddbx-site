@@ -525,7 +525,7 @@ export default function DefaultLayout({
       // leaves a clear gap at the bottom of the scroll.
       // …and in `solo` mode there is no bar to clear, so the reservation goes
       // with it — otherwise every page ends in 7rem of empty ground.
-      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? `xl:mr-0 xl:bg-[var(--shell-frame)] xl:pl-[228px] ${drawerRight && shellRail ? "min-[1440px]:pr-[292px]" : ""}` : ""}`}
+      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? `xl:mr-0 xl:bg-[var(--shell-frame)] xl:pl-[236px] ${drawerRight && shellRail ? "min-[1440px]:pr-[300px]" : ""}` : ""}`}
     >
       {/* First focusable thing on every page. Off-screen until it takes focus,
           then it parks itself over the navbar — otherwise a keyboard visitor
