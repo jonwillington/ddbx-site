@@ -428,6 +428,10 @@ export const Navbar = () => {
   // on ddbx.us. Congress and Trump Media ride the US domain, so they get it
   // too. SE/NL have no companies index yet.
   const showBrokers = market.id === "uk";
+  // Stories publish for UK and US only. The Congress and DJT markets ride the
+  // US host but have no story of their own yet, and surfacing an empty archive
+  // as a top-level tab would be worse than not offering it.
+  const showStories = ["uk", "us"].includes(market.id);
   const showCompanies = ["uk", "us", "usg", "djt"].includes(market.id);
 
   const navItems: NavItem[] = [
@@ -479,6 +483,23 @@ export const Navbar = () => {
             match: (p: string) =>
               RESEARCH_PATHS.some((x) => p === x || p.startsWith(`${x}/`)) ||
               p.startsWith("/company/"),
+          },
+        ]
+      : []),
+    // Its own tab rather than a row inside Research. Research is a set of
+    // indexes over the feed; a story is a piece of writing about one case, and
+    // filing it under a menu of rankings buried the only thing on the site a
+    // reader might come back for. That does take the masthead past the count
+    // the Learn menu was folded to preserve, so it appears one item later than
+    // it reads: after Research, before Brokers.
+    ...(showStories
+      ? [
+          {
+            kind: "link" as const,
+            label: "Stories",
+            href: "/stories",
+            match: (p: string) =>
+              p === "/stories" || p.startsWith("/stories/"),
           },
         ]
       : []),
