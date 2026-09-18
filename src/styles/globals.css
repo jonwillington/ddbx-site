@@ -83,7 +83,12 @@
    across the top, so flush-seated sticky bars seat at the viewport edge. */
 @media (min-width: 1280px) {
   :root.nav-sidebar {
-    --nav-h: 0px;
+    --nav-h: 12px;
+  }
+  /* Shell mode drops the fixed right rails (market channel, SEO, broker and
+     download asides) — the sheet takes the full width instead. */
+  :root.nav-sidebar aside.fixed.right-0 {
+    display: none !important;
   }
 }
 

@@ -505,7 +505,7 @@ export default function DefaultLayout({
       // leaves a clear gap at the bottom of the scroll.
       // …and in `solo` mode there is no bar to clear, so the reservation goes
       // with it — otherwise every page ends in 7rem of empty ground.
-      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? "xl:pl-[264px]" : ""}`}
+      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? "xl:mr-0 xl:bg-[#ebe3d6] xl:pl-[252px] xl:dark:bg-[#0e0c0a]" : ""}`}
     >
       {/* First focusable thing on every page. Off-screen until it takes focus,
           then it parks itself over the navbar — otherwise a keyboard visitor
@@ -520,7 +520,17 @@ export default function DefaultLayout({
       {/* The navbar floats: the sticky wrapper carries the inset (so the bar
           detaches from the viewport edges and page content scrolls beneath it
           through the gutters) and the Navbar itself is the glass capsule. */}
-      {NAV_SIDEBAR && <SideNav />}
+      {NAV_SIDEBAR && (
+        <>
+          <SideNav />
+          {/* Frame cap: the sheet below scrolls with the window, so a strip of
+              frame colour stands over its top edge to keep the inset. */}
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-x-0 top-0 z-30 hidden h-3 bg-[#ebe3d6] dark:bg-[#0e0c0a] xl:block"
+          />
+        </>
+      )}
       <div
         className={`sticky top-0 z-40 px-3 pt-3 md:px-6 md:pt-4 ${NAV_SIDEBAR && !ticker ? "xl:hidden" : ""}`}
       >
@@ -552,180 +562,192 @@ export default function DefaultLayout({
           which would otherwise cover the top of what we just jumped to — now
           derived from the capsule's own height (--nav-clear, globals.css)
           rather than a 96px guess that happened to be generous. */}
-      <main
-        className="mx-auto w-full max-w-[1280px] px-4 md:px-6 flex-grow pt-8 scroll-mt-[var(--nav-clear)] outline-none"
-        id="main"
-        tabIndex={-1}
+      {/* Shell mode (experiment, lib/nav-mode): page and footer sit in one
+          rounded sheet on the frame. Below xl — and in top-bar mode — this is
+          display:contents and the layout is exactly as before. */}
+      <div
+        className={
+          NAV_SIDEBAR
+            ? "contents xl:mx-3 xl:mb-3 xl:mt-3 xl:flex xl:overflow-clip xl:flex-grow xl:flex-col xl:rounded-[20px] xl:border xl:border-black/[0.06] xl:bg-[#f5f0e8] xl:shadow-[0_1px_2px_rgba(90,65,40,0.06),0_18px_40px_-30px_rgba(90,65,40,0.35)] xl:dark:border-white/[0.07] xl:dark:bg-background"
+            : "contents"
+        }
       >
-        {children}
-      </main>
-      {/* The footer is a raised sheet on the page, not a band ruled off from it:
+        <main
+          className="mx-auto w-full max-w-[1280px] px-4 md:px-6 flex-grow pt-8 scroll-mt-[var(--nav-clear)] outline-none"
+          id="main"
+          tabIndex={-1}
+        >
+          {children}
+        </main>
+        {/* The footer is a raised sheet on the page, not a band ruled off from it:
           a bordered box inside the content column, sitting on a soft warm wash.
           The box's own edge and shadow do the separating the old full-width
           `border-t` did. FooterTrail covers this whole <footer> rather than a
           strip under the box, so the padding here is what the wash ramps
           across. The band field this replaced needed a lot of it to be read
           as a composition; a wash only needs enough not to end in an edge. */}
-      <footer className="relative w-full pt-14 pb-10 md:pt-20 md:pb-14">
-        <FooterTrail />
-        <div className="relative mx-auto w-full max-w-[1280px] px-4 md:px-6">
-          <div className="rounded-2xl border border-hairline bg-sheet px-5 py-8 md:px-8 md:py-10 shadow-[0_18px_44px_-28px_rgba(90,65,40,0.45),0_1px_2px_rgba(90,65,40,0.03)] text-[10px] leading-4 text-foreground/40 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)]">
-            {/* The wordmark is a cell of the ruled band, not a masthead floating
+        <footer className="relative w-full pt-14 pb-10 md:pt-20 md:pb-14">
+          <FooterTrail />
+          <div className="relative mx-auto w-full max-w-[1280px] px-4 md:px-6">
+            <div className="rounded-2xl border border-hairline bg-sheet px-5 py-8 md:px-8 md:py-10 shadow-[0_18px_44px_-28px_rgba(90,65,40,0.45),0_1px_2px_rgba(90,65,40,0.03)] text-[10px] leading-4 text-foreground/40 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)]">
+              {/* The wordmark is a cell of the ruled band, not a masthead floating
               above it — on desktop it takes the left rail beside the index;
               below lg it stacks inside the same rules. Floating it above the
               band made it read as a stray object between the page and the
               footer. Only ruled underneath now the footer is a box: the band's
               old top rule ran parallel to the box's own edge a few millimetres
               below it, which read as a double border. */}
-            <div className="mb-6 border-b border-separator/50 pb-6 lg:flex lg:items-start">
-              <div className="mb-6 lg:mb-0 lg:w-44 lg:shrink-0">
-                <img
-                  alt="ddbx"
-                  className="h-7 max-w-[90px] opacity-40 dark:invert"
-                  src="/logo.svg"
-                />
+              <div className="mb-6 border-b border-separator/50 pb-6 lg:flex lg:items-start">
+                <div className="mb-6 lg:mb-0 lg:w-44 lg:shrink-0">
+                  <img
+                    alt="ddbx"
+                    className="h-7 max-w-[90px] opacity-40 dark:invert"
+                    src="/logo.svg"
+                  />
+                </div>
+                <FooterNav />
               </div>
-              <FooterNav />
-            </div>
 
-            <p>
-              Disclaimer: The information, ratings, signals, commentary, and any
-              related content provided on this website are for general
-              informational and educational purposes only and are not intended
-              to be financial advice, investment advice, tax advice, legal
-              advice, or a recommendation to buy, sell, or hold any security or
-              financial instrument.
-            </p>
-            <p className="mt-2">
-              Nothing on this site constitutes personal advice or takes account
-              of your individual objectives, financial situation, risk
-              tolerance, or needs. You should always conduct your own research
-              and, where appropriate, seek advice from a qualified and regulated
-              financial professional before making any investment decision.
-            </p>
-            <p className="mt-2">
-              Past performance, hypothetical performance, and model outputs are
-              not reliable indicators of future results. Market conditions can
-              change rapidly, data may be delayed or incomplete, and no
-              guarantee is made as to the accuracy, completeness, or timeliness
-              of any content provided.
-            </p>
-            <p className="mt-2">
-              By using this website, you acknowledge that any reliance on the
-              information is at your own risk and that the operators, authors,
-              and contributors of this site are not liable for any direct,
-              indirect, incidental, or consequential loss arising from use of,
-              or reliance on, the content.
-            </p>
-            <p className="mt-2">
-              This site is not an offer or solicitation in any jurisdiction
-              where such offer or solicitation would be unlawful. Investing
-              involves risk, including the possible loss of capital.
-            </p>
-            <p className="mt-2">
-              Logos provided by{" "}
-              <a
-                className="underline underline-offset-2 hover:text-foreground/70 transition-colors"
-                href="https://logo.dev"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Logo.dev
-              </a>
-              .
-            </p>
-            {/* Legal links + social/app links.
+              <p>
+                Disclaimer: The information, ratings, signals, commentary, and
+                any related content provided on this website are for general
+                informational and educational purposes only and are not intended
+                to be financial advice, investment advice, tax advice, legal
+                advice, or a recommendation to buy, sell, or hold any security
+                or financial instrument.
+              </p>
+              <p className="mt-2">
+                Nothing on this site constitutes personal advice or takes
+                account of your individual objectives, financial situation, risk
+                tolerance, or needs. You should always conduct your own research
+                and, where appropriate, seek advice from a qualified and
+                regulated financial professional before making any investment
+                decision.
+              </p>
+              <p className="mt-2">
+                Past performance, hypothetical performance, and model outputs
+                are not reliable indicators of future results. Market conditions
+                can change rapidly, data may be delayed or incomplete, and no
+                guarantee is made as to the accuracy, completeness, or
+                timeliness of any content provided.
+              </p>
+              <p className="mt-2">
+                By using this website, you acknowledge that any reliance on the
+                information is at your own risk and that the operators, authors,
+                and contributors of this site are not liable for any direct,
+                indirect, incidental, or consequential loss arising from use of,
+                or reliance on, the content.
+              </p>
+              <p className="mt-2">
+                This site is not an offer or solicitation in any jurisdiction
+                where such offer or solicitation would be unlawful. Investing
+                involves risk, including the possible loss of capital.
+              </p>
+              <p className="mt-2">
+                Logos provided by{" "}
+                <a
+                  className="underline underline-offset-2 hover:text-foreground/70 transition-colors"
+                  href="https://logo.dev"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Logo.dev
+                </a>
+                .
+              </p>
+              {/* Legal links + social/app links.
               The X mark used to sit with the store badges on the right, where
               it was a 14px glyph pinned between two large full-colour vendor
               lockups and read as an artefact of them rather than a link of its
               own. It belongs with the other things you can click through to —
               the end of the link row, interpunct-separated like the rest of
               it — leaving the right side to the two store badges alone. */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-3 border-t border-separator/50">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                {LEGAL_LINKS.map(({ label, page, path }) => (
-                  <Fragment key={page}>
-                    <button
-                      className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2 text-left"
-                      onClick={() => openLegal(path)}
-                    >
-                      {label}
-                    </button>
-                    <span aria-hidden className="text-foreground/20">
-                      ·
-                    </span>
-                  </Fragment>
-                ))}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-3 border-t border-separator/50">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                  {LEGAL_LINKS.map(({ label, page, path }) => (
+                    <Fragment key={page}>
+                      <button
+                        className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2 text-left"
+                        onClick={() => openLegal(path)}
+                      >
+                        {label}
+                      </button>
+                      <span aria-hidden className="text-foreground/20">
+                        ·
+                      </span>
+                    </Fragment>
+                  ))}
 
-                {/* A real <a>, not a router link: /sitemap.xml is served by a
+                  {/* A real <a>, not a router link: /sitemap.xml is served by a
                   Pages Function, so the SPA has no route for it. */}
-                <a
-                  className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2"
-                  data-ga-event="nav_footer_sitemap"
-                  href="/sitemap.xml"
-                >
-                  Sitemap
-                </a>
-                <span aria-hidden className="text-foreground/20">
-                  ·
-                </span>
+                  <a
+                    className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2"
+                    data-ga-event="nav_footer_sitemap"
+                    href="/sitemap.xml"
+                  >
+                    Sitemap
+                  </a>
+                  <span aria-hidden className="text-foreground/20">
+                    ·
+                  </span>
 
-                {/* Router link, unlike Sitemap above — /status is a real SPA
+                  {/* Router link, unlike Sitemap above — /status is a real SPA
                   route, and a full page load would throw away the probe
                   results the visitor is about to watch arrive. */}
-                <Link
-                  className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2"
-                  data-ga-event="nav_footer_status"
-                  to="/status"
-                >
-                  Status
-                </Link>
-                <span aria-hidden className="text-foreground/20">
-                  ·
-                </span>
-
-                <button
-                  aria-label="Follow on X (Twitter)"
-                  className="flex items-center text-foreground/40 hover:text-foreground/70 transition-colors"
-                  data-ga-event="cta_footer_follow_x"
-                  type="button"
-                  onClick={() => setFollowOpen(true)}
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="w-3 h-3 fill-current shrink-0"
-                    viewBox="0 0 24 24"
+                  <Link
+                    className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2"
+                    data-ga-event="nav_footer_status"
+                    to="/status"
                   >
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.736-8.861L1.254 2.25H8.08l4.257 5.625zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                  </svg>
-                </button>
-              </div>
-              <div className="flex items-center gap-4">
-                <button
-                  aria-label="Get it on Google Play"
-                  className="inline-block opacity-80 hover:opacity-100 transition-opacity"
-                  data-ga-event="cta_footer_download"
-                  data-ga-label="Footer Google Play"
-                  type="button"
-                  onClick={() => setAppsOpen("android")}
-                >
-                  <StoreBadgeImg size="sm" store="android" />
-                </button>
-                <button
-                  aria-label="Download on the App Store"
-                  className="inline-block opacity-80 hover:opacity-100 transition-opacity"
-                  data-ga-event="cta_footer_download"
-                  data-ga-label="Footer App Store"
-                  type="button"
-                  onClick={() => setAppsOpen("ios")}
-                >
-                  <StoreBadgeImg size="sm" store="ios" />
-                </button>
+                    Status
+                  </Link>
+                  <span aria-hidden className="text-foreground/20">
+                    ·
+                  </span>
+
+                  <button
+                    aria-label="Follow on X (Twitter)"
+                    className="flex items-center text-foreground/40 hover:text-foreground/70 transition-colors"
+                    data-ga-event="cta_footer_follow_x"
+                    type="button"
+                    onClick={() => setFollowOpen(true)}
+                  >
+                    <svg
+                      aria-hidden="true"
+                      className="w-3 h-3 fill-current shrink-0"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.736-8.861L1.254 2.25H8.08l4.257 5.625zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex items-center gap-4">
+                  <button
+                    aria-label="Get it on Google Play"
+                    className="inline-block opacity-80 hover:opacity-100 transition-opacity"
+                    data-ga-event="cta_footer_download"
+                    data-ga-label="Footer Google Play"
+                    type="button"
+                    onClick={() => setAppsOpen("android")}
+                  >
+                    <StoreBadgeImg size="sm" store="android" />
+                  </button>
+                  <button
+                    aria-label="Download on the App Store"
+                    className="inline-block opacity-80 hover:opacity-100 transition-opacity"
+                    data-ga-event="cta_footer_download"
+                    data-ga-label="Footer App Store"
+                    type="button"
+                    onClick={() => setAppsOpen("ios")}
+                  >
+                    <StoreBadgeImg size="sm" store="ios" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
 
       {/* Persistent mobile download CTA — an always-reachable tap target. When
        *  the route's market has a live app it jumps straight to that App Store

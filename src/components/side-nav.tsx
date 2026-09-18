@@ -21,12 +21,12 @@ import { StoreGlyph } from "@/components/store-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { siteConfig } from "@/config/site";
 
-/** EXPERIMENT — the masthead as a left rail, from xl (1280px) up. Behind
+/** EXPERIMENT — the masthead as a left rail on the frame, from xl (1280px) up. Behind
  *  `?nav=sidebar` (lib/nav-mode); production still ships the top bar.
  *
- *  Same items as the top bar (useNavModel), same active colour, same glass
- *  recipe, so the comparison is about the shape and nothing else. What the
- *  shape changes:
+ *  App-shell shape: the rail sits bare on a darker frame and the page is one
+ *  rounded sheet beside it (layouts/default). Same items as the top bar
+ *  (useNavModel), so the comparison is about the shape. What it changes:
  *
  *  - The disclosures open in place rather than as dropdowns, and the one the
  *    reader is inside starts open. A rail has the height a bar does not.
@@ -49,7 +49,7 @@ const rowClass = (active: boolean) =>
   clsx(
     "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
     active
-      ? "bg-black/[0.05] font-medium text-[#5a4128] dark:bg-white/[0.07] dark:text-[#d8c4af]"
+      ? "bg-[#f5f0e8] font-medium text-[#5a4128] shadow-[0_1px_2px_rgba(90,65,40,0.08)] dark:bg-white/[0.07] dark:text-[#d8c4af]"
       : "text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.05]",
   );
 
@@ -166,8 +166,8 @@ export function SideNav() {
     useNavModel();
 
   return (
-    <aside className="fixed bottom-4 left-4 top-4 z-40 hidden w-[248px] flex-col rounded-2xl border border-black/[0.07] bg-[#f5f0e8]/60 shadow-[0_12px_32px_-20px_rgba(90,65,40,0.45)] backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60 dark:shadow-[0_12px_32px_-20px_rgba(0,0,0,0.7)] xl:flex">
-      <div className="flex h-14 shrink-0 items-center justify-between px-4">
+    <aside className="fixed bottom-0 left-0 top-0 z-40 hidden w-[252px] flex-col pl-3 xl:flex">
+      <div className="flex h-[72px] shrink-0 items-center justify-between px-3 pt-3">
         <a href={dashboardHref}>
           <img
             alt={siteConfig.name}
@@ -180,13 +180,13 @@ export function SideNav() {
 
       {/* Outside the scroll area: the picker's dropdown hangs below its
           trigger and would be clipped by an overflow container. */}
-      <div className="shrink-0 px-3 pb-3">
+      <div className="shrink-0 px-1 pb-4">
         <MarketSwitcher />
       </div>
 
       <nav
         aria-label="Primary"
-        className="min-h-0 flex-1 overflow-y-auto border-t border-separator/60 px-2 py-3"
+        className="min-h-0 flex-1 overflow-y-auto pr-1"
       >
         <ul className="space-y-0.5">
           {navItems.map((item) => {
@@ -211,7 +211,7 @@ export function SideNav() {
         </ul>
       </nav>
 
-      <div className="shrink-0 border-t border-separator/60 p-3">
+      <div className="shrink-0 py-3 pr-1">
         <a
           className={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-4 py-2.5 text-sm font-medium transition-colors`}
           data-ga-event="cta_nav_download_app"
