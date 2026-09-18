@@ -523,12 +523,13 @@ export default function DefaultLayout({
       {NAV_SIDEBAR && (
         <>
           <SideNav />
-          {/* Frame cap: the sheet below scrolls with the window, so a strip of
-              frame colour stands over its top edge to keep the inset. */}
-          <div
-            aria-hidden
-            className="pointer-events-none fixed inset-x-0 top-0 z-30 hidden h-3 bg-[#ebe3d6] dark:bg-[#0e0c0a] xl:block"
-          />
+          {/* The frame. The page scrolls with the window (sticky, scroll
+              listeners and anchors all assume it), so the sheet can't be a
+              fixed box with its own scroller. Instead this fixed, empty
+              rounded rect paints the frame colour OUTSIDE itself (see
+              .shell-frame) — content passes under it and the four corners
+              stay put at every scroll position. */}
+          <div aria-hidden className="shell-frame hidden xl:block" />
         </>
       )}
       <div
@@ -568,7 +569,7 @@ export default function DefaultLayout({
       <div
         className={
           NAV_SIDEBAR
-            ? "contents xl:mx-3 xl:mb-3 xl:mt-3 xl:flex xl:overflow-clip xl:flex-grow xl:flex-col xl:rounded-[20px] xl:border xl:border-black/[0.06] xl:bg-[#f5f0e8] xl:shadow-[0_1px_2px_rgba(90,65,40,0.06),0_18px_40px_-30px_rgba(90,65,40,0.35)] xl:dark:border-white/[0.07] xl:dark:bg-background"
+            ? "contents xl:mx-3 xl:my-3 xl:flex xl:flex-grow xl:flex-col xl:overflow-clip xl:bg-[#f5f0e8] xl:dark:bg-background"
             : "contents"
         }
       >

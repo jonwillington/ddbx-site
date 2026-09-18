@@ -91,6 +91,25 @@
     display: none !important;
   }
 }
+/* Shell frame: a fixed rect the size of the sheet's window, transparent
+   inside, whose 100vmax spread shadow is the frame. The shadow follows the
+   radius, so the corners are filled with frame colour over whatever scrolls
+   beneath. Above sticky page chrome (z ≤ 30), below the rail (z-40) and
+   modals/sheets (z-50). */
+.shell-frame {
+  --frame: #ebe3d6;
+  position: fixed;
+  inset: 12px 12px 12px 264px; /* rail 252 + the sheet's mx-3 */
+  z-index: 35;
+  pointer-events: none;
+  border-radius: 20px;
+  border: 1px solid rgb(0 0 0 / 0.06);
+  box-shadow: 0 0 0 100vmax var(--frame);
+}
+.dark .shell-frame {
+  --frame: #0e0c0a;
+  border-color: rgb(255 255 255 / 0.07);
+}
 
 /* ─── Warm light theme ───────────────────────────────────────────────────────
    Light mode ran on HeroUI's stock tokens, which are COLD greys (hue ≈286):
