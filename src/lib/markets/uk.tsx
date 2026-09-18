@@ -48,7 +48,7 @@ const FTSE_LABEL = "FTSE";
 /** GBP formatter bundle. RNS price_pence is already in pence and matches
  *  what /api/prices stores for LSE tickers, so quoteToValue = 0.01 and
  *  normalizeLivePrice is identity. */
-const GBP_FORMAT: PriceFormat = {
+export const GBP_FORMAT: PriceFormat = {
   // Adaptive precision: blue-chips quote in hundreds/thousands of pence where
   // whole pence is right, but penny stocks need decimals — otherwise a 4.5p
   // close rounds to "5p" and an entry of 4.0p reads as a +25% move when the

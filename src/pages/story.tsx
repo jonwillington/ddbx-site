@@ -1,32 +1,46 @@
 /** One story — /stories/:id.
  *
- *  The article itself. The body is markdown authored upstream and rendered by
- *  `StoryBody`, which resolves the `ddbx://` links in it to real routes on this
- *  site (a filing link goes to /t/:id, a company link to /company/:key) and
- *  opens external citations in a new tab.
+ *  The page's order is the argument's order: the object, then the evidence,
+ *  then the writing about it.
  *
- *  The sources block at the foot is not decoration. Every causal claim in the
- *  body is linked, and this page lists what it was linked to, because an
- *  article that says why a stock moved is only worth reading if you can check
- *  it.
+ *  1. The stage. The headline sits inside a dark panel over the price line the
+ *     piece is about, with the trade and disclosure marked, and the receipt in
+ *     the figures band (what we rated it, what it has done since). Every board
+ *     page since 2026-09-05 puts its h1 over the object that makes its
+ *     argument; a story's object is the price path.
+ *  2. The byline, which says plainly how the piece was made.
+ *  3. The human take, when there is one. It is the loudest sentence on the page
+ *     because it is the only one a person wrote by hand.
+ *  4. The purchases. Above the prose, not below it: the reader's first question
+ *     is who bought and where it stands, and the writing argues about those
+ *     rows.
+ *  5. The body, then the sources it cites.
+ *
+ *  A story with no single anchoring filing (a sector piece spans several
+ *  companies) gets no stage rather than an empty one, and falls back to the
+ *  shell's own header.
  */
 import type { Story } from "@/types/ddbx";
 
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import DefaultLayout from "@/layouts/default";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { StoryBody } from "@/components/stories/story-body";
+import { StoryBuys } from "@/components/stories/story-buys";
+import { StoryStage } from "@/components/stories/story-stage";
 import { api } from "@/lib/api";
 import { STORY_KIND_LABEL } from "@/lib/stories";
 
 function dateLabel(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso.replace(" ", "T"));
+
   if (Number.isNaN(d.getTime())) return "";
+
   return d.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
@@ -41,10 +55,12 @@ export default function StoryPage() {
   useEffect(() => {
     if (!id) return;
     let live = true;
+
     api
       .story(id)
       .then((s) => live && setStory(s))
       .catch(() => live && setStory("missing"));
+
     return () => {
       live = false;
     };
@@ -60,7 +76,7 @@ export default function StoryPage() {
         >
           <p className="text-[14px] text-foreground/70">
             That story does not exist or has not been published.{" "}
-            <Link to="/stories">Back to the archive</Link>.
+            <Link to="/stories">Back to the timeline</Link>.
           </p>
         </SeoPageShell>
       </DefaultLayout>
@@ -68,32 +84,49 @@ export default function StoryPage() {
   }
 
   const s = story;
+  const kindLabel = s ? (STORY_KIND_LABEL[s.kind] ?? s.kind) : "Story";
+  const staged = !!s?.chart;
 
   return (
     <DefaultLayout>
       <SeoPageShell
         crumbs={[{ label: "Stories", to: "/stories" }, { label: "Article" }]}
         eyebrow={
-          s
-            ? `${STORY_KIND_LABEL[s.kind] ?? s.kind}${
-                s.published_at ? ` · ${dateLabel(s.published_at)}` : ""
-              }`
-            : "Story"
+          s?.published_at
+            ? `${kindLabel} · ${dateLabel(s.published_at)}`
+            : kindLabel
         }
         loading={s === null}
         skeleton={<SeoSkeleton rows={14} variant="ruled-list" />}
-        standfirst={s?.standfirst ?? undefined}
-        title={s?.headline ?? ""}
+        /* The stage carries the headline and standfirst itself, so the shell
+           must not print them a second time above it. */
+        standfirst={staged ? undefined : (s?.standfirst ?? undefined)}
+        title={staged ? "" : (s?.headline ?? "")}
+        titleInHero={false}
       >
         {s ? (
           <>
+            {staged ? (
+              <StoryStage kindLabel={kindLabel} story={s} />
+            ) : null}
+
+            <p className="mt-5 text-[12.5px] leading-[1.6] text-foreground/45">
+              {s.published_at ? `Published ${dateLabel(s.published_at)}. ` : ""}
+              Researched and drafted with AI assistance, approved by hand before
+              publication. Not investment advice.
+            </p>
+
             {s.take ? (
-              <p className="mb-8 border-l-2 border-foreground/30 pl-4 text-[16px] leading-relaxed text-foreground">
+              <p className="mt-8 text-[19px] leading-[1.5] text-foreground/90 sm:text-[22px]">
                 {s.take}
               </p>
             ) : null}
 
-            <StoryBody markdown={s.body_md} />
+            <StoryBuys story={s} />
+
+            <div className="mt-9 max-w-[62ch]">
+              <StoryBody markdown={s.body_md} />
+            </div>
 
             {s.sources.length > 0 ? (
               <SeoSection title="Sources">
@@ -122,10 +155,6 @@ export default function StoryPage() {
                 </ol>
               </SeoSection>
             ) : null}
-
-            <p className="mt-10 text-[12px] text-foreground/40">
-              Not financial advice.
-            </p>
           </>
         ) : null}
       </SeoPageShell>

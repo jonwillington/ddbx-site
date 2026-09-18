@@ -1,0 +1,153 @@
+import type { Story } from "@/types/ddbx";
+
+import { CompanyLogo } from "@/components/company-logo";
+import { MiniPriceChart } from "@/components/mini-price-chart";
+import { StageFigures } from "@/components/boards/stage-figures";
+import { GBP_FORMAT } from "@/lib/markets/uk";
+import { USD_FORMAT } from "@/lib/markets/us";
+
+/** Yahoo's USD bars land in the prices table as cents-times-FX while Form 4's
+ *  `price` is in major dollars, so the US chart needs the same conversion the
+ *  US filing page applies (markets/us.tsx). Defined here rather than exported
+ *  from there because it lives inside that file's component closure. */
+const normalizeUsdClose = (closePence: number) => closePence / 100;
+
+/** The article's hero: the headline inside a dark stage over the price line the
+ *  piece is about.
+ *
+ *  Every board page since 2026-09-05 puts its h1 inside a dark panel over the
+ *  object that makes its argument, and a story's object is not in question: the
+ *  price path since the buy, with the trade and disclosure marked on it. The
+ *  rule that device came with is that the object must be real data, never
+ *  decoration shaped like a chart, which is why a story with no single
+ *  anchoring filing gets no panel at all rather than an empty one.
+ *
+ *  The figures band carries the receipt. "Our call" states the rating we
+ *  published and when, "Since then" the return since that buy: the pair no
+ *  other publication can print, because printing it requires having gone on
+ *  record first. `StageFigures` drops any slot with no figure, so an unrated
+ *  story simply shows fewer.
+ */
+
+const KICKER =
+  "font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55";
+
+const CAPTION =
+  "flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-white/10 px-5 py-3.5 text-[12.5px] leading-[1.5] text-white/65";
+
+const PANEL =
+  "board-stage relative overflow-hidden rounded-[28px] border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)]";
+
+function dateLabel(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso.replace(" ", "T"));
+
+  if (Number.isNaN(d.getTime())) return "";
+
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+const shortDate = (iso: string) => {
+  const d = new Date(`${iso}T00:00:00`);
+
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+};
+
+export function StoryStage({
+  story,
+  kindLabel,
+}: {
+  story: Story;
+  kindLabel: string;
+}) {
+  const chart = story.chart;
+
+  if (!chart) return null;
+
+  const isUs = chart.market === "US";
+
+  // The receipt. Both halves come from the same buy the chart is anchored on,
+  // so the grade and the outcome are measured from one point rather than two.
+  const anchor = story.buys.find((b) => b.trade_date === chart.trade_date);
+  const rated = story.buys.find((b) => b.rating);
+  const figures = [
+    rated?.rating
+      ? {
+          k: "Our call",
+          v: `${rated.rating[0].toUpperCase()}${rated.rating.slice(1)}, ${shortDate(rated.trade_date)}`,
+        }
+      : null,
+    anchor?.return_pct != null
+      ? {
+          k: "Since then",
+          tone: (anchor.return_pct >= 0 ? "pos" : "neg") as "pos" | "neg",
+          v: `${anchor.return_pct >= 0 ? "+" : ""}${anchor.return_pct.toFixed(1)}%`,
+        }
+      : null,
+    story.buys.length > 1
+      ? {
+          k: "Insiders buying",
+          v: String(new Set(story.buys.map((b) => b.director)).size),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ k: string; v: string; tone?: "pos" | "neg" }>;
+
+  return (
+    <div className={`${PANEL} mt-8`}>
+      <div className="px-6 pt-7 sm:px-8 sm:pt-9">
+        <p className={KICKER}>
+          {kindLabel}
+          {story.published_at ? ` · ${dateLabel(story.published_at)}` : ""}
+        </p>
+
+        <div className="mt-4 flex items-start gap-3.5">
+          <CompanyLogo
+            className="mt-1"
+            size={40}
+            ticker={chart.ticker}
+          />
+          <h1 className="text-[28px] font-normal leading-[1.12] tracking-[-0.02em] text-white sm:text-[38px] lg:text-[44px]">
+            {story.headline}
+          </h1>
+        </div>
+
+        {story.standfirst ? (
+          <p className="mt-4 max-w-[58ch] text-[15px] leading-[1.6] text-white/65">
+            {story.standfirst}
+          </p>
+        ) : null}
+
+        {figures.length > 0 ? <StageFigures items={figures} /> : null}
+      </div>
+
+      {/* Full-bleed under the header, the way every stage puts its object. */}
+      <div className="mt-8 px-2 pb-1 sm:px-3">
+        <MiniPriceChart
+          detailed
+          disclosedDate={chart.disclosed_date ?? undefined}
+          entryPrice={chart.entry_price}
+          fmt={isUs ? USD_FORMAT : GBP_FORMAT}
+          normalizeClose={isUs ? normalizeUsdClose : undefined}
+          showFigures={false}
+          theme="dark"
+          tickerForApi={chart.ticker}
+          tickerForDisplay={chart.ticker_display}
+          tradeDate={chart.trade_date}
+        />
+      </div>
+
+      <div className={CAPTION}>
+        <span>{chart.caption}</span>
+        <span className="text-white/45">
+          {chart.ticker_display} · {chart.market}
+        </span>
+      </div>
+    </div>
+  );
+}

@@ -46,6 +46,11 @@ function Inline({ text }: { text: string }) {
             target="_blank"
           >
             {m[1]}
+            {/* Only external links carry the mark, so a reader can see at a
+                glance which ones leave the site. */}
+            <span aria-hidden className="ml-0.5 text-[0.85em] text-foreground/40">
+              ↗
+            </span>
           </a>
         ),
       );
@@ -136,9 +141,12 @@ export function StoryBody({ markdown }: { markdown: string }) {
       const text = heading[2];
       out.push(
         level === 2 ? (
+          /* Ruled, so the article's own sections and the page's (The
+             purchases, Sources) read as one system rather than two scales of
+             heading in the same column. */
           <h2
             key={key++}
-            className="mt-10 text-[19px] font-medium leading-snug text-foreground"
+            className="mt-10 border-t border-hairline pt-7 text-[17px] font-semibold leading-snug text-foreground dark:border-separator"
           >
             <Inline text={text} />
           </h2>
@@ -161,13 +169,22 @@ export function StoryBody({ markdown }: { markdown: string }) {
         quote.push(lines[i].replace(/^\s*>\s?/, ""));
         i += 1;
       }
+      // A quote in a story is almost always us quoting our own past rating,
+      // which is a receipt rather than a pull-quote: italics and a left rule
+      // make it read as rhetorical emphasis, when the point is that this is a
+      // record with a date on it. A lead `**…**` becomes the kicker.
+      const quoted = quote.join(" ").trim();
+      const lead = quoted.match(/^\*\*(.+?)\*\*\s*/);
+
       out.push(
-        <blockquote
-          key={key++}
-          className="my-6 border-l-2 border-hairline pl-4 text-[15px] italic leading-relaxed text-foreground/70 dark:border-separator"
-        >
-          <Inline text={quote.join(" ")} />
-        </blockquote>,
+        <figure key={key++} className="board-panel my-7 px-5 py-4">
+          <figcaption className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
+            {lead ? lead[1] : "From our records"}
+          </figcaption>
+          <div className="mt-2 text-[14px] leading-[1.6] text-foreground/80">
+            <Inline text={lead ? quoted.slice(lead[0].length) : quoted} />
+          </div>
+        </figure>,
       );
       continue;
     }

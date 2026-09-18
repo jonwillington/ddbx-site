@@ -566,47 +566,6 @@ export interface PerformanceRow {
   as_of_date: string | null;
 }
 
-/** One purchase's fixed-horizon outcome, as `/api/outcomes` serves it.
- *
- *  A row exists only once the horizon has elapsed: the close on/before the
- *  anchor date to the close on/before anchor + `horizon_days`, beside the
- *  market benchmark over the identical window (`^FTAS` UK, `^GSPC` US). Unlike
- *  `LivePerformance`, every purchase in a slice is measured over the SAME
- *  number of days, which is what a comparison between groups of purchases
- *  needs.
- *
- *  `event_id` joins back to the feed: UK `Dealing.id`; US
- *  `${filing_id}|${transaction_code}|${reporter.cik}`, one logical Form 4
- *  purchase (direct holdings outside 10b5-1 plans only, as the outcomes pass
- *  defines it).
- *
- *  PERCENTS, like the `outcomes` table (12.3 = +12.3%). `flags` is the table's
- *  vocabulary: `extreme` (close-to-close move outside 0.34x-3x, usually an
- *  unadjusted split), `stale_exit` / `stale_entry` (the bar used is more than
- *  ten days from the date wanted: the series stopped), `no_bench`
- *  (`abnormal_return_pct` is null). Rows are served flagged, never dropped;
- *  which flags to exclude is the consumer's stated choice. */
-export interface OutcomeEvent {
-  event_id: string;
-  anchor_date: string;
-  entry_date: string;
-  exit_date: string;
-  return_pct: number;
-  bench_return_pct: number | null;
-  abnormal_return_pct: number | null;
-  flags: string[];
-}
-
-export interface OutcomesResponse {
-  market: "UK" | "US";
-  anchor: "trade" | "disclosed";
-  horizon_days: 90 | 180 | 365 | 730;
-  benchmark: string;
-  /** Latest `exit_date` in the slice, or null when it is empty. */
-  resolved_through: string | null;
-  outcomes: OutcomeEvent[];
-}
-
 /** Server-precomputed "as of the latest cached close" performance, attached to
  *  every dealing so consumers render the row's return / alpha badge instantly
  *  from the dealings payload — no per-visitor /api/prices round-trips (which
@@ -2316,72 +2275,6 @@ export interface GovCommitteesResponse {
   chambers_modelled: GovChamber[];
 }
 
-/** One member's committee lane for one issuer, as the rating engine computes
- *  it (`committeeJurisdictionDetail`: SIC first, ICB sector as the fallback,
- *  in lane at a score of 0.5 or more, the member detail's `in_lane` rule).
- *
- *  Four values, not a boolean, because the last three are different facts:
- *   - "in"           sits on a committee whose jurisdiction covers the issuer
- *   - "out"          sits on at least one modelled committee; none covers it
- *   - "unmodelled"   none of their committees is one we model (every senator)
- *   - "unclassified" we hold neither a SIC nor a sector for the issuer, so the
- *                    question was never asked of anyone */
-export type GovStockLane = "in" | "out" | "unmodelled" | "unclassified";
-
-/** One buyer of one ticker, inside `GovStockSummary.buyers`. */
-export interface GovStockBuyer {
-  /** Bioguide id (the filed name for the rare unresolved reporter). */
-  id: string;
-  purchases: number;
-  lane: GovStockLane;
-  /** The committee the lane holds through. Null unless `lane` is "in". */
-  via: string | null;
-}
-
-/** One ticker in GET /api/gov-stocks. */
-export interface GovStockSummary {
-  ticker: string;
-  /** The most common filed issuer name, raw (share-class suffixes and all). */
-  company: string;
-  /** Most common sector across the ticker's rows; null when no row maps. */
-  sector_normalized: SectorNormalized | null;
-  /** Distinct members with a purchase of this ticker. */
-  members: number;
-  /** Purchase rows. Ingest stores purchases only today, so this equals the
-   *  row count `/api/gov-dealings?view=all&ticker=` returns; if sales are ever
-   *  stored, it stays purchases and that count will not. */
-  purchases: number;
-  /** Distinct PTR documents. */
-  filings: number;
-  /** Buyers whose lane is "in". */
-  in_lane_members: number;
-  first_disclosed: string;
-  last_disclosed: string;
-  /** A fund rather than an issuer (ETF, ETN, index fund), by its filed names.
-   *  PTRs file these under the "stock" asset class, so the name decides. */
-  is_fund: boolean;
-  /** Most purchases first. */
-  buyers: GovStockBuyer[];
-}
-
-/** GET /api/gov-stocks — every ticker a member of Congress has a purchase of,
- *  with the counts a consumer needs to build a by-stock index or apply a
- *  publishing bar. The bar itself lives in the consumer, the /api/companies
- *  posture: what counts as thin is an SEO judgement, and moving it should not
- *  need a Worker deploy. */
-export interface GovStocksResponse {
-  /** Latest disclosure date in the record. Null on an empty table. */
-  as_of: string | null;
-  corpus: {
-    /** Distinct members with at least one purchase. */
-    members: number;
-    purchases: number;
-    tickers: number;
-  };
-  /** Most members first, then most purchases, then ticker. */
-  stocks: GovStockSummary[];
-}
-
 // ============================================================================
 // Broker comparison / affiliate directory
 // ============================================================================
@@ -2728,6 +2621,51 @@ export interface StorySource {
  *  Anything `https://` is an external citation and opens in a browser. A story
  *  body never contains an absolute ddbx.uk URL: it would throw an app reader
  *  out to Safari for a page the app already has. */
+/** The price chart an article opens with.
+ *
+ *  Built deterministically in code from the filing it belongs to, never by the
+ *  model: a chart is an assertion about prices, and the one thing that must not
+ *  be generated prose is the picture the reader checks the prose against.
+ *
+ *  Units follow each market's own convention, matching what the clients already
+ *  render per filing: `entry_price` is pence on UK and major dollars on US. */
+export interface StoryChart {
+  /** Storage ticker, as the price API expects it (`HAS.L`, `ABCL`). */
+  ticker: string;
+  /** How the ticker is shown to a reader (UK drops the `.L`). */
+  ticker_display: string;
+  market: Market;
+  /** The buy the chart is anchored on, and the marker dates. */
+  trade_date: string;
+  disclosed_date: string | null;
+  entry_price: number;
+  /** One line under the chart naming what is drawn. */
+  caption: string;
+}
+
+/** One insider purchase, as the article's buy table renders it.
+ *
+ *  Structured rather than described in the prose, for the same reason the chart
+ *  is: these are numbers a reader scans and compares, and a paragraph listing
+ *  seven purchases is the worst possible presentation of a table. Built from
+ *  the filing rows in code, so the figures cannot drift from the feed. */
+export interface StoryBuy {
+  /** Links to the filing page, via `ddbx://filing/<market>/<id>`. */
+  deal_id: string;
+  director: string;
+  role: string | null;
+  trade_date: string;
+  /** GBP on UK, USD on US. */
+  value: number | null;
+  /** Pence on UK, major dollars on US, matching each market's convention. */
+  price: number | null;
+  /** Return since this buy, percent, against the latest close. Null when the
+   *  price panel cannot resolve one end of it. */
+  return_pct: number | null;
+  /** Our published rating at the time, when there was one. */
+  rating: string | null;
+}
+
 export interface Story {
   id: string;
   market: Market;
@@ -2745,6 +2683,12 @@ export interface Story {
   filings: string[];
   subject_ticker: string | null;
   subject_tickers: string[];
+  /** Null for a story with no single anchoring filing (a sector piece spans
+   *  several companies and gets no chart until there is a multi-line one). */
+  chart: StoryChart | null;
+  /** Every insider purchase behind the story, newest first. Empty when the
+   *  subject is not a single company. */
+  buys: StoryBuy[];
   published_at: string | null;
   created_at: string;
 }

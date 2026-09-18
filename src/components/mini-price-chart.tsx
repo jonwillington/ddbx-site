@@ -68,6 +68,7 @@ export function MiniPriceChart({
   muted = false,
   showFigures = true,
   detailed = false,
+  theme,
 }: {
   tickerForApi: string;
   tickerForDisplay: string;
@@ -110,6 +111,8 @@ export function MiniPriceChart({
    *  anchor across the series turns "+43.2% since disclosure" from a claim into
    *  something a reader can see. */
   detailed?: boolean;
+  /** Force the dark ink, for a chart inside an always-dark stage panel. */
+  theme?: "dark";
 }) {
   const [period, setPeriod] = useState<Period>("around");
   const [allBars, setAllBars] = useState<{ date: string; close: number }[]>([]);
@@ -217,9 +220,14 @@ export function MiniPriceChart({
   const flat = Math.abs(returnPct) < 0.05;
   const up = hasReturn ? lastBar.close >= entryPrice : true;
 
+  // `theme="dark"` forces the dark ink regardless of the page theme, for the
+  // one surface that is always dark: a chart sitting inside a board stage
+  // panel. Without it the light theme draws black 45% axis text on the
+  // panel's near-black ground and the axis disappears.
   const isDark =
-    typeof document !== "undefined" &&
-    document.documentElement.classList.contains("dark");
+    theme === "dark" ||
+    (typeof document !== "undefined" &&
+      document.documentElement.classList.contains("dark"));
 
   const upText = "text-[#1e6b18] dark:text-[#5cd84a]";
   const downText = "text-[#8b2020] dark:text-[#e84d4d]";

@@ -88,7 +88,7 @@ export const US_EXCHANGE_HOLIDAYS: HolidaySource = {
 /** USD formatter bundle. quoteToValue=1 because USD prices are already in
  *  the major unit; the only conversion we do is /100 on live closes (see
  *  normalizeLivePrice below). */
-const USD_FORMAT: PriceFormat = {
+export const USD_FORMAT: PriceFormat = {
   formatPrice: (n) => `$${n.toFixed(2)}`,
   formatValue: (n) =>
     new Intl.NumberFormat("en-US", {
