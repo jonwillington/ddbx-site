@@ -7,7 +7,7 @@ import {
 } from "@/components/boards/board-row";
 import { DeltaBadge } from "@/components/market/market-row";
 import { RatingBadge } from "@/components/rating-badge";
-import { moneyShort } from "@/lib/company-format";
+import { localeFor, moneyShort } from "@/lib/company-format";
 import { resolveStoryLink } from "@/lib/stories";
 
 /** The purchases behind a story, as the exhibit the prose argues about.
@@ -33,14 +33,6 @@ function priceLabel(b: StoryBuy, market: Story["market"]): string {
     ? `$${b.price.toFixed(2)}`
     : `${b.price < 10 ? b.price.toFixed(2) : b.price.toFixed(1)}p`;
 }
-
-const dayLabel = (iso: string) => {
-  const d = new Date(`${iso}T00:00:00`);
-
-  return Number.isNaN(d.getTime())
-    ? iso
-    : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-};
 
 export function StoryBuys({ story }: { story: Story }) {
   const buys = story.buys;
@@ -74,7 +66,7 @@ export function StoryBuys({ story }: { story: Story }) {
         {buys.map((b) => (
           <BoardRow
             key={b.deal_id}
-            date={{ iso: b.trade_date, locale: dayLabel(b.trade_date) }}
+            date={{ iso: b.trade_date, locale: localeFor(story.market) }}
             facts={[
               { label: "Paid", value: priceLabel(b, story.market) },
               {

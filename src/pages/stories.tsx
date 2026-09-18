@@ -30,6 +30,7 @@ import { BoardRow, BoardRowList } from "@/components/boards/board-row";
 import { CompanyLogo } from "@/components/company-logo";
 import { TickerPill } from "@/components/ticker-pill";
 import { api } from "@/lib/api";
+import { localeFor } from "@/lib/company-format";
 import { marketForPath } from "@/lib/markets/registry";
 import { STORY_KIND_LABEL, storyPath } from "@/lib/stories";
 
@@ -47,17 +48,6 @@ function parseDate(iso: string | null): Date | null {
   if (!iso) return null;
   const d = new Date(iso.replace(" ", "T"));
   return Number.isNaN(d.getTime()) ? null : d;
-}
-
-/** The rail's date: "14 Sept", with the year only when it is not this one. */
-function railDate(d: Date): string {
-  const thisYear = d.getFullYear() === new Date().getFullYear();
-
-  return d.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    ...(thisYear ? {} : { year: "numeric" }),
-  });
 }
 
 const monthLabel = (d: Date) =>
@@ -148,9 +138,15 @@ export default function StoriesPage() {
                         <TickerPill ticker={display(tickers[0])} />
                       ) : undefined
                     }
+                    /* `locale` is a BCP-47 tag, not a preformatted string:
+                       RowDate does the day/short-month rendering itself, and
+                       drops the year in unless it is a past one. */
                     date={
-                      when
-                        ? { iso: s.published_at ?? "", locale: railDate(when) }
+                      s.published_at
+                        ? {
+                            iso: s.published_at,
+                            locale: localeFor(s.market),
+                          }
                         : undefined
                     }
                     figure={
