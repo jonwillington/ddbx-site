@@ -1236,6 +1236,7 @@ export function MarketPage<W>({
           marketLabel={config.marketLabel}
           primaryCtaHref={appStoreUrlForMarketId(config.id)}
           reportLabel={monthShort(latestRecapMonth)}
+          showcase={config.heroShowcase}
           subhead={config.heroSubhead}
           onViewReport={
             config.id !== "uk" && latestRecapMonth

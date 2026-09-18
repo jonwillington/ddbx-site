@@ -59,12 +59,18 @@ const shortDate = (iso: string) => {
     : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 };
 
+export type ReturnBasis = "publish" | "today";
+
 export function StoryStage({
   story,
   kindLabel,
+  basis,
+  onBasis,
 }: {
   story: Story;
   kindLabel: string;
+  basis: ReturnBasis;
+  onBasis: (b: ReturnBasis) => void;
 }) {
   const chart = story.chart;
 
@@ -76,6 +82,12 @@ export function StoryStage({
   // so the grade and the outcome are measured from one point rather than two.
   const anchor = story.buys.find((b) => b.trade_date === chart.trade_date);
   const rated = story.buys.find((b) => b.rating);
+  // Which "now" the figure means. The prose is frozen at publication ("the
+  // stock is now 157p"), so a page that only ever showed the live number would
+  // contradict its own first paragraph a week later. Both are carried and the
+  // label always says which one is on screen.
+  const ret =
+    basis === "today" ? anchor?.return_pct : anchor?.return_pct_at_publish;
   const figures = [
     rated?.rating
       ? {
@@ -83,11 +95,11 @@ export function StoryStage({
           v: `${rated.rating[0].toUpperCase()}${rated.rating.slice(1)}, ${shortDate(rated.trade_date)}`,
         }
       : null,
-    anchor?.return_pct != null
+    ret != null
       ? {
-          k: "Since then",
-          tone: (anchor.return_pct >= 0 ? "pos" : "neg") as "pos" | "neg",
-          v: `${anchor.return_pct >= 0 ? "+" : ""}${anchor.return_pct.toFixed(1)}%`,
+          k: basis === "today" ? "Since then, today" : "Since then, at publication",
+          tone: (ret >= 0 ? "pos" : "neg") as "pos" | "neg",
+          v: `${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%`,
         }
       : null,
     story.buys.length > 1
@@ -106,16 +118,15 @@ export function StoryStage({
           {story.published_at ? ` · ${dateLabel(story.published_at)}` : ""}
         </p>
 
-        <div className="mt-4 flex items-start gap-3.5">
-          <CompanyLogo
-            className="mt-1"
-            size={40}
-            ticker={chart.ticker}
-          />
-          <h1 className="text-[28px] font-normal leading-[1.12] tracking-[-0.02em] text-white sm:text-[38px] lg:text-[44px]">
-            {story.headline}
-          </h1>
-        </div>
+        {/* Stacked, not inline. At 80px the mark is the company's own
+            identity rather than a bullet beside the text, and the headline
+            keeps a measure instead of running the full width of the panel:
+            a 44px line set across 900px is a banner, not a sentence. */}
+        <CompanyLogo className="mt-5" size={80} ticker={chart.ticker} />
+
+        <h1 className="mt-5 max-w-[19ch] text-[28px] font-normal leading-[1.12] tracking-[-0.02em] text-white sm:text-[38px] sm:max-w-[17ch] lg:text-[44px]">
+          {story.headline}
+        </h1>
 
         {story.standfirst ? (
           <p className="mt-4 max-w-[58ch] text-[15px] leading-[1.6] text-white/65">
@@ -124,6 +135,32 @@ export function StoryStage({
         ) : null}
 
         {figures.length > 0 ? <StageFigures items={figures} /> : null}
+
+        {/* One control for the whole page: the table below follows it. */}
+        {anchor?.return_pct != null &&
+        anchor?.return_pct_at_publish != null ? (
+          <div className="mt-6 inline-flex rounded-full border border-white/15 p-0.5 text-[11px]">
+            {(
+              [
+                ["publish", "At publication"],
+                ["today", "Today"],
+              ] as Array<[ReturnBasis, string]>
+            ).map(([k, lbl]) => (
+              <button
+                key={k}
+                className={`rounded-full px-3 py-1 transition-colors ${
+                  basis === k
+                    ? "bg-white/15 text-white"
+                    : "text-white/55 hover:text-white/80"
+                }`}
+                onClick={() => onBasis(k)}
+                type="button"
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {/* Full-bleed under the header, the way every stage puts its object. */}
@@ -134,6 +171,10 @@ export function StoryStage({
           entryPrice={chart.entry_price}
           fmt={isUs ? USD_FORMAT : GBP_FORMAT}
           normalizeClose={isUs ? normalizeUsdClose : undefined}
+          /* Six months of run-up before the buy. The grey leg is the price the
+             director chose to step into, which is half of what the article is
+             about; at the filing page's five days it is a stub. */
+          preBuyDays={180}
           showFigures={false}
           theme="dark"
           tickerForApi={chart.ticker}

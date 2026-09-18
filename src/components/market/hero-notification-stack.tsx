@@ -231,6 +231,8 @@ export function HeroNotificationStack({
         <CompanyLogo
           key={tick}
           className="hns-avatar"
+          domain={frontDeal.logoDomain}
+          monogramText={frontDeal.logoMonogram}
           size={56}
           ticker={frontDeal.ticker}
         />

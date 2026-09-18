@@ -25,6 +25,14 @@ export type HeroDeal = {
   id: string;
   /** Exchange-qualified ticker for the company logo (logo.dev). */
   ticker: string;
+  /** Company homepage as a bare domain. When present the badge logo is looked
+   *  up by domain instead of by ticker — the logo provider knows nothing about
+   *  a 6-digit KRX code. Mirrors `MarketDealing.logoDomain`. */
+  logoDomain?: string;
+  /** Text the logo's monogram fallback draws its initials from, for markets
+   *  whose ticker would make a nonsense glyph ("036" is not a company).
+   *  Mirrors `MarketDealing.logoMonogram`. */
+  logoMonogram?: string;
   /** Bare ticker, as the chart labels it. */
   symbol: string;
   /** App Store icon for the market this notification belongs to. */
@@ -61,6 +69,15 @@ export type HeroDeal = {
   disclosedDate: string;
   /** ISO date of the last close in `series`. */
   asOf: string;
+  /** What the chart calls the marker under the plot. Defaults to "The alert",
+   *  which is true of a market where the filing reports a trade that already
+   *  happened. Korea's filing reports one that hasn't: the event is an
+   *  announcement, and captioning it "The alert" would describe the
+   *  notification rather than the thing on the price line. */
+  alertLabel?: string;
+  /** How the outcome line names the point it is measuring from — "since the
+   *  alert" by default, "since the announcement" in Korea. Same reason. */
+  sinceLabel?: string;
 };
 
 const UK_DEALS: HeroDeal[] = [
@@ -449,6 +466,147 @@ const USG_DEALS: HeroDeal[] = [
   },
 ];
 
+// Korea (`kr`) tells a different story from every other market here, and the
+// copy has to say so. A Korean officer or major shareholder must DECLARE a
+// large purchase about thirty days before they are allowed to make it, so the
+// alert is an announcement of an intention, not a report of a trade. Three
+// consequences, all deliberate:
+//
+//   - there is no separate trade marker. The announcement IS the event, so
+//     tradeDate === disclosedDate in the series script and the chart draws one
+//     point, captioned "Announced" rather than "The alert";
+//   - no `buyStyle`. "Bought into weakness" describes a fill that hasn't
+//     happened yet;
+//   - the outcome reads "since the announcement", because that is the day a
+//     reader could have acted on it.
+//
+// There is no Korean app, so the banner carries ddbx's own mark and is titled
+// "ddbx" rather than a store listing that doesn't exist. Logos resolve by
+// issuer homepage: the provider knows nothing about a 6-digit KRX code.
+//
+// Figures are the declared amounts from DART, verified against /api/kr-plans.
+// Three of the four series end on 2026-08-04, which is where the price
+// history for those tickers ends; the window is drawn to the last real close,
+// never extrapolated.
+const KR_DEALS: HeroDeal[] = [
+  {
+    id: "jusung",
+    ticker: "036930.KQ",
+    logoDomain: "jusung.com",
+    logoMonogram: "Jusung Engineering",
+    symbol: "036930",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "ANNOUNCED",
+    lead: "036930 · Jusung Engineering",
+    body: "Lumiastra announced it would buy ₩24.9bn (≈ £13.7m) of the company, 1.6% of it, 30 days before it could start buying.",
+    buyIndex: 41,
+    alertLabel: "Announced",
+    sinceLabel: "since the announcement",
+    disclosedDate: "2026-02-02",
+    asOf: "2026-08-04",
+    series: [
+      74.3, 74.9, 72.2, 71.6, 71.6, 71.1, 70.4, 70.3, 68.9, 67.8, 65.7, 67,
+      66.2, 65.9, 68.3, 68.3, 66.8, 68.4, 68.8, 67.8, 74.5, 76.4, 79.4, 75.9,
+      85.6, 81.8, 80, 81, 81, 79.4, 78.2, 77.5, 76.4, 75.6, 76.7, 77.5, 82,
+      89.5, 93.9, 95, 101.2, 100, 109.9, 117.5, 108.1, 115.2, 127.1, 120.3,
+      119.7, 121.2, 124.8, 134.6, 136.6, 129.7, 129.5, 128.5, 137.3, 137.3,
+      144.4, 131.7, 163.5, 164.3, 146.6, 171.4, 164, 161.8, 161.8, 156.9, 149.6,
+      154, 149.3, 178.2, 175, 189.5, 180.2, 174.5, 174.5, 157.2, 148.6, 159.6,
+      148.8, 152.3, 149.3, 148.1, 166.5, 156.2, 155.2, 155, 155.7, 172.8, 177,
+      172.3, 224, 291.1, 294.7, 284.5, 303.3, 308.4, 319.5, 308.2, 308.4, 309.9,
+      312.4, 330.7, 340, 401, 381.9, 411.3, 411.3, 343.2, 446, 433, 437, 453.4,
+      548.3, 574.1, 560.6, 509.2, 489.6, 454.1, 482, 613.2, 514.1, 447.5, 469.3,
+      487.1, 601, 565.5, 550.8, 554.5, 538.6, 520.2, 472.7, 484.5, 450.9, 446.5,
+      408.6, 405.4, 432.3, 492, 592.4, 556.9, 471.5, 444.8, 429.9, 391.7, 436.7,
+      469.8, 446.8, 471.5, 512.9, 460, 411, 414.2, 396.6, 401.2, 345.2, 367,
+      315.3, 284.2, 240.6, 304.8, 312.9, 328,
+    ],
+  },
+  {
+    id: "coway",
+    ticker: "021240.KS",
+    logoDomain: "company.coway.com",
+    logoMonogram: "Coway",
+    symbol: "021240",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "DECLARED",
+    lead: "021240 · Coway",
+    body: "Netmarble, which already owns more than 10%, announced a ₩40bn (≈ £22m) purchase, 0.8% of the company, a month before the window opened.",
+    buyIndex: 30,
+    alertLabel: "Announced",
+    sinceLabel: "since the announcement",
+    disclosedDate: "2026-04-06",
+    asOf: "2026-08-04",
+    series: [
+      120.6, 119.6, 117.5, 115.7, 116.2, 113.1, 112.4, 101.9, 102.9, 103.9,
+      99.7, 99.9, 102.3, 102.5, 101.7, 102.1, 103.3, 103.6, 100.8, 102.8, 97.9,
+      99.9, 102.3, 101.2, 101.5, 100.1, 99.7, 99.2, 99.3, 99.4, 100, 107.5, 108,
+      103.2, 104.3, 110.4, 112.4, 113.4, 115.1, 115.1, 114.8, 112.4, 111.6,
+      109.9, 118.6, 118.9, 118.1, 120.7, 118.9, 119.8, 114.9, 120, 121, 128.2,
+      126.8, 130.7, 132.9, 130.8, 127.8, 125.8, 121.8, 129.4, 130.1, 129.4,
+      126.4, 127.6, 124.3, 124.3, 130.7, 128.5, 130.1, 120.7, 127.6, 127.1,
+      127.1, 122.9, 126.1, 126, 126.8, 125.7, 120.7, 118.8, 118.8, 119.2, 120.2,
+      118.4, 126.1, 124.7, 131.2, 132.7, 131.8, 131.2, 133.7, 126.7, 117.4,
+      124.2, 126.7, 130.1, 132.2, 133.6, 127.6, 129.1, 126.8, 125.3, 126.8,
+      127.5, 126, 125.1, 126, 126.4, 127.3, 128.3,
+    ],
+  },
+  {
+    id: "agabang",
+    ticker: "013990.KQ",
+    logoDomain: "agabang.com",
+    // agabang.com and kukilmetal.com both 404 at the logo proxy, so these two
+    // always render the monogram. One word, so it yields "AGA" — the same
+    // glyph the declarations table below draws from "AGABANG&COMPANY".
+    logoMonogram: "Agabang",
+    symbol: "013990",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "NEW PLAN",
+    lead: "013990 · Agabang & Company",
+    body: "Lancy Korea, the controlling shareholder, announced it would buy ₩6bn (≈ £3.3m) more, 5.5% of the company, a month before it could start.",
+    buyIndex: 30,
+    alertLabel: "Announced",
+    sinceLabel: "since the announcement",
+    disclosedDate: "2026-06-18",
+    asOf: "2026-08-04",
+    series: [
+      133, 129.1, 127.2, 126.7, 134.3, 130.4, 132.2, 134.8, 128.8, 129.6, 130.9,
+      128, 130.4, 130.9, 130.4, 129.3, 130, 124.6, 126.5, 119.4, 108.2, 104.4,
+      99.2, 107.4, 115.8, 103.8, 107.4, 108, 105.9, 103.8, 100, 97.7, 94, 88.1,
+      91.3, 88.1, 84.5, 93.5, 88.5, 90.6, 89, 89, 91.8, 91.3, 89.8, 88.7, 92.4,
+      91.9, 90.1, 95.7, 93.9, 91.5, 103.5, 104.2, 109.3, 106.6, 108, 108.5,
+      107.7, 111.3, 116.3, 118.6, 122.6,
+    ],
+  },
+  {
+    id: "kukil",
+    ticker: "060480.KQ",
+    logoDomain: "kukilmetal.com",
+    logoMonogram: "Kukil Metal",
+    symbol: "060480",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "30 DAYS AHEAD",
+    lead: "060480 · Kukil Metal",
+    body: "CEO Son In Kuk announced he would buy ₩500m (≈ £276k) of his own company, 4% of it, 30 days before he could start.",
+    buyIndex: 30,
+    alertLabel: "Announced",
+    sinceLabel: "since the announcement",
+    disclosedDate: "2026-08-11",
+    asOf: "2026-09-11",
+    series: [
+      128.9, 129.1, 130.7, 126.8, 125.1, 124.8, 125.3, 122.1, 120.2, 120.7,
+      121.6, 119.4, 120.1, 120, 119.6, 115.6, 109.9, 111.1, 111.8, 110.5, 87.8,
+      64.8, 76.5, 84.6, 89.8, 88.2, 95.6, 96, 97.5, 97.8, 100, 94.1, 89.5, 91.8,
+      89.2, 91.8, 102.4, 112.5, 119.3, 115.3, 120.9, 122.5, 121.9, 122.4, 120.5,
+      130.4, 131.9, 131.8, 130.4, 141.1, 145.5, 143.9, 138.8,
+    ],
+  },
+];
+
 /** Where the notification fires for a deal: the day it was DISCLOSED. For
  *  most filings that is the same point as the trade on this scale; a late
  *  Congressional PTR is weeks later, and says so. */
@@ -483,6 +641,7 @@ export function formatHold(days: number): string {
 export function dealsForMarket(marketId?: string): HeroDeal[] {
   if (marketId === "us") return US_DEALS;
   if (marketId === "usg") return USG_DEALS;
+  if (marketId === "kr") return KR_DEALS;
 
   return UK_DEALS;
 }

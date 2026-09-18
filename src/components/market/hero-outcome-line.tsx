@@ -1,5 +1,8 @@
 /** The success story's last beat, said out loud: "Up 135% in 107 days since
- *  the alert." Two forms, same figures (`outcomeOf`), same clock.
+ *  the alert." Two forms, same figures (`outcomeOf`), same clock. The deal
+ *  names the moment being measured from (`HeroDeal.sinceLabel`), because in
+ *  Korea it is an announcement of a purchase yet to be made, not an alert
+ *  about one already filed.
  *
  *  `HeroOutcomeBar` is the desktop card's: a full-width tinted row seated
  *  under the chart, so the payoff is the most visible object in the demo
@@ -64,7 +67,7 @@ export function HeroOutcomeBar({ deal }: { deal: HeroDeal }) {
         {pct}%
       </span>
       <span className="text-[14px] leading-tight text-foreground/65">
-        in {formatHold(days)} since the alert
+        in {formatHold(days)} {deal.sinceLabel ?? "since the alert"}
       </span>
     </div>
   );
@@ -115,7 +118,7 @@ export function HeroOutcomeLine({
         {up ? "Up" : "Down"} {Math.abs(pct)}%
       </span>
       <span className="text-foreground/55">
-        in {formatHold(days)} since the alert
+        in {formatHold(days)} {deal.sinceLabel ?? "since the alert"}
       </span>
     </p>
   );

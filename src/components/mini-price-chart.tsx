@@ -30,7 +30,13 @@ const PERIODS: { key: Period; label: string }[] = [
 
 /** How many calendar days of pre-buy context to include on the "Around buy"
  *  tab. Gives the reader a sense of where the price was heading when the
- *  director stepped in. */
+ *  director stepped in.
+ *
+ *  Five is right for the drawer and the filing page, where the question is
+ *  "what did this trade do". An article asks a different one: the run-up the
+ *  director bought INTO is half the story, so the story stage passes a much
+ *  wider window and the grey pre-buy leg carries real weight against the
+ *  coloured one. */
 const PRE_BUY_CONTEXT_DAYS = 5;
 
 /** Inline height. The drawer's chart is a supporting glance in a narrow
@@ -68,6 +74,7 @@ export function MiniPriceChart({
   muted = false,
   showFigures = true,
   detailed = false,
+  preBuyDays = PRE_BUY_CONTEXT_DAYS,
   theme,
 }: {
   tickerForApi: string;
@@ -111,6 +118,8 @@ export function MiniPriceChart({
    *  anchor across the series turns "+43.2% since disclosure" from a claim into
    *  something a reader can see. */
   detailed?: boolean;
+  /** Calendar days of pre-buy context on the "Around buy" window. */
+  preBuyDays?: number;
   /** Force the dark ink, for a chart inside an always-dark stage panel. */
   theme?: "dark";
 }) {
@@ -165,7 +174,7 @@ export function MiniPriceChart({
       const cutoff = (() => {
         const t = new Date(tradeDate);
 
-        t.setDate(t.getDate() - PRE_BUY_CONTEXT_DAYS);
+        t.setDate(t.getDate() - preBuyDays);
 
         return t.toISOString().slice(0, 10);
       })();
@@ -178,7 +187,7 @@ export function MiniPriceChart({
       );
 
     return allBars;
-  }, [allBars, period, tradeDate]);
+  }, [allBars, period, tradeDate, preBuyDays]);
 
   /** The series as plotted. When disclosure post-dates the last close the
    *  line is extended flat out to that date, so the disclosure marker has a

@@ -2659,9 +2659,17 @@ export interface StoryBuy {
   value: number | null;
   /** Pence on UK, major dollars on US, matching each market's convention. */
   price: number | null;
-  /** Return since this buy, percent, against the latest close. Null when the
+  /** Return since this buy, percent, against the LATEST close. Null when the
    *  price panel cannot resolve one end of it. */
   return_pct: number | null;
+  /** The same return measured to the close on the day the article published.
+   *
+   *  Both are carried because an article states one and a reader wants the
+   *  other. The prose is frozen ("the stock is now 157p") while a figure
+   *  computed on read moves every day, so a page showing only the live number
+   *  quietly contradicts its own first paragraph. Consumers label which one
+   *  they are showing and let the reader switch. */
+  return_pct_at_publish: number | null;
   /** Our published rating at the time, when there was one. */
   rating: string | null;
 }

@@ -10,6 +10,7 @@ import { Bars3Icon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { Drawer } from "vaul";
 
 import { Spinner } from "@/components/spinner";
+import { api } from "@/lib/api";
 import { StoreGlyph } from "@/components/store-glyph";
 import {
   RESEARCH_PATHS,
@@ -46,7 +47,7 @@ type NavItem =
     }
   | {
       kind: "menu";
-      id: "research" | "learn";
+      id: "research" | "learn" | "stories";
       label: string;
       links: ResearchLink[];
       match: (p: string) => boolean;
@@ -86,11 +87,16 @@ function NavMenu({
   label,
   links,
   active,
+  wide = false,
 }: {
   id: string;
   label: string;
   links: ResearchLink[];
   active: boolean;
+  /** Rows that are headlines rather than labels need a panel that can hold a
+   *  sentence and let it wrap. Everything else stays at the 224px the
+   *  Research and Learn menus were drawn for. */
+  wide?: boolean;
 }) {
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -154,7 +160,8 @@ function NavMenu({
           author `display` this panel might grow later. */}
       <div
         className={clsx(
-          "absolute left-0 mt-2 w-56 rounded-xl border border-separator bg-[#f5f0e8] dark:bg-background shadow-lg overflow-hidden z-50 py-1",
+          "absolute left-0 mt-2 rounded-xl border border-separator bg-[#f5f0e8] dark:bg-background shadow-lg overflow-hidden z-50 py-1",
+          wide ? "w-[23rem]" : "w-56",
           !open && "hidden",
         )}
         hidden={!open}
@@ -176,7 +183,10 @@ function NavMenu({
               >
                 <a
                   className={clsx(
-                    "flex items-center w-full px-2.5 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors",
+                    "flex w-full px-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors",
+                    wide
+                      ? "items-start py-2 text-[13.5px] leading-[1.45]"
+                      : "items-center py-1.5 text-sm",
                     current
                       ? "text-[#5a4128] dark:text-[#d8c4af] font-medium"
                       : "text-foreground",
@@ -432,6 +442,50 @@ export const Navbar = () => {
   // US host but have no story of their own yet, and surfacing an empty archive
   // as a top-level tab would be worse than not offering it.
   const showStories = ["uk", "us"].includes(market.id);
+
+  // The Stories menu lists the five most recent articles rather than a set of
+  // section links, so its rows have to be fetched. One cached request per page
+  // (the feed is edge-cached for five minutes and a few hundred bytes), and the
+  // item degrades to a plain link when the list is empty or the request fails,
+  // which is also what a brand-new market sees.
+  const [storyLinks, setStoryLinks] = useState<ResearchLink[]>([]);
+
+  useEffect(() => {
+    if (!showStories) return;
+    let live = true;
+
+    api
+      .stories(market.id === "us" ? "US" : "UK")
+      .then((r) => {
+        if (!live) return;
+        const recent = r.stories.slice(0, 5).map((st) => ({
+          href: `/stories/${st.id}`,
+          label: st.headline,
+          path: `/stories/${st.id}`,
+        }));
+
+        // "View all" only earns its row once the menu is actually a sample of
+        // something larger. At four articles the menu IS the archive.
+        setStoryLinks(
+          r.stories.length > 5
+            ? [
+                ...recent,
+                {
+                  divider: true,
+                  href: "/stories",
+                  label: "View all stories",
+                  path: "/stories",
+                },
+              ]
+            : recent,
+        );
+      })
+      .catch(() => {});
+
+    return () => {
+      live = false;
+    };
+  }, [showStories, market.id]);
   const showCompanies = ["uk", "us", "usg", "djt"].includes(market.id);
 
   const navItems: NavItem[] = [
@@ -494,13 +548,22 @@ export const Navbar = () => {
     // it reads: after Research, before Brokers.
     ...(showStories
       ? [
-          {
-            kind: "link" as const,
-            label: "Stories",
-            href: "/stories",
-            match: (p: string) =>
-              p === "/stories" || p.startsWith("/stories/"),
-          },
+          storyLinks.length > 0
+            ? {
+                kind: "menu" as const,
+                id: "stories" as const,
+                label: "Stories",
+                links: storyLinks,
+                match: (p: string) =>
+                  p === "/stories" || p.startsWith("/stories/"),
+              }
+            : {
+                kind: "link" as const,
+                label: "Stories",
+                href: "/stories",
+                match: (p: string) =>
+                  p === "/stories" || p.startsWith("/stories/"),
+              },
         ]
       : []),
     ...(showBrokers
@@ -574,6 +637,7 @@ export const Navbar = () => {
                         id={item.id}
                         label={item.label}
                         links={item.links}
+                        wide={item.id === "stories"}
                       />
                     ) : (
                       <a className={navItemClass(active)} href={item.href}>

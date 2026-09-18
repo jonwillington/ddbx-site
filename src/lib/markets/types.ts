@@ -230,9 +230,19 @@ export interface MarketPlan {
   /** Intended, not executed. */
   plannedShares: number | null;
   plannedValue: number | null;
-  /** Pre-formatted secondary rendering of `plannedValue` — see
-   *  MarketDealing.valueSecondary for why this arrives as a string. */
+  /** Pre-formatted reading of `plannedValue` in a currency the reader is
+   *  likelier to hold — "≈ £830k". The ROW LEADS WITH THIS when it exists:
+   *  a won figure is a number nobody outside Korea can size on sight, so the
+   *  sterling approximation is the headline and the filed currency sits
+   *  under it. Pre-formatted for the same reason as
+   *  MarketDealing.valueSecondary — only the market knows the rate and how
+   *  much precision survives it. */
   plannedValueSecondary?: string | null;
+  /** The same figure as a NUMBER, when the market has one. Not for display —
+   *  `plannedValueSecondary` is what gets rendered. This exists so the size
+   *  verdict can be thresholded on a comparable amount across markets rather
+   *  than on a currency-specific one. */
+  plannedValueGbp?: number | null;
   /** Intended purchase as a share of the company. */
   plannedPercent: number | null;
   /** Reader-facing reading of the filer's stated reason, when one can be
@@ -388,6 +398,16 @@ export interface MarketConfig<W = unknown> {
    *  "Which directors have been buying shares in {marketLabel} companies?".
    *  Congress sets this since members buy other companies, not themselves. */
   heroHeadline?: ReactNode;
+  /** Force the two-column hero — message column left, the deal-showcase panel
+   *  (alert, price chart, outcome bar) right — on a market that has no app.
+   *
+   *  The layout used to be gated on the App Store link, because the panel
+   *  began life as an app demo. It isn't one: it's the market's own proof,
+   *  and a market with real stories to show should not be stuck on the
+   *  centred layout just because there's nothing to install. When there is no
+   *  store link the panel carries no download CTA, and the explainer (if the
+   *  market has one) becomes the message column's filled anchor. */
+  heroShowcase?: boolean;
   /** One-line hero subhead for first-time visitors — what the product does
    *  for this market. Rendered under the headline on md+ viewports only. */
   heroSubhead?: ReactNode;

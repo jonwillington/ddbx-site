@@ -1,42 +1,53 @@
-// Advance declarations — trades an insider has publicly committed to but has
-// NOT yet made.
+// Insider buying programmes — one row per announced purchase, from the day it
+// is announced to the day it is bought or called off.
+//
+// ONE STORY PER ROW, IN PLAIN WORDS. The reader is assumed never to have heard
+// of DART, of FSCMA art. 173-3, or of the word "declaration". So the row says
+// who is buying and what they are to the company, roughly what it is worth in
+// a currency they hold, where the plan has got to, and whether it is a big one.
+// Nothing on the row is a term of art: "Announced", "Buying now", "Bought",
+// "Called off". The statute is one click away under the subtitle, not stacked
+// above the list as an introduction.
 //
 // The DATA is deliberately not a MarketDealing (see MarketPlan in
 // lib/markets/types.ts): every affordance a dealing has — a price paid, a
-// return since, a trade date — is wrong for a declaration, and mapping one
-// onto the other would quietly assert things that are not true. The LAYOUT,
-// on the other hand, is the dealings table's, column for column. A page that
-// stacks fifty declarations above fifty completed purchases has to read as one
-// table twice, not as a card wall followed by a table: the reader is comparing
-// the two lists, and they cannot compare what does not line up.
+// return since, a trade date — is wrong for a plan, and mapping one onto the
+// other would quietly assert things that are not true. The LAYOUT, on the
+// other hand, is the dealings table's, column for column. A page that stacks
+// these above the completed purchases has to read as one table twice, not as a
+// card wall followed by a table: the reader is comparing the two lists, and
+// they cannot compare what does not line up.
 //
 // So the row geometry here mirrors MarketRow exactly — w-28 date, w-20 ticker,
 // flex-1 company + insider, the market's value column, then the dealings
-// table's trend + performance width fused into one Window cell, then the w-40
+// table's trend + performance width fused into one stage cell, then the w-40
 // action column. Same hairline cell rules, same type sizes, same header
 // treatment with its tooltips.
 //
-// Three things shape it, all learned from the Korean feed:
+// Four things shape it, all learned from the Korean feed:
 //
-//   1. GROUPED BY WINDOW STATE, not by filed date. A flat sixty-row list in
-//      filing order interleaves declarations whose window opens next month
-//      with ones that closed weeks ago and ones the filer has since called
-//      off. Where a declaration sits against its window IS the declaration;
-//      sorting by the filing date buried the only axis that matters. Only the
-//      open group is expanded on arrival — the other two announce their count
-//      and wait, so the completed purchases below stay within reach.
-//   2. THE ROW LEADS WITH THE READING. The Window cell states where the
-//      declaration stands as a sentence — "Open until 18 Sep", "Opens in 2
-//      days" — with the literal date range beneath it. The reader should not
-//      have to subtract two dates to learn whether anything can happen today.
-//   3. THE FOLLOW-THROUGH IS THE PAYOFF. A declaration with executed filings
-//      against it can show what actually happened, and about a quarter of them
-//      can. It sits in the action column as a proportion of what was promised.
+//   1. GROUPED BY WHERE THE PLAN HAS GOT TO, not by filed date. A flat list in
+//      filing order interleaves plans whose window opens next month with ones
+//      that finished weeks ago and ones the filer has since called off. Where
+//      a plan sits against its window IS the plan; sorting by the filing date
+//      buried the only axis that matters. Only "Buying now" is expanded on
+//      arrival — the rest announce their count and wait, so the completed
+//      purchases below stay within reach.
+//   2. THE MONEY LEADS IN THE READER'S CURRENCY. ₩1,500,000,000 is a number,
+//      not a quantity. The approximate sterling figure is the headline and the
+//      filed currency sits under it, so the row can be sized on sight and the
+//      filing's own figure is still on the page.
+//   3. THE STAGE IS A SENTENCE, not a date range. "Buying now / until 18 Sept ·
+//      75% bought" says everything two dates and a progress bar were asking the
+//      reader to work out for themselves.
+//   4. THE LAST COLUMN IS A SIZE, NOT A RATING. Nothing here has been screened,
+//      so the only verdict it can honestly carry is how big the plan is against
+//      a stated threshold — and the header says what that threshold is.
 //
 // The notice is rendered from the payload rather than written here, so the
-// wording travels with the data and one market cannot drift from another. Only
-// its first paragraph is shown up front — the full text is three paragraphs of
-// statute, which is reference material, not an introduction.
+// wording travels with the data and one market cannot drift from another. It
+// is collapsed behind a link: it is three paragraphs of statute, which is
+// reference material, and the section subtitle now does the introducing.
 
 import type { ReactNode } from "react";
 import type { MarketPlan, PlansPayload } from "@/lib/markets/types";
@@ -63,9 +74,9 @@ const CELL = "border-r border-black/[0.06] dark:border-white/[0.06]";
  *
  * Mirrors MarketRowHeader. `VALUE` is the only one a market sets itself
  * (MarketConfig.priceFormat.valueColumnClass — Korea widens it to w-36,
- * because an exact won figure runs to fourteen characters); `WINDOW` is the
- * dealings table's trend (w-24) + performance (w-24)
- * fused, because a declaration has neither and the sentence needs the room.
+ * because an exact won figure runs to fourteen characters); `window` is the
+ * dealings table's trend (w-24) + performance (w-24) fused, because a plan has
+ * neither and the stage sentence needs the room.
  */
 const COL = {
   date: "w-28",
@@ -74,109 +85,177 @@ const COL = {
   action: "w-40",
 } as const;
 
-/* ─── Window state ───────────────────────────────────────────────────── */
+/* ─── Where the plan has got to ──────────────────────────────────────── */
 
-type StateId = "open" | "upcoming" | "closed" | "withdrawn" | "unstated";
+type StageId =
+  | "open"
+  | "upcoming"
+  | "unstated"
+  | "bought"
+  | "empty"
+  | "withdrawn";
 
-interface WindowState {
-  id: StateId;
-  /** Where the declaration stands, as a sentence. The row's primary reading. */
-  label: string;
+interface Stage {
+  id: StageId;
+  /** Two or three plain words. The row's primary reading, and the only thing
+   *  a skimming reader is expected to take from the column. */
+  headline: string;
+  /** One small line of supporting fact — a date, and how much has been bought
+   *  when anything has. Null when there is nothing honest to add. */
+  detail: string | null;
   tone: string;
-  /** True once there is nothing left to wait for — a shut window or a
-   *  cancellation. Suppresses "Nothing filed yet", which is a prompt, not a
-   *  verdict, and reads as an accusation against a plan that is already over. */
-  settled: boolean;
 }
 
-/** How near an opening has to be before it's worth counting down to. Past
- *  this the date itself is the more useful fact: "opens in 47 days" is a
- *  number the reader then has to turn back into a date. */
-const COUNTDOWN_DAYS = 14;
+/** Percent of the announced amount that has actually been bought, or null when
+ *  the two figures cannot be divided. Capped at 100: filings routinely execute
+ *  a few percent over the announced value (rounding, and the 70–130% band the
+ *  rule allows), and "117% bought" reads as a bug rather than as diligence. */
+function boughtPercent(p: MarketPlan): number | null {
+  if (!p.plannedValue || p.plannedValue <= 0) return null;
+  if (p.executedValue == null || p.executedValue <= 0) return null;
 
-function windowState(p: MarketPlan, today: string): WindowState {
+  return Math.min(100, Math.round((p.executedValue / p.plannedValue) * 100));
+}
+
+/** " · 75% bought", or " · ₩320m bought so far" when there is an executed
+ *  figure but nothing to measure it against. Empty when nothing has been
+ *  bought, because "0% bought" is a prompt dressed as a measurement. */
+function boughtSuffix(
+  p: MarketPlan,
+  formatValue: (v: number) => string,
+): string {
+  const pct = boughtPercent(p);
+
+  if (pct != null) return ` · ${pct}% bought`;
+  if (p.executedValue != null && p.executedValue > 0)
+    return ` · ${compactValue(p.executedValue, formatValue)} bought so far`;
+
+  return "";
+}
+
+function stage(
+  p: MarketPlan,
+  today: string,
+  formatValue: (v: number) => string,
+): Stage {
   if (p.isWithdrawn)
     return {
       id: "withdrawn",
-      label: "Withdrawn",
+      headline: "Called off",
+      detail: `withdrew ${fmtShort(p.filedDate)}`,
       tone: "text-foreground/45",
-      settled: true,
     };
   if (!p.windowStart)
     return {
       id: "unstated",
-      label: "Window not stated",
-      tone: "text-foreground/45",
-      settled: false,
+      headline: "Announced",
+      detail: "no start date given",
+      tone: "text-foreground/80",
     };
-  if (today < p.windowStart) {
-    const days = daysBetween(today, p.windowStart);
-
+  if (today < p.windowStart)
     return {
       id: "upcoming",
-      label:
-        days === 0
-          ? "Opens today"
-          : days <= COUNTDOWN_DAYS
-            ? `Opens in ${days} day${days === 1 ? "" : "s"}`
-            : `Opens ${fmtShort(p.windowStart)}`,
+      headline: "Announced",
+      detail:
+        daysBetween(today, p.windowStart) === 0
+          ? "buying can start today"
+          : `buying can start ${fmtShort(p.windowStart)}`,
       tone: "text-foreground/80",
-      settled: false,
     };
-  }
   if (p.windowEnd && today <= p.windowEnd)
     return {
       id: "open",
-      // Emerald is reserved for this one state across the whole section: the
+      // Emerald is reserved for this one stage across the whole section: the
       // colour means "something can happen today", nothing else.
-      label: `Open until ${fmtShort(p.windowEnd)}`,
+      headline: "Buying now",
+      detail: `until ${fmtShort(p.windowEnd)}${boughtSuffix(p, formatValue)}`,
       tone: "text-emerald-600 dark:text-emerald-400",
-      settled: false,
+    };
+  if (p.executedValue != null && p.executedValue > 0)
+    return {
+      id: "bought",
+      headline: "Bought",
+      detail: `${p.windowEnd ? `finished ${fmtShort(p.windowEnd)}` : "window closed"}${boughtSuffix(p, formatValue)}`,
+      tone: "text-foreground/80",
     };
 
   return {
-    id: "closed",
-    label: p.windowEnd ? `Closed ${fmtShort(p.windowEnd)}` : "Window closed",
+    id: "empty",
+    headline: "Nothing bought",
+    detail: p.windowEnd ? `window closed ${fmtShort(p.windowEnd)}` : null,
     tone: "text-foreground/45",
-    settled: true,
   };
 }
 
-/** The groups, in the order a reader cares about them. Only the open window is
- *  expanded on arrival. "Declared, not yet open" is the biggest group and the
- *  least urgent — every row in it says "wait" — and leaving it open pushed the
- *  completed-purchases table thousands of pixels down the page. "Settled"
- *  collects what there is nothing left to wait for: shut windows and
- *  cancellations. Empty groups render nothing. */
+/** The groups, in the order a reader cares about them, each introduced by one
+ *  beginner sentence. Only "Buying now" is expanded on arrival: every other
+ *  group is either waiting or over, and leaving them open pushed the purchases
+ *  table thousands of pixels down the page. Empty groups render nothing. */
 const GROUPS: {
   id: string;
-  states: StateId[];
+  stages: StageId[];
   title: string;
   blurb: string;
   collapsed?: boolean;
 }[] = [
   {
     id: "open",
-    states: ["open"],
-    title: "Buying window open now",
-    blurb: "The declared purchase can be made any day inside this window.",
+    stages: ["open"],
+    title: "Buying now",
+    blurb:
+      "The notice period is over and the shares can be bought on any day from here to the date shown.",
   },
   {
     id: "upcoming",
-    states: ["upcoming", "unstated"],
-    title: "Declared, not yet open",
-    blurb: "Filed and waiting out the notice period before buying can start.",
+    stages: ["upcoming", "unstated"],
+    title: "Announced, not started",
+    blurb:
+      "They have said what they intend to buy and are waiting out the notice period before they are allowed to start.",
     collapsed: true,
   },
   {
-    id: "settled",
-    states: ["closed", "withdrawn"],
-    title: "Closed and withdrawn",
+    id: "bought",
+    stages: ["bought"],
+    title: "Bought",
+    blurb: "The time ran out and shares were bought against the announcement.",
+    collapsed: true,
+  },
+  {
+    id: "empty",
+    stages: ["empty"],
+    title: "Closed without buying",
     blurb:
-      "Windows that have run their course, and plans the filer called off. Kept on the page because a controlling shareholder cancelling a purchase is itself news.",
+      "The time ran out and no purchase has been filed against the announcement.",
+    collapsed: true,
+  },
+  {
+    id: "withdrawn",
+    stages: ["withdrawn"],
+    title: "Called off",
+    blurb:
+      "The insider cancelled before buying. Kept on the page, because a large holder calling off a purchase is worth knowing too.",
     collapsed: true,
   },
 ];
+
+/* ─── Size ───────────────────────────────────────────────────────────── */
+
+/** A size, not a rating. Nothing on a Korean page has been screened, so the
+ *  only verdict this column can honestly carry is "this one is large", against
+ *  a threshold the header states out loud. Either limb qualifies: a small
+ *  company's 1% and a large one's £500,000 are both worth a second look, and
+ *  requiring both would silently drop one of them. */
+const BIG_PERCENT = 1;
+const BIG_GBP = 500_000;
+
+const BIG_HELP = "Size only, not a rating. 1% of the company or £500k and up.";
+
+function isBig(p: MarketPlan): boolean {
+  return (
+    (p.plannedPercent != null && p.plannedPercent >= BIG_PERCENT) ||
+    (p.plannedValueGbp != null && p.plannedValueGbp >= BIG_GBP)
+  );
+}
 
 /* ─── Dates + numbers ────────────────────────────────────────────────── */
 
@@ -286,12 +365,15 @@ export function MarketPlans({
 
   /** Bucket once, and sort each bucket by what its readers are waiting on:
    *  the open windows by which closes first, the upcoming ones by which
-   *  opens first, the settled ones newest-filed first. */
+   *  opens first, the finished ones newest-announced first. */
   const groups = useMemo(() => {
-    const stated = plans.map((p) => ({ plan: p, w: windowState(p, today) }));
+    const staged = plans.map((p) => ({
+      plan: p,
+      s: stage(p, today, formatValue),
+    }));
 
     return GROUPS.map((g) => {
-      const rows = stated.filter((r) => g.states.includes(r.w.id));
+      const rows = staged.filter((r) => g.stages.includes(r.s.id));
 
       rows.sort((a, b) => {
         if (g.id === "open")
@@ -306,7 +388,7 @@ export function MarketPlans({
 
       return { ...g, rows };
     }).filter((g) => g.rows.length > 0);
-  }, [plans, today]);
+  }, [plans, today, formatValue]);
 
   // A market whose declarations fail to load should lose the section, not the
   // page — the dealings feed below is independent and still worth reading.
@@ -323,6 +405,10 @@ export function MarketPlans({
         </p>
       ) : null}
 
+      {/* The statute, one click down. It used to sit here as a card: roughly
+          130 words of regulation between the heading and the first row, which
+          is reference material posing as an introduction. The subtitle above
+          now does the introducing. */}
       {data?.notice ? <Notice notice={data.notice} /> : null}
 
       {/* Loading holds the arrived geometry — same container, same header,
@@ -346,7 +432,7 @@ export function MarketPlans({
 
       {data && plans.length === 0 ? (
         <p className="mt-4 text-[13.5px] text-foreground/55">
-          {emptyLabel ?? "No declarations on file."}
+          {emptyLabel ?? "Nothing announced yet."}
         </p>
       ) : null}
 
@@ -367,57 +453,54 @@ export function MarketPlans({
   );
 }
 
-/** The payload's explainer. The first paragraph is the one a reader needs
- *  before the list makes sense; the rest is the statute — thresholds, notice
- *  periods, the 70–130% band — which is reference material and sat between
- *  the heading and the first row as roughly 130 words of regulation. It's
- *  still here, one click away, and still worded by the server. */
+/** The payload's explainer, collapsed to a link.
+ *
+ *  Everything in it is statute — thresholds, notice periods, the 70–130% band
+ *  the purchase has to land inside — and none of it is needed to read a row
+ *  now that the rows say "Buying now" and "Bought" rather than naming a legal
+ *  instrument. So the whole thing, headline and all, opens on request and is a
+ *  single line of chrome until then. Still worded by the server, so it cannot
+ *  drift from what the rows mean. */
 function Notice({ notice }: { notice: NonNullable<PlansPayload["notice"]> }) {
   const [expanded, setExpanded] = useState(false);
   const paras = notice.body.split("\n\n").filter(Boolean);
-  const [lead, ...rest] = paras;
 
   return (
-    <div className={`mt-4 ${CARD}`}>
-      <h3 className="text-[14px] font-semibold leading-[1.35] text-foreground">
-        {notice.headline}
-      </h3>
-      {lead ? (
-        <p className="mt-2 text-[13.5px] leading-[1.6] text-foreground/65">
-          {lead}
-        </p>
-      ) : null}
-
-      {expanded
-        ? rest.map((para) => (
-            <p
-              key={para.slice(0, 24)}
-              className="mt-2 text-[13.5px] leading-[1.6] text-foreground/65"
-            >
-              {para}
-            </p>
-          ))
-        : null}
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13.5px]">
-        {rest.length > 0 && (
-          <button
-            className="underline underline-offset-2 hover:opacity-70"
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-          >
-            {expanded ? "Show less" : "How the rule works"}
-          </button>
-        )}
+    <div className="mt-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px]">
+        <button
+          aria-expanded={expanded}
+          className="underline underline-offset-2 text-foreground/60 hover:opacity-70"
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? "Hide how the rule works" : "How the rule works"}
+        </button>
         {notice.learnMorePath ? (
           <Link
-            className="underline underline-offset-2 hover:opacity-70"
+            className="underline underline-offset-2 text-foreground/60 hover:opacity-70"
             to={notice.learnMorePath}
           >
             {notice.learnMoreLabel ?? "Learn more"}
           </Link>
         ) : null}
       </div>
+
+      {expanded ? (
+        <div className={`mt-3 ${CARD}`}>
+          <h3 className="text-[14px] font-semibold leading-[1.35] text-foreground">
+            {notice.headline}
+          </h3>
+          {paras.map((para) => (
+            <p
+              key={para.slice(0, 24)}
+              className="mt-2 text-[13.5px] leading-[1.6] text-foreground/65"
+            >
+              {para}
+            </p>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -435,7 +518,7 @@ function PlanGroup({
   title: string;
   blurb: string;
   count: number;
-  rows: { plan: MarketPlan; w: WindowState }[];
+  rows: { plan: MarketPlan; s: Stage }[];
   collapsed?: boolean;
   formatValue: (v: number) => string;
   valueColumnClass: string;
@@ -472,14 +555,14 @@ function PlanGroup({
         >
           <PlanRowHeader valueColumnClass={valueColumnClass} />
           <ul className="divide-y divide-black/[0.06] dark:divide-separator">
-            {rows.map(({ plan, w }) => (
+            {rows.map(({ plan, s }) => (
               <PlanRow
                 key={plan.key}
                 formatValue={formatValue}
                 locale={locale}
                 plan={plan}
+                s={s}
                 valueColumnClass={valueColumnClass}
-                w={w}
               />
             ))}
           </ul>
@@ -510,43 +593,48 @@ function HeaderLabel({
   );
 }
 
-/** Header for the declarations table. Deliberately not MarketRowHeader: the
- *  labels all differ (a declaration has no disclosure, no trend and no
- *  return), and its column set is driven by MarketConfig.hiddenColumns, which
- *  describes the dealings feed. The styling is copied verbatim. */
+/** Header for the programmes table. Deliberately not MarketRowHeader: the
+ *  labels all differ (a plan has no disclosure, no trend and no return), and
+ *  its column set is driven by MarketConfig.hiddenColumns, which describes the
+ *  dealings feed. The styling is copied verbatim.
+ *
+ *  Every help string is written for someone who has never seen one of these
+ *  filings before. No statute, no "declaration", no "consideration". */
 function PlanRowHeader({ valueColumnClass }: { valueColumnClass: string }) {
   return (
     <div className="hidden md:flex items-center text-[10px] uppercase tracking-wider text-muted/80 font-medium select-none border-b border-black/[0.08] dark:border-white/[0.08] bg-black/[0.04] dark:bg-white/[0.05]">
       <div className={`${COL.date} shrink-0 px-3 py-1.5 ${CELL}`}>
-        <HeaderLabel help="The date the declaration was filed. This is the event: nothing has been bought yet.">
-          Declared
+        <HeaderLabel help="The day the insider told the market they intended to buy. Nothing had been bought yet at this point.">
+          Announced
         </HeaderLabel>
       </div>
       <div className={`${COL.ticker} shrink-0 px-2 py-1.5 text-center ${CELL}`}>
-        <HeaderLabel help="The exchange code for the company the insider intends to buy.">
+        <HeaderLabel help="The exchange code for the company being bought.">
           Ticker
         </HeaderLabel>
       </div>
       <div className={`flex-1 min-w-0 px-3 py-1.5 ${CELL}`}>
-        <HeaderLabel help="The company, the insider who filed, and what they are to it — the filing threshold selects for ownership, so the holder status is usually more telling than the job title.">
-          Company / Insider
+        <HeaderLabel help="The company, the person or firm doing the buying, and what they are to it. Someone who already owns a lot of the company is usually more telling than a job title.">
+          Who and where
         </HeaderLabel>
       </div>
       <div
         className={`${valueColumnClass} shrink-0 px-3 py-1.5 text-right ${CELL}`}
       >
-        <HeaderLabel help="The size of the purchase as declared, and what share of the company it would be. Intended, not spent.">
-          Intends to buy
+        <HeaderLabel help="How much they said they would spend, in pounds at today's rate, with the figure they actually filed underneath. Intended, not spent.">
+          Plans to buy
         </HeaderLabel>
       </div>
       <div className={`${COL.window} shrink-0 px-3 py-1.5 ${CELL}`}>
-        <HeaderLabel help="The period the declared purchase must happen inside. Neither end of it is a trade date.">
-          Window
+        <HeaderLabel help="How far the plan has got: announced and waiting, buying right now, finished, or called off. Where anything has been bought, how much of the plan that covers.">
+          Where it stands
         </HeaderLabel>
       </div>
       <div className={`${COL.action} shrink-0 px-2 py-1.5 text-center`}>
-        <HeaderLabel help="What has actually been filed against the declaration so far, as a share of what was promised.">
-          Filed so far
+        <HeaderLabel
+          help={`How large the plan is. ${BIG_HELP} Nothing on this page has been screened or scored.`}
+        >
+          Size
         </HeaderLabel>
       </div>
     </div>
@@ -615,63 +703,62 @@ function PlanRowSkeleton({ valueColumnClass }: { valueColumnClass: string }) {
  *  is worse than one that doesn't. */
 function PlanRow({
   plan: p,
-  w,
+  s,
   formatValue,
   valueColumnClass,
   locale,
 }: {
   plan: MarketPlan;
-  w: WindowState;
+  s: Stage;
   formatValue: (v: number) => string;
   valueColumnClass: string;
   locale: string;
 }) {
   const ticker = displayTicker(p.ticker);
-  // A declaration that states no won value usually still states a share
-  // count. What it must never do is show an em-dash where a figure goes:
-  // "not stated" is a fact about the filing, "—" is the page shrugging.
-  const amount = p.plannedValue != null ? formatValue(p.plannedValue) : null;
-  const amountCompact =
+
+  // STERLING LEADS. ₩1,500,000,000 cannot be sized on sight by anyone who does
+  // not deal in won, so the approximate pound figure is the headline and the
+  // filed figure sits under it, compact. A plan that states no money usually
+  // still states a share count; what the cell must never do is show an em-dash
+  // where a figure goes. "Not stated" is a fact about the filing, "—" is the
+  // page shrugging.
+  const wonCompact =
     p.plannedValue != null ? compactValue(p.plannedValue, formatValue) : null;
   const shares =
     p.plannedShares != null ? p.plannedShares.toLocaleString("en-GB") : null;
   // "15,000 shares" wraps to two lines in a column sized for a currency
-  // figure. The unit drops to the secondary line instead, where the ≈£
-  // reading sits when there is a won value — same slot, same job.
-  const valueLabel = amount ?? shares ?? "Not stated";
-  const valueLabelCompact = amountCompact ?? shares ?? "Not stated";
-  const valueUnit = amount == null && shares != null ? "shares" : null;
-  const valueSecondary = p.plannedValueSecondary ?? valueUnit;
-  const valueStated = amount != null || shares != null;
-  const stake =
-    p.plannedPercent != null ? `${p.plannedPercent}% of company` : null;
-
-  // The insider line, in the dealings row's secondary slot. The filer's own
-  // Korean wording for the purpose stays in the title attribute: it is the
-  // record, not the reading, and a reader who cannot parse it gains nothing
-  // from it sitting in the row.
-  const insiderLine = [p.insiderName, p.holderStatus, p.purposeLabel]
-    .filter(Boolean)
-    .join(" · ");
-  const insiderTitle =
-    [insiderLine, p.purposeHint, p.purposeRaw].filter(Boolean).join(" — ") ||
-    undefined;
-
-  const range =
-    p.windowStart && p.windowEnd
-      ? `${fmtShort(p.windowStart)} – ${fmtShort(p.windowEnd)}`
-      : p.windowStart
-        ? `From ${fmtShort(p.windowStart)}`
+  // figure, so the unit drops to the line beneath — the same slot the won
+  // reading uses when there is a money figure.
+  const lead = p.plannedValueSecondary ?? wonCompact ?? shares ?? "Not stated";
+  const under =
+    p.plannedValueSecondary != null
+      ? wonCompact
+      : wonCompact == null && shares != null
+        ? "shares"
         : null;
+  const valueStated = p.plannedValue != null || shares != null;
+  // A filed 0 is a rounding artefact, not a measurement: rendering "0% of the
+  // company" would state a number the filing does not contain.
+  const stake =
+    p.plannedPercent != null && p.plannedPercent > 0
+      ? `${p.plannedPercent}% of the company`
+      : null;
 
-  const executedPct =
-    p.plannedValue && p.executedValue
-      ? Math.min(100, Math.round((p.executedValue / p.plannedValue) * 100))
-      : null;
-  const executed =
-    p.executedValue != null && p.executedValue > 0
-      ? formatValue(p.executedValue)
-      : null;
+  // Who is buying, and what they are to the company — "Jung Phil Moon, CEO",
+  // "Sejong Corp., controlling shareholder". A job title when there is a
+  // readable one, otherwise what they hold, which the filing threshold makes
+  // the more telling fact anyway. The filer's own Korean wording for the
+  // purpose stays in the title attribute: it is the record, not the reading,
+  // and a reader who cannot parse it gains nothing from it sitting in the row.
+  const insiderLine = [p.insiderName, p.insiderRole ?? p.holderStatus]
+    .filter(Boolean)
+    .join(", ");
+  const insiderTitle =
+    [insiderLine, p.purposeLabel, p.purposeHint, p.purposeRaw]
+      .filter(Boolean)
+      .join(" — ") || undefined;
+
+  const big = isBig(p);
 
   const companyClass = p.isWithdrawn
     ? "line-through decoration-foreground/30 text-foreground/60"
@@ -686,10 +773,10 @@ function PlanRow({
       }
     >
       {/* ── Mobile (<md) ──
-          MarketRow's one-liner: logo · company · what they intend to spend.
-          The state sits under the name because on a declaration it is the
-          whole point — a phone reader needs to know whether this can happen
-          today. Everything else (filer, notice period, follow-through) is
+          MarketRow's one-liner: logo · company · what they plan to spend. The
+          stage sits under the name because on a plan it is the whole point —
+          a phone reader needs to know whether this can happen today.
+          Everything else (who they are, the size verdict, the exact window) is
           desktop. */}
       <div className="md:hidden px-3.5 py-2.5 flex items-center gap-2.5">
         <CompanyLogo
@@ -704,8 +791,8 @@ function PlanRow({
           >
             {p.company}
           </div>
-          <div className={`mt-0.5 truncate text-[11px] ${w.tone}`}>
-            {w.label}
+          <div className={`mt-0.5 truncate text-[11px] font-medium ${s.tone}`}>
+            {s.headline}
           </div>
         </div>
         <span className="shrink-0 text-right leading-tight">
@@ -716,11 +803,11 @@ function PlanRow({
                 : "text-[13px] text-muted"
             }`}
           >
-            {valueLabelCompact}
+            {lead}
           </span>
-          {valueSecondary ? (
+          {under ? (
             <span className="block text-[10px] tabular-nums text-muted/75">
-              {valueSecondary}
+              {under}
             </span>
           ) : null}
         </span>
@@ -731,17 +818,13 @@ function PlanRow({
         <div
           className={`${COL.date} shrink-0 px-3 py-2.5 flex flex-col justify-center ${CELL}`}
         >
+          {/* The date alone. "30 days' notice" used to sit under it and was
+              the rule restated on every row: the notice period is the same
+              for everyone, so it told the reader nothing about this filing,
+              and the stage column already says when buying can start. */}
           <div className="text-xs text-foreground/90 font-medium leading-tight">
             {shortDate(fmtIso(p.filedDate), locale)}
           </div>
-          {/* Forewarning only reads as forewarning when there is some. A
-              withdrawal and a late-filed window both produce a negative
-              count, which rendered as "-26 days' notice". */}
-          {p.noticeDays != null && p.noticeDays > 0 ? (
-            <div className="text-[10px] text-muted/75 mt-0.5">
-              {p.noticeDays === 1 ? "1 day’s" : `${p.noticeDays} days’`} notice
-            </div>
-          ) : null}
         </div>
 
         <div
@@ -769,21 +852,22 @@ function PlanRow({
             >
               {p.company}
             </div>
-            {/* Venue leads the line, as it does on the dealings rows below:
-                a chip parked at the end of a truncating sentence is the
-                first thing to disappear. */}
+            {/* Who, then where. The chip is shrink-0 inside the flex row
+                rather than inside the truncating span, so the board survives
+                a long company officer's name instead of being the first
+                thing clipped. */}
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-              {p.venue ? (
-                <span className={`${chip()} shrink-0 text-muted`}>
-                  {p.venue}
-                </span>
-              ) : null}
               <span
                 className="text-[11px] text-muted truncate"
                 title={insiderTitle}
               >
                 {insiderLine}
               </span>
+              {p.venue ? (
+                <span className={`${chip()} shrink-0 text-muted`}>
+                  {p.venue}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -796,15 +880,15 @@ function PlanRow({
               valueStated ? "text-sm font-semibold" : "text-[13px] text-muted"
             }`}
           >
-            {valueLabel}
+            {lead}
           </div>
-          {valueSecondary ? (
+          {under ? (
             <div className="text-[10px] tabular-nums text-muted/75 leading-tight">
-              {valueSecondary}
+              {under}
             </div>
           ) : null}
-          {/* The reason the filing exists: a declaration is triggered by the
-              size of the stake, not by the sum of money. */}
+          {/* The reason the filing exists at all: the announcement is
+              triggered by the size of the stake, not by the sum of money. */}
           {stake ? (
             <div className="text-[10px] tabular-nums text-muted/75 leading-tight whitespace-nowrap">
               {stake}
@@ -815,43 +899,30 @@ function PlanRow({
         <div
           className={`${COL.window} shrink-0 px-3 py-2.5 flex flex-col justify-center ${CELL}`}
         >
-          <div className={`text-[13px] font-medium leading-tight ${w.tone}`}>
-            {w.label}
+          <div className={`text-[13px] font-medium leading-tight ${s.tone}`}>
+            {s.headline}
           </div>
-          {range ? (
+          {s.detail ? (
             <div className="text-[10px] tabular-nums text-muted/75 mt-0.5">
-              {range}
+              {s.detail}
             </div>
           ) : null}
         </div>
 
+        {/* A SIZE, not a rating. Empty when the plan is under the threshold,
+            because the honest alternative — "small" — is a judgement, and
+            nothing on this page has been screened. */}
         <div
-          className={`${COL.action} shrink-0 px-3 py-2.5 flex flex-col justify-center`}
+          className={`${COL.action} shrink-0 px-3 py-2.5 flex items-center justify-center`}
         >
-          {executed ? (
-            <>
-              <div className="text-[11px] font-medium text-foreground/85 tabular-nums">
-                {executedPct != null ? `Filed ${executedPct}%` : "Filed"}
-              </div>
-              {executedPct != null ? (
-                <div className="mt-1 h-1 w-full rounded-full bg-black/[0.08] dark:bg-white/[0.12]">
-                  {/* Brand brown reads as the filled part on cream and as a
-                      HOLE on the dark surface — it is darker than its own
-                      track there. The tan is the same token the rest of the
-                      site swaps to in dark mode. */}
-                  <div
-                    className="h-1 rounded-full bg-brand-brown/70 dark:bg-brand-tan/80"
-                    style={{ width: `${executedPct}%` }}
-                  />
-                </div>
-              ) : null}
-              <div className="mt-1 text-[10px] tabular-nums text-muted/75 leading-tight">
-                {executed}
-              </div>
-            </>
-          ) : w.settled ? null : (
-            <div className="text-[11px] text-muted/70">Nothing filed yet</div>
-          )}
+          {big ? (
+            <span
+              className={`${chip()} bg-brand-brown/10 text-brand-brown dark:bg-brand-tan/10 dark:text-brand-tan`}
+              title={BIG_HELP}
+            >
+              Big
+            </span>
+          ) : null}
         </div>
       </div>
     </li>

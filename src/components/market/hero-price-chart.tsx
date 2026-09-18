@@ -171,6 +171,10 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
   // of the draw everywhere except Congress, where it's partway through.
   const buyDelay = twoMarkers ? (DRAW_MS * deal.buyIndex) / alertIdx : DRAW_MS;
   const caption = deal.buyStyle ? CAPTION[deal.buyStyle] : null;
+  // The legend under the plot and the outcome bar beneath the card have to
+  // name the same moment in the same words, so both take it from the deal.
+  const since = deal.sinceLabel ?? "since the alert";
+  const sinceLegend = since.charAt(0).toUpperCase() + since.slice(1);
 
   return (
     <figure
@@ -404,7 +408,11 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
           {/* Ordinary filings caption the marker at the point itself, the way
               late Congress charts label "Traded"/"Filed" — the moment the
               panel exists to show shouldn't need a legend lookup. Clamped so
-              a buy near the window's edge keeps its label on the plot. */}
+              a buy near the window's edge keeps its label on the plot. The
+              word is the deal's, because it is not the same event everywhere:
+              a Korean filing announces a purchase that hasn't happened, and
+              "The alert" would be naming the notification rather than the
+              point on the line. */}
           {!twoMarkers && (
             <text
               className="hpc-fade hpc-fade-alert"
@@ -415,7 +423,7 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
               x={Math.min(Math.max(buyPt.x, 18), w - 18)}
               y={floor + 20}
             >
-              The alert
+              {deal.alertLabel ?? "The alert"}
             </text>
           )}
 
@@ -480,7 +488,7 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
             opacity: "var(--hpc-after-opacity)",
           }}
         />
-        Since the alert
+        {sinceLegend}
       </div>
     </figure>
   );

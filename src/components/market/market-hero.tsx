@@ -394,6 +394,7 @@ export function MarketHero({
   hasTopNotice = false,
   hasRightDrawer = false,
   primaryCtaHref,
+  showcase = false,
   onExplain,
   onViewReport,
   reportLabel,
@@ -429,6 +430,12 @@ export function MarketHero({
    *  showcase panel renders and links here (the panel is the only download CTA;
    *  the left column carries the explainer). */
   primaryCtaHref?: string;
+  /** Run the two-column showcase layout on a market with no App Store link.
+   *  The panel is the market's proof, not an app demo, so a market with real
+   *  stories to tell gets the same hero as UK/US — minus every download
+   *  affordance, which is keyed on `primaryCtaHref` rather than on the
+   *  layout. See `MarketConfig.heroShowcase`. */
+  showcase?: boolean;
   /** When provided, a "What are we looking for?" pill renders under the
    *  headline and opens the per-market explainer sheet. It's the left column's
    *  filled anchor (the download CTA lives on the right-hand panel). */
@@ -455,11 +462,17 @@ export function MarketHero({
   const promotedSubhead = !headline && !!subhead;
 
   /** App markets (UK, US, Congress — which ships inside the US app) get the
-   *  two-column desktop hero: text on the left, the notification app-showcase
-   *  panel on the right. Markets without an App Store link (NL, SE) keep the
-   *  original centred layout. Mobile is centred on every market — the showcase
-   *  panel is desktop-only. */
-  const appShowcase = !!primaryCtaHref;
+   *  two-column desktop hero: text on the left, the notification showcase
+   *  panel on the right. Markets with neither an App Store link nor an opt-in
+   *  (NL, SE) keep the original centred layout. Mobile is centred on every
+   *  market — the showcase panel is desktop-only.
+   *
+   *  The two are deliberately separate questions. "Does this market have a
+   *  story worth showing?" is `appShowcase`; "is there an app to install?" is
+   *  `primaryCtaHref`, and every download affordance below keys on that one —
+   *  otherwise an app-less market would inherit a trial chip and a store
+   *  button for a product it doesn't have. */
+  const appShowcase = !!primaryCtaHref || showcase;
   // Shared deal-radar clock — drives the showcase panel's queue and the
   // notification stack from one source so they stay in lockstep.
   const radar = useDealRadar(marketId, appShowcase);
@@ -485,8 +498,10 @@ export function MarketHero({
       {/* Trial promo eyebrow — the offer, called out where the eye lands
           first instead of buried under the App Store button. Chip-system
           capsule in the brand brown; app markets only (no trial elsewhere).
-          Markets that moved the offer into the headline/bullets drop it. */}
-      {appShowcase && !bullets && (
+          Markets that moved the offer into the headline/bullets drop it.
+          Keyed on the store link, not on the layout: a showcase market with
+          no app has no trial to offer. */}
+      {!!primaryCtaHref && !bullets && (
         <div className={`flex ${ctaJustify}`}>
           <span
             className={`${chip("lg")} bg-brand-brown/10 text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan`}
@@ -565,17 +580,26 @@ export function MarketHero({
   // content like any other button — it belongs to the message column, not to
   // the showcase panel, so it no longer inherits the notification stack's
   // width. The explainer stays the ghost beside it.
-  const ctaRowDesktop = (
+  //
+  // On a showcase market with no app there is no store button, so the
+  // explainer is promoted to the filled anchor exactly as it is in the
+  // compact row — the row must never read as a line of equal ghosts. And a
+  // market with nothing at all to put here renders no row rather than an
+  // empty flex child, which the column's gap would otherwise turn into a
+  // stray 24px under the bullets.
+  const ctaRowDesktop = (!!primaryCtaHref || onExplain || onViewReport) && (
     <div className={`flex flex-wrap items-center gap-3 ${ctaJustify}`}>
-      <StoreButtons
-        buttonClassName={FILLED_CTA}
-        gaEvent="cta_hero_download_app"
-        gaLabel="Hero desktop download"
-        marketId={marketId ?? "uk"}
-      />
+      {!!primaryCtaHref && (
+        <StoreButtons
+          buttonClassName={FILLED_CTA}
+          gaEvent="cta_hero_download_app"
+          gaLabel="Hero desktop download"
+          marketId={marketId ?? "uk"}
+        />
+      )}
       {onExplain && (
         <button
-          className={GHOST_CTA}
+          className={primaryCtaHref ? GHOST_CTA : FILLED_CTA}
           data-ga-event="cta_hero_open_explainer"
           data-ga-label="What are we looking for"
           type="button"
@@ -677,15 +701,20 @@ export function MarketHero({
                   column and only bounds itself on a tablet. */}
               <HeroShowcaseCompact radar={radar} />
               {headlineBlock}
-              <div className="hidden md:block">
-                <StoreButtons
-                  buttonClassName={`inline-flex items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
-                  className="items-center sm:flex-row"
-                  gaEvent="cta_hero_download_app"
-                  gaLabel="Hero compact download"
-                  marketId={marketId ?? "uk"}
-                />
-              </div>
+              {/* Keyed on the store link, not the layout — a showcase market
+                  with no app has nothing to stand in for the floating
+                  download bar. */}
+              {!!primaryCtaHref && (
+                <div className="hidden md:block">
+                  <StoreButtons
+                    buttonClassName={`inline-flex items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
+                    className="items-center sm:flex-row"
+                    gaEvent="cta_hero_download_app"
+                    gaLabel="Hero compact download"
+                    marketId={marketId ?? "uk"}
+                  />
+                </div>
+              )}
               {ctaRow}
             </div>
           </>

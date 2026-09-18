@@ -9,6 +9,7 @@ import { DeltaBadge } from "@/components/market/market-row";
 import { RatingBadge } from "@/components/rating-badge";
 import { localeFor, moneyShort } from "@/lib/company-format";
 import { resolveStoryLink } from "@/lib/stories";
+import type { ReturnBasis } from "@/components/stories/story-stage";
 
 /** The purchases behind a story, as the exhibit the prose argues about.
  *
@@ -34,13 +35,26 @@ function priceLabel(b: StoryBuy, market: Story["market"]): string {
     : `${b.price < 10 ? b.price.toFixed(2) : b.price.toFixed(1)}p`;
 }
 
-export function StoryBuys({ story }: { story: Story }) {
+export function StoryBuys({
+  story,
+  basis,
+}: {
+  story: Story;
+  /** Which "now" the Since buy column means, shared with the stage's toggle so
+   *  the page never shows two different ones at once. */
+  basis: ReturnBasis;
+}) {
   const buys = story.buys;
 
   if (buys.length === 0) return null;
 
   const currency = story.market === "US" ? "USD" : "GBP";
-  const asOf = new Date().toLocaleDateString("en-GB", {
+  const published = story.published_at
+    ? new Date(story.published_at.replace(" ", "T"))
+    : null;
+  const asOf = (
+    basis === "today" || !published ? new Date() : published
+  ).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -83,8 +97,15 @@ export function StoryBuys({ story }: { story: Story }) {
               </span>
             }
             perf={
-              b.return_pct != null ? (
-                <DeltaBadge value={b.return_pct} />
+              (basis === "today" ? b.return_pct : b.return_pct_at_publish) !=
+              null ? (
+                <DeltaBadge
+                  value={
+                    (basis === "today"
+                      ? b.return_pct
+                      : b.return_pct_at_publish) as number
+                  }
+                />
               ) : (
                 /* Never an em dash here: a missing mark is a state, and the
                    house style bans the character anyway. */
@@ -107,9 +128,9 @@ export function StoryBuys({ story }: { story: Story }) {
       </BoardRowList>
 
       <p className="mt-3 text-[12px] leading-[1.5] text-foreground/45">
-        Measured from each buy&rsquo;s trade-date close to the latest close, as
-        of {asOf}. Prices come from the daily panel at both ends, not from the
-        filed price.
+        Measured from each buy&rsquo;s trade-date close to the close on {asOf}
+        {basis === "today" ? " (today)" : " (the day this published)"}. Prices
+        come from the daily panel at both ends, not from the filed price.
       </p>
     </section>
   );

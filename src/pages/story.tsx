@@ -31,7 +31,7 @@ import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { StoryBody } from "@/components/stories/story-body";
 import { StoryBuys } from "@/components/stories/story-buys";
-import { StoryStage } from "@/components/stories/story-stage";
+import { StoryStage, type ReturnBasis } from "@/components/stories/story-stage";
 import { api } from "@/lib/api";
 import { STORY_KIND_LABEL } from "@/lib/stories";
 
@@ -51,6 +51,9 @@ function dateLabel(iso: string | null): string {
 export default function StoryPage() {
   const { id } = useParams<{ id: string }>();
   const [story, setStory] = useState<Story | null | "missing">(null);
+  // Defaults to publication, so the figures agree with the prose a reader is
+  // about to read. "Today" is one tap away and always labelled.
+  const [basis, setBasis] = useState<ReturnBasis>("publish");
 
   useEffect(() => {
     if (!id) return;
@@ -107,7 +110,12 @@ export default function StoryPage() {
         {s ? (
           <>
             {staged ? (
-              <StoryStage kindLabel={kindLabel} story={s} />
+              <StoryStage
+                basis={basis}
+                kindLabel={kindLabel}
+                onBasis={setBasis}
+                story={s}
+              />
             ) : null}
 
             <p className="mt-5 text-[12.5px] leading-[1.6] text-foreground/45">
@@ -122,7 +130,7 @@ export default function StoryPage() {
               </p>
             ) : null}
 
-            <StoryBuys story={s} />
+            <StoryBuys basis={basis} story={s} />
 
             <div className="mt-9 max-w-[62ch]">
               <StoryBody markdown={s.body_md} />
