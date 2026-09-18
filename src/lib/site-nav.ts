@@ -96,6 +96,7 @@ export const RESEARCH_PATHS = [
   "/cluster-buys",
   "/most-active-companies",
   "/reports",
+  "/stories",
   "/insider-index",
   "/research",
   "/us/research",
@@ -158,6 +159,11 @@ function researchLinks(
     link("Cluster buying", "/cluster-buys", { nav: true }),
     link("Most active", "/most-active-companies", { nav: true }),
     link("Monthly reports", "/reports", { nav: true, divider: true }),
+    // Beside the monthly archive, on the same side of the divider: both are
+    // published writing rather than a ranking over the feed. Same-host, so a
+    // reader on ddbx.us gets the US archive (the page filters by host market
+    // exactly as /reports does).
+    link("Stories", "/stories", { nav: true }),
     // Footer only, after the archive it belongs beside. The path carries the
     // market itself (/daily is UK, /us/daily is US on every host, per
     // shared/days.js), so it is chosen by the family `home` belongs to: every

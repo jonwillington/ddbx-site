@@ -22,6 +22,7 @@ import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { api } from "@/lib/api";
+import { marketForPath } from "@/lib/markets/registry";
 import { STORY_KIND_LABEL, storyPath } from "@/lib/stories";
 
 const RULE = "border-hairline dark:border-separator";
@@ -39,18 +40,30 @@ function dateLabel(iso: string | null): string {
 }
 
 export default function StoriesPage() {
+  // Host-aware, the same way /reports is: ddbx.us shows the US archive and
+  // ddbx.uk the UK one. One bundle serves both domains, so a /stories that
+  // listed every market would show a reader on ddbx.us articles about UK
+  // filings they cannot open from that host's navigation.
+  const marketParam = useMemo(() => {
+    const id = marketForPath(
+      "/",
+      typeof window === "undefined" ? undefined : window.location.hostname,
+    ).id;
+    return id === "us" || id === "usg" || id === "djt" ? "US" : "UK";
+  }, []);
+
   const [stories, setStories] = useState<StoryListItem[] | null>(null);
 
   useEffect(() => {
     let live = true;
     api
-      .stories()
+      .stories(marketParam)
       .then((r) => live && setStories(r.stories))
       .catch(() => live && setStories([]));
     return () => {
       live = false;
     };
-  }, []);
+  }, [marketParam]);
 
   const rows = stories ?? [];
   const lead = useMemo(() => rows[0], [rows]);
