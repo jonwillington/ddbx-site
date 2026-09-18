@@ -79,36 +79,106 @@
     --nav-h: 72px;
   }
 }
-/* Experimental sidebar masthead (lib/nav-mode): from xl there is no bar
-   across the top, so flush-seated sticky bars seat at the viewport edge. */
+/* ─── Shell layout (experiment, lib/nav-mode) ────────────────────────────────
+   From xl, `.nav-sidebar` turns the page into three panels on a frame: the
+   nav rail (components/side-nav), the page sheet (layouts/default), and —
+   from 1440 on pages that have one — the right rail, restyled from the same
+   fixed <aside>s the top-bar layout uses (`.page-rail`).
+
+   Geometry lives in two variables so every fixed thing that has to line up
+   with the sheet (the frame mask, the sticky page header, the cookie banner)
+   reads one source:
+     --shell-l  sheet's left edge  = 12 gutter + 216 nav panel + 12 gap
+     --shell-r  sheet's right edge = 12, or 12 + 280 rail + 12 with a rail
+   `.shell-rail` on <html> is written by DefaultLayout from `drawerRight`. */
+@custom-variant shell (&:where(.nav-sidebar *));
+
 @media (min-width: 1280px) {
   :root.nav-sidebar {
     --nav-h: 12px;
+    --shell-l: 240px;
+    --shell-r: 12px;
   }
-  /* Shell mode drops the fixed right rails (market channel, SEO, broker and
-     download asides) — the sheet takes the full width instead. */
-  :root.nav-sidebar aside.fixed.right-0 {
+  /* 1280-1439: two side panels would leave the sheet ~730px, too narrow for
+     the feed table, so the right rail stands down and its in-flow twin (the
+     block the page shows below lg) stands in for it. */
+  :root.nav-sidebar .page-rail {
     display: none !important;
   }
+  :root.nav-sidebar .page-rail-twin {
+    display: block !important;
+  }
 }
-/* Shell frame: a fixed rect the size of the sheet's window, transparent
-   inside, whose 100vmax spread shadow is the frame. The shadow follows the
-   radius, so the corners are filled with frame colour over whatever scrolls
-   beneath. Above sticky page chrome (z ≤ 30), below the rail (z-40) and
-   modals/sheets (z-50). */
+@media (min-width: 1440px) {
+  :root.nav-sidebar.shell-rail {
+    --shell-r: 304px;
+  }
+  :root.nav-sidebar .page-rail {
+    display: flex !important;
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: 280px;
+    /* Above the frame mask (35), which would otherwise paint over it. */
+    z-index: 40;
+    border: 1px solid var(--shell-panel-edge);
+    border-radius: 20px;
+    background: var(--shell-panel);
+    overflow: hidden;
+  }
+  :root.nav-sidebar .page-rail-twin {
+    display: none !important;
+  }
+  /* A page that opted out (DefaultLayout shellRail={false}) reserves no
+     room, so its rail stays down and its twin stays up. */
+  :root.nav-sidebar:not(.shell-rail) .page-rail {
+    display: none !important;
+  }
+  :root.nav-sidebar:not(.shell-rail) .page-rail-twin {
+    display: block !important;
+  }
+  /* The rails' scroll-edge fades are drawn in the old bg-sheet fill and
+     read as a light band on the panel colour. Contained panels don't fade
+     their edges anyway (design-language tenet 1). */
+  :root.nav-sidebar .page-rail .bg-gradient-to-b,
+  :root.nav-sidebar .page-rail .bg-gradient-to-t {
+    display: none;
+  }
+}
+:root {
+  --shell-frame: #e7dfd1;
+  --shell-panel: #efe8dd;
+  --shell-panel-edge: rgb(0 0 0 / 0.06);
+}
+.dark {
+  --shell-frame: #0b0908;
+  --shell-panel: #171411;
+  --shell-panel-edge: rgb(255 255 255 / 0.06);
+}
+/* The frame: a fixed rect exactly over the sheet, transparent inside, whose
+   100vmax spread shadow paints the frame colour everywhere else. The shadow
+   follows the radius, so the sheet's corners are masked over whatever
+   scrolls beneath and hold at every scroll position. z 35: above sticky page
+   chrome (≤ 34, incl. the page header), below the panels (40) and modals /
+   sheets (50). */
 .shell-frame {
-  --frame: #ebe3d6;
   position: fixed;
-  inset: 12px 12px 12px 264px; /* rail 252 + the sheet's mx-3 */
+  top: 12px;
+  bottom: 12px;
+  left: var(--shell-l);
+  right: var(--shell-r);
   z-index: 35;
   pointer-events: none;
   border-radius: 20px;
-  border: 1px solid rgb(0 0 0 / 0.06);
-  box-shadow: 0 0 0 100vmax var(--frame);
+  border: 1px solid var(--shell-panel-edge);
+  box-shadow: 0 0 0 100vmax var(--shell-frame);
 }
-.dark .shell-frame {
-  --frame: #0e0c0a;
-  border-color: rgb(255 255 255 / 0.07);
+/* Fixed overlays that centre on "the page" centre on the sheet instead. */
+@media (min-width: 1280px) {
+  :root.nav-sidebar .shell-center {
+    left: var(--shell-l) !important;
+    right: var(--shell-r) !important;
+  }
 }
 
 /* ─── Warm light theme ───────────────────────────────────────────────────────

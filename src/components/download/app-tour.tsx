@@ -331,7 +331,7 @@ function MobileTour({
   };
 
   return (
-    <div className="mt-10 lg:hidden">
+    <div className="page-rail-twin mt-10 lg:hidden">
       {/* snap-start rather than snap-center: centring split the peek across
           both edges, ~12px a side, which is invisible. Left-aligned to the
           page grid, the whole remainder shows the next slide on the right —

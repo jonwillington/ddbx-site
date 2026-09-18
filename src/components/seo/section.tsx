@@ -74,7 +74,7 @@ export function SeoSection({
   if (variant === "rail") {
     return (
       <section
-        className={`grid scroll-mt-24 gap-x-10 gap-y-4 border-t ${RULE} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9 ${className}`}
+        className={`grid scroll-mt-24 shell:xl:scroll-mt-[76px]! gap-x-10 gap-y-4 border-t ${RULE} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9 ${className}`}
         id={id}
       >
         <div>
@@ -112,7 +112,7 @@ export function SeoSection({
   // against a 34px heading pinned the heading's size to the counter's.
   return (
     <section
-      className={`mt-12 scroll-mt-24 border-t ${RULE} pt-5 ${className}`}
+      className={`mt-12 scroll-mt-24 shell:xl:scroll-mt-[76px]! border-t ${RULE} pt-5 ${className}`}
       id={id}
     >
       {counter ? <div className="flex justify-end">{counter}</div> : null}

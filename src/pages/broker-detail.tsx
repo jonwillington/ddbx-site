@@ -367,7 +367,7 @@ function Section({
 }) {
   return (
     <section
-      className={`grid scroll-mt-24 gap-x-10 gap-y-4 border-t ${R.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
+      className={`grid scroll-mt-24 shell:xl:scroll-mt-[76px]! gap-x-10 gap-y-4 border-t ${R.rule} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
       id={id}
     >
       <div>
@@ -394,7 +394,7 @@ function StickyBuyPanel({
   showIdentity: boolean;
 }) {
   return (
-    <aside className="hidden lg:block lg:sticky lg:top-24">
+    <aside className="hidden lg:block lg:sticky lg:top-24 shell:xl:top-[76px]!">
       <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-[#d8c4af]/25 dark:bg-surface-secondary">
         <div
           aria-hidden={!showIdentity}

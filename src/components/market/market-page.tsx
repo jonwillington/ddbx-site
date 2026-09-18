@@ -1220,7 +1220,10 @@ export function MarketPage<W>({
   );
 
   return (
-    <DefaultLayout drawerRight={hasNewsSource || supportsChannelPerf}>
+    <DefaultLayout
+      hidePageHeader
+      drawerRight={hasNewsSource || supportsChannelPerf}
+    >
       <section className="pb-8 space-y-6">
         {/* Shared hero — first content under the navbar. Perf moved to
             /performance; the old title + description block is dropped
@@ -1621,7 +1624,11 @@ export function MarketPage<W>({
                     <div
                       className={`sticky z-10 ${monthIdx === 0 ? "" : "pt-3"} bg-[#f5f0e8] dark:bg-background`}
                       style={{
-                        top: `${64 + (filterBarHeight || 0)}px`,
+                        // Seated on the filter bar, which is itself seated on
+                        // --nav-h. A hardcoded 64 here predated --nav-h and
+                        // left a strip the rows scrolled through (52px in the
+                        // shell layout, 8px under the 72px capsule).
+                        top: `calc(var(--nav-h) + ${filterBarHeight || 0}px)`,
                       }}
                     >
                       {/* Two actions share this row: the row itself toggles (or

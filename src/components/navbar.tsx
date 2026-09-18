@@ -27,7 +27,10 @@ import {
   useAppHandoff,
   type AppHandoffAnchorProps,
 } from "@/components/app-handoff-modal";
-import { useDevicePlatform } from "@/lib/use-device-platform";
+import {
+  useDevicePlatform,
+  type DevicePlatform,
+} from "@/lib/use-device-platform";
 import { useMediaQuery } from "@/lib/use-media-query";
 import {
   marketDashboardPath,
@@ -430,10 +433,15 @@ function MobileMenu({
  *  and the download handoff. Shared so the top bar and the experimental
  *  sidebar (components/side-nav, behind lib/nav-mode) can't drift apart on
  *  which items a market gets. */
-export function useNavModel() {
+export function useNavModel(
+  /** Pin the store the download CTA targets instead of sniffing the device —
+   *  the /download/ios and /download/android routes name their platform. */
+  platformOverride?: DevicePlatform | null,
+) {
   const location = useLocation();
   const market = marketForPath(location.pathname);
-  const platform = useDevicePlatform();
+  const sniffed = useDevicePlatform();
+  const platform = platformOverride ?? sniffed;
   // Dashboard stays in-app; secondary nav action now points to the market's
   // store listing for the visitor's device (App Store on iOS/desktop, Play on
   // Android), with the UK app as the fallback where a market-specific listing

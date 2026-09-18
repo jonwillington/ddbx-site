@@ -99,25 +99,26 @@ export default function StoryPage() {
             ? `${kindLabel} · ${dateLabel(s.published_at)}`
             : kindLabel
         }
+        lead={
+          s && staged ? (
+            <StoryStage
+              basis={basis}
+              kindLabel={kindLabel}
+              story={s}
+              onBasis={setBasis}
+            />
+          ) : undefined
+        }
         loading={s === null}
+        title={staged ? "" : (s?.headline ?? "")}
+        titleInHero={false}
         skeleton={<SeoSkeleton rows={14} variant="ruled-list" />}
         /* The stage carries the headline and standfirst itself, so the shell
            must not print them a second time above it. */
         standfirst={staged ? undefined : (s?.standfirst ?? undefined)}
-        title={staged ? "" : (s?.headline ?? "")}
-        titleInHero={false}
       >
         {s ? (
           <>
-            {staged ? (
-              <StoryStage
-                basis={basis}
-                kindLabel={kindLabel}
-                onBasis={setBasis}
-                story={s}
-              />
-            ) : null}
-
             <p className="mt-5 text-[12.5px] leading-[1.6] text-foreground/45">
               {s.published_at ? `Published ${dateLabel(s.published_at)}. ` : ""}
               Researched and drafted with AI assistance, approved by hand before
@@ -156,7 +157,10 @@ export default function StoryPage() {
                         </span>
                       ) : null}
                       {src.date ? (
-                        <span className="text-foreground/40"> · {src.date}</span>
+                        <span className="text-foreground/40">
+                          {" "}
+                          · {src.date}
+                        </span>
                       ) : null}
                     </li>
                   ))}

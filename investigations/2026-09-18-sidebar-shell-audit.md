@@ -139,3 +139,22 @@ Rough size: phases 1 and 3 are about a day together; phase 2 is one to two days;
 - **Two layouts to maintain.** New pages must be checked in both modes until one is retired. The shared `useNavModel()` keeps the nav items single-sourced, but spacing is not.
 - **The `.shell-frame` z-index (35)** must stay below anything interactive that floats over the page edge. Modals, drawers and sheets sit at 50, which is fine. Any new fixed element between 35 and 40 needs checking against the frame.
 - **Client-side flag.** `.nav-sidebar` is added at module evaluation, before React mounts, but the SSR and pre-render Functions output does not know the mode. Crawlers see the top-bar shape. That is acceptable while the shell is opt-in.
+
+---
+
+## 9. Round 2: built (2026-09-18)
+
+Jon's review notes plus the report were combined into one pass. What changed against the plan above:
+
+- **Three panels.** The nav rail is its own rounded panel (216px, compact rows, logo, market and theme on one line). The right rails came back as a matching rounded panel (280px) from **1440** up, restyled from the existing fixed `<aside>`s via `.page-rail`. This reverses the "hide all rails" decision, so R1–R5 mostly resolve themselves at ≥1440.
+- **1280–1439.** The rail stands down and its in-flow twin (`.page-rail-twin`) stands in, which also fixes B1 (the `/compare` picks and the app tour). The dashboard channel has no twin and is absent in this band, as agreed.
+- **Company pages** opt out of the rail (`DefaultLayout shellRail={false}`). Their in-sheet 17rem panel (Buy AZN, ticker facts) does that job, and both together squeezed the record to about 500px.
+- **Geometry** lives in `--shell-l` and `--shell-r`, read by the frame mask, the page header and centred overlays (`.shell-center`, now on the cookie banner: B2).
+- **Sticky page header** (`components/shell-page-header.tsx`) slides in once the page's first `<h1>` scrolls out. It reads the title from the DOM, so it needs no per-page wiring. The dashboard opts out (`hidePageHeader`) because its filter bar plays that role.
+- **Flat surfaces.** The dashboard hero card, the how-it-works hero panel and the footer box go flat in the shell (L5, L6 / D3, D4).
+- **Stories.** The rail shows Stories as a plain link (D6). `/stories` was removed from `RESEARCH_PATHS` (B4). `SeoPageShell` gained a `lead` slot that widens to 1100px in the shell, so a story's stage outgrows the 860 measure while its body stays at 860.
+- **Bugs fixed.** B3 (the month header now uses `calc(var(--nav-h) + filterBar)`, which also fixes the top-bar layout). L1 (hero min-height and padding). L2 (the beta tag is centred on the sheet). L3 (the 96px offsets are `shell:xl:top-[76px]` to clear the page header).
+- **Sidebar.** Links route client-side when same-host (L7). The download CTA follows `/download/ios|android` and the locale copy (R4).
+- **Decided against.** A theme switch on `/api`, `/developers` and `/mcp`; they stay pinned dark (D5 superseded).
+
+**Still open:** the broker category and comparison pages and the filing and director pages have no in-flow twin, so between 1280 and 1439 they show no broker ask. At 1440, with the rail present, the dashboard's feed table truncates company names (the sheet is 896px, the same as the old layout at a 1216px viewport).

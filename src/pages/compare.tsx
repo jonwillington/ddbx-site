@@ -285,7 +285,7 @@ export default function ComparePage() {
         {brokers && (
           <>
             {topPicks.length > 0 && (
-              <div className="mb-8 lg:hidden">
+              <div className="page-rail-twin mb-8 lg:hidden">
                 <h2 className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/50">
                   Our top picks
                 </h2>
@@ -630,7 +630,7 @@ function ComparisonSkeleton() {
 
       {/* Top picks: mobile and tablet only, matching the real block's
           `lg:hidden`. */}
-      <div className="mb-8 lg:hidden">
+      <div className="page-rail-twin mb-8 lg:hidden">
         <Skeleton className="mb-3 h-[11px] w-24" />
         <div className="grid gap-3 sm:grid-cols-2">
           <Skeleton className="w-full rounded-2xl" h={200} />

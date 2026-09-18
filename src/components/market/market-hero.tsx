@@ -261,6 +261,23 @@ export function HeroLiveGradient({ tick }: { tick: number }) {
           .hero-card-demo { width: 384px; padding: 20px; }
           .hero-chart-col { display: none; }
         }
+        /* Shell layout (lib/nav-mode): the page already sits in a rounded
+           sheet, so a second card inside it read as a card on a card. The
+           hero goes flat on the sheet — no fill, edge or shadow, and the
+           message column starts on the page's own left edge. The hairline
+           between claim and proof stays; it is what makes them one exhibit. */
+        @media (min-width: 1280px) {
+          .nav-sidebar .hero-card {
+            border-color: transparent;
+            border-radius: 0;
+            background: transparent;
+            -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+            box-shadow: none;
+          }
+          .nav-sidebar .hero-card-msg { padding: 8px 40px 8px 0; }
+          .nav-sidebar .hero-card-demo { padding-right: 0; }
+        }
       `}</style>
       {[0, 1, 2, 3].map((i) => (
         <div
@@ -624,7 +641,7 @@ export function MarketHero({
 
   return (
     <header
-      className={`relative -mt-4 md:mt-0 md:min-h-[58svh] flex flex-col animate-content-in ${
+      className={`relative -mt-4 md:mt-0 md:min-h-[58svh] flex flex-col animate-content-in shell:xl:min-h-0! ${
         appShowcase
           ? hasRightDrawer
             ? "xl:min-h-[560px]"
@@ -638,7 +655,7 @@ export function MarketHero({
       <HeroLiveGradient tick={radar.tick} />
 
       <div
-        className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 ${
+        className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 shell:xl:px-0! shell:xl:pt-6! shell:xl:pb-10! ${
           hasTopNotice ? "pt-16 pb-3 md:pb-6" : "py-3 md:py-6"
         }`}
       >

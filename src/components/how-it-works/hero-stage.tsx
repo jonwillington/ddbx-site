@@ -55,9 +55,10 @@ import { count } from "@/lib/coverage";
 
 /** The panel. The homepage hero-card's warm shadow, so the object sits ON the
  *  page rather than being drawn on it; relative + clipped so the wash below
- *  stays inside the rounded edge. */
+ *  stays inside the rounded edge. In the shell layout (lib/nav-mode) the
+ *  page is already a rounded sheet, so the panel goes flat on it. */
 const PANEL =
-  "relative overflow-hidden rounded-[28px] border border-hairline bg-sheet px-5 py-8 shadow-[0_26px_64px_-36px_rgba(90,65,40,0.5),0_1px_2px_rgba(90,65,40,0.03)] sm:px-8 sm:py-10 lg:px-12 lg:py-12 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_28px_68px_-36px_rgba(0,0,0,0.85)]";
+  "relative overflow-hidden rounded-[28px] border border-hairline bg-sheet px-5 py-8 shadow-[0_26px_64px_-36px_rgba(90,65,40,0.5),0_1px_2px_rgba(90,65,40,0.03)] sm:px-8 sm:py-10 lg:px-12 lg:py-12 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_28px_68px_-36px_rgba(0,0,0,0.85)] shell:xl:rounded-none! shell:xl:border-0! shell:xl:bg-transparent! shell:xl:px-0! shell:xl:pt-4! shell:xl:shadow-none!";
 const RULE = "border-hairline dark:border-white/[0.09]";
 
 /** The page's one sub-perceptual wash (design language, tenet 4): a static

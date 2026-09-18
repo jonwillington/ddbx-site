@@ -108,7 +108,8 @@ export const RESEARCH_PATHS = [
   "/cluster-buys",
   "/most-active-companies",
   "/reports",
-  "/stories",
+  // Not /stories: Stories is its own masthead item, and listing it here
+  // lit Research up on every story page as well.
   "/insider-index",
   "/research",
   "/us/research",

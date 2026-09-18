@@ -441,7 +441,7 @@ export default function CompanyPage() {
       // them the error state rendered 320px wider than every page around it, so
       // a mistyped ticker shunted the whole layout sideways — and it was a dead
       // end besides, which is why the onward rail is mounted below.
-      <DefaultLayout drawerRight>
+      <DefaultLayout drawerRight shellRail={false}>
         <SeoRail
           marketId={marketId}
           placement="company_rail"
@@ -575,7 +575,7 @@ export default function CompanyPage() {
   return (
     // drawerRight reserves lg:mr-80 for the fixed broker rail — the same
     // pairing /brokers/:slug uses.
-    <DefaultLayout drawerRight>
+    <DefaultLayout drawerRight shellRail={false}>
       {/* Grey CTAs, and the full directory below the picks: this page's one
           filled button is "Buy {ticker} with …" in the sticky panel. Via
           SeoRail so ddbx.us gets the app rail — the broker directory is UK-only
@@ -1093,7 +1093,7 @@ function CompanySkeleton({ ticker }: { ticker?: string }) {
       : "uk";
 
   return (
-    <DefaultLayout drawerRight>
+    <DefaultLayout drawerRight shellRail={false}>
       {/* The rail is mounted during the load too. `drawerRight` reserves its
           320px whether or not anything is in it, so leaving it out left a bare
           cream column beside a fully-drawn skeleton. It self-loads, so it
@@ -1182,7 +1182,7 @@ function CompanySkeleton({ ticker }: { ticker?: string }) {
 
           {/* Side panel — reserving its width is the point: without it the
               content column loads wide and then snaps. */}
-          <aside className="hidden xl:sticky xl:top-24 xl:block">
+          <aside className="hidden xl:sticky xl:top-24 xl:block shell:xl:top-[76px]!">
             <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 dark:border-brand-tan/25 dark:bg-surface-secondary">
               <Skeleton className="w-full rounded-lg" h={44} />
               <Skeleton className="mx-auto mt-2.5 h-[11px] w-2/3" />
@@ -1257,7 +1257,7 @@ function CompanyPanel({
   if (!broker && facts.length === 0) return null;
 
   return (
-    <aside className="hidden xl:sticky xl:top-24 xl:block">
+    <aside className="hidden xl:sticky xl:top-24 xl:block shell:xl:top-[76px]!">
       <div className="rounded-2xl border border-brand-brown/20 bg-white p-4 shadow-[0_8px_24px_rgba(90,65,40,0.08)] dark:border-brand-tan/25 dark:bg-surface-secondary">
         {broker ? (
           <>

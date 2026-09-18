@@ -38,7 +38,7 @@ export function MarketFaq({
       className="w-full pt-14 md:pt-20"
     >
       <div className="grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)] md:gap-16">
-        <div className="md:sticky md:top-24 md:self-start">
+        <div className="md:sticky md:top-24 md:self-start shell:xl:top-[76px]!">
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
             {copy.kicker}
           </p>

@@ -155,7 +155,7 @@ export function MarketChannel({
   }
 
   return (
-    <aside className="hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">
+    <aside className="page-rail hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">
       {/* Header — matches navbar h-16 */}
       <div className="h-16 px-4 flex items-center border-b border-hairline dark:border-separator shrink-0">
         {tabs}

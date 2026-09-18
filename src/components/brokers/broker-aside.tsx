@@ -44,7 +44,7 @@ export function BrokerNavAside({
   const ordered = recommendedOrder(brokers);
 
   return (
-    <aside className="hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">
+    <aside className="page-rail hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">
       <div className="h-16 px-4 flex items-center justify-between border-b border-hairline dark:border-separator shrink-0">
         <h2 className="text-sm font-semibold text-foreground/80">
           Broker reviews
@@ -183,7 +183,7 @@ export function BrokerAside({
   );
 
   return (
-    <aside className="hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">
+    <aside className="page-rail hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">
       <div className="h-16 px-4 flex items-center border-b border-hairline dark:border-separator shrink-0">
         <h2 className="text-sm font-semibold text-foreground/80">{heading}</h2>
       </div>

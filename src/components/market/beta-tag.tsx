@@ -114,7 +114,7 @@ export function BetaTag() {
       `}</style>
       <div
         aria-live="polite"
-        className={`absolute top-[80px] md:top-28 z-30 items-center gap-2 rounded-full border border-amber-300/40 bg-amber-100/85 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800/60 backdrop-blur-sm px-3.5 py-1 text-sm shadow-sm will-change-transform pointer-events-auto ${
+        className={`absolute top-[80px] md:top-28 z-30 shell:xl:top-7! shell:xl:left-[calc((var(--shell-l)+100%-var(--shell-r))/2)]! items-center gap-2 rounded-full border border-amber-300/40 bg-amber-100/85 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-800/60 backdrop-blur-sm px-3.5 py-1 text-sm shadow-sm will-change-transform pointer-events-auto ${
           isDesktop
             ? // Centred over the hero's framed panel (top edge ~97px from md
               // up, so top-28 tucks the pill just inside it). On drawer

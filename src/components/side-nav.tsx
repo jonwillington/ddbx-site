@@ -1,4 +1,5 @@
 import type { ResearchLink } from "@/lib/site-nav";
+import type { DevicePlatform } from "@/lib/use-device-platform";
 
 import clsx from "clsx";
 import { useState, type ComponentType, type SVGProps } from "react";
@@ -13,8 +14,10 @@ import {
   MagnifyingGlassIcon,
   NewspaperIcon,
 } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
 
 import { useNavModel, type NavItem } from "@/components/navbar";
+import { useDownloadCopy } from "@/lib/download/copy";
 import { MarketSwitcher } from "@/components/market-switcher";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { StoreGlyph } from "@/components/store-glyph";
@@ -47,9 +50,9 @@ const ICONS: Record<string, Icon> = {
 
 const rowClass = (active: boolean) =>
   clsx(
-    "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+    "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] transition-colors",
     active
-      ? "bg-[#f5f0e8] font-medium text-[#5a4128] shadow-[0_1px_2px_rgba(90,65,40,0.08)] dark:bg-white/[0.07] dark:text-[#d8c4af]"
+      ? "bg-[#f5f0e8] font-medium text-[#5a4128] shadow-[0_1px_2px_rgba(90,65,40,0.08)] dark:bg-white/[0.06] dark:text-[#d8c4af]"
       : "text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.05]",
   );
 
@@ -58,10 +61,10 @@ function SubLink({ link, current }: { link: ResearchLink; current: boolean }) {
     <li
       className={clsx(link.divider && "mt-1 border-t border-separator/60 pt-1")}
     >
-      <a
+      <NavLink
         className={clsx(
           "flex w-full rounded-md px-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]",
-          link.row ? "flex-col gap-0.5 py-2" : "py-1.5 text-[13px]",
+          link.row ? "flex-col gap-0.5 py-2" : "py-[5px] text-[12.5px]",
           current
             ? "font-medium text-[#5a4128] dark:text-[#d8c4af]"
             : "text-foreground/75",
@@ -98,7 +101,7 @@ function SubLink({ link, current }: { link: ResearchLink; current: boolean }) {
         ) : (
           link.label
         )}
-      </a>
+      </NavLink>
     </li>
   );
 }
@@ -123,7 +126,7 @@ function Group({
         type="button"
         onClick={() => setOpen((v) => !v)}
       >
-        {Glyph && <Glyph className="h-[18px] w-[18px] shrink-0 opacity-70" />}
+        {Glyph && <Glyph className="h-4 w-4 shrink-0 opacity-70" />}
         <span
           className={clsx(
             active && "font-medium text-[#5a4128] dark:text-[#d8c4af]",
@@ -142,7 +145,7 @@ function Group({
           graph, same reason the top bar's NavMenu keeps its panel mounted. */}
       <ul
         className={clsx(
-          "ml-[21px] mt-0.5 mb-1 border-l border-separator/60 pl-2",
+          "ml-[17px] mt-px mb-1 border-l border-separator/60 pl-2",
           !open && "hidden",
         )}
         hidden={!open}
@@ -160,60 +163,88 @@ function Group({
   );
 }
 
+/** Same-host hrefs route client-side; anything absolute (a cross-market
+ *  link marketHref() made host-absolute) stays a real navigation. */
+function NavLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className: string;
+  children: React.ReactNode;
+}) {
+  return href.startsWith("/") ? (
+    <Link className={className} to={href}>
+      {children}
+    </Link>
+  ) : (
+    <a className={className} href={href}>
+      {children}
+    </a>
+  );
+}
+
 export function SideNav() {
   const location = useLocation();
+  const t = useDownloadCopy();
+  // /download/ios and /download/android name their store; everywhere else the
+  // device decides, as in the top bar.
+  const routePlatform = /\/download\/(ios|android)\/?$/.exec(
+    location.pathname,
+  )?.[1] as DevicePlatform | undefined;
   const { market, dashboardHref, handoff, isPinnedTheme, navItems } =
-    useNavModel();
+    useNavModel(routePlatform);
 
   return (
-    <aside className="fixed bottom-0 left-0 top-0 z-40 hidden w-[252px] flex-col pl-3 xl:flex">
-      <div className="flex h-[72px] shrink-0 items-center justify-between px-3 pt-3">
-        <a href={dashboardHref}>
+    <aside className="fixed bottom-3 left-3 top-3 z-40 hidden w-[216px] flex-col rounded-[20px] border border-[var(--shell-panel-edge)] bg-[var(--shell-panel)] xl:flex">
+      {/* One line: wordmark, market, theme. The picker stays outside the
+          scroll area — its dropdown hangs below the trigger and an overflow
+          container would clip it. */}
+      <div className="flex h-14 shrink-0 items-center gap-2 px-3.5">
+        <NavLink className="shrink-0" href={dashboardHref}>
           <img
             alt={siteConfig.name}
-            className="h-7 max-w-[56px] dark:invert"
+            className="h-[22px] max-w-[48px] dark:invert"
             src="/logo.svg"
           />
-        </a>
-        {!isPinnedTheme && <ThemeSwitch />}
-      </div>
-
-      {/* Outside the scroll area: the picker's dropdown hangs below its
-          trigger and would be clipped by an overflow container. */}
-      <div className="shrink-0 px-1 pb-4">
+        </NavLink>
         <MarketSwitcher />
+        {!isPinnedTheme && <ThemeSwitch className="ml-auto" />}
       </div>
 
       <nav
         aria-label="Primary"
-        className="min-h-0 flex-1 overflow-y-auto pr-1"
+        className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
       >
-        <ul className="space-y-0.5">
+        <ul className="space-y-px">
           {navItems.map((item) => {
             const active = item.match(location.pathname);
 
-            if (item.kind === "menu") {
+            // Stories lists article records in the top bar's dropdown. In a
+            // rail that list sits open on every story page and repeats
+            // /stories itself, so here it is a plain link.
+            if (item.kind === "menu" && item.id !== "stories") {
               return <Group key={item.id} active={active} item={item} />;
             }
+            const href = item.kind === "menu" ? "/stories" : item.href;
             const Glyph = ICONS[item.label];
 
             return (
-              <li key={item.href}>
-                <a className={rowClass(active)} href={item.href}>
-                  {Glyph && (
-                    <Glyph className="h-[18px] w-[18px] shrink-0 opacity-70" />
-                  )}
+              <li key={href}>
+                <NavLink className={rowClass(active)} href={href}>
+                  {Glyph && <Glyph className="h-4 w-4 shrink-0 opacity-70" />}
                   {item.label}
-                </a>
+                </NavLink>
               </li>
             );
           })}
         </ul>
       </nav>
 
-      <div className="shrink-0 py-3 pr-1">
+      <div className="shrink-0 p-2.5">
         <a
-          className={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-4 py-2.5 text-sm font-medium transition-colors`}
+          className={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-3 py-2 text-[13px] font-medium transition-colors`}
           data-ga-event="cta_nav_download_app"
           data-ga-label={`Sidebar ${market.id}`}
           rel="noopener noreferrer"
@@ -221,7 +252,7 @@ export function SideNav() {
           {...handoff.anchorProps}
         >
           <StoreGlyph className="h-3.5 w-3.5 shrink-0" />
-          Download app
+          {t.locale === "en" ? "Download app" : t.startTrial}
         </a>
         {handoff.modal}
       </div>

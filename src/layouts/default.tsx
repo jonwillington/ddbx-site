@@ -7,6 +7,7 @@ import { StoreGlyph } from "@/components/store-glyph";
 import { Navbar } from "@/components/navbar";
 import { SideNav } from "@/components/side-nav";
 import { NAV_SIDEBAR } from "@/lib/nav-mode";
+import { ShellPageHeader } from "@/components/shell-page-header";
 import { StoreBadgeImg } from "@/components/app-store-badge";
 import {
   MarketChooserModal,
@@ -424,6 +425,8 @@ export default function DefaultLayout({
   drawerRight,
   ticker,
   hideMobileCta,
+  hidePageHeader,
+  shellRail = true,
 }: {
   children: React.ReactNode;
   drawerRight?: boolean;
@@ -431,6 +434,15 @@ export default function DefaultLayout({
   /** Suppress the floating mobile "Download app" CTA — used on pages that
    *  have their own primary mobile action (e.g. the broker "Visit" bar). */
   hideMobileCta?: boolean;
+  /** Shell mode only: suppress the sticky page header, for pages whose own
+   *  sticky bar already names what you're looking at (the market feed's
+   *  filter bar). */
+  hidePageHeader?: boolean;
+  /** Shell mode only: whether the page's fixed right rail becomes the shell's
+   *  right panel (from 1440). False for pages that already carry an in-sheet
+   *  side panel doing the rail's job (company), where both would squeeze the
+   *  record to ~500px. */
+  shellRail?: boolean;
 }) {
   // A surface with its own app ask (the winners interstitial) holds the
   // floating trial button away while it is on screen — see lib/floating-cta.
@@ -448,9 +460,17 @@ export default function DefaultLayout({
   // the fixed right rail, so they can centre within the content column.
   useEffect(() => {
     setRailPresent(Boolean(drawerRight));
+    // Shell mode: the frame, page header and centred overlays read the
+    // sheet's right edge from --shell-r, which widens when a rail is present.
+    if (NAV_SIDEBAR) {
+      document.documentElement.classList.toggle(
+        "shell-rail",
+        Boolean(drawerRight) && shellRail,
+      );
+    }
 
     return () => setRailPresent(false);
-  }, [drawerRight]);
+  }, [drawerRight, shellRail]);
 
   const [followOpen, setFollowOpen] = useState(false);
   // Which store the chooser was opened for: "ios"/"android" when the visitor
@@ -505,7 +525,7 @@ export default function DefaultLayout({
       // leaves a clear gap at the bottom of the scroll.
       // …and in `solo` mode there is no bar to clear, so the reservation goes
       // with it — otherwise every page ends in 7rem of empty ground.
-      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? "xl:mr-0 xl:bg-[#ebe3d6] xl:pl-[252px] xl:dark:bg-[#0e0c0a]" : ""}`}
+      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? `xl:mr-0 xl:bg-[var(--shell-frame)] xl:pl-[228px] ${drawerRight && shellRail ? "min-[1440px]:pr-[292px]" : ""}` : ""}`}
     >
       {/* First focusable thing on every page. Off-screen until it takes focus,
           then it parks itself over the navbar — otherwise a keyboard visitor
@@ -530,6 +550,7 @@ export default function DefaultLayout({
               .shell-frame) — content passes under it and the four corners
               stay put at every scroll position. */}
           <div aria-hidden className="shell-frame hidden xl:block" />
+          <ShellPageHeader enabled={!hidePageHeader} />
         </>
       )}
       <div
@@ -587,10 +608,12 @@ export default function DefaultLayout({
           strip under the box, so the padding here is what the wash ramps
           across. The band field this replaced needed a lot of it to be read
           as a composition; a wash only needs enough not to end in an edge. */}
-        <footer className="relative w-full pt-14 pb-10 md:pt-20 md:pb-14">
-          <FooterTrail />
+        <footer className="relative w-full pt-14 pb-10 md:pt-20 md:pb-14 shell:xl:pt-12! shell:xl:pb-10!">
+          <div className="shell:xl:hidden">
+            <FooterTrail />
+          </div>
           <div className="relative mx-auto w-full max-w-[1280px] px-4 md:px-6">
-            <div className="rounded-2xl border border-hairline bg-sheet px-5 py-8 md:px-8 md:py-10 shadow-[0_18px_44px_-28px_rgba(90,65,40,0.45),0_1px_2px_rgba(90,65,40,0.03)] text-[10px] leading-4 text-foreground/40 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)]">
+            <div className="rounded-2xl border border-hairline bg-sheet px-5 py-8 md:px-8 md:py-10 shadow-[0_18px_44px_-28px_rgba(90,65,40,0.45),0_1px_2px_rgba(90,65,40,0.03)] text-[10px] leading-4 text-foreground/40 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)] shell:xl:rounded-none! shell:xl:border-x-0! shell:xl:border-b-0! shell:xl:bg-transparent! shell:xl:px-0! shell:xl:pb-0! shell:xl:shadow-none!">
               {/* The wordmark is a cell of the ruled band, not a masthead floating
               above it — on desktop it takes the left rail beside the index;
               below lg it stacks inside the same rules. Floating it above the
