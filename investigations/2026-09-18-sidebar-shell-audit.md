@@ -1,7 +1,7 @@
 # Sidebar shell layout: audit and adoption plan
 
 **Date:** 2026-09-18
-**Branch:** `experiment/sidebar-nav` (worktree `.claude/worktrees/sidebar-nav`), commits `74b3a39`, `12790ae`, `6e42667`
+**Branch:** `feat/sidebar-shell` on origin (renamed from `experiment/sidebar-nav`; worktree `.claude/worktrees/sidebar-nav`)
 **Status:** Experiment. Not merged or deployed. Production ships the floating top bar.
 **Toggle:** `?nav=sidebar | top | reset`, persisted in localStorage `ddbx.nav.override`, env default `VITE_NAV_MODE` (code default `top`).
 
