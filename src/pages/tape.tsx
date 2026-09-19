@@ -51,10 +51,11 @@ import { Skeleton } from "@/components/skeleton";
 import { TapeList } from "@/components/tape/tape-list";
 import { useTape } from "@/components/tape/use-tape";
 import { TAPE_FLAGS, WorldClock } from "@/components/tape/world-clock";
+import { glass } from "@/components/ui/glass";
 import DefaultLayout from "@/layouts/default";
 
 const CAVEAT =
-  "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
+  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
 
 const CROSS_LINKS: RelatedCard[] = [
   {
@@ -122,16 +123,14 @@ function CoverageRow({
     >
       <div>
         <div className="flex items-center gap-2.5">
-          <Flag aria-hidden className="h-3.5 w-5 shrink-0 rounded-[2px]" />
-          <h3 className="text-[18px] font-semibold leading-[1.2] tracking-[-0.014em] text-foreground">
-            {market.name}
-          </h3>
+          <Flag aria-hidden className="h-3.5 w-5 shrink-0 rounded-mark" />
+          <h3 className="text-title text-foreground">{market.name}</h3>
         </div>
-        <p className="mt-1.5 text-[12.5px] leading-[1.5] text-foreground/55">
+        <p className="mt-1.5 text-small text-foreground/55">
           {market.city} · {formatSessionHours(market)} local · {market.currency}
         </p>
       </div>
-      <dl className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13.5px] leading-[1.55]">
+      <dl className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-body">
         {now ? (
           <>
             <dt className="text-foreground/45">Right now</dt>
@@ -194,7 +193,7 @@ export default function TapePage() {
         notice={
           <div className="space-y-2">
             {tape.floor ? (
-              <p className="text-[12.5px] leading-[1.5] text-foreground/55">
+              <p className="text-small text-foreground/55">
                 The tape holds every filing from {formatDayShort(tape.floor)}:
                 the span each market’s feed covers in full, set today by{" "}
                 {list(tape.binding)}.
@@ -250,14 +249,11 @@ export default function TapePage() {
         {tape.pending.length > 0 ? (
           <div className="pointer-events-none sticky top-[84px] z-20 mt-6 flex justify-center">
             <button
-              className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-[#fcfbf9]/70 px-4 py-2 text-[13px] font-medium text-foreground shadow-[0_12px_32px_-20px_rgba(90,65,40,0.45)] backdrop-blur-2xl backdrop-saturate-[2.5] outline-none transition-colors hover:bg-[#fcfbf9]/90 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-white/[0.09] dark:bg-background/70 dark:hover:bg-background/90"
+              className={`pointer-events-auto inline-flex items-center gap-2 rounded-full px-4 py-2 text-small font-medium text-foreground outline-none transition-colors hover:bg-page/90 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-background/90 ${glass()}`}
               type="button"
               onClick={tape.showPending}
             >
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 rounded-full bg-[#2E7D32]"
-              />
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-live" />
               {tape.pending.length} new{" "}
               {tape.pending.length === 1 ? "filing" : "filings"} · show
             </button>
@@ -267,20 +263,20 @@ export default function TapePage() {
         {loading ? (
           <TapeSkeleton />
         ) : tape.down ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t reach any of the five feeds just now. It’s a network
             problem rather than a quiet day across five countries. The page
             retries every minute, and the tape appears here as soon as a feed
             answers.
           </p>
         ) : tape.rows.length === 0 ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             The feeds answered and the tape is empty for the days they cover in
             full, which would be a first. The next refresh is a minute away.
           </p>
         ) : (
           <>
-            <p className={`mt-6 max-w-[62ch] ${R.body}`}>
+            <p className={`mt-6 max-w-measure ${R.body}`}>
               {tapeSummary(tape.rows, states ?? [], tape.floor)} A European
               notification that reports several transactions is one row. Each
               row states its side, its size in the currency it was filed in, and
@@ -296,7 +292,7 @@ export default function TapePage() {
 
         <SeoSection
           aside={
-            <p className="text-[12px] leading-[1.5] text-foreground/45">
+            <p className="text-small text-foreground/45">
               One list, five regulators, no conversion.
             </p>
           }
@@ -304,7 +300,7 @@ export default function TapePage() {
           title="What this is"
           variant="rail"
         >
-          <p className={`max-w-[62ch] ${R.body}`}>
+          <p className={`max-w-measure ${R.body}`}>
             Company insiders in most developed markets must tell the public when
             they trade their own company’s shares. Each country publishes that
             through its own regulator, in its own format, in its own currency
@@ -315,7 +311,7 @@ export default function TapePage() {
             carries what its market page carries, which is not every filing
             everywhere; the coverage below says what each one holds.
           </p>
-          <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-4 max-w-measure ${R.body}`}>
             The point of the merge is the clock. A director in Seoul files
             before London has opened; Stockholm and Amsterdam publish through
             the European afternoon; London’s RNS wave breaks at 07:00; EDGAR
@@ -327,7 +323,7 @@ export default function TapePage() {
 
         <SeoSection
           aside={
-            <p className="text-[12.5px] leading-[1.5] text-foreground/55">
+            <p className="text-small text-foreground/55">
               What each feed carries, when it lands, and whether a verdict can
               exist.
             </p>
@@ -357,7 +353,7 @@ export default function TapePage() {
 
         <SeoSection
           aside={
-            <p className="text-[12.5px] leading-[1.5] text-foreground/55">
+            <p className="text-small text-foreground/55">
               A row is five facts. This is what each one means and where it
               stops.
             </p>
@@ -369,9 +365,7 @@ export default function TapePage() {
         >
           <dl className="mt-6 grid gap-x-10 gap-y-6 sm:grid-cols-2">
             <div>
-              <dt className="text-[15px] font-semibold text-foreground">
-                Side
-              </dt>
+              <dt className="text-title text-foreground">Side</dt>
               <dd className={`mt-1.5 ${R.body}`}>
                 Bought or sold, in colour, from the regulator’s own transaction
                 type. Grants, exercises and pledges are shown in words with no
@@ -388,9 +382,7 @@ export default function TapePage() {
               </dd>
             </div>
             <div>
-              <dt className="text-[15px] font-semibold text-foreground">
-                Disclosed
-              </dt>
+              <dt className="text-title text-foreground">Disclosed</dt>
               <dd className={`mt-1.5 ${R.body}`}>
                 The time of day, in the market’s own city, where the regulator
                 publishes one. Sweden does. For the UK and US the row shows when
@@ -400,9 +392,7 @@ export default function TapePage() {
               </dd>
             </div>
             <div>
-              <dt className="text-[15px] font-semibold text-foreground">
-                Size
-              </dt>
+              <dt className="text-title text-foreground">Size</dt>
               <dd className={`mt-1.5 ${R.body}`}>
                 Shares times price, in the currency the filing was made in.
                 Nothing is converted, so a Swedish row in kronor sits above a
@@ -412,9 +402,7 @@ export default function TapePage() {
               </dd>
             </div>
             <div>
-              <dt className="text-[15px] font-semibold text-foreground">
-                Verdict
-              </dt>
+              <dt className="text-title text-foreground">Verdict</dt>
               <dd className={`mt-1.5 ${R.body}`}>
                 The same rating the filing page carries, from{" "}
                 <Link
@@ -430,7 +418,7 @@ export default function TapePage() {
               </dd>
             </div>
           </dl>
-          <p className="mt-6 max-w-[62ch] text-[13px] leading-[1.6] text-foreground/60">
+          <p className="mt-6 max-w-measure text-small text-foreground/60">
             The rules behind each regime:{" "}
             <Link className="underline underline-offset-4" to="/learn/pdmr">
               PDMR
@@ -459,7 +447,7 @@ export default function TapePage() {
 
         <SeoSection
           aside={
-            <p className="text-[12px] leading-[1.5] text-foreground/45">
+            <p className="text-small text-foreground/45">
               These rules build the tape, and they live in the module that
               builds it.
             </p>
@@ -477,13 +465,13 @@ export default function TapePage() {
                   aria-hidden
                   className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
                 />
-                <span className="max-w-[62ch]">{line}</span>
+                <span className="max-w-measure">{line}</span>
               </li>
             ))}
           </ul>
         </SeoSection>
 
-        <nav aria-label="More from ddbx" className="mt-9">
+        <nav aria-label="More from ddbx" className="mt-10">
           <RelatedCards cols={2} items={CROSS_LINKS} />
         </nav>
 

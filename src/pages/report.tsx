@@ -96,10 +96,8 @@ import { marketForPath } from "@/lib/markets/registry";
 import { reportsCta } from "@/components/seo/cta-copy";
 import { formatGbp, formatSignedPct } from "@/lib/performance/format";
 import { StageHeader } from "@/components/ui/stage-header";
-
-const RULE = "border-hairline dark:border-separator";
-const LABEL = "text-[11px] leading-none text-foreground/50";
-const BODY = "text-[14px] leading-[1.65] text-foreground/70";
+const LABEL = "text-caption leading-none text-foreground/50";
+const BODY = "text-body text-foreground/70";
 const LINK = "underline underline-offset-4";
 
 const STYLE_LABEL: Record<string, string> = {
@@ -301,7 +299,7 @@ export default function ReportPage() {
                 cannot travel in the shell's `notice` slot — the shell renders
                 no notice at all under `titleInHero`, so it would be silently
                 dropped. */}
-            <div className="mt-4 max-w-[62ch]">
+            <div className="mt-4 max-w-measure">
               <Byline summary={summary} />
               {/* The stage header carries the tracking line already. With no
                   stage there is no header for it to sit in, and the page still
@@ -321,7 +319,7 @@ export default function ReportPage() {
             </p>
 
             {summary.intro && (
-              <div className="mt-5 max-w-[62ch]">
+              <div className="mt-5 max-w-measure">
                 <Prose text={summary.intro} />
               </div>
             )}
@@ -337,7 +335,7 @@ export default function ReportPage() {
 
             {summary.macro_note && (
               <SeoSection title="Market backdrop">
-                <div className="max-w-[62ch]">
+                <div className="max-w-measure">
                   <Prose text={summary.macro_note} />
                 </div>
               </SeoSection>
@@ -475,7 +473,7 @@ function Terms() {
   return (
     <SeoSection
       aside={
-        <p className="text-[12px] leading-[1.5] text-foreground/45">
+        <p className="text-small text-foreground/45">
           The same five words appear in every month’s report, and they mean the
           same thing in each one.
         </p>
@@ -484,14 +482,14 @@ function Terms() {
       title="What this is, and what these words mean"
       variant="rail"
     >
-      <p className={`max-w-[62ch] ${BODY}`}>
+      <p className={`max-w-measure ${BODY}`}>
         Every month we read the month’s disclosed insider purchases, rank them,
         write up the standouts, and then — the following month — mark our own
         picks against the latest close and publish the result. Nothing here is
         advice, and none of it is a prediction.
       </p>
 
-      <dl className={`mt-6 border-t ${RULE}`}>
+      <dl className={`mt-6 border-t border-rule`}>
         <Term title="Alpha">
           A buy’s return less the benchmark’s return over the same window, so a
           purchase up 6% in a month the market rose 6% has an alpha of zero. It
@@ -526,7 +524,7 @@ function Terms() {
         </Term>
       </dl>
 
-      <p className="mt-5 max-w-[62ch] text-[13px] leading-[1.6] text-foreground/60">
+      <p className="mt-5 max-w-measure text-small text-foreground/60">
         More on how the reports are put together in{" "}
         <Link className={LINK} to="/how-it-works">
           how this works
@@ -548,10 +546,10 @@ function Terms() {
 function Term({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
     <div
-      className={`grid gap-x-8 gap-y-1 border-b ${RULE} py-3.5 sm:grid-cols-[10rem_minmax(0,1fr)]`}
+      className={`grid gap-x-8 gap-y-1 border-b border-rule py-3.5 sm:grid-cols-[10rem_minmax(0,1fr)]`}
     >
-      <dt className="text-[13.5px] font-medium text-foreground">{title}</dt>
-      <dd className={`max-w-[62ch] ${BODY}`}>{children}</dd>
+      <dt className="text-body font-medium text-foreground">{title}</dt>
+      <dd className={`max-w-measure ${BODY}`}>{children}</dd>
     </div>
   );
 }
@@ -564,7 +562,7 @@ function Byline({ summary }: { summary: MonthlySummary }) {
   const published = localeDate(summary.created_at);
 
   return (
-    <p className="text-[12.5px] leading-[1.5] text-foreground/45">
+    <p className="text-small text-foreground/45">
       {published ? (
         <>
           <time dateTime={summary.created_at}>Published {published}</time>
@@ -629,7 +627,7 @@ function ReportCard({
                   // Was a bare "," here until 2026-09-06 — a stray glyph
                   // standing where a mark should be. A pick with no usable
                   // price series has no mark, and that is a sentence.
-                  <span className="text-[12px] leading-[1.3] text-foreground/45">
+                  <span className="text-small text-foreground/45">
                     No mark yet
                   </span>
                 ) : (
@@ -660,34 +658,33 @@ function SectorTable({
   );
   const max = sorted[0]?.total_value_gbp ?? 0;
 
-  const head = `${LABEL} pb-2 pr-4 font-semibold uppercase tracking-[0.16em]`;
+  const head = "eyebrow pb-2 pr-4 text-foreground/50";
 
   return (
     <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <table className="w-full min-w-[520px] border-collapse text-left">
         <thead>
-          <tr className={`border-b ${RULE}`}>
+          <tr className={`border-b border-rule`}>
             <th className={head}>Sector</th>
             <th className={head}>Buys</th>
             <th className={`${head} w-[26%]`}>Value</th>
             <th className={head}>Median return</th>
-            <th
-              className={`${LABEL} pb-2 font-semibold uppercase tracking-[0.16em]`}
-            >
-              Median alpha
-            </th>
+            <th className="eyebrow pb-2 text-foreground/50">Median alpha</th>
           </tr>
         </thead>
         <tbody>
           {sorted.map((row) => (
-            <tr key={row.sector} className={`border-b ${RULE} last:border-b-0`}>
-              <th className="py-2.5 pr-4 text-[13.5px] font-medium text-foreground">
+            <tr
+              key={row.sector}
+              className={`border-b border-rule last:border-b-0`}
+            >
+              <th className="py-2.5 pr-4 text-body font-medium text-foreground">
                 {row.sector}
               </th>
-              <td className="py-2.5 pr-4 text-[13.5px] tabular-nums text-foreground/70">
+              <td className="py-2.5 pr-4 text-body tabular-nums text-foreground/70">
                 {row.buy_count}
               </td>
-              <td className="py-2.5 pr-4 align-middle text-[13.5px] tabular-nums text-foreground/70">
+              <td className="py-2.5 pr-4 align-middle text-body tabular-nums text-foreground/70">
                 {/* TODO(us-reports): `formatGbp` hardcodes £ — a US report
                     would state dollars as pounds on day one.
                     `moneyShort(value, currency)` in @/lib/company-format is the
@@ -701,12 +698,12 @@ function SectorTable({
                 />
               </td>
               <td
-                className={`py-2.5 pr-4 text-[13.5px] tabular-nums ${returnClass(row.median_return)}`}
+                className={`py-2.5 pr-4 text-body tabular-nums ${returnClass(row.median_return)}`}
               >
                 {formatSignedPct(row.median_return)}
               </td>
               <td
-                className={`py-2.5 text-[13.5px] tabular-nums ${returnClass(row.median_alpha)}`}
+                className={`py-2.5 text-body tabular-nums ${returnClass(row.median_alpha)}`}
               >
                 {formatSignedPct(row.median_alpha)}
               </td>
@@ -734,24 +731,24 @@ function StyleSplit({
   const max = sorted[0]?.total_value_gbp ?? 0;
 
   return (
-    <ul className={`border-t ${RULE}`}>
+    <ul className={`border-t border-rule`}>
       {sorted.map((row) => (
-        <li key={row.style} className={`border-b ${RULE} py-3.5`}>
+        <li key={row.style} className={`border-b border-rule py-3.5`}>
           <div className="flex items-baseline justify-between gap-4">
             <span className="min-w-0">
-              <span className="text-[14px] font-medium text-foreground">
+              <span className="text-body font-medium text-foreground">
                 {STYLE_LABEL[row.style] ?? row.style}
               </span>
               <span className={`ml-2 ${LABEL}`}>
                 {row.buy_count} {row.buy_count === 1 ? "buy" : "buys"}
               </span>
             </span>
-            <span className="shrink-0 font-mono text-[13px] tabular-nums text-foreground/75">
+            <span className="shrink-0 font-mono text-small tabular-nums text-foreground/75">
               {formatGbp(row.total_value_gbp, { compact: true })}
             </span>
           </div>
           <MeterBar className="mt-2" max={max} value={row.total_value_gbp} />
-          <p className={`mt-2 ${LABEL} leading-[1.6]`}>
+          <p className={`mt-2 ${LABEL} leading-relaxed`}>
             Median return{" "}
             <span className={`tabular-nums ${returnClass(row.median_return)}`}>
               {formatSignedPct(row.median_return)}

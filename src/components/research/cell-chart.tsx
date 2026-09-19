@@ -37,6 +37,8 @@ import type { StudyCell } from "../../../shared/studies";
 
 import { MIN_CELL, MIN_COMPANIES, pct } from "../../../shared/studies.js";
 
+import { panel } from "@/components/ui/panel";
+
 const TICKS = [0, 25, 50, 75, 100];
 
 export function CellChart({
@@ -55,13 +57,13 @@ export function CellChart({
   referenceLabel: string;
 }) {
   return (
-    <figure className="rounded-2xl border border-hairline bg-sheet p-4 sm:p-6 dark:border-white/[0.07] dark:bg-surface">
+    <figure className={`${panel()} p-4 sm:p-6`}>
       <figcaption className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
+        <span className="eyebrow text-foreground/45">
           Share that beat the index, with 95% interval
         </span>
         {reference != null ? (
-          <span className="text-[12px] text-foreground/55">
+          <span className="text-small text-foreground/55">
             <span
               aria-hidden
               className="mr-1.5 inline-block h-3 w-px translate-y-[2px] bg-foreground/50"
@@ -84,11 +86,11 @@ export function CellChart({
         {/* The axis, under the track column only. */}
         <div className="grid grid-cols-[minmax(0,11rem)_minmax(0,1fr)] gap-x-4 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
           <span />
-          <div className="relative h-5 border-t border-hairline dark:border-separator">
+          <div className="relative h-5 border-t border-rule">
             {TICKS.map((t) => (
               <span
                 key={t}
-                className="absolute top-1 -translate-x-1/2 font-mono text-[10px] tabular-nums text-foreground/40"
+                className="absolute top-1 -translate-x-1/2 micro tabular-nums text-foreground/40"
                 style={{ left: `${t}%` }}
               >
                 {t}%
@@ -126,15 +128,15 @@ function CellRow({
     >
       <div className={`min-w-0 ${cell.nested ? "pl-4" : ""}`}>
         <p
-          className={`leading-[1.3] ${
+          className={`${
             cell.nested
-              ? "text-[12.5px] text-foreground/60"
-              : "text-[14px] font-medium text-foreground"
+              ? "text-small text-foreground/60"
+              : "text-body font-medium text-foreground"
           }`}
         >
           {cell.label}
         </p>
-        <p className="mt-0.5 font-mono text-[10.5px] tabular-nums tracking-[0.04em] text-foreground/45">
+        <p className="mt-0.5 font-mono text-caption tabular-nums text-foreground/45">
           {stated
             ? `n ${cell.n} · ${cell.companies} ${cell.companies === 1 ? "company" : "companies"}`
             : `${cell.n} of ${MIN_CELL} · ${cell.companies} of ${MIN_COMPANIES} companies`}
@@ -187,7 +189,7 @@ function CellRow({
             {/* The value, in ink, placed clear of the interval on whichever
                 side has room. */}
             <span
-              className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap text-[13px] font-semibold tabular-nums tracking-[-0.01em] text-foreground ${
+              className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap text-small font-semibold tabular-nums text-foreground ${
                 cell.interval!.hi > 0.8 ? "-translate-x-full pr-2.5" : "pl-2.5"
               }`}
               style={{
@@ -204,7 +206,7 @@ function CellRow({
                 is the binding floor, not the axis: the full track is both. */}
             <span
               aria-hidden
-              className="absolute top-1/2 h-[7px] -translate-y-1/2 rounded-[3px] bg-brand-brown/[0.14] dark:bg-brand-tan/[0.18]"
+              className="absolute top-1/2 h-[7px] -translate-y-1/2 rounded-mark bg-brand-brown/[0.14] dark:bg-brand-tan/[0.18]"
               style={{
                 left: 0,
                 width: `${toward * 100}%`,
@@ -214,7 +216,7 @@ function CellRow({
                 it once there is not: a label that runs past the track is the
                 one thing a phone-width chart must not do. */}
             <span
-              className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap text-[12px] text-foreground/55 ${
+              className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap text-small text-foreground/55 ${
                 toward > 0.5 ? "-translate-x-full pr-2.5" : "pl-2.5"
               }`}
               style={{

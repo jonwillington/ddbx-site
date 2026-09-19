@@ -32,7 +32,6 @@ const normalizeUsdClose = (closePence: number) => closePence / 100;
  *  story simply shows fewer.
  */
 
-
 function dateLabel(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso.replace(" ", "T"));
@@ -133,16 +132,14 @@ export function StoryStage({
         </StageTitle>
 
         {story.standfirst ? (
-          <p className={`mt-4 max-w-[58ch] ${STAGE_DEK}`}>
-            {story.standfirst}
-          </p>
+          <p className={`mt-4 max-w-[58ch] ${STAGE_DEK}`}>{story.standfirst}</p>
         ) : null}
 
         {figures.length > 0 ? <StageFigures items={figures} /> : null}
 
         {/* One control for the whole page: the table below follows it. */}
         {anchor?.return_pct != null && anchor?.return_pct_at_publish != null ? (
-          <div className="mt-6 inline-flex rounded-full border border-white/15 p-0.5 text-[11px]">
+          <div className="mt-6 inline-flex rounded-full border border-white/15 p-0.5 text-caption">
             {(
               [
                 ["publish", "At publication"],

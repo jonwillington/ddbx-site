@@ -79,7 +79,7 @@ export default function StoryPage() {
           eyebrow="Stories"
           title="Not found"
         >
-          <p className="text-[14px] text-foreground/70">
+          <p className="text-body text-foreground/70">
             That story does not exist or has not been published.{" "}
             <Link to="/stories">Back to the timeline</Link>.
           </p>
@@ -128,21 +128,21 @@ export default function StoryPage() {
       >
         {s ? (
           <>
-            <p className="mt-5 text-[12.5px] leading-[1.6] text-foreground/45">
+            <p className="mt-5 text-small text-foreground/45">
               {s.published_at ? `Published ${dateLabel(s.published_at)}. ` : ""}
               Researched and drafted with AI assistance, approved by hand before
               publication. Not investment advice.
             </p>
 
             {s.take ? (
-              <p className="mt-8 text-[19px] leading-[1.5] text-foreground/90 sm:text-[22px]">
+              <p className="mt-8 text-[19px] leading-normal text-foreground/90 sm:text-[22px]">
                 {s.take}
               </p>
             ) : null}
 
             <StoryBuys basis={basis} story={s} />
 
-            <div className="mt-9 max-w-[62ch]">
+            <div className="mt-10 max-w-measure">
               <StoryBody markdown={s.body_md} />
             </div>
 
@@ -151,16 +151,16 @@ export default function StoryPage() {
                 {/* Each source leads with its publisher's favicon, so a list
                     of thirteen links reads as thirteen different outlets at a
                     glance rather than one block of underlines. */}
-                <ol className="mt-4 divide-y divide-hairline/70 border-y border-hairline/70 dark:divide-separator/60 dark:border-separator/60">
+                <ol className="mt-4 divide-y divide-hairline/70 border-y border-rule/70 dark:divide-separator/60/60">
                   {s.sources.map((src, n) => (
                     <li
                       key={src.url}
-                      className="flex items-start gap-3 py-2.5 text-[13.5px] leading-[1.5]"
+                      className="flex items-start gap-3 py-2.5 text-body"
                     >
-                      <span className="w-5 shrink-0 pt-px text-right font-mono text-[11px] tabular-nums text-foreground/35">
+                      <span className="w-5 shrink-0 pt-px text-right font-mono text-caption tabular-nums text-foreground/35">
                         {n + 1}
                       </span>
-                      <span className="mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-white ring-1 ring-black/[0.06] dark:ring-white/10">
+                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-mark bg-white ring-1 ring-black/[0.06] dark:ring-white/10">
                         <NewsSourceLogo size={14} url={src.url} />
                       </span>
                       <span className="min-w-0">
@@ -173,7 +173,7 @@ export default function StoryPage() {
                           {src.title || src.url}
                         </a>
                         {src.publisher || src.date ? (
-                          <span className="mt-0.5 block text-[12px] text-foreground/45">
+                          <span className="mt-0.5 block text-small text-foreground/45">
                             {[src.publisher, src.date]
                               .filter(Boolean)
                               .join(" · ")}

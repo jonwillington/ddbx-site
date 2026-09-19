@@ -24,7 +24,6 @@
  *  thing on the page allowed to be alive by itself.
  */
 import type { FlagComponent } from "country-flag-icons/react/3x2";
-import type { CSSProperties } from "react";
 import type { TapeFeeds, TapeMarket, TapeMarketId } from "../../../shared/tape";
 import type { HolidaySource } from "@/lib/bank-holidays";
 import type { MarketSession, MarketStatus } from "@/lib/market-status";
@@ -35,6 +34,8 @@ import { GB, KR, NL, SE, US } from "country-flag-icons/react/3x2";
 import { formatDayShort, TAPE_MARKETS, todayIn } from "../../../shared/tape.js";
 
 import { Skeleton } from "@/components/skeleton";
+import { eyebrow } from "@/components/ui/eyebrow";
+import { panel } from "@/components/ui/panel";
 import {
   UK_BANK_HOLIDAYS_SOURCE,
   useExchangeHolidays,
@@ -81,9 +82,6 @@ const HOLIDAYS: Record<TapeMarketId, HolidaySource> = {
   UK: UK_BANK_HOLIDAYS_SOURCE,
   US: US_EXCHANGE_HOLIDAYS,
 };
-
-const LIVE = "#2E7D32";
-const LIVE_DARK = "#7BBE7F";
 
 const MINUTES_IN_DAY = 24 * 60;
 
@@ -242,14 +240,8 @@ function LiveDot({ live }: { live: boolean }) {
 
   return (
     <span aria-hidden className="relative inline-flex h-2 w-2 shrink-0">
-      <span
-        className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 motion-reduce:hidden"
-        style={{ backgroundColor: LIVE }}
-      />
-      <span
-        className="relative inline-flex h-2 w-2 rounded-full"
-        style={{ backgroundColor: LIVE }}
-      />
+      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-live opacity-70 motion-reduce:hidden" />
+      <span className="relative inline-flex h-2 w-2 rounded-full bg-live" />
     </span>
   );
 }
@@ -259,10 +251,10 @@ function MarketCell({ view }: { view: CellView }) {
   const live = view.status.kind === "open";
 
   return (
-    <li className="min-w-0 rounded-xl border border-hairline px-3.5 py-3 dark:border-white/[0.08]">
+    <li className="min-w-0 rounded-control border border-rule px-3.5 py-3">
       <div className="flex items-center gap-2">
-        <Flag aria-hidden className="h-3 w-[18px] shrink-0 rounded-[2px]" />
-        <span className="min-w-0 truncate font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/60">
+        <Flag aria-hidden className="h-3 w-[18px] shrink-0 rounded-mark" />
+        <span className="min-w-0 truncate eyebrow text-foreground/60">
           {view.market.city}
         </span>
         <span className="ml-auto">
@@ -270,23 +262,21 @@ function MarketCell({ view }: { view: CellView }) {
         </span>
       </div>
       <div
-        className={`mt-2 text-[26px] font-semibold leading-none tabular-nums tracking-[-0.03em] ${
+        className={`mt-2 text-[26px] font-semibold leading-none tabular-nums tracking-tight ${
           live ? "text-foreground" : "text-foreground/75"
         }`}
       >
         {view.clock}
       </div>
       <div
-        className={`mt-1.5 truncate text-[11.5px] leading-[1.4] ${
-          live
-            ? "font-medium text-[#2E7D32] dark:text-[#7BBE7F]"
-            : "text-foreground/55"
+        className={`mt-1.5 truncate text-caption ${
+          live ? "font-medium text-live" : "text-foreground/55"
         }`}
         title={view.line}
       >
         {view.line}
       </div>
-      <div className="mt-2 text-[12px] leading-[1.4] text-foreground/70">
+      <div className="mt-2 text-small text-foreground/70">
         {view.feedState === "loading" ? (
           <Skeleton className="inline-block" h={12} w={72} />
         ) : view.feedState === "failed" ? (
@@ -361,10 +351,10 @@ function Band({
   return (
     <div className="mt-5">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
+        <p className="eyebrow text-foreground/45">
           The trading day, in your time
         </p>
-        <p className="text-[11px] tabular-nums text-foreground/45">
+        <p className="text-caption tabular-nums text-foreground/45">
           Now {clockText(now, visitorTz)} {zoneLabel}
         </p>
       </div>
@@ -377,7 +367,7 @@ function Band({
 
             return (
               <li key={v.market.id} className="flex h-3 items-center">
-                <Flag aria-hidden className="h-2.5 w-[15px] rounded-[1.5px]" />
+                <Flag aria-hidden className="h-2.5 w-[15px] rounded-mark" />
                 <span className="sr-only">{v.market.city}</span>
               </li>
             );
@@ -409,11 +399,11 @@ function Band({
                     <span
                       key={i}
                       aria-hidden
-                      className={`absolute inset-y-0 rounded-sm ${
+                      className={`absolute inset-y-0 rounded-mark ${
                         v.shut
                           ? "border border-dashed border-foreground/25"
                           : live
-                            ? "bg-[var(--tape-live)]"
+                            ? "bg-live"
                             : "bg-foreground/20"
                       }`}
                       style={{
@@ -470,18 +460,10 @@ export function WorldClock({ feeds }: { feeds: TapeFeeds | null }) {
   const open = views.filter((v) => v.status.kind === "open").length;
 
   return (
-    <section
-      aria-label="Market clocks"
-      className="rounded-2xl border border-hairline bg-sheet p-4 sm:p-5 dark:border-white/[0.08] dark:bg-surface"
-      style={
-        { "--tape-live": LIVE, "--tape-live-dark": LIVE_DARK } as CSSProperties
-      }
-    >
+    <section aria-label="Market clocks" className={`${panel()} p-4 sm:p-5`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
-          Five exchanges
-        </p>
-        <p className="text-[12px] text-foreground/55">
+        <p className={eyebrow()}>Five exchanges</p>
+        <p className="text-small text-foreground/55">
           {open === 0
             ? "None trading right now"
             : open === 1

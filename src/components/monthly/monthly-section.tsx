@@ -19,7 +19,7 @@ export function MonthlySection({
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="rounded-xl bg-surface/40 p-3 dark:bg-white/[0.03] lg:rounded-none lg:bg-transparent lg:p-0 lg:dark:bg-transparent">
+    <section className="rounded-card bg-surface/40 p-3 dark:bg-white/[0.03] lg:rounded-none lg:bg-transparent lg:p-0 lg:dark:bg-transparent">
       <button
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-2 lg:hidden"

@@ -341,7 +341,7 @@ export function MonthlyPicksStage({
           <>
             <div className="font-semibold">
               {p.company}{" "}
-              <span className="font-mono text-[10px] font-normal text-white/50">
+              <span className="micro text-white/50">
                 {displayTicker(p.ticker)}
               </span>
             </div>
@@ -351,7 +351,7 @@ export function MonthlyPicksStage({
               </span>
             </div>
             {p.then != null ? (
-              <div className="text-[11px] tabular-nums text-white/55">
+              <div className="text-caption tabular-nums text-white/55">
                 {formatSignedPct(p.then)} when we published it
               </div>
             ) : null}

@@ -32,8 +32,7 @@ import { api } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
 
 /** The month rule, in the counter style the section headers use. */
-const COUNTER =
-  "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/35";
+const COUNTER = "eyebrow text-foreground/35";
 
 function parseDate(iso: string | null): Date | null {
   if (!iso) return null;
@@ -92,7 +91,7 @@ export default function StoriesPage() {
         title="Stories"
       >
         {rows.length === 0 ? (
-          <p className="text-[14px] leading-[1.65] text-foreground/70">
+          <p className="text-body text-foreground/70">
             No stories published yet.
           </p>
         ) : (
@@ -110,7 +109,7 @@ export default function StoriesPage() {
                 <div key={s.id}>
                   {newMonth && when ? (
                     <div
-                      className={`${COUNTER} border-t border-hairline pb-1 pt-4 dark:border-separator`}
+                      className={`${COUNTER} border-t border-rule pb-1 pt-4`}
                     >
                       {monthLabel(when)}
                     </div>

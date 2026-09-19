@@ -22,8 +22,6 @@ import { TickerPill } from "@/components/ticker-pill";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { companyPath, displayTicker } from "@/lib/company";
 
-const RULE = "border-hairline dark:border-separator";
-
 export function WeeklyCards({
   cards,
   currency = "GBP",
@@ -36,19 +34,19 @@ export function WeeklyCards({
       {cards.map((card, i) => (
         <article
           key={`${card.kind}-${i}`}
-          className={`${i > 0 ? `mt-8 border-t ${RULE} pt-8` : ""}`}
+          className={`${i > 0 ? `mt-8 border-t border-rule pt-8` : ""}`}
         >
           {/* The card's own eyebrow, cased down to the house spec. The pipeline
               emits it upper-case ("BIGGEST CHEQUE") and the CSS does the
               uppercasing, so shouting it twice is avoided. */}
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
+          <p className="eyebrow text-brand-brown dark:text-brand-tan">
             {card.copy.eyebrow}
           </p>
-          <h3 className="mt-2 text-balance text-[19px] font-semibold leading-[1.25] tracking-[-0.015em] text-foreground sm:text-[22px]">
+          <h3 className="mt-2 text-balance text-[19px] font-semibold leading-tight tracking-[-0.015em] text-foreground sm:text-[22px]">
             {card.copy.headline}
           </h3>
           {card.copy.subhead ? (
-            <p className="mt-2 max-w-[62ch] text-[14px] leading-[1.65] text-foreground/70">
+            <p className="mt-2 max-w-measure text-body text-foreground/70">
               {card.copy.subhead}
             </p>
           ) : null}
@@ -91,24 +89,24 @@ function CardBody({ card, currency }: { card: WeeklyCard; currency: string }) {
   if (rows.length === 0) return null;
 
   return (
-    <ul className={`mt-5 border-t ${RULE}`}>
+    <ul className={`mt-5 border-t border-rule`}>
       {rows.map((r) => (
         <li
           key={r!.dealing_id}
-          className={`flex items-center gap-3 border-b ${RULE} py-2.5`}
+          className={`flex items-center gap-3 border-b border-rule py-2.5`}
         >
           {r!.ticker ? (
             <CompanyLogo className="shrink-0" size={22} ticker={r!.ticker} />
           ) : null}
           <span className="min-w-0 flex-1">
             <Link
-              className="text-[13.5px] text-foreground/85 underline-offset-4 hover:underline"
+              className="text-body text-foreground/85 underline-offset-4 hover:underline"
               to={filingPath(r!.dealing_id)}
             >
               {r!.insider_name}
               {r!.insider_role ? `, ${r!.insider_role}` : ""}
             </Link>
-            <span className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-foreground/45">
+            <span className="mt-0.5 flex flex-wrap items-center gap-2 text-small text-foreground/45">
               {r!.ticker ? (
                 <Link to={companyPath(r!.ticker)}>
                   <TickerPill ticker={displayTicker(r!.ticker)} />
@@ -117,9 +115,9 @@ function CardBody({ card, currency }: { card: WeeklyCard; currency: string }) {
               <span>{r!.company}</span>
             </span>
           </span>
-          <span className="shrink-0 text-right text-[13px] tabular-nums text-foreground/70">
+          <span className="shrink-0 text-right text-small tabular-nums text-foreground/70">
             {money(r!.value ?? 0, currency)}
-            <span className="mt-0.5 block text-[12px] text-foreground/45">
+            <span className="mt-0.5 block text-small text-foreground/45">
               {r!.disclosed_date}
             </span>
           </span>

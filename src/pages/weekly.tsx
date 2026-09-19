@@ -40,10 +40,9 @@ import { api } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
 
 const R = {
-  body: "text-[14px] leading-[1.65] text-foreground/70",
-  label: "text-[12px] text-foreground/45",
+  body: "text-body text-foreground/70",
+  label: "text-small text-foreground/45",
 };
-const RULE = "border-hairline dark:border-separator";
 
 /** The digest exists for UK and US only (WEEKLY_DIGEST_MARKETS in ddbx-data).
  *  Every other market's host falls back to UK rather than rendering an empty
@@ -125,12 +124,12 @@ export function WeeklyIndexPage() {
         title={`${market.label} insider buying, week by week`}
       >
         {failed ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the archive just now. That’s a fault at our end
             rather than an empty record. Try again shortly.
           </p>
         ) : rows.length === 0 ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No weeks published yet for {market.label}.
           </p>
         ) : (
@@ -139,14 +138,14 @@ export function WeeklyIndexPage() {
               aside="Newest first. A week with nothing worth reporting doesn’t get an entry."
               title="Every week"
             >
-              <ul className={`mt-4 border-t ${RULE}`}>
+              <ul className={`mt-4 border-t border-rule`}>
                 {rows.map((w) => (
-                  <li key={w.week_start} className={`border-b ${RULE}`}>
+                  <li key={w.week_start} className={`border-b border-rule`}>
                     <Link
                       className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3.5 transition-colors hover:bg-foreground/[0.02]"
                       to={weekPath(w.week_start)}
                     >
-                      <span className="text-[14.5px] font-medium text-foreground">
+                      <span className="text-body font-medium text-foreground">
                         {weekLabel(w.week_start, w.week_end)}
                       </span>
                       <span className={R.label}>
@@ -336,7 +335,7 @@ export default function WeeklyWeekPage() {
             <WeeklyCards cards={digest.cards} currency={market.currency} />
 
             {stats ? (
-              <p className={`mt-8 max-w-[62ch] ${R.label} leading-[1.6]`}>
+              <p className={`mt-8 max-w-measure ${R.label} leading-relaxed`}>
                 Totals cover disclosed open-market purchases in the{" "}
                 {market.label} market for this week only:{" "}
                 {money(stats.total_value ?? 0, market.currency)} across{" "}

@@ -96,9 +96,9 @@ const rowValue = (d: AnyRow) =>
   );
 
 const R = {
-  body: "text-[14px] leading-[1.65] text-foreground/70",
-  label: "text-[12px] text-foreground/45",
-  rule: "border-hairline dark:border-separator",
+  body: "text-body text-foreground/70",
+  label: "text-small text-foreground/45",
+  rule: "border-rule",
   link: "text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan",
 };
 
@@ -182,12 +182,12 @@ export function DailyIndexPage({ market }: { market: MarketId }) {
         title={`${m.label} insider buying, day by day`}
       >
         {failed ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the archive just now. That’s a fault at our end
             rather than an empty record. Try again shortly.
           </p>
         ) : rows.length === 0 ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No editions yet for {m.label}. An edition appears here on the first
             trading day a purchase is disclosed; the feed is read every fifteen
             minutes through the session.
@@ -204,9 +204,7 @@ export function DailyIndexPage({ market }: { market: MarketId }) {
             >
               {months.map((group) => (
                 <div key={group.heading} className="mt-6 first:mt-2">
-                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-                    {group.heading}
-                  </p>
+                  <p className="eyebrow text-foreground/45">{group.heading}</p>
                   <ul className={`mt-2 border-t ${R.rule}`}>
                     {group.days.map((d) => (
                       <li key={d.date} className={`border-b ${R.rule}`}>
@@ -214,7 +212,7 @@ export function DailyIndexPage({ market }: { market: MarketId }) {
                           className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3.5 transition-colors hover:bg-foreground/[0.02]"
                           to={dailyPath(m.id, d.date)}
                         >
-                          <span className="text-[14.5px] font-medium text-foreground">
+                          <span className="text-body font-medium text-foreground">
                             {dayLabel(d.date)}
                           </span>
                           <span className={`tabular-nums ${R.label}`}>
@@ -569,7 +567,7 @@ function DayNav({
   return (
     <nav
       aria-label="Adjacent trading days"
-      className={`mt-6 flex items-center justify-between gap-4 border-y ${R.rule} py-2.5 text-[12.5px]`}
+      className={`mt-6 flex items-center justify-between gap-4 border-y ${R.rule} py-2.5 text-small`}
     >
       {showPrev ? (
         <Link
@@ -587,7 +585,7 @@ function DayNav({
       ) : (
         <span />
       )}
-      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/35">
+      <span className="eyebrow text-foreground/35">
         {status === "today" ? "Session in progress" : "Session closed"}
       </span>
       {next ? (
@@ -659,7 +657,7 @@ function EditionBody({
         total={total}
       >
         {model.count === 0 ? (
-          <p className={`max-w-[62ch] ${R.body}`}>
+          <p className={`max-w-measure ${R.body}`}>
             {today
               ? m.id === "US"
                 ? "Nothing filed yet. Form 4s reach the SEC through the day and into the evening, New York time; the page fills in as they land."
@@ -766,7 +764,7 @@ function TheRead({
 
   if (summaryStatus === "failed") {
     return (
-      <p className={`max-w-[62ch] ${R.body}`}>
+      <p className={`max-w-measure ${R.body}`}>
         We couldn’t load the day’s summary just now. That’s a fault at our end;
         the filings below are unaffected.
       </p>
@@ -774,7 +772,7 @@ function TheRead({
   }
   if (!summary) {
     return (
-      <p className={`max-w-[62ch] ${R.body}`}>
+      <p className={`max-w-measure ${R.body}`}>
         {status === "today"
           ? `No summary yet. The day’s read is written ${m.summaryTime}, once every filing is in.`
           : `No summary was written for this day. The team began publishing daily reads on ${dateLabel(m.id === "US" ? "2026-06-01" : "2026-05-11")}; earlier days carry the filings alone.`}
@@ -789,20 +787,18 @@ function TheRead({
   const overview = summary.market_overview;
 
   return (
-    <div className="max-w-[62ch]">
-      <h3 className="text-[20px] font-semibold leading-[1.25] tracking-[-0.018em] text-foreground">
+    <div className="max-w-measure">
+      <h3 className="text-[20px] font-semibold leading-tight tracking-[-0.018em] text-foreground">
         {summary.headline}
       </h3>
-      <div className="mt-4 space-y-3.5 text-[15px] leading-[1.65] text-foreground/85">
+      <div className="mt-4 space-y-3.5 text-lede text-foreground/85">
         {paragraphs.map((p, i) => (
           <p key={i}>{inlineBold(p)}</p>
         ))}
       </div>
       {cited.length > 0 ? (
         <div className="mt-6">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-            Filings this read cites
-          </p>
+          <p className="eyebrow text-foreground/45">Filings this read cites</p>
           <ul className={`mt-2 border-t ${R.rule}`}>
             {cited.map((d, i) => {
               const who = insiderOf(d, market);
@@ -814,7 +810,7 @@ function TheRead({
               return (
                 <li
                   key={d.id ?? i}
-                  className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-0.5 border-b ${R.rule} py-2.5 text-[13.5px]`}
+                  className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-0.5 border-b ${R.rule} py-2.5 text-body`}
                 >
                   <span className="min-w-0">
                     {href ? (
@@ -842,7 +838,7 @@ function TheRead({
       ) : null}
       {overview && Number.isFinite(overview.pct) ? (
         <p
-          className={`${cited.length > 0 ? "mt-4" : `mt-5 border-t ${R.rule} pt-3`} text-[13px] leading-[1.55] text-foreground/60`}
+          className={`${cited.length > 0 ? "mt-4" : `mt-5 border-t ${R.rule} pt-3`} text-small text-foreground/60`}
         >
           <span className="font-semibold text-foreground/80">
             {overview.label}
@@ -895,7 +891,7 @@ function inlineBold(text: string) {
 function InsiderIndexSlot({ date, slot }: { date: string; slot: IndexSlot }) {
   if (slot.kind === "pending") {
     return (
-      <p className={`max-w-[62ch] ${R.body}`}>
+      <p className={`max-w-measure ${R.body}`}>
         The Insider Index reading for {dateLabel(date)} lands at {slot.landsAt},
         once the day’s filings are all in. Each reading is published the morning
         after the session it covers.{" "}
@@ -909,14 +905,12 @@ function InsiderIndexSlot({ date, slot }: { date: string; slot: IndexSlot }) {
   const { reading } = slot;
 
   return (
-    <div className="max-w-[62ch]">
+    <div className="max-w-measure">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
         <span className="text-[44px] font-semibold leading-none tabular-nums tracking-[-0.03em] text-foreground">
           {Math.round(reading.score)}
         </span>
-        <span className="text-[17px] font-semibold text-foreground">
-          {reading.tier.label}
-        </span>
+        <span className="text-title text-foreground">{reading.tier.label}</span>
         {reading.weekChange != null && Number.isFinite(reading.weekChange) ? (
           <span className={`tabular-nums ${R.label}`}>
             {reading.weekChange > 0 ? "+" : ""}
@@ -960,20 +954,18 @@ function MoneySection({
   return (
     <div className="space-y-8">
       <div>
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-          Biggest buy by an insider
-        </p>
+        <p className="eyebrow text-foreground/45">Biggest buy by an insider</p>
         {big ? (
           <BiggestBuy big={big} market={market} />
         ) : (
-          <p className={`mt-3 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-3 max-w-measure ${R.body}`}>
             None. Every purchase disclosed on this day was filed by a 10% holder
             with no board seat or office, and this slot is for the people
             running the company. Their filings are listed below.
           </p>
         )}
         {model.holders > 0 && big ? (
-          <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.5]`}>
+          <p className={`mt-3 max-w-measure ${R.label} leading-normal`}>
             Filings by 10% holders with no board seat or office are listed below
             and counted in the totals, but not ranked here: they are usually
             investment vehicles, not people running the business.
@@ -982,11 +974,9 @@ function MoneySection({
       </div>
 
       <div>
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-          Cluster activity
-        </p>
+        <p className="eyebrow text-foreground/45">Cluster activity</p>
         {model.clusters.length === 0 ? (
-          <p className={`mt-3 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-3 max-w-measure ${R.body}`}>
             None. No purchase disclosed on this day joined another insider’s buy
             in the same company within the previous fortnight.
           </p>
@@ -998,7 +988,7 @@ function MoneySection({
                 className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b ${R.rule} py-3.5`}
               >
                 <span className="min-w-0">
-                  <span className="text-[14.5px] font-medium text-foreground">
+                  <span className="text-body font-medium text-foreground">
                     {cleanCompanyName(c.company) || displayTicker(c.ticker)}
                   </span>{" "}
                   <TickerPill ticker={displayTicker(c.ticker)} />
@@ -1031,7 +1021,7 @@ function MoneySection({
             ))}
           </ul>
         )}
-        <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.5]`}>
+        <p className={`mt-3 max-w-measure ${R.label} leading-normal`}>
           A cluster count is the pipeline’s own rolling annotation on each
           filing: how many distinct insiders bought that company inside the
           window ending on this purchase. It includes buyers from earlier days.{" "}
@@ -1089,7 +1079,7 @@ function FilingsList({
   const m = dailyMarket(market);
 
   if (model.count === 0) {
-    return <p className={`max-w-[62ch] ${R.body}`}>No filings to list.</p>;
+    return <p className={`max-w-measure ${R.body}`}>No filings to list.</p>;
   }
 
   return (

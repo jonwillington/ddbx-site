@@ -37,7 +37,7 @@ export function MonthlyClusters({
       {heading ? <h3 className="text-sm font-semibold">Clusters</h3> : null}
 
       {page ? (
-        <p className="max-w-[62ch] text-[14px] leading-[1.65] text-foreground/70">
+        <p className="max-w-measure text-body text-foreground/70">
           {sorted.length} {sorted.length === 1 ? "company" : "companies"} had
           two or more insiders buying in the same month.
         </p>
@@ -55,10 +55,10 @@ export function MonthlyClusters({
               to={companyPath(c.ticker)}
             >
               <Tile cluster={c} />
-              <span className="w-full truncate text-[11px] font-medium text-foreground/80">
+              <span className="w-full truncate text-caption font-medium text-foreground/80">
                 {tickerShort(c.ticker)}
               </span>
-              <span className="line-clamp-2 w-full text-[10.5px] leading-[1.35] text-foreground/45">
+              <span className="line-clamp-2 w-full text-caption text-foreground/45">
                 {c.company}
               </span>
             </Link>
@@ -69,7 +69,7 @@ export function MonthlyClusters({
               title={`${c.company} · ${c.insider_count} buyers`}
             >
               <Tile cluster={c} />
-              <span className="w-full truncate text-[11px] font-medium text-foreground/80">
+              <span className="w-full truncate text-caption font-medium text-foreground/80">
                 {tickerShort(c.ticker)}
               </span>
             </div>
@@ -84,7 +84,7 @@ function Tile({ cluster }: { cluster: MonthlyCluster }) {
   return (
     <span className="relative">
       <CompanyLogo size={44} ticker={cluster.ticker} />
-      <span className="absolute -right-0.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-brown px-1 text-[10px] font-semibold tabular-nums text-white dark:bg-brand-tan dark:text-ink">
+      <span className="absolute -right-0.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-brown px-1 micro tabular-nums text-white dark:bg-brand-tan dark:text-ink">
         {cluster.insider_count}
       </span>
     </span>

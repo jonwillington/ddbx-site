@@ -45,15 +45,13 @@ import { api } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
 import { reportsCta } from "@/components/seo/cta-copy";
 import { formatGbp } from "@/lib/performance/format";
-
-const RULE = "border-hairline dark:border-separator";
-const BODY = "text-[14px] leading-[1.65] text-foreground/70";
+const BODY = "text-body text-foreground/70";
 
 /** The `Row` geometry from row-list.tsx, for the skeleton that stands in for
  *  the "What's in every report" list. Written out rather than imported because
  *  the component keeps its own class string private; kept beside the loaded
  *  list here so the two are read together when either changes. */
-const CONTENTS_ROW = `grid gap-x-10 gap-y-3 border-b ${RULE} py-7 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-9`;
+const CONTENTS_ROW = `grid gap-x-10 gap-y-3 border-b border-rule py-7 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-9`;
 
 /** The promoted month's sheet — shared with the skeleton for the same reason.
  *
@@ -200,15 +198,15 @@ export default function ReportsPage() {
                 aside={`Published before ${monthLabel(sorted[0].month)}, newest first. Every month keeps its own URL.`}
                 title="Earlier reports"
               >
-                <ul className={`border-t ${RULE}`}>
+                <ul className={`border-t border-rule`}>
                   {earlier.map((m) => {
                     const published = publishedLabel(m.created_at);
 
                     return (
-                      <li key={m.month} className={`border-b ${RULE} py-4`}>
+                      <li key={m.month} className={`border-b border-rule py-4`}>
                         <div className="flex items-baseline justify-between gap-4">
                           <Link
-                            className="min-w-0 text-[16px] font-semibold tracking-[-0.01em] text-foreground underline-offset-4 hover:underline"
+                            className="min-w-0 text-title text-foreground underline-offset-4 hover:underline"
                             to={reportPath(m.month)}
                           >
                             {monthLabel(m.month)}
@@ -218,14 +216,14 @@ export default function ReportsPage() {
                               empty <time>. */}
                           {published ? (
                             <time
-                              className="shrink-0 font-mono text-[11px] tabular-nums text-foreground/45"
+                              className="shrink-0 font-mono text-caption tabular-nums text-foreground/45"
                               dateTime={m.created_at}
                             >
                               {published}
                             </time>
                           ) : null}
                         </div>
-                        <p className={`mt-1.5 max-w-[62ch] ${BODY}`}>
+                        <p className={`mt-1.5 max-w-measure ${BODY}`}>
                           {m.headline}
                         </p>
                       </li>
@@ -262,7 +260,7 @@ function LatestReport({
       <h2 className="mt-2 text-[24px] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground">
         {label}
       </h2>
-      <p className="mt-2 max-w-[58ch] text-[16.5px] leading-[1.5] tracking-[-0.006em] text-foreground/85">
+      <p className="mt-2 max-w-[58ch] text-lede text-foreground/85">
         {item.headline}
       </p>
 
@@ -288,7 +286,7 @@ function LatestReport({
       ) : null}
 
       <Link
-        className={`mt-5 inline-flex items-center ${BUTTON_FILLED} ${BUTTON_RADIUS} px-4 py-2 text-[14px] font-medium`}
+        className={`mt-5 inline-flex items-center ${BUTTON_FILLED} ${BUTTON_RADIUS} px-4 py-2 text-body font-medium`}
         to={reportPath(item.month)}
       >
         Read the {label} report
@@ -315,9 +313,9 @@ function ArchiveSkeleton() {
         <Skeleton className={`mt-5 h-[37px] w-52 ${BUTTON_RADIUS}`} />
       </div>
 
-      <section className={`mt-12 border-t ${RULE} pt-5`}>
+      <section className={`mt-12 border-t border-rule pt-5`}>
         <Skeleton className="h-[34px] w-72" />
-        <div className={`mt-6 border-t ${RULE}`}>
+        <div className={`mt-6 border-t border-rule`}>
           {REPORT_CONTENTS.map((row: { label: string }) => (
             <div key={row.label} className={CONTENTS_ROW}>
               <div className="min-w-0">
@@ -332,11 +330,11 @@ function ArchiveSkeleton() {
         </div>
       </section>
 
-      <section className={`mt-12 border-t ${RULE} pt-5`}>
+      <section className={`mt-12 border-t border-rule pt-5`}>
         <Skeleton className="h-[34px] w-56" />
-        <ul className={`mt-6 border-t ${RULE}`}>
+        <ul className={`mt-6 border-t border-rule`}>
           {[0, 1].map((i) => (
-            <li key={i} className={`border-b ${RULE} py-4`}>
+            <li key={i} className={`border-b border-rule py-4`}>
               <div className="flex items-baseline justify-between gap-4">
                 <Skeleton className="h-[16px] w-40" />
                 <Skeleton className="h-[11px] w-16 shrink-0" />

@@ -14,7 +14,7 @@ export function Prose({
   return (
     <div className={`space-y-3 ${className}`}>
       {paragraphs.map((p, i) => (
-        <p key={i} className="text-[15px] leading-relaxed text-foreground/85">
+        <p key={i} className="text-lede leading-relaxed text-foreground/85">
           {renderBold(p).map((tok, j) =>
             typeof tok === "string" ? (
               tok

@@ -83,9 +83,9 @@ function Table({ rows }: { rows: string[] }) {
 
   return (
     <div className="my-6 overflow-x-auto">
-      <table className="w-full border-collapse text-[13px]">
+      <table className="w-full border-collapse text-small">
         <thead>
-          <tr className="border-b border-hairline dark:border-separator">
+          <tr className="border-b border-rule">
             {head.map((h, i) => (
               <th
                 key={i}
@@ -98,10 +98,7 @@ function Table({ rows }: { rows: string[] }) {
         </thead>
         <tbody>
           {body.map((r, i) => (
-            <tr
-              key={i}
-              className="border-b border-hairline/60 dark:border-separator/60"
-            >
+            <tr key={i} className="border-b border-rule/60/60">
               {r.map((c, j) => (
                 <td key={j} className="py-2 pr-4 align-top text-foreground/80">
                   <Inline text={c} />
@@ -154,14 +151,14 @@ export function StoryBody({ markdown }: { markdown: string }) {
              heading in the same column. */
           <h2
             key={key++}
-            className="mt-12 border-t border-hairline pt-9 text-[24px] font-semibold leading-[1.18] tracking-[-0.02em] text-balance text-foreground sm:text-[30px] dark:border-separator"
+            className="mt-12 border-t border-rule pt-9 text-balance text-heading font-semibold text-foreground"
           >
             <Inline text={text} />
           </h2>
         ) : (
           <h3
             key={key++}
-            className="mt-9 text-[19px] font-semibold leading-snug tracking-[-0.01em] text-foreground sm:text-[21px]"
+            className="mt-10 text-[19px] font-semibold leading-snug tracking-[-0.01em] text-foreground sm:text-[21px]"
           >
             <Inline text={text} />
           </h3>
@@ -187,10 +184,10 @@ export function StoryBody({ markdown }: { markdown: string }) {
 
       out.push(
         <figure key={key++} className="board-panel my-7 px-5 py-4">
-          <figcaption className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
+          <figcaption className="eyebrow text-brand">
             {lead ? lead[1] : "From our records"}
           </figcaption>
-          <div className="mt-2 text-[14px] leading-[1.6] text-foreground/80">
+          <div className="mt-2 text-body text-foreground/80">
             <Inline text={lead ? quoted.slice(lead[0].length) : quoted} />
           </div>
         </figure>,
@@ -208,7 +205,7 @@ export function StoryBody({ markdown }: { markdown: string }) {
       out.push(
         <ul
           key={key++}
-          className="my-4 list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-foreground/80"
+          className="my-4 list-disc space-y-2 pl-5 text-lede leading-relaxed text-foreground/80"
         >
           {items.map((it, n) => (
             <li key={n}>
@@ -222,12 +219,7 @@ export function StoryBody({ markdown }: { markdown: string }) {
 
     // A horizontal rule ends the article body; the sources block follows it.
     if (/^---+$/.test(line.trim())) {
-      out.push(
-        <hr
-          key={key++}
-          className="my-8 border-hairline dark:border-separator"
-        />,
-      );
+      out.push(<hr key={key++} className="my-8 border-rule" />);
       i += 1;
       continue;
     }
@@ -247,10 +239,7 @@ export function StoryBody({ markdown }: { markdown: string }) {
       i += 1;
     }
     out.push(
-      <p
-        key={key++}
-        className="my-4 text-[15px] leading-[1.7] text-foreground/80"
-      >
+      <p key={key++} className="my-4 text-lede text-foreground/80">
         <Inline text={para.join(" ")} />
       </p>,
     );

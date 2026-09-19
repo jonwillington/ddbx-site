@@ -15,8 +15,6 @@ import { BOARD_ROW_GRID } from "@/components/boards/board-row";
 import { TickerPill } from "@/components/ticker-pill";
 import { cleanCompanyName, displayTicker } from "@/lib/company";
 
-const RULE = "border-hairline dark:border-separator";
-
 /** The curated standout buys, sorted positive → neutral → negative. Each card
  *  expands in place to reveal the price arc, a price chart and the per-item
  *  retrospective / forward narrative.
@@ -60,7 +58,7 @@ export function MonthlyFeatured({
         {heading ? (
           <h3 className="mb-3 text-sm font-semibold">Featured buys</h3>
         ) : null}
-        <ol className={`border-t ${RULE}`}>
+        <ol className={`border-t border-rule`}>
           {sorted.map((item, i) => (
             <FeaturedCard
               key={item.dealing_id}
@@ -112,7 +110,7 @@ function FeaturedCard({
 
   const body = (
     <>
-      <p className="text-[15px] leading-relaxed text-foreground/85">
+      <p className="text-lede leading-relaxed text-foreground/85">
         {item.headline_text}
       </p>
 
@@ -127,18 +125,14 @@ function FeaturedCard({
 
       {item.retrospective_text && (
         <div className="space-y-1.5">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Has the value gone?
-          </h4>
+          <h4 className="eyebrow text-muted">Has the value gone?</h4>
           <Prose text={item.retrospective_text} />
         </div>
       )}
 
       {item.forward_view_text && (
         <div className="space-y-1.5">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Is there still a case?
-          </h4>
+          <h4 className="eyebrow text-muted">Is there still a case?</h4>
           <Prose text={item.forward_view_text} />
         </div>
       )}
@@ -184,7 +178,7 @@ function FeaturedCard({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-black/[0.06] bg-surface/40 dark:border-white/[0.08]">
+    <div className="overflow-hidden rounded-card border border-rule bg-surface/40">
       <button
         aria-expanded={open}
         className="flex w-full items-center gap-3 px-5 py-4 text-left"
@@ -234,9 +228,7 @@ function FeaturedCard({
       </button>
 
       {open && (
-        <div className="space-y-4 border-t border-black/[0.06] px-5 py-4 dark:border-white/[0.08]">
-          {body}
-        </div>
+        <div className="space-y-4 border-t border-rule px-5 py-4">{body}</div>
       )}
     </div>
   );
@@ -274,10 +266,10 @@ function FeaturedRow({
   const disclosed = disclosedLabel(item.disclosed_date);
 
   return (
-    <li className={`border-b ${RULE}`}>
+    <li className={`border-b border-rule`}>
       <button
         aria-expanded={open}
-        className="group relative -mx-2 block w-full rounded-lg px-2 py-3.5 text-left outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]"
+        className="group relative -mx-2 block w-full rounded-control px-2 py-3.5 text-left outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]"
         type="button"
         onClick={onToggle}
       >
@@ -293,7 +285,7 @@ function FeaturedRow({
         <span className={grid.className} style={grid.style}>
           <span
             aria-hidden
-            className={`font-mono text-[15px] leading-[1.35] tabular-nums ${
+            className={`font-mono text-lede tabular-nums ${
               position <= 3 ? "text-foreground" : "text-foreground/35"
             }`}
           >
@@ -306,7 +298,7 @@ function FeaturedRow({
 
           <span className="min-w-0">
             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="min-w-0 truncate text-[18px] font-semibold leading-[1.3] tracking-[-0.014em] text-foreground lg:text-[20px]">
+              <span className="min-w-0 truncate text-title text-foreground lg:text-[20px]">
                 {cleanCompanyName(item.company) || ticker}
               </span>
               <TickerPill ticker={ticker} />
@@ -316,7 +308,7 @@ function FeaturedRow({
                 one month (PANR.L was featured twice in June) are
                 indistinguishable while collapsed. */}
             {item.director_name || disclosed ? (
-              <span className="mt-1.5 block text-[12.5px] leading-[1.45] text-foreground/60">
+              <span className="mt-1.5 block text-small text-foreground/60">
                 {[item.director_name, disclosed].filter(Boolean).join(" · ")}
               </span>
             ) : null}
@@ -333,7 +325,7 @@ function FeaturedRow({
           >
             {item.return_since_entry != null ? (
               <span
-                className={`text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] lg:text-[19px] ${returnTextClass(
+                className={`text-title leading-none tabular-nums lg:text-[19px] ${returnTextClass(
                   item.return_since_entry,
                 )}`}
               >
@@ -342,12 +334,12 @@ function FeaturedRow({
             ) : (
               // Not an em dash. A featured buy with no usable price series has
               // no mark, which is a different statement from a flat one.
-              <span className="text-[11px] leading-[1.3] text-foreground/45">
+              <span className="text-caption text-foreground/45">
                 No mark yet
               </span>
             )}
             {item.return_since_entry != null ? (
-              <span className="mt-1.5 block text-[11px] leading-[1.3] text-foreground/45">
+              <span className="mt-1.5 block text-caption text-foreground/45">
                 since entry
               </span>
             ) : null}
@@ -395,14 +387,14 @@ function ArcHighlights({ item }: { item: MonthlyFeaturedItem }) {
       {cards.map((c) => (
         <div
           key={c.label}
-          className="rounded-lg border border-black/[0.06] bg-background/60 px-3 py-2 dark:border-white/[0.08]"
+          className="rounded-control border border-rule bg-background/60 px-3 py-2"
         >
           <div
             className={`text-base font-semibold tabular-nums ${c.colorClass}`}
           >
             {c.value}
           </div>
-          <div className="mt-0.5 text-[11px] text-muted">{c.label}</div>
+          <div className="mt-0.5 text-caption text-muted">{c.label}</div>
         </div>
       ))}
     </div>

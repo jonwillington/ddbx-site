@@ -84,7 +84,7 @@ export function MonthlyPerformanceSection({
           overflowing, so its radius softens from a capsule to a corner — a
           rounded-full track two rows deep reads as a mistake. */}
       {series.length > 1 && (
-        <div className="inline-flex flex-wrap gap-1 rounded-2xl border border-separator bg-surface/40 p-1">
+        <div className="inline-flex flex-wrap gap-1 rounded-card border border-separator bg-surface/40 p-1">
           {series.map((s) => (
             <button
               key={s.universe}

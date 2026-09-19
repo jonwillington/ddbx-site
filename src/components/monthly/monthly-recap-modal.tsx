@@ -163,7 +163,7 @@ export function MonthlyRecapModal({
               {summary.macro_note && (
                 <MonthlySection title="Macro backdrop">
                   <div className="space-y-2">
-                    <h4 className="hidden text-xs font-semibold uppercase tracking-wide text-muted lg:block">
+                    <h4 className="hidden eyebrow text-muted lg:block">
                       Macro backdrop
                     </h4>
                     <Prose text={summary.macro_note} />
@@ -190,8 +190,8 @@ export function MonthlyRecapModal({
               /reports/{month} — the permanently-addressed archive page — not
               the /report/{month} deep link that reopens this modal, so a
               recipient lands on a real page with its own og: card. */}
-          <footer className="mt-5 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-black/[0.06] pt-5 dark:border-white/[0.08] md:pt-6">
-            <p className="min-w-[200px] flex-1 text-[11px] leading-snug text-muted">
+          <footer className="mt-5 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-rule pt-5 md:pt-6">
+            <p className="min-w-[200px] flex-1 text-caption leading-snug text-muted">
               A look back at the month, drafted with AI assistance. Not
               investment advice.
             </p>

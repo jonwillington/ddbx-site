@@ -29,7 +29,7 @@ import {
   MIN_COMPANIES,
 } from "../../../shared/studies.js";
 
-const RULE = "border-hairline dark:border-separator";
+import { panel } from "@/components/ui/panel";
 
 /** The state stamp: the same mono eyebrow spec the rest of the family uses,
  *  carrying the one word that tells a reader whether there is a finding. */
@@ -37,7 +37,7 @@ export function StateTag({ result }: { result: StudyResult }) {
   const state = result.verdict.state;
 
   return (
-    <span className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
+    <span className="inline-flex items-center gap-2 eyebrow text-brand-brown dark:text-brand-tan">
       <span
         aria-hidden
         className={`inline-block h-2 w-2 rounded-full ${
@@ -72,23 +72,21 @@ export function VerdictPanel({
   return (
     <section
       aria-labelledby="verdict"
-      className="rounded-2xl border border-hairline bg-sheet px-5 py-6 sm:px-8 sm:py-8 dark:border-white/[0.07] dark:bg-surface"
+      className={`${panel()} px-5 py-6 sm:px-8 sm:py-8`}
     >
       <StateTag result={result} />
       <h2
-        className={`mt-4 max-w-[26ch] text-balance leading-[1.06] tracking-[-0.028em] text-foreground ${
-          waiting
-            ? "text-[26px] font-normal sm:text-[34px]"
-            : "text-[28px] font-semibold sm:text-[38px]"
+        className={`mt-4 max-w-[26ch] text-balance text-heading text-foreground ${
+          waiting ? "font-normal" : "font-semibold"
         }`}
         id="verdict"
       >
         {verdictHeadline(result)}
       </h2>
-      <p className="mt-5 max-w-[66ch] text-[15px] leading-[1.6] text-foreground/75">
+      <p className="mt-5 max-w-[66ch] text-lede text-foreground/75">
         {verdictDetail(result, market)}
       </p>
-      <p className="mt-5 font-mono text-[11px] tabular-nums tracking-[0.06em] text-foreground/45">
+      <p className="mt-5 font-mono text-caption tabular-nums text-foreground/45">
         {measurementLine(result)}
       </p>
     </section>
@@ -101,14 +99,14 @@ export function VerdictPanel({
  *  what it has. */
 export function CellsTable({ result }: { result: StudyResult }) {
   const head =
-    "whitespace-nowrap py-2.5 pr-3 text-left font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-foreground/45";
+    "whitespace-nowrap py-2.5 pr-3 text-left micro text-foreground/45";
   const numHead = `${head} pl-3 pr-0 text-right`;
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[680px] border-collapse text-[14px]">
+      <table className="w-full min-w-[680px] border-collapse text-body">
         <thead>
-          <tr className={`border-b ${RULE}`}>
+          <tr className={`border-b border-rule`}>
             <th className={head} scope="col">
               Cell
             </th>
@@ -161,18 +159,18 @@ function CellTableRow({
     v == null ? "" : v > 0 ? "text-positive" : v < 0 ? "text-negative" : "";
 
   return (
-    <tr className={`border-b ${RULE}`}>
+    <tr className={`border-b border-rule`}>
       <th
         className={`py-3 pr-4 text-left align-top ${
           cell.nested
-            ? "pl-4 text-[13px] font-normal text-foreground/65"
+            ? "pl-4 text-small font-normal text-foreground/65"
             : "font-medium text-foreground"
         }`}
         scope="row"
       >
         {cell.label}
         {compared ? (
-          <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.12em] text-brand-brown dark:text-brand-tan">
+          <span className="ml-2 micro text-brand-brown dark:text-brand-tan">
             tested
           </span>
         ) : null}
@@ -194,7 +192,7 @@ function CellTableRow({
         </>
       ) : (
         <td
-          className="py-3 text-right align-top text-[13px] text-foreground/55"
+          className="py-3 text-right align-top text-small text-foreground/55"
           colSpan={4}
         >
           Not enough yet. Rates appear at {MIN_CELL} purchases across{" "}
@@ -226,43 +224,33 @@ export function CitationBlock({ cite }: { cite: Citation }) {
   };
 
   return (
-    <div className="rounded-2xl border border-hairline bg-sheet p-5 dark:border-white/[0.07] dark:bg-surface">
-      <dl className="grid gap-x-8 gap-y-3 text-[13.5px] sm:grid-cols-[8rem_minmax(0,1fr)]">
-        <dt className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-foreground/45">
-          Title
-        </dt>
+    <div className={panel({ size: "roomy" })}>
+      <dl className="grid gap-x-8 gap-y-3 text-body sm:grid-cols-[8rem_minmax(0,1fr)]">
+        <dt className="micro text-foreground/45">Title</dt>
         <dd className="text-foreground">{cite.title}</dd>
-        <dt className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-foreground/45">
-          URL
-        </dt>
+        <dt className="micro text-foreground/45">URL</dt>
         <dd className="break-all text-foreground">{cite.url}</dd>
-        <dt className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-foreground/45">
-          Computed
-        </dt>
+        <dt className="micro text-foreground/45">Computed</dt>
         <dd className="text-foreground">
           {cite.computedOn}
           {cite.asOf ? `, from outcomes resolved to ${cite.asOf}` : ""}
         </dd>
-        <dt className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-foreground/45">
-          Dataset
-        </dt>
-        <dd className="font-mono text-[12.5px] text-foreground">
+        <dt className="micro text-foreground/45">Dataset</dt>
+        <dd className="font-mono text-small text-foreground">
           {cite.version}
-          <span className="ml-2 font-sans text-[12.5px] text-foreground/55">
+          <span className="ml-2 font-sans text-small text-foreground/55">
             {cite.sample.toLocaleString("en-GB")} purchases
           </span>
         </dd>
-        <dt className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-foreground/45">
-          Accessed
-        </dt>
+        <dt className="micro text-foreground/45">Accessed</dt>
         <dd className="text-foreground">{cite.accessed}</dd>
       </dl>
-      <div className={`mt-4 border-t ${RULE} pt-4`}>
-        <p className="select-all font-mono text-[12px] leading-[1.6] text-foreground/70">
+      <div className={`mt-4 border-t border-rule pt-4`}>
+        <p className="select-all font-mono text-small text-foreground/70">
           {cite.line}
         </p>
         <button
-          className="mt-3 inline-flex items-center gap-1.5 rounded-md text-[12.5px] font-medium text-foreground/60 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand-brown/40"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-control text-small font-medium text-foreground/60 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand-brown/40"
           type="button"
           onClick={copy}
         >
@@ -284,15 +272,12 @@ export function RuleList({ lines }: { lines: string[] }) {
   return (
     <ul className="space-y-2.5">
       {lines.map((line) => (
-        <li
-          key={line}
-          className="flex gap-2.5 text-[14px] leading-[1.65] text-foreground/70"
-        >
+        <li key={line} className="flex gap-2.5 text-body text-foreground/70">
           <span
             aria-hidden
             className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
           />
-          <span className="max-w-[62ch]">{line}</span>
+          <span className="max-w-measure">{line}</span>
         </li>
       ))}
     </ul>
@@ -310,7 +295,7 @@ export function BehindTheCells({
   hrefFor?: (path: string) => string;
 }) {
   return (
-    <p className="text-[13px] leading-[1.6] text-foreground/60">
+    <p className="text-small text-foreground/60">
       The purchases behind these cells are listed, by company and buyer, on{" "}
       {study.boards.map((b, i) => (
         <span key={b.to}>
@@ -330,10 +315,8 @@ export function BehindTheCells({
 export function Fact({ k, v }: { k: string; v: ReactNode }) {
   return (
     <div>
-      <dt className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-foreground/45">
-        {k}
-      </dt>
-      <dd className="mt-1 text-[20px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground">
+      <dt className="micro text-foreground/45">{k}</dt>
+      <dd className="mt-1 text-[20px] font-semibold leading-none tabular-nums tracking-tight text-foreground">
         {v}
       </dd>
     </div>

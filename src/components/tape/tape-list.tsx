@@ -57,15 +57,11 @@ function Verdict({ row }: { row: TapeRow }) {
     case "skipped":
       return <RatingBadge rating="skipped" />;
     case "reviewing":
-      return (
-        <span className="text-[11px] leading-[1.35] text-foreground/55">
-          In review
-        </span>
-      );
+      return <span className="text-caption text-foreground/55">In review</span>;
     case "no-layer":
       return (
         <span
-          className="text-[11px] leading-[1.35] text-foreground/45"
+          className="text-caption text-foreground/45"
           title={`${tapeMarket(row.market)?.name ?? row.market} has no rating layer yet`}
         >
           Unrated market
@@ -73,9 +69,7 @@ function Verdict({ row }: { row: TapeRow }) {
       );
     default:
       return (
-        <span className="text-[11px] leading-[1.35] text-foreground/45">
-          Not yet rated
-        </span>
+        <span className="text-caption text-foreground/45">Not yet rated</span>
       );
   }
 }
@@ -85,7 +79,7 @@ function Money({ row }: { row: TapeRow }) {
 
   if (!native) {
     return (
-      <span className="text-[11px] font-normal text-foreground/45">
+      <span className="text-caption font-normal text-foreground/45">
         not filed
       </span>
     );
@@ -96,7 +90,7 @@ function Money({ row }: { row: TapeRow }) {
     <>
       {native}
       {approx ? (
-        <span className="mt-0.5 block text-[11px] font-normal tabular-nums text-foreground/45">
+        <span className="mt-0.5 block text-caption font-normal tabular-nums text-foreground/45">
           {approx}
         </span>
       ) : null}
@@ -119,7 +113,7 @@ function FlaggedLogo({ row }: { row: TapeRow }) {
       />
       <Flag
         aria-hidden
-        className="absolute -bottom-0.5 -right-0.5 h-3.5 w-5 rounded-[2px] ring-2 ring-background"
+        className="absolute -bottom-0.5 -right-0.5 h-3.5 w-5 rounded-mark ring-2 ring-background"
       />
       <span className="sr-only">{market?.name}</span>
     </span>
@@ -208,11 +202,11 @@ function DayRule({
     <li
       className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b ${R.rule} pb-2.5 pt-7 first:pt-2`}
     >
-      <span className="text-[14px] font-semibold tracking-[-0.01em] text-foreground">
+      <span className="text-body font-semibold text-foreground">
         {iso === today ? "Today, " : ""}
         {formatDayLong(iso)}
       </span>
-      <span className="text-[11.5px] tabular-nums text-foreground/50">
+      <span className="text-caption tabular-nums text-foreground/50">
         {rows.length} {rows.length === 1 ? "filing" : "filings"} · {markets}{" "}
         {markets === 1 ? "market" : "markets"}
       </span>
@@ -226,7 +220,7 @@ function SinceMarker({ count, when }: { count: number; when: string }) {
       aria-label={`${count} filings since you last looked, ${when}`}
       className="py-2.5"
     >
-      <span className="flex items-center gap-3 font-mono text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
+      <span className="flex items-center gap-3 micro text-brand-brown dark:text-brand-tan">
         <span
           aria-hidden
           className="h-px flex-1 bg-brand-brown/35 dark:bg-brand-tan/35"
@@ -279,7 +273,7 @@ export function TapeList({
       />
 
       {lastSeenAt != null && sinceCount === 0 ? (
-        <p className="mt-2 text-[12px] text-foreground/50">
+        <p className="mt-2 text-small text-foreground/50">
           Nothing new since you last looked, {when}.
         </p>
       ) : null}
@@ -316,7 +310,7 @@ export function TapeList({
       {!showAll && rows.length > INITIAL ? (
         <div className="mt-5 flex justify-center">
           <button
-            className="rounded-lg bg-ink/[0.07] px-4 py-2 text-[13px] font-medium text-ink outline-none transition-colors hover:bg-ink/[0.12] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:bg-white/10 dark:text-white dark:hover:bg-white/[0.16]"
+            className="rounded-control bg-ink/[0.07] px-4 py-2 text-small font-medium text-ink outline-none transition-colors hover:bg-ink/[0.12] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:bg-white/10 dark:text-white dark:hover:bg-white/[0.16]"
             type="button"
             onClick={() => setShowAll(true)}
           >

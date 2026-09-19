@@ -15,8 +15,7 @@ import { STORY_KIND_LABEL, storyPath } from "@/lib/stories";
 /** The kind, as the row's kicker. STORY_KIND_LABEL entries are already
  *  phrases ("Since the buy", "Buying again"), so they read as a kicker and
  *  need no coloured pill to carry them. */
-const KICKER =
-  "font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-brand";
+const KICKER = "eyebrow text-brand";
 
 /** Display ticker: UK drops the `.L`, US is already bare. */
 const display = (t: string) => t.replace(/\.L$/, "");
@@ -95,7 +94,7 @@ export function StoryRow({ story: s }: { story: StoryListItem }) {
           <span className={`block ${KICKER}`}>
             {STORY_KIND_LABEL[s.kind] ?? s.kind}
           </span>
-          <span className="mt-1 block text-[16.5px] font-medium leading-snug text-foreground">
+          <span className="mt-1 block text-lede font-medium leading-snug text-foreground">
             {s.headline}
           </span>
         </span>

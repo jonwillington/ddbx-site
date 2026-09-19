@@ -86,7 +86,7 @@ import {
 
 const EYEBROW = "Living study";
 const CAVEAT =
-  "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
+  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
 
 /** The number the index and the study pages both call the room: purchases
  *  per week entering the studies’ universe, from the last ARRIVAL_WEEKS. */
@@ -134,7 +134,7 @@ function useStudyResults(
 /** The failed-fetch state, which is not an empty one. */
 function CouldNotLoad() {
   return (
-    <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+    <p className={`mt-10 max-w-measure ${R.body}`}>
       We couldn’t load the filings or their outcomes just now. It’s a network
       problem rather than a finding about the market. Try a refresh in a moment.
     </p>
@@ -258,13 +258,13 @@ export function ResearchIndexPage({
                       </Link>
                     }
                   >
-                    <p className="text-[14px] leading-[1.65] text-foreground/70">
+                    <p className="text-body text-foreground/70">
                       {study.summary}
                     </p>
-                    <p className="mt-3 text-[15px] font-medium leading-[1.45] text-foreground">
+                    <p className="mt-3 text-lede font-medium text-foreground">
                       {verdictHeadline(result)}
                     </p>
-                    <p className="mt-1.5 font-mono text-[11px] tabular-nums tracking-[0.06em] text-foreground/45">
+                    <p className="mt-1.5 font-mono text-caption tabular-nums text-foreground/45">
                       {measurementLine(result)}
                     </p>
                   </Row>
@@ -274,7 +274,7 @@ export function ResearchIndexPage({
 
             <SeoSection
               aside={
-                <p className="text-[12px] leading-[1.5] text-foreground/45">
+                <p className="text-small text-foreground/45">
                   The same rules on every study, and they live in the module
                   that computes it.
                 </p>
@@ -315,7 +315,7 @@ export function ResearchIndexPage({
                   ]}
                 />
               ) : (
-                <p className={`max-w-[62ch] ${R.body}`}>
+                <p className={`max-w-measure ${R.body}`}>
                   Not enough data yet. The sample opens once {MIN_CELL}{" "}
                   purchases across {MIN_COMPANIES} companies have had their{" "}
                   {HORIZON_DAYS} days.
@@ -324,9 +324,7 @@ export function ResearchIndexPage({
             </SeoSection>
 
             <SeoSection title="What this is">
-              <p
-                className={`max-w-[64ch] text-[15px] leading-[1.65] text-foreground/75`}
-              >
+              <p className={`max-w-[64ch] text-lede text-foreground/75`}>
                 ddbx records every disclosed purchase {market.noun} make in
                 their own companies, marks each one against the index from the
                 day it was disclosed, and rates the ones that clear{" "}
@@ -350,7 +348,7 @@ export function ResearchIndexPage({
               </p>
             </SeoSection>
 
-            <nav aria-label="More from ddbx" className="mt-9">
+            <nav aria-label="More from ddbx" className="mt-10">
               <RelatedCards cols={2} items={related} />
             </nav>
           </>
@@ -364,11 +362,11 @@ function IndexSkeleton() {
   return (
     <div aria-busy="true" className="mt-8">
       <span className="sr-only">Loading…</span>
-      <div className="border-t border-hairline dark:border-separator">
+      <div className="border-t border-rule">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="grid gap-x-10 gap-y-3 border-b border-hairline py-7 sm:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] sm:py-9 dark:border-separator"
+            className="grid gap-x-10 gap-y-3 border-b border-rule py-7 sm:grid-cols-[minmax(0,4fr)_minmax(0,7fr)] sm:py-9"
           >
             <div>
               <Skeleton className="h-[24px] w-4/5" />
@@ -556,10 +554,10 @@ function StudyDocument({
               ].map(([id, label], i) => (
                 <a
                   key={id}
-                  className="rounded-full border border-hairline bg-sheet px-2.5 py-1 text-[11.5px] leading-4 text-foreground/70 transition-colors hover:border-brand-brown/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-separator dark:bg-surface dark:hover:border-white/20"
+                  className="rounded-full border border-rule bg-sheet px-2.5 py-1 text-caption leading-4 text-foreground/70 transition-colors hover:border-brand-brown/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:bg-surface dark:hover:border-white/20"
                   href={`#${id}`}
                 >
-                  <span className="mr-1.5 font-mono text-[10px] tabular-nums text-foreground/40">
+                  <span className="mr-1.5 micro tabular-nums text-foreground/40">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   {label}
@@ -597,7 +595,7 @@ function StudyDocument({
 
             <SeoSection
               aside={
-                <p className="text-[12px] leading-[1.5] text-foreground/45">
+                <p className="text-small text-foreground/45">
                   The rules that produce the verdict, in the order they are
                   applied. They live in the module that computes it.
                 </p>
@@ -628,7 +626,7 @@ function StudyDocument({
                 {[...study.caveats, ...SHARED_LIMITS].map((line) => (
                   <p
                     key={line}
-                    className="max-w-[54ch] text-[14.5px] leading-[1.65] text-foreground/75"
+                    className="max-w-[54ch] text-body text-foreground/75"
                   >
                     {line}
                   </p>
@@ -638,7 +636,7 @@ function StudyDocument({
 
             <SeoSection
               aside={
-                <p className="text-[12px] leading-[1.5] text-foreground/45">
+                <p className="text-small text-foreground/45">
                   What this study was computed from today.
                 </p>
               }
@@ -664,7 +662,7 @@ function StudyDocument({
                   v={num(result.universe.pending)}
                 />
               </dl>
-              <p className="mt-5 max-w-[62ch] text-[13.5px] leading-[1.65] text-foreground/65">
+              <p className="mt-5 max-w-measure text-body text-foreground/65">
                 {datasetSentence(result, market.id)} Purchases arriving in scope
                 over the last {ARRIVAL_WEEKS} weeks:{" "}
                 {perWeek(result.universe.arrivalsWeekly)} a week.
@@ -679,7 +677,7 @@ function StudyDocument({
               total={SECTIONS.length}
             >
               {cite ? <CitationBlock cite={cite} /> : null}
-              <p className="mt-4 max-w-[62ch] text-[13px] leading-[1.6] text-foreground/55">
+              <p className="mt-4 max-w-measure text-small text-foreground/55">
                 The numbers on this page change as purchases reach their{" "}
                 {HORIZON_DAYS} days and new ones are filed, so a citation
                 without a version is a citation of a page that no longer exists.
@@ -691,7 +689,7 @@ function StudyDocument({
             </SeoSection>
 
             <SeoSection title="What this is">
-              <p className="max-w-[64ch] text-[15px] leading-[1.65] text-foreground/75">
+              <p className="max-w-[64ch] text-lede text-foreground/75">
                 ddbx records every disclosed purchase {market.noun} make in
                 their own companies, marks each against the index from the day
                 it was disclosed, and rates the ones that clear{" "}
@@ -715,7 +713,7 @@ function StudyDocument({
               </p>
             </SeoSection>
 
-            <nav aria-label="More from ddbx" className="mt-9">
+            <nav aria-label="More from ddbx" className="mt-10">
               <RelatedCards cols={2} items={others} />
             </nav>
           </>
@@ -731,7 +729,7 @@ function StudySkeleton() {
   return (
     <div aria-busy="true" className="mt-8">
       <span className="sr-only">Loading…</span>
-      <div className="rounded-2xl border border-hairline px-5 py-6 sm:px-8 sm:py-8 dark:border-white/[0.07]">
+      <div className="rounded-card border border-rule px-5 py-6 sm:px-8 sm:py-8">
         <Skeleton className="h-[11px] w-28" />
         <Skeleton className="mt-4 h-[34px] w-4/5" />
         <Skeleton className="mt-3 h-[34px] w-3/5" />

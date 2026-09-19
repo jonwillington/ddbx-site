@@ -61,8 +61,8 @@ export function StoryBuys({
   });
 
   return (
-    <section className="mt-9">
-      <h2 className="border-t border-hairline pt-7 text-[17px] font-semibold text-foreground dark:border-separator">
+    <section className="mt-10">
+      <h2 className="border-t border-rule pt-7 text-title text-foreground">
         The purchases
       </h2>
 
@@ -108,14 +108,14 @@ export function StoryBuys({
               ) : (
                 /* Never an em dash here: a missing mark is a state, and the
                    house style bans the character anyway. */
-                <span className="text-[12px] text-foreground/45">
+                <span className="text-small text-foreground/45">
                   No mark yet
                 </span>
               )
             }
             secondary={
               b.role ? (
-                <span className="text-[13px] text-foreground/60">{b.role}</span>
+                <span className="text-small text-foreground/60">{b.role}</span>
               ) : undefined
             }
             to={
@@ -126,7 +126,7 @@ export function StoryBuys({
         ))}
       </BoardRowList>
 
-      <p className="mt-3 text-[12px] leading-[1.5] text-foreground/45">
+      <p className="mt-3 text-small text-foreground/45">
         Measured from each buy&rsquo;s trade-date close to the close on {asOf}
         {basis === "today" ? " (today)" : " (the day this published)"}. Prices
         come from the daily panel at both ends, not from the filed price.

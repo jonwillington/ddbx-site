@@ -42,7 +42,7 @@ export function MonthlyMetrics({
       </div>
 
       {(metrics.median_return != null || metrics.benchmark_return != null) && (
-        <div className="flex flex-wrap gap-x-6 gap-y-1.5 rounded-xl border border-black/[0.06] bg-surface/40 px-4 py-3 text-sm dark:border-white/[0.08]">
+        <div className="flex flex-wrap gap-x-6 gap-y-1.5 rounded-card border border-rule bg-surface/40 px-4 py-3 text-sm">
           {metrics.median_return != null && (
             <Stat
               colorClass={returnTextClass(metrics.median_return)}
@@ -203,7 +203,7 @@ function PageMetrics({ metrics }: { metrics: Metrics }) {
 
 function Card({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-black/[0.06] bg-surface/40 px-4 py-3 dark:border-white/[0.08]">
+    <div className="rounded-card border border-rule bg-surface/40 px-4 py-3">
       <div className="text-2xl font-semibold tabular-nums">{value}</div>
       <div className="mt-0.5 text-xs text-muted">{label}</div>
     </div>
