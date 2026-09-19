@@ -622,12 +622,24 @@ export default function FilingPage({
           // behaviour the shell exists to prevent.
           share && deal ? (
             <ShareArrivalCard deal={deal} marketId={fam.marketId} />
+          ) : deal ? (
+            // Off the share route the stage IS the hero: in the hero slot the
+            // sidebar shell pulls a board-stage up to the sheet's top edge
+            // (globals.css, `.seo-hero:first-child:has(.board-stage)`), so no
+            // cream band sits above it. In the body it kept main's padding.
+            <FilingStage
+              deal={deal}
+              eyebrow="Disclosure"
+              market={market}
+              sector={sector}
+              summary={summary}
+            />
           ) : undefined
         }
         loading={status === "loading"}
         skeleton={
           <>
-            <div className={share ? "mt-6" : "pt-2"}>
+            <div className="mt-6">
               <FilingStageSkeleton />
             </div>
             <Skeleton className="mt-5 h-[12px] w-[70%] rounded" />
@@ -641,15 +653,17 @@ export default function FilingPage({
       >
         {deal ? (
           <>
-            <div className="mt-6">
-              <FilingStage
-                deal={deal}
-                eyebrow={share ? "Shared filing" : "Disclosure"}
-                market={market}
-                sector={sector}
-                summary={summary}
-              />
-            </div>
+            {share ? (
+              <div className="mt-6">
+                <FilingStage
+                  deal={deal}
+                  eyebrow="Shared filing"
+                  market={market}
+                  sector={sector}
+                  summary={summary}
+                />
+              </div>
+            ) : null}
 
             {/* The dated basis, then the share control: the two pieces of
                 small print every stage in the family sets directly under its
