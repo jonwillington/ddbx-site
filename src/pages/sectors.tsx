@@ -66,7 +66,7 @@ import { STAGE_LINK, StageHeader } from "@/components/ui/stage-header";
  *  A truncated window changes how every total above it should be read, and set
  *  in the same grey as the row meta it was, in practice, invisible. */
 const CAVEAT =
-  "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
+  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
 
 export default function SectorsPage() {
   const market = useSectorMarket();
@@ -250,7 +250,7 @@ export default function SectorsPage() {
             rather than about the archive. The tracking line moved into the
             stage header, directly under the figures it qualifies — at 45%
             opacity below a 600px object nobody was reading it. */}
-        <div className="mt-4 max-w-[62ch]">
+        <div className="mt-4 max-w-measure">
           {/* The empty and error states mount no stage, so there is no header
               for the in-stage notice to sit in. The page still has to say how
               far back it holds. */}
@@ -268,13 +268,13 @@ export default function SectorsPage() {
         {failed ? (
           // Not "there is nothing here" — we don't know that. The onward cards
           // below still render, so the reader has somewhere to go.
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the filings just now, so there’s no breakdown to
             show. That’s a fault at our end rather than a quiet twelve months.
             Try again shortly.
           </p>
         ) : !hasData ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No sector has reached {MIN_BUYS} disclosed purchases in the last
             twelve months yet, which is the bar for publishing a breakdown. In
             the meantime,{" "}
@@ -289,7 +289,7 @@ export default function SectorsPage() {
           </p>
         ) : (
           <>
-            <div className="mt-6 max-w-[62ch]">
+            <div className="mt-6 max-w-measure">
               {/* "Median alpha" heads a column three lines below this, and
                   this is the only place it is explained. */}
               <p className={R.body}>
@@ -324,7 +324,7 @@ export default function SectorsPage() {
                         the middle of the row and the tap target stopped short
                         of the rule. */}
                     <Link
-                      className="-mx-3 block rounded-lg px-3 py-4 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]"
+                      className="-mx-3 block rounded-control px-3 py-4 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]"
                       to={sectorPath(row.sector.slug)}
                       onBlur={() => setActiveSlug(null)}
                       onFocus={() => setActiveSlug(row.sector.slug)}
@@ -344,7 +344,7 @@ export default function SectorsPage() {
           aside="What the aggregate is, and what it isn’t."
           title="How to read a sector total"
         >
-          <div className="max-w-[62ch]">
+          <div className="max-w-measure">
             <p className={R.body}>
               Each sector here is an aggregate of individual disclosures: every
               open-market purchase {market.noun} made in their own companies,

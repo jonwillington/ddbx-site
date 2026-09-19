@@ -673,11 +673,11 @@ export function ActivityStage({
           <>
             <div className="font-semibold">
               {companyName(tip)}{" "}
-              <span className="font-mono text-[10px] font-normal text-white/50">
+              <span className="micro text-white/50">
                 {displayTicker(tip.ticker)}
               </span>
             </div>
-            <div className="text-[11px] text-white/55">
+            <div className="text-caption text-white/55">
               {tip.filings} purchases · {breadthWords(tip)}
             </div>
             {tip.value >= 500 ? (
@@ -689,7 +689,7 @@ export function ActivityStage({
               </div>
             ) : null}
             {tip.alphaCount > 0 ? (
-              <div className="mt-1 text-[11px] text-white/55">
+              <div className="mt-1 text-caption text-white/55">
                 median {signedPp(tip.medianAlpha)} vs {benchmark}, on{" "}
                 {tip.alphaCount} of {tip.filings} with a mark
               </div>

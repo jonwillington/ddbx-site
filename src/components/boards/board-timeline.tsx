@@ -228,7 +228,7 @@ export function BoardTimeline({
             );
           })}
         </svg>
-        <div className="flex flex-wrap gap-x-5 gap-y-1 border-t border-hairline px-1 pt-3 text-[11.5px] text-foreground/55 dark:border-separator">
+        <div className="flex flex-wrap gap-x-5 gap-y-1 border-t border-rule px-1 pt-3 text-caption text-foreground/55">
           <span className="inline-flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-positive" />
             Ahead of the index since

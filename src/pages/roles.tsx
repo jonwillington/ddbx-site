@@ -83,7 +83,7 @@ import {
 import { StageHeader } from "@/components/ui/stage-header";
 
 const CAVEAT =
-  "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
+  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
 
 function signedPp(ratio: number | null): string {
   if (ratio == null) return "n/a";
@@ -213,7 +213,7 @@ export function RolesIndexPage() {
                   {rows === null ? (
                     <div aria-hidden className="mt-4 h-[3rem]" />
                   ) : verdict ? (
-                    <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.5] text-white/85">
+                    <p className="mt-4 max-w-measure text-lede text-white/85">
                       {verdict}
                     </p>
                   ) : null}
@@ -241,9 +241,9 @@ export function RolesIndexPage() {
         {/* Under the stage: the rule and the truncation caveat. The tracking
             line moved into the stage header, under the figures it qualifies —
             below a 600px object at 45% opacity it was invisible. */}
-        <div className="mt-4 max-w-[62ch]">
+        <div className="mt-4 max-w-measure">
           <a
-            className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+            className="inline-block text-small font-medium text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
             href="#methodology"
           >
             Roles are read from the filed job title. How that’s matched ↓
@@ -265,12 +265,12 @@ export function RolesIndexPage() {
         </div>
 
         {buckets.length === 0 && !complete ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the filings just now. It’s a network problem rather
             than an empty period. Try a refresh in a moment.
           </p>
         ) : buckets.length === 0 ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No role reached {MIN_FILINGS} qualifying purchases in this period.
             The window is the last twelve months and refills as filings arrive,
             so a group reappears here as soon as it crosses that bar.
@@ -281,7 +281,7 @@ export function RolesIndexPage() {
               {buckets.map(({ role, filings, summary }) => (
                 <Link
                   key={role.slug}
-                  className={`block rounded-2xl border p-5 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] ${R.rule} ${
+                  className={`block rounded-card border p-5 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] ${R.rule} ${
                     activeId === role.slug
                       ? "bg-black/[0.03] dark:bg-white/[0.05]"
                       : ""
@@ -291,10 +291,10 @@ export function RolesIndexPage() {
                   onMouseLeave={() => setActiveId(null)}
                 >
                   <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <span className="text-[18px] font-semibold leading-[1.25] tracking-[-0.014em] text-foreground">
+                    <span className="text-title leading-tight text-foreground">
                       {role.plural}
                     </span>
-                    <span className="text-[13px] tabular-nums text-foreground/55">
+                    <span className="text-small tabular-nums text-foreground/55">
                       {filings.length} purchases ·{" "}
                       {money(summary.value, market.symbol)} ·{" "}
                       {summary.companies}{" "}
@@ -333,7 +333,7 @@ export function RolesIndexPage() {
 
         <SeoSection
           aside={
-            <p className="text-[12px] leading-[1.5] text-foreground/45">
+            <p className="text-small text-foreground/45">
               These rules decide who lands in which group, and they live in the
               same module that classifies the filings.
             </p>
@@ -349,13 +349,13 @@ export function RolesIndexPage() {
                   aria-hidden
                   className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
                 />
-                <span className="max-w-[62ch]">{line}</span>
+                <span className="max-w-measure">{line}</span>
               </li>
             ))}
           </ul>
         </SeoSection>
 
-        <nav aria-label="More from ddbx" className="mt-9">
+        <nav aria-label="More from ddbx" className="mt-10">
           <RelatedCards cols={2} items={INDEX_LINKS} />
         </nav>
       </SeoPageShell>
@@ -465,7 +465,7 @@ export default function RolePage() {
         notice={
           <>
             <a
-              className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+              className="inline-block text-small font-medium text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
               href="#methodology"
             >
               Who counts as {entry.noun.replace(/s$/, "")} here ↓
@@ -493,12 +493,12 @@ export default function RolePage() {
         }
       >
         {shown.length === 0 && !complete ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the filings just now. It’s a network problem rather
             than an empty period. Try a refresh in a moment.
           </p>
         ) : shown.length === 0 ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No qualifying purchases by {entry.noun} in this period.
           </p>
         ) : (
@@ -562,7 +562,7 @@ export default function RolePage() {
 
         <SeoSection
           aside={
-            <p className="text-[12px] leading-[1.5] text-foreground/45">
+            <p className="text-small text-foreground/45">
               These rules decide who lands in this group, and they live in the
               same module that classifies the filings.
             </p>
@@ -578,12 +578,12 @@ export default function RolePage() {
                   aria-hidden
                   className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
                 />
-                <span className="max-w-[62ch]">{line}</span>
+                <span className="max-w-measure">{line}</span>
               </li>
             ))}
           </ul>
 
-          <p className="mt-5 max-w-[62ch] text-[13px] leading-[1.6] text-foreground/60">
+          <p className="mt-5 max-w-measure text-small text-foreground/60">
             More on the terms used here:{" "}
             <Link className="underline underline-offset-4" to="/learn/pdmr">
               PDMR
@@ -676,7 +676,7 @@ function RoleFilingRow({
       name={cleanCompanyName(d.company ?? "") || ticker}
       perf={
         alpha == null ? (
-          <span className="whitespace-nowrap text-[10.5px] leading-[1.35] text-foreground/45">
+          <span className="whitespace-nowrap text-caption text-foreground/45">
             No mark yet
           </span>
         ) : (

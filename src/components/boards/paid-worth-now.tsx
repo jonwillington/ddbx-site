@@ -40,7 +40,7 @@ export function PaidWorthNow({
   return (
     <>
       <span className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-        <span className="text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground xl:text-[19px]">
+        <span className="text-title leading-none tabular-nums text-foreground xl:text-[19px]">
           <span className="sr-only">Value bought: </span>
           {pair ? pair[0] : money(r.value, symbol)}
         </span>
@@ -53,7 +53,7 @@ export function PaidWorthNow({
               }`}
             />
             <span
-              className={`text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] xl:text-[19px] ${tone}`}
+              className={`text-title leading-none tabular-nums xl:text-[19px] ${tone}`}
             >
               <span className="sr-only">Worth now, if still held: </span>
               {pair[1]}
@@ -63,7 +63,7 @@ export function PaidWorthNow({
       </span>
       {delta ? (
         <span
-          className={`mt-1.5 block whitespace-nowrap text-[12.5px] font-medium tabular-nums ${tone}`}
+          className={`mt-1.5 block whitespace-nowrap text-small font-medium tabular-nums ${tone}`}
         >
           {delta}
         </span>
@@ -78,7 +78,7 @@ export function AlphaCell({ alpha }: { alpha: number | null }) {
     <>
       <span className="sr-only">Alpha since disclosure: </span>
       {alpha == null ? (
-        <span className="text-[13px] tabular-nums text-foreground/40">
+        <span className="text-small tabular-nums text-foreground/40">
           no mark yet
         </span>
       ) : (

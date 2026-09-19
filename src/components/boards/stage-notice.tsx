@@ -25,9 +25,7 @@ export function StageNotice({
   marketId?: string | null;
 }) {
   return (
-    <p
-      className={`max-w-[48ch] text-[12.5px] leading-[1.5] text-white/60 ${className}`}
-    >
+    <p className={`max-w-[48ch] text-small text-white/60 ${className}`}>
       Recording started in {trackingSinceLabel(marketId)}, so a period described
       as a year covers only the filings since then.
     </p>

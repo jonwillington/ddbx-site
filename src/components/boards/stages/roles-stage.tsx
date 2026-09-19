@@ -1251,7 +1251,7 @@ export function RolesStage({
               real count. The floor is a number we apply, so it is a number we
               state. */}
             {model.heldBack.length > 0 ? (
-              <p className="mt-1 font-mono text-[11px] leading-[1.5] text-white/40">
+              <p className="mt-1 font-mono text-caption text-white/40">
                 {model.heldBack.map((c) => (
                   <span key={c.slug}>
                     {c.role.plural}: {c.n} purchases this period, below the{" "}
@@ -1262,7 +1262,7 @@ export function RolesStage({
             ) : null}
 
             {modes.length === 1 ? (
-              <p className="mt-1 font-mono text-[11px] leading-[1.5] text-white/40">
+              <p className="mt-1 font-mono text-caption text-white/40">
                 No performance marks in this window yet; a purchase gets one
                 once there is a close after the day it was disclosed.
               </p>
@@ -1289,19 +1289,19 @@ export function RolesStage({
         return (
           <>
             <div className="font-semibold">{col.role.plural}</div>
-            <div className="mt-1 tabular-nums text-[11px] text-white/70">
+            <div className="mt-1 tabular-nums text-caption text-white/70">
               {col.n} purchases · {col.companies}{" "}
               {col.companies === 1 ? "company" : "companies"} ·{" "}
               {money(col.value, symbol)}
             </div>
             {col.alphaCount > 0 && col.medianAlpha != null ? (
-              <div className="mt-1 text-[11px] text-white/55">
+              <div className="mt-1 text-caption text-white/55">
                 median {signedPp(col.medianAlpha)} vs {benchmark}, from{" "}
                 {col.alphaCount} with a mark
               </div>
             ) : null}
             {col.partners.map((p) => (
-              <div key={p.slug} className="mt-1 text-[11px] text-white/45">
+              <div key={p.slug} className="mt-1 text-caption text-white/45">
                 {p.count} also counted under {p.label}
               </div>
             ))}

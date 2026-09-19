@@ -72,7 +72,7 @@ import {
 import { StageHeader } from "@/components/ui/stage-header";
 
 const CAVEAT =
-  "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
+  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
 
 const CROSS_LINKS: RelatedCard[] = [
   {
@@ -153,9 +153,9 @@ export default function MostActiveCompaniesPage() {
                     <>
                       The companies whose own {market.noun} bought most often
                       over the last twelve months, with how many different
-                      people were buying, because one person buying twelve
-                      times and twelve people buying once are the same number
-                      and not the same signal.
+                      people were buying, because one person buying twelve times
+                      and twelve people buying once are the same number and not
+                      the same signal.
                     </>
                   }
                   eyebrow="Leaderboard"
@@ -202,9 +202,9 @@ export default function MostActiveCompaniesPage() {
         {/* Under the stage: the rule, the tracking caveat, the truncation
             caveat, and the denominator the totals are drawn from. Small print
             belongs outside the object. */}
-        <div className="mt-4 max-w-[62ch]">
+        <div className="mt-4 max-w-measure">
           <a
-            className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+            className="inline-block text-small font-medium text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
             href="#methodology"
           >
             Ranked on purchases, then on how many people made them ↓
@@ -231,12 +231,12 @@ export default function MostActiveCompaniesPage() {
             two different statements. Only one of them is a fact about the
             market. */}
         {!hasBoard && !complete ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the board just now. It’s a network problem rather
             than an empty period. Try a refresh in a moment.
           </p>
         ) : !hasBoard ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No company in this period reached {MIN_COMPANY_FILINGS} qualifying
             purchases.{" "}
             <a className="underline underline-offset-4" href="#methodology">
@@ -271,7 +271,7 @@ export default function MostActiveCompaniesPage() {
 
         <SeoSection
           aside={
-            <p className="text-[12px] leading-[1.5] text-foreground/45">
+            <p className="text-small text-foreground/45">
               These rules decide the order, and they live in the same module
               that ranks the board.
             </p>
@@ -287,12 +287,12 @@ export default function MostActiveCompaniesPage() {
                   aria-hidden
                   className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
                 />
-                <span className="max-w-[62ch]">{line}</span>
+                <span className="max-w-measure">{line}</span>
               </li>
             ))}
           </ul>
 
-          <p className="mt-5 max-w-[62ch] text-[13px] leading-[1.6] text-foreground/60">
+          <p className="mt-5 max-w-measure text-small text-foreground/60">
             More on the terms used here:{" "}
             <Link
               className="underline underline-offset-4"
@@ -315,7 +315,7 @@ export default function MostActiveCompaniesPage() {
           </p>
         </SeoSection>
 
-        <nav aria-label="More from ddbx" className="mt-9">
+        <nav aria-label="More from ddbx" className="mt-10">
           <RelatedCards cols={2} items={CROSS_LINKS} />
         </nav>
 

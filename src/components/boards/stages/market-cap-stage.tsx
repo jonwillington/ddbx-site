@@ -860,9 +860,9 @@ export function MarketCapStage({
       dek={
         <>
           The same disclosed buying, split by how big the company is. A chief
-          executive putting {symbol}100,000 into a {symbol}20bn company and
-          into a {symbol}50m one are not the same act, and the size of the
-          business is most of the difference.
+          executive putting {symbol}100,000 into a {symbol}20bn company and into
+          a {symbol}50m one are not the same act, and the size of the business
+          is most of the difference.
         </>
       }
       eyebrow="By size"
@@ -917,23 +917,21 @@ export function MarketCapStage({
           <>
             <div className="font-semibold">
               {row.name}{" "}
-              <span className="font-mono text-[10px] font-normal text-white/50">
-                {row.ticker}
-              </span>
+              <span className="micro text-white/50">{row.ticker}</span>
             </div>
             <div className="mt-1 tabular-nums">
               {spend(row.value, symbol, locale)} bought over{" "}
               {plural(row.deals, "purchase", "purchases")}
               {row.last ? ` · last ${dateLabel(row.last, locale)}` : ""}
             </div>
-            <div className="text-[11px] text-white/55">
+            <div className="text-caption text-white/55">
               valued at {formatMoney(row.cap, symbol)} today ·{" "}
               {share >= 0.0001
                 ? `${(share * 100).toFixed(2)}% of the company`
                 : "under 0.01% of the company"}
             </div>
             {row.sector ? (
-              <div className="text-[11px] text-white/55">{row.sector}</div>
+              <div className="text-caption text-white/55">{row.sector}</div>
             ) : null}
           </>
         );

@@ -100,7 +100,7 @@ import { STAGE_LINK, StageHeader } from "@/components/ui/stage-header";
  *  should be read, and they were set in the same 11px grey as the row meta —
  *  which is to say, invisible. */
 const CAVEAT =
-  "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
+  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
 
 /** Onward links, shaped as RelatedCards so the page has one card vocabulary. */
 const CROSS_LINKS: RelatedCard[] = [
@@ -308,9 +308,9 @@ export default function BiggestBuysPage() {
                       <Link className={STAGE_LINK} to="/learn/open-market-buy">
                         open-market purchases
                       </Link>{" "}
-                      {market.noun} made in their own companies, ranked by
-                      what they spent, with how each has performed against
-                      the market since it was disclosed.
+                      {market.noun} made in their own companies, ranked by what
+                      they spent, with how each has performed against the market
+                      since it was disclosed.
                     </>
                   }
                   eyebrow="Leaderboard"
@@ -345,11 +345,9 @@ export default function BiggestBuysPage() {
                         },
                       ].map((f) => (
                         <div key={f.k}>
-                          <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/45">
-                            {f.k}
-                          </dt>
+                          <dt className="micro text-white/45">{f.k}</dt>
                           <dd
-                            className={`mt-1.5 text-[26px] font-medium leading-none tracking-[-0.02em] ${f.tone || "text-white"}`}
+                            className={`mt-1.5 text-[26px] font-medium leading-none tracking-tight ${f.tone || "text-white"}`}
                           >
                             {f.v}
                           </dd>
@@ -393,9 +391,9 @@ export default function BiggestBuysPage() {
         {/* Under the stage: the rule and the truncation caveat. The tracking
             line moved into the stage header, under the figures it qualifies —
             below a 600px object at 45% opacity it was invisible. */}
-        <div className="mt-4 max-w-[62ch]">
+        <div className="mt-4 max-w-measure">
           <a
-            className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+            className="inline-block text-small font-medium text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
             href="#methodology"
           >
             Only open-market purchases count. How we rank these ↓
@@ -422,12 +420,12 @@ export default function BiggestBuysPage() {
             market, and stating it when the API is down tells a reader there was
             no insider buying this period. */}
         {ranked.length === 0 && !complete ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the board just now. It’s a network problem rather
             than an empty period. Try a refresh in a moment.
           </p>
         ) : ranked.length === 0 ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No qualifying open-market purchases in this period.{" "}
             <a className="underline underline-offset-4" href="#methodology">
               What makes a purchase qualify
@@ -451,7 +449,7 @@ export default function BiggestBuysPage() {
             <SeoSection
               aside={
                 finding ? (
-                  <p className="max-w-[64ch] text-[13.5px] leading-[1.55] text-foreground/70">
+                  <p className="max-w-[64ch] text-body text-foreground/70">
                     <span className="font-semibold text-foreground">
                       {finding.text}
                     </span>{" "}
@@ -520,7 +518,7 @@ export default function BiggestBuysPage() {
 
         <SeoSection
           aside={
-            <p className="text-[12px] leading-[1.5] text-foreground/45">
+            <p className="text-small text-foreground/45">
               These rules decide the order, and they live in the same module
               that ranks the board.
             </p>
@@ -539,12 +537,12 @@ export default function BiggestBuysPage() {
                   aria-hidden
                   className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
                 />
-                <span className="max-w-[62ch]">{line}</span>
+                <span className="max-w-measure">{line}</span>
               </li>
             ))}
           </ul>
 
-          <p className="mt-5 max-w-[62ch] text-[13px] leading-[1.6] text-foreground/60">
+          <p className="mt-5 max-w-measure text-small text-foreground/60">
             More on the terms used here:{" "}
             <Link
               className="underline underline-offset-4"
@@ -578,7 +576,7 @@ export default function BiggestBuysPage() {
 
         {/* Last, so the onward links close the document instead of interrupting
             it. */}
-        <nav aria-label="More from ddbx" className="mt-9">
+        <nav aria-label="More from ddbx" className="mt-10">
           <RelatedCards cols={2} items={CROSS_LINKS} />
         </nav>
 

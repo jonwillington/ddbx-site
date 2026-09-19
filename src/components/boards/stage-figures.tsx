@@ -38,9 +38,9 @@ const RESERVED_PAIRS = 2;
 const DL =
   "mt-7 grid grid-cols-2 gap-x-8 gap-y-5 sm:flex sm:flex-wrap sm:gap-x-12";
 
-const DT = "font-mono text-[10px] uppercase tracking-[0.14em] text-white/45";
+const DT = "micro text-white/45";
 
-const DD = "mt-1.5 text-[26px] font-medium leading-none tracking-[-0.02em]";
+const DD = "mt-1.5 text-[26px] font-medium leading-none tracking-tight";
 
 function toneClass(tone: StageFigure["tone"]): string {
   if (tone === "pos") return "text-[var(--stage-pos)]";

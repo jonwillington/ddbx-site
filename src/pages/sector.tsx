@@ -241,7 +241,7 @@ export default function SectorPage() {
           <>
             <TrackingNotice />
             {!complete && !failed && (
-              <p className={`mt-2 ${R.label} leading-[1.6]`}>
+              <p className={`mt-2 ${R.label} leading-relaxed`}>
                 We couldn’t load the whole period, so these figures may be
                 missing older purchases.
               </p>
@@ -276,13 +276,13 @@ export default function SectorPage() {
         {failed ? (
           // Not "this sector is quiet" — we don't know that. "Other sectors"
           // below still renders, so the reader has somewhere to go.
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the filings just now, so there are no figures to
             show for {sector.label.toLowerCase()}. That’s a fault at our end
             rather than a quiet twelve months. Try again shortly.
           </p>
         ) : !publishable ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             Fewer than {MIN_BUYS} disclosed purchases in this sector over the
             last twelve months, not enough to draw anything from.{" "}
             <Link className="underline underline-offset-4" to="/sectors">
@@ -296,13 +296,13 @@ export default function SectorPage() {
                 sentence is also the page's meta description, from the same
                 function — it used to exist only in the pre-render, so a crawler
                 read a summary no visitor ever saw. */}
-            <p className={`mt-8 max-w-[62ch] ${R.body}`}>
+            <p className={`mt-8 max-w-measure ${R.body}`}>
               {leadSentence(row!, market.id)}
             </p>
 
             <SectorFigures className="mt-5" market={market} row={row!} />
 
-            <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
+            <p className={`mt-3 max-w-measure ${R.label} leading-relaxed`}>
               Rolling twelve months. Median alpha is the middle buy’s return
               against the market, measured from the disclosure-day close, the
               first price a reader could have paid, not from the insider’s own
@@ -327,7 +327,7 @@ export default function SectorPage() {
                     <span className="min-w-0 flex-1">
                       <span className="flex min-w-0 items-center gap-2">
                         <Link
-                          className="truncate text-[14.5px] font-medium text-foreground underline-offset-4 hover:underline"
+                          className="truncate text-body font-medium text-foreground underline-offset-4 hover:underline"
                           to={companyPath(c.ticker)}
                         >
                           {cleanCompanyName(c.company) ||
@@ -344,7 +344,7 @@ export default function SectorPage() {
                         value={c.value}
                       />
                     </span>
-                    <span className="shrink-0 text-right text-[14px] font-semibold tabular-nums text-foreground">
+                    <span className="shrink-0 text-right text-body font-semibold tabular-nums text-foreground">
                       {money(c.value, market.symbol)}
                     </span>
                   </li>
@@ -376,7 +376,7 @@ export default function SectorPage() {
                       <span className="min-w-0 flex-1">
                         <span className="flex min-w-0 items-center gap-2">
                           <Link
-                            className="truncate text-[14.5px] font-medium text-foreground underline-offset-4 hover:underline"
+                            className="truncate text-body font-medium text-foreground underline-offset-4 hover:underline"
                             to={companyPath(d.ticker ?? "")}
                           >
                             {cleanCompanyName(d.company ?? "") || ticker}
@@ -393,11 +393,11 @@ export default function SectorPage() {
                         </span>
                       </span>
                       <span className="shrink-0 text-right">
-                        <span className="block text-[14px] font-semibold tabular-nums text-foreground">
+                        <span className="block text-body font-semibold tabular-nums text-foreground">
                           {money(dealValue(d), market.symbol)}
                         </span>
                         <span
-                          className={`mt-0.5 block text-[13px] tabular-nums ${alphaClass(alpha == null ? null : alpha / 100)}`}
+                          className={`mt-0.5 block text-small tabular-nums ${alphaClass(alpha == null ? null : alpha / 100)}`}
                         >
                           {signedPct(alpha == null ? null : alpha / 100)}
                         </span>
@@ -413,7 +413,7 @@ export default function SectorPage() {
                       {market.id === "UK" && d.id ? (
                         <Link
                           aria-label={`Open this filing at ${cleanCompanyName(d.company ?? "") || ticker}`}
-                          className="mt-0.5 shrink-0 rounded-md p-1 text-foreground/25 outline-none transition-colors hover:text-foreground/70 focus-visible:ring-2 focus-visible:ring-brand-brown/40"
+                          className="mt-0.5 shrink-0 rounded-control p-1 text-foreground/25 outline-none transition-colors hover:text-foreground/70 focus-visible:ring-2 focus-visible:ring-brand-brown/40"
                           to={filingPath(d.id)}
                         >
                           <ArrowRightIcon aria-hidden className="h-4 w-4" />

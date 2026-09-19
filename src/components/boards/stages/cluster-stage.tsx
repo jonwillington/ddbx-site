@@ -456,14 +456,14 @@ export function ClusterStage({
           <>
             <div className="font-semibold">
               {name(e)}{" "}
-              <span className="font-mono text-[10px] font-normal text-white/50">
+              <span className="micro text-white/50">
                 {displayTicker(e.ticker)}
               </span>
             </div>
             {/* Where the two counts are stated together, because they differ
                 and the difference is the honest part: six people, seven
                 purchases. */}
-            <div className="text-[11px] text-white/55">
+            <div className="text-caption text-white/55">
               {e.named} insiders · {e.filings}{" "}
               {e.filings === 1 ? "purchase" : "purchases"} ·{" "}
               {spanLabel(e.spanDays)}
@@ -485,7 +485,7 @@ export function ClusterStage({
             {/* Stated, never coloured, and never when there is no mark to
                 state it from. The board does not rank on this. */}
             {e.alphaCount > 0 ? (
-              <div className="mt-1 text-[11px] text-white/55">
+              <div className="mt-1 text-caption text-white/55">
                 median {signedPp(e.medianAlpha)} vs {benchmark} since disclosure
               </div>
             ) : null}

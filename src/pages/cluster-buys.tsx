@@ -80,7 +80,7 @@ import {
 import { STAGE_LINK, StageHeader } from "@/components/ui/stage-header";
 
 const CAVEAT =
-  "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
+  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
 
 /** The span, without the preposition `spanLabel` supplies — the column heading
  *  says "Span", so "over 9 days" underneath it says "over" twice. The stage
@@ -189,14 +189,14 @@ export default function ClusterBuysPage() {
                 <StageHeader
                   dek={
                     <>
-                      Where several {market.noun} bought the same company
-                      within a fortnight of each other. One insider buying is a
+                      Where several {market.noun} bought the same company within
+                      a fortnight of each other. One insider buying is a
                       person’s opinion;{" "}
                       <Link className={STAGE_LINK} to="/learn/cluster-buying">
                         a cluster
                       </Link>{" "}
-                      is a board agreeing with itself, which is a different
-                      and rarer thing.
+                      is a board agreeing with itself, which is a different and
+                      rarer thing.
                     </>
                   }
                   eyebrow="Leaderboard"
@@ -241,9 +241,9 @@ export default function ClusterBuysPage() {
         {/* Under the stage: the rule and the truncation caveat. The tracking
             line moved into the stage header, under the figures it qualifies —
             below a 600px object at 45% opacity it was invisible. */}
-        <div className="mt-4 max-w-[62ch]">
+        <div className="mt-4 max-w-measure">
           <a
-            className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+            className="inline-block text-small font-medium text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
             href="#methodology"
           >
             A cluster is an event, not a company. How these are grouped ↓
@@ -266,12 +266,12 @@ export default function ClusterBuysPage() {
             two different statements. Only one of them is a fact about the
             market. */}
         {!hasBoard && !complete ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the board just now. It’s a network problem rather
             than an empty period. Try a refresh in a moment.
           </p>
         ) : !hasBoard ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No clusters in this period meet the bar.{" "}
             <a className="underline underline-offset-4" href="#methodology">
               What counts as one
@@ -285,7 +285,7 @@ export default function ClusterBuysPage() {
             {/* The denominator, in prose rather than under a tile. "Widest",
                 not "largest": rankClusters sorts on how many people bought,
                 not on what they spent. */}
-            <p className={`mt-6 max-w-[62ch] ${R.body}`}>
+            <p className={`mt-6 max-w-measure ${R.body}`}>
               {qualifying} clusters in the last twelve months can be shown in
               full; the {ranked.length} widest are listed. Totals cover those,
               not the whole market.
@@ -341,7 +341,7 @@ export default function ClusterBuysPage() {
 
         <SeoSection
           aside={
-            <p className="text-[12px] leading-[1.5] text-foreground/45">
+            <p className="text-small text-foreground/45">
               These rules decide what counts as a cluster, and they live in the
               same module that groups the board.
             </p>
@@ -357,12 +357,12 @@ export default function ClusterBuysPage() {
                   aria-hidden
                   className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
                 />
-                <span className="max-w-[62ch]">{line}</span>
+                <span className="max-w-measure">{line}</span>
               </li>
             ))}
           </ul>
 
-          <p className="mt-5 max-w-[62ch] text-[13px] leading-[1.6] text-foreground/60">
+          <p className="mt-5 max-w-measure text-small text-foreground/60">
             More on the terms used here:{" "}
             <Link
               className="underline underline-offset-4"
@@ -385,7 +385,7 @@ export default function ClusterBuysPage() {
           </p>
         </SeoSection>
 
-        <nav aria-label="More from ddbx" className="mt-9">
+        <nav aria-label="More from ddbx" className="mt-10">
           <RelatedCards cols={2} items={CROSS_LINKS} />
         </nav>
 

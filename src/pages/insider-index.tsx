@@ -68,6 +68,7 @@ import { useWindowFeed } from "@/components/boards/board-feed";
 import { StageNotice } from "@/components/boards/stage-notice";
 import { IndexStage } from "@/components/insider-index/index-stage";
 import { StageHeader } from "@/components/ui/stage-header";
+import { panel } from "@/components/ui/panel";
 
 const MARKET = {
   id: "UK" as const,
@@ -77,13 +78,13 @@ const MARKET = {
 };
 
 const R = {
-  body: "text-[14px] leading-[1.65] text-foreground/70",
-  label: "text-[12px] text-foreground/45",
-  rule: "border-hairline dark:border-separator",
+  body: "text-body text-foreground/70",
+  label: "text-small text-foreground/45",
+  rule: "border-rule",
 };
 
 const CAVEAT =
-  "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
+  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
 
 const LINK =
   "underline decoration-foreground/30 underline-offset-4 transition-colors hover:decoration-foreground/70";
@@ -298,7 +299,7 @@ function IndexDocument({ date }: { date: string | null }) {
         width="wide"
       >
         {failed ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the filings the index is computed from. That’s a
             fault at our end rather than a quiet market. Try a refresh in a
             moment.
@@ -306,7 +307,7 @@ function IndexDocument({ date }: { date: string | null }) {
         ) : missing ? (
           <>
             {pending && date ? (
-              <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+              <p className={`mt-10 max-w-measure ${R.body}`}>
                 The reading for {dateLabel(date)} lands at {publishLabel(date)},
                 once that day’s filings are in. Until then the latest reading is{" "}
                 {latest
@@ -315,7 +316,7 @@ function IndexDocument({ date }: { date: string | null }) {
                 .
               </p>
             ) : (
-              <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+              <p className={`mt-10 max-w-measure ${R.body}`}>
                 The index publishes one reading per London Stock Exchange
                 session, from{" "}
                 {published[0]
@@ -351,9 +352,9 @@ function IndexDocument({ date }: { date: string | null }) {
         ) : (
           <>
             {/* Under the stage: the rule and the caveats. */}
-            <div className="mt-4 max-w-[62ch]">
+            <div className="mt-4 max-w-measure">
               <a
-                className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+                className="inline-block text-small font-medium text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
                 href="#methodology"
               >
                 Buying against its own record, not net of selling. How it is
@@ -413,7 +414,7 @@ function IndexDocument({ date }: { date: string | null }) {
                   stats={figures}
                 />
               ) : (
-                <p className={`max-w-[62ch] ${R.body}`}>
+                <p className={`max-w-measure ${R.body}`}>
                   Not enough data yet.{" "}
                   {notYet
                     ? `The first reading will be published at ${publishLabel(notYet)}, once ${MIN_HISTORY} earlier windows exist to rank it against.`
@@ -497,7 +498,7 @@ function IndexDocument({ date }: { date: string | null }) {
               ) : published.length > 0 ? (
                 <ReadingList rows={[...published].reverse().slice(0, RECENT)} />
               ) : (
-                <p className={`max-w-[62ch] ${R.body}`}>
+                <p className={`max-w-measure ${R.body}`}>
                   No readings published yet.
                 </p>
               )}
@@ -512,7 +513,7 @@ function IndexDocument({ date }: { date: string | null }) {
             {/* 04: the formula. */}
             <SeoSection
               aside={
-                <p className="text-[12px] leading-[1.5] text-foreground/45">
+                <p className="text-small text-foreground/45">
                   These rules decide every reading, and they live in the same
                   module that draws the line above.
                 </p>
@@ -531,7 +532,7 @@ function IndexDocument({ date }: { date: string | null }) {
                       aria-hidden
                       className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
                     />
-                    <span className="max-w-[62ch]">{line}</span>
+                    <span className="max-w-measure">{line}</span>
                   </li>
                 ))}
               </ul>
@@ -542,7 +543,7 @@ function IndexDocument({ date }: { date: string | null }) {
               aside="Why a count of directors buying is worth a number of its own."
               title="What this is"
             >
-              <div className={`max-w-[62ch] space-y-3 ${R.body}`}>
+              <div className={`max-w-measure space-y-3 ${R.body}`}>
                 <p>
                   When a director buys shares in their own company on the open
                   market, they have to say so within two working days, and it is
@@ -580,7 +581,7 @@ function IndexDocument({ date }: { date: string | null }) {
               </div>
             </SeoSection>
 
-            <nav aria-label="More from ddbx" className="mt-9">
+            <nav aria-label="More from ddbx" className="mt-10">
               <RelatedCards cols={2} items={CROSS_LINKS} />
             </nav>
           </>
@@ -598,7 +599,7 @@ function Figure({ value, pct }: { value: string; pct: number }) {
   return (
     <>
       {value}
-      <span className="mt-1.5 block text-[12px] font-normal leading-[1.4] tracking-normal text-foreground/50">
+      <span className="mt-1.5 block text-small font-normal tracking-normal text-foreground/50">
         {p >= 50 ? `above ${p}% of windows` : `above only ${p}% of windows`}
       </span>
     </>
@@ -609,7 +610,9 @@ function Figure({ value, pct }: { value: string; pct: number }) {
  *  comment in code. */
 function Formula() {
   return (
-    <div className="rounded-2xl border border-hairline bg-sheet px-4 py-3.5 font-mono text-[12.5px] leading-[1.7] text-foreground/80 dark:border-white/[0.07] dark:bg-surface">
+    <div
+      className={`${panel({ size: "compact" })} font-mono text-small text-foreground/80`}
+    >
       <p>window(d) = the {WINDOW_DAYS} LSE sessions ending on d, inclusive</p>
       <p>count(d) = open-market purchases disclosed in window(d)</p>
       <p>breadth(d) = distinct companies bought in window(d)</p>
@@ -645,14 +648,14 @@ function ReadingList({ rows }: { rows: Reading[] }) {
             className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 py-3 transition-colors hover:bg-foreground/[0.02] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
             to={indexPath(r.date)}
           >
-            <span className="text-[14.5px] font-medium text-foreground">
+            <span className="text-body font-medium text-foreground">
               {dateLabel(r.date)}
             </span>
             <span className={`hidden sm:block ${R.label}`}>
               {r.count} purchases · {r.breadth} companies
             </span>
             <span className="text-right">
-              <span className="text-[15px] font-semibold tabular-nums text-foreground">
+              <span className="text-title tabular-nums text-foreground">
                 {r.score}
               </span>
               <span className={`ml-2 ${R.label}`}>{r.tier?.label}</span>
@@ -690,7 +693,7 @@ function ReadingArchive({
 
   return (
     <div className="mt-8">
-      <h3 className="text-[13px] font-medium text-foreground">Every reading</h3>
+      <h3 className="text-small font-medium text-foreground">Every reading</h3>
       <div className={`mt-3 border-t ${R.rule}`}>
         {months.map(([key, list]) => (
           <div
@@ -709,17 +712,17 @@ function ReadingArchive({
                     <Link
                       aria-current={current ? "page" : undefined}
                       aria-label={`${dateLabel(r.date)}: ${r.score}, ${r.tier?.phrase ?? ""}`}
-                      className={`flex w-[46px] flex-col items-center rounded-lg border py-1 leading-tight transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-brown dark:focus-visible:outline-brand-tan ${
+                      className={`flex w-[46px] flex-col items-center rounded-control border py-1 leading-tight transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-brown dark:focus-visible:outline-brand-tan ${
                         current
                           ? "border-brand-brown bg-brand-brown/[0.06] dark:border-brand-tan dark:bg-brand-tan/[0.08]"
-                          : "border-hairline hover:bg-foreground/[0.03] dark:border-separator"
+                          : "border-rule hover:bg-foreground/[0.03]"
                       }`}
                       to={indexPath(r.date)}
                     >
-                      <span className="text-[10.5px] tabular-nums text-foreground/45">
+                      <span className="text-caption tabular-nums text-foreground/45">
                         {Number(r.date.slice(8, 10))}
                       </span>
-                      <span className="text-[13.5px] font-semibold tabular-nums text-foreground">
+                      <span className="text-body font-semibold tabular-nums text-foreground">
                         {r.score}
                       </span>
                     </Link>

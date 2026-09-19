@@ -67,7 +67,7 @@ import { API_BASE } from "@/lib/api";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 
 const CAVEAT =
-  "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
+  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
 
 const CROSS_LINKS: RelatedCard[] = [
   { to: "/sectors", title: "Buying by sector", description: "Where it went" },
@@ -211,9 +211,9 @@ export function MarketCapIndexPage() {
             to sit beside it and moved into the stage header, where the reader
             meets it before the figures it qualifies rather than 600px after
             them. */}
-        <div className="mt-4 max-w-[62ch]">
+        <div className="mt-4 max-w-measure">
           <a
-            className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+            className="inline-block text-small font-medium text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
             href="#methodology"
           >
             Where the band lines fall, and what sits outside them ↓
@@ -245,12 +245,12 @@ export function MarketCapIndexPage() {
         ) : null}
 
         {failed ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the company index just now. It’s a network problem
             rather than an empty market. Try a refresh in a moment.
           </p>
         ) : placed === 0 ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No company in this market has a market value on file yet, so there
             is nothing to place in a band. Market values are refreshed daily;
             this page will fill in as soon as they land. Meanwhile,{" "}
@@ -260,7 +260,7 @@ export function MarketCapIndexPage() {
             .
           </p>
         ) : shown.length === 0 ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No band has the {MIN_COMPANIES} companies we publish a page from
             yet. The ladder above holds every company we can place, and the band
             pages open as more of them disclose.
@@ -271,7 +271,7 @@ export function MarketCapIndexPage() {
               {shown.map((row) => (
                 <Link
                   key={row.band.slug}
-                  className={`block rounded-2xl border p-5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-brown/40 ${R.rule} ${
+                  className={`block rounded-card border p-5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-brown/40 ${R.rule} ${
                     activeBand === row.band.slug
                       ? "bg-black/[0.035] dark:bg-white/[0.05]"
                       : "hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
@@ -281,10 +281,10 @@ export function MarketCapIndexPage() {
                   onMouseLeave={() => setActiveBand(null)}
                 >
                   <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <span className="text-[18px] font-semibold leading-[1.25] tracking-[-0.014em] text-foreground">
+                    <span className="text-title leading-tight text-foreground">
                       {row.band.plural}
                     </span>
-                    <span className="text-[13px] tabular-nums text-foreground/55">
+                    <span className="text-small tabular-nums text-foreground/55">
                       {row.count} companies · {row.deals} purchases ·{" "}
                       {money(row.value, market.symbol)}
                     </span>
@@ -307,7 +307,7 @@ export function MarketCapIndexPage() {
 
         <Methodology />
 
-        <nav aria-label="More from ddbx" className="mt-9">
+        <nav aria-label="More from ddbx" className="mt-10">
           <RelatedCards cols={2} items={CROSS_LINKS} />
         </nav>
 
@@ -397,7 +397,7 @@ export default function MarketCapBandPage() {
         notice={
           <>
             <a
-              className="inline-block text-[12.5px] font-medium leading-[1.5] text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
+              className="inline-block text-small font-medium text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan"
               href="#methodology"
             >
               {thresholdSentence(band, market.id)} How that line is drawn ↓
@@ -423,12 +423,12 @@ export default function MarketCapBandPage() {
         }
       >
         {!row || row.count === 0 ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the company index just now. It’s a network problem
             rather than an empty band. Try a refresh in a moment.
           </p>
         ) : row.count < MIN_COMPANIES ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             Only {row.count} {row.count === 1 ? "company" : "companies"} in this
             band have disclosed buying at the moment, too few to rank. Try{" "}
             <Link className="underline underline-offset-4" to="/market-cap">
@@ -507,7 +507,7 @@ function Methodology() {
   return (
     <SeoSection
       aside={
-        <p className="text-[12px] leading-[1.5] text-foreground/45">
+        <p className="text-small text-foreground/45">
           These rules decide which band a company lands in, and they live in the
           same module that sorts them.
         </p>
@@ -523,7 +523,7 @@ function Methodology() {
               aria-hidden
               className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
             />
-            <span className="max-w-[62ch]">{line}</span>
+            <span className="max-w-measure">{line}</span>
           </li>
         ))}
       </ul>

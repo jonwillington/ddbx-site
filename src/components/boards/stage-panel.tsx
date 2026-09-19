@@ -36,6 +36,7 @@ import type { Linking } from "./board-model";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { Skeleton } from "../skeleton";
+import { glass } from "../ui/glass";
 import { Stage, StageFooter, StageTooltip } from "../ui/stage";
 
 import { useMeasuredWidth } from "./board-model";
@@ -123,14 +124,14 @@ function Toggle<M extends string>({
   onChoose: (m: M) => void;
 }) {
   return (
-    <div className="flex rounded-full border border-white/12 bg-white/[0.06] p-0.5 backdrop-blur-md">
+    <div className={`flex rounded-full p-0.5 ${glass("stage")}`}>
       {modes.map((m) => (
         <button
           key={m.id}
           aria-pressed={mode === m.id}
-          className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium tracking-[-0.005em] transition-colors disabled:pointer-events-none disabled:opacity-40 ${
+          className={`rounded-full px-3.5 py-1.5 text-small font-medium transition-colors disabled:pointer-events-none disabled:opacity-40 ${
             mode === m.id
-              ? "bg-white text-[#1a140d]"
+              ? "bg-white text-ink"
               : "text-white/65 hover:text-white"
           }`}
           disabled={disabled}
@@ -195,7 +196,7 @@ function StageSkeleton({
           {Array.from({ length: n }, (_, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 border-b border-white/[0.06] last:border-b-0"
+              className="flex items-center gap-3 border-b border-rule-stage last:border-b-0"
               style={{ height: rowH }}
             >
               <Skeleton circle h={disc} w={disc} />

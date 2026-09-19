@@ -96,7 +96,7 @@ export function BuySparkline({
     return (
       <div
         aria-hidden
-        className="h-[44px] w-full rounded-md bg-black/[0.03] dark:bg-white/[0.04]"
+        className="h-[44px] w-full rounded-control bg-black/[0.03] dark:bg-white/[0.04]"
       />
     );
   }

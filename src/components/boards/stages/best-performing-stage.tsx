@@ -666,11 +666,11 @@ export function BestPerformingStage({
           <>
             <div className="font-semibold">
               {tip.company}{" "}
-              <span className="font-mono text-[10px] font-normal text-white/50">
+              <span className="micro text-white/50">
                 {displayTicker(tip.ticker)}
               </span>
             </div>
-            <div className="text-[11px] text-white/55">
+            <div className="text-caption text-white/55">
               {tip.person ?? "Undisclosed"}
               {tip.role ? ` · ${tip.role}` : ""} ·{" "}
               {dateLabel(tip.disclosedDate, locale)}

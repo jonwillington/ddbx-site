@@ -54,7 +54,7 @@ import { Link } from "react-router-dom";
 import { R } from "@/components/sector-ui";
 
 const ROW_LINK =
-  "group relative -mx-2 block rounded-lg px-2 py-3.5 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]";
+  "group relative -mx-2 block rounded-control px-2 py-3.5 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]";
 
 /** Column widths, in one place so a change lands on every board at once.
  *  The phone rail is narrower; everything else either survives at full
@@ -324,7 +324,7 @@ export function BoardRowHeader({
   return (
     <div
       aria-hidden
-      className={`${className} pb-2.5 text-[11px] leading-[1.4] text-foreground/50 ${grid.className}`}
+      className={`${className} pb-2.5 text-caption text-foreground/50 ${grid.className}`}
       style={grid.style}
     >
       {lead !== "none" ? (
@@ -569,7 +569,7 @@ export function BoardRow({
           {position != null ? (
             <span
               aria-hidden
-              className={`font-mono text-[15px] leading-[1.35] tabular-nums ${
+              className={`font-mono text-lede tabular-nums ${
                 position <= 3 ? "text-foreground" : "text-foreground/35"
               }`}
             >
@@ -593,7 +593,7 @@ export function BoardRow({
                   down, which is the whole point of the aligned columns. */}
               {name != null ? (
                 <span
-                  className={`${wrapName ? "" : "line-clamp-2 "}min-w-0 text-[18px] font-semibold leading-[1.3] tracking-[-0.014em] text-foreground xl:text-[20px]`}
+                  className={`${wrapName ? "" : "line-clamp-2 "}min-w-0 text-title text-foreground xl:text-[20px]`}
                 >
                   {name}
                 </span>
@@ -603,14 +603,14 @@ export function BoardRow({
 
             {secondary != null ? (
               <span
-                className={`block text-[12.5px] leading-[1.45] text-foreground/60 ${name != null ? "mt-1.5" : ""}`}
+                className={`block text-small text-foreground/60 ${name != null ? "mt-1.5" : ""}`}
               >
                 {secondary}
               </span>
             ) : null}
 
             {captionCells.length > 0 ? (
-              <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-[1.35] text-foreground/50 xl:hidden">
+              <span className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-caption text-foreground/50 xl:hidden">
                 {captionCells.map((cell) => (
                   <span
                     key={cell.key}
@@ -654,7 +654,7 @@ export function BoardRow({
               // /market-cap puts "Consumer Discretionary" in one; without this
               // the overflow lands on top of the next column rather than in
               // the cell it belongs to.
-              className={`truncate text-[13px] leading-[1.35] tabular-nums text-foreground/75 ${grid.cell.fact(i)}`}
+              className={`truncate text-small tabular-nums text-foreground/75 ${grid.cell.fact(i)}`}
             >
               {fact.value}
             </span>
@@ -666,14 +666,14 @@ export function BoardRow({
             // lines, so a centred picture floats below the values it sits
             // beside and the row reads as two staggered halves. 3px is where
             // a 13px fact's glyphs start inside its line box.
-            <span className={`self-start pt-[3px] ${grid.cell.visual}`}>
+            <span className={`self-start pt-1 ${grid.cell.visual}`}>
               {visual}
             </span>
           ) : null}
 
           {money != null ? (
             <span
-              className={`text-right text-[14px] font-semibold leading-[1.35] tabular-nums text-foreground ${grid.cell.money}`}
+              className={`text-right text-body font-semibold tabular-nums text-foreground ${grid.cell.money}`}
             >
               {money}
             </span>
@@ -685,14 +685,14 @@ export function BoardRow({
 
           {figure != null ? (
             <span className={`text-right ${grid.cell.figure}`}>
-              <span className="text-[17px] font-semibold leading-none tabular-nums tracking-[-0.02em] text-foreground xl:text-[19px]">
+              <span className="text-title leading-none tabular-nums text-foreground xl:text-[19px]">
                 {figure.srLabel ? (
                   <span className="sr-only">{figure.srLabel}: </span>
                 ) : null}
                 {figure.value}
               </span>
               {figure.unit ? (
-                <span className="mt-1.5 block text-[11px] leading-[1.3] text-foreground/45">
+                <span className="mt-1.5 block text-caption text-foreground/45">
                   {figure.unit}
                 </span>
               ) : null}
@@ -725,10 +725,10 @@ function RowDate({ iso, locale }: { iso: string; locale: string }) {
   const year = d.getUTCFullYear();
 
   return (
-    <span className="font-mono text-[15px] font-medium leading-[1.35] tabular-nums text-foreground">
+    <span className="font-mono text-lede font-medium tabular-nums text-foreground">
       <span className="block whitespace-nowrap">{dayMonth}</span>
       {year !== new Date().getUTCFullYear() ? (
-        <span className="mt-0.5 block text-[11px] font-normal text-foreground/45">
+        <span className="mt-0.5 block text-caption font-normal text-foreground/45">
           {year}
         </span>
       ) : null}

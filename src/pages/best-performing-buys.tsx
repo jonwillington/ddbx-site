@@ -85,7 +85,7 @@ import {
 import { StageHeader } from "@/components/ui/stage-header";
 
 const CAVEAT =
-  "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
+  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
 
 const CROSS_LINKS: RelatedCard[] = [
   {
@@ -305,11 +305,11 @@ export default function BestPerformingBuysPage() {
         {/* Under the stage: the rule and the truncation caveat. The tracking
             line moved into the stage header, under the figures it qualifies —
             below a 600px object at 45% opacity it was invisible. */}
-        <div className="mt-4 max-w-[62ch]">
+        <div className="mt-4 max-w-measure">
           {/* "Alpha" came out of the standfirst, so its definition link lands
               here, on the line that names the rule. Two destinations, one
               sentence: what the word means, and how the board applies it. */}
-          <p className="text-[12.5px] font-medium leading-[1.5] text-brand-brown dark:text-brand-tan">
+          <p className="text-small font-medium text-brand-brown dark:text-brand-tan">
             Ranked on{" "}
             <Link
               className="underline underline-offset-4"
@@ -342,12 +342,12 @@ export default function BestPerformingBuysPage() {
         {/* An empty board and a board we couldn't fetch are the same shape and
             two different statements. */}
         {ranked.length === 0 && !complete ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the board just now. It’s a network problem rather
             than an empty period. Try a refresh in a moment.
           </p>
         ) : ranked.length === 0 ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             No purchases in this period clear both the {floor} floor and the
             need for a performance mark.{" "}
             <a className="underline underline-offset-4" href="#methodology">
@@ -440,7 +440,7 @@ export default function BestPerformingBuysPage() {
 
         <SeoSection
           aside={
-            <p className="text-[12px] leading-[1.5] text-foreground/45">
+            <p className="text-small text-foreground/45">
               These rules decide the order, and they live in the same module
               that ranks the board.
             </p>
@@ -460,12 +460,12 @@ export default function BestPerformingBuysPage() {
                   aria-hidden
                   className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
                 />
-                <span className="max-w-[62ch]">{line}</span>
+                <span className="max-w-measure">{line}</span>
               </li>
             ))}
           </ul>
 
-          <p className="mt-5 max-w-[62ch] text-[13px] leading-[1.6] text-foreground/60">
+          <p className="mt-5 max-w-measure text-small text-foreground/60">
             More on the terms used here:{" "}
             <Link
               className="underline underline-offset-4"
@@ -488,7 +488,7 @@ export default function BestPerformingBuysPage() {
           </p>
         </SeoSection>
 
-        <nav aria-label="More from ddbx" className="mt-9">
+        <nav aria-label="More from ddbx" className="mt-10">
           <RelatedCards cols={2} items={CROSS_LINKS} />
         </nav>
 
@@ -518,7 +518,7 @@ function AlphaBar({ pp, lo, span }: { pp: number; lo: number; span: number }) {
     <span className="flex items-center gap-2.5">
       <span
         aria-hidden
-        className="relative block h-[9px] min-w-0 flex-1 rounded-[3px] bg-black/[0.05] dark:bg-white/[0.07]"
+        className="relative block h-[9px] min-w-0 flex-1 rounded-mark bg-black/[0.05] dark:bg-white/[0.07]"
       >
         {/* The origin, drawn. A bar with no visible zero is a bar whose reader
             has to take the scale on trust. */}
@@ -527,7 +527,7 @@ function AlphaBar({ pp, lo, span }: { pp: number; lo: number; span: number }) {
           style={{ left: `${zero}%` }}
         />
         <span
-          className={`absolute inset-y-0 rounded-[2px] ${
+          className={`absolute inset-y-0 rounded-mark ${
             ahead ? "bg-positive" : "bg-negative"
           }`}
           // A purchase level with the index still gets a visible mark: a bar
@@ -539,7 +539,7 @@ function AlphaBar({ pp, lo, span }: { pp: number; lo: number; span: number }) {
         />
       </span>
       <span
-        className={`shrink-0 text-[15px] font-semibold leading-none tabular-nums tracking-[-0.01em] ${
+        className={`shrink-0 text-title leading-none tabular-nums ${
           ahead ? "text-positive" : "text-negative"
         }`}
       >

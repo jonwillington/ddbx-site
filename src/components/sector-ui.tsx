@@ -18,12 +18,13 @@ import { marketForPath } from "@/lib/markets/registry";
 import { SectorIcon } from "@/components/sector-icon";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { Delta } from "@/components/ui/delta";
+import { eyebrow } from "@/components/ui/eyebrow";
 
 export const R = {
-  rule: "border-hairline dark:border-separator",
-  label: "text-[11px] leading-none text-foreground/50",
-  body: "text-[14px] leading-[1.65] text-foreground/70",
-  tile: "rounded-xl bg-black/[0.035] dark:bg-white/[0.05]",
+  rule: "border-rule",
+  label: "text-caption leading-none text-foreground/50",
+  body: "text-body text-foreground/70",
+  tile: "rounded-control bg-black/[0.035] dark:bg-white/[0.05]",
 } as const;
 
 export interface SectorMarket {
@@ -109,7 +110,7 @@ const COMPARISON_GRID =
 export function SectorComparisonHeader() {
   return (
     <div
-      className={`${COMPARISON_GRID} hidden pb-2 sm:grid ${R.label} uppercase tracking-[0.08em]`}
+      className={`${COMPARISON_GRID} hidden pb-2 sm:grid ${eyebrow("quiet")}`}
     >
       <span>Sector</span>
       <span className="text-right">Value bought</span>
@@ -143,9 +144,7 @@ export function SectorComparisonRow({
           slug={row.sector.slug}
         />
         <div className="min-w-0">
-          <span className="text-[16px] font-semibold tracking-[-0.01em] text-foreground">
-            {row.sector.label}
-          </span>
+          <span className="text-title text-foreground">{row.sector.label}</span>
           <span className={`mt-0.5 block ${R.label}`}>
             {row.buys} buys · {row.companies} companies
           </span>
@@ -158,7 +157,7 @@ export function SectorComparisonRow({
           eleven sectors spanning three orders of magnitude leave nine bars
           reading as empty. */}
       <div className="order-3 col-span-2 sm:order-none sm:col-span-1">
-        <span className="block text-[15px] font-semibold tabular-nums tracking-[-0.01em] text-foreground sm:text-right">
+        <span className="block text-title tabular-nums text-foreground sm:text-right">
           {money(row.value, market.symbol)}
         </span>
       </div>
@@ -170,7 +169,7 @@ export function SectorComparisonRow({
           // honest shape, and a chip would give an absence the same weight as
           // a result.
           <span
-            className={`mt-0.5 block text-[15px] font-semibold tabular-nums ${alphaClass(null)}`}
+            className={`mt-0.5 block text-title tabular-nums ${alphaClass(null)}`}
           >
             {signedPct(null)}
           </span>
@@ -187,7 +186,7 @@ export function SectorComparisonRow({
       {concentrated && row.topCompany && (
         /* Indented past the mark column, so it hangs off the sector's name
            rather than off a glyph it has nothing to do with. */
-        <p className="order-4 col-span-2 mt-1 flex items-start gap-1.5 pl-11 text-[12px] leading-[1.5] text-foreground/45 sm:col-span-3">
+        <p className="order-4 col-span-2 mt-1 flex items-start gap-1.5 pl-11 text-small text-foreground/45 sm:col-span-3">
           {/* The caveat is the reason not to read the number beside it at face
               value, so it gets the site's key-risk amber rather than dissolving
               into the same grey as the row's own small print. */}

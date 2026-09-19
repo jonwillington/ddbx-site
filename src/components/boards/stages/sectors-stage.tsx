@@ -982,7 +982,7 @@ export function SectorsStage({
         return (
           <>
             <div className="font-semibold">{row.sector.label}</div>
-            <div className="text-[11px] text-white/55">
+            <div className="text-caption text-white/55">
               {row.buys} purchases · {row.companies} companies · {row.people}{" "}
               {market.noun}
             </div>
@@ -998,7 +998,7 @@ export function SectorsStage({
             {/* Uncoloured: the sign carries it, and a green median beside a
                 grey volume reads as a recommendation. */}
             {row.alphaCount > 0 ? (
-              <div className="mt-1 text-[11px] text-white/70">
+              <div className="mt-1 text-caption text-white/70">
                 median {formatSignedPct(row.medianAlpha)} vs the market · from{" "}
                 {row.alphaCount} of {row.buys} buys
               </div>

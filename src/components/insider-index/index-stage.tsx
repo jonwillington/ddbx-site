@@ -100,9 +100,7 @@ export function IndexStage({
         ) : null}
       </div>
 
-      {caption ? (
-        <StageFooter>{caption}</StageFooter>
-      ) : null}
+      {caption ? <StageFooter>{caption}</StageFooter> : null}
     </Stage>
   );
 }
@@ -133,14 +131,12 @@ function HeroReading({
 
   return (
     <div className="lg:justify-self-end lg:text-right">
-      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/45">
+      <p className="micro text-white/45">
         Reading for {dateLabel(reading.date)}
       </p>
       {/* Proportional figures at this size: tabular-nums makes "121" loose. */}
-      <p className="mt-1 text-[72px] font-semibold leading-none tracking-[-0.04em] text-white sm:text-[84px]">
-        {reading.score}
-      </p>
-      <p className="mt-2 text-[16px] font-medium leading-[1.3] text-white/85">
+      <p className="mt-1 text-figure-xl text-white">{reading.score}</p>
+      <p className="mt-2 text-lede font-medium text-white/85">
         {reading.tier.label}
         <span className="text-white/45"> · out of 100</span>
       </p>
@@ -161,7 +157,7 @@ function Meter({ score, loading }: { score: number | null; loading: boolean }) {
         aria-valuemax={100}
         aria-valuemin={0}
         aria-valuenow={pct ?? undefined}
-        className="relative grid grid-cols-5 gap-[2px]"
+        className="relative grid grid-cols-5 gap-0.5"
         role="meter"
       >
         {TIERS.map((t) => {
@@ -189,12 +185,12 @@ function Meter({ score, loading }: { score: number | null; loading: boolean }) {
         {pct != null ? (
           <div
             aria-hidden
-            className="absolute -top-[5px] h-[17px] w-[3px] rounded-full bg-white shadow-[0_0_0_2px_var(--stage-bg)]"
+            className="absolute -top-[5px] h-[17px] w-[3px] rounded-full bg-white ring-2 ring-[var(--stage-bg)]"
             style={{ left: `calc(${pct}% - 1.5px)` }}
           />
         ) : null}
       </div>
-      <div className="mt-2 grid grid-cols-5 gap-[2px] font-mono text-[10px] uppercase tracking-[0.12em] text-white/40">
+      <div className="mt-2 grid grid-cols-5 gap-0.5 micro text-white/40">
         {TIERS.map((t, i) => (
           <span
             key={t.id}
@@ -325,7 +321,7 @@ function Chart({
       <svg
         aria-describedby={keyed && tip ? "index-chart-focus" : undefined}
         aria-label={`The index, one reading per session, ${rows.length} readings from ${dateLabel(rows[0].date)} to ${dateLabel(rows[rows.length - 1].date)}. Use the left and right arrow keys to move between days and Enter to open one, or the list of every reading below.`}
-        className="block w-full touch-pan-y select-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-amber)]"
+        className="block w-full touch-pan-y select-none rounded-control outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-amber)]"
         height={H}
         role="img"
         tabIndex={0}
@@ -503,9 +499,9 @@ function Chart({
             {dateLabel(tip.r.date)}
             <span className="text-white/55"> · {tip.r.tier.label}</span>
           </p>
-          <p className="mt-0.5 text-[15px] font-semibold leading-tight">
+          <p className="mt-0.5 text-title leading-tight">
             {tip.r.score}
-            <span className="text-[11px] font-normal text-white/50">
+            <span className="text-caption font-normal text-white/50">
               {" "}
               / 100
             </span>
