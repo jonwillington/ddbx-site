@@ -67,7 +67,7 @@ import { RowList, Row } from "@/components/row-list";
 import { useWindowFeed } from "@/components/boards/board-feed";
 import { StageNotice } from "@/components/boards/stage-notice";
 import { IndexStage } from "@/components/insider-index/index-stage";
-import { SectionEyebrow } from "@/components/section-eyebrow";
+import { StageHeader } from "@/components/ui/stage-header";
 
 const MARKET = {
   id: "UK" as const,
@@ -265,18 +265,13 @@ function IndexDocument({ date }: { date: string | null }) {
               caption={caption}
               focusDate={focus?.date ?? null}
               header={
-                <>
-                  <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
-                    Insider Index
-                  </SectionEyebrow>
-                  <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[44px] lg:text-[50px]">
-                    {title}
-                  </h1>
-                  <p className="mt-5 max-w-[52ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
-                    {sentence ?? standfirst}
-                  </p>
-                  <StageNotice marketId="uk" />
-                </>
+                <StageHeader
+                  dek={sentence ?? standfirst}
+                  dekClassName="max-w-[52ch]"
+                  eyebrow="Insider Index"
+                  notice={<StageNotice marketId="uk" />}
+                  title={title}
+                />
               }
               symbol={MARKET.symbol}
             />

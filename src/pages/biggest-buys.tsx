@@ -93,7 +93,7 @@ import {
   summarise,
   toBoardRows,
 } from "@/components/boards/board-model";
-import { SectionEyebrow } from "@/components/section-eyebrow";
+import { STAGE_LINK, StageHeader } from "@/components/ui/stage-header";
 
 /** Caveats are risk-amber wells rather than another line of grey small print.
  *  A truncated window and a held-back company both change how the ranking
@@ -301,28 +301,22 @@ export default function BiggestBuysPage() {
             <BoardStage
               benchmark={bench.label}
               header={
-                <>
-                  <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
-                    Leaderboard
-                  </SectionEyebrow>
-                  {/* Light, not bold: the object is the emphasis, the title
-                      names it. Instrument Sans ships 400–700, so 400 at this
-                      size is the light rung. */}
-                  <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
-                    The biggest {market.label} insider buys {periodLabel}
-                  </h1>
-                  <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
-                    The largest{" "}
-                    <Link
-                      className="text-white/85 underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white/70"
-                      to="/learn/open-market-buy"
-                    >
-                      open-market purchases
-                    </Link>{" "}
-                    {market.noun} made in their own companies, ranked by what
-                    they spent, with how each has performed against the market
-                    since it was disclosed.
-                  </p>
+                <StageHeader
+                  dek={
+                    <>
+                      The largest{" "}
+                      <Link className={STAGE_LINK} to="/learn/open-market-buy">
+                        open-market purchases
+                      </Link>{" "}
+                      {market.noun} made in their own companies, ranked by
+                      what they spent, with how each has performed against
+                      the market since it was disclosed.
+                    </>
+                  }
+                  eyebrow="Leaderboard"
+                  notice={<StageNotice marketId={market.id} />}
+                  title={`The biggest ${market.label} insider buys ${periodLabel}`}
+                >
                   {summary && hasBoard ? (
                     <dl className="mt-7 grid grid-cols-2 gap-x-8 gap-y-5 sm:flex sm:flex-wrap sm:gap-x-12">
                       {[
@@ -363,8 +357,7 @@ export default function BiggestBuysPage() {
                       ))}
                     </dl>
                   ) : null}
-                  <StageNotice marketId={market.id} />
-                </>
+                </StageHeader>
               }
               linking={linking}
               locale={locale}

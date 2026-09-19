@@ -60,7 +60,7 @@ import {
 } from "@/components/boards/stages/sectors-stage";
 import { sectorCta } from "@/components/seo/cta-copy";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
-import { SectionEyebrow } from "@/components/section-eyebrow";
+import { STAGE_LINK, StageHeader } from "@/components/ui/stage-header";
 
 /** Caveats are risk-amber wells rather than another line of grey small print.
  *  A truncated window changes how every total above it should be read, and set
@@ -198,35 +198,32 @@ export default function SectorsPage() {
             <SectorsStage
               buys={buys}
               header={
-                <>
-                  <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
-                    Sector hub
-                  </SectionEyebrow>
-                  {/* Light, not bold: the object is the emphasis, the title
-                      names it. */}
-                  <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
-                    {market.label} insider buying by sector
-                  </h1>
-                  <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
-                    Where {market.noun} have been{" "}
-                    <Link
-                      className="text-white/85 underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white/70"
-                      to="/learn/open-market-buy"
-                    >
-                      buying their own shares
-                    </Link>{" "}
-                    over the last twelve months, and how those buys have
-                    performed against the market since they were disclosed.
-                  </p>
-                  <StageFigures reserve items={figures} />
-                  <StageNotice marketId={market.id} />
-                  {issuer && issuer.share > CONCENTRATION_THRESHOLD ? (
-                    <p className="mt-3 max-w-[48ch] text-[12.5px] leading-[1.5] text-white/60">
-                      {Math.round(issuer.share * 100)}% of that is{" "}
-                      {cleanCompanyName(issuer.company)} alone.
-                    </p>
-                  ) : null}
-                </>
+                <StageHeader
+                  dek={
+                    <>
+                      Where {market.noun} have been{" "}
+                      <Link className={STAGE_LINK} to="/learn/open-market-buy">
+                        buying their own shares
+                      </Link>{" "}
+                      over the last twelve months, and how those buys have
+                      performed against the market since they were disclosed.
+                    </>
+                  }
+                  eyebrow="Sector hub"
+                  figures={<StageFigures reserve items={figures} />}
+                  notice={
+                    <>
+                      <StageNotice marketId={market.id} />
+                      {issuer && issuer.share > CONCENTRATION_THRESHOLD ? (
+                        <p className="mt-3 max-w-[48ch] text-small text-white/60">
+                          {Math.round(issuer.share * 100)}% of that is{" "}
+                          {cleanCompanyName(issuer.company)} alone.
+                        </p>
+                      ) : null}
+                    </>
+                  }
+                  title={`${market.label} insider buying by sector`}
+                />
               }
               linking={linking}
               locale={locale}

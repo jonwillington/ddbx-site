@@ -51,7 +51,7 @@ import {
 import { BoardStagePanel } from "../stage-panel";
 
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
-import { SectionEyebrow } from "@/components/section-eyebrow";
+import { StageHeader } from "@/components/ui/stage-header";
 
 type Mode = "size";
 
@@ -856,22 +856,20 @@ export function MarketCapStage({
   }).map((band) => bn(band.min[market.id], symbol));
 
   const header = (
-    <>
-      <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
-        By size
-      </SectionEyebrow>
-      <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
-        {market.label} insider buying by company size
-      </h1>
-      <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
-        The same disclosed buying, split by how big the company is. A chief
-        executive putting {symbol}100,000 into a {symbol}20bn company and into a{" "}
-        {symbol}50m one are not the same act, and the size of the business is
-        most of the difference.
-      </p>
-      <StageFigures items={figures} reserve={loading} />
-      <StageNotice marketId={market.id} />
-    </>
+    <StageHeader
+      dek={
+        <>
+          The same disclosed buying, split by how big the company is. A chief
+          executive putting {symbol}100,000 into a {symbol}20bn company and
+          into a {symbol}50m one are not the same act, and the size of the
+          business is most of the difference.
+        </>
+      }
+      eyebrow="By size"
+      figures={<StageFigures items={figures} reserve={loading} />}
+      notice={<StageNotice marketId={market.id} />}
+      title={`${market.label} insider buying by company size`}
+    />
   );
 
   return (

@@ -77,7 +77,7 @@ import {
   ClusterStage,
   episodeId,
 } from "@/components/boards/stages/cluster-stage";
-import { SectionEyebrow } from "@/components/section-eyebrow";
+import { STAGE_LINK, StageHeader } from "@/components/ui/stage-header";
 
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
@@ -186,32 +186,25 @@ export default function ClusterBuysPage() {
               benchmark={BENCHMARK[market.id].label}
               episodes={rows === null ? null : ranked}
               header={
-                <>
-                  <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
-                    Leaderboard
-                  </SectionEyebrow>
-                  {/* Light, not bold: the object is the emphasis, the title
-                      names it. */}
-                  <h1 className="mt-3 max-w-[24ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
-                    Cluster buying, where several {market.label} insiders bought
-                    at once
-                  </h1>
-                  <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
-                    Where several {market.noun} bought the same company within a
-                    fortnight of each other. One insider buying is a person’s
-                    opinion;{" "}
-                    <Link
-                      className="text-white/85 underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white/70"
-                      to="/learn/cluster-buying"
-                    >
-                      a cluster
-                    </Link>{" "}
-                    is a board agreeing with itself, which is a different and
-                    rarer thing.
-                  </p>
-                  <StageFigures reserve items={figures} />
-                  <StageNotice marketId={market.id} />
-                </>
+                <StageHeader
+                  dek={
+                    <>
+                      Where several {market.noun} bought the same company
+                      within a fortnight of each other. One insider buying is a
+                      person’s opinion;{" "}
+                      <Link className={STAGE_LINK} to="/learn/cluster-buying">
+                        a cluster
+                      </Link>{" "}
+                      is a board agreeing with itself, which is a different
+                      and rarer thing.
+                    </>
+                  }
+                  eyebrow="Leaderboard"
+                  figures={<StageFigures reserve items={figures} />}
+                  notice={<StageNotice marketId={market.id} />}
+                  title={`Cluster buying, where several ${market.label} insiders bought at once`}
+                  titleClassName="max-w-[24ch]"
+                />
               }
               linking={linking}
               locale={locale}

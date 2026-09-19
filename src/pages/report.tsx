@@ -95,7 +95,7 @@ import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 import { marketForPath } from "@/lib/markets/registry";
 import { reportsCta } from "@/components/seo/cta-copy";
 import { formatGbp, formatSignedPct } from "@/lib/performance/format";
-import { SectionEyebrow } from "@/components/section-eyebrow";
+import { StageHeader } from "@/components/ui/stage-header";
 
 const RULE = "border-hairline dark:border-separator";
 const LABEL = "text-[11px] leading-none text-foreground/50";
@@ -272,21 +272,14 @@ export default function ReportPage() {
               asOf={graded?.asOf ?? ""}
               graded={graded?.graded}
               header={
-                <>
-                  <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
-                    Monthly report
-                  </SectionEyebrow>
-                  {/* Light, not bold: the object is the emphasis, the title
-                      names it. */}
-                  <h1 className="mt-3 max-w-[20ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
-                    {label} insider buying report
-                  </h1>
-                  <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
-                    {standfirst}
-                  </p>
-                  <StageFigures reserve items={figures} />
-                  <StageNotice marketId={marketId} />
-                </>
+                <StageHeader
+                  dek={standfirst}
+                  eyebrow="Monthly report"
+                  figures={<StageFigures reserve items={figures} />}
+                  notice={<StageNotice marketId={marketId} />}
+                  title={`${label} insider buying report`}
+                  titleClassName="max-w-[20ch]"
+                />
               }
               hits={graded?.hits ?? 0}
               misses={graded?.misses ?? 0}

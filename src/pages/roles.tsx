@@ -80,7 +80,7 @@ import {
   toRoleColumns,
   RolesStage,
 } from "@/components/boards/stages/roles-stage";
-import { SectionEyebrow } from "@/components/section-eyebrow";
+import { StageHeader } from "@/components/ui/stage-header";
 
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
@@ -186,18 +186,18 @@ export function RolesIndexPage() {
             <RolesStage
               benchmark={bench.label}
               header={
-                <>
-                  <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
-                    By role
-                  </SectionEyebrow>
-                  {/* Light, not bold: the columns are the emphasis and the
-                      title names them. */}
-                  <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
-                    {market.label} insider buying by role
-                  </h1>
-                  <p className="mt-5 max-w-[58ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px]">
-                    {standfirst}
-                  </p>
+                <StageHeader
+                  dek={standfirst}
+                  eyebrow="By role"
+                  figures={
+                    <StageFigures
+                      reserve
+                      items={rows === null ? [] : roleFigures(model)}
+                    />
+                  }
+                  notice={<StageNotice marketId={market.id} />}
+                  title={`${market.label} insider buying by role`}
+                >
                   {/* The finding, above the fold and on clean ground. It was
                       only ever in the stage's caption strip, and only on the
                       second of two tabs — the answer to the question the title
@@ -217,12 +217,7 @@ export function RolesIndexPage() {
                       {verdict}
                     </p>
                   ) : null}
-                  <StageFigures
-                    reserve
-                    items={rows === null ? [] : roleFigures(model)}
-                  />
-                  <StageNotice marketId={market.id} />
-                </>
+                </StageHeader>
               }
               linking={linking}
               loading={rows === null}
