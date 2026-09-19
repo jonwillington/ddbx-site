@@ -55,17 +55,13 @@ import { displayTicker } from "@/lib/company";
 import { localeFor } from "@/lib/company-format";
 import { UkMarket } from "@/lib/markets/uk";
 import { UsMarket } from "@/lib/markets/us";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { Stage, StageFooter } from "@/components/ui/stage";
+import { StageTitle } from "@/components/ui/stage-header";
 
-/** The story stage's three class strings, verbatim, so the two heroes cannot
- *  drift into two panels. */
-const KICKER =
-  "font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55";
-
-const CAPTION =
-  "flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-white/10 px-5 py-3.5 text-[12.5px] leading-[1.5] text-white/65 sm:px-8";
-
-const PANEL =
-  "board-stage relative overflow-hidden rounded-[28px] border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)]";
+/* The panel, its eyebrow and its caption strip are the shared stage
+   primitives (components/ui/stage.tsx), the same ones the story stage uses,
+   so the two heroes cannot drift into two panels. */
 
 function longDate(iso: string | null | undefined, market: string): string {
   if (!iso) return "";
@@ -176,13 +172,13 @@ export function FilingStage({
   }
 
   return (
-    <div className={PANEL}>
+    <Stage>
       <div className="px-6 pt-7 sm:px-8 sm:pt-9">
-        <p className={KICKER}>
+        <Eyebrow tone="stage">
           {eyebrow}
           {rating ? ` · ${rating}` : ""}
           {` · ${longDate(deal.disclosed_date, market)}`}
-        </p>
+        </Eyebrow>
 
         <CompanyLogo
           className="mt-5"
@@ -191,9 +187,11 @@ export function FilingStage({
           ticker={deal.ticker}
         />
 
-        <h1 className="mt-5 max-w-[26ch] text-balance text-[26px] font-normal leading-[1.12] tracking-[-0.02em] text-white sm:text-[34px] lg:text-[40px]">
+        {/* Capped at 44: the headline is a sentence about the trade, and
+            54px runs it to four lines. */}
+        <StageTitle capped className="mt-5 max-w-[26ch]">
           {filingHeadline(deal, market)}
-        </h1>
+        </StageTitle>
 
         {summary ? (
           <figure className="mt-5 max-w-[60ch]">
@@ -246,7 +244,7 @@ export function FilingStage({
         />
       </div>
 
-      <div className={CAPTION}>
+      <StageFooter className="sm:px-8">
         <span>
           {fmtShares(deal.shares)} shares{price ? ` at ${price}` : ""}, traded{" "}
           {shortDate(deal.trade_date, market)}, disclosed{" "}
@@ -266,8 +264,8 @@ export function FilingStage({
             </>
           ) : null}
         </span>
-      </div>
-    </div>
+      </StageFooter>
+    </Stage>
   );
 }
 
@@ -276,21 +274,21 @@ export function FilingStage({
  *  occupy rather than pushing the page down. */
 export function FilingStageSkeleton() {
   return (
-    <div aria-hidden className={PANEL}>
+    <Stage aria-hidden>
       <div className="px-6 pt-7 sm:px-8 sm:pt-9">
         <Skeleton className="h-[11px] w-[220px] max-w-full" />
         <Skeleton circle className="mt-5" h={80} w={80} />
-        <Skeleton className="mt-5 h-[26px] w-[92%] max-w-[560px] sm:h-[32px]" />
-        <Skeleton className="mt-2 h-[26px] w-[86%] max-w-[540px] sm:h-[32px]" />
-        <Skeleton className="mt-2 h-[26px] w-[64%] max-w-[420px] sm:h-[32px]" />
+        <Skeleton className="mt-5 h-[27px] w-[92%] max-w-[560px] sm:h-[37px]" />
+        <Skeleton className="mt-2 h-[27px] w-[86%] max-w-[540px] sm:h-[37px]" />
+        <Skeleton className="mt-2 h-[27px] w-[64%] max-w-[420px] sm:h-[37px]" />
         <StageFigures reserve items={[]} />
       </div>
       <div className="mt-8 px-5 pb-4 sm:px-8">
         <Skeleton className="h-[360px] w-full rounded-xl" />
       </div>
-      <div className={CAPTION}>
+      <StageFooter className="sm:px-8">
         <Skeleton className="h-[12px] w-[260px] max-w-full" />
-      </div>
-    </div>
+      </StageFooter>
+    </Stage>
   );
 }

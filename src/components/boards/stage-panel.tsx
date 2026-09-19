@@ -36,6 +36,7 @@ import type { Linking } from "./board-model";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import { Skeleton } from "../skeleton";
+import { Stage, StageFooter, StageTooltip } from "../ui/stage";
 
 import { useMeasuredWidth } from "./board-model";
 
@@ -79,23 +80,9 @@ export interface StageContext<M extends string> {
   choose: (mode: M) => void;
 }
 
-/** The object itself. Rounded, hairline, dark in both themes — the design
- *  language's contained-not-blended tenet, and the reason the colours inside
- *  are fixed rather than read through the theme. */
-const PANEL =
-  "board-stage relative overflow-hidden rounded-[28px] border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)]";
-
 /** Message column left, toggle right, both sitting on the chart's baseline. */
 const HEADER_GRID =
   "grid gap-x-12 gap-y-6 px-6 pt-7 sm:px-8 sm:pt-9 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end";
-
-/** The finding, in words, inside the object rather than under it. */
-const CAPTION =
-  "flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-white/10 px-5 py-3.5 text-[12.5px] leading-[1.5] text-white/65";
-
-/** HTML over the SVG, and never under the pointer. */
-const TIP =
-  "pointer-events-none absolute z-20 min-w-[190px] rounded-xl border border-white/12 bg-[#241b12]/95 px-3 py-2 text-[12px] leading-[1.45] text-white shadow-xl backdrop-blur-md";
 
 const DEFAULT_PAD: StagePad = { l: 56, r: 24, t: 68, b: 44 };
 
@@ -403,7 +390,10 @@ export function BoardStagePanel<M extends string>({
 
   return (
     <StageCtx.Provider value={ctx as unknown as StageContext<string>}>
-      <div ref={ref} className={PANEL}>
+      {/* The object itself: rounded, hairline, dark in both themes — the
+          design language's contained-not-blended tenet, and the reason the
+          colours inside are fixed rather than read through the theme. */}
+      <Stage ref={ref}>
         <div className={HEADER_GRID}>
           <div className="min-w-0">{header}</div>
           {hasToggle ? (
@@ -438,8 +428,8 @@ export function BoardStagePanel<M extends string>({
               {children(ctx)}
             </svg>
             {tip && renderTip ? (
-              <div
-                className={TIP}
+              <StageTooltip
+                className="min-w-[190px]"
                 style={{
                   left: Math.min(
                     W - 210,
@@ -449,7 +439,7 @@ export function BoardStagePanel<M extends string>({
                 }}
               >
                 {renderTip(tip.id, ctx)}
-              </div>
+              </StageTooltip>
             ) : null}
           </div>
         )}
@@ -458,15 +448,15 @@ export function BoardStagePanel<M extends string>({
             caption has words to say made the panel grow by a row the moment
             the data landed, which moved everything below the stage. */}
         {caption ? (
-          <div className={CAPTION}>
+          <StageFooter>
             {loading ? (
               <Skeleton className="h-[13px] w-3/5 max-w-[420px]" />
             ) : (
               caption(ctx)
             )}
-          </div>
+          </StageFooter>
         ) : null}
-      </div>
+      </Stage>
     </StageCtx.Provider>
   );
 }

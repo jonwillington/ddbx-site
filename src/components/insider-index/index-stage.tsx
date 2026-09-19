@@ -48,18 +48,13 @@ import {
 import { formatMoney } from "../../../shared/sectors.js";
 import { Skeleton } from "../skeleton";
 import { useMeasuredWidth } from "../boards/board-model";
-
-const PANEL =
-  "board-stage relative overflow-hidden rounded-[28px] border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)]";
+import { Stage, StageFooter, StageTooltip } from "../ui/stage";
 
 /** The one hue on the panel. */
 const INK = "var(--color-brand-amber)";
 
 const PAD = { l: 40, r: 88, t: 24, b: 36 };
 const PAD_NARROW = { l: 34, r: 16, t: 24, b: 36 };
-
-const TIP =
-  "pointer-events-none absolute z-20 min-w-[200px] rounded-xl border border-white/12 bg-[#241b12]/95 px-3 py-2 text-[12px] leading-[1.45] text-white shadow-xl backdrop-blur-md";
 
 function chartHeight(W: number): number {
   return W < 520 ? 280 : 320;
@@ -87,7 +82,7 @@ export function IndexStage({
   const focus = rows.find((r) => r.date === focusDate) ?? null;
 
   return (
-    <div className={PANEL}>
+    <Stage>
       <div className="grid gap-x-12 gap-y-8 px-6 pt-7 sm:px-8 sm:pt-9 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-start">
         <div className="min-w-0">{header}</div>
         <HeroReading loading={all === null} reading={focus} />
@@ -106,11 +101,9 @@ export function IndexStage({
       </div>
 
       {caption ? (
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-white/10 px-5 py-3.5 text-[12.5px] leading-[1.5] text-white/65">
-          {caption}
-        </div>
+        <StageFooter>{caption}</StageFooter>
       ) : null}
-    </div>
+    </Stage>
   );
 }
 
@@ -502,7 +495,10 @@ function Chart({
       </svg>
 
       {tip && tip.r.tier ? (
-        <div className={TIP} style={{ left: tipLeft, top: tipTop }}>
+        <StageTooltip
+          className="min-w-[200px]"
+          style={{ left: tipLeft, top: tipTop }}
+        >
           <p className="font-medium">
             {dateLabel(tip.r.date)}
             <span className="text-white/55"> · {tip.r.tier.label}</span>
@@ -522,7 +518,7 @@ function Chart({
           <p className="mt-1 text-white/45">
             {keyed ? "Enter for this day’s page" : "Click for this day’s page"}
           </p>
-        </div>
+        </StageTooltip>
       ) : null}
       {/* What the keyboard has landed on, for a screen reader. */}
       <p aria-live="polite" className="sr-only" id="index-chart-focus">

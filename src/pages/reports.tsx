@@ -39,6 +39,8 @@ import { StatTiles } from "@/components/seo/stat-tiles";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { Row, RowList } from "@/components/row-list";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { stage } from "@/components/ui/stage";
 import { api } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
 import { reportsCta } from "@/components/seo/cta-copy";
@@ -68,8 +70,7 @@ const CONTENTS_ROW = `grid gap-x-10 gap-y-3 border-b ${RULE} py-7 sm:grid-cols-[
  *  rather than `background`, so the panel stays a panel on the dark theme too:
  *  on the cream page it is the contrast, on the dark page it is a step above
  *  the ground. */
-const LEAD_SHEET =
-  "dark mt-8 rounded-[28px] border border-white/10 bg-surface px-5 py-6 text-foreground shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)] sm:px-8 sm:py-8";
+const LEAD_SHEET = `${stage({ ground: "surface" })} mt-8 px-5 py-6 sm:px-8 sm:py-8`;
 
 export default function ReportsPage() {
   const { marketId, marketParam, label } = useMemo(() => {
@@ -257,9 +258,7 @@ function LatestReport({
 
   return (
     <section className={LEAD_SHEET}>
-      <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
-        Latest report
-      </p>
+      <Eyebrow>Latest report</Eyebrow>
       <h2 className="mt-2 text-[24px] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground">
         {label}
       </h2>

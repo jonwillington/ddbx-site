@@ -10,6 +10,7 @@
 import { useEffect } from "react";
 
 import { SpecimenStrip } from "@/components/how-it-works/specimen-card";
+import { Stage } from "@/components/ui/stage";
 import { examplesFor } from "@/lib/methodology-examples";
 
 export default function SpecimenPreview() {
@@ -31,9 +32,9 @@ export default function SpecimenPreview() {
         Every rating on this site starts as one disclosure and ends as a number
         that can be checked. Here is the filing the rest of this page follows.
       </p>
-      <div className="board-stage mt-8 overflow-hidden rounded-[28px] border border-white/10 text-white">
+      <Stage className="mt-8" shadow={false}>
         <SpecimenStrip specimen={examples.specimen} />
-      </div>
+      </Stage>
     </div>
   );
 }

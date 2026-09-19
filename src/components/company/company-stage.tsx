@@ -24,18 +24,8 @@ import { SectionEyebrow } from "@/components/section-eyebrow";
 import { StageFigures } from "@/components/boards/stage-figures";
 import { CompanyPriceChart } from "@/components/company/price-chart";
 import { Skeleton } from "@/components/skeleton";
-
-const PANEL =
-  "board-stage relative overflow-hidden rounded-[28px] border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)]";
-
-const KICKER =
-  "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55";
-
-const CAPTION =
-  "flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-white/10 px-5 py-3.5 text-[12.5px] leading-[1.5] text-white/65 sm:px-8";
-
-const H1 =
-  "mt-5 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.04] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]";
+import { Stage, StageFooter } from "@/components/ui/stage";
+import { STAGE_DEK, StageTitle } from "@/components/ui/stage-header";
 
 const CHART_H = 240;
 
@@ -68,21 +58,21 @@ export function CompanyStage({
   captionRight?: ReactNode;
 }) {
   return (
-    <div className={PANEL}>
+    <Stage>
       <div className="px-6 pt-7 sm:px-8 sm:pt-9">
-        <SectionEyebrow className={KICKER}>{eyebrow}</SectionEyebrow>
+        <SectionEyebrow tone="stage">{eyebrow}</SectionEyebrow>
 
         {/* The page's own mark: it does not link to the page it is on. */}
         <CompanyLogo className="mt-5" link={false} size={72} ticker={logoKey} />
 
         {/* data-logo: the shell's sticky header draws the mark beside the
             name once this h1 scrolls away (shell-page-header.tsx). */}
-        <h1 className={H1} data-logo={logoKey}>
+        <StageTitle className="mt-5 max-w-[22ch]" data-logo={logoKey}>
           {headline}
-        </h1>
+        </StageTitle>
 
         {deck ? (
-          <p className="mt-4 max-w-[60ch] text-[15px] leading-[1.6] text-white/65 sm:text-[16px]">
+          <p className={`mt-4 max-w-[60ch] ${STAGE_DEK}`}>
             {deck}
           </p>
         ) : null}
@@ -109,20 +99,20 @@ export function CompanyStage({
         </div>
       )}
 
-      <div className={CAPTION}>
+      <StageFooter className="sm:px-8">
         <span>{caption}</span>
         {captionRight ? (
           <span className="text-white/45">{captionRight}</span>
         ) : null}
-      </div>
-    </div>
+      </StageFooter>
+    </Stage>
   );
 }
 
 /** The stage at its arrived geometry, for the page's loading state. */
 export function CompanyStageSkeleton() {
   return (
-    <div aria-hidden className={PANEL}>
+    <Stage aria-hidden>
       <div className="px-6 pt-7 sm:px-8 sm:pt-9">
         <Skeleton className="h-[11px] w-44" />
         <Skeleton circle className="mt-5" h={72} w={72} />
@@ -135,9 +125,9 @@ export function CompanyStageSkeleton() {
         <Skeleton className="h-[22px] w-40" />
         <Skeleton className="mt-3 w-full rounded-xl" h={CHART_H} />
       </div>
-      <div className={CAPTION}>
+      <StageFooter className="sm:px-8">
         <Skeleton className="h-[12px] w-64" />
-      </div>
-    </div>
+      </StageFooter>
+    </Stage>
   );
 }

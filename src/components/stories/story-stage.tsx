@@ -6,6 +6,8 @@ import { StageFigures } from "@/components/boards/stage-figures";
 import { GBP_FORMAT } from "@/lib/markets/uk";
 import { USD_FORMAT } from "@/lib/markets/us";
 import { SectionEyebrow } from "@/components/section-eyebrow";
+import { Stage, StageFooter } from "@/components/ui/stage";
+import { STAGE_DEK, StageTitle } from "@/components/ui/stage-header";
 
 /** Yahoo's USD bars land in the prices table as cents-times-FX while Form 4's
  *  `price` is in major dollars, so the US chart needs the same conversion the
@@ -30,14 +32,6 @@ const normalizeUsdClose = (closePence: number) => closePence / 100;
  *  story simply shows fewer.
  */
 
-const KICKER =
-  "font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55";
-
-const CAPTION =
-  "flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-white/10 px-5 py-3.5 text-[12.5px] leading-[1.5] text-white/65";
-
-const PANEL =
-  "board-stage relative overflow-hidden rounded-[28px] border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)]";
 
 function dateLabel(iso: string | null): string {
   if (!iso) return "";
@@ -115,9 +109,9 @@ export function StoryStage({
   ].filter(Boolean) as Array<{ k: string; v: string; tone?: "pos" | "neg" }>;
 
   return (
-    <div className={`${PANEL} story-stage mt-8`}>
+    <Stage className="story-stage mt-8">
       <div className="px-6 pt-7 sm:px-8 sm:pt-9">
-        <SectionEyebrow className={KICKER}>
+        <SectionEyebrow tone="stage">
           {story.published_at
             ? `${kindLabel} · ${dateLabel(story.published_at)}`
             : kindLabel}
@@ -134,12 +128,12 @@ export function StoryStage({
           ticker={chart.ticker}
         />
 
-        <h1 className="mt-5 max-w-[19ch] text-[28px] font-normal leading-[1.12] tracking-[-0.02em] text-white sm:text-[38px] sm:max-w-[17ch] lg:text-[44px]">
+        <StageTitle className="mt-5 max-w-[19ch] sm:max-w-[17ch]">
           {story.headline}
-        </h1>
+        </StageTitle>
 
         {story.standfirst ? (
-          <p className="mt-4 max-w-[58ch] text-[15px] leading-[1.6] text-white/65">
+          <p className={`mt-4 max-w-[58ch] ${STAGE_DEK}`}>
             {story.standfirst}
           </p>
         ) : null}
@@ -192,12 +186,12 @@ export function StoryStage({
         />
       </div>
 
-      <div className={CAPTION}>
+      <StageFooter>
         <span>{chart.caption}</span>
         <span className="text-white/45">
           {chart.ticker_display} · {chart.market}
         </span>
-      </div>
-    </div>
+      </StageFooter>
+    </Stage>
   );
 }

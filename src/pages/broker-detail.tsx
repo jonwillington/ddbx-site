@@ -41,6 +41,8 @@ import {
 
 import { BrokerNavAside } from "@/components/brokers/broker-aside";
 import { SectionEyebrow } from "@/components/section-eyebrow";
+import { Stage, StageFooter } from "@/components/ui/stage";
+import { StageTitle } from "@/components/ui/stage-header";
 import {
   BrokerComplianceNote,
   BrokerLogo,
@@ -81,11 +83,9 @@ const BODY = "text-[15px] leading-[1.65] text-foreground/75";
 const KICKER =
   "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45";
 
-/** The board-stage material, as every hero in the family draws it. */
-const PANEL =
-  "board-stage relative overflow-hidden rounded-[28px] border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)]";
-const STAGE_KICKER =
-  "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55";
+/* The hero is the board-stage material, as every hero in the family draws
+   it: <Stage> and its caption strip, components/ui/stage.tsx. STRIP is the
+   same strip's type, for the disclosure line along its top. */
 const STRIP =
   "flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-5 py-3.5 text-[12.5px] leading-[1.5] text-white/65";
 
@@ -296,7 +296,7 @@ function ReviewStage({
   const offer = isOfferLive(b) ? b.offer_headline : null;
 
   return (
-    <div className={PANEL}>
+    <Stage>
       {/* The disclosure is the panel's first line: it is on screen whenever
           the visit button below it is, at every width. */}
       <p
@@ -310,15 +310,13 @@ function ReviewStage({
 
       <div className="grid gap-x-12 gap-y-9 px-6 pt-7 sm:px-8 sm:pt-9 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
         <div className="min-w-0">
-          <SectionEyebrow className={STAGE_KICKER}>
+          <SectionEyebrow tone="stage">
             {`Review · Updated ${fmtVerifiedDate(b.last_verified)}`}
           </SectionEyebrow>
 
           <BrokerLogo broker={b} className="mt-5 !rounded-2xl" size={80} />
 
-          <h1 className="mt-5 text-[34px] font-normal leading-[1.05] tracking-[-0.03em] text-white sm:text-[44px] lg:text-[50px]">
-            {b.name}
-          </h1>
+          <StageTitle className="mt-5">{b.name}</StageTitle>
           <p className="mt-3 max-w-[52ch] text-[15px] leading-[1.55] text-white/65 sm:text-[16px]">
             {b.tagline}
           </p>
@@ -401,7 +399,7 @@ function ReviewStage({
         <CostBars className="mt-5" rows={bars} tone="stage" />
       </div>
 
-      <div className={`${STRIP} border-t border-white/10`}>
+      <StageFooter>
         <span>
           {ratings.length
             ? ratings
@@ -419,15 +417,15 @@ function ReviewStage({
             .filter(Boolean)
             .join(" · ")}
         </span>
-      </div>
-    </div>
+      </StageFooter>
+    </Stage>
   );
 }
 
 /** The stage at its arrived geometry, before the record lands. */
 function StageSkeleton() {
   return (
-    <div aria-busy="true" className={PANEL}>
+    <Stage aria-busy="true">
       <span className="sr-only">Loading the review</span>
       <div className={`${STRIP} border-b border-white/10`}>
         <Skeleton className="h-[12px] w-4/5 max-w-[620px]" />
@@ -454,10 +452,10 @@ function StageSkeleton() {
           <Skeleton key={i} className="h-[12px] w-full" />
         ))}
       </div>
-      <div className={`${STRIP} border-t border-white/10`}>
+      <StageFooter>
         <Skeleton className="h-[13px] w-3/5 max-w-[420px]" />
-      </div>
-    </div>
+      </StageFooter>
+    </Stage>
   );
 }
 

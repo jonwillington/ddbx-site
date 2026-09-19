@@ -49,12 +49,8 @@ import { useMemo } from "react";
 import { HeroScaleChart } from "@/components/how-it-works/hero-scale-chart";
 import { SpecimenStrip } from "@/components/how-it-works/specimen-card";
 import { count } from "@/lib/coverage";
-import { SectionEyebrow } from "@/components/section-eyebrow";
-
-/** The board-stage material, verbatim from the insider-index and story
- *  stages: dark in both themes, rounded, one hairline, the warm drop. */
-const PANEL =
-  "board-stage relative overflow-hidden rounded-[28px] border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)]";
+import { Stage } from "@/components/ui/stage";
+import { STAGE_DEK, StageHeader } from "@/components/ui/stage-header";
 
 /** The design language's one sub-perceptual wash (tenet 4): a static pool of
  *  amber under the right-hand end of the drawing, where the survivors' block
@@ -195,18 +191,13 @@ export function HeroStage({
   }, [disclosures, analyses]);
 
   return (
-    <section className={PANEL}>
+    // The board-stage material, as the insider-index and story stages draw
+    // it: dark in both themes, rounded, one hairline, the warm drop.
+    <Stage as="section">
       <div aria-hidden className={WASH} />
 
       <div className="relative grid gap-x-12 gap-y-6 px-6 pt-7 sm:px-8 sm:pt-9 lg:px-10 lg:pt-10 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
-        <div>
-          <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
-            {eyebrow}
-          </SectionEyebrow>
-          <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[44px] lg:text-[50px]">
-            {title}
-          </h1>
-        </div>
+        <StageHeader eyebrow={eyebrow} title={title} />
         <div className="xl:pt-7">
           {ratio ? (
             <p className="max-w-[24ch] text-balance text-[22px] font-medium leading-[1.25] tracking-[-0.015em] text-brand-amber sm:text-[26px]">
@@ -214,7 +205,7 @@ export function HeroStage({
             </p>
           ) : null}
           <p
-            className={`max-w-[52ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px] ${ratio ? "mt-4" : ""}`}
+            className={`max-w-[52ch] ${STAGE_DEK} ${ratio ? "mt-4" : ""}`}
           >
             {standfirst}
           </p>
@@ -234,6 +225,6 @@ export function HeroStage({
           <SpecimenStrip specimen={specimen} />
         </div>
       ) : null}
-    </section>
+    </Stage>
   );
 }
