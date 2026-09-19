@@ -41,6 +41,7 @@ import { api } from "@/lib/api";
 import { displayCompany } from "@/lib/display-name";
 import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { useDiscretion } from "@/lib/discretion";
+import { PRICING, PROMO_NOTE, formatPrice } from "@/lib/pricing";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -709,14 +710,33 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
   id: "us",
   title: "US Form 4 (preview)",
   // US-market copy uses US English (analyzed, not analysed).
+  // The UK hero's shape: the promise, then the offer tinted beneath it, then
+  // one-line checkmark bullets ending on the price (see uk.tsx).
   heroHeadline: (
     <>
-      Start following the{" "}
-      <span className="text-brand-brown dark:text-brand-tan">money</span>.
+      Every US insider deal.
+      <span className="block text-brand-brown dark:text-brand-tan">
+        7 days free.
+      </span>
     </>
   ),
-  heroSubhead:
-    "Every open-market stock purchase a US insider files on Form 4, screened and rated the moment it lands, so you're early to the ones that matter, not reading about them in the news.",
+  heroBullets: [
+    <>Every Form 4 buy, the day it&rsquo;s filed</>,
+    <>Each one screened and rated</>,
+    <>Tracked against the S&amp;P 500</>,
+    <>
+      Then{" "}
+      <strong className="font-semibold text-foreground/90">
+        {formatPrice(PRICING.us, PRICING.us.annual)} for a year
+      </strong>
+      {PRICING.us.promotional && (
+        <span className="text-brand-brown dark:text-brand-tan">
+          {" "}
+          · {PROMO_NOTE.toLowerCase()}
+        </span>
+      )}
+    </>,
+  ],
   faq: buildMarketFaq({
     insiderTerm: "US insider",
     filingPhrase: "on a Form 4",

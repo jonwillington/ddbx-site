@@ -579,8 +579,21 @@ const SwedenAnalysisOverlay = () => <EuWaitlistOverlay marketId="se" />;
 export const SwedenMarket: MarketConfig<EuRowGroup> = {
   id: "se",
   title: "Sweden director dealings (preview)",
-  heroSubhead:
-    "Follow the money. Every Swedish insider purchase, rated as it lands, so you see it as it's filed, not when it's news.",
+  // The UK hero's shape (see uk.tsx), minus its offer: there is no Swedish
+  // app, so no trial and no price (korea.tsx has the same rule).
+  heroHeadline: (
+    <>
+      Every Swedish insider deal.
+      <span className="block text-brand-brown dark:text-brand-tan">
+        Free on the web.
+      </span>
+    </>
+  ),
+  heroBullets: [
+    <>Every Swedish director buy, the day it&rsquo;s filed</>,
+    <>Each one screened and rated</>,
+    <>Straight from Finansinspektionen</>,
+  ],
   faq: buildMarketFaq({
     insiderTerm: "Swedish insider",
     filingPhrase: "to Finansinspektionen",

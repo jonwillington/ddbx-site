@@ -768,8 +768,13 @@ export function MarketHero({
       <HeroLiveGradient tick={radar.tick} />
 
       <div
-        className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 shell:xl:px-8! shell:xl:pt-10! shell:xl:pb-12! ${
-          hasTopNotice ? "pt-16 pb-3 md:pb-6" : "py-3 md:py-6"
+        className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 shell:xl:px-8! shell:xl:pb-12! ${
+          // The beta pill floats at the stage's top edge (BetaTag,
+          // shell:xl:top-7), so a market carrying one clears it here or the
+          // pill lands on the headline.
+          hasTopNotice
+            ? "pt-16 pb-3 md:pb-6 shell:xl:pt-20!"
+            : "py-3 md:py-6 shell:xl:pt-10!"
         }`}
       >
         {appShowcase ? (

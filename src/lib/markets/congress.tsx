@@ -25,6 +25,7 @@ import { RatingBadge } from "@/components/rating-badge";
 import { BenchmarkVerdict, PositionCard } from "@/components/position-card";
 import { MiniPriceChart } from "@/components/mini-price-chart";
 import { useDiscretion } from "@/lib/discretion";
+import { PRICING, PROMO_NOTE, formatPrice } from "@/lib/pricing";
 
 const SPY_TICKER = "^GSPC";
 const SPY_LABEL = "S&P 500";
@@ -944,16 +945,33 @@ function CongressExplainer() {
 export const CongressMarket: MarketConfig<GovDealing> = {
   id: "usg",
   title: "US Congress (preview)",
+  // The UK hero's shape (see uk.tsx). Congress ships inside the US app, so
+  // the offer and the price are the US app's. US-market copy uses US English.
   heroHeadline: (
     <>
-      Which members of{" "}
-      <span className="text-brand-brown dark:text-brand-tan">Congress</span>{" "}
-      have been buying stocks?
+      Every buy in Congress.
+      <span className="block text-brand-brown dark:text-brand-tan">
+        7 days free.
+      </span>
     </>
   ),
-  // US-market copy uses US English.
-  heroSubhead:
-    "Follow the money. Every US Congress STOCK Act purchase, rated as it lands, so you see it as it's filed, not when it's news.",
+  heroBullets: [
+    <>Every STOCK Act purchase, the day it&rsquo;s filed</>,
+    <>Each one screened and rated</>,
+    <>Tracked against the S&amp;P 500</>,
+    <>
+      Then{" "}
+      <strong className="font-semibold text-foreground/90">
+        {formatPrice(PRICING.us, PRICING.us.annual)} for a year
+      </strong>
+      {PRICING.us.promotional && (
+        <span className="text-brand-brown dark:text-brand-tan">
+          {" "}
+          · {PROMO_NOTE.toLowerCase()}
+        </span>
+      )}
+    </>,
+  ],
   faq: buildMarketFaq({
     insiderTerm: "member of Congress",
     filingPhrase: "in a STOCK Act report",

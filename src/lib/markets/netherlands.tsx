@@ -490,8 +490,23 @@ const NetherlandsAnalysisOverlay = () => <EuWaitlistOverlay marketId="nl" />;
 export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
   id: "nl",
   title: "Netherlands director dealings (preview)",
-  heroSubhead:
-    "Follow the money. Every Dutch insider purchase, rated as it lands, so you see it as it's filed, not when it's news.",
+  // The UK hero's shape (see uk.tsx), minus its offer: there is no Dutch app,
+  // so no trial and no price — a bullet selling one would be the page's only
+  // lie (korea.tsx has the same rule). No benchmark bullet either: Amsterdam
+  // has no price source yet, so nothing here is tracked against the AEX.
+  heroHeadline: (
+    <>
+      Every Dutch insider deal.
+      <span className="block text-brand-brown dark:text-brand-tan">
+        Free on the web.
+      </span>
+    </>
+  ),
+  heroBullets: [
+    <>Every Dutch director buy, the day it&rsquo;s filed</>,
+    <>Each one screened and rated</>,
+    <>Straight from the AFM register</>,
+  ],
   faq: buildMarketFaq({
     insiderTerm: "Dutch insider",
     filingPhrase: "to the AFM",
