@@ -18,6 +18,10 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
  *  closing band and its request modal, on a route that pins `.dark`). */
 
 const SIZES = {
+  /** Inside a pill or chip (a recent-search term). */
+  "2xs": { button: "h-4 w-4", icon: "h-3 w-3" },
+  /** Inline in a row or an input (clear the field, forget a recent). */
+  xs: { button: "h-6 w-6", icon: "h-3.5 w-3.5" },
   /** Compact dismiss for banners/toasts. */
   sm: { button: "h-7 w-7", icon: "h-4 w-4" },
   /** Default for drawer/modal headers. */
@@ -26,12 +30,12 @@ const SIZES = {
 
 const TONES = {
   /** Theme-aware: light-contrast circle against the page background. */
-  auto: "bg-black/[0.05] text-muted hover:bg-black/[0.09] hover:text-foreground dark:bg-white/[0.08] dark:hover:bg-white/[0.14] dark:hover:text-foreground focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40",
+  auto: "bg-black/5 text-muted hover:bg-black/9 hover:text-foreground dark:bg-white/8 dark:hover:bg-white/14 dark:hover:text-foreground focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40",
   /** For always-dark surfaces (explainer stage) in either theme. */
-  dark: "bg-white/[0.08] text-[#f3ecdf]/60 hover:bg-white/[0.14] hover:text-[#f3ecdf] focus-visible:ring-white/40",
+  dark: "bg-white/8 text-[#f3ecdf]/60 hover:bg-white/14 hover:text-[#f3ecdf] focus-visible:ring-white/40",
   /** For always-cream surfaces in either theme. `auto`'s light half, literal. */
   light:
-    "bg-black/[0.05] text-ink/55 hover:bg-black/[0.09] hover:text-ink focus-visible:ring-brand-brown/40",
+    "bg-black/5 text-ink/55 hover:bg-black/9 hover:text-ink focus-visible:ring-brand-brown/40",
 } as const;
 
 export function CloseButton({

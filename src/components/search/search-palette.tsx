@@ -42,13 +42,16 @@ import {
   DocumentTextIcon,
   MagnifyingGlassIcon,
   UserIcon,
-  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 import { useAppHandoff } from "@/components/app-handoff-modal";
 import { CompanyLogo } from "@/components/company-logo";
 import { TickerPill } from "@/components/ticker-pill";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import { chip } from "@/components/chip";
+import { CloseButton } from "@/components/close-button";
+import { Skeleton } from "@/components/skeleton";
+import { eyebrow } from "@/components/ui/eyebrow";
 import { appHrefForMarket } from "@/lib/app-store";
 import { displayTicker } from "@/lib/company";
 import { marketForPath } from "@/lib/markets/registry";
@@ -116,8 +119,7 @@ const RECORDED_GROUPS = new Set([
   "Developers",
 ]);
 
-const EYEBROW =
-  "px-3 pb-1.5 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-foreground/45";
+const EYEBROW = `${eyebrow("quiet")} px-3 pb-1.5 pt-3`;
 
 function isMac(): boolean {
   if (typeof navigator === "undefined") return true;
@@ -244,7 +246,7 @@ export function SearchLauncher({ className }: { className?: string }) {
         aria-haspopup="dialog"
         aria-keyshortcuts={mac ? "Meta+K" : "Control+K"}
         className={clsx(
-          "group flex w-full items-center gap-2.5 rounded-lg border border-black/[0.07] bg-white/55 px-2.5 py-[6px] text-left text-[13px] text-foreground/50 shadow-[0_1px_1px_rgba(0,0,0,0.03)] transition-colors hover:border-black/[0.12] hover:bg-white/80 hover:text-foreground/70 dark:border-white/[0.07] dark:bg-white/[0.04] dark:hover:border-white/[0.12] dark:hover:bg-white/[0.07]",
+          "group flex w-full items-center gap-2.5 rounded-control border border-black/7 bg-white/55 px-2.5 py-1.5 text-left text-small text-foreground/50 shadow-xs transition-colors hover:border-black/12 hover:bg-white/80 hover:text-foreground/70 dark:border-white/7 dark:bg-white/4 dark:hover:border-white/12 dark:hover:bg-white/7",
           className,
         )}
         data-ga-event="search_open"
@@ -277,7 +279,7 @@ function Kbd({
   return (
     <kbd
       className={clsx(
-        "inline-flex min-w-[20px] items-center justify-center rounded-[5px] border border-black/[0.09] bg-white/70 px-1 font-sans text-[10.5px] font-medium leading-[18px] text-foreground/50 dark:border-white/10 dark:bg-white/[0.06]",
+        "inline-flex h-5 min-w-5 items-center justify-center rounded-mark border border-black/9 bg-white/70 px-1 font-sans text-caption font-medium text-foreground/50 dark:border-white/10 dark:bg-white/6",
         className,
       )}
     >
@@ -548,7 +550,7 @@ function SearchPalette({
         label: "Recently viewed",
         action: (
           <button
-            className="rounded px-1 text-[11px] font-medium normal-case tracking-normal text-foreground/45 hover:text-foreground/80"
+            className="rounded-mark px-1 font-sans text-caption font-medium normal-case tracking-normal text-foreground/45 hover:text-foreground/80"
             data-ga-event="search_clear_history"
             type="button"
             onClick={() => clearHistory()}
@@ -894,7 +896,7 @@ function SearchPalette({
     <div className="fixed inset-0 z-[60] flex justify-center px-4 pt-[min(14vh,120px)]">
       <button
         aria-label="Close search"
-        className="animate-search-backdrop absolute inset-0 cursor-default bg-[#1a140e]/35 backdrop-blur-[2px] dark:bg-black/60"
+        className="animate-search-backdrop absolute inset-0 cursor-default bg-ink/35 backdrop-blur-[2px] dark:bg-black/60"
         tabIndex={-1}
         type="button"
         onClick={onClose}
@@ -902,11 +904,11 @@ function SearchPalette({
       <div
         aria-label="Search"
         aria-modal="true"
-        className="animate-search-in relative flex max-h-[min(640px,calc(100vh-min(14vh,120px)-32px))] w-full max-w-[640px] flex-col self-start overflow-hidden rounded-[16px] border border-black/[0.09] bg-background shadow-[0_28px_90px_-20px_rgba(40,28,16,0.45),0_2px_6px_rgba(40,28,16,0.06)] dark:border-white/10 dark:shadow-[0_28px_90px_-20px_rgba(0,0,0,0.8)]"
+        className="animate-search-in relative flex max-h-[min(640px,calc(100vh-min(14vh,120px)-32px))] w-full max-w-[640px] flex-col self-start overflow-hidden rounded-card border border-black/9 bg-background shadow-float dark:border-white/10"
         role="dialog"
       >
         {/* Field */}
-        <div className="flex h-[56px] shrink-0 items-center gap-3 border-b border-black/[0.07] px-4 dark:border-separator">
+        <div className="flex h-14 shrink-0 items-center gap-3 border-b border-rule px-4">
           <MagnifyingGlassIcon className="h-[18px] w-[18px] shrink-0 text-foreground/45" />
           <input
             ref={inputRef}
@@ -917,7 +919,7 @@ function SearchPalette({
             aria-autocomplete="list"
             aria-controls={listId}
             autoComplete="off"
-            className="min-w-0 flex-1 bg-transparent text-[16px] text-foreground outline-none placeholder:text-foreground/35"
+            className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-foreground/35"
             enterKeyHint="go"
             placeholder={
               entityMarket
@@ -931,17 +933,14 @@ function SearchPalette({
             onKeyDown={onKeyDown}
           />
           {query ? (
-            <button
+            <CloseButton
               aria-label="Clear search"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-foreground/55 hover:bg-black/[0.1] hover:text-foreground dark:bg-white/[0.08] dark:hover:bg-white/[0.14]"
-              type="button"
+              size="xs"
               onClick={() => {
                 setQuery("");
                 inputRef.current?.focus();
               }}
-            >
-              <XMarkIcon className="h-3.5 w-3.5" />
-            </button>
+            />
           ) : (
             <button
               className="shrink-0"
@@ -975,7 +974,7 @@ function SearchPalette({
         )}
 
         {/* Key hints */}
-        <div className="hidden h-9 shrink-0 items-center gap-4 border-t border-black/[0.07] px-4 text-[11px] text-foreground/45 dark:border-separator sm:flex">
+        <div className="hidden h-9 shrink-0 items-center gap-4 border-t border-rule px-4 text-caption text-foreground/45 sm:flex">
           <span className="flex items-center gap-1.5">
             <Kbd>↑</Kbd>
             <Kbd>↓</Kbd>
@@ -1018,7 +1017,7 @@ function Hl({ text, q }: { text: string; q: string }) {
         r.hit ? (
           <mark
             key={i}
-            className="bg-transparent font-semibold text-[#5a4128] dark:text-[#e2cdb6]"
+            className="bg-transparent font-semibold text-brand-brown dark:text-[#e2cdb6]"
           >
             {r.text}
           </mark>
@@ -1033,7 +1032,7 @@ function Hl({ text, q }: { text: string; q: string }) {
 /** "View in ddbx US ↗" — the row leaves this site for the other market's. */
 function AwayTag({ market }: { market: EntityMarket }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-black/[0.09] px-2 py-[1px] text-[11px] font-medium text-foreground/60 dark:border-white/[0.12]">
+    <span className={`${chip("sm")} text-foreground/60`}>
       View in {marketName(market)}
       <ArrowUpRightIcon className="h-3 w-3" />
     </span>
@@ -1042,7 +1041,7 @@ function AwayTag({ market }: { market: EntityMarket }) {
 
 function IconTile({ icon: Icon }: { icon: typeof UserIcon }) {
   return (
-    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-foreground/55 dark:bg-white/[0.07]">
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/5 text-foreground/55 dark:bg-white/7">
       <Icon className="h-3.5 w-3.5" />
     </span>
   );
@@ -1066,17 +1065,17 @@ function Row({
   return (
     <div
       className={clsx(
-        "group/row flex min-h-[46px] items-center gap-3 rounded-[10px] px-2.5 py-1.5",
-        active ? "bg-[#fcfbf9] dark:bg-white/[0.07]" : "",
+        "group/row flex min-h-[46px] items-center gap-3 rounded-control px-2.5 py-1.5",
+        active ? "bg-page dark:bg-white/7" : "",
       )}
     >
       {lead}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] leading-[1.35] text-foreground">
+        <div className="truncate text-body leading-snug text-foreground">
           {title}
         </div>
         {sub ? (
-          <div className="truncate text-[12px] leading-[1.35] text-foreground/50">
+          <div className="truncate text-small leading-snug text-foreground/50">
             {sub}
           </div>
         ) : null}
@@ -1084,7 +1083,7 @@ function Row({
       {meta ? (
         <span
           className={clsx(
-            "shrink-0 text-[11.5px] tabular-nums text-foreground/40",
+            "shrink-0 text-caption tabular-nums text-foreground/40",
             active && onForget && "hidden",
           )}
         >
@@ -1092,19 +1091,16 @@ function Row({
         </span>
       ) : null}
       {onForget && active ? (
-        <button
+        <CloseButton
           aria-label="Remove from recent"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-foreground/40 hover:bg-black/[0.07] hover:text-foreground dark:hover:bg-white/[0.1]"
+          size="xs"
           tabIndex={-1}
-          type="button"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             onForget();
           }}
-        >
-          <XMarkIcon className="h-3.5 w-3.5" />
-        </button>
+        />
       ) : null}
       <Kbd className={clsx("shrink-0", !active && "invisible")}>↵</Kbd>
     </div>
@@ -1123,27 +1119,24 @@ function TermChip({
   return (
     <span
       className={clsx(
-        "group/chip inline-flex items-center gap-1.5 rounded-full border py-[3px] pl-2.5 pr-1 text-[12.5px] transition-colors",
+        "group/chip inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-2.5 pr-1 text-small transition-colors",
         active
-          ? "border-[#d9c9b3] bg-[#fcfbf9] text-[#5a4128] dark:border-white/20 dark:bg-white/[0.08] dark:text-[#e2cdb6]"
-          : "border-black/[0.08] text-foreground/70 dark:border-white/10",
+          ? "border-[#d9c9b3] bg-page text-brand-brown dark:border-white/20 dark:bg-white/8 dark:text-[#e2cdb6]"
+          : "border-black/8 text-foreground/70 dark:border-white/10",
       )}
     >
       <ClockIcon className="h-3 w-3 opacity-60" />
       {term}
-      <button
+      <CloseButton
         aria-label={`Remove “${term}” from recent searches`}
-        className="flex h-4 w-4 items-center justify-center rounded-full opacity-40 hover:bg-black/[0.08] hover:opacity-100 dark:hover:bg-white/[0.12]"
+        size="2xs"
         tabIndex={-1}
-        type="button"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           onForget();
         }}
-      >
-        <XMarkIcon className="h-3 w-3" />
-      </button>
+      />
     </span>
   );
 }
@@ -1186,15 +1179,15 @@ function AppStrip({
   );
 
   return (
-    <div className="flex shrink-0 items-center gap-3 border-t border-black/[0.07] bg-black/[0.02] px-4 py-2.5 dark:border-separator dark:bg-white/[0.03]">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#5a4128] shadow-[0_1px_2px_rgba(90,65,40,0.12)] dark:bg-white/[0.08] dark:text-[#e2cdb6]">
+    <div className="flex shrink-0 items-center gap-3 border-t border-rule bg-black/2 px-4 py-2.5 dark:bg-white/3">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-brand-brown shadow-xs dark:bg-white/8 dark:text-[#e2cdb6]">
         <BellAlertIcon className="h-3.5 w-3.5" />
       </span>
-      <p className="min-w-0 flex-1 truncate text-[12.5px] text-foreground/60">
+      <p className="min-w-0 flex-1 truncate text-small text-foreground/60">
         {line}
       </p>
       <a
-        className={`inline-flex shrink-0 items-center gap-1 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-2.5 py-1 text-[12px] font-medium`}
+        className={`inline-flex shrink-0 items-center gap-1 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-2.5 py-1 text-small font-medium`}
         data-ga-event="cta_search_get_app"
         data-ga-label={`Search ${marketId}${subject ? ` · ${subject.kind}` : ""}`}
         rel="noopener noreferrer"
@@ -1217,10 +1210,10 @@ function AppStrip({
 function EmptyHint() {
   return (
     <div className="px-6 py-10 text-center">
-      <p className="text-[14px] text-foreground/70">
+      <p className="text-body text-foreground/70">
         Search by company, ticker or insider.
       </p>
-      <p className="mt-1 text-[12.5px] text-foreground/45">
+      <p className="mt-1 text-small text-foreground/45">
         Pages you visit will show up here.
       </p>
     </div>
@@ -1240,11 +1233,8 @@ function LoadingRows({ compact = false }: { compact?: boolean }) {
           key={i}
           className="flex min-h-[46px] items-center gap-3 px-2.5 py-1.5"
         >
-          <span className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-black/[0.06] dark:bg-white/[0.07]" />
-          <span
-            className="h-3 animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.07]"
-            style={{ width: `${[46, 34, 52, 40][i % 4]}%` }}
-          />
+          <Skeleton circle className="h-7 w-7 shrink-0" />
+          <Skeleton className="h-3" w={`${[46, 34, 52, 40][i % 4]}%`} />
         </div>
       ))}
     </div>
@@ -1253,7 +1243,7 @@ function LoadingRows({ compact = false }: { compact?: boolean }) {
 
 function FailedNote({ onRetry }: { onRetry: () => void }) {
   return (
-    <p className="mx-4 mt-2 rounded-lg bg-black/[0.03] px-3 py-2 text-[12.5px] text-foreground/60 dark:bg-white/[0.04]">
+    <p className="mx-4 mt-2 rounded-control bg-black/3 px-3 py-2 text-small text-foreground/60 dark:bg-white/4">
       We couldn’t load companies and insiders just now, so only pages are
       searched.{" "}
       <button
@@ -1283,7 +1273,7 @@ function NoResults({
   if (failed) {
     return (
       <div className="px-6 py-10 text-center">
-        <p className="text-[14px] text-foreground/75">
+        <p className="text-body text-foreground/75">
           Nothing in pages for “{query}”.
         </p>
         <FailedNote onRetry={onRetry} />
@@ -1293,19 +1283,17 @@ function NoResults({
 
   return (
     <div className="px-6 py-10 text-center">
-      <p className="text-[14px] text-foreground/75">
-        No matches for “{query}”.
-      </p>
+      <p className="text-body text-foreground/75">No matches for “{query}”.</p>
       {browse && (
-        <p className="mx-auto mt-1 max-w-[40ch] text-[12.5px] leading-[1.55] text-foreground/45">
-          Try a ticker, part of a company name or an insider’s surname. We
-          list UK and US companies where an insider has bought shares on the
-          open market.
+        <p className="mx-auto mt-1 max-w-[40ch] text-small text-foreground/45">
+          Try a ticker, part of a company name or an insider’s surname. We list
+          UK and US companies where an insider has bought shares on the open
+          market.
         </p>
       )}
       {browse && (
         <Link
-          className="mt-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-[#5a4128] hover:underline dark:text-[#e2cdb6]"
+          className="mt-4 inline-flex items-center gap-1 text-small font-medium text-brand-brown hover:underline dark:text-[#e2cdb6]"
           to="/companies"
           onClick={onBrowse}
         >
