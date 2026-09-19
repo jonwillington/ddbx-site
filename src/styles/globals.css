@@ -126,7 +126,7 @@
     /* Above the frame mask (35), which would otherwise paint over it. */
     z-index: 40;
     border: 1px solid var(--shell-panel-edge);
-    border-radius: 20px;
+    border-radius: 16px;
     background: var(--shell-panel);
     overflow: hidden;
   }
@@ -164,7 +164,8 @@
    follows the radius, so the sheet's corners are masked over whatever
    scrolls beneath and hold at every scroll position. z 35: above sticky page
    chrome (≤ 34, incl. the page header), below the panels (40) and modals /
-   sheets (50). */
+   sheets (50). One radius (16px) for all three panels: the frame's hole,
+   the nav panel (side-nav.tsx) and the rails — change them together. */
 .shell-frame {
   position: fixed;
   top: 12px;
@@ -173,7 +174,7 @@
   right: var(--shell-r);
   z-index: 35;
   pointer-events: none;
-  border-radius: 20px;
+  border-radius: 16px;
   border: 1px solid var(--shell-panel-edge);
   box-shadow: 0 0 0 100vmax var(--shell-frame);
 }

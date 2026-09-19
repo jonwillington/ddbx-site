@@ -195,27 +195,15 @@ export function SideNav() {
   )?.[1] as DevicePlatform | undefined;
   const { market, dashboardHref, handoff, isPinnedTheme, navItems } =
     useNavModel(routePlatform);
-  // The rail lists Learn after Stories. The top bar puts Learn second, as
-  // the first thing a newcomer needs, but in a rail the eye runs down the
-  // content (Deals, Research, Stories) before the guides.
-  const isLearn = (i: NavItem) => i.kind === "menu" && i.id === "learn";
-  const isStories = (i: NavItem) =>
-    i.kind === "menu" ? i.id === "stories" : i.label === "Stories";
-  const learn = navItems.find(isLearn);
-  // Only move it when Stories is there to follow; otherwise leave the order.
-  const railItems =
-    learn && navItems.some(isStories)
-      ? navItems
-          .filter((i) => !isLearn(i))
-          .flatMap((i) => (isStories(i) ? [i, learn] : [i]))
-      : navItems;
 
   return (
-    <aside className="fixed bottom-3 left-3 top-3 z-40 hidden w-[216px] flex-col rounded-[20px] border border-[var(--shell-panel-edge)] bg-[var(--shell-panel)] xl:flex">
-      {/* One line: wordmark, market, theme. The picker stays outside the
+    <aside className="fixed bottom-3 left-3 top-3 z-40 hidden w-[216px] flex-col rounded-[16px] border border-[var(--shell-panel-edge)] bg-[var(--shell-panel)] xl:flex">
+      {/* One line: wordmark, market, theme, ruled off from the nav under it
+          the way the right rail's header is, at the same 64px height so the
+          two rules line up across the sheet. The picker stays outside the
           scroll area — its dropdown hangs below the trigger and an overflow
           container would clip it. */}
-      <div className="flex h-14 shrink-0 items-center gap-2 px-3.5">
+      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-black/[0.08] px-3.5 dark:border-separator">
         <NavLink className="shrink-0" href={dashboardHref}>
           <img
             alt={siteConfig.name}
@@ -229,10 +217,10 @@ export function SideNav() {
 
       <nav
         aria-label="Primary"
-        className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
+        className="min-h-0 flex-1 overflow-y-auto px-2 py-2"
       >
         <ul className="space-y-px">
-          {railItems.map((item) => {
+          {navItems.map((item) => {
             const active = item.match(location.pathname);
 
             // Stories lists article records in the top bar's dropdown. In a

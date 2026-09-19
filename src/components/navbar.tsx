@@ -534,32 +534,6 @@ export function useNavModel(
       href: dashboardHref,
       match: (p: string) => p === dashboardHref || p === "/",
     },
-    // Learn sits second, ahead of Research: it is the item a reader who has
-    // never followed director buying needs first, and the four after it
-    // (Research, Brokers, API, MCP) all assume they already do. It took the
-    // place of a plain "Method" link, which is now its "How it works" row —
-    // see learnNavLinks for why the two were folded rather than added.
-    //
-    // Gated to the two markets that publish /how-it-works and own glossary
-    // entries: SE/NL run no analysis layer for it to describe — on ddbx.eu the
-    // route 301s to ddbx.uk (see isForeignResearchPath in shared/seo.js), so
-    // linking it there would put a cross-domain redirect in the primary nav.
-    // Congress and Trump Media ride the US domain but score on their own
-    // model, so they're out too.
-    ...(market.id === "uk" || market.id === "us"
-      ? [
-          {
-            kind: "menu" as const,
-            id: "learn" as const,
-            label: "Learn",
-            links: learnNavLinks(location.pathname),
-            match: (p: string) =>
-              p === "/how-it-works" ||
-              p === "/learn" ||
-              p.startsWith("/learn/"),
-          },
-        ]
-      : []),
     // "Companies" used to sit here as its own item; it is now the first row of
     // the Research menu. The masthead holds its item count rather than growing
     // it at exactly the 768px breakpoint where the list first appears, and
@@ -583,8 +557,8 @@ export function useNavModel(
     // indexes over the feed; a story is a piece of writing about one case, and
     // filing it under a menu of rankings buried the only thing on the site a
     // reader might come back for. That does take the masthead past the count
-    // the Learn menu was folded to preserve, so it appears one item later than
-    // it reads: after Research, before Brokers.
+    // the Learn menu was folded to preserve. It sits after Research and
+    // ahead of Learn, with the content items together at the front.
     ...(showStories
       ? [
           storyLinks.length > 0
@@ -603,6 +577,33 @@ export function useNavModel(
                 match: (p: string) =>
                   p === "/stories" || p.startsWith("/stories/"),
               },
+        ]
+      : []),
+    // Learn follows the content items (Deals, Research, Stories) rather than
+    // leading them: it sat second, as the first thing a newcomer needs, but
+    // the site sells on what it covers, and the guides read as support for
+    // that rather than the way in. It took the place of a plain "Method"
+    // link, which is now its "How it works" row — see learnNavLinks for why
+    // the two were folded rather than added.
+    //
+    // Gated to the two markets that publish /how-it-works and own glossary
+    // entries: SE/NL run no analysis layer for it to describe — on ddbx.eu the
+    // route 301s to ddbx.uk (see isForeignResearchPath in shared/seo.js), so
+    // linking it there would put a cross-domain redirect in the primary nav.
+    // Congress and Trump Media ride the US domain but score on their own
+    // model, so they're out too.
+    ...(market.id === "uk" || market.id === "us"
+      ? [
+          {
+            kind: "menu" as const,
+            id: "learn" as const,
+            label: "Learn",
+            links: learnNavLinks(location.pathname),
+            match: (p: string) =>
+              p === "/how-it-works" ||
+              p === "/learn" ||
+              p.startsWith("/learn/"),
+          },
         ]
       : []),
     ...(showBrokers
