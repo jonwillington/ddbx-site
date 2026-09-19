@@ -409,6 +409,11 @@ export interface BoardRowProps {
    *  list shares one subject that the page has already named — see `named` on
    *  BoardRowShape. */
   name?: ReactNode;
+  /** Let the name wrap in full instead of clamping at two lines. For a name
+   *  that is a sentence rather than a company — a story headline, whose
+   *  kicker already spends one of the two lines — where an ellipsis cuts the
+   *  point off the end. */
+  wrapName?: boolean;
   /** Sits beside the name. Usually a `TickerPill`. */
   badge?: ReactNode;
   /** The second line, allowed to WRAP. /cluster-buys learned the hard way
@@ -460,6 +465,7 @@ export function BoardRow({
   secondary,
   to,
   visual,
+  wrapName = false,
 }: BoardRowProps) {
   const grid = BOARD_ROW_GRID({
     facts: facts.length,
@@ -586,7 +592,9 @@ export function BoardRow({
                   lines is the cap: past that the rows stop being scannable
                   down, which is the whole point of the aligned columns. */}
               {name != null ? (
-                <span className="line-clamp-2 min-w-0 text-[18px] font-semibold leading-[1.3] tracking-[-0.014em] text-foreground xl:text-[20px]">
+                <span
+                  className={`${wrapName ? "" : "line-clamp-2 "}min-w-0 text-[18px] font-semibold leading-[1.3] tracking-[-0.014em] text-foreground xl:text-[20px]`}
+                >
                   {name}
                 </span>
               ) : null}

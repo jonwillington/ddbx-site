@@ -31,6 +31,7 @@ import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { StoryBody } from "@/components/stories/story-body";
 import { StoryBuys } from "@/components/stories/story-buys";
+import { MoreStories, SimilarTrades } from "@/components/stories/story-related";
 import { StoryStage, type ReturnBasis } from "@/components/stories/story-stage";
 import { api } from "@/lib/api";
 import { STORY_KIND_LABEL } from "@/lib/stories";
@@ -184,6 +185,9 @@ export default function StoryPage() {
                 </ol>
               </SeoSection>
             ) : null}
+
+            <SimilarTrades story={s} />
+            <MoreStories story={s} />
           </>
         ) : null}
       </SeoPageShell>
