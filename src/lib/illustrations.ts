@@ -123,10 +123,11 @@ export function illustrationSrcSet(
 
 /** Which scene a market status is drawn with.
  *
- *  Keyed on the same `MarketStatus` value the copy is written from
- *  (`describeStatus` in market-anchor-card.tsx, `describe` in
- *  today-empty-state.tsx), so the picture and the words can't disagree —
- *  a "Market opens in 40m" headline never sits next to the moon. Mirrors
+ *  Keyed on `MarketStatus`, so whatever copy sits beside it is written from
+ *  the same value and the picture and the words can't disagree — a "Market
+ *  opens in 40m" headline never sits next to the moon. (No caller since the
+ *  empty-day hero and anchor card were removed, 2026-09-19; kept because it
+ *  mirrors the app and the scenes are still shipped.) Mirrors
  *  the app's `noDealsTodayCard` / `noStandoutsCopy` in
  *  `Features/Dashboard/DashboardView.swift`, including its split of the
  *  non-trading hours: after the close is always night; before the open

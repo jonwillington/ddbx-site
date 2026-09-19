@@ -45,7 +45,7 @@ import {
  *  cells sit side by side; stacked on a phone it becomes the horizontal rule
  *  above the second tier, because a vertical rule between stacked blocks has
  *  nothing to divide. Whole literals so Tailwind can see them (as in
- *  `latest-buy.tsx`). */
+ *  the since-removed `latest-buy.tsx`). */
 function cellRule(index: number): string {
   return index === 0
     ? ""

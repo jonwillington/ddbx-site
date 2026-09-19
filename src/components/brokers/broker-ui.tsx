@@ -20,11 +20,7 @@ import {
   badgeLabel,
   brokerHref,
   brokerLinkRel,
-  fmtMoney,
-  fmtPct,
   isAffiliateLink,
-  isOfferLive,
-  platformFeeSummary,
 } from "@/lib/brokers";
 
 function domainFromUrl(url: string): string {
@@ -174,53 +170,6 @@ export function StarRating({
   );
 }
 
-/** Row of available store/Trustpilot ratings — only renders the ones present. */
-export function RatingsStrip({
-  broker,
-  className,
-}: {
-  broker: BrokerOffer;
-  className?: string;
-}) {
-  const items = (
-    [
-      { label: "App Store", value: broker.trust.app_store_rating },
-      { label: "Google Play", value: broker.trust.play_store_rating },
-      { label: "Trustpilot", value: broker.trust.trustpilot_rating },
-    ] as { label: string; value: number | null }[]
-  ).filter((i): i is { label: string; value: number } => i.value != null);
-
-  if (!items.length) return null;
-
-  return (
-    <div
-      className={clsx("flex flex-wrap items-center gap-x-5 gap-y-2", className)}
-    >
-      {items.map((i) => (
-        <span key={i.label} className="inline-flex items-center gap-1.5">
-          <StarRating value={i.value} />
-          <span className="text-[11px] text-foreground/50">{i.label}</span>
-        </span>
-      ))}
-    </div>
-  );
-}
-
-/** Verbose boolean for detail rows: check + Yes / No / Not stated (null).
- *  Clearer than the compact grid Tick on a long spec page. */
-export function BoolValue({ value }: { value: boolean | null | undefined }) {
-  if (value === true)
-    return (
-      <span className="inline-flex items-center gap-1 text-positive">
-        <CheckIcon className="h-[15px] w-[15px] shrink-0" strokeWidth={2.5} />
-        Yes
-      </span>
-    );
-  if (value === false) return <span className="text-foreground/55">No</span>;
-
-  return <span className="text-foreground/40">Not stated</span>;
-}
-
 /** Outbound CTA to a broker. Renders the affiliate/referral link when present
  *  (rel="sponsored", with an "Ad" marker per ASA guidance), else the canonical
  *  site. Click is auto-tracked by the delegated GA listener via data-ga-*. */
@@ -312,68 +261,6 @@ export function BrokerDisclosure({ className }: { className?: string }) {
     >
       <span className="font-semibold text-foreground/80">Ad</span>.{" "}
       {BROKER_DISCLOSURE.replace(/^Ad\. /, "")}
-    </div>
-  );
-}
-
-function BuyFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <dt className="text-foreground/55">{label}</dt>
-      <dd className="font-medium text-foreground/85">{value}</dd>
-    </div>
-  );
-}
-
-/** Conversion card for a single broker — logo, rating, headline facts, offer
- *  and a full-width Visit CTA. Used in the detail-page sticky rail and the
- *  mobile sticky bar. */
-export function BrokerBuyBox({ broker: b }: { broker: BrokerOffer }) {
-  const accounts =
-    [b.accounts.stocks_isa && "ISA", b.accounts.sipp && "SIPP"]
-      .filter(Boolean)
-      .join(" + ") || "General only";
-
-  return (
-    <div className="rounded-2xl border border-brand-brown/25 bg-background/60 p-4 dark:border-[#d8c4af]/25">
-      <div className="flex items-center gap-3">
-        <BrokerLogo broker={b} size={44} />
-        <div className="min-w-0">
-          <div className="truncate font-semibold text-foreground">{b.name}</div>
-          {/* Stars are driven by one named source. App Store, Play and
-              Trustpilot rate different things and don't average. */}
-          {b.trust.trustpilot_rating != null && (
-            <span className="inline-flex items-center gap-1.5">
-              <span className="text-[11px] text-foreground/50">Trustpilot</span>
-              <StarRating value={b.trust.trustpilot_rating} />
-            </span>
-          )}
-        </div>
-      </div>
-      {isOfferLive(b) && (
-        <OfferBadge className="mt-3" text={b.offer_headline!} />
-      )}
-      <dl className="mt-3 space-y-1.5 text-xs">
-        <BuyFact label="Platform fee" value={platformFeeSummary(b.fees)} />
-        <BuyFact
-          label="UK trade"
-          value={fmtMoney(b.fees.trade_commission_uk_gbp)}
-        />
-        <BuyFact label="FX fee" value={fmtPct(b.fees.fx_fee_pct)} />
-        <BuyFact label="Accounts" value={accounts} />
-      </dl>
-      <div className="mt-4">
-        <BrokerVisitLink
-          broker={b}
-          className="w-full"
-          placement="buy_box"
-          size="lg"
-        />
-      </div>
-      <p className="mt-2 text-center text-[10px] leading-snug text-foreground/45">
-        Capital at risk.
-        {isAffiliateLink(b) ? " We may earn a commission." : ""}
-      </p>
     </div>
   );
 }
