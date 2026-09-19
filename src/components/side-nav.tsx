@@ -68,7 +68,7 @@ function SubLink({ link, current }: { link: ResearchLink; current: boolean }) {
       <NavLink
         className={clsx(
           "flex w-full rounded-control px-2.5 transition-colors hover:bg-black/4 dark:hover:bg-white/5",
-          link.row ? "flex-col gap-0.5 py-2" : "py-1 text-small",
+          link.row ? "flex-col gap-0.5 py-2" : "py-1.25 text-small",
           current
             ? "font-medium text-brand-brown dark:text-[#d8c4af]"
             : "text-foreground/75",
