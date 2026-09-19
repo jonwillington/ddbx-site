@@ -89,9 +89,7 @@ function SubLink({ link, current }: { link: ResearchLink; current: boolean }) {
                 {link.row.date}
               </span>
             </span>
-            <span className="line-clamp-2 text-small">
-              {link.label}
-            </span>
+            <span className="line-clamp-2 text-small">{link.label}</span>
           </>
         ) : (
           link.label

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -6,6 +6,100 @@ import { Drawer } from "vaul";
 
 import { useMediaQuery } from "@/lib/use-media-query";
 import { CloseButton } from "@/components/close-button";
+
+/** The modal material: the panel every dialog on the site sits in. */
+export const MODAL_PANEL =
+  "rounded-card border border-black/10 bg-background shadow-float outline-none dark:border-white/10";
+
+/** Escape-to-close and body-scroll lock while `active`. vaul does both for
+ *  the bottom sheets, so only the hand-rolled centred dialogs call this. */
+export function useModalDismiss(active: boolean, onClose: () => void) {
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    const prevOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [active, onClose]);
+}
+
+/** The dimmed backdrop, as a real button so a click outside closes the
+ *  dialog. Out of the tab order: the dialog's own CloseButton is the
+ *  keyboard way out. Extra props (a GA scope) pass through. */
+export function ModalBackdrop(props: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      aria-label="Close"
+      className="absolute inset-0 z-0 cursor-default bg-black/50"
+      tabIndex={-1}
+      type="button"
+      {...props}
+    />
+  );
+}
+
+/** A small centred dialog with no header — the store handoff, the
+ *  coming-soon app modal and the unlock gates. The same backdrop, dismissal
+ *  and CloseButton as {@link AppModal}'s desktop branch; the content owns its
+ *  own heading. `closeProps` / `backdropProps` carry each caller's GA attrs. */
+export function ModalDialog({
+  open,
+  onClose,
+  label,
+  className = "",
+  align = "center",
+  closeProps,
+  backdropProps,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** Accessible name for the dialog. */
+  label: string;
+  /** Width, padding and anything else the panel needs. */
+  className?: string;
+  /** `sheet` sits at the bottom below sm and centres from sm up. */
+  align?: "center" | "sheet";
+  closeProps?: Record<`data-${string}`, string>;
+  backdropProps?: Record<`data-${string}`, string>;
+  children: ReactNode;
+}) {
+  useModalDismiss(open, onClose);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div
+      className={`fixed inset-0 z-50 flex justify-center p-4 ${
+        align === "sheet" ? "items-end sm:items-center" : "items-center"
+      }`}
+    >
+      <ModalBackdrop {...backdropProps} onClick={onClose} />
+      <div
+        aria-label={label}
+        aria-modal="true"
+        className={`animate-content-in relative z-10 w-full ${MODAL_PANEL} ${className}`}
+        role="dialog"
+      >
+        <CloseButton
+          className="absolute right-4 top-4"
+          {...closeProps}
+          onClick={onClose}
+        />
+        {children}
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 /** Centered-modal sibling of {@link AppDrawer}. Content-heavy panels (the
  *  monthly recap) need more horizontal room than the right-edge side panel
@@ -64,21 +158,7 @@ export function AppModal({
 
   // Desktop: lock body scroll + escape-to-close while open. vaul owns both on
   // mobile, so only wire them up for the hand-rolled desktop branch.
-  useEffect(() => {
-    if (!isDesktop || !open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    const prevOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKey);
-
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [isDesktop, open, onClose]);
+  useModalDismiss(isDesktop && open, onClose);
 
   // A non-theme-aware panel needs a non-theme-aware hairline with it: the
   // default resolves to white/10 under `.dark`, which is invisible on cream.
@@ -125,7 +205,7 @@ export function AppModal({
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/50" />
           <Drawer.Content
-            className={`fixed bottom-2 inset-x-2 z-50 h-[92vh] max-h-[92vh] rounded-2xl border shadow-2xl flex flex-col overflow-hidden outline-none ${panelClassName}`}
+            className={`fixed bottom-2 inset-x-2 z-50 h-[92vh] max-h-[92vh] rounded-card border shadow-float flex flex-col overflow-hidden outline-none ${panelClassName}`}
           >
             <div className="shrink-0 pt-3 pb-1 flex justify-center">
               <Drawer.Handle
@@ -151,16 +231,10 @@ export function AppModal({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6">
-      <button
-        aria-label="Close"
-        className="absolute inset-0 z-0 cursor-default bg-black/50"
-        tabIndex={-1}
-        type="button"
-        onClick={onClose}
-      />
+      <ModalBackdrop onClick={onClose} />
       <div
         aria-modal="true"
-        className={`relative z-10 w-full ${maxWidthClass} max-h-[90vh] rounded-2xl border shadow-2xl flex flex-col overflow-hidden outline-none animate-content-in ${panelClassName}`}
+        className={`relative z-10 w-full ${maxWidthClass} max-h-[90vh] rounded-card border shadow-float flex flex-col overflow-hidden outline-none animate-content-in ${panelClassName}`}
         role="dialog"
       >
         {header}

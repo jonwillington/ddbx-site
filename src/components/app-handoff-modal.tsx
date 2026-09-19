@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useState } from "react";
 
-import { CloseButton } from "@/components/close-button";
+import { ModalDialog } from "@/components/app-modal";
 import { QrInstall } from "@/components/download/qr-install";
 import { StoreBadges } from "@/components/app-store-badge";
 import { AppComingSoonModal } from "@/components/app-coming-soon-modal";
@@ -45,24 +44,6 @@ export function AppHandoffModal({
   /** GA label for the badges inside ("Navbar handoff"). */
   placement: string;
 }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    const prevOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKey);
-
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
-
   const pricing =
     PRICING[marketId === "us" || marketId === "usg" ? "us" : "uk"];
   const qrUrl = appStoreUrlForMarketId(marketId === "usg" ? "us" : marketId);
@@ -70,71 +51,53 @@ export function AppHandoffModal({
     IOS_APP_LOGO_BY_MARKET[marketId === "usg" ? "us" : marketId] ??
     "/ios-app-logo.svg";
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        aria-label="Close"
-        className="absolute inset-0 z-0 cursor-default bg-black/50"
-        tabIndex={-1}
-        type="button"
-        onClick={onClose}
+  return (
+    <ModalDialog
+      className="max-w-sm px-6 py-6 text-center"
+      closeProps={{
+        "data-ga-event": "cta_app_handoff_close",
+        "data-ga-label": `App handoff close · ${placement}`,
+      }}
+      label="Get the ddbx app"
+      open={open}
+      onClose={onClose}
+    >
+      <img
+        alt=""
+        className="mx-auto h-16 w-16 rounded-card border border-black/10 shadow-lg dark:border-white/10"
+        src={icon}
       />
-      <div
-        aria-label="Get the ddbx app"
-        aria-modal="true"
-        className="animate-content-in relative z-10 w-full max-w-sm rounded-2xl border border-black/10 bg-background px-6 py-6 text-center shadow-2xl outline-none dark:border-white/10"
-        role="dialog"
-      >
-        <CloseButton
-          className="absolute right-4 top-4"
-          data-ga-event="cta_app_handoff_close"
-          data-ga-label={`App handoff close · ${placement}`}
-          onClick={onClose}
-        />
+      <h2 className="mt-3 text-title">Get the ddbx app</h2>
+      <ul className="mx-auto mt-3 max-w-[17rem] space-y-1.5 text-left text-sm">
+        {BENEFITS.map((line) => (
+          <li key={line} className="flex items-start gap-2 text-foreground/80">
+            <span className="mt-0.5 text-brand-brown dark:text-brand-tan">
+              ✓
+            </span>
+            <span>{line}</span>
+          </li>
+        ))}
+      </ul>
 
-        <img
-          alt=""
-          className="mx-auto h-16 w-16 rounded-[1rem] border border-black/10 shadow-lg dark:border-white/10"
-          src={icon}
-        />
-        <h2 className="mt-3 text-lg font-semibold tracking-[-0.02em]">
-          Get the ddbx app
-        </h2>
-        <ul className="mx-auto mt-3 max-w-[17rem] space-y-1.5 text-left text-sm">
-          {BENEFITS.map((line) => (
-            <li
-              key={line}
-              className="flex items-start gap-2 text-foreground/80"
-            >
-              <span className="mt-0.5 text-brand-brown dark:text-brand-tan">
-                ✓
-              </span>
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
+      {qrUrl ? (
+        <div className="mt-5 flex justify-center">
+          <QrInstall caption="Scan with your phone to install" url={qrUrl} />
+        </div>
+      ) : null}
 
-        {qrUrl ? (
-          <div className="mt-5 flex justify-center">
-            <QrInstall caption="Scan with your phone to install" url={qrUrl} />
-          </div>
-        ) : null}
-
-        <StoreBadges
-          className="mt-5 justify-center"
-          marketId={marketId}
-          placement={placement}
-          size="md"
-        />
-        <p className="mt-3 text-[11px] text-muted/70">
-          Free for {pricing.trialDays} days, then{" "}
-          {formatPrice(pricing, pricing.monthly)}/month
-          {pricing.promotional ? " while the promotion runs" : ""}. Cancel any
-          time.
-        </p>
-      </div>
-    </div>,
-    document.body,
+      <StoreBadges
+        className="mt-5 justify-center"
+        marketId={marketId}
+        placement={placement}
+        size="md"
+      />
+      <p className="mt-3 text-caption text-muted/70">
+        Free for {pricing.trialDays} days, then{" "}
+        {formatPrice(pricing, pricing.monthly)}/month
+        {pricing.promotional ? " while the promotion runs" : ""}. Cancel any
+        time.
+      </p>
+    </ModalDialog>
   );
 }
 

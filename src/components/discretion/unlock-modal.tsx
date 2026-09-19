@@ -1,8 +1,8 @@
 /** The chrome every "this is in the app" gate shares.
  *
  *  Bottom sheet on mobile, centred modal on desktop — vaul only does
- *  edge-anchored drawers, so the desktop half is hand-rolled, with body-scroll
- *  lock and escape-to-close while open.
+ *  edge-anchored drawers, so the desktop half is AppModal's `ModalDialog`
+ *  (backdrop, body-scroll lock, escape-to-close, CloseButton).
  *
  *  It exists because that split was about to be written a third time. The
  *  month gate and the day gate each carried their own copy of the same ninety
@@ -17,10 +17,9 @@
  */
 import type { ReactNode } from "react";
 
-import { useEffect } from "react";
-import { createPortal } from "react-dom";
 import { Drawer } from "vaul";
 
+import { MODAL_PANEL, ModalDialog } from "@/components/app-modal";
 import { CloseButton } from "@/components/close-button";
 import { useMediaQuery } from "@/lib/use-media-query";
 
@@ -46,22 +45,6 @@ export function UnlockModal({
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  useEffect(() => {
-    if (!isDesktop || !open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    const prevOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKey);
-
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [isDesktop, open, onClose]);
-
   if (!isDesktop) {
     return (
       <Drawer.Root
@@ -74,7 +57,9 @@ export function UnlockModal({
       >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-black/50" />
-          <Drawer.Content className="unlock-confirm-sheet fixed bottom-2 inset-x-2 z-50 rounded-2xl border border-black/10 bg-background shadow-2xl outline-none dark:border-white/10">
+          <Drawer.Content
+            className={`unlock-confirm-sheet fixed bottom-2 inset-x-2 z-50 ${MODAL_PANEL}`}
+          >
             <div className="flex shrink-0 justify-center pb-1 pt-3">
               <Drawer.Handle className="!w-10 !bg-black/15 dark:!bg-white/20" />
             </div>
@@ -97,34 +82,22 @@ export function UnlockModal({
     );
   }
 
-  if (!open) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        aria-label="Close"
-        className="absolute inset-0 z-0 cursor-default bg-black/50"
-        data-ga-event={`cta_${gaScope}_overlay_close`}
-        data-ga-label={`${gaScope} overlay close`}
-        tabIndex={-1}
-        type="button"
-        onClick={onClose}
-      />
-      <div
-        aria-label={title}
-        aria-modal="true"
-        className="animate-content-in relative z-10 w-full max-w-sm rounded-2xl border border-black/10 bg-background px-6 py-6 text-center shadow-2xl outline-none dark:border-white/10"
-        role="dialog"
-      >
-        <CloseButton
-          className="absolute right-4 top-4"
-          data-ga-event={`cta_${gaScope}_close`}
-          data-ga-label={`${gaScope} close`}
-          onClick={onClose}
-        />
-        {children}
-      </div>
-    </div>,
-    document.body,
+  return (
+    <ModalDialog
+      backdropProps={{
+        "data-ga-event": `cta_${gaScope}_overlay_close`,
+        "data-ga-label": `${gaScope} overlay close`,
+      }}
+      className="max-w-sm px-6 py-6 text-center"
+      closeProps={{
+        "data-ga-event": `cta_${gaScope}_close`,
+        "data-ga-label": `${gaScope} close`,
+      }}
+      label={title}
+      open={open}
+      onClose={onClose}
+    >
+      {children}
+    </ModalDialog>
   );
 }

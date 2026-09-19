@@ -1,4 +1,8 @@
-import { STORE_BADGES, StoreCta, type StoreCtaSize } from "@/components/store-cta";
+import {
+  STORE_BADGES,
+  StoreCta,
+  type StoreCtaSize,
+} from "@/components/store-cta";
 import { storeTargetsForMarket } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 
