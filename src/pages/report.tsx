@@ -56,6 +56,7 @@ import type { RelatedCard } from "@/components/seo/related-cards";
 import type { Pick } from "@/components/monthly/monthly-picks-stage";
 import type { ReactNode } from "react";
 
+import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -75,7 +76,7 @@ import { MeterBar } from "@/components/seo/meter-bar";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
-import { SeoSection } from "@/components/seo/section";
+import { SECTION_MORE, SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { Skeleton } from "@/components/skeleton";
 import { StageFigures } from "@/components/boards/stage-figures";
@@ -233,16 +234,20 @@ export default function ReportPage() {
           title="No report for that month"
         >
           {months.length > 0 ? (
-            <SeoSection title="Every report">
+            <SeoSection
+              more={{ to: "/reports", label: "See the report archive" }}
+              title="Every report"
+            >
               <RelatedCards items={months.map(monthCard)} />
             </SeoSection>
-          ) : null}
-          <p className={`mt-8 ${BODY}`}>
-            <Link className={LINK} to="/reports">
-              See the report archive
-            </Link>
-            .
-          </p>
+          ) : (
+            <div>
+              <Link className={SECTION_MORE} to="/reports">
+                See the report archive
+                <ArrowRightIcon aria-hidden className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          )}
         </SeoPageShell>
       </DefaultLayout>
     );
@@ -314,7 +319,7 @@ export default function ReportPage() {
                 slot with a sentence a reader can rely on being the same shape
                 every month; this one is written fresh and belongs in the
                 document. */}
-            <p className="mt-7 max-w-[58ch] text-[19px] leading-[1.4] tracking-[-0.012em] text-foreground/90 sm:text-[22px]">
+            <p className="mt-7 max-w-[58ch] text-subheading leading-snug text-foreground/90">
               {summary.headline}
             </p>
 
@@ -408,14 +413,11 @@ export default function ReportPage() {
             <Terms />
 
             {neighbours.length > 0 && (
-              <SeoSection title="More reports">
+              <SeoSection
+                more={{ to: "/reports", label: "See every report" }}
+                title="More reports"
+              >
                 <RelatedCards cols={2} items={neighbours} />
-                <p className={`mt-4 ${BODY}`}>
-                  <Link className={LINK} to="/reports">
-                    See every report
-                  </Link>
-                  .
-                </p>
               </SeoSection>
             )}
 

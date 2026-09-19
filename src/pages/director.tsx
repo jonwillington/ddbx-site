@@ -503,9 +503,13 @@ export default function DirectorPage() {
         {rail}
         <SeoPageShell
           back={<BackLink />}
+          error={{
+            what: "this profile",
+            detail:
+              "That’s a fault at our end rather than a missing person. Try a refresh in a moment, or browse the record from here.",
+          }}
           eyebrow="Insider"
-          standfirst="That’s a fault at our end rather than a missing person. Try a refresh in a moment, or browse the record from here."
-          title="Couldn’t load this profile"
+          title="Insider profile"
         >
           <SeoSection aside="Where to go instead." title="Browse the record">
             <RelatedCards cols={2} items={FALLBACK_LINKS} />

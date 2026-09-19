@@ -978,17 +978,11 @@ function CompanyBody({
         <SeoSection
           aside="Disclosed under the STOCK Act. Members report a range, not an exact figure."
           id="congress"
+          more={{ to: "/congress", label: "See all congressional trading" }}
           title="Congress"
           {...counter("congress")}
         >
           <CongressTable market={market} rows={data.gov} />
-          <Link
-            className="mt-4 inline-flex items-center gap-1.5 text-small font-medium text-foreground underline underline-offset-4"
-            to="/congress"
-          >
-            See all congressional trading
-            <ArrowRightIcon className="h-3.5 w-3.5" />
-          </Link>
         </SeoSection>
       )}
 

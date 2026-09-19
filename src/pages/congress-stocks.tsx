@@ -130,13 +130,10 @@ export default function CongressStocksPage() {
         <SeoRail marketId="us" placement="congress_rail" />
         <SeoPageShell
           crumbs={crumbs}
+          error={failed ? { what: "the stock list" } : null}
           eyebrow="Congress by stock"
-          standfirst={
-            failed
-              ? "We couldn’t load the list of stocks just now. That’s a fault at our end rather than an empty record; try again in a few minutes."
-              : `Not enough data yet. A stock gets a page once at least ${MIN_STOCK_MEMBERS} members of Congress and ${MIN_STOCK_ROWS} purchases are on record, and none has crossed that bar. This index fills in on its own as filings arrive.`
-          }
-          title={failed ? "Couldn’t load the stock list" : TITLE}
+          standfirst={`Not enough data yet. A stock gets a page once at least ${MIN_STOCK_MEMBERS} members of Congress and ${MIN_STOCK_ROWS} purchases are on record, and none has crossed that bar. This index fills in on its own as filings arrive.`}
+          title={TITLE}
         >
           <SeoSection aside="Where the record is." title="Browse instead">
             <RelatedCards

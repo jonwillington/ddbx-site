@@ -174,17 +174,10 @@ export default function CongressStockPage() {
             { label: "Stocks", to: STOCKS_INDEX_PATH },
             { label: status === "missing" ? "Not found" : "Unavailable" },
           ]}
+          error={status === "failed" ? { what: "this stock" } : null}
           eyebrow="Congress by stock"
-          standfirst={
-            status === "missing"
-              ? `We publish a page for every ticker with a congressional purchase on record. ${ticker ? `${ticker} isn’t one of them` : "That isn’t a ticker"}: either no member has disclosed buying it in the period we hold, or the address is wrong.`
-              : "We couldn’t load the purchases for this ticker just now. That’s a fault at our end rather than an empty record."
-          }
-          title={
-            status === "missing"
-              ? `We hold no congressional purchases of ${ticker ?? "that"}`
-              : "Couldn’t load this stock"
-          }
+          standfirst={`We publish a page for every ticker with a congressional purchase on record. ${ticker ? `${ticker} isn’t one of them` : "That isn’t a ticker"}: either no member has disclosed buying it in the period we hold, or the address is wrong.`}
+          title={`We hold no congressional purchases of ${ticker ?? "that"}`}
         >
           <SeoSection aside="Where the record is." title="Browse instead">
             <RelatedCards

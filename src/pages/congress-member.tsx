@@ -182,17 +182,10 @@ export default function CongressMemberPage() {
             { label: "Members", to: "/congress/members" },
             { label: status === "missing" ? "Not found" : "Unavailable" },
           ]}
+          error={status === "failed" ? { what: "this member" } : null}
           eyebrow="Congress member"
-          standfirst={
-            status === "missing"
-              ? "We publish a page for every member with a filing on record. That isn’t one of them, either they haven’t filed a purchase in the period we hold, or the address is wrong."
-              : "We couldn’t load this member’s filings just now. That’s a fault at our end rather than an empty record."
-          }
-          title={
-            status === "missing"
-              ? "We don’t hold filings for that member"
-              : "Couldn’t load this member"
-          }
+          standfirst="We publish a page for every member with a filing on record. That isn’t one of them, either they haven’t filed a purchase in the period we hold, or the address is wrong."
+          title="We don’t hold filings for that member"
         >
           <SeoSection
             aside="Members with disclosed purchases on record."

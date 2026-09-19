@@ -23,6 +23,7 @@ import { companyRollup, rankClusters } from "../../../shared/boards.js";
 
 import { AlphaBadge } from "@/components/boards/filing-row";
 import { CompanyLogo } from "@/components/company-logo";
+import { SECTION_MORE } from "@/components/seo/section";
 import { Skeleton } from "@/components/skeleton";
 import { panel } from "@/components/ui/panel";
 import { cleanCompanyName, companyPath } from "@/lib/company";
@@ -71,7 +72,7 @@ export function UkHomeSpotlights({
         <p className="eyebrow text-muted">
           Company focus · last 90 days
         </p>
-        <h2 className="text-[20px] font-semibold leading-[1.2] tracking-[-0.015em] text-foreground sm:text-[22px]">
+        <h2 className="text-subheading font-semibold text-foreground">
           Where the buying is concentrated
         </h2>
       </header>
@@ -195,18 +196,18 @@ function Strand({
         )}
       </div>
       {hasCards && (
-        <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
+        <div className="flex flex-wrap gap-x-4">
           {[{ href: boardHref, label: boardLabel }, ...(extraLinks ?? [])].map(
             (l) => (
               <Link
                 key={l.href}
-                className="inline-flex items-center gap-1 text-small font-semibold text-brand-brown hover:underline dark:text-brand-tan"
+                className={SECTION_MORE}
                 data-ga-event="cta_home_spotlight_board"
                 data-ga-label={l.href}
                 to={l.href}
               >
                 {l.label}
-                <ArrowRightIcon className="h-3.5 w-3.5" />
+                <ArrowRightIcon aria-hidden className="h-3.5 w-3.5" />
               </Link>
             ),
           )}

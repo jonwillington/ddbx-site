@@ -258,6 +258,15 @@ function IndexDocument({ date }: { date: string | null }) {
             : undefined
         }
         cta={missing || failed ? false : shellCta}
+        error={
+          failed
+            ? {
+                what: "the index",
+                detail:
+                  "We couldn’t load the filings the index is computed from. That’s a fault at our end rather than a quiet market. Try a refresh in a moment, or browse from here.",
+              }
+            : null
+        }
         eyebrow="Insider Index"
         hero={
           missing || failed ? undefined : (
@@ -291,22 +300,14 @@ function IndexDocument({ date }: { date: string | null }) {
             ? pending
               ? "No reading for that day yet"
               : "No reading for that day"
-            : failed
-              ? "Couldn’t load the index"
-              : title
+            : title
         }
         titleInHero={!missing && !failed}
         width="wide"
       >
-        {failed ? (
-          <p className={`mt-10 max-w-measure ${R.body}`}>
-            We couldn’t load the filings the index is computed from. That’s a
-            fault at our end rather than a quiet market. Try a refresh in a
-            moment.
-          </p>
-        ) : missing ? (
+        {failed || missing ? (
           <>
-            {pending && date ? (
+            {failed ? null : pending && date ? (
               <p className={`mt-10 max-w-measure ${R.body}`}>
                 The reading for {dateLabel(date)} lands at {publishLabel(date)},
                 once that day’s filings are in. Until then the latest reading is{" "}

@@ -148,17 +148,10 @@ export default function CongressCommitteePage() {
             { label: "Committees", to: "/congress/committees" },
             { label: failed ? "Unavailable" : "Not found" },
           ]}
+          error={failed ? { what: "this committee" } : null}
           eyebrow="Committee"
-          standfirst={
-            failed
-              ? "We couldn’t load the committee list just now. That’s a fault at our end."
-              : "We publish a page for each committee whose sector jurisdiction we map, eleven House committees. That isn’t one of them."
-          }
-          title={
-            failed
-              ? "Couldn’t load this committee"
-              : "We don’t map that committee"
-          }
+          standfirst="We publish a page for each committee whose sector jurisdiction we map, eleven House committees. That isn’t one of them."
+          title="We don’t map that committee"
         >
           <SeoSection aside="The committees we do map." title="Every committee">
             <RelatedCards

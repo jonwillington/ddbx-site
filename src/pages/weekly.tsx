@@ -252,17 +252,18 @@ export default function WeeklyWeekPage() {
             { label: "Weekly", to: "/weekly" },
             { label: status === "missing" ? "Not found" : "Unavailable" },
           ]}
+          error={
+            status === "failed"
+              ? {
+                  what: "this week",
+                  detail:
+                    "That’s a fault at our end rather than a quiet week. Try a refresh in a moment, or browse the archive below.",
+                }
+              : null
+          }
           eyebrow="Weekly digest"
-          standfirst={
-            status === "missing"
-              ? "We publish a digest for each week with enough disclosed buying to describe. That week either had none, or the address is wrong, the weeks we do publish are in the archive."
-              : "We couldn’t load this week just now. That’s a fault at our end rather than a quiet week."
-          }
-          title={
-            status === "missing"
-              ? "No digest for that week"
-              : "Couldn’t load this week"
-          }
+          standfirst="We publish a digest for each week with enough disclosed buying to describe. That week either had none, or the address is wrong, the weeks we do publish are in the archive."
+          title="No digest for that week"
         >
           <SeoSection aside="Every week we publish." title="The archive">
             <RelatedCards
