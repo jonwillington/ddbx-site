@@ -93,6 +93,7 @@ import {
   summarise,
   toBoardRows,
 } from "@/components/boards/board-model";
+import { SectionEyebrow } from "@/components/section-eyebrow";
 
 /** Caveats are risk-amber wells rather than another line of grey small print.
  *  A truncated window and a held-back company both change how the ranking
@@ -301,9 +302,9 @@ export default function BiggestBuysPage() {
               benchmark={bench.label}
               header={
                 <>
-                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                  <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
                     Leaderboard
-                  </p>
+                  </SectionEyebrow>
                   {/* Light, not bold: the object is the emphasis, the title
                       names it. Instrument Sans ships 400–700, so 400 at this
                       size is the light rung. */}

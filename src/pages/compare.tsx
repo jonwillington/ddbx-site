@@ -27,6 +27,7 @@ import {
   isOfferLive,
   platformFeeSummary,
 } from "@/lib/brokers";
+import { SectionEyebrow } from "@/components/section-eyebrow";
 
 type SortKey = "recommended" | "name" | "cost";
 
@@ -240,9 +241,9 @@ export default function ComparePage() {
       <BrokerAside brokers={brokers} />
       <section className="w-full">
         <header className="mb-5">
-          <p className="pt-5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
+          <SectionEyebrow className="pt-5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
             Broker guide
-          </p>
+          </SectionEyebrow>
           <h1 className="mt-2 text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.02em] text-foreground sm:text-[38px]">
             Compare UK trading platforms
           </h1>

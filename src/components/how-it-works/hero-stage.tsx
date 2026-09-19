@@ -52,6 +52,7 @@ import { useMemo } from "react";
 
 import { HeroScaleChart } from "@/components/how-it-works/hero-scale-chart";
 import { count } from "@/lib/coverage";
+import { SectionEyebrow } from "@/components/section-eyebrow";
 
 /** The panel. The homepage hero-card's warm shadow, so the object sits ON the
  *  page rather than being drawn on it; relative + clipped so the wash below
@@ -220,9 +221,9 @@ export function HeroStage({
       <div aria-hidden className={WASH} />
       <div className="relative grid gap-x-12 gap-y-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
         <div>
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
+          <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
             {eyebrow}
-          </p>
+          </SectionEyebrow>
           <h1 className="mt-3 text-balance text-[34px] font-normal leading-[1.03] tracking-[-0.03em] text-foreground sm:text-[44px] lg:text-[52px]">
             {title}
           </h1>

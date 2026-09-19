@@ -67,6 +67,7 @@ import { RowList, Row } from "@/components/row-list";
 import { useWindowFeed } from "@/components/boards/board-feed";
 import { StageNotice } from "@/components/boards/stage-notice";
 import { IndexStage } from "@/components/insider-index/index-stage";
+import { SectionEyebrow } from "@/components/section-eyebrow";
 
 const MARKET = {
   id: "UK" as const,
@@ -265,9 +266,9 @@ function IndexDocument({ date }: { date: string | null }) {
               focusDate={focus?.date ?? null}
               header={
                 <>
-                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                  <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
                     Insider Index
-                  </p>
+                  </SectionEyebrow>
                   <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[44px] lg:text-[50px]">
                     {title}
                   </h1>

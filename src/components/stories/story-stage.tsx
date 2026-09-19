@@ -5,6 +5,7 @@ import { MiniPriceChart } from "@/components/mini-price-chart";
 import { StageFigures } from "@/components/boards/stage-figures";
 import { GBP_FORMAT } from "@/lib/markets/uk";
 import { USD_FORMAT } from "@/lib/markets/us";
+import { SectionEyebrow } from "@/components/section-eyebrow";
 
 /** Yahoo's USD bars land in the prices table as cents-times-FX while Form 4's
  *  `price` is in major dollars, so the US chart needs the same conversion the
@@ -97,7 +98,10 @@ export function StoryStage({
       : null,
     ret != null
       ? {
-          k: basis === "today" ? "Since then, today" : "Since then, at publication",
+          k:
+            basis === "today"
+              ? "Since then, today"
+              : "Since then, at publication",
           tone: (ret >= 0 ? "pos" : "neg") as "pos" | "neg",
           v: `${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%`,
         }
@@ -111,12 +115,13 @@ export function StoryStage({
   ].filter(Boolean) as Array<{ k: string; v: string; tone?: "pos" | "neg" }>;
 
   return (
-    <div className={`${PANEL} mt-8`}>
+    <div className={`${PANEL} story-stage mt-8`}>
       <div className="px-6 pt-7 sm:px-8 sm:pt-9">
-        <p className={KICKER}>
-          {kindLabel}
-          {story.published_at ? ` · ${dateLabel(story.published_at)}` : ""}
-        </p>
+        <SectionEyebrow className={KICKER}>
+          {story.published_at
+            ? `${kindLabel} · ${dateLabel(story.published_at)}`
+            : kindLabel}
+        </SectionEyebrow>
 
         {/* Stacked, not inline. At 80px the mark is the company's own
             identity rather than a bullet beside the text, and the headline
@@ -137,8 +142,7 @@ export function StoryStage({
         {figures.length > 0 ? <StageFigures items={figures} /> : null}
 
         {/* One control for the whole page: the table below follows it. */}
-        {anchor?.return_pct != null &&
-        anchor?.return_pct_at_publish != null ? (
+        {anchor?.return_pct != null && anchor?.return_pct_at_publish != null ? (
           <div className="mt-6 inline-flex rounded-full border border-white/15 p-0.5 text-[11px]">
             {(
               [
@@ -153,8 +157,8 @@ export function StoryStage({
                     ? "bg-white/15 text-white"
                     : "text-white/55 hover:text-white/80"
                 }`}
-                onClick={() => onBasis(k)}
                 type="button"
+                onClick={() => onBasis(k)}
               >
                 {lbl}
               </button>

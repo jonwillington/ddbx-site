@@ -69,6 +69,7 @@ import {
   ActivityStage,
   PipRun,
 } from "@/components/boards/stages/activity-stage";
+import { SectionEyebrow } from "@/components/section-eyebrow";
 
 const CAVEAT =
   "rounded-xl bg-risk/[0.08] px-3.5 py-2.5 text-[12.5px] leading-[1.5] text-foreground/70";
@@ -148,9 +149,9 @@ export default function MostActiveCompaniesPage() {
               benchmark={BENCHMARK[market.id].label}
               header={
                 <>
-                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                  <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
                     Leaderboard
-                  </p>
+                  </SectionEyebrow>
                   <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
                     {market.label} companies with the most insider buying
                   </h1>

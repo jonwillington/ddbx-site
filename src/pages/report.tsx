@@ -95,6 +95,7 @@ import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 import { marketForPath } from "@/lib/markets/registry";
 import { reportsCta } from "@/components/seo/cta-copy";
 import { formatGbp, formatSignedPct } from "@/lib/performance/format";
+import { SectionEyebrow } from "@/components/section-eyebrow";
 
 const RULE = "border-hairline dark:border-separator";
 const LABEL = "text-[11px] leading-none text-foreground/50";
@@ -272,9 +273,9 @@ export default function ReportPage() {
               graded={graded?.graded}
               header={
                 <>
-                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                  <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
                     Monthly report
-                  </p>
+                  </SectionEyebrow>
                   {/* Light, not bold: the object is the emphasis, the title
                       names it. */}
                   <h1 className="mt-3 max-w-[20ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">

@@ -28,6 +28,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { useSectionEyebrow } from "@/lib/section";
 import { AppCtaBand, type CtaMedia } from "@/components/seo/app-cta-band";
 
 export interface ShellCrumb {
@@ -59,7 +60,6 @@ export function SeoPageShell({
   cta,
   width = "article",
   stage,
-  lead,
   titleInHero = false,
   loading = false,
   skeleton,
@@ -127,10 +127,6 @@ export function SeoPageShell({
    *  right from `lg`, stacking beneath it before that. Never rendered over
    *  the title: message layer and proof layer are separate objects. */
   stage?: ReactNode;
-  /** The page's exhibit, rendered full-bleed of the measure between the
-   *  header and the document (a story's stage). Widens past 860 in the shell
-   *  layout; otherwise it sits at the document measure like any child. */
-  lead?: ReactNode;
   /** The page's own hero carries the h1 (and eyebrow, standfirst, figures)
    *  inside a proof object, so the shell renders `hero` and nothing of its
    *  own header. `title` still names the page for the shell's callers; the
@@ -161,6 +157,7 @@ export function SeoPageShell({
   }, [loading, holdSkeleton]);
 
   const handoff = loading || holdSkeleton;
+  const sectionEyebrow = useSectionEyebrow(eyebrow);
 
   // The article measure applies to the DOCUMENT — furniture, standfirst,
   // sections — not to the terminal band. The band is a conversion surface,
@@ -168,18 +165,9 @@ export function SeoPageShell({
   // so it spans the full column the rail leaves free while everything above
   // it keeps the reading width.
   const measure = width === "article" ? "mx-auto w-full max-w-[860px]" : "";
-  // A `lead` (a story's stage) is the page's exhibit, not its prose. In the
-  // shell layout (lib/nav-mode) the sheet is wide enough for it to outgrow
-  // the reading measure, so it — and the furniture above it, which has to
-  // share its left edge — widen while the document below stays at 860.
-  const leadMeasure =
-    lead && width === "article"
-      ? "mx-auto w-full max-w-[860px] shell:xl:max-w-[1100px]"
-      : measure;
 
   const body = (
     <>
-      {lead ? <div className={leadMeasure}>{lead}</div> : null}
       <div className={measure}>{children}</div>
 
       {cta ? (
@@ -200,7 +188,7 @@ export function SeoPageShell({
 
   return (
     <div className="w-full pb-16">
-      <div className={`${leadMeasure} ${headerWrap}`}>
+      <div className={`${measure} ${headerWrap}`}>
         <div>
           {hero ? <div className="seo-hero pt-2">{hero}</div> : null}
 
@@ -242,7 +230,7 @@ export function SeoPageShell({
                       : "pt-2"
                 }`}
               >
-                {eyebrow}
+                {sectionEyebrow}
               </p>
 
               {/* Levelled off /api's hero h1 (34/44/58). Stepped to 34/44 for the

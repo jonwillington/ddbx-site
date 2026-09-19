@@ -93,13 +93,22 @@ export default function StoryPage() {
   return (
     <DefaultLayout>
       <SeoPageShell
-        crumbs={[{ label: "Stories", to: "/stories" }, { label: "Article" }]}
+        /* A staged story opens on its stage, which carries the eyebrow
+           ("Stories · Since the buy · date"), the headline and the
+           standfirst, so the shell prints none of its own furniture above
+           it — a crumb and a second eyebrow on a strip of cream read as a
+           stray header. Unstaged stories keep the plain document header. */
+        crumbs={
+          staged
+            ? undefined
+            : [{ label: "Stories", to: "/stories" }, { label: "Article" }]
+        }
         eyebrow={
           s?.published_at
             ? `${kindLabel} · ${dateLabel(s.published_at)}`
             : kindLabel
         }
-        lead={
+        hero={
           s && staged ? (
             <StoryStage
               basis={basis}
@@ -110,12 +119,10 @@ export default function StoryPage() {
           ) : undefined
         }
         loading={s === null}
-        title={staged ? "" : (s?.headline ?? "")}
-        titleInHero={false}
         skeleton={<SeoSkeleton rows={14} variant="ruled-list" />}
-        /* The stage carries the headline and standfirst itself, so the shell
-           must not print them a second time above it. */
         standfirst={staged ? undefined : (s?.standfirst ?? undefined)}
+        title={staged ? "" : (s?.headline ?? "")}
+        titleInHero={staged}
       >
         {s ? (
           <>

@@ -51,6 +51,7 @@ import {
 import { BoardStagePanel } from "../stage-panel";
 
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
+import { SectionEyebrow } from "@/components/section-eyebrow";
 
 type Mode = "size";
 
@@ -856,9 +857,9 @@ export function MarketCapStage({
 
   const header = (
     <>
-      <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+      <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
         By size
-      </p>
+      </SectionEyebrow>
       <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]">
         {market.label} insider buying by company size
       </h1>
