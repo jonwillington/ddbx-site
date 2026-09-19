@@ -270,7 +270,7 @@ work happens on branches; each sweep passes a headless before/after render
 6. **Filing/story h1 moving up.** Reviewer: yes to the stage species, but cap
    filing at 44.
 7. **Caption size**: 11 or 12? Decide after the render pass (§2.1).
-8. **Doubled gutter**: remove it, or keep the text in line with the api hero card? Decide after the render pass (§4).
+8. **Doubled gutter** — DECIDED 2026-09-19: removed (Jon). `band()` has no gutter of its own.
 
 **Added by Jon, 2026-09-19:** returns and deltas render as plain coloured
 text, not chips. One `<Delta value>` component (sign, %, `tabular-nums`,
