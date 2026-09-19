@@ -758,6 +758,7 @@ export function MemberClusterRow({
   totalValueLabel,
   aggReturnPct = null,
   aggShowAlpha = false,
+  pricesPending = false,
   children,
 }: {
   insiderName: string;
@@ -779,6 +780,10 @@ export function MemberClusterRow({
   /** True when aggReturnPct is alpha vs the benchmark (pp) rather than a raw
    *  stock return — drives the badge suffix. */
   aggShowAlpha?: boolean;
+  /** True while the latest-prices fetch is in flight — the aggregate cell
+   *  draws a skeleton rather than claiming there is no figure (MarketRow's
+   *  Performance cell does the same). */
+  pricesPending?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false); // collapsed → one tidy row per member; expand for the buys + connector
@@ -881,8 +886,11 @@ export function MemberClusterRow({
                 suffix={aggShowAlpha ? "pp" : undefined}
                 value={aggReturnPct}
               />
+            ) : pricesPending ? (
+              // The same bar MarketRowSkeleton draws in this cell.
+              <Skeleton className="h-3 w-12 rounded" />
             ) : (
-              <span className="text-caption text-muted/50">—</span>
+              <span className="text-caption text-muted/60">No data yet</span>
             )}
           </div>
           <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
@@ -1126,11 +1134,11 @@ export function MarketRow<W>({
         )}
         {!hiddenColumns.has("comments") && (
           <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
+            {/* Zero comments is a count, not a missing figure: the cell
+                stays empty rather than holding a dash (static-page rule 2). */}
             {commentCount > 0 ? (
               <CommentCountChip count={commentCount} />
-            ) : (
-              <span className="text-caption text-muted/50">—</span>
-            )}
+            ) : null}
           </div>
         )}
         {!hiddenColumns.has("action") && (

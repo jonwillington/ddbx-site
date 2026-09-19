@@ -1126,6 +1126,7 @@ export function MarketPage<W>({
           insiderPhotoUrl={group.insiderPhotoUrl}
           insiderRole={group.insiderRole}
           party={group.party}
+          pricesPending={livePricesEnabled && !pricesSettled}
           signalCount={
             group.dealings.filter(
               (d) =>
