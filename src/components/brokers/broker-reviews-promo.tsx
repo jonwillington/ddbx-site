@@ -13,6 +13,7 @@ import { api, type BrokerOffer } from "@/lib/api";
 const LOGO_COUNT = 5;
 
 import { BUTTON_FILLED_GROUP, BUTTON_RADIUS } from "@/components/button";
+import { panel } from "@/components/ui/panel";
 export function BrokerReviewsPromo({
   brokers: provided,
   className,
@@ -85,7 +86,7 @@ export function BrokerReviewsPromo({
   if (variant === "bar") {
     return (
       <a
-        className={`group flex items-center gap-5 overflow-hidden rounded-xl border border-hairline bg-sheet px-5 py-5 transition-colors dark:border-separator dark:bg-surface ${className ?? ""}`}
+        className={`group flex items-center gap-5 overflow-hidden ${panel()} px-5 py-5 transition-colors ${className ?? ""}`}
         data-ga-event="cta_broker_reviews"
         data-ga-label="market_table_bar"
         href="/compare"
@@ -96,7 +97,7 @@ export function BrokerReviewsPromo({
           {logos.map((b, i) => (
             <span
               key={b.slug}
-              className="rounded-2xl ring-2 ring-sheet dark:ring-surface"
+              className="rounded-card ring-2 ring-sheet dark:ring-surface"
               style={{ marginLeft: i === 0 ? 0 : -14, zIndex: LOGO_COUNT - i }}
             >
               <BrokerLogo broker={b} size={56} />
@@ -105,13 +106,13 @@ export function BrokerReviewsPromo({
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-brown/70 dark:text-[#d8c4af]/70">
+          <p className="micro text-brand-brown/70 dark:text-[#d8c4af]/70">
             UK brokers
           </p>
-          <h3 className="truncate text-lg font-semibold leading-snug text-foreground md:text-xl">
+          <h3 className="truncate text-title text-foreground">
             Read reviews of UK trading platforms
           </h3>
-          <p className="mt-0.5 truncate text-sm text-foreground/55">
+          <p className="mt-0.5 truncate text-body text-foreground/55">
             Fees, ISAs and sign-up offers, independently ranked.
           </p>
         </div>
@@ -128,20 +129,20 @@ export function BrokerReviewsPromo({
 
   return (
     <a
-      className={`group block overflow-hidden rounded-2xl border border-hairline bg-sheet p-5 shadow-[0_1px_2px_rgba(90,65,40,0.03)] transition-colors dark:border-separator dark:bg-surface ${className ?? ""}`}
+      className={`group block overflow-hidden ${panel({ size: "roomy" })} transition-colors ${className ?? ""}`}
       data-ga-event="cta_broker_reviews"
       data-ga-label={gaLabel ?? "market_today_mobile"}
       href="/compare"
       rel="noopener"
       target="_blank"
     >
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-brown/70 dark:text-[#d8c4af]/70">
+      <p className="micro text-brand-brown/70 dark:text-[#d8c4af]/70">
         UK brokers
       </p>
-      <h3 className="mt-1.5 text-lg font-semibold leading-snug text-foreground">
+      <h3 className="mt-1.5 text-title text-foreground">
         Read reviews of UK trading platforms
       </h3>
-      <p className="mt-1 text-sm text-foreground/55">
+      <p className="mt-1 text-body text-foreground/55">
         Fees, ISAs and sign-up offers, independently ranked.
       </p>
 
@@ -149,14 +150,14 @@ export function BrokerReviewsPromo({
         {logos.map((b, i) => (
           <span
             key={b.slug}
-            className="rounded-xl ring-2 ring-sheet dark:ring-surface"
+            className="rounded-card ring-2 ring-sheet dark:ring-surface"
             style={{ marginLeft: i === 0 ? 0 : -10, zIndex: LOGO_COUNT - i }}
           >
             <BrokerLogo broker={b} size={44} />
           </span>
         ))}
         {brokers.length > LOGO_COUNT && (
-          <span className="ml-2.5 text-xs font-medium text-foreground/45">
+          <span className="ml-2.5 text-caption font-medium text-foreground/45">
             +{brokers.length - LOGO_COUNT} more
           </span>
         )}

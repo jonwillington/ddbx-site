@@ -56,6 +56,8 @@ import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoSection } from "@/components/seo/section";
 import { Skeleton } from "@/components/skeleton";
+import { eyebrow } from "@/components/ui/eyebrow";
+import { panel } from "@/components/ui/panel";
 import { TickerPill } from "@/components/ticker-pill";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
@@ -132,9 +134,7 @@ function EntryList({ entries }: { entries: GlossaryEntry[] }) {
     <div className="mt-10">
       {groups.map((g) => (
         <section key={g.id} className="mt-9 first:mt-0">
-          <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-            {g.label}
-          </h2>
+          <h2 className={eyebrow("quiet")}>{g.label}</h2>
           <ul className={`mt-3 border-t ${R.rule}`}>
             {g.entries.map((e) => (
               <li key={e.slug} className={`border-b ${R.rule}`}>
@@ -143,13 +143,13 @@ function EntryList({ entries }: { entries: GlossaryEntry[] }) {
                     tap area and no hover affordance on the part of the row a
                     reader actually points at. */}
                 <Link
-                  className="-mx-3 block rounded-lg px-3 py-4 transition-colors hover:bg-foreground/[0.03] dark:hover:bg-white/[0.04]"
+                  className="-mx-3 block rounded-control px-3 py-4 transition-colors hover:bg-foreground/[0.03] dark:hover:bg-white/[0.04]"
                   to={learnPath(e.slug)}
                 >
-                  <span className="block text-[17px] font-semibold tracking-[-0.01em] text-foreground">
+                  <span className="block text-title text-foreground">
                     {e.title}
                   </span>
-                  <span className="mt-1.5 block max-w-[62ch] text-[14px] leading-[1.65] text-foreground/60">
+                  <span className="mt-1.5 block max-w-measure text-body text-foreground/60">
                     {e.description}
                   </span>
                 </Link>
@@ -257,14 +257,16 @@ export default function LearnEntryPage() {
         eyebrow={EYEBROW}
         notice={
           <>
-            <p className="text-[11px] leading-[1.6] text-foreground/45">
+            <p className="text-caption text-foreground/45">
               Last reviewed {formatUpdated(entry.updated)}
             </p>
             {foreign && canonical ? (
               // A warning set in the same faint grey as a caption isn't a
               // warning, and one that names the other domain without linking
               // to it asks the reader to retype a URL.
-              <p className="mt-3 rounded-xl border border-hairline bg-sheet px-4 py-3 text-[13px] leading-[1.6] text-foreground/70 dark:border-white/[0.07] dark:bg-surface">
+              <p
+                className={`mt-3 ${panel()} px-4 py-3 text-small text-foreground/70`}
+              >
                 This is a {entry.owner === "uk" ? "UK/EU" : "US"} concept. The
                 canonical version lives on{" "}
                 <a
@@ -283,22 +285,21 @@ export default function LearnEntryPage() {
         {/* The definition on its own, before the argument starts. A reader who
             wanted one sentence gets it without reading four paragraphs, and
             it's the unit a search result can lift whole. */}
-        <p className="mt-6 rounded-2xl border border-hairline bg-sheet px-5 py-4 text-[15px] leading-[1.6] text-foreground/85 dark:border-white/[0.07] dark:bg-surface">
+        <p className={`mt-6 ${panel()} px-5 py-4 text-lede text-foreground/85`}>
           {entry.oneLiner}
         </p>
 
         <div className="mt-7">
           {/* The opening paragraph carries the page's thesis, so it's set as
-              one — the body that follows steps back a size rather than running
-              at a flat 14px from the h1 down. */}
-          <p className="max-w-[64ch] text-[16.5px] leading-[1.6] tracking-[-0.006em] text-foreground/85">
-            {lede}
-          </p>
+              one — lede size at full ink; the body that follows stays at lede
+              size one step quieter rather than running at a flat 14px from
+              the h1 down. */}
+          <p className="max-w-[64ch] text-lede text-foreground/85">{lede}</p>
           <div className="mt-4 space-y-4">
             {rest.map((para) => (
               <p
                 key={para}
-                className="max-w-[64ch] text-[15px] leading-[1.7] text-foreground/80"
+                className="max-w-[64ch] text-lede text-foreground/80"
               >
                 {para}
               </p>
@@ -345,7 +346,7 @@ export default function LearnEntryPage() {
               {entry.sources.map((s) => (
                 <li key={s.url}>
                   <a
-                    className="text-[14.5px] text-foreground/85 underline underline-offset-4 hover:text-foreground"
+                    className="text-body text-foreground/85 underline underline-offset-4 hover:text-foreground"
                     href={s.url}
                     rel="nofollow noopener noreferrer"
                     target="_blank"
@@ -440,6 +441,7 @@ function LiveExamples({
   return (
     <SeoSection
       aside="The six most recent from the last twelve months."
+      more={{ to: "/biggest-buys", label: "See all recent purchases" }}
       title={heading}
     >
       <ul className={`border-t ${R.rule}`}>
@@ -465,15 +467,9 @@ function LiveExamples({
             ))}
       </ul>
 
-      <div className="mt-4 flex flex-wrap items-baseline justify-between gap-3">
-        <Link
-          className="text-[13.5px] font-medium text-foreground underline-offset-4 hover:underline"
-          to="/biggest-buys"
-        >
-          See all recent purchases &rarr;
-        </Link>
-        <LogoDevAttribution />
-      </div>
+      {/* The attribution rides at the list's foot, right-aligned; the
+          section's `more` link follows it. */}
+      <LogoDevAttribution className="mt-3 text-right" />
     </SeoSection>
   );
 }
@@ -497,7 +493,7 @@ function ExampleRow({
         <span className="flex min-w-0 items-center gap-2">
           <CompanyLogo size={22} ticker={d.ticker ?? ""} />
           <Link
-            className="truncate text-[14.5px] font-medium text-foreground underline-offset-4 hover:underline"
+            className="truncate text-body font-medium text-foreground underline-offset-4 hover:underline"
             title={name}
             to={companyPath(d.ticker ?? "")}
           >
@@ -511,7 +507,7 @@ function ExampleRow({
         </span>
       </span>
 
-      <span className="shrink-0 text-[14.5px] font-semibold tabular-nums text-foreground">
+      <span className="shrink-0 text-body font-semibold tabular-nums text-foreground">
         {money(buyValue(d), symbol)}
       </span>
     </li>

@@ -24,6 +24,7 @@ import { COLUMNS } from "../../../shared/broker-categories.js";
 import { BrokerLogo, Tick } from "./broker-ui";
 
 import { SeoSection } from "@/components/seo/section";
+import { panel } from "@/components/ui/panel";
 import { Tooltip } from "@/components/tooltip";
 import {
   fmtMoney,
@@ -40,13 +41,13 @@ import {
 export const R = {
   // A half-step off the cream page — present but low-contrast. White is
   // reserved for the floating buy panel so it reads as the raised object.
-  sheet:
-    "rounded-2xl border border-hairline bg-sheet shadow-[0_1px_2px_rgba(90,65,40,0.03)] dark:border-white/[0.07] dark:bg-surface",
-  rule: "border-hairline dark:border-separator",
-  tile: "rounded-xl bg-black/[0.035] dark:bg-white/[0.05]",
-  label: "text-[11px] leading-none text-foreground/50",
-  body: "text-[14px] leading-[1.65] text-foreground/70",
-  subhead: "text-[12px] font-semibold text-foreground/55",
+  sheet: panel(),
+  rule: "border-rule",
+  tile: "rounded-control bg-black/[0.035] dark:bg-white/[0.05]",
+  // leading-none: the label sits on a tile's first line, tight to its figure.
+  label: "text-caption leading-none text-foreground/50",
+  body: "text-body text-foreground/70",
+  subhead: "text-small font-semibold text-foreground/55",
 } as const;
 
 /** Heading + content in the two-column ruled grid the broker pages use.
@@ -177,7 +178,7 @@ export function LogoPair({ a, b }: { a?: BrokerOffer; b?: BrokerOffer }) {
       {[a, b].map((broker) => (
         <span
           key={broker.slug}
-          className="rounded-lg ring-2 ring-sheet dark:ring-surface"
+          className="rounded-control ring-2 ring-sheet dark:ring-surface"
         >
           <BrokerLogo broker={broker} size={22} />
         </span>
@@ -210,7 +211,7 @@ export function FeeTiles({
       {tiles.map((t) => (
         <div key={t.label} className={`${R.tile} px-3 py-2`}>
           <dt className={R.label}>{t.label}</dt>
-          <dd className="mt-1.5 truncate text-[13.5px] font-semibold leading-none tracking-[-0.01em] tabular-nums text-foreground">
+          <dd className="mt-1.5 truncate text-num leading-none tabular-nums text-foreground">
             {t.value}
           </dd>
         </div>
@@ -246,7 +247,7 @@ export function CostBars({
           label: "text-white/55",
           value: "font-medium text-white/60",
           rule: "border-white/15",
-          bar: "bg-[var(--color-brand-amber)]",
+          bar: "bg-brand-amber",
           rest: "bg-white/20",
         }
       : {
@@ -269,22 +270,22 @@ export function CostBars({
       {rows.map((row) => (
         <div key={row.label} className="contents">
           <span
-            className={`truncate text-[13px] leading-none ${
+            className={`truncate text-small leading-none ${
               row.primary ? ink.primary : ink.label
             }`}
           >
             {row.label}
           </span>
-          <span className={`h-[12px] self-center border-l ${ink.rule}`}>
+          <span className={`h-3 self-center border-l ${ink.rule}`}>
             <span
-              className={`block h-full rounded-r-[4px] ${
+              className={`block h-full rounded-r-mark ${
                 row.primary ? ink.bar : ink.rest
               }`}
               style={{ width: `${Math.max((row.value / max) * 100, 1.5)}%` }}
             />
           </span>
           <span
-            className={`text-right text-[13px] leading-none tabular-nums ${
+            className={`text-right text-small leading-none tabular-nums ${
               row.primary ? ink.primary : ink.value
             }`}
           >
@@ -325,7 +326,7 @@ export function SourceNote({
     .sort()[0];
 
   return (
-    <p className={`text-xs leading-5 text-foreground/50 ${className}`}>
+    <p className={`text-caption text-foreground/50 ${className}`}>
       <span className="mr-1 font-semibold text-foreground/55">Sources</span>
       {sources.map(([label, source], index) => (
         <span key={label}>
@@ -406,7 +407,7 @@ export function VerifiedNote({
   if (!oldest) return null;
 
   return (
-    <p className={`${R.label} leading-[1.6] ${className ?? ""}`}>
+    <p className={`text-caption text-foreground/50 ${className ?? ""}`}>
       Figures checked against providers’ official pages on{" "}
       {new Date(oldest).toLocaleDateString("en-GB", {
         day: "numeric",

@@ -64,6 +64,7 @@ import { BrokerAside } from "@/components/brokers/broker-aside";
 import DefaultLayout from "@/layouts/default";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
+import { SeoSection } from "@/components/seo/section";
 import { ShareRow } from "@/components/share-row";
 import { brokerGuideCta } from "@/components/seo/cta-copy";
 import { Skeleton } from "@/components/skeleton";
@@ -105,13 +106,26 @@ export default function BrokerCategoryPage() {
   if (!category) {
     return (
       <DefaultLayout>
-        <p className="mx-auto max-w-3xl py-20 text-base text-foreground/65">
-          We don’t have a guide for that category.{" "}
-          <Link className="underline" to="/brokers">
-            See all platforms
-          </Link>
-          .
-        </p>
+        <SeoPageShell
+          crumbs={[
+            { label: "Broker reviews", to: "/brokers" },
+            { label: "Not found" },
+          ]}
+          cta={false}
+          eyebrow="Broker guide"
+          standfirst="We publish a guide for each question readers most often bring to choosing a platform. This isn’t one of them yet, or the link is wrong."
+          title="We don’t have a guide for that category"
+        >
+          <SeoSection
+            more={{ to: "/brokers", label: "See all platforms" }}
+            title="Browse instead"
+          >
+            <p className="max-w-measure text-body text-foreground/70">
+              Every platform we cover, ranked on fees, features and FSCS
+              protection, with its own full review.
+            </p>
+          </SeoSection>
+        </SeoPageShell>
       </DefaultLayout>
     );
   }
@@ -154,6 +168,16 @@ export default function BrokerCategoryPage() {
           marketId: "uk",
           media: "none",
         }}
+        // A dropped request is our fault, and says so in the shell's one
+        // failed state; the intro and the related guides still render.
+        error={
+          err
+            ? {
+                what: "the platform data",
+                detail: `That’s a fault at our end rather than a gap in our records (${err}). Try again shortly, or browse every platform we cover.`,
+              }
+            : null
+        }
         eyebrow="Broker guide"
         loading={brokers === null}
         // Above the fold, before any commercial link — and outside the loading
@@ -186,7 +210,7 @@ export default function BrokerCategoryPage() {
           <PageSection id="why" title="Why we rank platforms">
             <div className="space-y-3">
               {whyWeRank(brokers!.length).map((para) => (
-                <p key={para} className={`max-w-[62ch] ${R.body}`}>
+                <p key={para} className={`max-w-measure ${R.body}`}>
                   {para}
                 </p>
               ))}
@@ -194,16 +218,7 @@ export default function BrokerCategoryPage() {
           </PageSection>
         )}
 
-        {err ? (
-          <p className={`mt-10 ${R.body}`}>
-            We couldn’t load the platform data just now ({err}). Please try
-            again shortly, or{" "}
-            <Link className="underline" to="/brokers">
-              see all platforms
-            </Link>
-            .
-          </p>
-        ) : ranked.length < MIN_BROKERS ? (
+        {err ? null : ranked.length < MIN_BROKERS ? (
           // Belt and braces: the sitemap already withholds a category that
           // can't field MIN_BROKERS, but badges are edited in ddbx-data and
           // this page shouldn't render a two-item "comparison" if one is
@@ -220,7 +235,7 @@ export default function BrokerCategoryPage() {
           <>
             <PageSection
               aside={
-                <p className={`${R.label} leading-[1.6]`}>
+                <p className="text-caption text-foreground/50">
                   Every platform here carries our “{badge}” badge. That is what
                   makes it eligible. The order is editorial.
                 </p>
@@ -256,7 +271,7 @@ export default function BrokerCategoryPage() {
                   aria-hidden
                   className="mt-[0.6em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
                 />
-                <span className="max-w-[62ch]">{point}</span>
+                <span className="max-w-measure">{point}</span>
               </li>
             ))}
           </ul>
@@ -324,7 +339,7 @@ function RankedBroker({
       <div className="flex items-start gap-4">
         <span
           aria-hidden
-          className={`mt-0.5 w-8 shrink-0 font-mono text-[15px] font-semibold tabular-nums ${
+          className={`mt-0.5 w-8 shrink-0 font-mono text-lede font-semibold tabular-nums ${
             position <= 3 ? "text-foreground/70" : "text-foreground/35"
           }`}
         >
@@ -335,7 +350,7 @@ function RankedBroker({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              className="text-[16px] font-semibold leading-snug tracking-[-0.01em] text-foreground underline-offset-4 hover:underline"
+              className="text-title text-foreground underline-offset-4 hover:underline"
               to={`/brokers/${b.slug}`}
             >
               {b.name}
@@ -344,7 +359,7 @@ function RankedBroker({
             <BadgeChip badge={badge} />
           </div>
 
-          <p className="mt-1.5 max-w-[58ch] text-[14px] leading-[1.6] text-foreground/75">
+          <p className="mt-1.5 max-w-[58ch] text-body text-foreground/75">
             {pick ?? b.tagline}
           </p>
 
@@ -415,7 +430,7 @@ function ComparisonTable({
           {brokers.map((b) => (
             <tr key={b.slug} className={`border-b ${R.rule} last:border-b-0`}>
               <th
-                className={`${STICKY_COL} py-3 pr-4 text-[13.5px] font-medium text-foreground`}
+                className={`${STICKY_COL} py-3 pr-4 text-body font-medium text-foreground`}
               >
                 <Link
                   className="underline-offset-4 hover:underline"
@@ -427,7 +442,7 @@ function ComparisonTable({
               {columns.map((c) => (
                 <td
                   key={c}
-                  className={`py-3 pr-4 text-[13.5px] tabular-nums ${
+                  className={`py-3 pr-4 text-body tabular-nums ${
                     bestInColumn(c as never, b, brokers)
                       ? "font-semibold text-foreground"
                       : "text-foreground/75"
@@ -449,7 +464,6 @@ function ComparisonTable({
  *  that follow it. The previous version was four 96px boxes standing in for a
  *  ~1,600px document, so the page redrew rather than filled in. */
 function CategorySkeleton({ rows }: { rows: number }) {
-  const RULE = `border-t ${R.rule}`;
 
   return (
     <div aria-busy="true">
@@ -463,22 +477,22 @@ function CategorySkeleton({ rows }: { rows: number }) {
 
       {/* "Why we rank" + "Our ranking", on the PageSection rail grid. */}
       <div
-        className={`mt-4 grid gap-x-10 gap-y-4 ${RULE} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
+        className={`mt-4 grid gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
       >
         <Skeleton className="h-[17px] w-32" />
-        <div className="min-w-0 max-w-[62ch] space-y-2.5">
+        <div className="min-w-0 max-w-measure space-y-2.5">
           <Skeleton className="h-[14px] w-full" />
           <Skeleton className="h-[14px] w-10/12" />
         </div>
       </div>
 
       <div
-        className={`grid gap-x-10 gap-y-4 ${RULE} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
+        className={`grid gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
       >
         <Skeleton className="h-[17px] w-24" />
         <div className="min-w-0 space-y-3">
           {Array.from({ length: rows }, (_, i) => (
-            <Skeleton key={i} className="w-full rounded-2xl" h={148} />
+            <Skeleton key={i} className="w-full rounded-card" h={148} />
           ))}
         </div>
       </div>
@@ -487,10 +501,10 @@ function CategorySkeleton({ rows }: { rows: number }) {
       {[0, 1].map((i) => (
         <div
           key={i}
-          className={`grid gap-x-10 gap-y-4 ${RULE} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
+          className={`grid gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
         >
           <Skeleton className="h-[17px] w-24" />
-          <Skeleton className="w-full rounded-xl" h={i === 0 ? 200 : 120} />
+          <Skeleton className="w-full rounded-card" h={i === 0 ? 200 : 120} />
         </div>
       ))}
     </div>

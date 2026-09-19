@@ -181,7 +181,7 @@ export default function StatusPage() {
         })}
 
         <SeoSection title="How these checks work">
-          <div className="space-y-3 text-[14px] leading-[1.65] text-foreground/75">
+          <div className="space-y-3 text-body text-foreground/75">
             <p>
               Your browser requests {PROBES.length} public endpoints and records
               how long each took to answer and parse. It repeats that every{" "}
@@ -238,23 +238,20 @@ export default function StatusPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[34rem] border-collapse text-left">
               <thead>
-                <tr className="text-[11px] uppercase tracking-[0.08em] text-foreground/45">
+                <tr className="text-caption uppercase tracking-wider text-foreground/45">
                   <th className="pb-2 font-medium">Job</th>
                   <th className="pb-2 font-medium">Runs</th>
                 </tr>
               </thead>
               <tbody>
                 {SCHEDULE.map((row) => (
-                  <tr
-                    key={row.cron}
-                    className="border-t border-hairline dark:border-separator"
-                  >
-                    <td className="py-2.5 pr-6 text-[13.5px] leading-[1.45] text-foreground/85">
+                  <tr key={row.cron} className="border-t border-rule">
+                    <td className="py-2.5 pr-6 text-body text-foreground/85">
                       {row.job}
                     </td>
-                    <td className="py-2.5 text-[13.5px] leading-[1.45] text-foreground/60">
+                    <td className="py-2.5 text-body text-foreground/60">
                       {row.cadence}
-                      <span className="ml-2 font-mono text-[11px] text-foreground/35">
+                      <span className="ml-2 font-mono text-caption text-foreground/35">
                         {row.cron}
                       </span>
                     </td>
@@ -270,7 +267,7 @@ export default function StatusPage() {
           title="Incident history"
         >
           {INCIDENTS.length === 0 ? (
-            <p className="text-[14px] leading-[1.65] text-foreground/60">
+            <p className="text-body text-foreground/60">
               No incidents recorded since this log started on 2026-07-31.
             </p>
           ) : (
@@ -278,15 +275,15 @@ export default function StatusPage() {
               {INCIDENTS.map((incident) => (
                 <li key={`${incident.date}-${incident.title}`}>
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-foreground">
+                    <h3 className="text-body font-semibold text-foreground">
                       {incident.title}
                     </h3>
-                    <span className="text-[11.5px] tabular-nums text-foreground/45">
+                    <span className="text-caption tabular-nums text-foreground/45">
                       {incident.date} · {incident.duration} ·{" "}
                       {incident.severity === "outage" ? "Outage" : "Degraded"}
                     </span>
                   </div>
-                  <p className="mt-1.5 max-w-[62ch] text-[13.5px] leading-[1.6] text-foreground/70">
+                  <p className="mt-1.5 max-w-measure text-body text-foreground/70">
                     {incident.body}
                   </p>
                 </li>

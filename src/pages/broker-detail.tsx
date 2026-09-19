@@ -29,7 +29,7 @@
 import type { ReactNode } from "react";
 
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { CheckIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { GiftIcon } from "@heroicons/react/20/solid";
 
@@ -42,6 +42,9 @@ import {
 import { BrokerNavAside } from "@/components/brokers/broker-aside";
 import { SectionEyebrow } from "@/components/section-eyebrow";
 import { Stage, StageFooter } from "@/components/ui/stage";
+import { eyebrow } from "@/components/ui/eyebrow";
+import { glass } from "@/components/ui/glass";
+import { panel } from "@/components/ui/panel";
 import { StageTitle } from "@/components/ui/stage-header";
 import {
   BrokerComplianceNote,
@@ -78,16 +81,14 @@ import {
   platformFeeSummary,
 } from "@/lib/brokers";
 
-const RULE = "border-hairline dark:border-separator";
-const BODY = "text-[15px] leading-[1.65] text-foreground/75";
-const KICKER =
-  "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45";
+const BODY = "text-lede text-foreground/75";
+const KICKER = eyebrow("quiet");
 
 /* The hero is the board-stage material, as every hero in the family draws
    it: <Stage> and its caption strip, components/ui/stage.tsx. STRIP is the
    same strip's type, for the disclosure line along its top. */
 const STRIP =
-  "flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-5 py-3.5 text-[12.5px] leading-[1.5] text-white/65";
+  "flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-5 py-3.5 text-small text-white/65";
 
 type AppShotsEntry = {
   appId: number;
@@ -114,37 +115,45 @@ export default function BrokerDetailPage() {
     [brokers, slug],
   );
 
-  if (error) {
+  // Failed and missing are different states (static-page rules): a fetch
+  // that fell over is our fault and says so; a slug we don't review is the
+  // reader's link. Both leave by the same door, the full directory.
+  if (error || (brokers && !broker)) {
     return (
       <DefaultLayout>
-        <PageMessage>
-          Couldn’t load this review ({error}).{" "}
-          <a href="/brokers">See all brokers</a>.
-        </PageMessage>
-      </DefaultLayout>
-    );
-  }
-
-  if (brokers && !broker) {
-    return (
-      <DefaultLayout>
-        <PageMessage>
-          We don’t have a review for that platform.{" "}
-          <a href="/brokers">See all brokers</a>.
-        </PageMessage>
+        <SeoPageShell
+          crumbs={[
+            { label: "Broker reviews", to: "/brokers" },
+            { label: error ? "Unavailable" : "Not found" },
+          ]}
+          cta={false}
+          error={
+            error
+              ? {
+                  what: "this review",
+                  detail: `That’s a fault at our end rather than a missing review (${error}). Try a refresh in a moment, or browse every platform we cover.`,
+                }
+              : null
+          }
+          eyebrow="Broker review"
+          standfirst="We review the UK trading platforms most readers ask about. This isn’t one of them yet, or the link is wrong."
+          title="We don’t have a review for that platform"
+        >
+          <SeoSection
+            more={{ to: "/brokers", label: "See all brokers" }}
+            title="Browse instead"
+          >
+            <p className="max-w-measure text-body text-foreground/70">
+              Every platform we cover, ranked on fees, features and FSCS
+              protection, with its own full review.
+            </p>
+          </SeoSection>
+        </SeoPageShell>
       </DefaultLayout>
     );
   }
 
   return <BrokerReview broker={broker} brokers={brokers} />;
-}
-
-function PageMessage({ children }: { children: ReactNode }) {
-  return (
-    <p className="mx-auto max-w-3xl py-20 text-base text-foreground/65 [&_a]:underline">
-      {children}
-    </p>
-  );
 }
 
 /** The review, or its loading geometry when `broker` is still null. One
@@ -299,9 +308,7 @@ function ReviewStage({
     <Stage>
       {/* The disclosure is the panel's first line: it is on screen whenever
           the visit button below it is, at every width. */}
-      <p
-        className={`${STRIP} border-b border-white/10 !text-[12px] !text-white/60`}
-      >
+      <p className={`${STRIP} border-b border-rule-stage !text-white/60`}>
         <span>
           <span className="font-semibold text-white/85">Ad.</span>{" "}
           {BROKER_DISCLOSURE.replace(/^Ad\. /, "")}
@@ -314,10 +321,10 @@ function ReviewStage({
             {`Review · Updated ${fmtVerifiedDate(b.last_verified)}`}
           </SectionEyebrow>
 
-          <BrokerLogo broker={b} className="mt-5 !rounded-2xl" size={80} />
+          <BrokerLogo broker={b} className="mt-5 !rounded-card" size={80} />
 
           <StageTitle className="mt-5">{b.name}</StageTitle>
-          <p className="mt-3 max-w-[52ch] text-[15px] leading-[1.55] text-white/65 sm:text-[16px]">
+          <p className="mt-3 max-w-[52ch] text-lede text-white/65">
             {b.tagline}
           </p>
 
@@ -327,7 +334,7 @@ function ReviewStage({
               button to its white-on-dark form without forking its tokens. */}
           <div className="dark mt-8">
             {offer ? (
-              <p className="mb-3 flex max-w-[52ch] items-start gap-2 text-[13.5px] font-medium leading-[1.45] text-[var(--color-brand-amber)]">
+              <p className="mb-3 flex max-w-[52ch] items-start gap-2 text-body font-medium text-brand-amber">
                 <GiftIcon className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>
                   {offer}.{" "}
@@ -341,7 +348,7 @@ function ReviewStage({
               </p>
             ) : null}
             <BrokerVisitLink broker={b} placement="verdict" size="lg" />
-            <p className="mt-2.5 text-[11.5px] leading-4 text-white/45">
+            <p className="mt-2.5 text-caption text-white/45">
               Capital at risk.
               {isAffiliateLink(b) ? " We may earn a commission." : ""}
             </p>
@@ -351,20 +358,20 @@ function ReviewStage({
         {/* The verdict figure: what this platform would cost, at a balance
             the reader picks. */}
         <div className="min-w-0 lg:justify-self-end lg:text-right">
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/45">
+          <p className="micro text-white/45">
             Estimated cost a year on £{pot.toLocaleString("en-GB")}
           </p>
           {/* Proportional figures at this size; tabular loosens them. */}
-          <p className="mt-1 text-[72px] font-semibold leading-none tracking-[-0.04em] text-white sm:text-[84px]">
+          <p className="mt-1 text-figure-xl normal-nums text-white">
             {fmtMoneyRound(mine.total)}
           </p>
-          <p className="mt-2 text-[16px] font-medium leading-[1.3] text-white/85">
+          <p className="mt-2 text-lede font-medium text-white/85">
             {rankSentence(
               mine.total,
               rivals.map((r) => r.total),
             )}
           </p>
-          <p className="mt-1.5 text-[12.5px] tabular-nums text-white/50">
+          <p className="mt-1.5 text-small tabular-nums text-white/50">
             Platform {fmtMoneyRound(mine.platform)} · Dealing{" "}
             {fmtMoneyRound(mine.dealing)} · FX {fmtMoneyRound(mine.fx)}
           </p>
@@ -374,7 +381,7 @@ function ReviewStage({
                 <button
                   key={value}
                   aria-pressed={pot === value}
-                  className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium tracking-[-0.005em] transition-colors ${
+                  className={`rounded-full px-3.5 py-1.5 text-small font-medium transition-colors ${
                     pot === value
                       ? "bg-white text-[#1a140d]"
                       : "text-white/65 hover:text-white"
@@ -392,8 +399,8 @@ function ReviewStage({
 
       {/* The comparison, full width under the header, the way every stage
           puts its object. Only this platform's bar carries the hue. */}
-      <div className="mt-9 border-t border-white/10 px-6 pb-8 pt-6 sm:px-8">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/45">
+      <div className="mt-9 border-t border-rule-stage px-6 pb-8 pt-6 sm:px-8">
+        <p className="micro text-white/45">
           Against the other {rivals.length} platforms we review
         </p>
         <CostBars className="mt-5" rows={bars} tone="stage" />
@@ -427,18 +434,18 @@ function StageSkeleton() {
   return (
     <Stage aria-busy="true">
       <span className="sr-only">Loading the review</span>
-      <div className={`${STRIP} border-b border-white/10`}>
+      <div className={`${STRIP} border-b border-rule-stage`}>
         <Skeleton className="h-[12px] w-4/5 max-w-[620px]" />
       </div>
       <div className="grid gap-x-12 gap-y-9 px-6 pt-7 sm:px-8 sm:pt-9 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         <div>
           <Skeleton className="h-[11px] w-56" />
-          <Skeleton className="mt-5 h-[80px] w-[80px] rounded-2xl" />
+          <Skeleton className="mt-5 h-[80px] w-[80px] rounded-card" />
           <Skeleton className="mt-5 h-[46px] w-64" />
           <Skeleton className="mt-4 h-[15px] w-full max-w-[460px]" />
           <Skeleton className="mt-2 h-[15px] w-3/5 max-w-[300px]" />
           <StageFigures reserve items={[]} />
-          <Skeleton className="mt-8 h-[44px] w-48 rounded-lg" />
+          <Skeleton className="mt-8 h-[44px] w-48 rounded-control" />
         </div>
         <div className="lg:justify-self-end">
           <Skeleton className="h-[10px] w-48 lg:ml-auto" />
@@ -446,7 +453,7 @@ function StageSkeleton() {
           <Skeleton className="mt-3 h-[16px] w-56 lg:ml-auto" />
         </div>
       </div>
-      <div className="mt-9 space-y-3 border-t border-white/10 px-6 pb-8 pt-6 sm:px-8">
+      <div className="mt-9 space-y-3 border-t border-rule-stage px-6 pb-8 pt-6 sm:px-8">
         <Skeleton className="h-[10px] w-52" />
         {[0, 1, 2].map((i) => (
           <Skeleton key={i} className="h-[12px] w-full" />
@@ -583,14 +590,14 @@ function ReviewBody({
       key: "faq",
       node: (i, n) => (
         <SeoSection id="faq" index={i} title="Questions and answers" total={n}>
-          <div className={`border-t ${RULE}`}>
+          <div className={`border-t border-rule`}>
             {faqs.map((item) => (
-              <details key={item.question} className={`group border-b ${RULE}`}>
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 text-[18px] font-semibold leading-[1.3] tracking-[-0.014em] text-foreground transition-colors hover:text-foreground/70 sm:text-[20px] [&::-webkit-details-marker]:hidden">
+              <details key={item.question} className={`group border-b border-rule`}>
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 text-title text-foreground transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
                   {item.question}
                   <ChevronDownIcon className="mt-1 h-5 w-5 shrink-0 text-foreground/35 transition-transform group-open:rotate-180" />
                 </summary>
-                <p className={`max-w-[62ch] pb-6 ${BODY}`}>{item.answer}</p>
+                <p className={`max-w-measure pb-6 ${BODY}`}>{item.answer}</p>
               </details>
             ))}
           </div>
@@ -609,6 +616,10 @@ function ReviewBody({
               <SeoSection
                 aside={`Five more reviews, each with the same yearly estimate on £${pot.toLocaleString("en-GB")}.`}
                 index={i}
+                more={{
+                  to: "/brokers",
+                  label: `Compare all ${brokers.length} platforms`,
+                }}
                 title="Other platforms"
                 total={n}
               >
@@ -653,12 +664,6 @@ function ReviewBody({
                     />
                   ))}
                 </BoardRowList>
-                <Link
-                  className="mt-5 inline-block text-[13px] font-medium text-foreground/60 underline underline-offset-4 transition-colors hover:text-foreground"
-                  to="/brokers"
-                >
-                  Compare all {brokers.length} platforms
-                </Link>
               </SeoSection>
             ),
           },
@@ -698,7 +703,7 @@ function ReviewBody({
     <>
       {/* The basis line: what the stage's estimate is, and how fresh. */}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
-        <p className="max-w-[78ch] text-[12.5px] leading-[1.6] text-foreground/45">
+        <p className="max-w-[78ch] text-small text-foreground/45">
           Estimate assumes 12 monthly purchases over a year, split between UK
           and US shares, with FX on the overseas half. Fee caps, subscription
           tiers and fund charges are not modelled, and a fee the platform
@@ -715,7 +720,7 @@ function ReviewBody({
       </div>
 
       {b.summary ? (
-        <p className="mt-9 max-w-[62ch] text-[19px] leading-[1.55] tracking-[-0.008em] text-foreground/90 sm:text-[21px]">
+        <p className="mt-9 max-w-measure text-[19px] leading-[1.55] tracking-[-0.008em] text-foreground/90 sm:text-[21px]">
           {b.summary}
         </p>
       ) : null}
@@ -749,15 +754,15 @@ function Verdict({ pros, cons }: { pros: string[]; cons: string[] }) {
           <p className={`pb-3 ${KICKER}`}>
             {g.title} · {g.items.length}
           </p>
-          <ul className={`border-t ${RULE}`}>
+          <ul className={`border-t border-rule`}>
             {g.items.map((item) => (
               <li
                 key={item}
-                className={`flex gap-4 border-b ${RULE} py-4 text-[16px] leading-[1.5] text-foreground/85`}
+                className={`flex gap-4 border-b border-rule py-4 text-lede text-foreground/85`}
               >
                 <span
                   aria-label={g.tone === "for" ? "For" : "Against"}
-                  className={`w-3 shrink-0 font-mono text-[16px] font-semibold leading-[1.5] ${
+                  className={`w-3 shrink-0 font-mono text-lede font-semibold ${
                     g.tone === "for" ? "text-positive" : "text-negative"
                   }`}
                 >
@@ -784,13 +789,13 @@ function AppShots({
   entry: AppShotsEntry;
 }) {
   return (
-    <div className="overflow-hidden rounded-[20px] border border-hairline bg-sheet dark:border-separator dark:bg-white/[0.03]">
+    <div className={`overflow-hidden ${panel()}`}>
       <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-px-4 p-4 [-webkit-overflow-scrolling:touch]">
         {entry.screenshots.map((base, index) => (
           <img
             key={base}
             alt={`${b.name} app screenshot ${index + 1}`}
-            className={`h-[300px] w-auto shrink-0 snap-start rounded-xl border ${RULE} bg-background`}
+            className={`h-[300px] w-auto shrink-0 snap-start rounded-card border border-rule bg-background`}
             decoding="async"
             loading="lazy"
             src={`${base}/300x650bb.webp`}
@@ -799,7 +804,7 @@ function AppShots({
         ))}
       </div>
       <div
-        className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t ${RULE} px-4 py-3 text-[12.5px] text-foreground/55`}
+        className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-rule px-4 py-3 text-small text-foreground/55`}
       >
         <span>{entry.screenshots.length} screens · scroll for more</span>
         <a
@@ -826,10 +831,10 @@ function FactRow({
 }) {
   return (
     <div
-      className={`grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 border-b ${RULE} py-3.5 sm:grid-cols-[14rem_minmax(0,1fr)]`}
+      className={`grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 border-b border-rule py-3.5 sm:grid-cols-[14rem_minmax(0,1fr)]`}
     >
-      <dt className="text-[14px] text-foreground/60">{label}</dt>
-      <dd className="text-right text-[15px] font-semibold tabular-nums text-foreground sm:text-left">
+      <dt className="text-body text-foreground/60">{label}</dt>
+      <dd className="text-right text-lede font-semibold tabular-nums text-foreground sm:text-left">
         {children}
       </dd>
     </div>
@@ -855,7 +860,7 @@ function FeeSchedule({ broker: b }: { broker: BrokerOffer }) {
 
   return (
     <div className="max-w-[860px]">
-      <dl className={`border-t ${RULE}`}>
+      <dl className={`border-t border-rule`}>
         {shown.map(([label, value]) => (
           <FactRow key={label} label={label}>
             {value ?? (
@@ -867,7 +872,7 @@ function FeeSchedule({ broker: b }: { broker: BrokerOffer }) {
         ))}
       </dl>
       {b.fees.platform_fee_note ? (
-        <p className="mt-4 max-w-[62ch] text-[13px] leading-[1.6] text-foreground/55">
+        <p className="mt-4 max-w-measure text-small text-foreground/55">
           {b.fees.platform_fee_note}
         </p>
       ) : null}
@@ -875,15 +880,17 @@ function FeeSchedule({ broker: b }: { broker: BrokerOffer }) {
   );
 }
 
+/** The tick is `live` (status), not `positive` (direction) — as broker-ui's
+ *  `Tick`. */
 function YesNo({ value }: { value: boolean }) {
   return value ? (
     <CheckIcon
       aria-label="Yes"
-      className="h-[16px] w-[16px] shrink-0 text-positive"
+      className="h-4 w-4 shrink-0 text-live"
       strokeWidth={2.5}
     />
   ) : (
-    <span className="text-[13px] font-normal text-foreground/35">No</span>
+    <span className="text-small font-normal text-foreground/35">No</span>
   );
 }
 
@@ -942,11 +949,11 @@ function Platform({ broker: b }: { broker: BrokerOffer }) {
         return (
           <div key={group.label}>
             <p className={`pb-3 ${KICKER}`}>{group.label}</p>
-            <ul className={`border-t ${RULE}`}>
+            <ul className={`border-t border-rule`}>
               {items.map(([label, value]) => (
                 <li
                   key={label}
-                  className={`flex items-center justify-between gap-4 border-b ${RULE} py-3 text-[15px]`}
+                  className={`flex items-center justify-between gap-4 border-b border-rule py-3 text-lede`}
                 >
                   <span
                     className={
@@ -965,13 +972,13 @@ function Platform({ broker: b }: { broker: BrokerOffer }) {
 
       <div>
         <p className={`pb-3 ${KICKER}`}>Protection</p>
-        <ul className={`border-t ${RULE}`}>
+        <ul className={`border-t border-rule`}>
           {protection
             .filter((item): item is [string, string] => item[1] != null)
             .map(([label, value]) => (
               <li
                 key={label}
-                className={`flex items-baseline justify-between gap-4 border-b ${RULE} py-3 text-[15px]`}
+                className={`flex items-baseline justify-between gap-4 border-b border-rule py-3 text-lede`}
               >
                 <span className="text-foreground/60">{label}</span>
                 <span className="text-right font-medium text-foreground/85">
@@ -988,7 +995,7 @@ function Platform({ broker: b }: { broker: BrokerOffer }) {
 function Offer({ broker: b }: { broker: BrokerOffer }) {
   return (
     <div
-      className={`grid gap-x-10 gap-y-5 border-y ${RULE} py-7 sm:py-9 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]`}
+      className={`grid gap-x-10 gap-y-5 border-y border-rule py-7 sm:py-9 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]`}
     >
       <div>
         <p className="flex items-start gap-3 text-balance text-[21px] font-semibold leading-[1.2] tracking-[-0.022em] text-foreground sm:text-[24px]">
@@ -997,7 +1004,7 @@ function Offer({ broker: b }: { broker: BrokerOffer }) {
         </p>
         <div className="mt-5 pl-8">
           <BrokerVisitLink broker={b} placement="offer" size="lg" />
-          <p className="mt-2.5 text-[11.5px] leading-4 text-foreground/45">
+          <p className="mt-2.5 text-caption text-foreground/45">
             Capital at risk.
             {isAffiliateLink(b) ? " We may earn a commission." : ""}
           </p>
@@ -1006,7 +1013,7 @@ function Offer({ broker: b }: { broker: BrokerOffer }) {
       {b.offer_terms ? (
         <div className="min-w-0 sm:pt-1">
           <p className={KICKER}>Terms</p>
-          <p className={`mt-2 max-w-[62ch] ${BODY}`}>{b.offer_terms}</p>
+          <p className={`mt-2 max-w-measure ${BODY}`}>{b.offer_terms}</p>
         </div>
       ) : null}
     </div>
@@ -1016,16 +1023,16 @@ function Offer({ broker: b }: { broker: BrokerOffer }) {
 function MobileVisitBar({ broker: b }: { broker: BrokerOffer }) {
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-separator bg-background/95 px-4 py-3 backdrop-blur lg:hidden"
+      className={`fixed inset-x-0 bottom-0 z-40 ${glass()} border-x-0 border-b-0 px-4 py-3 lg:hidden`}
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto flex max-w-3xl items-center gap-3">
         <BrokerLogo broker={b} size={36} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">
+          <p className="truncate text-body font-semibold text-foreground">
             {b.name}
           </p>
-          <p className="truncate text-[11px] text-foreground/50">
+          <p className="truncate text-caption text-foreground/50">
             Capital at risk
             {isAffiliateLink(b) ? " · We may earn a commission" : ""}
           </p>

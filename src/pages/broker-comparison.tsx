@@ -62,6 +62,8 @@ import { BrokerAside } from "@/components/brokers/broker-aside";
 import DefaultLayout from "@/layouts/default";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
+import { SeoSection } from "@/components/seo/section";
+import { eyebrow } from "@/components/ui/eyebrow";
 import { ShareRow } from "@/components/share-row";
 import { brokerGuideCta } from "@/components/seo/cta-copy";
 import { Skeleton } from "@/components/skeleton";
@@ -206,13 +208,26 @@ export default function BrokerComparisonPage() {
   if (!comparison) {
     return (
       <DefaultLayout>
-        <p className="mx-auto max-w-3xl py-20 text-base text-foreground/65">
-          We haven’t written that comparison.{" "}
-          <Link className="underline" to="/brokers">
-            See all platforms
-          </Link>
-          .
-        </p>
+        <SeoPageShell
+          crumbs={[
+            { label: "Broker reviews", to: "/brokers" },
+            { label: "Not found" },
+          ]}
+          cta={false}
+          eyebrow="Broker guide"
+          standfirst="We write head-to-heads for the pairs readers most often weigh up. This isn’t one of them yet, or the link is wrong."
+          title="We haven’t written that comparison"
+        >
+          <SeoSection
+            more={{ to: "/brokers", label: "See all platforms" }}
+            title="Browse instead"
+          >
+            <p className="max-w-measure text-body text-foreground/70">
+              Every platform we cover, ranked on fees, features and FSCS
+              protection, with its own full review.
+            </p>
+          </SeoSection>
+        </SeoPageShell>
       </DefaultLayout>
     );
   }
@@ -260,6 +275,17 @@ export default function BrokerComparisonPage() {
           marketId: "uk",
           media: "none",
         }}
+        // A dropped request is our fault, and says so in the shell's one
+        // failed state; the static verdict and the other head-to-heads below
+        // still render as the way out.
+        error={
+          err
+            ? {
+                what: "the platform data",
+                detail: `That’s a fault at our end rather than a gap in our records (${err}). Try again shortly, or browse the other comparisons below.`,
+              }
+            : null
+        }
         eyebrow="Broker guide"
         loading={brokers === null}
         notice={<BrokerDisclosure />}
@@ -281,17 +307,15 @@ export default function BrokerComparisonPage() {
             after the evidence — but a reader who came for "which one" gets it
             in a sentence without scrolling past four sections first. */}
         <div className={`mt-6 ${R.tile} px-5 py-4`}>
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
-            Our verdict
-          </p>
-          <p className="mt-2 max-w-[62ch] text-[15.5px] font-medium leading-[1.55] tracking-[-0.006em] text-foreground">
+          <p className={eyebrow("brand")}>Our verdict</p>
+          <p className="mt-2 max-w-measure text-lede font-medium text-foreground">
             {comparison.shortVerdict}
           </p>
           {/* Only when the section it points at is actually on the page —
               the verdict lives inside the loaded branch. */}
           {pair && (
             <a
-              className="mt-2.5 inline-block text-[13px] font-medium text-foreground/55 underline underline-offset-2 transition-colors hover:text-foreground"
+              className="mt-2.5 inline-block text-small font-medium text-foreground/55 underline underline-offset-2 transition-colors hover:text-foreground"
               href="#verdict"
             >
               Read the full verdict
@@ -299,16 +323,7 @@ export default function BrokerComparisonPage() {
           )}
         </div>
 
-        {err ? (
-          <p className={`mt-10 ${R.body}`}>
-            We couldn’t load the platform data just now ({err}). Please try
-            again shortly, or{" "}
-            <Link className="underline" to="/brokers">
-              see all platforms
-            </Link>
-            .
-          </p>
-        ) : !pair ? (
+        {err ? null : !pair ? (
           <p className={`mt-10 ${R.body}`}>
             One of these platforms isn’t on file at the moment, so we’re not
             showing a half-populated comparison.{" "}
@@ -327,7 +342,7 @@ export default function BrokerComparisonPage() {
             <CrossoverCallout a={pair.a} b={pair.b} />
 
             <PageSection id="why-this-pair" title="Why this pair">
-              <p className={`max-w-[62ch] ${R.body}`}>
+              <p className={`max-w-measure ${R.body}`}>
                 {comparison.whyThisPair}
               </p>
             </PageSection>
@@ -339,7 +354,7 @@ export default function BrokerComparisonPage() {
 
             <PageSection id="cost" title="What each costs a year">
               <CostComparison a={pair.a} b={pair.b} />
-              <p className={`mt-6 ${R.label} leading-[1.6]`}>
+              <p className="mt-6 text-caption text-foreground/50">
                 Illustrative only: a pot built with monthly buys, 12 trades a
                 year split evenly between UK and US shares, and half the
                 purchases in non-GBP shares incurring the FX fee once on the
@@ -423,15 +438,13 @@ function BrokerColumn({ broker: b }: { broker: BrokerOffer }) {
       <div className="flex items-center gap-3">
         <BrokerLogo broker={b} size={40} />
         <Link
-          className="text-[17px] font-semibold tracking-[-0.01em] text-foreground underline-offset-4 hover:underline"
+          className="text-title text-foreground underline-offset-4 hover:underline"
           to={`/brokers/${b.slug}`}
         >
           {b.name}
         </Link>
       </div>
-      <p className="mt-3 text-[13.5px] leading-[1.6] text-foreground/70">
-        {b.tagline}
-      </p>
+      <p className="mt-3 text-body text-foreground/70">{b.tagline}</p>
 
       <FeeTiles broker={b} className="mt-4" />
 
@@ -463,10 +476,8 @@ function CrossoverCallout({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
     <div
       className={`mt-6 ${R.tile} border-l-2 border-brand-brown/30 px-5 py-4 dark:border-brand-tan/40`}
     >
-      <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
-        Where it flips
-      </p>
-      <p className="mt-2 text-[15.5px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
+      <p className={eyebrow("brand")}>Where it flips</p>
+      <p className="mt-2 text-lede font-semibold text-foreground">
         {crossover.cheaperAbove.name} becomes the cheaper platform at about{" "}
         {fmtMoneyRound(crossover.pot)}.
       </p>
@@ -510,10 +521,10 @@ function DifferencesTable({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
             <th
               className={`${R.label} ${STICKY_COL} pb-2 pr-4 font-semibold`}
             />
-            <th className="pb-2 pr-4 text-[13px] font-semibold text-foreground">
+            <th className="pb-2 pr-4 text-small font-semibold text-foreground">
               {a.name}
             </th>
-            <th className="pb-2 text-[13px] font-semibold text-foreground">
+            <th className="pb-2 text-small font-semibold text-foreground">
               {b.name}
             </th>
           </tr>
@@ -535,17 +546,17 @@ function DifferencesTable({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
                   return (
                     <tr key={f.label} className={`border-b ${R.rule}`}>
                       <th
-                        className={`${STICKY_COL} py-2.5 pr-4 text-[13.5px] font-normal text-foreground/60`}
+                        className={`${STICKY_COL} py-2.5 pr-4 text-body font-normal text-foreground/60`}
                       >
                         {f.label}
                       </th>
                       <td
-                        className={`py-2.5 pr-4 text-[13.5px] tabular-nums ${cheaperInk(ca, cb)}`}
+                        className={`py-2.5 pr-4 text-body tabular-nums ${cheaperInk(ca, cb)}`}
                       >
                         {f.render(a)}
                       </td>
                       <td
-                        className={`py-2.5 text-[13.5px] tabular-nums ${cheaperInk(cb, ca)}`}
+                        className={`py-2.5 text-body tabular-nums ${cheaperInk(cb, ca)}`}
                       >
                         {f.render(b)}
                       </td>
@@ -589,7 +600,7 @@ function CostComparison({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
                 { label: b.name, value: cb, primary: cb <= ca },
               ]}
             />
-            <p className={`mt-2.5 ${R.label} leading-[1.6]`}>
+            <p className="mt-2.5 text-caption text-foreground/50">
               {Math.round(gap) === 0
                 ? "The two cost about the same at this balance."
                 : `${cheaper.name} costs ${fmtMoneyRound(gap)} less a year at this balance.`}
@@ -604,27 +615,21 @@ function CostComparison({ a, b }: { a: BrokerOffer; b: BrokerOffer }) {
 function ProsCons({ broker: b }: { broker: BrokerOffer }) {
   return (
     <div>
-      <h3 className="text-[14px] font-semibold text-foreground">{b.name}</h3>
+      <h3 className="text-body font-semibold text-foreground">{b.name}</h3>
       <ul className="mt-2.5 space-y-1.5">
         {b.pros.map((p) => (
-          <li
-            key={p}
-            className="flex gap-2 text-[13.5px] leading-[1.55] text-foreground/75"
-          >
+          <li key={p} className="flex gap-2 text-body text-foreground/75">
             <CheckIcon
-              className="mt-[4px] h-3.5 w-3.5 shrink-0 text-positive/70"
+              className="mt-1 h-3.5 w-3.5 shrink-0 text-positive/70"
               strokeWidth={2.5}
             />
             <span>{p}</span>
           </li>
         ))}
         {b.cons.map((c) => (
-          <li
-            key={c}
-            className="flex gap-2 text-[13.5px] leading-[1.55] text-foreground/75"
-          >
+          <li key={c} className="flex gap-2 text-body text-foreground/75">
             <XMarkIcon
-              className="mt-[4px] h-3.5 w-3.5 shrink-0 text-negative/70"
+              className="mt-1 h-3.5 w-3.5 shrink-0 text-negative/70"
               strokeWidth={2.5}
             />
             <span>{c}</span>
@@ -639,26 +644,25 @@ function ProsCons({ broker: b }: { broker: BrokerOffer }) {
  *  pair sheets, then the ruled sections on the same 10rem rail grid. The
  *  previous version was ~460px of boxes standing in for ~1,750px of page. */
 function ComparisonSkeleton() {
-  const RULE = `border-t ${R.rule}`;
 
   return (
     <div aria-busy="true">
       <span className="sr-only">Loading platforms…</span>
 
-      <Skeleton className="mt-6 w-full rounded-xl" h={116} />
+      <Skeleton className="mt-6 w-full rounded-control" h={116} />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <Skeleton className="w-full rounded-2xl" h={280} />
-        <Skeleton className="w-full rounded-2xl" h={280} />
+        <Skeleton className="w-full rounded-card" h={280} />
+        <Skeleton className="w-full rounded-card" h={280} />
       </div>
 
       {[220, 300, 260, 200].map((h, i) => (
         <div
           key={i}
-          className={`${i === 0 ? "mt-6" : ""} grid gap-x-10 gap-y-4 ${RULE} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
+          className={`${i === 0 ? "mt-6" : ""} grid gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
         >
           <Skeleton className="h-[17px] w-28" />
-          <Skeleton className="w-full rounded-xl" h={h} />
+          <Skeleton className="w-full rounded-card" h={h} />
         </div>
       ))}
     </div>

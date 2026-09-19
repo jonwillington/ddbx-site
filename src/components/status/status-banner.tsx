@@ -49,12 +49,12 @@ export function StatusBanner({
   useTick(lastRun != null);
 
   return (
-    <div className="mt-6 rounded-2xl border border-hairline bg-sheet p-5 dark:border-separator dark:bg-white/[0.03] sm:p-6">
+    <div className="mt-6 rounded-card border border-rule bg-sheet p-5 dark:bg-white/[0.03] sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="flex min-w-0 items-start gap-3">
           <span
             aria-hidden="true"
-            className="relative mt-[7px] flex size-2.5 shrink-0"
+            className="relative mt-2 flex size-2.5 shrink-0"
           >
             {/* The ping is suppressed while checking and while down: an
                 animation that reads as "live and healthy" is the wrong
@@ -70,12 +70,10 @@ export function StatusBanner({
           </span>
 
           <div className="min-w-0">
-            <h2
-              className={`text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] ${STATE_TEXT[state]}`}
-            >
+            <h2 className={`text-title ${STATE_TEXT[state]}`}>
               {BANNER_HEADLINE[state]}
             </h2>
-            <p className="mt-1.5 max-w-[58ch] text-[13.5px] leading-[1.55] text-foreground/70">
+            <p className="mt-1.5 max-w-[58ch] text-body text-foreground/70">
               {BANNER_BODY[state]}
             </p>
           </div>
@@ -84,13 +82,13 @@ export function StatusBanner({
         <div className="flex shrink-0 items-center gap-3">
           <span
             aria-live="polite"
-            className="text-[11.5px] tabular-nums text-foreground/45"
+            className="text-caption tabular-nums text-foreground/45"
           >
             {lastRun == null ? "Checking…" : `Checked ${timeAgo(lastRun)}`}
           </span>
           <button
             aria-label="Re-run the checks now"
-            className="rounded-full border border-hairline p-1.5 text-foreground/55 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/40 disabled:opacity-40 dark:border-separator"
+            className="rounded-full border border-rule p-1.5 text-foreground/55 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/40 disabled:opacity-40"
             disabled={running}
             type="button"
             onClick={onRefresh}

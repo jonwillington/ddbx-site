@@ -15,6 +15,7 @@ import {
   OfferBadge,
 } from "./broker-ui";
 
+import { Skeleton } from "@/components/skeleton";
 import { api, type BrokerOffer } from "@/lib/api";
 import { isOfferLive, platformFeeSummary } from "@/lib/brokers";
 
@@ -44,30 +45,27 @@ export function BrokerNavAside({
   const ordered = recommendedOrder(brokers);
 
   return (
-    <aside className="page-rail hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">
-      <div className="h-16 px-4 flex items-center justify-between border-b border-hairline dark:border-separator shrink-0">
-        <h2 className="text-sm font-semibold text-foreground/80">
+    <aside className="page-rail hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-rule bg-sheet dark:bg-surface z-20">
+      <div className="h-16 px-4 flex items-center justify-between border-b border-rule shrink-0">
+        <h2 className="text-body font-semibold text-foreground/80">
           Broker reviews
         </h2>
         <a
-          className="text-xs font-medium text-foreground/50 transition-colors hover:text-foreground"
+          className="text-caption font-medium text-foreground/50 transition-colors hover:text-foreground"
           href="/brokers"
         >
           Compare all
         </a>
       </div>
 
-      {/* The platform nav scrolls. */}
+      {/* The platform nav scrolls — under the header and disclosure rules,
+          with no edge fades (design language: contained, not blended). */}
       <div className="relative flex-1 min-h-0">
-        <div className="absolute inset-x-0 top-0 h-4 pointer-events-none z-[1] bg-gradient-to-b from-sheet dark:from-surface to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-4 pointer-events-none z-[1] bg-gradient-to-t from-sheet dark:from-surface to-transparent" />
         <nav
           aria-label="All broker reviews"
           className="h-full overflow-y-auto overscroll-contain px-4 py-3"
         >
-          <p className="px-1 pb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-            All platforms
-          </p>
+          <p className="px-1 pb-1.5 micro text-foreground/45">All platforms</p>
           <ul className="space-y-0.5">
             {ordered.map((b) => {
               const active = b.slug === current.slug;
@@ -78,8 +76,8 @@ export function BrokerNavAside({
                     aria-current={active ? "page" : undefined}
                     className={
                       active
-                        ? "flex items-center gap-2.5 rounded-lg bg-background px-2 py-2 ring-1 ring-hairline dark:bg-white/[0.07] dark:ring-white/[0.08]"
-                        : "flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+                        ? "flex items-center gap-2.5 rounded-control bg-background px-2 py-2 ring-1 ring-hairline dark:bg-white/[0.07] dark:ring-white/[0.08]"
+                        : "flex items-center gap-2.5 rounded-control px-2 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                     }
                     href={`/brokers/${b.slug}`}
                   >
@@ -88,8 +86,8 @@ export function BrokerNavAside({
                       <span
                         className={
                           active
-                            ? "block truncate text-[13px] font-bold text-foreground"
-                            : "block truncate text-[13px] font-medium text-foreground/75"
+                            ? "block truncate text-small font-bold text-foreground"
+                            : "block truncate text-small font-medium text-foreground/75"
                         }
                       >
                         {b.name}
@@ -98,7 +96,7 @@ export function BrokerNavAside({
                           fees live on the detail page. Rows without an offer
                           stay single-line so the promos stand out. */}
                       {isOfferLive(b) && (
-                        <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold leading-4 text-brand-brown dark:text-[#e7d4bf]">
+                        <span className="mt-0.5 flex items-center gap-1 text-caption font-semibold text-brand-brown dark:text-[#e7d4bf]">
                           <GiftIcon className="h-3 w-3 shrink-0" />
                           <span className="truncate">{b.offer_headline}</span>
                         </span>
@@ -113,8 +111,8 @@ export function BrokerNavAside({
       </div>
 
       {/* Pinned disclosure — stays visible at the point of engagement. */}
-      <div className="shrink-0 border-t border-hairline px-4 py-3 dark:border-separator">
-        <BrokerDisclosure className="!border-0 !bg-transparent !p-0 !text-[11px] !leading-4" />
+      <div className="shrink-0 border-t border-rule px-4 py-3">
+        <BrokerDisclosure className="!border-0 !bg-transparent !p-0 !text-caption" />
       </div>
     </aside>
   );
@@ -183,13 +181,13 @@ export function BrokerAside({
   );
 
   return (
-    <aside className="page-rail hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">
-      <div className="h-16 px-4 flex items-center border-b border-hairline dark:border-separator shrink-0">
-        <h2 className="text-sm font-semibold text-foreground/80">{heading}</h2>
+    <aside className="page-rail hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-rule bg-sheet dark:bg-surface z-20">
+      <div className="h-16 px-4 flex items-center border-b border-rule shrink-0">
+        <h2 className="text-body font-semibold text-foreground/80">
+          {heading}
+        </h2>
       </div>
       <div className="relative flex-1 min-h-0">
-        <div className="absolute inset-x-0 top-0 h-4 pointer-events-none z-[1] bg-gradient-to-b from-sheet dark:from-surface to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-4 pointer-events-none z-[1] bg-gradient-to-t from-sheet dark:from-surface to-transparent" />
         <div className="h-full overflow-y-auto overscroll-contain">
           {loading ? (
             <RailSkeleton showAll={showAll} />
@@ -198,7 +196,7 @@ export function BrokerAside({
               {picks.map((b) => (
                 <div
                   key={b.slug}
-                  className="rounded-xl border border-hairline dark:border-separator bg-background/40 p-3"
+                  className="rounded-card border border-rule bg-background/40 p-3"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex min-w-0 items-center gap-2.5">
@@ -214,11 +212,13 @@ export function BrokerAside({
                       <BadgeChip badge="top_pick" />
                     )}
                   </div>
-                  <p className="mt-2 text-xs text-foreground/55">{b.tagline}</p>
+                  <p className="mt-2 text-caption text-foreground/55">
+                    {b.tagline}
+                  </p>
                   {isOfferLive(b) && (
                     <OfferBadge className="mt-2.5" text={b.offer_headline!} />
                   )}
-                  <p className="mt-2.5 text-[11px] text-foreground/50">
+                  <p className="mt-2.5 text-caption text-foreground/50">
                     Platform fee: {platformFeeSummary(b.fees)}
                   </p>
                   <div className="mt-3">
@@ -235,26 +235,26 @@ export function BrokerAside({
 
               {showAll && rest.length > 0 && (
                 <nav aria-label="All trading platforms">
-                  <p className="px-1 pb-1.5 pt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
+                  <p className="px-1 pb-1.5 pt-1 micro text-foreground/45">
                     All platforms
                   </p>
                   <ul className="space-y-0.5">
                     {rest.map((b) => (
                       <li key={b.slug}>
                         <a
-                          className="flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+                          className="flex items-center gap-2.5 rounded-control px-2 py-2 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
                           href={`/brokers/${b.slug}`}
                         >
                           <BrokerLogo broker={b} size={28} />
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13px] font-medium text-foreground/75">
+                            <span className="block truncate text-small font-medium text-foreground/75">
                               {b.name}
                             </span>
                             {/* The live sign-up offer is the click-worthy hook —
                               fees live on the review. Rows without one stay
                               single-line so the promos stand out. */}
                             {isOfferLive(b) && b.offer_headline ? (
-                              <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold leading-4 text-brand-brown dark:text-[#e7d4bf]">
+                              <span className="mt-0.5 flex items-center gap-1 text-caption font-semibold text-brand-brown dark:text-[#e7d4bf]">
                                 <GiftIcon className="h-3 w-3 shrink-0" />
                                 <span className="truncate">
                                   {b.offer_headline}
@@ -270,7 +270,7 @@ export function BrokerAside({
               )}
 
               <BrokerDisclosure />
-              <p className="text-[11px] leading-4 text-foreground/45">
+              <p className="text-caption text-foreground/45">
                 Ranked editorially on fees, features and FSCS protection, not
                 commission. Capital at risk; always confirm current terms on the
                 provider’s site.
@@ -284,37 +284,37 @@ export function BrokerAside({
 }
 
 /** The rail's loading state, at the real geometry: two pick cards and — when
- *  the rail is showing the full directory — a run of platform rows. One
- *  animation on the wrapper rather than per-bar, so it reads as one surface
- *  filling in instead of a dozen independently-blinking blocks. */
+ *  the rail is showing the full directory — a run of platform rows. Built on
+ *  the house `Skeleton`, so its fill and tempo match every other loading
+ *  surface on the site (seo/skeletons.tsx). */
 function RailSkeleton({ showAll }: { showAll: boolean }) {
   return (
-    <div aria-busy="true" className="animate-pulse px-4 py-4 space-y-4">
+    <div aria-busy="true" className="px-4 py-4 space-y-4">
       <span className="sr-only">Loading trading platforms</span>
       {Array.from({ length: 2 }, (_, i) => (
         <div
           key={i}
-          className="rounded-xl border border-hairline bg-background/40 p-3 dark:border-separator"
+          className="rounded-card border border-rule bg-background/40 p-3"
         >
           <div className="flex items-center gap-2.5">
-            <div className="h-[42px] w-[42px] shrink-0 rounded-lg bg-foreground/[0.07]" />
-            <div className="h-3.5 w-28 rounded bg-foreground/[0.07]" />
+            <Skeleton className="shrink-0" h={42} w={42} />
+            <Skeleton className="h-3.5 w-28" />
           </div>
-          <div className="mt-3 h-2.5 w-4/5 rounded bg-foreground/[0.07]" />
-          <div className="mt-3 h-6 w-3/5 rounded-full bg-foreground/[0.07]" />
-          <div className="mt-3 h-2.5 w-2/3 rounded bg-foreground/[0.07]" />
-          <div className="mt-3 h-10 w-full rounded-lg bg-foreground/[0.07]" />
+          <Skeleton className="mt-3 h-2.5 w-4/5" />
+          <Skeleton circle className="mt-3 h-6 w-3/5" />
+          <Skeleton className="mt-3 h-2.5 w-2/3" />
+          <Skeleton className="mt-3 h-10 w-full" />
         </div>
       ))}
 
       {showAll && (
         <div>
-          <div className="mx-1 mb-2 mt-1 h-2 w-24 rounded bg-foreground/[0.07]" />
+          <Skeleton className="mx-1 mb-2 mt-1 h-2 w-24" />
           <div className="space-y-0.5">
             {Array.from({ length: 6 }, (_, i) => (
               <div key={i} className="flex items-center gap-2.5 px-2 py-2">
-                <div className="h-7 w-7 shrink-0 rounded-lg bg-foreground/[0.07]" />
-                <div className="h-3 w-2/3 rounded bg-foreground/[0.07]" />
+                <Skeleton className="shrink-0" h={28} w={28} />
+                <Skeleton className="h-3 w-2/3" />
               </div>
             ))}
           </div>

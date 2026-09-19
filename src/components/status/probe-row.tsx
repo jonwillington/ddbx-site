@@ -40,7 +40,7 @@ function Sparkline({ samples }: { samples: Sample[] }) {
       {samples.map((s) => (
         <span
           key={s.at}
-          className={`w-[3px] rounded-[1px] ${STATE_FILL[s.state]} opacity-70`}
+          className={`w-[3px] rounded-mark ${STATE_FILL[s.state]} opacity-70`}
           style={{
             // Failures are drawn full-height for the same reason the row hides
             // their duration: a connection refused in 20ms would otherwise be
@@ -82,22 +82,22 @@ export function ProbeRow({
         : Math.max(2, Math.min(100, (result.ms / DEGRADED_MS) * 100));
 
   return (
-    <div className="grid gap-x-6 gap-y-2 border-t border-hairline py-4 dark:border-separator sm:grid-cols-[minmax(0,1fr)_13rem]">
+    <div className="grid gap-x-6 gap-y-2 border-t border-rule py-4 sm:grid-cols-[minmax(0,1fr)_13rem]">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <span
             aria-hidden="true"
             className={`size-1.5 shrink-0 rounded-full ${STATE_DOT[state]}`}
           />
-          <h3 className="truncate text-[14px] font-semibold leading-[1.3] tracking-[-0.01em] text-foreground">
+          <h3 className="truncate text-body font-semibold text-foreground">
             {spec.label}
           </h3>
         </div>
-        <p className="mt-1 pl-[14px] text-[12.5px] leading-[1.5] text-foreground/55">
+        <p className="mt-1 pl-3.5 text-small text-foreground/55">
           {spec.blurb}
         </p>
         {result?.detail ? (
-          <p className="mt-1 pl-[14px] text-[11.5px] leading-[1.5] text-foreground/45">
+          <p className="mt-1 pl-3.5 text-caption text-foreground/45">
             {result.detail.label}{" "}
             {result.detail.kind === "time"
               ? freshnessLabel(result.detail.value)
@@ -106,11 +106,11 @@ export function ProbeRow({
         ) : null}
       </div>
 
-      <div className="pl-[14px] sm:pl-0 sm:text-right">
+      <div className="pl-3.5 sm:pl-0 sm:text-right">
         <div className="flex items-center gap-2 sm:justify-end">
           <Sparkline samples={samples} />
           <span
-            className={`text-[12px] font-semibold ${STATE_TEXT[state]}`}
+            className={`text-small font-semibold ${STATE_TEXT[state]}`}
             // The reason, for anyone who wants it, without giving an HTTP
             // status its own permanent column on a page most readers skim.
             title={result?.error ?? undefined}
@@ -128,7 +128,7 @@ export function ProbeRow({
               style={{ width: `${width}%` }}
             />
           </span>
-          <span className="w-14 text-[11.5px] tabular-nums text-foreground/45 sm:text-right">
+          <span className="w-14 text-caption tabular-nums text-foreground/45 sm:text-right">
             {result && !failed ? `${result.ms} ms` : "—"}
           </span>
         </div>

@@ -68,7 +68,7 @@ export function BrokerLogo({
     <span
       aria-hidden="true"
       className={clsx(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#d0c8be]/50 bg-white dark:border-border/50 dark:bg-surface-secondary",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-control border border-[#d0c8be]/50 bg-white dark:border-border/50 dark:bg-surface-secondary",
         className,
       )}
       style={{ width: size, height: size }}
@@ -118,13 +118,15 @@ export function BadgeChip({ badge }: { badge: BrokerBadge }) {
 }
 
 /** Boolean cell: check / "No" / ? for true / false / unknown(null). The one
- *  vocabulary every broker surface uses, so a tick never means two things. */
+ *  vocabulary every broker surface uses, so a tick never means two things.
+ *  The tick is `live`, not `positive`: green-for-direction is reserved for
+ *  up/down (spec §8.2), and "has an ISA" is a status, not a gain. */
 export function Tick({ value }: { value: boolean | null | undefined }) {
   if (value === true)
     return (
       <CheckIcon
         aria-label="Yes"
-        className="h-[15px] w-[15px] shrink-0 text-positive"
+        className="h-[15px] w-[15px] shrink-0 text-live"
         strokeWidth={2.5}
       />
     );
@@ -154,7 +156,7 @@ export function StarRating({
 
   return (
     <span className={clsx("inline-flex items-center gap-1.5", className)}>
-      <span className="relative inline-block text-[13px] leading-none">
+      <span className="relative inline-block text-small leading-none">
         <span className="text-foreground/20">★★★★★</span>
         <span
           className="absolute inset-0 overflow-hidden whitespace-nowrap text-[#e0a52e]"
@@ -163,7 +165,7 @@ export function StarRating({
           ★★★★★
         </span>
       </span>
-      <span className="text-xs font-medium tabular-nums text-foreground/70">
+      <span className="text-caption font-medium tabular-nums text-foreground/70">
         {value.toFixed(1)}
       </span>
     </span>
@@ -217,7 +219,7 @@ export function BrokerVisitLink({
       <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5 shrink-0 opacity-55" />
       {affiliate && (
         <span
-          className="text-[10px] font-normal opacity-60"
+          className="text-caption font-normal opacity-60"
           title="Affiliate link. We may earn a commission"
         >
           Ad
@@ -239,7 +241,7 @@ export function OfferBadge({
   return (
     <div
       className={clsx(
-        "flex items-start gap-2 rounded-lg bg-brand-brown/[0.08] px-3 py-2 text-xs font-semibold leading-snug text-brand-brown dark:bg-[#d8c4af]/[0.14] dark:text-[#e7d4bf]",
+        "flex items-start gap-2 rounded-control bg-brand-brown/[0.08] px-3 py-2 text-caption font-semibold text-brand-brown dark:bg-[#d8c4af]/[0.14] dark:text-[#e7d4bf]",
         className,
       )}
     >
@@ -255,7 +257,7 @@ export function BrokerDisclosure({ className }: { className?: string }) {
   return (
     <div
       className={clsx(
-        "rounded-xl border border-separator bg-surface/60 px-4 py-2.5 text-xs text-foreground/80",
+        "rounded-card border border-separator bg-surface/60 px-4 py-2.5 text-caption text-foreground/80",
         className,
       )}
     >
@@ -270,10 +272,7 @@ export function BrokerDisclosure({ className }: { className?: string }) {
 export function BrokerComplianceNote({ className }: { className?: string }) {
   return (
     <div
-      className={clsx(
-        "space-y-2 text-xs leading-5 text-foreground/55",
-        className,
-      )}
+      className={clsx("space-y-2 text-caption text-foreground/55", className)}
     >
       {BROKER_DISCLAIMERS.map((line) => (
         <p key={line}>{line}</p>

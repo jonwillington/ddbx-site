@@ -5,8 +5,10 @@
  *  same reading with different words — which is the classic status-page bug
  *  where the header says "All systems operational" over a row marked degraded.
  *
- *  Colours come from the site's own directional tokens (`--positive`,
- *  `--negative`) plus `--risk` for the middle state. `--risk` is the warm amber
+ *  Colours: `--live` for operational — status green, not the directional
+ *  `--positive`, which is reserved for up/down (spec §8.2) — `--negative`
+ *  for down (there is no separate status red) and `--risk` for the middle
+ *  state. `--risk` is the warm amber
  *  the analysis pages already use for "a caveat to weigh, not a verdict
  *  against" — which is exactly what a slow-but-answering endpoint is. No new
  *  emerald/amber literals: see the note at the top of chip.ts.
@@ -14,14 +16,14 @@
 import type { OverallState, ProbeState } from "@/lib/status";
 
 export const STATE_TEXT: Record<OverallState, string> = {
-  operational: "text-positive",
+  operational: "text-live",
   degraded: "text-risk",
   down: "text-negative",
   checking: "text-foreground/40",
 };
 
 export const STATE_DOT: Record<OverallState, string> = {
-  operational: "bg-positive",
+  operational: "bg-live",
   degraded: "bg-risk",
   down: "bg-negative",
   checking: "bg-foreground/30",
@@ -56,7 +58,7 @@ export const BANNER_BODY: Record<OverallState, string> = {
 
 /** Both sparkline and latency meter fill from this. */
 export const STATE_FILL: Record<ProbeState, string> = {
-  operational: "bg-positive",
+  operational: "bg-live",
   degraded: "bg-risk",
   down: "bg-negative",
 };
