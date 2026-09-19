@@ -57,8 +57,8 @@ export const RULES = {
     use: "text-live / bg-live",
   },
   "emerald/rose": {
-    re: /\b(?:text|bg|border|fill|stroke)-(?:emerald|rose|green|red)-\d{2,3}\b/g,
-    use: "positive/negative for direction, live for status",
+    re: /\b(?:text|bg|border|fill|stroke)-(?:emerald|rose|green|red|blue)-\d{2,3}\b/g,
+    use: "positive/negative for direction, live for status, party-dem/party-rep for party",
   },
   "max-w-[62ch]": {
     re: /\bmax-w-\[62ch\]/g,
