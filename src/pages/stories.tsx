@@ -206,13 +206,10 @@ export default function StoriesPage() {
                         </span>
                       </span>
                     }
-                    secondary={
-                      s.standfirst ? (
-                        <span className="line-clamp-2 text-[13.5px] leading-[1.55] text-foreground/70">
-                          {s.standfirst}
-                        </span>
-                      ) : undefined
-                    }
+                    /* No standfirst line: the headline, ticker and the return
+                       beside them already say what happened, and the sentence
+                       repeated the return in prose. The standfirst still leads
+                       the article itself. */
                     to={storyPath(s.id)}
                   />
                 </div>
