@@ -29,21 +29,19 @@ import { Link } from "react-router-dom";
 
 import { CompanyLogo } from "@/components/company-logo";
 import { shortDate } from "@/components/how-it-works/shared";
+import { eyebrow } from "@/components/ui/eyebrow";
 import { SpecimenMark } from "@/components/how-it-works/specimen-mark";
-
-const KICKER =
-  "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55";
 
 export function SpecimenStrip({ specimen }: { specimen: ExampleFiling }) {
   const rating =
     specimen.rating.charAt(0).toUpperCase() + specimen.rating.slice(1);
 
   return (
-    <div className="grid gap-x-8 gap-y-4 border-t border-white/10 px-6 py-6 sm:px-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
+    <div className="grid gap-x-8 gap-y-4 border-t border-rule-stage px-6 py-6 sm:px-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
       <div className="flex items-start gap-4">
         <CompanyLogo className="shrink-0" size={56} ticker={specimen.ticker} />
         <div className="min-w-0">
-          <p className={`flex items-center gap-2 ${KICKER}`}>
+          <p className={`flex items-center gap-2 ${eyebrow("stage")}`}>
             <SpecimenMark onStage />
             The worked example · {rating}
           </p>
@@ -60,11 +58,11 @@ export function SpecimenStrip({ specimen }: { specimen: ExampleFiling }) {
       </div>
 
       <div className="lg:pt-6">
-        <p className="max-w-[58ch] text-[15px] leading-[1.6] text-white/65">
+        <p className="max-w-[58ch] text-lede text-white/65">
           {specimen.line} This one purchase runs through the whole page.
         </p>
         <Link
-          className="mt-3 inline-flex items-center gap-1.5 text-[14px] font-medium text-white underline decoration-white/30 underline-offset-[5px] transition-colors hover:decoration-white"
+          className="mt-3 inline-flex items-center gap-1.5 text-body font-medium text-white underline decoration-white/30 underline-offset-[5px] transition-colors hover:decoration-white"
           to={specimen.path}
         >
           See the filing

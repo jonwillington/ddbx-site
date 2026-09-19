@@ -53,11 +53,11 @@ export default function LabHowItWorksPage() {
             <mod.default />
           </div>
         ) : (
-          <div className="mx-auto w-full max-w-[860px] pt-6 text-[14px] text-foreground/70">
+          <div className="mx-auto w-full max-w-[860px] pt-6 text-body text-foreground/70">
             <p>No preview named “{name}”. Available:</p>
             <ul className="mt-2 list-disc pl-5">
               {Object.keys(PREVIEWS).map((k) => (
-                <li key={k} className="font-mono text-[12px]">
+                <li key={k} className="font-mono text-small">
                   {k.replace(/^.*\/previews\//, "").replace(/\.tsx$/, "")}
                 </li>
               ))}

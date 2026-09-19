@@ -90,12 +90,8 @@ import {
   ScaleIcon,
 } from "@heroicons/react/24/outline";
 
-import {
-  EYEBROW,
-  EYEBROW_QUIET,
-  RULE,
-  StepNode,
-} from "@/components/how-it-works/shared";
+import { StepNode } from "@/components/how-it-works/shared";
+import { eyebrow } from "@/components/ui/eyebrow";
 import { PIPELINE } from "@/lib/methodology";
 import { count } from "@/lib/coverage";
 
@@ -212,12 +208,12 @@ export function PipelineLedger({
           pipe. The feeds and the cadence are the sources section's to state
           and the watch row's own footnote; saying them here too put the same
           fact on screen three times. */}
-      <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
+      <p className="max-w-[64ch] text-lede text-foreground/80">
         Only two of the six throw filings away; the other four read, score and
         measure what survives.
       </p>
 
-      <ol className={`relative mt-8 border-t ${RULE}`}>
+      <ol className={`relative mt-8 border-t border-rule`}>
         {PIPELINE.map((stage, i) => {
           const gate = GATE[stage.id] ?? { leaves: [], note: "" };
           const items = gate.leaves.length > 0 ? gate.leaves : ["Nothing"];
@@ -227,7 +223,7 @@ export function PipelineLedger({
           return (
             <li
               key={stage.id}
-              className={`relative grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-4 gap-y-7 border-b ${RULE} py-7 sm:grid-cols-[1.75rem_minmax(0,5fr)_minmax(0,4fr)] sm:gap-x-7 sm:gap-y-0 sm:py-9 lg:grid-cols-[1.75rem_minmax(0,6fr)_minmax(0,4.5fr)] lg:gap-x-12`}
+              className={`relative grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-4 gap-y-7 border-b border-rule py-7 sm:grid-cols-[1.75rem_minmax(0,5fr)_minmax(0,4fr)] sm:gap-x-7 sm:gap-y-0 sm:py-9 lg:grid-cols-[1.75rem_minmax(0,6fr)_minmax(0,4.5fr)] lg:gap-x-12`}
             >
               {/* The spine, in two segments per row so it never crosses a
                   mark: one through the row's top padding (absent on the first
@@ -261,15 +257,15 @@ export function PipelineLedger({
 
               {/* The stage. */}
               <div className="col-start-2 row-start-1 min-w-0">
-                <p className={EYEBROW}>{stage.label}</p>
+                <p className={eyebrow()}>{stage.label}</p>
                 <h3 className="mt-2 text-balance text-[22px] font-semibold leading-[1.2] tracking-[-0.02em] text-foreground sm:text-[24px]">
                   {stage.title}
                 </h3>
-                <p className="mt-3 max-w-[62ch] text-[16px] leading-[1.65] text-foreground/75">
+                <p className="mt-3 max-w-measure text-lede text-foreground/75">
                   {stage.body}
                 </p>
                 {footnote ? (
-                  <p className="mt-3.5 text-[14px] leading-[1.5] tabular-nums text-foreground/50">
+                  <p className="mt-3.5 text-body tabular-nums text-foreground/50">
                     {footnote}
                   </p>
                 ) : null}
@@ -281,23 +277,21 @@ export function PipelineLedger({
                   below sm the column simply sits underneath with its own
                   eyebrow and the enclosed list carries the edge. */}
               <div
-                className={`col-start-2 row-start-2 min-w-0 sm:col-start-3 sm:row-start-1 sm:border-l ${RULE} sm:pl-6`}
+                className={`col-start-2 row-start-2 min-w-0 sm:col-start-3 sm:row-start-1 sm:border-l border-rule sm:pl-6`}
               >
-                <p className={EYEBROW_QUIET}>What leaves</p>
-                <ul
-                  className={`mt-3 border-y ${RULE} divide-y divide-black/[0.06] dark:divide-white/[0.08]`}
-                >
+                <p className={eyebrow("quiet")}>What leaves</p>
+                <ul className="mt-3 divide-y divide-hairline border-y border-rule dark:divide-separator">
                   {items.map((item) => (
                     <li
                       key={item}
-                      className="py-2.5 text-[16px] leading-[1.35] text-foreground/70"
+                      className="py-2.5 text-lede text-foreground/70"
                     >
                       {item}
                     </li>
                   ))}
                 </ul>
                 {gate.note ? (
-                  <p className="mt-3.5 max-w-[46ch] text-[14px] leading-[1.55] text-foreground/55">
+                  <p className="mt-3.5 max-w-[46ch] text-body text-foreground/55">
                     {gate.note}
                   </p>
                 ) : null}

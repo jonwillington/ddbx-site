@@ -48,7 +48,7 @@
  */
 import type { ReactNode } from "react";
 
-import { EYEBROW_QUIET, RULE } from "@/components/how-it-works/shared";
+import { eyebrow } from "@/components/ui/eyebrow";
 
 /** The caveats, stated plainly rather than buried in small print.
  *
@@ -118,17 +118,15 @@ function LimitRow({
 }) {
   return (
     <li
-      className={`grid gap-x-10 gap-y-3 border-b ${RULE} py-8 @min-[560px]:grid-cols-[8.5rem_minmax(0,1fr)] @min-[560px]:py-10`}
+      className={`grid gap-x-10 gap-y-3 border-b border-rule py-8 @min-[560px]:grid-cols-[8.5rem_minmax(0,1fr)] @min-[560px]:py-10`}
     >
       {/* The house eyebrow spec, quiet: it names the axis, it is not a
           heading, and five brand-coloured labels stacked in a column would
           shout louder than the claims beside them. */}
-      <p className={`${EYEBROW_QUIET} leading-[1.4] @min-[560px]:pt-2.5`}>
-        {label}
-      </p>
+      <p className={`${eyebrow("quiet")} @min-[560px]:pt-2.5`}>{label}</p>
 
       <div className="min-w-0">
-        <h3 className="max-w-[36ch] text-balance text-[24px] font-semibold leading-[1.14] tracking-[-0.025em] text-foreground @min-[560px]:text-[26px]">
+        <h3 className="max-w-[36ch] text-balance text-[24px] font-semibold leading-[1.14] tracking-tight text-foreground @min-[560px]:text-[26px]">
           {title}
         </h3>
         {/* 66ch, and a measure rather than the full track for the reason the
@@ -136,7 +134,7 @@ function LimitRow({
             unbounded paragraph here would run past 120 characters a line at
             1,070px. This is the one section on the page that is pure prose,
             and prose is the case where the full column is the wrong answer. */}
-        <p className="mt-3.5 max-w-[66ch] text-[16px] leading-[1.65] text-foreground/75">
+        <p className="mt-3.5 max-w-[66ch] text-lede text-foreground/75">
           {children}
         </p>
       </div>
@@ -148,7 +146,7 @@ function LimitRow({
  *  ledger closes cleanly whatever follows it. */
 export function LimitsLedger({ className = "" }: { className?: string }) {
   return (
-    <ol className={`@container border-t ${RULE} ${className}`}>
+    <ol className={`@container border-t border-rule ${className}`}>
       {LIMITS.map((limit) => (
         <LimitRow key={limit.title} label={limit.label} title={limit.title}>
           {limit.body}

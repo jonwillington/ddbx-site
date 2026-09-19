@@ -53,7 +53,7 @@ export default function LimitsPreview() {
         </SeoSection>
       ) : null}
 
-      <p className="mt-8 text-[13.5px] leading-[1.6] text-foreground/60">
+      <p className="mt-8 text-body text-foreground/60">
         Prefer to see it applied?{" "}
         <Link
           className="font-medium text-foreground underline underline-offset-4"

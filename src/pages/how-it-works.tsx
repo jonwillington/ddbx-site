@@ -84,7 +84,7 @@ import { LimitsLedger } from "@/components/how-it-works/limits-ledger";
 import { MeasuredSection } from "@/components/how-it-works/measured-section";
 import { PipelineLedger } from "@/components/how-it-works/pipeline-ledger";
 import { RatingLadder } from "@/components/how-it-works/ratings-ladder";
-import { DIVIDE, Fold, RULE } from "@/components/how-it-works/shared";
+import { DIVIDE, Fold } from "@/components/how-it-works/shared";
 import { SourcesRegister } from "@/components/how-it-works/sources-register";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
@@ -222,9 +222,7 @@ export default function HowItWorksPage() {
             />
             {/* The dated basis, directly under the stage, the way the
                 reference pages carry theirs. */}
-            <p className="mt-5 text-[12.5px] leading-[1.6] text-foreground/45">
-              {basis}
-            </p>
+            <p className="mt-5 text-small text-foreground/45">{basis}</p>
           </>
         }
         standfirst={standfirst}
@@ -253,7 +251,7 @@ export default function HowItWorksPage() {
             title={`The ${CHECK_COUNT_WORD} checks`}
             total={CONTENTS.length}
           >
-            <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
+            <p className="max-w-[64ch] text-lede text-foreground/80">
               Each check is a yes or no. There is no score to average: a
               purchase clears them or it doesn’t, and the count of what it
               cleared is published on the filing itself, so you can see which
@@ -305,7 +303,7 @@ export default function HowItWorksPage() {
                 className="mt-3 max-w-[64ch]"
                 label="How the measuring is done"
               >
-                <p className="text-[14px] leading-[1.7] text-foreground/65">
+                <p className="text-body text-foreground/65">
                   Both legs of every return are market closes off the same price
                   series, entry and exit, stored beside the benchmark over the
                   identical window, so what we keep is the difference against
@@ -319,7 +317,7 @@ export default function HowItWorksPage() {
                   be absent rather than claim "0 insider transactions from 0
                   filings", which is the one thing worse than saying nothing. */}
                 {coverage.research ? (
-                  <p className="mt-4 text-[14px] leading-[1.7] text-foreground/65">
+                  <p className="mt-4 text-body text-foreground/65">
                     The checks themselves are tuned against a much larger
                     offline panel: {approx(coverage.research.transactions)}{" "}
                     insider transactions from{" "}
@@ -347,7 +345,7 @@ export default function HowItWorksPage() {
               id="korea-advance-plans"
               title="Trades declared before they happen"
             >
-              <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
+              <p className="max-w-[64ch] text-lede text-foreground/80">
                 Korea is the only market here where the disclosure arrives{" "}
                 <em>before</em> the trade. Officers and major shareholders have
                 to declare a planned purchase in advance, naming themselves, the
@@ -355,7 +353,7 @@ export default function HowItWorksPage() {
                 these, nothing has been bought yet.
               </p>
 
-              <dl className={`mt-5 border-y ${RULE} divide-y ${DIVIDE}`}>
+              <dl className={`mt-5 border-y border-rule divide-y ${DIVIDE}`}>
                 <MetaRow
                   label="When it applies"
                   value="A planned trade that, with the previous six months of dealing, reaches 1% of the company's shares or 50bn won"
@@ -374,7 +372,7 @@ export default function HowItWorksPage() {
                 />
               </dl>
 
-              <p className="mt-5 max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
+              <p className="mt-5 max-w-[64ch] text-lede text-foreground/80">
                 Because the threshold is a share of the company rather than a
                 cash amount, the people who file are mostly controlling
                 shareholders and large holders, not rank-and-file managers. That
@@ -382,7 +380,7 @@ export default function HowItWorksPage() {
                 other market pages, and it is worth reading it as one.
               </p>
 
-              <p className="mt-4 max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
+              <p className="mt-4 max-w-[64ch] text-lede text-foreground/80">
                 We lead this page with the declarations rather than the
                 completed purchases that follow them. The declaration is the
                 moment something is learned; the filing that confirms it, weeks
@@ -414,7 +412,7 @@ export default function HowItWorksPage() {
             </SeoSection>
           ) : null}
 
-          <p className="mt-8 text-[13.5px] leading-[1.6] text-foreground/60">
+          <p className="mt-8 text-body text-foreground/60">
             Prefer to see it applied?{" "}
             <Link
               className="font-medium text-foreground underline underline-offset-4"
@@ -434,12 +432,8 @@ export default function HowItWorksPage() {
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-6 py-3">
-      <dt className="shrink-0 font-mono text-[10.5px] uppercase tracking-[0.14em] text-foreground/45">
-        {label}
-      </dt>
-      <dd className="text-right text-[14px] leading-[1.5] text-foreground/85">
-        {value}
-      </dd>
+      <dt className="shrink-0 micro text-foreground/45">{label}</dt>
+      <dd className="text-right text-body text-foreground/85">{value}</dd>
     </div>
   );
 }

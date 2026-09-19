@@ -68,14 +68,8 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { CompanyLogo } from "@/components/company-logo";
-import {
-  EYEBROW,
-  Fold,
-  KICKER,
-  RULE,
-  StepNode,
-  shortDate,
-} from "@/components/how-it-works/shared";
+import { Fold, StepNode, shortDate } from "@/components/how-it-works/shared";
+import { eyebrow } from "@/components/ui/eyebrow";
 import {
   SpecimenMark,
   VerdictDisc,
@@ -102,13 +96,13 @@ export function ChecksScorecard({
   const s = examples.specimen;
 
   return (
-    <div className={`mt-9 border-y ${RULE} py-7`}>
+    <div className={`mt-10 border-y border-rule py-7`}>
       {/* No panel and no rating badge since 2026-09-19: the section sits on
           the page ground like every other, and the rating is already stated
           on the stage's footer row. */}
       <div className="flex items-center gap-2.5">
         <SpecimenMark />
-        <p className={EYEBROW}>The worked example, scored</p>
+        <p className={eyebrow()}>The worked example, scored</p>
       </div>
 
       {/* The strip, full width. One position per check, in the order they are
@@ -123,10 +117,10 @@ export function ChecksScorecard({
             className="flex flex-col items-center gap-2.5 text-center"
           >
             <VerdictDisc cleared delayMs={80 + i * 70} size={30} />
-            <span className="font-mono text-[12px] font-semibold tabular-nums leading-none text-foreground/40">
+            <span className="font-mono text-small font-semibold tabular-nums leading-none text-foreground/40">
               {i + 1}
             </span>
-            <span className="text-balance text-[12px] leading-[1.35] text-foreground/50">
+            <span className="text-balance text-small text-foreground/50">
               {check.label}
             </span>
           </li>
@@ -134,7 +128,7 @@ export function ChecksScorecard({
       </ol>
 
       <p
-        className={`mt-7 border-t ${RULE} max-w-[72ch] pt-6 text-[16px] leading-[1.65] text-foreground/70`}
+        className={`mt-7 border-t border-rule max-w-[72ch] pt-6 text-lede text-foreground/70`}
       >
         <Link
           className="font-medium text-foreground/90 underline underline-offset-4 hover:text-foreground"
@@ -189,17 +183,17 @@ function VerdictEntry({
           moved to the reference grammar — lists are full-width hairline rows,
           never cards. */}
       <Link
-        className={`group grid gap-x-6 gap-y-3 border-t ${RULE} py-5 outline-none transition-colors @xl:grid-cols-[150px_minmax(0,1fr)] focus-visible:ring-2 focus-visible:ring-brand-brown/40`}
+        className={`group grid gap-x-6 gap-y-3 border-t border-rule py-5 outline-none transition-colors @xl:grid-cols-[150px_minmax(0,1fr)] focus-visible:ring-2 focus-visible:ring-brand-brown/40`}
         to={filing.path}
       >
         {/* The verdict, as its own column once the card is wide enough to
             spare 150px — a CONTAINER query, not a viewport one: at 1440 with
             the SEO rail this column is about 560px wide. Below the threshold
             the verdict stacks above the trade. */}
-        <span className="flex items-center gap-2.5 @xl:items-start @xl:pt-[6px]">
+        <span className="flex items-center gap-2.5 @xl:items-start @xl:pt-1.5">
           <VerdictDisc cleared={cleared} size={26} />
           <span
-            className={`${KICKER} whitespace-nowrap text-[11.5px] @xl:pt-[6px] ${
+            className={`eyebrow whitespace-nowrap @xl:pt-1.5 ${
               cleared ? "text-positive" : "text-negative"
             }`}
           >
@@ -211,7 +205,7 @@ function VerdictEntry({
           <span className="flex items-start gap-3.5">
             <CompanyLogo size={44} ticker={filing.ticker} />
             <span className="min-w-0">
-              <span className="block text-[19px] font-semibold leading-[1.25] tracking-[-0.015em] text-foreground underline-offset-4 group-hover:underline sm:text-[20px]">
+              <span className="block text-[19px] font-semibold leading-tight tracking-[-0.015em] text-foreground underline-offset-4 group-hover:underline sm:text-[20px]">
                 {filing.name}
                 {filing.role ? (
                   <span className="font-normal text-foreground/60">
@@ -219,7 +213,7 @@ function VerdictEntry({
                   </span>
                 ) : null}
               </span>
-              <span className="mt-1 block text-[15px] leading-[1.45] text-foreground/60">
+              <span className="mt-1 block text-lede text-foreground/60">
                 bought {filing.value} of {filing.company} ·{" "}
                 {shortDate(filing.date)}
               </span>
@@ -229,7 +223,7 @@ function VerdictEntry({
               as one block hanging off the verdict beside them. 58px = the
               44px logo plus the 14px gap beside it. */}
           <span
-            className={`mt-3 block text-[16px] leading-[1.6] sm:pl-[58px] ${
+            className={`mt-3 block text-lede sm:pl-[58px] ${
               cleared ? "text-foreground/85" : "text-foreground/65"
             }`}
           >
@@ -256,7 +250,7 @@ export function CheckVerdicts({
   const counter = examples.counters[check.key];
 
   return (
-    <ul className={`@container mt-6 border-b ${RULE}`}>
+    <ul className={`@container mt-6 border-b border-rule`}>
       <VerdictEntry cleared filing={examples.specimen}>
         {check.passLine(specimenContext(examples.specimen))}
       </VerdictEntry>
@@ -290,9 +284,7 @@ export function ChecksRowList({
               className="mt-6 max-w-[64ch]"
               label="Why this check earns its place"
             >
-              <p className="text-[15px] leading-[1.7] text-foreground/65">
-                {check.detail}
-              </p>
+              <p className="text-lede text-foreground/65">{check.detail}</p>
             </Fold>
           }
           split="description"
@@ -304,7 +296,7 @@ export function ChecksRowList({
           }
         >
           <>
-            <p className="max-w-[62ch] text-[16px] leading-[1.65] text-foreground/75">
+            <p className="max-w-measure text-lede text-foreground/75">
               {check.body}
             </p>
             <CheckVerdicts check={check} examples={examples} />

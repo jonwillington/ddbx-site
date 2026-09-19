@@ -32,15 +32,13 @@ export default function ChecksPreview() {
         title={`The ${CHECK_COUNT_WORD} checks`}
         total={6}
       >
-        <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
-          {INTRO}
-        </p>
+        <p className="max-w-[64ch] text-lede text-foreground/80">{INTRO}</p>
         <ChecksScorecard examples={examples} />
         <ChecksRowList examples={examples} />
       </SeoSection>
 
-      <div className="mt-20 border-t-4 border-dashed border-hairline pt-6 dark:border-separator">
-        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-foreground/35">
+      <div className="mt-20 border-t-4 border-dashed border-rule pt-6">
+        <p className="eyebrow text-foreground/35">
           Below: the same section with examples = null (SE / NL)
         </p>
       </div>
@@ -51,9 +49,7 @@ export default function ChecksPreview() {
         title={`The ${CHECK_COUNT_WORD} checks`}
         total={6}
       >
-        <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
-          {INTRO}
-        </p>
+        <p className="max-w-[64ch] text-lede text-foreground/80">{INTRO}</p>
         <ChecksScorecard examples={null} />
         <ChecksRowList examples={null} />
       </SeoSection>

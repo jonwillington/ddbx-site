@@ -200,13 +200,11 @@ export function HeroStage({
         <StageHeader eyebrow={eyebrow} title={title} />
         <div className="xl:pt-7">
           {ratio ? (
-            <p className="max-w-[24ch] text-balance text-[22px] font-medium leading-[1.25] tracking-[-0.015em] text-brand-amber sm:text-[26px]">
+            <p className="max-w-[24ch] text-balance text-[22px] font-medium leading-tight tracking-[-0.015em] text-brand-amber sm:text-[26px]">
               {ratio}
             </p>
           ) : null}
-          <p
-            className={`max-w-[52ch] ${STAGE_DEK} ${ratio ? "mt-4" : ""}`}
-          >
+          <p className={`max-w-[52ch] ${STAGE_DEK} ${ratio ? "mt-4" : ""}`}>
             {standfirst}
           </p>
         </div>

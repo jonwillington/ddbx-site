@@ -183,7 +183,7 @@ function Figure({
           inline, it pushed the figure 50px right of the column it belongs to
           and broke the one alignment the drawing depends on. */}
       {stage.prefix ? (
-        <span className="mb-1.5 block font-mono text-[11px] font-semibold uppercase leading-[1.2] tracking-[0.14em] text-white/45">
+        <span className="mb-1.5 block eyebrow text-white/45">
           {stage.prefix}
         </span>
       ) : null}
@@ -206,7 +206,7 @@ function StageLabel({ stage }: { stage: ScaleStage }) {
   return (
     <div>
       <p
-        className={`text-[16px] leading-[1.25] sm:text-[18px] ${
+        className={`text-lede leading-tight sm:text-[18px] ${
           stage.accent
             ? "font-semibold text-white"
             : "font-medium text-white/80"
@@ -215,9 +215,7 @@ function StageLabel({ stage }: { stage: ScaleStage }) {
         {stage.label}
       </p>
       {stage.sub ? (
-        <p className="mt-1 text-[14px] leading-[1.35] text-white/45">
-          {stage.sub}
-        </p>
+        <p className="mt-1 text-body text-white/45">{stage.sub}</p>
       ) : null}
     </div>
   );
@@ -235,9 +233,9 @@ function SpecimenLine({
 }) {
   return (
     <p
-      className={`flex items-start gap-2 text-[13.5px] leading-[1.45] text-white/55 ${className}`}
+      className={`flex items-start gap-2 text-body text-white/55 ${className}`}
     >
-      <SpecimenMark className="mt-[2px]" onStage />
+      <SpecimenMark className="mt-0.5" onStage />
       <span>
         <span className="font-semibold text-white">{company}</span>, one of
         these {count(survivors)}.
@@ -279,7 +277,7 @@ function BandNote({
 }) {
   return (
     <p
-      className={`max-w-[38ch] leading-[1.5] text-white/60 ${className}`}
+      className={`max-w-[38ch] leading-normal text-white/60 ${className}`}
       style={{ fontSize: size, ...style }}
     >
       {text}
@@ -396,7 +394,7 @@ export function HeroScaleChart({
                   style={{ height: ROW_H }}
                 >
                   <div
-                    className={`absolute inset-y-0 left-0 rounded-r-[3px] ${
+                    className={`absolute inset-y-0 left-0 rounded-r-mark ${
                       stage.accent ? ACCENT : RAMP[Math.min(i, RAMP.length - 1)]
                     }`}
                     style={{ width: barW, ...grow(i, "X") }}
@@ -471,7 +469,7 @@ export function HeroScaleChart({
 
                   <div
                     aria-hidden
-                    className={`absolute rounded-t-[4px] ${
+                    className={`absolute rounded-t-mark ${
                       stage.accent ? ACCENT : RAMP[Math.min(i, RAMP.length - 1)]
                     }`}
                     style={{

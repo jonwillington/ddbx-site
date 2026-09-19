@@ -59,15 +59,15 @@ import { ChevronRightIcon } from "@heroicons/react/20/solid";
 import { Link } from "react-router-dom";
 
 import { CompanyLogo } from "@/components/company-logo";
-import { DIVIDE, KICKER, shortDate } from "@/components/how-it-works/shared";
+import { DIVIDE, shortDate } from "@/components/how-it-works/shared";
 import { VerdictDisc } from "@/components/how-it-works/specimen-mark";
 import { RatingBadge } from "@/components/rating-badge";
 import { CHECK_COUNT, CHECK_COUNT_WORD, RATING_SCALE } from "@/lib/methodology";
 
 /** No sheet since 2026-09-19: the ladder sits on the page ground between
  *  hairlines, like every other list on the page. */
-const PANEL = `@container border-y border-hairline dark:border-separator`;
-const MONO = `${KICKER} text-foreground/45`;
+const PANEL = `@container border-y border-rule`;
+const MONO = "micro text-foreground/45";
 
 /** One column spec for the rungs and the cap band, keyed on the PANEL'S OWN
  *  width rather than the viewport's.
@@ -97,7 +97,7 @@ const COL_STYLE = {
  *  medium, under everything on a phone. Placed rather than duplicated, so the
  *  filing link appears exactly once in the DOM at every width. */
 const SIDECAR =
-  "min-w-0 @min-[540px]:col-start-2 @min-[840px]:col-start-3 @min-[840px]:row-start-1 @min-[840px]:border-l @min-[840px]:border-black/[0.07] @min-[840px]:pl-9 @min-[840px]:dark:border-white/[0.09]";
+  "min-w-0 @min-[540px]:col-start-2 @min-[840px]:col-start-3 @min-[840px]:row-start-1 @min-[840px]:border-l @min-[840px]:border-rule @min-[840px]:pl-9";
 
 /** How loud the left edge bar is, per rung. Not data — the taper IS the
  *  statement, and it has to survive four steps in both themes, so it is
@@ -133,15 +133,15 @@ function ExampleRow({ example }: { example: ExampleFiling }) {
     <div>
       <p className={`${MONO} mb-2.5`}>One that earned it</p>
       <Link
-        className="group -mx-2 flex items-center gap-3 rounded-xl px-2 py-2 outline-none transition-colors hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.04]"
+        className="group -mx-2 flex items-center gap-3 rounded-control px-2 py-2 outline-none transition-colors hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.04]"
         to={example.path}
       >
         <CompanyLogo size={40} ticker={example.ticker} />
         <span className="min-w-0">
-          <span className="block text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-foreground underline-offset-4 group-hover:underline">
+          <span className="block text-title leading-tight text-foreground underline-offset-4 group-hover:underline">
             {example.company}
           </span>
-          <span className="mt-1 block text-[14px] leading-[1.45] text-foreground/60">
+          <span className="mt-1 block text-body text-foreground/60">
             {example.name}
             {example.role ? `, ${example.role.toLowerCase()}` : ""} ·{" "}
             {example.value} · {shortDate(example.date)}
@@ -152,7 +152,7 @@ function ExampleRow({ example }: { example: ExampleFiling }) {
           className="ml-auto h-4 w-4 shrink-0 text-foreground/30 transition-colors group-hover:text-foreground/60"
         />
       </Link>
-      <p className="mt-2 max-w-[56ch] text-[14px] leading-[1.6] text-foreground/60">
+      <p className="mt-2 max-w-[56ch] text-body text-foreground/60">
         {example.line}
       </p>
     </div>
@@ -162,10 +162,7 @@ function ExampleRow({ example }: { example: ExampleFiling }) {
 /** The ceiling, stated once, between the top rung and everything under it. */
 function CapBand() {
   return (
-    <div
-      className={`${COLS} border-t border-black/[0.07] dark:border-white/[0.09]`}
-      style={COL_STYLE}
-    >
+    <div className={`${COLS} border-t border-rule`} style={COL_STYLE}>
       <div>
         <CheckGauge
           cleared={CHECK_COUNT - 1}
@@ -173,16 +170,14 @@ function CapBand() {
         />
         <p className={`mt-3 ${MONO}`}>Any one missed</p>
       </div>
-      <p className="min-w-0 max-w-[46ch] text-[16px] leading-[1.65] text-foreground/85">
+      <p className="min-w-0 max-w-[46ch] text-lede text-foreground/85">
         Miss even one of the {CHECK_COUNT_WORD} and the buy is capped below
         significant, whatever else is in its favour.
       </p>
       {/* The qualifier takes the third track rather than sitting under the
           claim: it is the answer to the question the claim provokes, and side
           by side it reads as an answer instead of as small print. */}
-      <p
-        className={`${SIDECAR} max-w-[46ch] text-[14px] leading-[1.6] text-foreground/55`}
-      >
+      <p className={`${SIDECAR} max-w-[46ch] text-body text-foreground/55`}>
         How far below is a judgement about what the filing is, not a tally of
         the checks that did clear.
       </p>
@@ -199,7 +194,7 @@ export function RatingLadder({
 }) {
   return (
     <>
-      <p className="max-w-[68ch] text-[16px] leading-[1.65] text-foreground/80">
+      <p className="max-w-[68ch] text-lede text-foreground/80">
         Every buy we read properly comes out with one of four labels. Where it
         lands depends on how the {CHECK_COUNT_WORD} checks went.
       </p>
@@ -236,7 +231,7 @@ export function RatingLadder({
                   ) : null}
                 </div>
 
-                <p className="min-w-0 max-w-[46ch] text-[16px] leading-[1.65] text-foreground/85">
+                <p className="min-w-0 max-w-[46ch] text-lede text-foreground/85">
                   {r.meaning}
                 </p>
 

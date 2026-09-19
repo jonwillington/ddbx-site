@@ -28,7 +28,7 @@ export default function SpecimenPreview() {
 
   return (
     <div className="pt-6">
-      <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
+      <p className="max-w-[64ch] text-lede text-foreground/80">
         Every rating on this site starts as one disclosure and ends as a number
         that can be checked. Here is the filing the rest of this page follows.
       </p>

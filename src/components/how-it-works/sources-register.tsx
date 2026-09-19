@@ -59,7 +59,8 @@ import type {
 
 import { GB, NL, SE, US } from "country-flag-icons/react/3x2";
 
-import { EYEBROW, Fold, KICKER, RULE } from "@/components/how-it-works/shared";
+import { Fold } from "@/components/how-it-works/shared";
+import { eyebrow } from "@/components/ui/eyebrow";
 import { FEEDS, FEED_ORDER, count, monthLabel } from "@/lib/coverage";
 
 /** Flags identify a FEED, not a country: the congressional corpus flies the US
@@ -122,7 +123,7 @@ function ColumnHeader() {
   return (
     <div
       aria-hidden
-      className={`${ROW_GRID} items-end border-t ${RULE} pt-3 text-[13px] leading-[1.35] text-foreground/45`}
+      className={`${ROW_GRID} items-end border-t border-rule pt-3 text-small text-foreground/45`}
       style={ROW_STYLE}
     >
       <span />
@@ -152,7 +153,7 @@ function Figure({
       className={`text-right tabular-nums leading-none ${
         lead
           ? "text-[20px] font-semibold tracking-[-0.015em] text-foreground"
-          : "text-[16px] text-foreground/70"
+          : "text-lede text-foreground/70"
       } ${className}`}
     >
       {value}
@@ -179,10 +180,8 @@ function HostFacts({ copy }: { copy: MarketCopy }) {
     <dl className="mt-3 flex flex-wrap gap-x-7 gap-y-1.5">
       {facts.map((f) => (
         <div key={f.label} className="flex items-baseline gap-2">
-          <dt className={`shrink-0 ${KICKER} text-foreground/40`}>{f.label}</dt>
-          <dd className="text-[14px] leading-[1.5] text-foreground/75">
-            {f.value}
-          </dd>
+          <dt className={"shrink-0 micro text-foreground/40"}>{f.label}</dt>
+          <dd className="text-body text-foreground/75">{f.value}</dd>
         </div>
       ))}
     </dl>
@@ -214,34 +213,30 @@ function FeedRow({
   if (from) folded.push(`records from ${from}`);
 
   return (
-    <li className={`border-t ${RULE}`}>
+    <li className={`border-t border-rule`}>
       <div className={`${ROW_GRID} py-5`} style={ROW_STYLE}>
         <Flag
           aria-hidden
-          className="mt-0.5 h-[1.5rem] w-[2.25rem] rounded-[3px] ring-1 ring-black/10 dark:ring-white/15"
+          className="mt-0.5 h-[1.5rem] w-[2.25rem] rounded-mark ring-1 ring-black/10 dark:ring-white/15"
         />
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <h3 className="text-[17px] font-semibold leading-snug tracking-[-0.015em] text-foreground">
+            <h3 className="text-title leading-snug text-foreground">
               {feed.name}
             </h3>
             {home ? (
-              <span
-                className={`rounded-full border ${RULE} px-2 py-[2px] text-[11px] leading-[1.5] text-foreground/55`}
-              >
+              <span className="rounded-full border border-rule px-2 py-0.5 text-caption text-foreground/55">
                 This site’s market
               </span>
             ) : null}
           </div>
-          <p className={`mt-1.5 ${EYEBROW} leading-[1.4]`}>{feed.source}</p>
-          <p className="mt-1.5 text-[14px] leading-[1.5] text-foreground/55">
-            {feed.filer}
-          </p>
+          <p className={`mt-1.5 ${eyebrow()}`}>{feed.source}</p>
+          <p className="mt-1.5 text-body text-foreground/55">{feed.filer}</p>
         </div>
 
         <Figure lead value={count(row.disclosures)} />
-        <p className="hidden text-right text-[16px] tabular-nums leading-none text-foreground/70 @min-[520px]:block">
+        <p className="hidden text-right text-lede tabular-nums leading-none text-foreground/70 @min-[520px]:block">
           {row.open_market_buys != null ? count(row.open_market_buys) : ""}
         </p>
         <Figure
@@ -254,7 +249,7 @@ function FeedRow({
         />
         {/* Empty rather than a dash when the feed reports no first date: rule
             2 of the static pages, and the caption says what the column is. */}
-        <p className="hidden text-right text-[16px] tabular-nums leading-none text-foreground/70 @min-[820px]:block">
+        <p className="hidden text-right text-lede tabular-nums leading-none text-foreground/70 @min-[820px]:block">
           {from ?? ""}
         </p>
 
@@ -267,7 +262,7 @@ function FeedRow({
         {/* The quantities with no column at this width. Gone at xl, where
             every one of them has a track and a heading of its own. */}
         <p
-          className={`${FULL} mt-3 text-[14px] leading-[1.5] text-foreground/50 @min-[820px]:hidden`}
+          className={`${FULL} mt-3 text-body text-foreground/50 @min-[820px]:hidden`}
         >
           <span className="@min-[520px]:hidden">{folded.join(" · ")}</span>
           <span className="hidden @min-[520px]:inline">
@@ -277,7 +272,7 @@ function FeedRow({
 
         {feed.note ? (
           <p
-            className={`${FULL} mt-3 max-w-[68ch] text-[14px] leading-[1.55] text-foreground/45`}
+            className={`${FULL} mt-3 max-w-[68ch] text-body text-foreground/45`}
           >
             {feed.note}
           </p>
@@ -318,7 +313,7 @@ export function SourcesRegister({
           well: for the UK `regulatorFullName` already contains the venue, so
           interpolating both put "London Stock Exchange" in one sentence
           twice. */}
-      <p className="max-w-[70ch] text-[16px] leading-[1.65] text-foreground/80">
+      <p className="max-w-[70ch] text-lede text-foreground/80">
         Markets don’t disclose the same way, and a pipeline that pretends they
         do gets the vocabulary wrong before it gets anything else wrong. In{" "}
         {copy.regionName} that means reading {copy.regulatorFullName}, filed by
@@ -326,7 +321,7 @@ export function SourcesRegister({
         format, standardised here.
       </p>
 
-      <p className="mt-4 max-w-[70ch] text-[16px] leading-[1.65] text-foreground/80">
+      <p className="mt-4 max-w-[70ch] text-lede text-foreground/80">
         And it is not one feed but five. They arrive in five formats, name their
         filers five different ways, and hold records reaching back to five
         different starting points, so the rows below are not like-for-like and
@@ -334,7 +329,7 @@ export function SourcesRegister({
       </p>
 
       <Fold className="mt-4 max-w-[70ch]" label="How to read the register">
-        <p className="text-[16px] leading-[1.65] text-foreground/65">
+        <p className="text-lede text-foreground/65">
           A US, Swedish or Dutch row is a single transaction line from a filing
           that may hold several, and a congressional row is an amount band
           sorted by fixed rules rather than by a model. Filers and issuers are
@@ -347,7 +342,7 @@ export function SourcesRegister({
           seven-track spec has to sit inside it, header included. */}
       <div className="@container mt-8">
         <ColumnHeader />
-        <ol className={`border-b ${RULE}`}>
+        <ol className={`border-b border-rule`}>
           {rows.map((row) => (
             <FeedRow
               key={row.market}
@@ -362,7 +357,7 @@ export function SourcesRegister({
       {/* The house caption, one step up from shared.tsx's 12.5px: the whole
           page moved to a larger scale this round and a caption set to the old
           number under a 16px body reads as a different document. */}
-      <p className="mt-5 max-w-[74ch] text-[13px] leading-[1.6] text-foreground/50">
+      <p className="mt-5 max-w-[74ch] text-small text-foreground/50">
         {source === "snapshot" ? (
           <>
             Counted {monthLabel(data.generated_at)}, from a stored reading: the

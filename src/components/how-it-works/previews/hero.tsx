@@ -56,7 +56,7 @@ export default function HeroPreview() {
       title="How we rate a director’s share purchase"
       width="wide"
     >
-      <p className="mt-10 text-[13px] text-foreground/40">
+      <p className="mt-10 text-small text-foreground/40">
         (preview only — sections 01–06 follow here on the real page. Live
         counts: {count(coverage.totals.disclosures)} disclosed,{" "}
         {count(openMarketFloor)} open-market, {count(coverage.totals.analyses)}{" "}

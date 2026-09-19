@@ -47,13 +47,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { CompanyLogo } from "@/components/company-logo";
-import { RULE, shortDate } from "@/components/how-it-works/shared";
+import { shortDate } from "@/components/how-it-works/shared";
 import { SpecimenMark } from "@/components/how-it-works/specimen-mark";
 import { RatingBadge } from "@/components/rating-badge";
 import { Skeleton } from "@/components/skeleton";
 import { api } from "@/lib/api";
 const ROW_LINK =
-  "group relative -mx-2 block rounded-lg px-2 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]";
+  "group relative -mx-2 block rounded-control px-2 outline-none transition-colors hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03]";
 /** Mark lane, logo, subject, figure. The figure track only exists once the row
  *  is wide enough for it; below that it drops under the subject rather than
  *  squeezing the name, which is the one thing in the row that must never
@@ -142,7 +142,7 @@ export function MeasuredExamples({
     if (!threw) return null;
 
     return (
-      <p className="mt-6 max-w-[70ch] text-[16px] leading-[1.65] text-foreground/55">
+      <p className="mt-6 max-w-[70ch] text-lede text-foreground/55">
         The live figures for the worked filings did not come back this time.
         They are read from the API at the moment you load the page and are never
         stored here, so nothing is shown rather than something out of date.
@@ -154,26 +154,26 @@ export function MeasuredExamples({
 
   return (
     <>
-      <p className="mt-9 max-w-[70ch] text-[16px] leading-[1.65] text-foreground/80">
+      <p className="mt-10 max-w-[70ch] text-lede text-foreground/80">
         Two of those measurements up close, each scored against {benchmark} over
         its own window. The figures are read from the API as you load the page
         and move with the market:
       </p>
 
-      <div className={`@container mt-6 border-t ${RULE}`}>
+      <div className={`@container mt-6 border-t border-rule`}>
         {rows === null
           ? examples.tracked.map((t) => (
-              <div key={t.id} className={`border-b py-5 ${RULE}`}>
+              <div key={t.id} className={`border-b py-5 border-rule`}>
                 <div className={GRID}>
                   <span />
                   <Skeleton circle h={48} w={48} />
                   <div>
-                    <Skeleton className="rounded" h={24} w="70%" />
-                    <Skeleton className="mt-2.5 rounded" h={14} w="45%" />
+                    <Skeleton className="rounded-mark" h={24} w="70%" />
+                    <Skeleton className="mt-2.5 rounded-mark" h={14} w="45%" />
                   </div>
                   <div className="col-start-3 @min-[540px]:col-start-4 @min-[540px]:row-start-1">
-                    <Skeleton className="rounded" h={28} w={104} />
-                    <Skeleton className="mt-2 rounded" h={13} w="90%" />
+                    <Skeleton className="rounded-mark" h={28} w={104} />
+                    <Skeleton className="mt-2 rounded-mark" h={13} w="90%" />
                   </div>
                 </div>
               </div>
@@ -200,7 +200,7 @@ function TrackedRow({
   ).toFixed(1)}%`;
 
   return (
-    <div className={`border-b ${RULE}`}>
+    <div className={`border-b border-rule`}>
       <Link className={`${ROW_LINK} py-5`} to={filing.path}>
         <div className={GRID}>
           {/* The specimen mark's lane. Present on both rows so the logos line
@@ -226,7 +226,7 @@ function TrackedRow({
               {filing.name} bought {filing.value} of {filing.company}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <p className="text-[14px] leading-[1.5] text-foreground/60">
+              <p className="text-body text-foreground/60">
                 {filing.role ? `${filing.role}, ` : ""}
                 {shortDate(filing.date)}
               </p>
@@ -248,7 +248,7 @@ function TrackedRow({
             >
               {signed}
             </p>
-            <p className="mt-2 text-[13px] leading-[1.45] text-foreground/45">
+            <p className="mt-2 text-small text-foreground/45">
               vs {benchmark} since{" "}
               {basis === "disclosure" ? "disclosure" : "the trade"}, as of{" "}
               {shortDate(asOf)}
