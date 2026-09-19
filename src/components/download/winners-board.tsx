@@ -39,7 +39,6 @@ import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { CompanyLogo } from "@/components/company-logo";
 import { SectionHeader } from "@/components/download/section-header";
 import { band } from "@/components/ui/band";
-import { CAPTION } from "@/components/how-it-works/shared";
 import { Skeleton } from "@/components/skeleton";
 import { StoreButtons } from "@/components/store-buttons";
 import { TickerPill } from "@/components/ticker-pill";
@@ -211,9 +210,7 @@ export function WinnersBoard({
         // Empty and failed are the same sentence, because to the reader they
         // are the same thing: there is nothing here yet. Silence is the one
         // answer rule 2 forbids.
-        <p
-          className={`mt-12 border-t border-rule pt-5 ${CAPTION} max-w-[56ch]`}
-        >
+        <p className="mt-12 border-t border-rule pt-5 text-small text-foreground/50 max-w-[56ch]">
           {emptyNote}
         </p>
       ) : (
@@ -283,7 +280,7 @@ export function WinnersBoard({
       )}
 
       {asOf && labels.pricesAsOf ? (
-        <p className={`mt-3 ${CAPTION}`}>
+        <p className="mt-3 text-small text-foreground/50">
           {labels.pricesAsOf(formatDate(asOf))}
         </p>
       ) : null}

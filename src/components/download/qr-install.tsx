@@ -11,8 +11,6 @@
  */
 import { useEffect, useRef, useState } from "react";
 
-import { CAPTION } from "@/components/how-it-works/shared";
-
 /** Rendered size on the page. The canvas is encoded at 2× this for retina and
  *  then pinned back down with an inline style — `qrcode` writes its own
  *  `style.width`/`style.height` onto the canvas, which beats any class we put
@@ -86,7 +84,7 @@ export function QrInstall({
       </div>
       {/* `text-balance` so a two-line caption splits between phrases rather
           than orphaning the second half of the store's name on its own line. */}
-      <p className={`max-w-[220px] text-balance text-center ${CAPTION}`}>
+      <p className="max-w-[220px] text-balance text-center text-small text-foreground/50">
         <span className={captionClassName}>{caption}</span>
       </p>
     </div>

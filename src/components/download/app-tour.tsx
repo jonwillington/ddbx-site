@@ -31,12 +31,9 @@ import { useState, type ReactNode, type UIEvent } from "react";
 import { DeviceFrame } from "./device-frame";
 import { SectionHeader } from "./section-header";
 
+import { eyebrow } from "@/components/ui/eyebrow";
 import { band } from "@/components/ui/band";
-import {
-  EYEBROW,
-  EYEBROW_QUIET,
-  PANEL,
-} from "@/components/how-it-works/shared";
+import { PANEL } from "@/components/how-it-works/shared";
 import { dealsForMarket } from "@/components/market/hero-deal-data";
 import {
   HeroNotificationStack,
@@ -212,14 +209,14 @@ export function AppTour({
                       aria-hidden
                       className="absolute -left-[calc(2rem+4.5px)] h-[9px] w-[9px] rounded-full bg-brand-brown dark:bg-brand-tan"
                     />
-                    <span className={`${EYEBROW} tabular-nums`}>
+                    <span className={`${eyebrow()} tabular-nums`}>
                       {b.timestamp}
                     </span>
                     <span
                       aria-hidden
                       className="h-px w-6 bg-hairline dark:bg-border/60"
                     />
-                    <span className={EYEBROW_QUIET}>{b.kicker}</span>
+                    <span className={eyebrow("quiet")}>{b.kicker}</span>
                   </div>
 
                   {/* The beat's claim is the thing worth reading on this
@@ -360,7 +357,7 @@ function MobileTour({
               shotWidth={SHOT_W}
               tick={tick}
             />
-            <p className={`mt-5 flex items-center gap-2.5 ${EYEBROW}`}>
+            <p className={`mt-5 flex items-center gap-2.5 ${eyebrow()}`}>
               {b.timestamp}
               <span
                 aria-hidden
@@ -379,7 +376,7 @@ function MobileTour({
 
       <div
         aria-hidden
-        className={`mt-5 flex items-center gap-3 ${EYEBROW_QUIET} tabular-nums`}
+        className={`mt-5 flex items-center gap-3 ${eyebrow("quiet")} tabular-nums`}
       >
         <span>
           {String(active + 1).padStart(2, "0")} /{" "}

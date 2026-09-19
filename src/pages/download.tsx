@@ -54,7 +54,6 @@ import {
   WinnersBoard,
   type WinnerRowData,
 } from "@/components/download/winners-board";
-import { CAPTION } from "@/components/how-it-works/shared";
 import { AppCtaBand } from "@/components/seo/app-cta-band";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
@@ -731,7 +730,7 @@ export default function DownloadPage({
 
           {/* Small print reads as the caption of the whole page and belongs
               at the true bottom, after the ask. */}
-          <p className={`${CAPTION} mt-8 max-w-[72ch]`}>
+          <p className="text-small text-foreground/50 mt-8 max-w-[72ch]">
             {t.returnsDisclaimer(cfg.buyerNoun)}
           </p>
         </div>

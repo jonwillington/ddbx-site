@@ -24,12 +24,12 @@
 import type { ReactNode } from "react";
 import type { AppPlatform } from "@/lib/app-screenshots";
 
+import { eyebrow } from "@/components/ui/eyebrow";
 import {
   BUTTON_FILLED,
   BUTTON_GHOST,
   BUTTON_RADIUS,
 } from "@/components/button";
-import { CAPTION, EYEBROW } from "@/components/how-it-works/shared";
 import { useDealRadar } from "@/components/market/hero-deal-radar";
 import {
   HeroLiveGradient,
@@ -60,8 +60,7 @@ export interface HeroFigure {
 const DL =
   "mt-6 flex flex-wrap justify-center gap-x-9 gap-y-4 xl:justify-start xl:gap-x-10";
 const DT = "micro text-foreground/45";
-const DD =
-  "mt-1.5 text-[26px] font-medium leading-none tracking-[-0.02em] tabular-nums";
+const DD = "mt-1.5 text-figure font-medium tabular-nums";
 
 /** Two stand-in pairs on the real grid while the feed is in flight — the
  *  same device as `StageFigures reserve`. An empty box of the right height
@@ -119,7 +118,7 @@ function HeroFigures({
       </dl>
       {/* Provenance under the figures it belongs to — it was a stray line
           under three cards before. */}
-      <p className={`mt-3 ${CAPTION}`}>
+      <p className="mt-3 text-small text-foreground/50">
         <NewsSourceLogo className="mr-1.5" name={sourceLine} size="small" />
         {sourceLine}
       </p>
@@ -171,7 +170,7 @@ export function DownloadHero({
       {/* The trial was a chip here. As the eyebrow it carries the same copy
           in the page's one eyebrow species, and stops the hero opening on a
           pill nothing else on the page wears. */}
-      <p className={EYEBROW}>{t.trialChip(trialDays)}</p>
+      <p className={eyebrow()}>{t.trialChip(trialDays)}</p>
 
       {/* A step under the market hero's 64px: this page's claim is a full
           sentence rather than four words, and inside a card half it has to

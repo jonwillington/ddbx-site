@@ -9,17 +9,15 @@
  *
  *  Type species on this page, decided once (the page's own grammar 9):
  *
- *    EYEBROW   mono 11px, 0.16em, semibold — names a section, a panel, a
- *              stage. Brand-coloured by default; `EYEBROW_QUIET` for a rail
- *              label or a column heading that must not shout.
- *    KICKER    mono 10.5px, 0.14em — the tag under a row title (RowList's
- *              own kicker spec) and the small "Cleared / Not cleared" labels.
- *    CAPTION   12.5px at 50% — the "how to read this" line under a drawn
- *              object, and the provenance line. One species, so the five
- *              captions on the page read as one voice.
+ *    eyebrow()  mono 11, 0.16em, semibold (`@/components/ui/eyebrow`) — names
+ *               a section, a panel, a stage; `eyebrow("quiet")` for a rail
+ *               label or a column heading that must not shout.
+ *    micro      mono 10, 0.14em — the tag under a row title and the small
+ *               "Cleared / Not cleared" labels.
+ *    caption    `text-small text-foreground/50` — the "how to read this" line
+ *               under a drawn object, and the provenance line.
  *
- *  Row titles (raised 2026-09-07 on Jon's "bigger typography"): the tenet-3
- *  selling row (RowList/Row, 24/26px) for the checks and the limits; the
+ *   *  selling row (RowList/Row, 24/26px) for the checks and the limits; the
  *  ledger row (22/24px) for the pipeline; data rows (17px names, 16px
  *  tabular figures) for feeds and tracked filings. Body prose is 16px/1.65.
  */
@@ -27,24 +25,11 @@ import type { ReactNode } from "react";
 
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 
-import { eyebrow } from "@/components/ui/eyebrow";
 import { panel } from "@/components/ui/panel";
-
-export const DIVIDE = "divide-hairline dark:divide-separator";
 
 /** The light panel: the site's one `panel()` recipe (sheet, hairline,
  *  rounded-card). Padding stays at each call site. */
 export const PANEL = panel();
-
-/** Deprecated aliases, kept only for the /download components that still
- *  import them (components/download/*). Inside how-it-works, use `eyebrow()`
- *  / <Eyebrow>, `micro` and `border-rule` directly. */
-export const RULE = "border-rule";
-export const EYEBROW = eyebrow("brand");
-export const EYEBROW_QUIET = eyebrow("quiet");
-export const KICKER = "micro";
-
-export const CAPTION = "text-small text-foreground/50";
 
 /** "15 Jul 2026" — the filing pages' short date. Parsed as UTC on purpose: a
  *  bare `new Date("2026-07-15")` renders as the 14th for every reader west of

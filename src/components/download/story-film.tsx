@@ -28,8 +28,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { SectionHeader } from "./section-header";
 
+import { eyebrow } from "@/components/ui/eyebrow";
 import { band } from "@/components/ui/band";
-import { CAPTION, EYEBROW } from "@/components/how-it-works/shared";
 
 export interface FilmBeat {
   /** The caption as it appears on screen in the film. */
@@ -138,7 +138,7 @@ export function StoryFilm({
                 aria-hidden
                 className="absolute -left-[4.5px] top-[7px] h-[9px] w-[9px] rounded-full bg-brand-brown dark:bg-brand-tan"
               />
-              <p className={`${EYEBROW} tabular-nums`}>
+              <p className={`${eyebrow()} tabular-nums`}>
                 {String(i + 1).padStart(2, "0")}
               </p>
               <h3 className="mt-2 max-w-[20ch] text-balance text-heading font-semibold">
@@ -189,7 +189,7 @@ export function StoryFilm({
               </button>
             ) : null}
           </div>
-          <figcaption className={`mt-4 max-w-[52ch] ${CAPTION}`}>
+          <figcaption className="mt-4 max-w-[52ch] text-small text-foreground/50">
             {copy.note}
           </figcaption>
         </figure>

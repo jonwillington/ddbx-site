@@ -84,7 +84,7 @@ import { LimitsLedger } from "@/components/how-it-works/limits-ledger";
 import { MeasuredSection } from "@/components/how-it-works/measured-section";
 import { PipelineLedger } from "@/components/how-it-works/pipeline-ledger";
 import { RatingLadder } from "@/components/how-it-works/ratings-ladder";
-import { DIVIDE, Fold } from "@/components/how-it-works/shared";
+import { Fold } from "@/components/how-it-works/shared";
 import { SourcesRegister } from "@/components/how-it-works/sources-register";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
@@ -353,7 +353,7 @@ export default function HowItWorksPage() {
                 these, nothing has been bought yet.
               </p>
 
-              <dl className={`mt-5 border-y border-rule divide-y ${DIVIDE}`}>
+              <dl className={`mt-5 border-y border-rule divide-y divide-rule`}>
                 <MetaRow
                   label="When it applies"
                   value="A planned trade that, with the previous six months of dealing, reaches 1% of the company's shares or 50bn won"

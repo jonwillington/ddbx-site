@@ -26,14 +26,9 @@
  *  figures below it are the card's subject: what the reader is looking for is
  *  the two numbers, and the free week is the frame around them.
  */
-import {
-  CAPTION,
-  EYEBROW,
-  EYEBROW_QUIET,
-  KICKER,
-} from "@/components/how-it-works/shared";
 import { panel } from "@/components/ui/panel";
 import { useDownloadCopy } from "@/lib/download/copy";
+import { eyebrow } from "@/components/ui/eyebrow";
 import {
   annualPerMonth,
   annualSavingPct,
@@ -68,38 +63,32 @@ export function PricingCard({
       className={`max-w-lg ${panel({ variant: "inset" })} px-5 py-6 sm:px-7 sm:py-7`}
     >
       <div className="flex items-center justify-between gap-x-4">
-        <p className={EYEBROW}>{t.freeForDays(pricing.trialDays)}</p>
+        <p className={eyebrow()}>{t.freeForDays(pricing.trialDays)}</p>
         {/* A promotion has to say it is one, in the same object as the numbers
             it applies to. Left implicit, a visitor who comes back after it ends
             reads the higher price as a bait-and-switch. On the eyebrow's own
             row, the way LatestBuyCard sets its rating badge. */}
         {pricing.promotional ? (
-          <span
-            className={`shrink-0 rounded-full bg-brand-brown/10 px-2.5 py-1 ${KICKER} text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan`}
-          >
+          <span className="shrink-0 rounded-full bg-brand-brown/10 px-2.5 py-1 micro text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan">
             {t.limitedTime}
           </span>
         ) : null}
       </div>
       <p className="mt-2 text-lede text-foreground/70">{t.fullAccessNote}</p>
 
-      <div
-        className={`mt-6 grid border-t border-rule pt-6 sm:grid-cols-2 sm:gap-x-6`}
-      >
+      <div className="mt-6 grid border-t border-rule pt-6 sm:grid-cols-2 sm:gap-x-6">
         <div className={`min-w-0 ${cellRule(0)}`}>
-          <p className={`${KICKER} text-foreground/45`}>{t.monthly}</p>
+          <p className="micro text-foreground/45">{t.monthly}</p>
           <p className="mt-2 text-heading font-semibold tabular-nums text-foreground">
             {formatPrice(pricing, pricing.monthly)}
           </p>
-          <p className={`mt-1.5 ${CAPTION}`}>{t.perMonth}</p>
+          <p className="mt-1.5 text-small text-foreground/50">{t.perMonth}</p>
         </div>
 
         <div className={`min-w-0 ${cellRule(1)}`}>
           {/* Inline with the tier label, not floated into the corner — as an
               absolute pill it collided with the figure below it. */}
-          <p
-            className={`flex flex-wrap items-center gap-2 ${KICKER} text-foreground/45`}
-          >
+          <p className="flex flex-wrap items-center gap-2 micro text-foreground/45">
             {t.annual}
             {saving > 0 ? (
               <span className="rounded-full bg-positive/12 px-2 py-0.5 tabular-nums text-positive">
@@ -110,13 +99,13 @@ export function PricingCard({
           <p className="mt-2 text-heading font-semibold tabular-nums text-foreground">
             {formatPrice(pricing, annualPerMonth(pricing))}
           </p>
-          <p className={`mt-1.5 tabular-nums ${CAPTION}`}>
+          <p className="mt-1.5 tabular-nums text-small text-foreground/50">
             {t.perMonthBilledYearly(formatPrice(pricing, pricing.annual))}
           </p>
         </div>
       </div>
 
-      <p className={`mt-6 border-t border-rule pt-5 ${CAPTION}`}>
+      <p className="mt-6 border-t border-rule pt-5 text-small text-foreground/50">
         {t.billedThrough(storeLabel, pricing.code)}
       </p>
     </div>
@@ -147,7 +136,7 @@ export function IncludedList({ benefits }: { benefits: string[] }) {
 
   return (
     <div>
-      <p className={EYEBROW_QUIET}>{t.everythingIncluded}</p>
+      <p className={eyebrow("quiet")}>{t.everythingIncluded}</p>
       <ul className="mt-5 border-t border-rule">
         {benefits.map((b) => (
           <li

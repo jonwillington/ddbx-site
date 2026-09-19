@@ -59,7 +59,7 @@ import { ChevronRightIcon } from "@heroicons/react/20/solid";
 import { Link } from "react-router-dom";
 
 import { CompanyLogo } from "@/components/company-logo";
-import { DIVIDE, shortDate } from "@/components/how-it-works/shared";
+import { shortDate } from "@/components/how-it-works/shared";
 import { VerdictDisc } from "@/components/how-it-works/specimen-mark";
 import { RatingBadge } from "@/components/rating-badge";
 import { CHECK_COUNT, CHECK_COUNT_WORD, RATING_SCALE } from "@/lib/methodology";
@@ -199,7 +199,7 @@ export function RatingLadder({
         lands depends on how the {CHECK_COUNT_WORD} checks went.
       </p>
 
-      <div className={`mt-7 ${PANEL} divide-y ${DIVIDE}`}>
+      <div className={`mt-7 ${PANEL} divide-y divide-rule`}>
         {RATING_SCALE.map((r, i) => {
           const rating = r.rating as Rating;
           const example = examples?.ratings[rating];
