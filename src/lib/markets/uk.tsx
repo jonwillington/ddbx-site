@@ -23,6 +23,7 @@ import { displayCompany, normalisedDisplayName } from "@/lib/display-name";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { buildMarketFaq } from "@/lib/markets/faq";
 import { AnalysisSection } from "@/components/analysis-section";
+import { chip } from "@/components/chip";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { MiniPriceChart } from "@/components/mini-price-chart";
@@ -319,14 +320,33 @@ const VERDICT_LABEL: Record<TriageVerdict, string> = {
   promising: "Promising",
 };
 
+// The US VerdictChip's tints (lib/markets/us.tsx): the chip system supplies
+// the capsule, mono label and hairline. "Promising" is a triage status, not a
+// direction, so it takes live rather than positive.
+const VERDICT_STYLES: Record<TriageVerdict, string> = {
+  promising: "bg-live/15 text-live",
+  maybe: "bg-amber-600/10 text-amber-800 dark:text-amber-200",
+  skip: "bg-transparent text-foreground/45 dark:text-foreground/40",
+};
+
+function VerdictChip({
+  verdict,
+  size = "sm",
+}: {
+  verdict: TriageVerdict;
+  size?: "md" | "sm";
+}) {
+  return (
+    <span className={`${chip(size)} ${VERDICT_STYLES[verdict]}`}>
+      {VERDICT_LABEL[verdict]}
+    </span>
+  );
+}
+
 function UkTriageOnlyNotice({ triage }: { triage: Dealing["triage"] }) {
   // Mirrors DealingDetailPanel's TriageOnlyAnalysisNotice — small inline
   // version so we don't have to break apart that component yet. When the
   // dashboard.tsx fully retires we can move the canonical version here.
-  const verdictLabel = triage?.verdict
-    ? VERDICT_LABEL[triage.verdict]
-    : "Screened";
-
   return (
     <div
       className="flex gap-3 rounded-lg border border-amber-200/90 bg-amber-50/95 px-3.5 py-3.5 text-left shadow-sm dark:border-amber-900/55 dark:bg-amber-950/35"
@@ -337,11 +357,13 @@ function UkTriageOnlyNotice({ triage }: { triage: Dealing["triage"] }) {
         className="w-5 h-5 shrink-0 text-amber-700 dark:text-amber-400 mt-0.5"
       />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-amber-950 dark:text-amber-100">
+        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-amber-950 dark:text-amber-100">
           No further analysis on this purchase
-          <span className="font-normal font-mono text-xs text-amber-900/70 dark:text-amber-300/80 ml-2">
-            ({verdictLabel})
-          </span>
+          {triage?.verdict ? (
+            <VerdictChip verdict={triage.verdict} />
+          ) : (
+            <span className={`${chip()} ${VERDICT_STYLES.skip}`}>Screened</span>
+          )}
         </p>
         {triage?.reason ? (
           <p className="text-sm text-amber-950/95 dark:text-amber-100/90 mt-2 leading-relaxed">
