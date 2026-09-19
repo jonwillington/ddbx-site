@@ -109,38 +109,38 @@ export function MarketRowHeader({
 
   return (
     <div
-      className={`hidden md:flex items-center text-[10px] uppercase tracking-wider text-muted/80 font-medium select-none border-b border-black/[0.08] dark:border-white/[0.08] bg-black/[0.04] dark:bg-white/[0.05] ${inset ? "px-3" : ""}`}
+      className={`hidden md:flex items-center micro text-muted/80 select-none border-b border-rule bg-black/[0.04] dark:bg-white/[0.05] ${inset ? "px-3" : ""}`}
     >
       {!hideDate && (
-        <div className="w-28 shrink-0 px-3 py-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+        <div className="w-28 shrink-0 px-3 py-1.5 border-r border-rule">
           <HeaderLabel help={help.disclosed}>Disclosed</HeaderLabel>
         </div>
       )}
-      <div className="w-20 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
+      <div className="w-20 shrink-0 px-2 py-1.5 text-center border-r border-rule">
         <HeaderLabel help={help.ticker}>Ticker</HeaderLabel>
       </div>
-      <div className="flex-1 min-w-0 px-3 py-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+      <div className="flex-1 min-w-0 px-3 py-1.5 border-r border-rule">
         <HeaderLabel help={help.company}>Company / Insider</HeaderLabel>
       </div>
       <div
-        className={`${valueColumnClass} shrink-0 px-3 py-1.5 text-right border-r border-black/[0.06] dark:border-white/[0.06]`}
+        className={`${valueColumnClass} shrink-0 px-3 py-1.5 text-right border-r border-rule`}
       >
         <HeaderLabel help={help.value}>Value</HeaderLabel>
       </div>
       {!hiddenColumns.has("trend") && (
-        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
+        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-rule">
           <HeaderLabel help={help.trend}>
             {showLegCount ? "Qty / Trend" : "Trend"}
           </HeaderLabel>
         </div>
       )}
       {!hiddenColumns.has("performance") && (
-        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
+        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-rule">
           <HeaderLabel help={help.performance}>{perfLabel}</HeaderLabel>
         </div>
       )}
       {!hiddenColumns.has("comments") && (
-        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-black/[0.06] dark:border-white/[0.06]">
+        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-rule">
           <HeaderLabel help={help.comments}>Comments</HeaderLabel>
         </div>
       )}
@@ -197,7 +197,7 @@ export function MarketDayHeader({
     <div className="mb-2 flex items-center gap-3 px-1 xl:hidden">
       <time className="flex items-center gap-2" dateTime={isoDate}>
         <CalendarDayChip dayNum={dayNum} size="sm" weekday={weekday} />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/55">
+        <span className="micro text-foreground/55">
           {monthLabel}
         </span>
       </time>
@@ -215,7 +215,7 @@ export function WeekendBreak() {
   return (
     <div aria-hidden className="flex items-center gap-3 px-1">
       <span className="flex-1 border-t border-dashed border-foreground/15" />
-      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-foreground/40">
+      <span className="micro text-foreground/40">
         Weekend
       </span>
       <span className="flex-1 border-t border-dashed border-foreground/15" />
@@ -278,10 +278,10 @@ export function MarketDaySummaryRow({
       <div className="md:hidden px-3 py-2.5 flex items-center gap-2.5">
         <AiAvatar />
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-brand-brown dark:text-brand-tan leading-tight">
+          <div className="micro text-brand-brown dark:text-brand-tan">
             {label}
           </div>
-          <div className="text-[13px] font-medium text-foreground/90 mt-0.5 truncate">
+          <div className="text-small font-medium text-foreground/90 mt-0.5 truncate">
             {headline}
           </div>
         </div>
@@ -289,24 +289,24 @@ export function MarketDaySummaryRow({
 
       {/* ── Desktop (md+) ── */}
       <div className="hidden md:flex items-stretch">
-        <div className="w-20 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
-        <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+        <div className="w-20 shrink-0 px-2 py-2.5 border-r border-rule" />
+        <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-rule">
           <AiAvatar />
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-brand-brown dark:text-brand-tan leading-tight">
+            <div className="micro text-brand-brown dark:text-brand-tan">
               {label}
             </div>
-            <div className="text-[13px] font-medium text-foreground/90 mt-0.5 truncate">
+            <div className="text-small font-medium text-foreground/90 mt-0.5 truncate">
               {headline}
             </div>
           </div>
         </div>
         <div
-          className={`${valueColumnClass} shrink-0 px-3 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]`}
+          className={`${valueColumnClass} shrink-0 px-3 py-2.5 border-r border-rule`}
         />
-        <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
-        <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
-        <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+        <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
+        <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
+        <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
         <div className="w-40 shrink-0 px-2 py-2.5" />
       </div>
     </button>
@@ -332,7 +332,7 @@ export function MarketRowSkeleton({
     <div className="w-full">
       {/* Mobile */}
       <div className="md:hidden px-3 py-3">
-        <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-white/50 dark:bg-white/[0.03] p-3.5 space-y-3">
+        <div className="rounded-card border border-rule bg-white/50 dark:bg-white/[0.03] p-3.5 space-y-3">
           <Skeleton className="h-3 w-32 rounded" />
           <div className="flex items-start gap-3">
             <Skeleton circle className="shrink-0 mt-0.5" h={38} w={38} />
@@ -344,9 +344,9 @@ export function MarketRowSkeleton({
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <Skeleton className="h-[54px] rounded-xl" />
-            <Skeleton className="h-[54px] rounded-xl" />
-            <Skeleton className="h-[54px] rounded-xl" />
+            <Skeleton className="h-[54px] rounded-card" />
+            <Skeleton className="h-[54px] rounded-card" />
+            <Skeleton className="h-[54px] rounded-card" />
           </div>
         </div>
       </div>
@@ -354,14 +354,14 @@ export function MarketRowSkeleton({
       {/* Desktop */}
       <div className="hidden md:flex items-stretch">
         {!hideDate && (
-          <div className="w-28 shrink-0 px-3 py-2.5 flex items-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-28 shrink-0 px-3 py-2.5 flex items-center border-r border-rule">
             <Skeleton className="h-3.5 w-16 rounded" />
           </div>
         )}
-        <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+        <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
           <Skeleton className="h-4 w-10 rounded" />
         </div>
-        <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+        <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-rule">
           <Skeleton circle className="shrink-0" h={28} w={28} />
           <div className="flex-1 min-w-0 space-y-1">
             <Skeleton className="h-3.5 w-1/2 rounded" />
@@ -369,22 +369,22 @@ export function MarketRowSkeleton({
           </div>
         </div>
         <div
-          className={`${valueColumnClass} shrink-0 px-3 py-2.5 flex flex-col items-end justify-center gap-1 border-r border-black/[0.06] dark:border-white/[0.06]`}
+          className={`${valueColumnClass} shrink-0 px-3 py-2.5 flex flex-col items-end justify-center gap-1 border-r border-rule`}
         >
           <Skeleton className="h-4 w-16 rounded" />
         </div>
         {!hiddenColumns.has("trend") && (
-          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
             <Skeleton className="h-3 w-16 rounded" />
           </div>
         )}
         {!hiddenColumns.has("performance") && (
-          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
             <Skeleton className="h-3 w-12 rounded" />
           </div>
         )}
         {!hiddenColumns.has("comments") && (
-          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
             <Skeleton className="h-5 w-10 rounded-md" />
           </div>
         )}
@@ -485,6 +485,11 @@ interface MarketRowProps<W> {
    *  for Friday's disclosures). Drives a "No data yet" placeholder in the
    *  Return cell instead of a misleading +0.0%. */
   noPosteriorData?: boolean;
+  /** True while the latest-prices fetch is still in flight. A row with no
+   *  figure yet draws a skeleton bar the width of the one that will arrive
+   *  (static-page rule 2: never a placeholder in a figure slot); once it has
+   *  answered, a row still without a figure says "No data yet". */
+  pricesPending?: boolean;
   /** When true, the company column's content (logo + name) is nudged right by
    *  one chevron-width so a child row's logo lines up under the parent's
    *  portrait/logo. Set for rows rendered inside a MemberClusterRow, whose
@@ -533,7 +538,7 @@ export function MarketClusterRow<W>({
   const countLabel = `${count} insider buys`;
 
   return (
-    <div className="divide-y divide-black/[0.06] dark:divide-separator">
+    <div className="divide-y divide-hairline dark:divide-separator">
       <button
         aria-expanded={open}
         className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40"
@@ -556,14 +561,14 @@ export function MarketClusterRow<W>({
           )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary shrink-0">
+              <span className="font-mono text-caption font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary shrink-0">
                 {ticker}
               </span>
-              <span className="text-[13px] font-medium truncate">
+              <span className="text-small font-medium truncate">
                 {company}
               </span>
             </div>
-            <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
+            <div className="text-caption text-muted mt-0.5">{countLabel}</div>
           </div>
           <div className="shrink-0 text-sm font-semibold tabular-nums text-right">
             {totalValueLabel}
@@ -572,12 +577,12 @@ export function MarketClusterRow<W>({
 
         {/* ── Desktop (md+) ── */}
         <div className="hidden md:flex items-stretch">
-          <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-            <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary">
+          <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
+            <span className="font-mono text-caption font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary">
               {ticker}
             </span>
           </div>
-          <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-rule">
             <ChevronDownIcon
               className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             />
@@ -590,34 +595,34 @@ export function MarketClusterRow<W>({
               />
             )}
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-medium truncate leading-tight">
+              <div className="text-small font-medium truncate leading-tight">
                 {company}
               </div>
-              <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
+              <div className="text-caption text-muted mt-0.5">{countLabel}</div>
             </div>
           </div>
           <div
-            className={`${valueColumnClass} shrink-0 px-3 py-2.5 flex items-center justify-end border-r border-black/[0.06] dark:border-white/[0.06]`}
+            className={`${valueColumnClass} shrink-0 px-3 py-2.5 flex items-center justify-end border-r border-rule`}
           >
             <span className="text-sm font-semibold tabular-nums">
               {totalValueLabel}
             </span>
           </div>
-          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
             {showLegCount && (
-              <span className="text-[11px] font-semibold tabular-nums text-muted/70">
+              <span className="text-caption font-semibold tabular-nums text-muted/70">
                 {count}
               </span>
             )}
           </div>
-          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
-          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
+          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
           <div className="w-40 shrink-0 px-2 py-2.5" />
         </div>
       </button>
 
       {open && (
-        <div className="divide-y divide-black/[0.06] dark:divide-separator bg-black/[0.015] dark:bg-white/[0.035]">
+        <div className="divide-y divide-hairline dark:divide-separator bg-black/[0.015] dark:bg-white/[0.035]">
           {children}
         </div>
       )}
@@ -662,7 +667,7 @@ export function InsiderAvatar({
 
   return (
     <div
-      className="rounded-full bg-black/[0.06] dark:bg-white/10 shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted"
+      className="rounded-full bg-black/[0.06] dark:bg-white/10 shrink-0 flex items-center justify-center text-caption font-semibold text-muted"
       style={{ width: size, height: size }}
     >
       {initials}
@@ -712,13 +717,13 @@ export function MemberAppTeaserRow({
       <InsiderAvatar name={insiderName} photoUrl={insiderPhotoUrl} size={36} />
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center">
-          <span className="truncate text-[14px] font-semibold leading-tight">
+          <span className="truncate text-body font-semibold leading-tight">
             {insiderName}
           </span>
           <PartyChip className="ml-2" party={party} />
           <ChamberChip chamber={chamber} className="ml-1.5" />
         </div>
-        <div className="mt-0.5 text-[11px] text-muted">{countLabel}</div>
+        <div className="mt-0.5 text-caption text-muted">{countLabel}</div>
       </div>
       {/* Who they bought — overlapping logo stack, newest first. */}
       <div className="flex shrink-0 items-center -space-x-1.5">
@@ -731,7 +736,7 @@ export function MemberAppTeaserRow({
           </span>
         ))}
         {extra > 0 && (
-          <span className="z-10 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-black/[0.06] text-[10px] font-semibold text-muted ring-2 ring-white dark:bg-white/10 dark:ring-surface-secondary">
+          <span className="z-10 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-black/[0.06] text-caption font-semibold text-muted ring-2 ring-white dark:bg-white/10 dark:ring-surface-secondary">
             +{extra}
           </span>
         )}
@@ -796,7 +801,7 @@ export function MemberClusterRow({
     ) : null;
 
   return (
-    <div className="divide-y divide-black/[0.06] dark:divide-separator">
+    <div className="divide-y divide-hairline dark:divide-separator">
       <button
         aria-expanded={open}
         className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40"
@@ -816,13 +821,13 @@ export function MemberClusterRow({
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center min-w-0">
-              <span className="text-[13px] font-semibold truncate">
+              <span className="text-small font-semibold truncate">
                 {insiderName}
               </span>
               <PartyChip className="ml-2" party={party} />
               <ChamberChip chamber={chamber} className="ml-1.5" />
             </div>
-            <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
+            <div className="text-caption text-muted mt-0.5">{countLabel}</div>
           </div>
           <div className="shrink-0 flex flex-col items-end gap-0.5">
             <span className="text-sm font-semibold tabular-nums">
@@ -842,8 +847,8 @@ export function MemberClusterRow({
             ticker column for the child rows; the member photo sits beside the
             name instead. */}
         <div className="hidden md:flex items-stretch">
-          <div className="w-20 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
-          <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-20 shrink-0 px-2 py-2.5 border-r border-rule" />
+          <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-rule">
             <ChevronDownIcon
               className={`w-4 h-4 text-muted shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             />
@@ -854,26 +859,26 @@ export function MemberClusterRow({
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center min-w-0">
-                <span className="text-[13px] font-semibold truncate leading-tight">
+                <span className="text-small font-semibold truncate leading-tight">
                   {insiderName}
                 </span>
                 <PartyChip className="ml-2" party={party} />
                 <ChamberChip chamber={chamber} className="ml-1.5" />
               </div>
-              <div className="text-[11px] text-muted mt-0.5">{countLabel}</div>
+              <div className="text-caption text-muted mt-0.5">{countLabel}</div>
             </div>
           </div>
-          <div className="w-24 shrink-0 px-3 py-2.5 flex items-center justify-end border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-24 shrink-0 px-3 py-2.5 flex items-center justify-end border-r border-rule">
             <span className="text-sm font-semibold tabular-nums">
               {totalValueLabel}
             </span>
           </div>
-          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-            <span className="text-[11px] font-semibold tabular-nums text-muted/70">
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
+            <span className="text-caption font-semibold tabular-nums text-muted/70">
               {count}
             </span>
           </div>
-          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
             {aggReturnPct != null ? (
               <Delta
                 size="num"
@@ -881,10 +886,10 @@ export function MemberClusterRow({
                 value={aggReturnPct}
               />
             ) : (
-              <span className="text-[11px] text-muted/50">—</span>
+              <span className="text-caption text-muted/50">—</span>
             )}
           </div>
-          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-black/[0.06] dark:border-white/[0.06]" />
+          <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
           <div className="w-40 shrink-0 px-2 py-2.5 flex items-center justify-center">
             <SignalChip />
           </div>
@@ -895,7 +900,7 @@ export function MemberClusterRow({
         // The member's buys, flush so the ticker column stays aligned/pure.
         // No connector rule — the grouping under the member already conveys
         // they're all the same person.
-        <div className="bg-black/[0.015] dark:bg-white/[0.035] divide-y divide-black/[0.06] dark:divide-separator">
+        <div className="bg-black/[0.015] dark:bg-white/[0.035] divide-y divide-hairline dark:divide-separator">
           {children}
         </div>
       )}
@@ -929,6 +934,7 @@ export function MarketRow<W>({
   showLegCount = true,
   chartMode,
   noPosteriorData = false,
+  pricesPending = false,
   indent = false,
   hideInsider = false,
 }: MarketRowProps<W>) {
@@ -1013,16 +1019,16 @@ export function MarketRow<W>({
             ticker={rawTicker}
           />
         )}
-        <span className="flex-1 min-w-0 truncate text-[15px] font-semibold leading-tight">
+        <span className="flex-1 min-w-0 truncate text-lede font-semibold leading-tight">
           {company}
         </span>
         <CommentCountChip count={commentCount} />
         <span className="shrink-0 text-right leading-tight">
-          <span className="block text-[15px] font-semibold tabular-nums">
+          <span className="block text-lede font-semibold tabular-nums">
             {compactValueLabel}
           </span>
           {dealing.valueSecondary && (
-            <span className="block text-[10px] tabular-nums text-muted/75">
+            <span className="block text-caption tabular-nums text-muted/75">
               {dealing.valueSecondary}
             </span>
           )}
@@ -1032,23 +1038,23 @@ export function MarketRow<W>({
       {/* ── Desktop (md+) ── */}
       <div className="hidden md:flex items-stretch">
         {!hideDate && (
-          <div className="w-28 shrink-0 px-3 py-2.5 flex flex-col justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-28 shrink-0 px-3 py-2.5 flex flex-col justify-center border-r border-rule">
             <div className="text-xs text-foreground/90 font-medium leading-tight">
               {shortDate(dealing.disclosedDate, locale)}
             </div>
             {tradeDiffers && (
-              <div className="text-[10px] text-muted/75 mt-0.5">
+              <div className="text-caption text-muted/75 mt-0.5">
                 trade {shortDate(dealing.tradeDate, locale)}
               </div>
             )}
           </div>
         )}
-        <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-          <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary">
+        <div className="w-20 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
+          <span className="font-mono text-caption font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary">
             {ticker}
           </span>
         </div>
-        <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+        <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-rule">
           {indent && <div aria-hidden className="w-4 shrink-0" />}
           {showLogo && (
             <CompanyLogo
@@ -1059,13 +1065,13 @@ export function MarketRow<W>({
             />
           )}
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-medium truncate leading-tight">
+            <div className="text-small font-medium truncate leading-tight">
               {company}
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
               {RowNameBadge && <RowNameBadge dealing={dealing} />}
               {!hideInsider && (
-                <span className="text-[11px] text-muted truncate">
+                <span className="text-caption text-muted truncate">
                   {insiderLine}
                 </span>
               )}
@@ -1079,19 +1085,19 @@ export function MarketRow<W>({
           </div>
         </div>
         <div
-          className={`${fmt.valueColumnClass ?? "w-24"} shrink-0 px-3 py-2.5 flex flex-col items-end justify-center border-r border-black/[0.06] dark:border-white/[0.06]`}
+          className={`${fmt.valueColumnClass ?? "w-24"} shrink-0 px-3 py-2.5 flex flex-col items-end justify-center border-r border-rule`}
         >
           <div className="text-sm font-semibold tabular-nums">{valueLabel}</div>
           {dealing.valueSecondary && (
-            <div className="text-[10px] tabular-nums text-muted/75 leading-tight">
+            <div className="text-caption tabular-nums text-muted/75 leading-tight">
               {dealing.valueSecondary}
             </div>
           )}
         </div>
         {!hiddenColumns.has("trend") && (
-          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center gap-1.5 border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center gap-1.5 border-r border-rule">
             {showLegCount && dealing.legCount > 1 && (
-              <span className="text-[11px] font-semibold tabular-nums text-muted/70">
+              <span className="text-caption font-semibold tabular-nums text-muted/70">
                 {dealing.legCount}
               </span>
             )}
@@ -1106,7 +1112,7 @@ export function MarketRow<W>({
           </div>
         )}
         {!hiddenColumns.has("performance") && (
-          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
             {metricPct != null ? (
               <Delta
                 className="animate-content-in"
@@ -1114,19 +1120,20 @@ export function MarketRow<W>({
                 suffix={showAlpha ? "pp" : undefined}
                 value={metricPct}
               />
-            ) : noPosteriorData ? (
-              <span className="text-[11px] text-muted/60">No data yet</span>
+            ) : pricesPending && !noPosteriorData ? (
+              // The same bar MarketRowSkeleton draws in this cell.
+              <Skeleton className="h-3 w-12 rounded" />
             ) : (
-              <span className="text-[11px] text-muted/50">—</span>
+              <span className="text-caption text-muted/60">No data yet</span>
             )}
           </div>
         )}
         {!hiddenColumns.has("comments") && (
-          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
             {commentCount > 0 ? (
               <CommentCountChip count={commentCount} />
             ) : (
-              <span className="text-[11px] text-muted/50">—</span>
+              <span className="text-caption text-muted/50">—</span>
             )}
           </div>
         )}

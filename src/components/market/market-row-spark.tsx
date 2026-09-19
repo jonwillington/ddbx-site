@@ -49,7 +49,7 @@ export function MarketRowSpark({
   height = 22,
 }: MarketRowSparkProps) {
   const empty = (
-    <span className="text-[10px] text-muted/40 tabular-nums">—</span>
+    <span className="text-caption text-muted/40 tabular-nums">—</span>
   );
 
   // Memoise so the rAF tween only fires when an actual input changes —

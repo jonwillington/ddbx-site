@@ -42,6 +42,7 @@ import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { formatSignedPct } from "@/lib/performance/format";
 import { AppModal } from "@/components/app-modal";
 import { CompanyLogo } from "@/components/company-logo";
+import { panel } from "@/components/ui/panel";
 
 interface Props {
   summary: ChannelPerformanceSummary;
@@ -87,8 +88,7 @@ const SLICE_ADJECTIVE: Record<
   noteworthy: "noteworthy",
 };
 
-const CARD_CLASS =
-  "rounded-2xl border border-hairline bg-white/45 shadow-[0_12px_32px_-28px_rgba(61,43,26,0.7)] dark:border-border/70 dark:bg-surface-secondary/35";
+const CARD_CLASS = panel({ variant: "inset", lift: true });
 
 function toneClass(ratio: number | null): string {
   if (ratio == null) return "text-muted";
@@ -235,13 +235,13 @@ function Story({
             Last {CHANNEL_WINDOW_DAYS} days · {totalBuys}{" "}
             {totalBuys === 1 ? "buy" : "buys"}
           </Eyebrow>
-          <span className="whitespace-nowrap font-mono text-[10px] text-muted tabular-nums">
+          <span className="whitespace-nowrap font-mono text-caption text-muted tabular-nums">
             {lastUpdated ? `to ${formatDay(lastUpdated, "short")}` : ""}
           </span>
         </div>
 
         {pp == null ? (
-          <p className="mt-2 text-[15px] font-semibold text-foreground">
+          <p className="mt-2 text-lede font-semibold text-foreground">
             Not enough data yet
           </p>
         ) : (
@@ -253,7 +253,7 @@ function Story({
                 ? "Level"
                 : `${ahead ? "+" : "−"}${Math.abs(pp).toFixed(1)}pp`}
             </span>
-            <span className="whitespace-nowrap text-[12px] leading-tight text-foreground/60">
+            <span className="whitespace-nowrap text-small leading-tight text-foreground/60">
               {level
                 ? `with the ${index}`
                 : ahead
@@ -264,7 +264,7 @@ function Story({
         )}
 
         {picksReturnPct != null && (
-          <p className="mt-1.5 text-[12px] leading-snug text-foreground/70">
+          <p className="mt-1.5 text-small leading-snug text-foreground/70">
             <StorySentence
               benchmarkReturnPct={benchmarkReturnPct}
               headlineUniverse={headlineUniverse}
@@ -346,12 +346,12 @@ function HitRate({ count, total }: { count: number; total: number }) {
   return (
     <div className="mt-2.5 border-t border-hairline/90 pt-2 dark:border-border/60">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[11px] text-foreground/70 tabular-nums">
+        <span className="text-caption text-foreground/70 tabular-nums">
           <span className="font-semibold text-foreground">{count}</span> of{" "}
           {total} beat it
         </span>
         <span
-          className={`text-[13px] font-semibold leading-none tabular-nums ${good ? "text-positive" : "text-foreground/70"}`}
+          className={`text-num font-semibold leading-none tabular-nums ${good ? "text-positive" : "text-foreground/70"}`}
         >
           {Math.round(rate * 100)}%
         </span>
@@ -391,7 +391,7 @@ function Edge({
     <section className="border-t border-hairline pt-3 dark:border-border/60">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <Eyebrow>Where the edge came from</Eyebrow>
-        <span className="shrink-0 text-[10px] text-muted">vs {index}</span>
+        <span className="shrink-0 text-caption text-muted">vs {index}</span>
       </div>
       <ul className="mt-2 divide-y divide-hairline/80 border-y border-hairline/80 dark:divide-border/50 dark:border-border/50">
         {leaders.map((s) => (
@@ -399,13 +399,13 @@ function Edge({
             key={s.sector}
             className="flex items-baseline justify-between gap-2 py-1.5"
           >
-            <span className="min-w-0 truncate text-[12px] text-foreground/85">
+            <span className="min-w-0 truncate text-small text-foreground/85">
               {s.sector}
-              <span className="ml-1.5 font-mono text-[9.5px] text-muted tabular-nums">
+              <span className="ml-1.5 font-mono text-caption text-muted tabular-nums">
                 {s.dealCount} {s.dealCount === 1 ? "buy" : "buys"}
               </span>
             </span>
-            <span className="shrink-0 text-[12px] font-semibold tabular-nums text-positive">
+            <span className="shrink-0 text-small font-semibold tabular-nums text-positive">
               {formatSignedPct(s.meanAlphaPct)}
             </span>
           </li>
@@ -443,7 +443,7 @@ function Picks({
     <section>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <Eyebrow>Best recent picks</Eyebrow>
-        <span className="shrink-0 text-[10px] text-muted">
+        <span className="shrink-0 text-caption text-muted">
           share price since disclosure
         </span>
       </div>
@@ -474,7 +474,7 @@ function Picks({
         {gated && hiddenCount > 0 && (
           <li>
             <a
-              className="group flex items-center justify-center gap-1.5 px-3 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-brown transition-colors hover:bg-brand-brown/[0.06] dark:text-brand-tan dark:hover:bg-surface-secondary/80"
+              className="group flex items-center justify-center gap-1.5 px-3 py-2.5 micro text-brand-brown transition-colors hover:bg-brand-brown/[0.06] dark:text-brand-tan dark:hover:bg-surface-secondary/80"
               data-ga-event="cta_channel_see_all_picks_in_app"
               data-ga-label={`See all ${rows.length} picks in app`}
               href={appHref}
@@ -528,10 +528,10 @@ function HeroPick({
         <span className="flex items-center gap-2.5 @max-[19rem]:gap-2">
           <CompanyLogo size={36} ticker={row.ticker} />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13.5px] font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
+            <span className="block truncate text-body font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
               {row.company}
             </span>
-            <span className="block font-mono text-[10px] leading-tight text-muted">
+            <span className="block font-mono text-caption leading-tight text-muted">
               {row.ticker}
             </span>
           </span>
@@ -543,7 +543,7 @@ function HeroPick({
         </span>
 
         {/* Who, how much, when — one line, full width so the name fits. */}
-        <span className="mt-1.5 block truncate text-[11px] leading-tight text-foreground/70 tabular-nums">
+        <span className="mt-1.5 block truncate text-caption leading-tight text-foreground/70 tabular-nums">
           <span className="font-semibold text-foreground">
             {row.insiderName}
           </span>
@@ -560,7 +560,7 @@ function HeroPick({
         </span>
 
         {formatStake && (
-          <span className="mt-2 flex items-baseline gap-1 border-t border-positive/15 pt-1.5 text-[10.5px] tabular-nums text-muted">
+          <span className="mt-2 flex items-baseline gap-1 border-t border-positive/15 pt-1.5 text-caption tabular-nums text-muted">
             {formatStake(STAKE)} at disclosure →
             <span className="font-semibold text-foreground">
               {formatStake(STAKE * (1 + row.returnPct))} today
@@ -605,15 +605,15 @@ function PickRow({
       >
         <CompanyLogo size={28} ticker={row.ticker} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px] font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
+          <span className="block truncate text-small font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
             {row.company}
           </span>
-          <span className="mt-0.5 block truncate text-[10.5px] leading-tight text-muted tabular-nums">
+          <span className="mt-0.5 block truncate text-caption leading-tight text-muted tabular-nums">
             {subline}
           </span>
         </span>
         <span
-          className={`shrink-0 text-[15px] font-bold tabular-nums ${toneClass(row.returnPct)}`}
+          className={`shrink-0 text-lede font-bold tabular-nums ${toneClass(row.returnPct)}`}
         >
           {formatSignedPct(row.returnPct)}
         </span>
@@ -660,14 +660,14 @@ function ContributorExplainer({
               >
                 {formatSignedPct(row.returnPct)}
               </p>
-              <p className="text-[11px] text-muted">
+              <p className="text-caption text-muted">
                 share price since {formatDay(row.disclosedDate)}, {row.daysHeld}{" "}
                 {row.daysHeld === 1 ? "day" : "days"} ago
               </p>
             </div>
           </div>
 
-          <p className="mt-4 rounded-xl bg-foreground/[0.04] px-3.5 py-3 text-[13px] leading-relaxed text-muted">
+          <p className="mt-4 rounded-card bg-foreground/[0.04] px-3.5 py-3 text-small leading-relaxed text-muted">
             <span className="font-semibold text-foreground">
               {row.insiderName}
             </span>
@@ -695,7 +695,7 @@ function ContributorExplainer({
             )}
           </p>
 
-          <div className="mt-5 space-y-3 text-[13px] leading-relaxed text-foreground/70">
+          <div className="mt-5 space-y-3 text-small leading-relaxed text-foreground/70">
             <p>
               <span className="font-semibold text-foreground">
                 What you&rsquo;re looking at.
@@ -722,7 +722,7 @@ function ContributorExplainer({
           </div>
 
           <a
-            className="mt-6 flex w-full items-center justify-center rounded-lg bg-ink px-5 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118] dark:bg-white dark:text-ink dark:hover:bg-white/90"
+            className="mt-6 flex w-full items-center justify-center rounded-control bg-ink px-5 py-3.5 text-lede font-semibold text-white transition-colors hover:bg-[#2a2118] dark:bg-white dark:text-ink dark:hover:bg-white/90"
             data-ga-event="cta_channel_picks_explainer_download"
             data-ga-label={row.ticker}
             href={appHref}
@@ -731,7 +731,7 @@ function ContributorExplainer({
           >
             Get the app. Every buy as it files
           </a>
-          <p className="mt-2 text-center text-[11px] text-muted">
+          <p className="mt-2 text-center text-caption text-muted">
             Free for 7 days, cancel any time.
           </p>
 
@@ -739,7 +739,7 @@ function ContributorExplainer({
               who wanted the filing rather than the explanation still gets
               there in one more click. */}
           <Link
-            className="mt-4 block text-center text-[12.5px] text-foreground/55 underline underline-offset-4 hover:text-foreground"
+            className="mt-4 block text-center text-small text-foreground/55 underline underline-offset-4 hover:text-foreground"
             data-ga-event="cta_channel_picks_explainer_see_filing"
             data-ga-label={row.ticker}
             to={dealHref ? dealHref(row.id) : `/dealings/${row.id}`}
@@ -757,7 +757,7 @@ function ContributorExplainer({
  *  size. One repeated label lets the sentences and figures carry the panel. */
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="whitespace-nowrap font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55 @max-[19rem]:tracking-[0.1em]">
+    <h3 className="whitespace-nowrap micro text-foreground/55 @max-[19rem]:tracking-widest">
       {children}
     </h3>
   );

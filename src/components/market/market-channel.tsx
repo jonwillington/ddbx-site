@@ -13,6 +13,7 @@ import { ChannelPerformance } from "./channel-performance";
 
 import { NewsSourceLogo } from "@/components/news-source-logo";
 import { Skeleton } from "@/components/skeleton";
+import { panel } from "@/components/ui/panel";
 
 type TabId = "performance" | "news";
 
@@ -155,16 +156,17 @@ export function MarketChannel({
   }
 
   return (
-    <aside className="page-rail hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-hairline dark:border-separator bg-sheet dark:bg-surface z-20">
+    <aside className="page-rail hidden lg:flex fixed top-0 right-0 bottom-0 w-80 flex-col border-l border-rule bg-sheet dark:bg-surface z-20">
       {/* Header — matches navbar h-16 */}
-      <div className="h-16 px-4 flex items-center border-b border-hairline dark:border-separator shrink-0">
+      <div className="h-16 px-4 flex items-center border-b border-rule shrink-0">
         {tabs}
       </div>
 
-      <div className="relative flex-1 min-h-0">
-        <div className="absolute inset-x-0 top-0 h-4 pointer-events-none z-[1] bg-gradient-to-b from-sheet dark:from-surface to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-4 pointer-events-none z-[1] bg-gradient-to-t from-sheet dark:from-surface to-transparent" />
-        <div className="h-full overflow-y-auto overscroll-contain">{body}</div>
+      {/* No scroll-edge fades: content scrolls under the header's hairline
+          and stops at the rail's foot (design language: contained, not
+          blended). */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        {body}
       </div>
     </aside>
   );
@@ -206,7 +208,7 @@ function TabButton({
 function PerfSkeleton() {
   return (
     <div className="px-5 lg:px-4 py-3.5 space-y-4">
-      <div className="rounded-2xl border border-hairline px-3.5 py-3 dark:border-border/70">
+      <div className={`${panel({ variant: "inset", lift: true })} px-3.5 py-3`}>
         <Skeleton className="h-2.5 w-24" />
         <Skeleton className="mt-2.5 h-7 w-44" />
         <div className="mt-2.5 space-y-1.5">
@@ -219,7 +221,7 @@ function PerfSkeleton() {
 
       <div>
         <Skeleton className="h-2.5 w-28" />
-        <div className="mt-2 divide-y divide-hairline/80 rounded-2xl border border-hairline dark:divide-border/50 dark:border-border/70">
+        <div className={`mt-2 divide-y divide-hairline/80 dark:divide-border/50 ${panel({ variant: "inset", lift: true })}`}>
           <div className="px-3 py-3">
             <div className="flex items-center gap-2.5">
               <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
@@ -295,7 +297,7 @@ function NewsStrip({
         </ul>
       )}
       {news?.fetched_at && (
-        <p className="text-[10px] text-muted/50 mt-3">
+        <p className="text-caption text-muted/50 mt-3">
           Refreshed{" "}
           {new Date(news.fetched_at).toLocaleString(undefined, {
             dateStyle: "medium",
@@ -304,7 +306,7 @@ function NewsStrip({
         </p>
       )}
       {footerNote && (
-        <p className="text-[10px] text-muted/45 mt-2 leading-relaxed">
+        <p className="text-caption text-muted/45 mt-2 leading-relaxed">
           {footerNote}
         </p>
       )}
@@ -334,7 +336,7 @@ function NewsRow({
       >
         <NewsSourceLogo className="mt-0.5" url={item.url} />
         <span className="min-w-0">
-          <span className="flex items-center gap-1.5 text-[10px] font-mono leading-none text-brand-brown/90 dark:text-brand-tan mb-1">
+          <span className="flex items-center gap-1.5 text-caption font-mono leading-none text-brand-brown/90 dark:text-brand-tan mb-1">
             {fresh && (
               <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#7c5cbf] animate-[fade-in-up_0.3s_ease-out]" />
             )}

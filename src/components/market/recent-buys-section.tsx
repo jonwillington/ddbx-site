@@ -68,7 +68,7 @@ export function RecentBuysSection<W>({
         <InformationCircleIcon className="h-3.5 w-3.5 shrink-0 text-muted/50 transition-colors group-hover/tip:text-muted/80" />
         <span
           className="pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-64
-          rounded-lg bg-[#1e1a16] px-3 py-2.5 text-xs leading-relaxed text-[#e8e2da]
+          rounded-control bg-[#1e1a16] px-3 py-2.5 text-xs leading-relaxed text-[#e8e2da]
           opacity-0 shadow-2xl transition-opacity duration-150
           group-hover/tip:opacity-100 dark:bg-[#e8e2da] dark:text-[#1e1a16]"
         >
@@ -112,7 +112,7 @@ export function RecentBuysSection<W>({
       </button>
 
       {open && (
-        <ul className="mt-3 divide-y divide-black/[0.06] dark:divide-white/[0.08] border-y border-black/[0.06] dark:border-white/[0.08]">
+        <ul className="mt-3 divide-y divide-hairline dark:divide-separator border-y border-rule">
           {visible.map((d) => {
             const content = (
               <>

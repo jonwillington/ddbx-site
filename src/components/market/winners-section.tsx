@@ -58,6 +58,7 @@ import {
 import { CompanyLogo } from "@/components/company-logo";
 import { RowList } from "@/components/row-list";
 import { Skeleton } from "@/components/skeleton";
+import { panel } from "@/components/ui/panel";
 
 /** Illustration stake for a row whose trade value the wire didn't carry —
  *  "£1,000 put in alongside them would be worth £X today". Same figure as the
@@ -67,14 +68,9 @@ const STAKE = 1000;
 /** Interstitial position: the app ask lands after this many winner rows. */
 const INTERSTITIAL_AFTER = 3;
 
-/** Hairline rule shared with RowList, so the list closes on the same line
- *  weight it opened on. */
-const RULE = "border-hairline dark:border-separator";
-
 /** Panel chrome for the non-row states (failed, empty) and the interstitial:
  *  a contained object sitting between rows, per tenet 1. */
-const PANEL_CLASS =
-  "rounded-xl border border-hairline bg-white/45 shadow-[0_8px_24px_-22px_rgba(61,43,26,0.8)] dark:border-border/70 dark:bg-surface-secondary/35";
+const PANEL_CLASS = panel({ variant: "inset", lift: true });
 
 /** Reader-facing role. The wire's PCA role is a sentence — "Person Closely
  *  Associated to J Smith (Chief Executive)", or the abbreviated "PCA of CFO
@@ -144,7 +140,7 @@ export function WinnersSection<W>({
 
     if (askHere) {
       items.push(
-        <li key="interstitial" className={`border-b ${RULE} py-3`}>
+        <li key="interstitial" className={`border-b border-rule py-3`}>
           <AppInterstitial appHref={appHref} marketId={marketId} />
         </li>,
       );
@@ -242,7 +238,7 @@ function WinnerRow({
   const role = displayRole(w.insiderRole);
 
   return (
-    <li className={`border-b ${RULE}`}>
+    <li className={`border-b border-rule`}>
       <Link
         className="group flex items-start gap-3 py-3.5"
         data-ga-event="cta_winner_read_analysis"
@@ -255,16 +251,16 @@ function WinnerRow({
               what it is, and what it did. The return is the hook, so it is
               the larger of the two. */}
           <span className="flex items-baseline justify-between gap-3">
-            <span className="min-w-0 truncate text-[15px] font-semibold leading-snug text-foreground">
+            <span className="min-w-0 truncate text-lede font-semibold leading-snug text-foreground">
               {w.company}
             </span>
-            <span className="shrink-0 text-[17px] font-bold tabular-nums leading-none text-positive">
+            <span className="shrink-0 text-title font-bold tabular-nums leading-none text-positive">
               {formatSignedPct(w.returnPct)}
             </span>
           </span>
 
           {/* Who bought. Secondary: it qualifies the buy, it isn't the hook. */}
-          <span className="mt-0.5 block truncate text-[13px] leading-snug text-foreground/60">
+          <span className="mt-0.5 block truncate text-small leading-snug text-foreground/60">
             {w.insiderName}
             {role ? ` · ${role}` : ""}
           </span>
@@ -272,7 +268,7 @@ function WinnerRow({
           {/* The story in one sentence, then the honest label for what the
               row's page holds. Stake figures are ink, not green: one green
               number per row. */}
-          <span className="mt-1.5 block text-[13px] leading-relaxed text-foreground/75">
+          <span className="mt-1.5 block text-small leading-relaxed text-foreground/75">
             {value != null ? (
               <>
                 Bought{" "}
@@ -352,7 +348,7 @@ function AppInterstitial({
 
   return (
     <div ref={ref} className={`${PANEL_CLASS} px-5 py-6 text-center`}>
-      <p className="text-[17px] font-semibold leading-snug text-foreground">
+      <p className="text-title font-semibold leading-snug text-foreground">
         Every deal is in the ddbx app
       </p>
       <p className="mx-auto mt-1.5 max-w-[34ch] text-sm leading-relaxed text-foreground/60">
@@ -367,7 +363,7 @@ function AppInterstitial({
       </div>
 
       <a
-        className={`mt-5 inline-flex items-center justify-center ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-[15px] font-semibold shadow-md`}
+        className={`mt-5 inline-flex items-center justify-center ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-lede font-semibold shadow-md`}
         data-ga-event="cta_winners_app_interstitial"
         data-ga-label="winners_after_3"
         href={appHref}
@@ -389,9 +385,9 @@ function WinnersSkeleton() {
   return (
     <RowList ordered={false}>
       {Array.from({ length: 5 }).map((_, i) => (
-        <li key={i} className={`border-b ${RULE} py-3.5`}>
+        <li key={i} className={`border-b border-rule py-3.5`}>
           <div className="flex items-start gap-3">
-            <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+            <Skeleton className="h-9 w-9 shrink-0 rounded-control" />
             <div className="min-w-0 flex-1 space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <Skeleton className="h-4 w-2/5 rounded" />

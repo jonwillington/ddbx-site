@@ -237,6 +237,11 @@ export function MarketPage<W>({
   const [prices, setPrices] = useState<
     Record<string, { price: number; date?: string }>
   >({});
+  /** The latest-prices fetch has answered (or failed). Until then a row with
+   *  no server snapshot shows a skeleton in its Performance cell, not a
+   *  placeholder figure; after it, a row still without a price says so in
+   *  words. */
+  const [pricesSettled, setPricesSettled] = useState(false);
   /** Benchmark daily closes keyed by ISO date — raw values from the
    *  prices table (index points). */
   const [benchEntries, setBenchEntries] = useState<Record<string, number>>({});
@@ -479,8 +484,9 @@ export function MarketPage<W>({
         for (const p of list)
           map[p.ticker] = { price: p.price_pence, date: p.date };
         setPrices(map);
+        setPricesSettled(true);
       })
-      .catch(() => undefined);
+      .catch(() => setPricesSettled(true));
   }, [dealings, config.benchmarkTicker, livePricesEnabled]);
 
   // Benchmark daily-close history — pre-loaded once per market. Kept in
@@ -999,6 +1005,7 @@ export function MarketPage<W>({
       isMuted={config.isRowMuted}
       locale={config.locale}
       noPosteriorData={stockNoPosteriorData(d)}
+      pricesPending={livePricesEnabled && !pricesSettled}
       selected={selectedKey === d.key}
       showLegCount={config.showLegCount}
       showLogo={logosEnabled}
@@ -1178,7 +1185,7 @@ export function MarketPage<W>({
       : rows.map(renderDayRow);
 
   const emptyState = filteredDealings.length === 0 && !loading && (
-    <div className="bg-sheet dark:bg-surface rounded-xl px-4 py-10 text-center text-sm text-muted">
+    <div className="bg-sheet dark:bg-surface rounded-card px-4 py-10 text-center text-sm text-muted">
       {search.trim() ? (
         <>
           No filings match{" "}
@@ -1255,7 +1262,7 @@ export function MarketPage<W>({
         )}
 
         {err && (
-          <div className="rounded-lg border border-rose-300/60 bg-rose-50 dark:bg-rose-950/30 px-4 py-2 text-sm text-rose-900 dark:text-rose-200">
+          <div className="rounded-control border border-negative/30 bg-negative/5 px-4 py-2 text-sm text-negative">
             {err}
           </div>
         )}
@@ -1327,11 +1334,11 @@ export function MarketPage<W>({
                `space-y-6` wrapper, whose sibling rule owns margin-top and
                would silently win over one set here. */
             <div className="pt-4">
-              <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-foreground">
+              <h2 className="text-title font-semibold text-foreground">
                 {config.dealingsHeading.title}
               </h2>
               {config.dealingsHeading.subtitle ? (
-                <p className="mt-1 text-[13.5px] leading-[1.6] text-foreground/60">
+                <p className="mt-1 text-body text-foreground/60">
                   {config.dealingsHeading.subtitle}
                 </p>
               ) : null}
@@ -1360,7 +1367,7 @@ export function MarketPage<W>({
               // bar scrolls away with the page and the month headers below
               // pin to the capsule alone (filterBarHeight reads 0 while the
               // bar isn't sticky).
-              className="md:sticky md:top-[var(--nav-h)] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-xl border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
+              className="md:sticky md:top-[var(--nav-h)] z-20 -mx-4 md:-mx-6 bg-sheet dark:bg-surface rounded-t-card border-b border-hairline/50 dark:border-separator/30 shadow-[0_1px_0_0_rgba(0,0,0,0.04)]"
             >
               {/* Mobile list tabs — the winners rows from the 90-day channel
                 window vs the chronological feed. Labelled by what you get,
@@ -1452,7 +1459,7 @@ export function MarketPage<W>({
               the real list is, because the bar renders while loading too. */}
           {loading && filteredDealings.length === 0 && (
             <div
-              className={`bg-sheet dark:bg-surface rounded-b-xl overflow-hidden animate-content-in -mt-6 -mx-4 md:-mx-6 ${
+              className={`bg-sheet dark:bg-surface rounded-b-card overflow-hidden animate-content-in -mt-6 -mx-4 md:-mx-6 ${
                 config.mobileWinners && mobileTab === "winners"
                   ? "hidden md:block"
                   : ""
@@ -1465,7 +1472,7 @@ export function MarketPage<W>({
                 </div>
                 <Skeleton className="h-3 w-24 rounded" />
               </div>
-              <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
+              <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-card">
                 {[3, 2].map((rowCount, dayIdx) => (
                   <div
                     key={dayIdx}
@@ -1473,17 +1480,17 @@ export function MarketPage<W>({
                   >
                     {/* Date chip — rail on xl, inline strip below. */}
                     <div className="hidden xl:block pt-2">
-                      <Skeleton className="h-12 w-10 rounded-lg" />
+                      <Skeleton className="h-12 w-10 rounded-control" />
                     </div>
                     <div className="mb-2 flex items-center gap-3 px-1 xl:hidden">
-                      <Skeleton className="h-10 w-9 rounded-lg" />
+                      <Skeleton className="h-10 w-9 rounded-control" />
                       <Skeleton className="h-3 w-10 rounded" />
                       <span
                         aria-hidden
                         className="h-px flex-1 bg-foreground/10"
                       />
                     </div>
-                    <div className="rounded-xl overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-black/[0.06] dark:divide-separator">
+                    <div className="rounded-card overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-hairline dark:divide-separator">
                       {Array.from({ length: rowCount }).map((_, i) => (
                         <MarketRowSkeleton
                           key={i}
@@ -1526,7 +1533,7 @@ export function MarketPage<W>({
 
           {/* By-gain view */}
           {filteredDealings.length > 0 && viewMode === "by-gain" && (
-            <div className="bg-sheet dark:bg-surface rounded-b-xl animate-content-in -mt-6 -mx-4 md:-mx-6">
+            <div className="bg-sheet dark:bg-surface rounded-b-card animate-content-in -mt-6 -mx-4 md:-mx-6">
               <MarketRowHeader
                 benchmarkLabel={config.benchmarkLabel}
                 chartMode={chartMode}
@@ -1535,7 +1542,7 @@ export function MarketPage<W>({
                 showLegCount={config.showLegCount}
                 valueColumnClass={config.priceFormat.valueColumnClass}
               />
-              <div className="divide-y divide-black/[0.06] dark:divide-separator overflow-hidden rounded-b-xl">
+              <div className="divide-y divide-hairline dark:divide-separator overflow-hidden rounded-b-card">
                 {byGain.map(({ dealing: d }) => (
                   <MarketRow
                     key={d.key}
@@ -1553,6 +1560,7 @@ export function MarketPage<W>({
                     isMuted={config.isRowMuted}
                     locale={config.locale}
                     noPosteriorData={stockNoPosteriorData(d)}
+                    pricesPending={livePricesEnabled && !pricesSettled}
                     selected={selectedKey === d.key}
                     showLegCount={config.showLegCount}
                     showLogo={logosEnabled}
@@ -1599,7 +1607,7 @@ export function MarketPage<W>({
                 return (
                   <div key={month.key}>
                     <div
-                      className={`sticky z-10 ${monthIdx === 0 ? "" : "pt-3"} bg-[#fcfbf9] dark:bg-background`}
+                      className={`sticky z-10 ${monthIdx === 0 ? "" : "pt-3"} bg-page dark:bg-background`}
                       style={{
                         // Seated on the filter bar, which is itself seated on
                         // --nav-h. A hardcoded 64 here predated --nav-h and
@@ -1618,7 +1626,7 @@ export function MarketPage<W>({
                         second button opts back in. Both are real buttons, both
                         are tabbable, both show a focus ring. */}
                       <div
-                        className={`relative w-full flex items-center justify-between px-6 py-5 bg-sheet dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-xl"} ${monthOpen ? "" : "rounded-b-xl"}`}
+                        className={`relative w-full flex items-center justify-between px-6 py-5 bg-sheet dark:bg-surface ${monthIdx === 0 ? "" : "rounded-t-card"} ${monthOpen ? "" : "rounded-b-card"}`}
                       >
                         <button
                           aria-expanded={monthGated ? undefined : monthOpen}
@@ -1687,12 +1695,12 @@ export function MarketPage<W>({
                       </div>
                     </div>
                     {monthOpen && (
-                      <div className="bg-sheet dark:bg-surface rounded-b-xl">
+                      <div className="bg-sheet dark:bg-surface rounded-b-card">
                         {/* Teaser mode has no table columns to head — the rows
                           are flat avatar → logos links. */}
                         {!simpleGatedRows && (
                           <div className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:gap-3 xl:px-3 xl:bg-black/[0.04] dark:xl:bg-white/[0.05]">
-                            <div className="hidden xl:flex items-center border-b border-black/[0.08] py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted/80 dark:border-white/[0.08]">
+                            <div className="hidden xl:flex items-center border-b border-rule py-1.5 micro text-muted/80">
                               Date
                             </div>
                             <MarketRowHeader
@@ -1709,12 +1717,12 @@ export function MarketPage<W>({
                             />
                           </div>
                         )}
-                        <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-xl">
+                        <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-card">
                           {/* Plain-English claim above the first day — names
                             the market's own insider term and the one fact
                             that matters: their own money. */}
                           {monthIdx === 0 && config.timelineTitle && (
-                            <h2 className="px-1 pt-2 pb-1 text-xl font-semibold leading-snug tracking-[-0.02em] text-foreground/90 md:text-2xl">
+                            <h2 className="px-1 pt-2 pb-1 text-xl font-semibold leading-snug tracking-tight text-foreground/90 sm:text-2xl">
                               {config.timelineTitle}
                               <TimelineSwoosh
                                 aria-hidden
@@ -1755,7 +1763,7 @@ export function MarketPage<W>({
                                     locale={config.locale}
                                     weekday={day.weekday}
                                   />
-                                  <div className="rounded-xl overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-black/[0.06] dark:divide-separator">
+                                  <div className="rounded-card overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-hairline dark:divide-separator">
                                     {config.id === "uk" &&
                                       !collapsed &&
                                       dailySummaries.get(day.key) && (
@@ -1840,7 +1848,7 @@ export function MarketPage<W>({
                   {/* Same two-action row as the month headers above — see the
                     note there for why the row action is a stretched button
                     rather than a wrapper around the recap link. */}
-                  <div className="relative w-full flex items-center justify-between rounded-xl px-6 py-5 bg-sheet dark:bg-surface">
+                  <div className="relative w-full flex items-center justify-between rounded-card px-6 py-5 bg-sheet dark:bg-surface">
                     <button
                       className="absolute inset-0 rounded-[inherit] transition-colors outline-none hover:bg-black/[0.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:hover:bg-white/[0.03] dark:focus-visible:ring-brand-tan/40"
                       data-ga-event="cta_month_unlock_open"

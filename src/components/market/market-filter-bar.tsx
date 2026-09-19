@@ -244,7 +244,7 @@ function FilterSelect({
 
       {open && (
         <div
-          className={`absolute left-0 mt-2 rounded-xl border border-separator bg-[#fcfbf9] dark:bg-background shadow-lg overflow-hidden z-50 py-1 ${
+          className={`absolute left-0 mt-2 rounded-card border border-separator bg-page dark:bg-background shadow-lg overflow-hidden z-50 py-1 ${
             options.some((o) => o.description) ? "w-72" : "min-w-[180px]"
           }`}
           role="listbox"
@@ -267,7 +267,7 @@ function FilterSelect({
                 <div className="flex-1 min-w-0">
                   <div className="font-medium leading-tight">{opt.label}</div>
                   {opt.description && (
-                    <div className="text-[11px] text-muted mt-0.5 leading-snug">
+                    <div className="text-caption text-muted mt-0.5 leading-snug">
                       {opt.description}
                     </div>
                   )}

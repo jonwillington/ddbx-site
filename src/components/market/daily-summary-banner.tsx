@@ -59,7 +59,7 @@ export function DailySummarySheet({ date, onClose, onSelectDeal }: SheetProps) {
       {phase.kind === "loading" && <SummarySkeleton />}
       {phase.kind === "unavailable" && <Unavailable />}
       {phase.kind === "error" && (
-        <p className="text-sm text-rose-600 dark:text-rose-400">
+        <p className="text-sm text-negative">
           Couldn&apos;t load summary: {phase.msg}
         </p>
       )}
@@ -132,13 +132,13 @@ function SummarySkeleton() {
         ))}
       </div>
 
-      <div className="border-t border-black/[0.06] pt-3 dark:border-white/[0.06]">
+      <div className="border-t border-rule pt-3">
         <Skeleton className="h-[11px] w-4/5 max-w-[320px]" />
       </div>
 
       <section className="space-y-2.5 pt-2">
         <Skeleton className="h-[10px] w-24" />
-        <div className="divide-y divide-black/[0.06] overflow-hidden rounded-xl border border-black/[0.06] dark:divide-separator dark:border-white/[0.06]">
+        <div className="divide-y divide-hairline dark:divide-separator overflow-hidden rounded-card border border-rule">
           {[0, 1, 2].map((i) => (
             <div key={i} className="flex items-center gap-3 px-3 py-2.5">
               <Skeleton circle h={28} w={28} />
@@ -172,7 +172,7 @@ function SummaryBody({
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <div className="text-[10px] font-medium uppercase tracking-wider text-muted">
+        <div className="micro text-muted">
           {formatDate(summary.date)}
         </div>
         <h2 className="text-2xl font-bold leading-tight tracking-tight">
@@ -206,7 +206,7 @@ function StatChip({ label, value }: { label: string; value: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-hairline dark:bg-surface-secondary px-2.5 py-1">
       <span className="text-xs font-semibold tabular-nums">{value}</span>
-      <span className="text-[11px] text-muted">{label}</span>
+      <span className="text-caption text-muted">{label}</span>
     </span>
   );
 }
@@ -219,7 +219,7 @@ function BodyProse({ markdown }: { markdown: string }) {
     .filter(Boolean);
 
   return (
-    <div className="space-y-3.5 text-[15px] leading-relaxed text-foreground/90">
+    <div className="space-y-3.5 text-lede leading-relaxed text-foreground/90">
       {paragraphs.map((p, i) => (
         <p key={i}>{renderInlineMarkdown(p)}</p>
       ))}
@@ -244,7 +244,7 @@ function renderInlineMarkdown(text: string) {
 
 function Attribution() {
   return (
-    <div className="text-xs text-muted border-t border-black/[0.06] dark:border-white/[0.06] pt-3">
+    <div className="text-xs text-muted border-t border-rule pt-3">
       Written by the ddbx.uk team, drafted with AI assistance after each market
       close.
     </div>
@@ -260,10 +260,10 @@ function CitedSection({
 }) {
   return (
     <section className="space-y-2.5 pt-2">
-      <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+      <h3 className="micro text-muted">
         Cited dealings
       </h3>
-      <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.06] divide-y divide-black/[0.06] dark:divide-separator overflow-hidden">
+      <div className="rounded-card border border-rule divide-y divide-hairline dark:divide-separator overflow-hidden">
         {cited.map((deal) => (
           <button
             key={deal.id}

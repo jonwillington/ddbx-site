@@ -23,12 +23,6 @@ import { Illustration } from "@/components/illustration";
 
 const STRAT_COLOR = "#5a4128"; // brand brown, matches the active-link tint
 const BENCH_COLOR = "#a1a1aa"; // muted grey
-// Match the site's canonical positive/negative palette (see market-row,
-// evidence-table, hero-card). Light/dark variants are picked at render time.
-const POS_LIGHT = "#1e6b18";
-const POS_DARK = "#5cd84a";
-const NEG_LIGHT = "#8b2020";
-const NEG_DARK = "#e84d4d";
 const ZERO_COLOR = "#a1a1aa";
 
 const HEIGHT = 220;
@@ -207,7 +201,7 @@ export function PerformanceChart({ result, viewMode, onScrub }: Props) {
     return (
       <div
         ref={containerRef}
-        className="flex h-[220px] flex-col items-center justify-center gap-3 rounded-lg border border-separator bg-surface/40 text-sm text-muted"
+        className="flex h-[220px] flex-col items-center justify-center gap-3 rounded-control border border-separator bg-surface/40 text-sm text-muted"
       >
         {/* Held still: the line only sweeps where a session is live. */}
         <Illustration
@@ -273,17 +267,11 @@ export function PerformanceChart({ result, viewMode, onScrub }: Props) {
 
   // vs Market signed area fill
   const alphaEnd = series.alpha.values[n - 1] ?? 0;
-  const isDark =
-    typeof document !== "undefined" &&
-    document.documentElement.classList.contains("dark");
-  const alphaColor =
-    alphaEnd >= 0
-      ? isDark
-        ? POS_DARK
-        : POS_LIGHT
-      : isDark
-        ? NEG_DARK
-        : NEG_LIGHT;
+  // The site's positive / negative tokens, which carry their own dark values
+  // (styles/globals.css) — so the fill follows a theme switch without a
+  // re-render.
+  const alphaFill = alphaEnd >= 0 ? "fill-positive" : "fill-negative";
+  const alphaStroke = alphaEnd >= 0 ? "stroke-positive" : "stroke-negative";
   const zeroY = yFor(0);
   const fillPath =
     `M ${xFor(0).toFixed(2)} ${zeroY.toFixed(2)} ` +
@@ -341,19 +329,19 @@ export function PerformanceChart({ result, viewMode, onScrub }: Props) {
 
         {viewMode === "vs_market" ? (
           <>
-            <path d={fillPath} fill={alphaColor} fillOpacity={0.18} />
+            <path className={alphaFill} d={fillPath} fillOpacity={0.18} />
             <path
+              className={alphaStroke}
               d={alphaPath}
               fill="none"
-              stroke={alphaColor}
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
             />
             <circle
+              className={alphaFill}
               cx={xFor(n - 1)}
               cy={yFor(alphaEnd)}
-              fill={alphaColor}
               r={3}
             />
           </>
@@ -410,9 +398,9 @@ export function PerformanceChart({ result, viewMode, onScrub }: Props) {
                 />
                 {viewMode === "vs_market" ? (
                   <circle
+                    className={alphaFill}
                     cx={sx}
                     cy={yFor(series.alpha.values[scrubIdx])}
-                    fill={alphaColor}
                     r={4}
                   />
                 ) : (

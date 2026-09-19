@@ -24,11 +24,11 @@ import { companyRollup, rankClusters } from "../../../shared/boards.js";
 import { AlphaBadge } from "@/components/boards/filing-row";
 import { CompanyLogo } from "@/components/company-logo";
 import { Skeleton } from "@/components/skeleton";
+import { panel } from "@/components/ui/panel";
 import { cleanCompanyName, companyPath } from "@/lib/company";
 import { formatGbp } from "@/lib/performance/format";
 
-const CARD_CLASS =
-  "flex items-center gap-3 rounded-xl border border-hairline bg-sheet px-3.5 py-3 transition-colors hover:border-brand-brown/30 dark:border-separator dark:bg-surface dark:hover:border-brand-tan/30";
+const CARD_CLASS = `flex items-center gap-3 ${panel()} px-3.5 py-3 transition-colors hover:border-brand-brown/30 dark:hover:border-brand-tan/30`;
 
 /** Top performers need at least this many priced buys before a median means
  *  anything — one lucky pick shouldn't crown a company. */
@@ -68,7 +68,7 @@ export function UkHomeSpotlights({
   return (
     <section aria-label="Company focus" className="w-full pt-14 md:pt-20">
       <header className="space-y-2">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+        <p className="eyebrow text-muted">
           Company focus · last 90 days
         </p>
         <h2 className="text-[20px] font-semibold leading-[1.2] tracking-[-0.015em] text-foreground sm:text-[22px]">
@@ -164,12 +164,12 @@ function Strand({
 
   return (
     <div>
-      <h3 className="text-[15px] font-semibold text-foreground/85">{title}</h3>
+      <h3 className="text-lede font-semibold text-foreground/85">{title}</h3>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         {loading ? (
           Array.from({ length: MAX_PER_STRAND }).map((_, i) => (
             <div key={i} className={CARD_CLASS}>
-              <Skeleton className="h-[34px] w-[34px] shrink-0 rounded-lg" />
+              <Skeleton className="h-[34px] w-[34px] shrink-0 rounded-control" />
               <div className="min-w-0 flex-1 space-y-1.5">
                 <Skeleton className="h-4 w-3/4 rounded" />
                 <Skeleton className="h-3 w-1/2 rounded" />
@@ -200,7 +200,7 @@ function Strand({
             (l) => (
               <Link
                 key={l.href}
-                className="inline-flex items-center gap-1 text-[13px] font-semibold text-brand-brown hover:underline dark:text-brand-tan"
+                className="inline-flex items-center gap-1 text-small font-semibold text-brand-brown hover:underline dark:text-brand-tan"
                 data-ga-event="cta_home_spotlight_board"
                 data-ga-label={l.href}
                 to={l.href}

@@ -62,13 +62,13 @@ import { chip } from "@/components/chip";
 import { CompanyLogo } from "@/components/company-logo";
 import { Skeleton } from "@/components/skeleton";
 import { Tooltip } from "@/components/tooltip";
+import { panel } from "@/components/ui/panel";
 
-const RULE = "border-hairline dark:border-separator";
-const CARD = `rounded-xl border ${RULE} bg-sheet px-4 py-3.5 dark:bg-surface`;
+const CARD = panel({ size: "compact" });
 
 /** The dealings table's cell rule, verbatim. Every column divider in this
  *  component uses it so the two tables share one hairline weight. */
-const CELL = "border-r border-black/[0.06] dark:border-white/[0.06]";
+const CELL = "border-r border-rule";
 
 /* ─── Column widths ──────────────────────────────────────────────────────
  *
@@ -165,11 +165,11 @@ function stage(
   if (p.windowEnd && today <= p.windowEnd)
     return {
       id: "open",
-      // Emerald is reserved for this one stage across the whole section: the
-      // colour means "something can happen today", nothing else.
+      // Live green is reserved for this one stage across the whole section:
+      // the colour means "something can happen today" (a status), nothing else.
       headline: "Buying now",
       detail: `until ${fmtShort(p.windowEnd)}${boughtSuffix(p, formatValue)}`,
-      tone: "text-emerald-600 dark:text-emerald-400",
+      tone: "text-live",
     };
   if (p.executedValue != null && p.executedValue > 0)
     return {
@@ -396,11 +396,11 @@ export function MarketPlans({
 
   return (
     <section className="mt-8">
-      <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-foreground">
+      <h2 className="text-title font-semibold text-foreground">
         {title}
       </h2>
       {subtitle ? (
-        <p className="mt-1 text-[13.5px] leading-[1.6] text-foreground/60">
+        <p className="mt-1 text-body text-foreground/60">
           {subtitle}
         </p>
       ) : null}
@@ -418,10 +418,10 @@ export function MarketPlans({
           <Skeleton className="h-4 w-52 rounded" />
           <Skeleton className="mt-2 h-3 w-80 rounded" />
           <div
-            className={`mt-3 overflow-hidden rounded-xl border ${RULE} bg-sheet dark:bg-surface`}
+            className={`mt-3 overflow-hidden ${panel()}`}
           >
             <PlanRowHeader valueColumnClass={valueColumnClass} />
-            <div className="divide-y divide-black/[0.06] dark:divide-separator">
+            <div className="divide-y divide-hairline dark:divide-separator">
               {[0, 1, 2].map((i) => (
                 <PlanRowSkeleton key={i} valueColumnClass={valueColumnClass} />
               ))}
@@ -431,7 +431,7 @@ export function MarketPlans({
       ) : null}
 
       {data && plans.length === 0 ? (
-        <p className="mt-4 text-[13.5px] text-foreground/55">
+        <p className="mt-4 text-body text-foreground/55">
           {emptyLabel ?? "Nothing announced yet."}
         </p>
       ) : null}
@@ -467,7 +467,7 @@ function Notice({ notice }: { notice: NonNullable<PlansPayload["notice"]> }) {
 
   return (
     <div className="mt-2">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px]">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-small">
         <button
           aria-expanded={expanded}
           className="underline underline-offset-2 text-foreground/60 hover:opacity-70"
@@ -488,13 +488,13 @@ function Notice({ notice }: { notice: NonNullable<PlansPayload["notice"]> }) {
 
       {expanded ? (
         <div className={`mt-3 ${CARD}`}>
-          <h3 className="text-[14px] font-semibold leading-[1.35] text-foreground">
+          <h3 className="text-body font-semibold leading-snug text-foreground">
             {notice.headline}
           </h3>
           {paras.map((para) => (
             <p
               key={para.slice(0, 24)}
-              className="mt-2 text-[13.5px] leading-[1.6] text-foreground/65"
+              className="mt-2 text-body text-foreground/65"
             >
               {para}
             </p>
@@ -529,15 +529,15 @@ function PlanGroup({
   return (
     <div className="mt-6">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-foreground">
+        <h3 className="text-body font-semibold text-foreground">
           {title}
-          <span className="ml-2 text-[13px] font-normal tabular-nums text-foreground/45">
+          <span className="ml-2 text-small font-normal tabular-nums text-foreground/45">
             {count}
           </span>
         </h3>
         {collapsed ? (
           <button
-            className="text-[13px] underline underline-offset-2 hover:opacity-70"
+            className="text-small underline underline-offset-2 hover:opacity-70"
             type="button"
             onClick={() => setOpen((v) => !v)}
           >
@@ -545,16 +545,16 @@ function PlanGroup({
           </button>
         ) : null}
       </div>
-      <p className="mt-0.5 text-[13px] leading-[1.55] text-foreground/55">
+      <p className="mt-0.5 text-small text-foreground/55">
         {blurb}
       </p>
 
       {open ? (
         <div
-          className={`mt-3 overflow-hidden rounded-xl border ${RULE} bg-sheet dark:bg-surface`}
+          className={`mt-3 overflow-hidden ${panel()}`}
         >
           <PlanRowHeader valueColumnClass={valueColumnClass} />
-          <ul className="divide-y divide-black/[0.06] dark:divide-separator">
+          <ul className="divide-y divide-hairline dark:divide-separator">
             {rows.map(({ plan, s }) => (
               <PlanRow
                 key={plan.key}
@@ -602,7 +602,7 @@ function HeaderLabel({
  *  filings before. No statute, no "declaration", no "consideration". */
 function PlanRowHeader({ valueColumnClass }: { valueColumnClass: string }) {
   return (
-    <div className="hidden md:flex items-center text-[10px] uppercase tracking-wider text-muted/80 font-medium select-none border-b border-black/[0.08] dark:border-white/[0.08] bg-black/[0.04] dark:bg-white/[0.05]">
+    <div className="hidden md:flex items-center micro text-muted/80 select-none border-b border-rule bg-black/[0.04] dark:bg-white/[0.05]">
       <div className={`${COL.date} shrink-0 px-3 py-1.5 ${CELL}`}>
         <HeaderLabel help="The day the insider told the market they intended to buy. Nothing had been bought yet at this point.">
           Announced
@@ -787,11 +787,11 @@ function PlanRow({
         />
         <div className="flex-1 min-w-0">
           <div
-            className={`truncate text-[15px] font-semibold leading-tight ${companyClass}`}
+            className={`truncate text-lede font-semibold leading-tight ${companyClass}`}
           >
             {p.company}
           </div>
-          <div className={`mt-0.5 truncate text-[11px] font-medium ${s.tone}`}>
+          <div className={`mt-0.5 truncate text-caption font-medium ${s.tone}`}>
             {s.headline}
           </div>
         </div>
@@ -799,14 +799,14 @@ function PlanRow({
           <span
             className={`block tabular-nums ${
               valueStated
-                ? "text-[15px] font-semibold"
-                : "text-[13px] text-muted"
+                ? "text-lede font-semibold"
+                : "text-small text-muted"
             }`}
           >
             {lead}
           </span>
           {under ? (
-            <span className="block text-[10px] tabular-nums text-muted/75">
+            <span className="block text-caption tabular-nums text-muted/75">
               {under}
             </span>
           ) : null}
@@ -831,7 +831,7 @@ function PlanRow({
           className={`${COL.ticker} shrink-0 px-2 py-2.5 flex items-center justify-center ${CELL}`}
         >
           {ticker ? (
-            <span className="font-mono text-[11px] font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary">
+            <span className="font-mono text-caption font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary">
               {ticker}
             </span>
           ) : null}
@@ -848,7 +848,7 @@ function PlanRow({
           />
           <div className="flex-1 min-w-0">
             <div
-              className={`text-[13px] font-medium truncate leading-tight ${companyClass}`}
+              className={`text-small font-medium truncate leading-tight ${companyClass}`}
             >
               {p.company}
             </div>
@@ -858,7 +858,7 @@ function PlanRow({
                 thing clipped. */}
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
               <span
-                className="text-[11px] text-muted truncate"
+                className="text-caption text-muted truncate"
                 title={insiderTitle}
               >
                 {insiderLine}
@@ -877,20 +877,20 @@ function PlanRow({
         >
           <div
             className={`tabular-nums whitespace-nowrap ${
-              valueStated ? "text-sm font-semibold" : "text-[13px] text-muted"
+              valueStated ? "text-sm font-semibold" : "text-small text-muted"
             }`}
           >
             {lead}
           </div>
           {under ? (
-            <div className="text-[10px] tabular-nums text-muted/75 leading-tight">
+            <div className="text-caption tabular-nums text-muted/75 leading-tight">
               {under}
             </div>
           ) : null}
           {/* The reason the filing exists at all: the announcement is
               triggered by the size of the stake, not by the sum of money. */}
           {stake ? (
-            <div className="text-[10px] tabular-nums text-muted/75 leading-tight whitespace-nowrap">
+            <div className="text-caption tabular-nums text-muted/75 leading-tight whitespace-nowrap">
               {stake}
             </div>
           ) : null}
@@ -899,11 +899,11 @@ function PlanRow({
         <div
           className={`${COL.window} shrink-0 px-3 py-2.5 flex flex-col justify-center ${CELL}`}
         >
-          <div className={`text-[13px] font-medium leading-tight ${s.tone}`}>
+          <div className={`text-small font-medium leading-tight ${s.tone}`}>
             {s.headline}
           </div>
           {s.detail ? (
-            <div className="text-[10px] tabular-nums text-muted/75 mt-0.5">
+            <div className="text-caption tabular-nums text-muted/75 mt-0.5">
               {s.detail}
             </div>
           ) : null}

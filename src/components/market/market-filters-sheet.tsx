@@ -82,8 +82,8 @@ export function MarketFiltersSheet({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const direction = isDesktop ? "right" : "bottom";
   const contentClass = isDesktop
-    ? "fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-sm rounded-2xl border border-hairline dark:border-separator bg-[#fcfbf9] dark:bg-background shadow-2xl flex flex-col overflow-hidden outline-none"
-    : "fixed bottom-0 inset-x-0 z-50 max-h-[88vh] rounded-t-2xl border-t border-hairline dark:border-separator bg-[#fcfbf9] dark:bg-background flex flex-col overflow-hidden outline-none";
+    ? "fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-sm rounded-card border border-rule bg-page dark:bg-background shadow-2xl flex flex-col overflow-hidden outline-none"
+    : "fixed bottom-0 inset-x-0 z-50 max-h-[88vh] rounded-t-card border-t border-rule bg-page dark:bg-background flex flex-col overflow-hidden outline-none";
 
   const strengthValue = heroFilterId ?? heroFilters?.[0]?.id ?? "";
 
@@ -306,19 +306,19 @@ function Accordion({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-separator/70 bg-surface/30">
+    <div className="overflow-hidden rounded-card border border-separator/70 bg-surface/30">
       <button
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left"
         type="button"
         onClick={onToggle}
       >
-        <span className="text-[13px] font-semibold text-foreground/90">
+        <span className="text-small font-semibold text-foreground/90">
           {title}
         </span>
         <span className="flex shrink-0 items-center gap-2">
           {value && (
-            <span className="max-w-[150px] truncate text-[12px] text-muted">
+            <span className="max-w-[150px] truncate text-small text-muted">
               {value}
             </span>
           )}
@@ -331,7 +331,7 @@ function Accordion({
         <div className="space-y-2 px-3.5 pb-3.5 pt-0.5">
           {children}
           {description && (
-            <p className="text-[12px] leading-snug text-muted">{description}</p>
+            <p className="text-small leading-snug text-muted">{description}</p>
           )}
         </div>
       )}
@@ -429,7 +429,7 @@ function MultiSelect({
           <button
             key={opt.id}
             aria-pressed={on}
-            className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+            className={`rounded-full border px-3 py-1.5 text-small font-medium transition-colors ${
               on
                 ? "border-brand-brown/40 bg-brand-brown/15 text-[#3d2b1a] dark:text-brand-tan"
                 : "border-separator text-muted hover:text-foreground"

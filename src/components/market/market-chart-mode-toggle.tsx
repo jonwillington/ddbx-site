@@ -33,7 +33,7 @@ export function MarketChartModeToggle({
     return (
       <div className="space-y-5">
         <div className="space-y-2">
-          <div className="text-[13px] font-semibold text-foreground/90">
+          <div className="text-small font-semibold text-foreground/90">
             How is performance compared?
           </div>
           <PillGroup
@@ -42,14 +42,14 @@ export function MarketChartModeToggle({
             selected={mode.axis}
             onChange={(axis) => onChange({ ...mode, axis })}
           />
-          <p className="text-[12px] leading-snug text-muted">
+          <p className="text-small leading-snug text-muted">
             Raw is the stock&apos;s own move. vs {benchmarkLabel} is alpha, the
             move minus the index, so you see whether the pick actually beat the
             market.
           </p>
         </div>
         <div className="space-y-2">
-          <div className="text-[13px] font-semibold text-foreground/90">
+          <div className="text-small font-semibold text-foreground/90">
             Measured from when?
           </div>
           <PillGroup
@@ -58,7 +58,7 @@ export function MarketChartModeToggle({
             selected={mode.anchor}
             onChange={(anchor) => onChange({ ...mode, anchor })}
           />
-          <p className="text-[12px] leading-snug text-muted">
+          <p className="text-small leading-snug text-muted">
             From trade counts from the day the member traded. From disclosure
             counts from when it became public, often weeks later, after the
             early move.
@@ -105,7 +105,7 @@ function PillGroup<T extends string>({
           key={item.id}
           aria-pressed={selected === item.id}
           className={`rounded-full font-medium transition-colors whitespace-nowrap ${
-            block ? "flex-1 px-3 py-2 text-sm" : "px-2.5 py-0.5 text-[11px]"
+            block ? "flex-1 px-3 py-2 text-sm" : "px-2.5 py-0.5 text-caption"
           } ${
             selected === item.id
               ? "bg-brand-brown/15 text-[#3d2b1a] dark:text-brand-tan"

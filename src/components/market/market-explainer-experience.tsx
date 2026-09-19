@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 
 import { shortDate } from "./market-utils";
 
+import { chip } from "@/components/chip";
 import { CloseButton } from "@/components/close-button";
 import { CompanyLogo } from "@/components/company-logo";
 import { marketCopyFor } from "@/lib/markets/market-copy";
@@ -380,17 +381,17 @@ export function MarketExplainerExperience({
 
           {check && (
             <>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#ad9479]">
+              <p className="eyebrow text-brand-tan">
                 Check {step} of {CHECKS.length}
               </p>
-              <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight md:text-5xl md:leading-[1.05]">
+              <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-5xl sm:leading-none">
                 {check.question}
               </h2>
-              <p className="mx-auto mt-4 max-w-md text-balance text-[15px] leading-relaxed text-[#f3ecdf]/65">
+              <p className="mx-auto mt-4 max-w-md text-balance text-lede leading-relaxed text-[#f3ecdf]/65">
                 {check.body}
               </p>
               {ctx && (
-                <div className="exp-verdict mx-auto mt-9 flex max-w-md items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.045] px-5 py-4 text-left backdrop-blur-sm">
+                <div className="exp-verdict mx-auto mt-9 flex max-w-md items-start gap-3 rounded-card border border-white/10 bg-white/[0.045] px-5 py-4 text-left backdrop-blur-sm">
                   <span
                     aria-hidden
                     className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
@@ -402,7 +403,7 @@ export function MarketExplainerExperience({
                     {checkPassed ? "✓" : "✗"}
                   </span>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f3ecdf]/40">
+                    <p className="micro text-[#f3ecdf]/40">
                       This filing
                     </p>
                     <p className="mt-1 text-sm leading-relaxed text-[#f3ecdf]/90">
@@ -505,11 +506,11 @@ function IntroScene({
           </span>
         </span>
       )}
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#ad9479]">
+      <p className="eyebrow text-brand-tan">
         {exchange}
         {dealing && ` · ${shortDate(dealing.disclosedDate, locale)}`}
       </p>
-      <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight md:text-5xl md:leading-[1.05]">
+      <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-5xl sm:leading-none">
         {ctx && dealing ? (
           <>
             {ctx.role ? `The ${ctx.role} of ${ctx.company}` : ctx.name} just
@@ -523,7 +524,7 @@ function IntroScene({
           </>
         )}
       </h2>
-      <p className="mx-auto mt-4 max-w-md text-balance text-[15px] leading-relaxed text-[#f3ecdf]/65">
+      <p className="mx-auto mt-4 max-w-md text-balance text-lede leading-relaxed text-[#f3ecdf]/65">
         {ctx
           ? "Most filings are noise. We run every one through six checks. Watch this one go through."
           : "We run every filing through six checks before it earns a place on the list. Here's what we look for."}
@@ -553,23 +554,23 @@ function FinaleScene({
 }) {
   return (
     <>
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#ad9479]">
+      <p className="eyebrow text-brand-tan">
         The verdict
       </p>
-      <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight md:text-5xl md:leading-[1.05]">
+      <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-5xl sm:leading-none">
         {dealing ? "Six for six." : "That's the bar."}
       </h2>
       {dealing?.rating && (
-        <span className="mt-5 inline-flex items-center rounded-full border border-[#ad9479]/40 bg-[#ad9479]/15 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#cdb190]">
+        <span className={`mt-5 ${chip("lg")} bg-brand-tan/15 text-[#cdb190]`}>
           Rated {dealing.rating}
         </span>
       )}
       {dealing?.summary ? (
-        <p className="mx-auto mt-5 max-w-md text-balance text-[15px] leading-relaxed text-[#f3ecdf]/80">
+        <p className="mx-auto mt-5 max-w-md text-balance text-lede leading-relaxed text-[#f3ecdf]/80">
           &ldquo;{dealing.summary}&rdquo;
         </p>
       ) : (
-        <p className="mx-auto mt-5 max-w-md text-balance text-[15px] leading-relaxed text-[#f3ecdf]/65">
+        <p className="mx-auto mt-5 max-w-md text-balance text-lede leading-relaxed text-[#f3ecdf]/65">
           A buy that clears all six is what we rate highest; the more it misses,
           the further it sinks down the list.
         </p>
@@ -598,7 +599,7 @@ function FinaleScene({
           is the way to the written version, which does. Quiet, below the two
           real CTAs: a reader who wanted the argument rather than the demo is a
           minority, but until now there was nowhere to send them. */}
-      <p className="mt-7 text-[13px] text-[#f3ecdf]/45">
+      <p className="mt-7 text-small text-[#f3ecdf]/45">
         <Link
           className="underline underline-offset-4 transition-colors hover:text-[#f3ecdf]/80"
           to={HOW_IT_WORKS_PATH}

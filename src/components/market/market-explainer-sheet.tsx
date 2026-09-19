@@ -62,7 +62,7 @@ export function MarketExplainerSheet({
     >
       <div className="space-y-7">
         {/* Thesis */}
-        <p className="text-[15px] leading-relaxed text-foreground/90">
+        <p className="text-lede leading-relaxed text-foreground/90">
           {insidersTitle} know their companies better than the market does. When
           one buys shares with their own money, it is worth paying attention to.
         </p>
@@ -76,7 +76,7 @@ export function MarketExplainerSheet({
             rules call {c.insiderTermPlural}. We read those filings in their own
             format and standardise them here.
           </p>
-          <dl className="overflow-hidden rounded-xl border border-black/[0.06] dark:border-white/[0.08] divide-y divide-black/[0.06] dark:divide-white/[0.08]">
+          <dl className="overflow-hidden rounded-card border border-rule divide-y divide-hairline dark:divide-separator">
             <MetaRow label="Exchange" value={c.exchangeFullName} />
             <MetaRow label="Disclosures" value={c.regulatorFullName} />
             <MetaRow
@@ -126,7 +126,7 @@ export function MarketExplainerSheet({
         </section>
 
         {/* Still tuning */}
-        <section className="flex gap-3 rounded-xl border border-[#5a4128]/20 bg-[#5a4128]/[0.06] p-4 dark:border-[#ad9479]/25 dark:bg-[#ad9479]/[0.08]">
+        <section className="flex gap-3 rounded-card border border-[#5a4128]/20 bg-[#5a4128]/[0.06] p-4 dark:border-[#ad9479]/25 dark:bg-[#ad9479]/[0.08]">
           <SparklesIcon className="mt-0.5 h-5 w-5 shrink-0 text-[#5a4128] dark:text-[#ad9479]" />
           <div className="space-y-1.5">
             <h3 className="text-sm font-semibold">Still tuning</h3>
@@ -145,7 +145,7 @@ export function MarketExplainerSheet({
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4 px-3.5 py-2.5">
-      <dt className="shrink-0 text-xs uppercase tracking-wide text-muted">
+      <dt className="shrink-0 eyebrow text-muted">
         {label}
       </dt>
       <dd className="text-right text-sm text-foreground/85">{value}</dd>
