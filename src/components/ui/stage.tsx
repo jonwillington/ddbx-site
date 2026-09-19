@@ -20,7 +20,7 @@
  *
  *  Spec: investigations/2026-09-19-ui-standardisation.md §3.
  */
-import type { HTMLAttributes } from "react";
+import type { ComponentPropsWithRef, HTMLAttributes } from "react";
 
 import clsx from "clsx";
 
@@ -46,7 +46,9 @@ export function stage({
   );
 }
 
-export interface StageProps extends HTMLAttributes<HTMLElement> {
+/** `ref` is a plain prop in React 19 and reaches the root through `rest` —
+ *  the board panel measures its width off it. */
+export interface StageProps extends ComponentPropsWithRef<"div"> {
   ground?: StageGround;
   /** The warm drop under the panel. Off for a stage embedded inside another
    *  document block (the how-it-works specimen preview). */
