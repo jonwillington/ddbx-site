@@ -5,6 +5,7 @@ import { ArrowUpIcon } from "@heroicons/react/24/outline";
 
 import { CompanyLogo } from "@/components/company-logo";
 import { ShareRow } from "@/components/share-row";
+import { glass } from "@/components/ui/glass";
 
 /** Shell mode's sticky page header (experiment, lib/nav-mode).
  *
@@ -77,14 +78,17 @@ export function ShellPageHeader({ enabled }: { enabled: boolean }) {
     <div
       aria-hidden={!shown}
       className={clsx(
-        "fixed left-[var(--shell-l)] right-[var(--shell-r)] top-3 z-[34] hidden h-[52px] items-center gap-3 border-b border-black/[0.06] bg-[#fcfbf9]/85 px-6 backdrop-blur-xl backdrop-saturate-150 transition-[opacity,transform] duration-200 dark:border-white/[0.07] dark:bg-background/85 xl:flex",
+        "fixed left-[var(--shell-l)] right-[var(--shell-r)] top-3 z-[34] hidden h-[52px] items-center gap-3 border-x-0 border-t-0 px-6 transition-[opacity,transform] duration-200 xl:flex",
+        // The navbar's material, ruled only underneath: it is a band across
+        // the top of the sheet, not a capsule.
+        glass(),
         shown
           ? "translate-y-0 opacity-100"
           : "pointer-events-none -translate-y-2 opacity-0",
       )}
     >
       {logo ? <CompanyLogo link={false} size={28} ticker={logo} /> : null}
-      <span className="min-w-0 truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+      <span className="min-w-0 truncate text-lede font-semibold text-foreground">
         {title}
       </span>
       <ShareRow
@@ -99,7 +103,7 @@ export function ShellPageHeader({ enabled }: { enabled: boolean }) {
       />
       <button
         aria-label="Back to top"
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/60 transition-colors hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.07]"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/60 transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/7"
         tabIndex={shown ? 0 : -1}
         type="button"
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

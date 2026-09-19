@@ -20,8 +20,7 @@ import { useNavModel, type NavItem } from "@/components/navbar";
 import { useDownloadCopy } from "@/lib/download/copy";
 import { MarketSwitcher } from "@/components/market-switcher";
 import { ThemeSwitch } from "@/components/theme-switch";
-import { StoreGlyph } from "@/components/store-glyph";
-import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import { StoreCta } from "@/components/store-cta";
 import { chip } from "@/components/chip";
 import { Delta } from "@/components/ui/delta";
 import { siteConfig } from "@/config/site";
@@ -55,10 +54,10 @@ const ICONS: Record<string, Icon> = {
 
 const rowClass = (active: boolean) =>
   clsx(
-    "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] transition-colors",
+    "flex w-full items-center gap-2.5 rounded-control px-2.5 py-1.5 text-body transition-colors",
     active
-      ? "bg-[#fcfbf9] font-medium text-[#5a4128] shadow-[0_1px_2px_rgba(90,65,40,0.08)] dark:bg-white/[0.06] dark:text-[#d8c4af]"
-      : "text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.05]",
+      ? "bg-page font-medium text-brand-brown shadow-xs dark:bg-white/6 dark:text-[#d8c4af]"
+      : "text-foreground hover:bg-black/4 dark:hover:bg-white/5",
   );
 
 function SubLink({ link, current }: { link: ResearchLink; current: boolean }) {
@@ -68,10 +67,10 @@ function SubLink({ link, current }: { link: ResearchLink; current: boolean }) {
     >
       <NavLink
         className={clsx(
-          "flex w-full rounded-md px-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]",
-          link.row ? "flex-col gap-0.5 py-2" : "py-[5px] text-[12.5px]",
+          "flex w-full rounded-control px-2.5 transition-colors hover:bg-black/4 dark:hover:bg-white/5",
+          link.row ? "flex-col gap-0.5 py-2" : "py-1 text-small",
           current
-            ? "font-medium text-[#5a4128] dark:text-[#d8c4af]"
+            ? "font-medium text-brand-brown dark:text-[#d8c4af]"
             : "text-foreground/75",
         )}
         href={link.href}
@@ -79,18 +78,18 @@ function SubLink({ link, current }: { link: ResearchLink; current: boolean }) {
         {link.row ? (
           <>
             <span className="flex items-baseline gap-2">
-              <span className="font-mono text-[11px] font-semibold tabular-nums text-foreground/70">
+              <span className="font-mono text-caption font-semibold tabular-nums text-foreground/70">
                 {link.row.ticker}
               </span>
               <Delta
-                className="font-mono text-[11px] font-semibold"
+                className="font-mono text-caption font-semibold"
                 value={link.row.deltaPct}
               />
-              <span className="ml-auto font-mono text-[10.5px] tabular-nums text-foreground/40">
+              <span className="ml-auto font-mono text-caption tabular-nums text-foreground/40">
                 {link.row.date}
               </span>
             </span>
-            <span className="line-clamp-2 text-[12.5px] leading-[1.4]">
+            <span className="line-clamp-2 text-small">
               {link.label}
             </span>
           </>
@@ -125,7 +124,7 @@ function Group({
         {Glyph && <Glyph className="h-4 w-4 shrink-0 opacity-70" />}
         <span
           className={clsx(
-            active && "font-medium text-[#5a4128] dark:text-[#d8c4af]",
+            active && "font-medium text-brand-brown dark:text-[#d8c4af]",
           )}
         >
           {item.label}
@@ -141,7 +140,7 @@ function Group({
           graph, same reason the top bar's NavMenu keeps its panel mounted. */}
       <ul
         className={clsx(
-          "ml-[17px] mt-px mb-1 border-l border-separator/60 pl-2",
+          "ml-4 mt-px mb-1 border-l border-separator/60 pl-2",
           !open && "hidden",
         )}
         hidden={!open}
@@ -193,13 +192,13 @@ export function SideNav() {
     useNavModel(routePlatform);
 
   return (
-    <aside className="fixed bottom-3 left-3 top-3 z-40 hidden w-[216px] flex-col rounded-[16px] border border-[var(--shell-panel-edge)] bg-[var(--shell-panel)] xl:flex">
+    <aside className="fixed bottom-3 left-3 top-3 z-40 hidden w-[216px] flex-col rounded-card border border-[var(--shell-panel-edge)] bg-[var(--shell-panel)] xl:flex">
       {/* One line: wordmark, market, theme, ruled off from the nav under it
           the way the right rail's header is, at the same 64px height so the
           two rules line up across the sheet. The picker stays outside the
           scroll area — its dropdown hangs below the trigger and an overflow
           container would clip it. */}
-      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-black/[0.08] px-3.5 dark:border-separator">
+      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-rule px-3.5">
         <NavLink className="shrink-0" href={dashboardHref}>
           <img
             alt={siteConfig.name}
@@ -217,7 +216,7 @@ export function SideNav() {
           page of it. Below xl there is no rail and the hero carries it. */}
       {market.config.topNotice && (
         <div className="shrink-0 px-2 pt-2.5">
-          <p className="flex items-start gap-2 rounded-[10px] border border-amber-300/50 bg-amber-100/70 px-2.5 py-2 text-[12px] leading-[1.4] text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-200">
+          <p className="flex items-start gap-2 rounded-control border border-amber-300/50 bg-amber-100/70 px-2.5 py-2 text-small text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-200">
             <span
               className={`${chip("sm")} mt-px shrink-0 bg-amber-500/25 text-amber-900 dark:text-amber-200`}
             >
@@ -264,19 +263,17 @@ export function SideNav() {
         </ul>
       </nav>
 
-      <div className="shrink-0 border-t border-black/[0.08] p-2.5 dark:border-separator">
+      <div className="shrink-0 border-t border-rule p-2.5">
         <ConnectBadges className="mb-3 px-1 pt-1" />
-        <a
-          className={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-3 py-2 text-[13px] font-medium transition-colors`}
+        <StoreCta
+          block
           data-ga-event="cta_nav_download_app"
           data-ga-label={`Sidebar ${market.id}`}
-          rel="noopener noreferrer"
-          target="_blank"
+          size="sm"
           {...handoff.anchorProps}
         >
-          <StoreGlyph className="h-3.5 w-3.5 shrink-0" />
           {t.locale === "en" ? "Download app" : t.startTrial}
-        </a>
+        </StoreCta>
         {handoff.modal}
       </div>
     </aside>

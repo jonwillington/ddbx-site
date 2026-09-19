@@ -12,14 +12,14 @@ import { Drawer } from "vaul";
 import { Spinner } from "@/components/spinner";
 import { Delta } from "@/components/ui/delta";
 import { api } from "@/lib/api";
-import { StoreGlyph } from "@/components/store-glyph";
+import { StoreCta } from "@/components/store-cta";
+import { glass } from "@/components/ui/glass";
 import {
   RESEARCH_PATHS,
   learnNavLinks,
   researchNavLinks,
   type ResearchLink,
 } from "@/lib/site-nav";
-import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { MarketSwitcher } from "@/components/market-switcher";
@@ -62,8 +62,8 @@ export type NavItem =
  *  <a>s beside it. */
 export const navItemClass = (active: boolean) =>
   clsx("text-sm transition-colors", {
-    "text-[#5a4128] dark:text-[#d8c4af] font-medium": active,
-    "text-foreground hover:text-[#5a4128]": !active,
+    "text-brand-brown dark:text-[#d8c4af] font-medium": active,
+    "text-foreground hover:text-brand-brown": !active,
   });
 
 /** A masthead dropdown. Built for Research — the site's content axis, folded
@@ -164,7 +164,7 @@ function NavMenu({
           author `display` this panel might grow later. */}
       <div
         className={clsx(
-          "absolute left-0 mt-2 rounded-xl border border-separator bg-[#fcfbf9] dark:bg-background shadow-lg overflow-hidden z-50 py-1",
+          "absolute left-0 mt-2 rounded-card border border-separator bg-page dark:bg-background shadow-lg overflow-hidden z-50 py-1",
           wide ? "w-[23rem]" : "w-56",
           !open && "hidden",
         )}
@@ -191,10 +191,10 @@ function NavMenu({
                     link.row
                       ? "flex-col items-start gap-1 py-2.5"
                       : wide
-                        ? "items-start py-2 text-[13.5px] leading-[1.45]"
+                        ? "items-start py-2 text-body"
                         : "items-center py-1.5 text-sm",
                     current
-                      ? "text-[#5a4128] dark:text-[#d8c4af] font-medium"
+                      ? "text-brand-brown dark:text-[#d8c4af] font-medium"
                       : "text-foreground",
                   )}
                   href={link.href}
@@ -204,19 +204,19 @@ function NavMenu({
                       {/* The record line: what it is about, whether it went
                           anywhere, and when we published it. */}
                       <span className="flex w-full items-baseline gap-2">
-                        <span className="rounded bg-hairline px-1.5 font-mono text-[11px] font-semibold tabular-nums text-foreground/70 dark:bg-surface-secondary">
+                        <span className="rounded-mark bg-hairline px-1.5 font-mono text-caption font-semibold tabular-nums text-foreground/70 dark:bg-surface-secondary">
                           {link.row.ticker}
                         </span>
                         <Delta
-                          className="font-mono text-[12px] font-semibold"
+                          className="font-mono text-small font-semibold"
                           decimals={2}
                           value={link.row.deltaPct}
                         />
-                        <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-foreground/40">
+                        <span className="ml-auto shrink-0 font-mono text-caption tabular-nums text-foreground/40">
                           {link.row.date}
                         </span>
                       </span>
-                      <span className="line-clamp-2 text-[13px] leading-[1.4] text-foreground/75">
+                      <span className="line-clamp-2 text-small text-foreground/75">
                         {link.label}
                       </span>
                     </>
@@ -289,9 +289,9 @@ function MobileMenu({
 
   const rowClass = (active: boolean, href: string) =>
     clsx(
-      "flex w-full items-center rounded-lg px-2 py-3 text-base transition-[color,background-color,opacity] hover:bg-black/5 dark:hover:bg-white/5",
+      "flex w-full items-center rounded-control px-2 py-3 text-base transition-[color,background-color,opacity] hover:bg-black/5 dark:hover:bg-white/5",
       active
-        ? "text-[#5a4128] dark:text-[#d8c4af] font-medium"
+        ? "text-brand-brown dark:text-[#d8c4af] font-medium"
         : "text-foreground",
       pendingHref != null && "pointer-events-none",
       pendingHref != null && pendingHref !== href && "opacity-40",
@@ -327,7 +327,7 @@ function MobileMenu({
       <Drawer.Trigger asChild>
         <button
           aria-label="Open menu"
-          className="-mr-1 flex h-8 w-8 items-center justify-center rounded-full text-foreground transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+          className="-mr-1 flex h-8 w-8 items-center justify-center rounded-full text-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/8"
           type="button"
         >
           <Bars3Icon className="h-6 w-6" />
@@ -336,7 +336,7 @@ function MobileMenu({
 
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/50" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-hairline bg-[#fcfbf9] outline-none dark:border-separator dark:bg-background">
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-card border-t border-rule bg-page outline-none dark:bg-background">
           <div className="mx-auto mb-1 mt-3 h-1.5 w-10 shrink-0 rounded-full bg-black/15 dark:bg-white/20" />
 
           {/* The list scrolls; the CTA below it does not. Twelve rows outrun a
@@ -365,7 +365,7 @@ function MobileMenu({
             {menus.map((menu) => (
               <div key={menu.id}>
                 <div className="my-1.5 border-t border-separator/60" />
-                <div className="px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-foreground/45">
+                <div className="micro px-2 pb-1 pt-3 text-foreground/45">
                   {menu.label}
                 </div>
                 <ul>
@@ -395,16 +395,14 @@ function MobileMenu({
           </div>
 
           <div className="shrink-0 border-t border-separator/60 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3">
-            <a
-              className={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-4 py-3 text-base font-medium transition-colors`}
+            <StoreCta
+              block
               data-ga-event="cta_nav_download_app"
               data-ga-label={`Nav menu ${marketId}`}
               data-ga-store-intercepted={
                 downloadAnchorProps["data-ga-store-intercepted"]
               }
               href={downloadAnchorProps.href}
-              rel="noopener noreferrer"
-              target="_blank"
               // A desktop-width window narrowed under md gets the handoff
               // modal; the sheet has to leave before it arrives.
               onClick={(e) => {
@@ -412,9 +410,8 @@ function MobileMenu({
                 downloadAnchorProps.onClick?.(e);
               }}
             >
-              <StoreGlyph className="h-4 w-4 shrink-0" />
               Download app
-            </a>
+            </StoreCta>
           </div>
         </Drawer.Content>
       </Drawer.Portal>
@@ -665,8 +662,9 @@ export const Navbar = () => {
        every side; content scrolls beneath through the gutters). Translucent
        fill + heavy blur with a saturation boost so what passes underneath
        reads as material, not mud; hairline border and a soft warm shadow do
-       the separating the old border-b did. */
-    <nav className="mx-auto max-w-[1280px] rounded-2xl border border-black/[0.07] bg-[#fcfbf9]/60 shadow-[0_12px_32px_-20px_rgba(90,65,40,0.45)] backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60 dark:shadow-[0_12px_32px_-20px_rgba(0,0,0,0.7)]">
+       the separating the old border-b did. The recipe is glass() — this bar
+       is where it came from. */
+    <nav className={clsx("mx-auto max-w-[1280px] rounded-card", glass())}>
       <header className="flex h-14 items-center justify-between gap-3 px-4 md:gap-4 md:px-5">
         <div className="flex items-center gap-6">
           <a className="shrink-0" href={dashboardHref}>
@@ -708,22 +706,25 @@ export const Navbar = () => {
           )}
         </div>
         <div className="flex items-center gap-3 md:gap-4">
-          <a
+          {/* The reveal rides on a wrapper so the button itself stays a
+              plain StoreCta; pointer-events-none here reaches the anchor. */}
+          <div
             className={clsx(
-              `hidden items-center gap-1.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-4 py-1.5 text-sm font-medium transition-[transform,opacity,background-color] duration-300 md:inline-flex`,
+              "hidden transition-[transform,opacity] duration-300 md:flex",
               scrolled
                 ? "translate-y-0 opacity-100"
                 : "pointer-events-none -translate-y-1 opacity-0",
             )}
-            data-ga-event="cta_nav_download_app"
-            data-ga-label={`Nav ${market.id}`}
-            rel="noopener noreferrer"
-            target="_blank"
-            {...handoff.anchorProps}
           >
-            <StoreGlyph className="h-3.5 w-3.5 shrink-0" />
-            Download app
-          </a>
+            <StoreCta
+              data-ga-event="cta_nav_download_app"
+              data-ga-label={`Nav ${market.id}`}
+              variant="compact"
+              {...handoff.anchorProps}
+            >
+              Download app
+            </StoreCta>
+          </div>
           {handoff.modal}
           {/* /api pins itself dark (see lib/use-pinned-theme.ts), so the
               toggle would be a control that visibly does nothing. */}

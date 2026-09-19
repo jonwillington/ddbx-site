@@ -4,12 +4,12 @@ import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 
 import { AppDrawer } from "@/components/app-drawer";
 import { AppComingSoonModal } from "@/components/app-coming-soon-modal";
-import { StoreGlyph } from "@/components/store-glyph";
+import { StoreCta } from "@/components/store-cta";
+import { glass } from "@/components/ui/glass";
 import { Navbar } from "@/components/navbar";
 import { SideNav } from "@/components/side-nav";
 import { NAV_SIDEBAR } from "@/lib/nav-mode";
 import { ShellPageHeader } from "@/components/shell-page-header";
-import { StoreBadgeImg } from "@/components/app-store-badge";
 import {
   MarketChooserModal,
   type MarketChoice,
@@ -22,17 +22,12 @@ import {
 } from "@/lib/app-store";
 import { useDownloadCopy } from "@/lib/download/copy";
 import { useDevicePlatform } from "@/lib/use-device-platform";
-import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { marketContactEmail, marketForPath } from "@/lib/markets/registry";
 import { footerGroups } from "@/lib/site-nav";
 import { FooterTrail } from "@/components/footer-trail";
 import { setRailPresent } from "@/lib/rail-presence";
 import { useFloatingCtaSuppressed } from "@/lib/floating-cta";
 import { smartBannerReplacesFloatingCta } from "@/lib/smart-banner";
-
-/** Shared styling for the floating mobile download CTA — solid pill, rendered
- *  as an `<a>` (direct App Store link) or a `<button>` (chooser fallback). */
-const DOWNLOAD_CTA_CLASS = `pointer-events-auto flex w-full items-center justify-center gap-2.5 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-4 text-base font-semibold shadow-lg transition-colors`;
 
 type LegalPage = "privacy" | "cookies" | "terms" | "contact" | null;
 
@@ -134,7 +129,7 @@ function LegalDrawer({
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-sm font-semibold text-foreground/90 mt-6 mb-2">
+    <h3 className="mt-6 mb-2 text-body font-semibold text-foreground/90">
       {children}
     </h3>
   );
@@ -532,7 +527,7 @@ export default function DefaultLayout({
       // leaves a clear gap at the bottom of the scroll.
       // …and in `solo` mode there is no bar to clear, so the reservation goes
       // with it — otherwise every page ends in 7rem of empty ground.
-      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#fcfbf9] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? `xl:mr-0 xl:bg-[var(--shell-frame)] xl:pl-[236px] ${drawerRight && shellRail ? "min-[1440px]:pr-[300px]" : ""}` : ""}`}
+      className={`relative flex flex-col min-h-screen overflow-x-clip bg-page dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? `xl:mr-0 xl:bg-[var(--shell-frame)] xl:pl-[236px] ${drawerRight && shellRail ? "min-[1440px]:pr-[300px]" : ""}` : ""}`}
     >
       {/* First focusable thing on every page. Off-screen until it takes focus,
           then it parks itself over the navbar — otherwise a keyboard visitor
@@ -575,13 +570,15 @@ export default function DefaultLayout({
             through the glass — the blur keeps something to work on. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-3 bg-[#fcfbf9] dark:bg-background md:h-4"
+          className="pointer-events-none absolute inset-x-0 top-0 h-3 bg-page dark:bg-background md:h-4"
         />
         <div className={NAV_SIDEBAR ? "xl:hidden" : undefined}>
           <Navbar />
         </div>
         {ticker && (
-          <div className="mx-auto mt-2 max-w-[1280px] rounded-xl border border-black/[0.07] bg-[#fcfbf9]/60 backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60">
+          <div
+            className={`mx-auto mt-2 max-w-[1280px] rounded-card ${glass()}`}
+          >
             <div className="flex items-stretch px-4 md:px-5">{ticker}</div>
           </div>
         )}
@@ -597,7 +594,7 @@ export default function DefaultLayout({
       <div
         className={
           NAV_SIDEBAR
-            ? "contents xl:mx-3 xl:my-3 xl:flex xl:flex-grow xl:flex-col xl:overflow-clip xl:bg-[#fcfbf9] xl:dark:bg-background"
+            ? "contents xl:mx-3 xl:my-3 xl:flex xl:flex-grow xl:flex-col xl:overflow-clip xl:bg-page xl:dark:bg-background"
             : "contents"
         }
       >
@@ -620,7 +617,7 @@ export default function DefaultLayout({
             <FooterTrail />
           </div>
           <div className="relative mx-auto w-full max-w-[1280px] px-4 md:px-6">
-            <div className="rounded-2xl border border-hairline bg-sheet px-5 py-8 md:px-8 md:py-10 shadow-[0_18px_44px_-28px_rgba(90,65,40,0.45),0_1px_2px_rgba(90,65,40,0.03)] text-[10.5px] leading-4 text-foreground/45 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)] shell:xl:rounded-none! shell:xl:border-x-0! shell:xl:border-b-0! shell:xl:bg-transparent! shell:xl:px-0! shell:xl:pb-0! shell:xl:shadow-none!">
+            <div className="rounded-card border border-hairline bg-sheet px-5 py-8 md:px-8 md:py-10 shadow-lift text-caption text-foreground/45 dark:border-white/7 dark:bg-surface shell:xl:rounded-none! shell:xl:border-x-0! shell:xl:border-b-0! shell:xl:bg-transparent! shell:xl:px-0! shell:xl:pb-0! shell:xl:shadow-none!">
               {/* The wordmark is a cell of the ruled band, not a masthead floating
               above it — on desktop it takes the left rail beside the index;
               below lg it stacks inside the same rules. Floating it above the
@@ -753,26 +750,24 @@ export default function DefaultLayout({
                   </button>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    aria-label="Get it on Google Play"
-                    className="inline-block transition-opacity hover:opacity-85"
+                  <StoreCta
+                    className="hover:opacity-85"
                     data-ga-event="cta_footer_download"
                     data-ga-label="Footer Google Play"
-                    type="button"
+                    size="md"
+                    store="android"
+                    variant="badge"
                     onClick={() => setAppsOpen("android")}
-                  >
-                    <StoreBadgeImg size="md" store="android" />
-                  </button>
-                  <button
-                    aria-label="Download on the App Store"
-                    className="inline-block transition-opacity hover:opacity-85"
+                  />
+                  <StoreCta
+                    className="hover:opacity-85"
                     data-ga-event="cta_footer_download"
                     data-ga-label="Footer App Store"
-                    type="button"
+                    size="md"
+                    store="ios"
+                    variant="badge"
                     onClick={() => setAppsOpen("ios")}
-                  >
-                    <StoreBadgeImg size="md" store="ios" />
-                  </button>
+                  />
                 </div>
               </div>
             </div>
@@ -783,10 +778,18 @@ export default function DefaultLayout({
       {/* Persistent mobile download CTA — an always-reachable tap target. When
        *  the route's market has a live app it jumps straight to that App Store
        *  listing (UK site → UK app, US → US app); app-less markets (SE/NL) fall
-       *  back to the chooser. The button floats over a transparent blur that
-       *  fades into the page (no hard bar), so content scrolling beneath it
-       *  stays legible. Hidden from `md` up, where the footer CTA and hero
-       *  suffice. */}
+       *  back to the chooser. Hidden from `md` up, where the footer CTA and
+       *  hero suffice.
+       *
+       *  The button sits in a contained glass capsule — the navbar's material,
+       *  inset from the screen edges — rather than over the gradient-and-mask
+       *  scrim it used to fade out of: design-language tenet 1 rules out
+       *  scrims, and the capsule keeps what scrolls beneath legible the same
+       *  way the navbar does. Nothing fixed covers the bottom viewport edge
+       *  any more, so iOS 26 Safari tints its toolbar from the page itself
+       *  (body background), not from an overlay that had to be kept in step
+       *  with THEME_COLOR by hand. Its block — capsule, button, caption,
+       *  safe-area — still fits the 7rem reservation on the layout root. */}
       <div
         className={`pointer-events-none fixed bottom-0 inset-x-0 z-40 md:hidden transition-[opacity,transform,visibility] duration-300 ease-out ${hideMobileCta || bannerOwnsInstallCta ? "hidden" : ""} ${
           // Slid away, not removed: it comes back the moment the suppressing
@@ -796,54 +799,43 @@ export default function DefaultLayout({
           floatingCtaSuppressed ? "invisible translate-y-6 opacity-0" : ""
         }`}
       >
-        <div
-          aria-hidden="true"
-          // Literal hex on both sides, not `dark:from-background`. This scrim
-          // is the fixed element covering the bottom viewport edge, which is
-          // what iOS 26 Safari samples to tint the bottom toolbar — and it was
-          // the one half of that sample still resolving an oklch custom
-          // property, so it disagreed with the body underneath it. #231811 is
-          // --background resolved; keep it in step with THEME_COLOR.
-          className="absolute inset-0 bg-gradient-to-t from-[#fcfbf9]/85 via-[#fcfbf9]/40 to-transparent dark:from-[#231811]/85 dark:via-[#231811]/40 backdrop-blur-md [mask-image:linear-gradient(to_top,black_55%,transparent)]"
-        />
-        <div className="relative px-4 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          {directAppUrl ? (
-            // Live-app market (UK/US): lead with the offer, not the mechanic —
-            // "Start your free trial" converts better than "Download the app".
-            <a
-              className={DOWNLOAD_CTA_CLASS}
-              data-ga-event="cta_floating_trial"
-              data-ga-label="Floating mobile CTA"
-              href={directAppUrl}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              <StoreGlyph className="h-5 w-5 shrink-0" />
-              <span>{t.startTrial}</span>
-            </a>
-          ) : (
-            // App-less market: no trial to offer. A coming-soon market opens
-            // its modal (UK/US apps + waitlist); anything else the chooser.
-            <button
-              className={DOWNLOAD_CTA_CLASS}
-              data-ga-event="cta_floating_download_chooser"
-              data-ga-label="Floating mobile CTA"
-              type="button"
-              onClick={() =>
-                comingSoonApp ? setComingSoonOpen(true) : setAppsOpen("auto")
-              }
-            >
-              <StoreGlyph className="h-5 w-5 shrink-0" />
-              <span>Download the app</span>
-            </button>
-          )}
-          <p className="pointer-events-none mt-2 text-center text-xs text-foreground/55">
-            {directAppUrl
-              ? t.floatingTrialNote
-              : comingSoonApp
-                ? `The ${comingSoonApp} app is coming soon.`
-                : "Start your 7-day free trial."}
-          </p>
+        <div className="px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className={`pointer-events-auto rounded-card p-2.5 ${glass()}`}>
+            {directAppUrl ? (
+              // Live-app market (UK/US): lead with the offer, not the mechanic —
+              // "Start your free trial" converts better than "Download the app".
+              <StoreCta
+                block
+                data-ga-event="cta_floating_trial"
+                data-ga-label="Floating mobile CTA"
+                href={directAppUrl}
+                size="lg"
+              >
+                <span>{t.startTrial}</span>
+              </StoreCta>
+            ) : (
+              // App-less market: no trial to offer. A coming-soon market opens
+              // its modal (UK/US apps + waitlist); anything else the chooser.
+              <StoreCta
+                block
+                data-ga-event="cta_floating_download_chooser"
+                data-ga-label="Floating mobile CTA"
+                size="lg"
+                onClick={() =>
+                  comingSoonApp ? setComingSoonOpen(true) : setAppsOpen("auto")
+                }
+              >
+                <span>Download the app</span>
+              </StoreCta>
+            )}
+            <p className="mt-2 text-center text-caption text-foreground/55">
+              {directAppUrl
+                ? t.floatingTrialNote
+                : comingSoonApp
+                  ? `The ${comingSoonApp} app is coming soon.`
+                  : "Start your 7-day free trial."}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -921,14 +913,14 @@ function FooterNav() {
           exceptions. */}
       {groups.map((group) => (
         <div key={group.title}>
-          <h2 className="text-[14px] font-semibold leading-5 text-foreground/85">
+          <h2 className="text-body font-semibold text-foreground/85">
             {group.title}
           </h2>
           <ul className="mt-3 space-y-2">
             {group.links.map((link) => (
               <li key={link.href + link.label}>
                 <a
-                  className="text-[14px] leading-5 text-foreground/65 transition-colors hover:text-foreground"
+                  className="text-body text-foreground/65 transition-colors hover:text-foreground"
                   href={link.href}
                 >
                   {link.label}

@@ -1,7 +1,6 @@
 import type { DevicePlatform } from "@/lib/use-device-platform";
 
-import { AndroidGlyph } from "@/components/android-glyph";
-import { AppleGlyph } from "@/components/apple-glyph";
+import { StoreCta } from "@/components/store-cta";
 import { storeTargetsForMarket } from "@/lib/app-store";
 import { useDownloadCopy } from "@/lib/download/copy";
 import { useDevicePlatform } from "@/lib/use-device-platform";
@@ -11,7 +10,10 @@ import { useDevicePlatform } from "@/lib/use-device-platform";
  *  single device to target, so we lead with the App Store). Used by the market
  *  hero and the /download landing pages. Callers pass the anchor styling
  *  (`buttonClassName`) so the button inherits each page's exact CTA treatment.
- *  The footer is where BOTH store badges live — see `StoreBadgeImg`. */
+ *  The footer is where BOTH store badges live — see `StoreBadgeImg`.
+ *
+ *  A thin wrapper over `<StoreCta recipe>` now: new call sites use StoreCta
+ *  directly (variant + size) rather than passing a whole class string. */
 export function StoreButtons({
   marketId,
   buttonClassName,
@@ -49,21 +51,16 @@ export function StoreButtons({
 
   return (
     <div className={`flex flex-col gap-2.5 ${className}`}>
-      <a
-        className={buttonClassName}
+      <StoreCta
         data-ga-event={gaEvent}
         data-ga-label={`${gaLabel} · ${target.store}`}
+        glyphClassName={glyphClassName}
         href={target.href}
-        rel="noopener noreferrer"
-        target="_blank"
+        recipe={buttonClassName}
+        store={target.store}
       >
-        {target.store === "android" ? (
-          <AndroidGlyph className={glyphClassName} />
-        ) : (
-          <AppleGlyph className={glyphClassName} />
-        )}
         {storeButton[target.store]}
-      </a>
+      </StoreCta>
     </div>
   );
 }
