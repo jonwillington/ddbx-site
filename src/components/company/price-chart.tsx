@@ -278,7 +278,7 @@ export function CompanyPriceChart({
   if (!bars) {
     return (
       <div ref={box}>
-        <Skeleton className="w-full rounded-xl" h={H} />
+        <Skeleton className="w-full rounded-card" h={H} />
       </div>
     );
   }
@@ -382,13 +382,13 @@ export function CompanyPriceChart({
           {fmtPrice(last, currency)}
         </p>
         <p
-          className="text-[13.5px] font-semibold tabular-nums"
+          className="text-body font-semibold tabular-nums"
           style={{ color }}
         >
           {changePct >= 0 ? "+" : ""}
           {changePct.toFixed(1)}%
         </p>
-        <p className={`text-[12px] ${P.quiet}`}>past 12 months</p>
+        <p className={`text-small ${P.quiet}`}>past 12 months</p>
       </div>
 
       <svg
@@ -489,7 +489,7 @@ export function CompanyPriceChart({
       </svg>
 
       <div
-        className={`mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[11.5px] ${P.quiet}`}
+        className={`mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-caption ${P.quiet}`}
       >
         {marks.length > 0 && (
           <>
@@ -515,7 +515,7 @@ export function CompanyPriceChart({
       </div>
 
       {marks.length > 0 && theme === "light" && (
-        <p className="mt-2 text-[12px] leading-[1.6] text-foreground/45">
+        <p className="mt-2 text-small text-foreground/45">
           Every disclosed buy, plotted at the close on the day it was made.
           Ratings are ours, not the company&rsquo;s.
         </p>

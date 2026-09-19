@@ -59,9 +59,8 @@ import { DISCRETION_ENABLED } from "@/lib/discretion";
 import { appHrefForMarket } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 
-const RULE = "border-hairline dark:border-separator";
 const LABEL =
-  "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45";
+  "eyebrow text-foreground/45";
 
 /** Direction styling. The site already owns a colour for each side of an
  *  argument, and the whole point of the section is that the assessment argues
@@ -106,7 +105,7 @@ function Source({
   if (!label) return null;
 
   return (
-    <p className="mt-2 text-[12px] leading-[1.5] text-foreground/45">
+    <p className="mt-2 text-small text-foreground/45">
       {url ? (
         <a
           className="inline-flex items-center gap-1 underline-offset-4 hover:text-foreground/70 hover:underline"
@@ -130,18 +129,18 @@ function Source({
  *  24px a list of them reads as a stack of banners. */
 function EvidenceRows({ points }: { points: EvidencePoint[] }) {
   return (
-    <ul className={`mt-4 border-t ${RULE}`}>
+    <ul className={`mt-4 border-t border-rule`}>
       {points.map((p, i) => (
         <li
           key={`${i}-${p.headline}`}
-          className={`grid gap-x-10 gap-y-2 border-b ${RULE} py-5 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-6`}
+          className={`grid gap-x-10 gap-y-2 border-b border-rule py-5 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-6`}
         >
-          <h4 className="text-balance text-[16.5px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground sm:text-[18px]">
+          <h4 className="text-balance text-lede font-semibold leading-tight text-foreground sm:text-title">
             {p.headline}
           </h4>
           <div className="min-w-0">
             {p.detail ? (
-              <p className="max-w-[58ch] text-[14.5px] leading-[1.65] text-foreground/70">
+              <p className="max-w-[58ch] text-body text-foreground/70">
                 {p.detail}
               </p>
             ) : null}
@@ -201,14 +200,14 @@ function OpenCase({
       </p>
 
       {analysis.thesis_points.length > 0 ? (
-        <div className="mt-5 max-w-[62ch] space-y-4">
+        <div className="mt-5 max-w-measure space-y-4">
           {analysis.thesis_points.map((p, i) => (
             <p
               key={i}
               className={
                 i === 0
-                  ? "text-[17px] leading-[1.6] text-foreground/90"
-                  : "text-[15px] leading-[1.7] text-foreground/80"
+                  ? "text-lede text-foreground/90"
+                  : "text-lede text-foreground/80"
               }
             >
               {p}
@@ -234,16 +233,16 @@ function OpenCase({
       {analysis.key_risks.length > 0 ? (
         <div className="mt-10">
           <p className={LABEL}>Key risks · {analysis.key_risks.length}</p>
-          <ol className={`mt-4 border-t ${RULE}`}>
+          <ol className={`mt-4 border-t border-rule`}>
             {analysis.key_risks.map((r, i) => (
               <li
                 key={i}
-                className={`flex gap-5 border-b ${RULE} py-4 sm:py-5`}
+                className={`flex gap-5 border-b border-rule py-4 sm:py-5`}
               >
-                <span className="mt-[3px] shrink-0 font-mono text-[11px] font-semibold tabular-nums tracking-[0.16em] text-foreground/35">
+                <span className="mt-[3px] shrink-0 font-mono text-caption font-semibold tabular-nums tracking-widest text-foreground/35">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <p className="max-w-[62ch] text-[15px] leading-[1.65] text-foreground/80">
+                <p className="max-w-measure text-lede text-foreground/80">
                   {r}
                 </p>
               </li>
@@ -265,10 +264,10 @@ function OpenCase({
           have just had all of it. The honest remainder is timing and
           follow-up: the app reaches you the day a filing lands. */}
       <div className="mt-10">
-        <p className="text-[16px] font-semibold leading-[1.35] text-foreground">
+        <p className="text-lede font-semibold text-foreground">
           Get the next one the day it files.
         </p>
-        <p className="mt-1 max-w-[58ch] text-[14px] leading-[1.6] text-foreground/60">
+        <p className="mt-1 max-w-[58ch] text-body text-foreground/60">
           This filing is already public record. The app pushes each new rated
           buy as it’s disclosed, with the written case attached.
         </p>
@@ -283,7 +282,7 @@ function OpenCase({
           <StoreGlyph className="h-4 w-4 shrink-0" />
           Download the app
         </a>
-        <p className="mt-2 text-[11.5px] text-foreground/45">
+        <p className="mt-2 text-caption text-foreground/45">
           Free for 7 days, cancel any time.
         </p>
       </div>
@@ -354,7 +353,7 @@ export function AnalysisPreview({
         {summary ? (
           <figure className="mt-5">
             <figcaption className={LABEL}>From the written analysis</figcaption>
-            <blockquote className="mt-2 border-l-2 border-brand-brown/30 pl-4 text-[15.5px] leading-[1.55] text-foreground/85 dark:border-brand-tan/30">
+            <blockquote className="mt-2 border-l-2 border-brand-brown/30 pl-4 text-lede text-foreground/85 dark:border-brand-tan/30">
               {summary}
             </blockquote>
           </figure>
@@ -367,11 +366,11 @@ export function AnalysisPreview({
             {/* Hairline rows, not tinted pills: the headline is the row,
                 the lock sits at its right end, the citation under it. The
                 whole row is the gate's button. */}
-            <ul className={`mt-4 border-t ${RULE}`}>
+            <ul className={`mt-4 border-t border-rule`}>
               {rows.map((e) => (
                 <li
                   key={`${e.direction}-${e.headline}`}
-                  className={`border-b ${RULE} py-4 sm:py-5`}
+                  className={`border-b border-rule py-4 sm:py-5`}
                 >
                   <button
                     className="group flex w-full items-start gap-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-brown/40"
@@ -380,7 +379,7 @@ export function AnalysisPreview({
                     type="button"
                     onClick={() => openGate(e.headline)}
                   >
-                    <span className="min-w-0 flex-1 text-balance text-[16.5px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground transition-colors group-hover:text-foreground/70 sm:text-[18px]">
+                    <span className="min-w-0 flex-1 text-balance text-lede font-semibold leading-tight text-foreground transition-colors group-hover:text-foreground/70 sm:text-title">
                       {e.headline}
                     </span>
                     <LockClosedIcon
@@ -408,14 +407,14 @@ export function AnalysisPreview({
             nothing of these on the page to see. No large numerals: the
             evidence rows are the offer now, and a 40px figure beside them
             competes with the thing it is supporting. */}
-        <p className="mt-6 text-[13.5px] leading-[1.6] text-foreground/60">
+        <p className="mt-6 text-body text-foreground/60">
           The app adds the {shape.thesis}-point thesis behind this rating
           {shape.risks > 0
             ? `, the ${shape.risks} key ${shape.risks === 1 ? "risk" : "risks"} weighed against it`
             : ""}
           , and the detail under every line above.
         </p>
-        <p className="mt-1.5 text-[13px] leading-[1.6] text-foreground/45">
+        <p className="mt-1.5 text-small text-foreground/45">
           {shape.confidence != null
             ? `Written with ${shape.confidence}% stated confidence`
             : "Written with a stated confidence"}
@@ -423,7 +422,7 @@ export function AnalysisPreview({
         </p>
 
         <button
-          className={`mt-5 ${BUTTON_RADIUS} bg-foreground/[0.06] px-4 py-2 text-[13.5px] font-medium text-foreground transition-colors hover:bg-foreground/[0.1]`}
+          className={`mt-5 ${BUTTON_RADIUS} bg-foreground/[0.06] px-4 py-2 text-body font-medium text-foreground transition-colors hover:bg-foreground/[0.1]`}
           data-ga-event="cta_filing_assessment"
           data-ga-label="Filing assessment panel"
           type="button"

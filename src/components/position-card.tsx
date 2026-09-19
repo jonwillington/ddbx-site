@@ -169,8 +169,8 @@ export function PositionCard({
 
   return (
     <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-      <div className="rounded-xl bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
-        <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
+      <div className="rounded-card bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
+        <div className="micro text-muted mb-2">
           Entry
         </div>
         <div className="text-2xl font-bold tabular-nums">
@@ -183,8 +183,8 @@ export function PositionCard({
         )}
       </div>
 
-      <div className="rounded-xl bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
-        <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
+      <div className="rounded-card bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
+        <div className="micro text-muted mb-2">
           Now
         </div>
         <div className={`text-2xl font-bold tabular-nums ${trendText}`}>
@@ -197,8 +197,8 @@ export function PositionCard({
         )}
       </div>
 
-      <div className="rounded-xl bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
-        <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
+      <div className="rounded-card bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
+        <div className="micro text-muted mb-2">
           Return
         </div>
         {muted ? (

@@ -58,7 +58,7 @@ export function CompanyAppPitch({
     // its neighbours respect is the opposite of what the design language asks
     // for. Held inside the column as one rounded object, it reads as a card
     // the page hands you rather than a stripe painted across it.
-    <section className="mt-16 overflow-hidden rounded-[28px] bg-ink text-white dark:bg-[oklch(17%_0.02_55)]">
+    <section className="mt-16 overflow-hidden rounded-stage bg-ink text-white dark:bg-[oklch(17%_0.02_55)]">
       <div className="px-6 py-14 sm:px-10 md:px-14 md:py-16">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           {/* ---- Left: the ask ----
@@ -86,17 +86,17 @@ export function CompanyAppPitch({
                 company NAME here — the headline says it 6px below. */}
             <div className="flex items-center gap-3">
               <CompanyLogo link={false} size={40} ticker={logoKey} />
-              <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.14em] text-white">
+              <span className="eyebrow text-white">
                 {ticker}
               </span>
-              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
+              <span className="eyebrow text-brand-amber">
                 {marketId.toUpperCase()}
               </span>
             </div>
             <h2 className="mt-6 max-w-[15ch] text-balance text-[32px] font-semibold leading-[1.05] tracking-[-0.028em] sm:text-[40px] lg:text-[44px] xl:text-[48px]">
               The next {company} buy lands on your phone.
             </h2>
-            <p className="mt-6 max-w-[34em] text-[16px] leading-[1.6] text-white/60">
+            <p className="mt-6 max-w-[34em] text-lede text-white/60">
               Follow {ticker} and your phone buzzes the moment{" "}
               {market === "UK"
                 ? "a director files with the LSE"
@@ -107,14 +107,14 @@ export function CompanyAppPitch({
             <div className="mt-9 flex flex-col items-start gap-2.5">
               {/* Light fill: BUTTON_FILLED is near-black, which is the panel. */}
               <StoreButtons
-                buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
+                buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-lede font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
                 className="items-start"
                 gaEvent="cta_company_download"
                 gaLabel={`Company pitch · ${ticker}`}
                 glyphClassName="h-4 w-4 shrink-0"
                 marketId={marketId}
               />
-              <p className="text-[12.5px] text-white/50">
+              <p className="text-small text-white/50">
                 Free for 7 days, cancel any time.
               </p>
             </div>
@@ -127,7 +127,7 @@ export function CompanyAppPitch({
               rather than a card floating on it. `object-cover` at a fixed
               aspect keeps the handset centred at every width; intrinsic
               width/height so the row doesn't reflow when it decodes. */}
-          <div className="overflow-hidden rounded-3xl border border-white/[0.09] bg-black/20">
+          <div className="overflow-hidden rounded-stage border border-white/[0.09] bg-black/20">
             <img
               alt={`The ddbx ${marketId.toUpperCase()} app showing the week's insider buys`}
               className="aspect-[4/3] h-full w-full object-cover lg:aspect-[5/4]"

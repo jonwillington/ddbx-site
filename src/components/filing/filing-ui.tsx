@@ -36,7 +36,6 @@ import { Row, RowList } from "@/components/row-list";
 import { downloadPagePathForMarketId } from "@/lib/app-store";
 import { formatPrice, PRICING } from "@/lib/pricing";
 
-const RULE = "border-hairline dark:border-separator";
 
 /** One icon per check, keyed on `RatingChecklist`.
  *
@@ -96,11 +95,11 @@ export function RatingChecks({
   return (
     <div>
       <div className="flex items-baseline justify-between gap-4">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
+        <p className="eyebrow text-foreground/45">
           {met} of {CHECKS.length} met
         </p>
         <Link
-          className="text-[12.5px] text-foreground/50 underline-offset-4 hover:text-foreground hover:underline"
+          className="text-small text-foreground/50 underline-offset-4 hover:text-foreground hover:underline"
           to="/how-it-works"
         >
           How the checks work
@@ -148,7 +147,7 @@ export function RatingChecks({
               }
               more={
                 <details className="group mt-3">
-                  <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-[12.5px] text-foreground/45 transition-colors hover:text-foreground/75 [&::-webkit-details-marker]:hidden">
+                  <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-small text-foreground/45 transition-colors hover:text-foreground/75 [&::-webkit-details-marker]:hidden">
                     {Icon ? (
                       <Icon
                         aria-hidden
@@ -162,7 +161,7 @@ export function RatingChecks({
                       className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
                     />
                   </summary>
-                  <p className="mt-2.5 max-w-[58ch] text-[13.5px] leading-[1.65] text-foreground/55">
+                  <p className="mt-2.5 max-w-[58ch] text-body text-foreground/55">
                     {c.detail}
                   </p>
                 </details>
@@ -170,7 +169,7 @@ export function RatingChecks({
               title={c.question}
             >
               <p
-                className={`max-w-[58ch] text-[15px] leading-[1.65] ${
+                className={`max-w-[58ch] text-lede ${
                   ok ? "text-foreground/80" : "text-foreground/55"
                 }`}
               >
@@ -203,15 +202,15 @@ function CheckRow({
 }) {
   return (
     <li
-      className={`grid gap-x-10 gap-y-2 border-b ${RULE} py-6 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-7`}
+      className={`grid gap-x-10 gap-y-2 border-b border-rule py-6 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-7`}
     >
       <div className="flex gap-3">
         <span className="mt-0.5 shrink-0">{glyph}</span>
         <div className="min-w-0">
-          <h3 className="text-balance text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-foreground sm:text-[19px]">
+          <h3 className="text-balance text-title font-semibold text-foreground">
             {title}
           </h3>
-          <p className="mt-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-foreground/40">
+          <p className="mt-1.5 micro text-foreground/40">
             {kicker}
           </p>
         </div>
@@ -253,7 +252,7 @@ export function TrialNudge({
 
   return (
     <p
-      className={`border-y ${RULE} px-1 py-3 text-[13px] leading-[1.6] text-foreground/55`}
+      className={`border-y border-rule px-1 py-3 text-small text-foreground/55`}
     >
       {lead} {p.trialDays} days free, then {formatPrice(p, p.annual)} for the
       year{p.promotional ? ", a limited-time price" : ""}.{" "}

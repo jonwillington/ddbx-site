@@ -36,6 +36,7 @@ import {
 import { CompanyLogo } from "@/components/company-logo";
 import { Skeleton } from "@/components/skeleton";
 import { TickerPill } from "@/components/ticker-pill";
+import { panel } from "@/components/ui/panel";
 import { api } from "@/lib/api";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 import { moneyShort } from "@/lib/company-format";
@@ -222,7 +223,7 @@ export function MoreCompanies({
           {subject} at other companies
         </h2>
         <Link
-          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-foreground/70 underline-offset-4 hover:underline"
+          className="inline-flex items-center gap-1.5 text-body font-medium text-foreground/70 underline-offset-4 hover:underline"
           to="/companies"
         >
           Browse every company
@@ -242,7 +243,7 @@ export function MoreCompanies({
         {loading
           ? Array.from({ length: SHOWN }, (_, i) => (
               <li key={i}>
-                <div className="flex h-full flex-col rounded-xl border border-hairline bg-sheet px-4 py-3.5 dark:border-white/[0.07] dark:bg-surface">
+                <div className={`flex h-full flex-col ${panel({ size: "compact" })}`}>
                   <span className="flex items-start gap-2.5">
                     <Skeleton circle className="shrink-0" h={30} w={30} />
                     <span className="min-w-0 flex-1">
@@ -277,7 +278,7 @@ export function MoreCompanies({
           return (
             <li key={c.key}>
               <Link
-                className="group flex h-full flex-col rounded-xl border border-hairline bg-sheet px-4 py-3.5 transition-colors hover:border-brand-brown/25 hover:bg-white dark:border-white/[0.07] dark:bg-surface dark:hover:border-white/15 dark:hover:bg-surface-secondary"
+                className={`group flex h-full flex-col ${panel({ size: "compact" })} transition-colors hover:border-brand-brown/25 hover:bg-white dark:hover:border-white/15 dark:hover:bg-surface-secondary`}
                 to={companyPath(c.key)}
               >
                 <span className="flex items-start gap-2.5">
@@ -288,7 +289,7 @@ export function MoreCompanies({
                       metadata and the name of the place you were about to go
                       read as an annotation on a number. */}
                   <span
-                    className="line-clamp-2 min-w-0 flex-1 text-[15px] font-semibold leading-[1.3] tracking-[-0.012em] text-foreground"
+                    className="line-clamp-2 min-w-0 flex-1 text-lede font-semibold leading-tight text-foreground"
                     title={cleanCompanyName(c.company)}
                   >
                     {cleanCompanyName(c.company)}
@@ -327,7 +328,7 @@ export function MoreCompanies({
                   </span>
                   {when ? (
                     <span
-                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10.5px] font-semibold leading-none ${
+                      className={`shrink-0 rounded px-1.5 py-0.5 text-caption font-semibold leading-none ${
                         when.fresh
                           ? "bg-positive/10 text-positive"
                           : "bg-black/[0.05] text-foreground/50 dark:bg-white/[0.07]"
@@ -338,7 +339,7 @@ export function MoreCompanies({
                   ) : null}
                 </span>
 
-                <span className="mt-2 flex items-center gap-2 text-[11.5px] leading-4 text-foreground/45">
+                <span className="mt-2 flex items-center gap-2 text-caption leading-4 text-foreground/45">
                   <TickerPill ticker={displayTicker(c.key)} />
                   {secondary ? (
                     <span className="truncate">{secondary}</span>

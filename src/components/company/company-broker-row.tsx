@@ -36,7 +36,7 @@ export function CompanyBrokerRow({
       <div className="flex min-w-0 items-center gap-3.5">
         <BrokerLogo broker={broker} size={36} />
         <div className="min-w-0">
-          <p className="text-[14px] font-medium leading-snug text-foreground/85">
+          <p className="text-body font-medium leading-snug text-foreground/85">
             Want to own {company}?{" "}
             <span className="text-foreground/55">
               {isOfferLive(broker) && broker.offer_headline
@@ -44,7 +44,7 @@ export function CompanyBrokerRow({
                 : broker.tagline}
             </span>
           </p>
-          <p className="mt-1 text-[11px] leading-snug text-foreground/45">
+          <p className="mt-1 text-caption leading-snug text-foreground/45">
             <span className="font-semibold text-foreground/60">Ad</span> ·
             Capital at risk.
             {isAffiliateLink(broker) ? " We may earn a commission." : ""}

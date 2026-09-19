@@ -38,23 +38,21 @@ import { ChamberChip } from "@/components/chamber-chip";
 import { TickerPill } from "@/components/ticker-pill";
 import { CompanyLogo } from "@/components/company-logo";
 import { companyPath } from "@/lib/company";
+import { panel } from "@/components/ui/panel";
 
 /** The family's type tokens, same names the sector pages use so a reader
  *  moving between families sees one voice. */
 export const R = {
-  body: "text-[14px] leading-[1.65] text-foreground/70",
-  label: "text-[12px] text-foreground/45",
+  body: "text-body text-foreground/70",
+  label: "text-small text-foreground/45",
   eyebrow:
-    "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan",
+    "eyebrow text-brand-brown dark:text-brand-tan",
 };
 
-const RULE = "border-hairline dark:border-separator";
 
-/** The house card, levelled off /api via download/stat-band.tsx. Same constant
- *  as components/filing/filing-ui.tsx so a reader moving between a member page
- *  and a filing page sees one object, not two near-misses. */
-const CARD =
-  "rounded-3xl border border-hairline bg-white/70 dark:border-border/60 dark:bg-surface-secondary/40";
+/** The house card: the shared inset panel, so a reader moving between a
+ *  member page and a filing page sees one object, not two near-misses. */
+const CARD = panel({ variant: "inset" });
 
 /* ─── Identity ───────────────────────────────────────────────────────────── */
 
@@ -99,7 +97,7 @@ export function MemberSeatLine({ member }: { member: GovMemberSummary }) {
     <div className="mt-3 flex flex-wrap items-center gap-1.5">
       <PartyChip party={member.party} />
       <ChamberChip chamber={member.chamber} />
-      <span className="text-[12.5px] text-foreground/55">{seatLine}</span>
+      <span className="text-small text-foreground/55">{seatLine}</span>
     </div>
   );
 }
@@ -120,12 +118,12 @@ export function MemberPortrait({
 
   return (
     <span
-      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border ${RULE} bg-black/[0.035] dark:bg-white/[0.05]`}
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-card border border-rule bg-black/[0.035] dark:bg-white/[0.05]`}
       style={{ width: size, height: size }}
     >
       <span
         aria-hidden
-        className="absolute text-[15px] font-semibold text-foreground/35"
+        className="absolute text-lede font-semibold text-foreground/35"
       >
         {initials}
       </span>
@@ -177,7 +175,7 @@ export function HowToRead({
     <aside className={`mt-7 ${CARD} p-5 sm:p-6`}>
       <p className={R.eyebrow}>How to read this</p>
       {lead ? (
-        <p className="mt-3 max-w-[68ch] text-[14px] font-medium leading-[1.6] text-foreground/85">
+        <p className="mt-3 max-w-[68ch] text-body font-medium text-foreground/85">
           {lead}
         </p>
       ) : null}
@@ -187,7 +185,7 @@ export function HowToRead({
             <li
               key={n}
               className={`max-w-[68ch] py-2 ${R.body} ${
-                i > 0 || lead ? `border-t ${RULE}` : ""
+                i > 0 || lead ? `border-t border-rule` : ""
               }`}
             >
               {n}
@@ -227,7 +225,7 @@ export function LanePanel({
   // the same absence twice in different words.
   if (committees.length === 0) {
     return (
-      <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+      <p className={`mt-4 max-w-measure ${R.body}`}>
         Our roster records no current full-committee assignments for this
         member, so no lane is computed. The filings below are complete either
         way.
@@ -240,17 +238,17 @@ export function LanePanel({
 
   return (
     <div className="mt-4">
-      <p className={`max-w-[62ch] ${R.body}`}>{laneLine}</p>
+      <p className={`max-w-measure ${R.body}`}>{laneLine}</p>
 
       {modelled.length > 0 ? (
-        <ul className={`mt-4 border-t ${RULE}`}>
+        <ul className={`mt-4 border-t border-rule`}>
           {modelled.map((c) => (
             <li
               key={c}
-              className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b ${RULE} py-2.5`}
+              className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-rule py-2.5`}
             >
               <Link
-                className="text-[14px] font-medium text-foreground underline-offset-4 hover:underline"
+                className="text-body font-medium text-foreground underline-offset-4 hover:underline"
                 to={committeePath(committeeSlug(c))}
               >
                 {shortCommittee(c)}
@@ -312,7 +310,7 @@ export function FilingsBoard({
     <div className="mt-4 overflow-x-auto">
       <table className="w-full min-w-[600px] border-collapse text-left">
         <thead>
-          <tr className={`border-b ${RULE}`}>
+          <tr className={`border-b border-rule`}>
             <Th>{showMember ? "Member" : "Company"}</Th>
             <Th>{showMember ? "Company" : "Filed"}</Th>
             <Th>Disclosed band</Th>
@@ -326,7 +324,7 @@ export function FilingsBoard({
             const perf = d.live_performance?.return_pct_disclosed ?? null;
 
             return (
-              <tr key={d.id} className={`border-b ${RULE} align-top`}>
+              <tr key={d.id} className={`border-b border-rule align-top`}>
                 <Td>
                   {showMember ? (
                     m ? (
@@ -410,7 +408,7 @@ function Th({
 }) {
   return (
     <th
-      className={`pb-2 pr-4 text-[11px] font-medium leading-tight text-foreground/45 last:pr-0 ${className}`}
+      className={`pb-2 pr-4 text-caption font-medium leading-tight text-foreground/45 last:pr-0 ${className}`}
       scope="col"
     >
       {children}
@@ -426,7 +424,7 @@ function Td({
   className?: string;
 }) {
   return (
-    <td className={`py-2.5 pr-4 text-[13.5px] last:pr-0 ${className}`}>
+    <td className={`py-2.5 pr-4 text-body last:pr-0 ${className}`}>
       {children}
     </td>
   );
@@ -454,11 +452,11 @@ export function IssuerList({
   const top = issuers[0]?.count ?? 1;
 
   return (
-    <ul className={`mt-4 border-t ${RULE}`}>
+    <ul className={`mt-4 border-t border-rule`}>
       {issuers.map((it) => (
         <li
           key={it.ticker}
-          className={`flex items-center gap-4 border-b ${RULE} py-2.5`}
+          className={`flex items-center gap-4 border-b border-rule py-2.5`}
         >
           <CompanyLogo className="shrink-0" size={24} ticker={it.ticker} />
           {/* The Congress-by-stock page, not /company/: most of these tickers
@@ -466,7 +464,7 @@ export function IssuerList({
               resolved to a page that noindexed itself. The stock page exists
               for every ticker with a purchase on record. */}
           <Link
-            className="min-w-0 flex-1 truncate text-[13.5px] underline-offset-4 hover:underline"
+            className="min-w-0 flex-1 truncate text-body underline-offset-4 hover:underline"
             to={stockPath(it.ticker)}
           >
             {it.company || it.ticker}
@@ -481,7 +479,7 @@ export function IssuerList({
               style={{ width: `${Math.max(8, (it.count / top) * 100)}%` }}
             />
           </span>
-          <span className="w-8 shrink-0 text-right text-[13px] tabular-nums text-foreground/60">
+          <span className="w-8 shrink-0 text-right text-small tabular-nums text-foreground/60">
             {it.count}
           </span>
         </li>
@@ -498,7 +496,7 @@ export function MemberRow({ member }: { member: GovMemberSummary }) {
   const tag = bulkTag(member);
 
   return (
-    <li className={`border-b ${RULE}`}>
+    <li className={`border-b border-rule`}>
       <Link
         className="flex items-center gap-4 py-3.5 transition-colors hover:bg-foreground/[0.02]"
         to={memberPathFor(member)}
@@ -506,7 +504,7 @@ export function MemberRow({ member }: { member: GovMemberSummary }) {
         <MemberPortrait member={member} size={44} />
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-[14.5px] font-medium text-foreground">
+            <span className="text-body font-medium text-foreground">
               {member.name}
             </span>
             <PartyChip party={member.party} />
@@ -527,7 +525,7 @@ export function MemberRow({ member }: { member: GovMemberSummary }) {
           </span>
         </span>
         <span className="shrink-0 text-right">
-          <span className="block text-[13px] tabular-nums text-foreground/70">
+          <span className="block text-small tabular-nums text-foreground/70">
             {band(s.total_min, s.total_max)}
           </span>
           <span className={`block ${R.label}`}>disclosed band</span>

@@ -31,6 +31,7 @@ import { usFilingPath } from "../../../shared/filings-us.js";
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { buildMarketFaq } from "@/lib/markets/faq";
 import { AnalysisSection } from "@/components/analysis-section";
+import { chip } from "@/components/chip";
 import { BlurredAnalysisOverlay } from "@/components/discretion/blurred-analysis-overlay";
 import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { DisclosureSection } from "@/components/disclosure-section";
@@ -182,24 +183,23 @@ const CODE_LABELS: Record<UsTransactionCode, string> = {
   E: "Short-position expiration",
 };
 
+// Tint + label colour only: the chip system (components/chip.ts) supplies the
+// capsule, the mono label and a hairline derived from the label colour. A buy
+// or a sell is a direction, so it takes positive / negative.
 const TONE_STYLES: Record<Tone, string> = {
-  buy: "bg-emerald-700/15 text-emerald-800 border-emerald-700/35 dark:text-emerald-300 dark:border-emerald-300/30 font-semibold",
-  sell: "bg-rose-700/12 text-rose-800 border-rose-700/30 dark:text-rose-300 dark:border-rose-300/30 font-semibold",
-  plan: "bg-amber-200/15 text-amber-900/70 border-amber-400/25 dark:text-amber-200/60 dark:border-amber-300/20",
-  grant:
-    "bg-[#c0b4a6]/10 text-[#7e766c] border-[#c0b4a6]/40 dark:text-foreground/55",
-  exercise:
-    "bg-[#c0b4a6]/10 text-[#7e766c] border-[#c0b4a6]/40 dark:text-foreground/55",
-  neutral:
-    "bg-transparent text-[#b0a898] border-[#d8d0c6]/60 dark:text-foreground/45",
+  buy: "bg-positive/15 text-positive",
+  sell: "bg-negative/12 text-negative",
+  plan: "bg-amber-200/15 text-amber-900/70 dark:text-amber-200/60",
+  grant: "bg-[#c0b4a6]/10 text-[#7e766c] dark:text-foreground/55",
+  exercise: "bg-[#c0b4a6]/10 text-[#7e766c] dark:text-foreground/55",
+  neutral: "bg-transparent text-[#b0a898] dark:text-foreground/45",
 };
 
+// "Promising" is a triage status, not a direction: live, not positive.
 const VERDICT_STYLES: Record<UsTriageVerdict, string> = {
-  promising:
-    "bg-emerald-700/15 text-emerald-800 border-emerald-700/40 dark:text-emerald-300 dark:border-emerald-300/35 font-semibold",
-  maybe:
-    "bg-amber-600/10 text-amber-800 border-amber-600/30 dark:text-amber-200 dark:border-amber-300/25",
-  skip: "bg-transparent text-[#a89e8c] border-[#d8d0c6]/55 dark:text-foreground/40",
+  promising: "bg-live/15 text-live",
+  maybe: "bg-amber-600/10 text-amber-800 dark:text-amber-200",
+  skip: "bg-transparent text-[#a89e8c] dark:text-foreground/40",
 };
 
 const VERDICT_LABEL: Record<UsTriageVerdict, string> = {
@@ -336,16 +336,7 @@ export function ActionChip({
   tone: Tone;
   size?: "md" | "sm";
 }) {
-  const sizing =
-    size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1.5 text-sm";
-
-  return (
-    <span
-      className={`inline-flex items-center justify-center rounded-md border whitespace-nowrap ${sizing} ${TONE_STYLES[tone]}`}
-    >
-      {label}
-    </span>
-  );
+  return <span className={`${chip(size)} ${TONE_STYLES[tone]}`}>{label}</span>;
 }
 
 function VerdictChip({
@@ -355,13 +346,8 @@ function VerdictChip({
   verdict: UsTriageVerdict;
   size?: "md" | "sm";
 }) {
-  const sizing =
-    size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs";
-
   return (
-    <span
-      className={`inline-flex items-center justify-center rounded-md border whitespace-nowrap uppercase tracking-wide ${sizing} ${VERDICT_STYLES[verdict]}`}
-    >
+    <span className={`${chip(size)} ${VERDICT_STYLES[verdict]}`}>
       {VERDICT_LABEL[verdict]}
     </span>
   );
@@ -384,11 +370,7 @@ function UsRowActionCell({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
   if (row.is_late) suffix.push({ label: "Late filing", tone: "neutral" });
 
   if (!group.analysis && suffix.length === 0) {
-    return (
-      <span className="inline-flex items-center justify-center rounded-md border border-[#d8d0c6]/55 bg-transparent px-2 py-0.5 text-[11px] text-[#a89e8c] dark:text-foreground/40">
-        Skipped
-      </span>
-    );
+    return <RatingBadge rating="skipped" />;
   }
 
   return (
@@ -463,7 +445,7 @@ export function UsDetailPosition({
       {/* Position figures and the chart they describe share one card — the
           chart's legend used to repeat Entry / Now / return from the tiles
           directly above it. Merged per iOS b64f22f. */}
-      <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4 space-y-4">
+      <div className="rounded-card bg-black/[0.03] dark:bg-white/[0.04] p-4 space-y-4">
         {currentUsd != null && group.total_value != null && (
           <PositionCard
             current={currentUsd}
@@ -501,7 +483,7 @@ export function UsDetailBody({
       {group.analysis && <AnalysisSection analysis={group.analysis} />}
 
       {group.triage_verdict && (
-        <div className="flex items-start gap-3 rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface px-4 py-3">
+        <div className="flex items-start gap-3 rounded-control border border-rule bg-white dark:bg-surface px-4 py-3">
           <VerdictChip verdict={group.triage_verdict} />
           <div className="text-sm text-foreground/80 leading-snug">
             {group.triage_reason || (
@@ -625,7 +607,7 @@ export function UsDetailBody({
               {group.legs.map((leg) => (
                 <tr
                   key={leg.id}
-                  className="border-t border-black/[0.04] dark:border-white/[0.06]"
+                  className="border-t border-rule"
                 >
                   <td className="py-1">{leg.trade_date}</td>
                   <td className="py-1 text-right">
@@ -656,7 +638,7 @@ export function UsDetailBody({
       )}
 
       <DisclosureSection count={group.leg_count} title="Raw JSON">
-        <pre className="overflow-x-auto rounded bg-black/85 dark:bg-black/60 p-3 text-[11px] text-slate-100 leading-snug">
+        <pre className="overflow-x-auto rounded bg-black/85 dark:bg-black/60 p-3 text-caption text-slate-100 leading-snug">
           {JSON.stringify(group.legs, null, 2)}
         </pre>
       </DisclosureSection>

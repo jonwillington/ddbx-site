@@ -123,7 +123,7 @@ export function CompanyStageSkeleton() {
       </div>
       <div className="mt-9 px-6 pb-5 sm:px-8">
         <Skeleton className="h-[22px] w-40" />
-        <Skeleton className="mt-3 w-full rounded-xl" h={CHART_H} />
+        <Skeleton className="mt-3 w-full rounded-card" h={CHART_H} />
       </div>
       <StageFooter className="sm:px-8">
         <Skeleton className="h-[12px] w-64" />

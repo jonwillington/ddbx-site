@@ -29,7 +29,6 @@ import { ChevronRightIcon } from "@heroicons/react/20/solid";
 
 import { AppDrawer } from "@/components/app-drawer";
 
-const RULE = "border-hairline dark:border-separator";
 
 export interface FilingSectionEntry {
   key: string;
@@ -59,11 +58,11 @@ export function FilingSectionRows({
 
   return (
     <>
-      <div className={`mt-8 border-t ${RULE}`}>
+      <div className={`mt-8 border-t border-rule`}>
         {sections.map((s, i) => (
           <button
             key={s.key}
-            className={`flex w-full items-center gap-4 border-b ${RULE} py-5 text-left`}
+            className={`flex w-full items-center gap-4 border-b border-rule py-5 text-left`}
             type="button"
             onClick={() => {
               setActiveKey(s.key);
@@ -73,15 +72,15 @@ export function FilingSectionRows({
             {/* The house counter spec, numbering the rows in THIS list's
                 order — the mobile read is its own run, not a citation of the
                 desktop one. */}
-            <span className="shrink-0 font-mono text-[11px] font-semibold tabular-nums tracking-[0.16em] text-foreground/35">
+            <span className="shrink-0 font-mono text-caption font-semibold tabular-nums tracking-widest text-foreground/35">
               {String(i + 1).padStart(2, "0")}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[16.5px] font-semibold leading-[1.25] tracking-[-0.015em] text-foreground">
+              <span className="block text-lede font-semibold leading-tight text-foreground">
                 {s.title}
               </span>
               {/* Truncated, never wrapped: the row's job is to stay a row. */}
-              <span className="mt-1 block truncate text-[12.5px] leading-[1.5] text-foreground/55">
+              <span className="mt-1 block truncate text-small text-foreground/55">
                 {s.hint}
               </span>
             </span>

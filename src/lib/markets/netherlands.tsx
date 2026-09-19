@@ -263,7 +263,7 @@ export function toMarketDealing(g: EuRowGroup): MarketDealing<EuRowGroup> {
 /* ─── Slot: RowActionCell (flag chips for AFM-specific signals) ──────── */
 
 const CHIP_BASE =
-  "inline-flex items-center justify-center rounded-md border whitespace-nowrap px-2 py-0.5 text-[11px]";
+  "inline-flex items-center justify-center rounded-md border whitespace-nowrap px-2 py-0.5 text-caption";
 
 const CHIP_TONES: Record<"weak" | "neutral", string> = {
   weak: "bg-amber-200/15 text-amber-900/70 border-amber-400/25 dark:text-amber-200/60 dark:border-amber-300/20",
@@ -397,7 +397,7 @@ function NetherlandsDetailBody({
               {g.legs.map((leg) => (
                 <tr
                   key={leg.id}
-                  className="border-t border-black/[0.04] dark:border-white/[0.06]"
+                  className="border-t border-rule"
                 >
                   <td className="py-1">{leg.trade_date.slice(0, 10)}</td>
                   <td className="py-1 text-right">
@@ -441,7 +441,7 @@ function NetherlandsDetailBody({
           <DetailField mono label="Trade date" value={d.trade_date} />
           <DetailField mono label="ID" value={d.id} />
         </dl>
-        <pre className="mt-3 overflow-x-auto rounded bg-black/85 dark:bg-black/60 p-3 text-[11px] text-slate-100 leading-snug">
+        <pre className="mt-3 overflow-x-auto rounded bg-black/85 dark:bg-black/60 p-3 text-caption text-slate-100 leading-snug">
           {JSON.stringify(d, null, 2)}
         </pre>
       </DisclosureSection>

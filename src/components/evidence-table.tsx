@@ -19,15 +19,15 @@ import { ChevronDownIcon } from "@heroicons/react/16/solid";
 const TONE = {
   for: {
     icon: "✓",
-    text: "text-[#1e6b18] dark:text-[#5cd84a]",
+    text: "text-positive",
     plate:
-      "bg-[#1e6b18]/[0.06] border-[#1e6b18]/[0.14] dark:bg-[#5cd84a]/[0.06] dark:border-[#5cd84a]/[0.16]",
+      "bg-positive/6 border-positive/15",
   },
   against: {
     icon: "✗",
-    text: "text-[#8b2020] dark:text-[#e84d4d]",
+    text: "text-negative",
     plate:
-      "bg-[#8b2020]/[0.06] border-[#8b2020]/[0.14] dark:bg-[#e84d4d]/[0.06] dark:border-[#e84d4d]/[0.16]",
+      "bg-negative/6 border-negative/15",
   },
 } as const;
 
@@ -107,7 +107,7 @@ export function EvidenceTable({
             return (
               <div
                 key={i}
-                className={`flex gap-3 rounded-xl border px-3.5 py-3 ${t.plate}`}
+                className={`flex gap-3 rounded-card border px-3.5 py-3 ${t.plate}`}
               >
                 {head}
               </div>
@@ -117,7 +117,7 @@ export function EvidenceTable({
           return (
             <details
               key={i}
-              className={`group rounded-xl border px-3.5 py-3 ${t.plate}`}
+              className={`group rounded-card border px-3.5 py-3 ${t.plate}`}
             >
               <summary className="flex gap-3 cursor-pointer list-none items-start [&::-webkit-details-marker]:hidden">
                 {head}

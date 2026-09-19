@@ -45,11 +45,11 @@ export function RatingChecklistView({
                 <summary className="flex items-center gap-3 py-2.5 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                   <span
                     aria-label={ok ? "passed" : "failed"}
-                    className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold shrink-0
+                    className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-caption font-bold shrink-0
                       ${
                         ok
-                          ? "bg-[#1e6b18]/[0.12] text-[#1e6b18] dark:bg-[#5cd84a]/[0.15] dark:text-[#5cd84a]"
-                          : "bg-[#8b2020]/[0.12] text-[#8b2020] dark:bg-[#e84d4d]/[0.15] dark:text-[#e84d4d]"
+                          ? "bg-positive/12 text-positive dark:bg-positive/15"
+                          : "bg-negative/12 text-negative dark:bg-negative/15"
                       }`}
                   >
                     {ok ? "✓" : "✗"}

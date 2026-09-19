@@ -81,7 +81,7 @@ export function AnalysisSection({
       )}
 
       {showRationale && analysis.rating_rationale && (
-        <p className="text-xs italic text-muted leading-relaxed border-t border-black/[0.06] dark:border-white/[0.08] pt-3">
+        <p className="text-xs italic text-muted leading-relaxed border-t border-rule pt-3">
           {analysis.rating_rationale}
         </p>
       )}

@@ -227,15 +227,8 @@ function CongressRowActionCell({
   // is in the value column + the drawer's exact disclosed band.
   return (
     <div className="flex items-center justify-end gap-1">
-      {dealing.rating ? (
-        <RatingBadge rating={dealing.rating} />
-      ) : (
-        // Match the US/UK "Skipped" pill exactly (capitalised, not uppercase)
-        // so the congress table reads consistently with the others.
-        <span className="inline-flex items-center justify-center rounded-md border border-[#d8d0c6]/55 bg-transparent px-2 py-0.5 text-[11px] text-[#a89e8c] dark:text-foreground/40">
-          Skipped
-        </span>
-      )}
+      {/* Unrated rows take the same "Skipped" badge as the UK and US tables. */}
+      <RatingBadge rating={dealing.rating ?? "skipped"} />
     </div>
   );
 }
@@ -280,7 +273,7 @@ function DisclosureGapCallout({
   );
 
   return (
-    <div className="space-y-2 rounded-xl border border-foreground/10 bg-foreground/[0.02] p-3">
+    <div className="space-y-2 rounded-card border border-foreground/10 bg-foreground/[0.02] p-3">
       <div className="flex items-center justify-between text-sm">
         <span className="text-foreground/60">Since the trade</span>
         <Delta className="font-semibold" value={rt} />
@@ -290,7 +283,7 @@ function DisclosureGapCallout({
         <Delta className="font-semibold" value={rd} />
       </div>
       {lagDays > 1 && (
-        <div className="flex items-start gap-1.5 border-t border-foreground/10 pt-2 text-[13px] leading-snug text-foreground/80">
+        <div className="flex items-start gap-1.5 border-t border-foreground/10 pt-2 text-small leading-snug text-foreground/80">
           <BoltIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-500" />
           <span>
             <Delta className="font-semibold" suffix="pp" value={gap} /> of that
@@ -406,7 +399,7 @@ function CongressDetailPosition({
         /* Position figures, chart and benchmark verdict as one card — the
            chart's legend used to repeat the tiles' own numbers. Per iOS
            b64f22f. */
-        <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-4 space-y-4">
+        <div className="rounded-card bg-black/[0.03] dark:bg-white/[0.04] p-4 space-y-4">
           {current != null && (
             <PositionCard
               hideAmounts
@@ -517,7 +510,8 @@ function CongressTraderProfile({
       : adv === false
         ? {
             text: "Self-directed",
-            cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+            // A status, not a direction: live.
+            cls: "bg-live/10 text-live",
           }
         : {
             text: "Management unconfirmed",
@@ -584,13 +578,7 @@ function CongressDetailBody({
         <section className="space-y-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              {d.rating ? (
-                <RatingBadge rating={d.rating} />
-              ) : (
-                <span className="inline-flex items-center justify-center rounded-md border border-[#d8d0c6]/55 bg-transparent px-2 py-0.5 text-[11px] text-[#a89e8c] dark:text-foreground/40">
-                  Skipped
-                </span>
-              )}
+              <RatingBadge rating={d.rating ?? "skipped"} />
               <h3 className="text-base font-semibold">
                 {isWiderFiling ? "This trade" : "Trade assessment"}
               </h3>
@@ -837,7 +825,7 @@ function CongressExplainer() {
 
   return (
     <div className="space-y-7">
-      <p className="text-[15px] leading-relaxed text-foreground/90">
+      <p className="text-lede leading-relaxed text-foreground/90">
         Members of Congress write the laws and sit on the committees that
         oversee whole industries. When one buys stock in a company their own
         committee regulates, or places an unusually large or leveraged bet,
@@ -852,13 +840,13 @@ function CongressExplainer() {
           House Clerk and the Senate eFD system, keep the purchases, sales and
           non-trades are dropped, and standardise every filing here.
         </p>
-        <dl className="overflow-hidden rounded-xl border border-black/[0.06] divide-y divide-black/[0.06] dark:border-white/[0.08] dark:divide-white/[0.08]">
+        <dl className="overflow-hidden rounded-card border border-rule divide-y divide-hairline dark:divide-separator">
           {meta.map((m) => (
             <div
               key={m.label}
               className="flex items-baseline justify-between gap-4 px-3.5 py-2.5"
             >
-              <dt className="shrink-0 text-xs uppercase tracking-wide text-muted">
+              <dt className="shrink-0 eyebrow text-muted">
                 {m.label}
               </dt>
               <dd className="text-right text-sm text-foreground/85">
@@ -916,7 +904,7 @@ function CongressExplainer() {
         </ul>
       </section>
 
-      <section className="rounded-xl border border-brand-brown/20 bg-brand-brown/[0.06] p-4 dark:border-brand-tan/25 dark:bg-brand-tan/[0.08]">
+      <section className="rounded-card border border-brand-brown/20 bg-brand-brown/[0.06] p-4 dark:border-brand-tan/25 dark:bg-brand-tan/[0.08]">
         <h3 className="text-sm font-semibold">Still tuning</h3>
         <p className="mt-1.5 text-sm leading-relaxed text-foreground/70">
           This is an early preview. As we see how these trades play out, we

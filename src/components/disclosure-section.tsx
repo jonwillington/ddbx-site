@@ -18,12 +18,12 @@ export function DisclosureSection({
 }) {
   return (
     <details
-      className="group rounded-lg border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-surface"
+      className="group rounded-control border border-rule bg-white dark:bg-surface"
       open={defaultOpen}
     >
       <summary className="flex cursor-pointer list-none select-none items-center gap-2 px-4 py-3">
         <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-90" />
-        <span className="flex-1 text-xs font-semibold uppercase tracking-wide text-muted">
+        <span className="flex-1 eyebrow text-muted">
           {title}
           {count !== undefined && (
             <span className="ml-1.5 font-mono normal-case tracking-normal text-foreground/50">
@@ -32,7 +32,7 @@ export function DisclosureSection({
           )}
         </span>
       </summary>
-      <div className="border-t border-black/[0.04] px-4 pb-4 pt-3 dark:border-white/[0.06]">
+      <div className="border-t border-rule px-4 pb-4 pt-3">
         {children}
       </div>
     </details>

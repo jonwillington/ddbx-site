@@ -50,12 +50,10 @@ import { CompanyLogo } from "@/components/company-logo";
 import { MemberPortrait, R } from "@/components/congress/congress-ui";
 import { PartyChip } from "@/components/party-chip";
 import { MeterBar } from "@/components/seo/meter-bar";
+import { panel } from "@/components/ui/panel";
 
-const RULE = "border-hairline dark:border-separator";
-
-/** The house panel, same constant as congress-ui.tsx and filing-ui.tsx. */
-export const PANEL =
-  "rounded-3xl border border-hairline bg-white/70 dark:border-border/60 dark:bg-surface-secondary/40";
+/** The house panel: the shared inset panel, as congress-ui.tsx uses. */
+export const PANEL = panel({ variant: "inset" });
 
 const LOCALE = "en-US";
 
@@ -174,11 +172,11 @@ export function RollCall({
           to={memberPathFor(m)}
         >
           <MemberPortrait member={m} size={20} />
-          <span className="min-w-0 truncate text-[12.5px] text-foreground">
+          <span className="min-w-0 truncate text-small text-foreground">
             {m.name}
           </span>
           {m.lane === "in" ? (
-            <span className="shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-brown dark:text-brand-tan">
+            <span className="shrink-0 micro text-brand-brown dark:text-brand-tan">
               lane
             </span>
           ) : null}
@@ -191,7 +189,7 @@ export function RollCall({
       lines.push({
         key: "__rest",
         label: (
-          <span className="text-[12.5px] text-foreground/60">
+          <span className="text-small text-foreground/60">
             {rest.length} more {rest.length === 1 ? "member" : "members"}
           </span>
         ),
@@ -235,7 +233,7 @@ export function RollCall({
           {drawn.lines.map((l) => (
             <li
               key={l.key}
-              className={`flex items-center border-b ${RULE} last:border-b-0`}
+              className={`flex items-center border-b border-rule last:border-b-0`}
               style={{ height: ROW_H }}
             >
               {l.label}
@@ -277,7 +275,7 @@ export function RollCall({
                     y2={h}
                   />
                   <text
-                    className="fill-foreground/45 font-mono text-[10px]"
+                    className="fill-foreground/45 font-mono text-caption"
                     textAnchor="middle"
                     x={m.x}
                     y={h + 17}
@@ -308,7 +306,7 @@ export function RollCall({
           )}
         </div>
       </div>
-      <p className={`mt-3 max-w-[66ch] ${R.label} leading-[1.6]`}>
+      <p className={`mt-3 max-w-[66ch] ${R.label}`}>
         Marks sit on the day each purchase was disclosed, sized by the floor of
         its band; the largest here is {band(maxFloor, maxFloor)} and up. Hollow
         marks are options positions.
@@ -330,13 +328,13 @@ export function BandLadder({ tiers }: { tiers: BandTier[] }) {
       {tiers.map((t) => (
         <li
           key={`${t.min}-${t.max}`}
-          className={`grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_4.5rem] items-center gap-x-4 border-b ${RULE} py-2.5 last:border-b-0`}
+          className={`grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_4.5rem] items-center gap-x-4 border-b border-rule py-2.5 last:border-b-0`}
         >
-          <span className="text-[13.5px] tabular-nums text-foreground">
+          <span className="text-body tabular-nums text-foreground">
             {band(t.min, t.max)}
           </span>
           <MeterBar max={max} value={t.count} />
-          <span className="text-right text-[13px] tabular-nums text-foreground/60">
+          <span className="text-right text-small tabular-nums text-foreground/60">
             {t.count} {t.count === 1 ? "buy" : "buys"}
           </span>
         </li>
@@ -416,7 +414,7 @@ export function PurchasesTable({ rows }: { rows: GovDealing[] }) {
     <div className="mt-4 overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-left">
         <thead>
-          <tr className={`border-b ${RULE}`}>
+          <tr className={`border-b border-rule`}>
             <Th>Member</Th>
             <Th>Filed</Th>
             <Th>Lag</Th>
@@ -435,7 +433,7 @@ export function PurchasesTable({ rows }: { rows: GovDealing[] }) {
             const lag = lagDays(d);
 
             return (
-              <tr key={d.id} className={`border-b ${RULE} align-top`}>
+              <tr key={d.id} className={`border-b border-rule align-top`}>
                 <Td>
                   <Link
                     className="font-medium text-foreground underline-offset-4 hover:underline"
@@ -458,7 +456,7 @@ export function PurchasesTable({ rows }: { rows: GovDealing[] }) {
                     <>
                       {lag} {lag === 1 ? "day" : "days"}
                       {d.is_late ? (
-                        <span className="ml-1.5 text-[11px] text-negative">
+                        <span className="ml-1.5 text-caption text-negative">
                           late
                         </span>
                       ) : null}
@@ -513,7 +511,7 @@ function Th({
 }) {
   return (
     <th
-      className={`pb-2 pr-4 text-[11px] font-medium leading-tight text-foreground/45 last:pr-0 ${className}`}
+      className={`pb-2 pr-4 text-caption font-medium leading-tight text-foreground/45 last:pr-0 ${className}`}
       scope="col"
     >
       {children}
@@ -529,7 +527,7 @@ function Td({
   className?: string;
 }) {
   return (
-    <td className={`py-2.5 pr-4 text-[13.5px] last:pr-0 ${className}`}>
+    <td className={`py-2.5 pr-4 text-body last:pr-0 ${className}`}>
       {children}
     </td>
   );
@@ -559,16 +557,16 @@ export function StockLanePanel({
 }) {
   return (
     <div className="mt-4">
-      <p className={`max-w-[62ch] ${R.body}`}>{laneLine}</p>
+      <p className={`max-w-measure ${R.body}`}>{laneLine}</p>
       {committees.length > 0 ? (
-        <ul className={`mt-4 border-t ${RULE}`}>
+        <ul className={`mt-4 border-t border-rule`}>
           {committees.map((c) => (
             <li
               key={c.committee}
-              className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b ${RULE} py-2.5`}
+              className={`flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-rule py-2.5`}
             >
               <Link
-                className="text-[14px] font-medium text-foreground underline-offset-4 hover:underline"
+                className="text-body font-medium text-foreground underline-offset-4 hover:underline"
                 to={committeeHref(c.committee)}
               >
                 {c.committee.replace(/^House Committee on /, "")}
@@ -581,7 +579,7 @@ export function StockLanePanel({
         </ul>
       ) : null}
       {out > 0 || unmodelled > 0 || pending > 0 ? (
-        <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
+        <p className={`mt-3 max-w-measure ${R.label}`}>
           {out > 0
             ? `${out} ${out === 1 ? "buyer sits" : "buyers sit"} on mapped committees, none of which covers this company. `
             : null}
@@ -612,14 +610,14 @@ export function StockCell({
   to: string;
 }) {
   return (
-    <li className={`border-b ${RULE}`}>
+    <li className={`border-b border-rule`}>
       <Link
         className="flex items-center gap-3 py-2.5 transition-colors hover:bg-foreground/[0.02]"
         to={to}
       >
         <CompanyLogo className="shrink-0" size={28} ticker={ticker} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13.5px] font-medium text-foreground">
+          <span className="block truncate text-body font-medium text-foreground">
             {company}
           </span>
           <span className={`block ${R.label}`}>

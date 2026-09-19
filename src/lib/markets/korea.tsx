@@ -592,14 +592,14 @@ function KrDetailBody({ dealing }: { dealing: MarketDealing<KrDealingGroup> }) {
           years, and a reader who does not know that will read the single
           trade date above it as the date of the whole lot. */}
       {multi ? (
-        <p className="text-[12.5px] leading-[1.5] text-foreground/70">
+        <p className="text-small text-foreground/70">
           {legs.length} trades between {longDate(first.trade_date)} and{" "}
           {longDate(last.trade_date)}, all reported in one filing on{" "}
           {longDate(w.disclosed_date)}. The figures below are the totals.
         </p>
       ) : null}
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-small">
         <DetailPair
           label="Shares"
           value={Math.abs(w.shares_change).toLocaleString("en-GB")}
@@ -673,7 +673,7 @@ function KrDetailBody({ dealing }: { dealing: MarketDealing<KrDealingGroup> }) {
               {legs.map((leg) => (
                 <tr
                   key={leg.id}
-                  className="border-t border-black/[0.04] dark:border-white/[0.06]"
+                  className="border-t border-rule"
                 >
                   <td className="py-1">{iso(leg.trade_date)}</td>
                   <td className="py-1 text-right">
@@ -697,7 +697,7 @@ function KrDetailBody({ dealing }: { dealing: MarketDealing<KrDealingGroup> }) {
       ) : null}
 
       {w.plan_report_date ? (
-        <p className="text-[12.5px] leading-[1.5] text-foreground/60">
+        <p className="text-small text-foreground/60">
           This purchase was announced in advance on{" "}
           {longDate(w.plan_report_date)}, under the rule that puts a Korean
           insider&apos;s intended buy on the record before they make it.
@@ -743,13 +743,13 @@ function DetailPair({
 }) {
   return (
     <div>
-      <dt className="text-[11.5px] uppercase tracking-[0.04em] text-foreground/45">
+      <dt className="eyebrow text-foreground/45">
         {label}
       </dt>
       <dd className="mt-0.5 text-foreground/85">
         {value}
         {sub ? (
-          <span className="block text-[11.5px] text-foreground/50">{sub}</span>
+          <span className="block text-caption text-foreground/50">{sub}</span>
         ) : null}
       </dd>
     </div>
@@ -799,7 +799,7 @@ function KoreaExplainer() {
 
   return (
     <div className="space-y-7">
-      <p className="text-[15px] leading-relaxed text-foreground/90">
+      <p className="text-lede leading-relaxed text-foreground/90">
         Korea is the one market here where the news arrives <em>before</em> the
         trade. Once a planned purchase reaches 1% of a company&apos;s shares or
         50bn won, the insider has to announce it at least 30 days ahead and then
@@ -813,13 +813,13 @@ function KoreaExplainer() {
 
       <section className="space-y-3">
         <h3 className="text-sm font-semibold">Where it comes from</h3>
-        <dl className="overflow-hidden rounded-xl border border-black/[0.06] divide-y divide-black/[0.06] dark:border-white/[0.08] dark:divide-white/[0.08]">
+        <dl className="overflow-hidden rounded-card border border-rule divide-y divide-hairline dark:divide-separator">
           {meta.map((m) => (
             <div
               key={m.label}
               className="flex items-baseline justify-between gap-4 px-3.5 py-2.5"
             >
-              <dt className="shrink-0 text-xs uppercase tracking-wide text-muted">
+              <dt className="shrink-0 eyebrow text-muted">
                 {m.label}
               </dt>
               <dd className="text-right text-sm text-foreground/85">
@@ -848,7 +848,7 @@ function KoreaExplainer() {
         </ul>
       </section>
 
-      <section className="rounded-xl border border-brand-brown/20 bg-brand-brown/[0.06] p-4 dark:border-brand-tan/25 dark:bg-brand-tan/[0.08]">
+      <section className="rounded-card border border-brand-brown/20 bg-brand-brown/[0.06] p-4 dark:border-brand-tan/25 dark:bg-brand-tan/[0.08]">
         <h3 className="text-sm font-semibold">A data preview</h3>
         <p className="mt-1.5 text-sm leading-relaxed text-foreground/70">
           Korea is published as filed while we work out what a signal looks like
