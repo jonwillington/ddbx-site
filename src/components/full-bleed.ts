@@ -24,3 +24,12 @@ export const FULL_BLEED = "relative left-1/2 w-screen -translate-x-1/2";
  *  for full-bleed sections whose content should still start where the column
  *  does on narrow screens. */
 export const FULL_BLEED_PADDED = `${FULL_BLEED} px-4 md:px-6`;
+
+/** A horizontally-scrolling strip (a wide table, a card rail) that runs to
+ *  the screen edge on phones, so its first column starts on the text column
+ *  and the overflow scrolls under the gutter rather than being clipped at it.
+ *  From `sm` the column is wide enough and the strip sits back inside it.
+ *
+ *  Matches the layout's `px-4` phone gutter; a page padded differently (the
+ *  company page's `px-5`) keeps its own. */
+export const SCROLL_BLEED = "-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0";

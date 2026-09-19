@@ -1,14 +1,15 @@
+import type { EyebrowProps } from "@/components/ui/eyebrow";
+
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { useSectionEyebrow } from "@/lib/section";
 
 /** An eyebrow prefixed with the page's masthead section — "Research ·
- *  Leaderboard". Styling stays with the caller: the stages set theirs in
- *  white on the dark panel, the light pages in brand brown. */
+ *  Leaderboard". A thin wrapper over `<Eyebrow>`: pick the colour with
+ *  `tone` (brand on light pages, stage on the dark panel); `className` is for
+ *  spacing only. */
 export function SectionEyebrow({
   children,
-  className,
-}: {
-  children: string;
-  className: string;
-}) {
-  return <p className={className}>{useSectionEyebrow(children)}</p>;
+  ...rest
+}: Omit<EyebrowProps, "children"> & { children: string }) {
+  return <Eyebrow {...rest}>{useSectionEyebrow(children)}</Eyebrow>;
 }
