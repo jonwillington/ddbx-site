@@ -195,6 +195,20 @@ export function SideNav() {
   )?.[1] as DevicePlatform | undefined;
   const { market, dashboardHref, handoff, isPinnedTheme, navItems } =
     useNavModel(routePlatform);
+  // The rail lists Learn after Stories. The top bar puts Learn second, as
+  // the first thing a newcomer needs, but in a rail the eye runs down the
+  // content (Deals, Research, Stories) before the guides.
+  const isLearn = (i: NavItem) => i.kind === "menu" && i.id === "learn";
+  const isStories = (i: NavItem) =>
+    i.kind === "menu" ? i.id === "stories" : i.label === "Stories";
+  const learn = navItems.find(isLearn);
+  // Only move it when Stories is there to follow; otherwise leave the order.
+  const railItems =
+    learn && navItems.some(isStories)
+      ? navItems
+          .filter((i) => !isLearn(i))
+          .flatMap((i) => (isStories(i) ? [i, learn] : [i]))
+      : navItems;
 
   return (
     <aside className="fixed bottom-3 left-3 top-3 z-40 hidden w-[216px] flex-col rounded-[20px] border border-[var(--shell-panel-edge)] bg-[var(--shell-panel)] xl:flex">
@@ -218,7 +232,7 @@ export function SideNav() {
         className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
       >
         <ul className="space-y-px">
-          {navItems.map((item) => {
+          {railItems.map((item) => {
             const active = item.match(location.pathname);
 
             // Stories lists article records in the top bar's dropdown. In a
