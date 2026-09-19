@@ -45,7 +45,6 @@ import {
 } from "@/components/company/company-stage";
 import { MoreCompanies } from "@/components/company/more-companies";
 import {
-  fmtPrice,
   seriesSummary,
   useCompanyPriceBars,
 } from "@/components/company/price-chart";
@@ -75,6 +74,7 @@ import {
 import { localeFor, moneyShort, SYMBOL } from "@/lib/company-format";
 import { useRememberPage } from "@/lib/search/history";
 import { marketForPath } from "@/lib/markets/registry";
+import { sharePrice } from "../../shared/share-price.js";
 
 /** /company/:key — one issuer, and the insider buying in it.
  *
@@ -107,9 +107,9 @@ import { marketForPath } from "@/lib/markets/registry";
  *  at a different point, and the stage already draws all of them on it.
  */
 const C = {
-  rule: "border-hairline dark:border-separator",
-  note: "text-[12px] leading-[1.6] text-foreground/45",
-  prose: "text-[16px] leading-[1.65] text-foreground/75",
+  rule: "border-rule",
+  note: "text-small text-foreground/45",
+  prose: "text-lede text-foreground/75",
 } as const;
 
 const LINK =
@@ -538,10 +538,7 @@ function heroFigures(
     // own formatter keeps four for sub-penny lines.
     out.push({
       k: "Share price",
-      v:
-        price.last >= 0.1 && price.last < 1000
-          ? `${SYMBOL[currency] ?? ""}${price.last.toFixed(2)}`
-          : fmtPrice(price.last, currency),
+      v: sharePrice(price.last, currency),
     });
     out.push({
       k: "12 months",
@@ -760,7 +757,7 @@ export default function CompanyPage() {
         }
         loading={!data}
         skeleton={
-          <div className="mt-8">
+          <div className="mt-10">
             <SeoSkeleton rows={4} variant="ranked-board" />
           </div>
         }
@@ -847,7 +844,7 @@ function LoadedHero({
         market={market}
         series={priceSeries}
       />
-      <p className="mt-4 max-w-[80ch] text-[12.5px] leading-[1.6] text-foreground/45">
+      <p className="mt-4 max-w-[80ch] text-small text-foreground/45">
         {updated ? `Updated ${fmtDate(updated, market)}. ` : ""}
         Share price is the latest daily close; market data refreshes daily.
         Insider figures are open-market purchases disclosed in the last twelve
@@ -909,7 +906,7 @@ function CompanyBody({
     <>
       <CompanyBrokerRow
         broker={broker}
-        className="mt-8"
+        className="mt-10"
         company={name}
         ticker={ticker}
       />
@@ -922,19 +919,19 @@ function CompanyBody({
           {...counter("company")}
         >
           {description ? (
-            <p className={`max-w-[62ch] ${C.prose}`}>{description}</p>
+            <p className={`max-w-measure ${C.prose}`}>{description}</p>
           ) : null}
           {stats.length > 0 ? (
             <dl
-              className={`grid gap-x-10 border-t ${C.rule} sm:grid-cols-2 ${description ? "mt-8" : ""}`}
+              className={`grid gap-x-10 border-t ${C.rule} sm:grid-cols-2 ${description ? "mt-10" : ""}`}
             >
               {stats.map(([k, v]) => (
                 <div
                   key={k}
                   className={`flex items-baseline justify-between border-b ${C.rule} py-3.5`}
                 >
-                  <dt className="text-[15px] text-foreground/55">{k}</dt>
-                  <dd className="text-[15px] font-semibold tabular-nums text-foreground">
+                  <dt className="text-lede text-foreground/55">{k}</dt>
+                  <dd className="text-lede font-semibold tabular-nums text-foreground">
                     {v}
                   </dd>
                 </div>
@@ -959,7 +956,7 @@ function CompanyBody({
             {headline(data, name, market, symbol, outcome)}
           </p>
           {dealingDeck ? (
-            <p className={`mt-3 max-w-[62ch] ${C.prose}`}>{dealingDeck}</p>
+            <p className={`mt-3 max-w-measure ${C.prose}`}>{dealingDeck}</p>
           ) : null}
           {tiles.length > 0 ? (
             <StatTiles
@@ -968,7 +965,6 @@ function CompanyBody({
               stats={tiles}
             />
           ) : null}
-          <div className="mt-10" />
           <BuysList
             deals={data.deals}
             locale={locale}
@@ -987,7 +983,7 @@ function CompanyBody({
         >
           <CongressTable market={market} rows={data.gov} />
           <Link
-            className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground underline underline-offset-4"
+            className="mt-4 inline-flex items-center gap-1.5 text-small font-medium text-foreground underline underline-offset-4"
             to="/congress"
           >
             See all congressional trading
@@ -1077,7 +1073,7 @@ function CompanyBody({
       <MarketFaq items={companyFaq(name, market)} />
 
       <nav
-        className={`mt-14 flex flex-wrap gap-x-7 gap-y-2 border-t ${C.rule} pt-6 text-[13.5px]`}
+        className={`mt-14 flex flex-wrap gap-x-7 gap-y-2 border-t ${C.rule} pt-6 text-body`}
       >
         <Link
           className="text-foreground/70 underline-offset-4 hover:underline"
@@ -1135,8 +1131,10 @@ function BuysList({
     [deals],
   );
 
+  // Block tier (mt-10) off the tiles above: the spacing the section used to
+  // get from an empty spacer div at the call site.
   return (
-    <>
+    <div className="mt-10">
       <BoardRowHeader
         moneyPair
         className=""
@@ -1179,7 +1177,7 @@ function BuysList({
           );
         })}
       </BoardRowList>
-    </>
+    </div>
   );
 }
 
@@ -1199,8 +1197,8 @@ function PeerRows({
   symbol: string;
 }) {
   return (
-    <div className="mt-8">
-      <p className="text-[13px] font-medium text-foreground/60">{heading}</p>
+    <div className="mt-10">
+      <p className="text-small font-medium text-foreground/60">{heading}</p>
       <BoardRowHeader
         className="mt-3"
         facts={["Buys", "Disclosed"]}
@@ -1274,10 +1272,10 @@ function NewsRows({
               rel="nofollow noopener noreferrer"
               target="_blank"
             >
-              <span className="text-[17px] font-medium leading-[1.35] tracking-[-0.01em] text-foreground/90 underline-offset-4 group-hover:underline">
+              <span className="text-lede font-medium text-foreground/90 underline-offset-4 group-hover:underline">
                 {n.title}
               </span>
-              <span className="flex items-center gap-1.5 text-[12.5px] text-foreground/45 sm:justify-end">
+              <span className="flex items-center gap-1.5 text-small text-foreground/45 sm:justify-end">
                 {n.source ? (
                   <>
                     <NewsSourceLogo size={14} url={n.url} />
@@ -1306,7 +1304,6 @@ function statRows(
 ): Array<[string, string]> {
   if (!stats) return [];
   const cur = stats.currency ?? (market === "UK" ? "GBP" : "USD");
-  const sym = SYMBOL[cur] ?? "";
   const rows = (
     [
       [
@@ -1317,9 +1314,11 @@ function statRows(
       ],
       [
         "Previous close",
-        stats.previousClose != null ? `${sym}${stats.previousClose}` : null,
+        stats.previousClose != null
+          ? sharePrice(stats.previousClose, cur) || null
+          : null,
       ],
-      ["Open", stats.open ? `${sym}${stats.open}` : null],
+      ["Open", stats.open ? sharePrice(stats.open, cur) || null : null],
       ["P/E ratio", stats.peRatio != null ? stats.peRatio.toFixed(2) : null],
       ["P/B ratio", stats.pbRatio != null ? stats.pbRatio.toFixed(2) : null],
       ["PEG ratio", stats.pegRatio != null ? stats.pegRatio.toFixed(2) : null],
@@ -1347,7 +1346,7 @@ function CongressTable({
   return (
     <div className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
       <div>
-        <table className="w-full text-[13.5px]">
+        <table className="w-full text-body">
           <thead>
             <tr className={`border-b ${C.rule}`}>
               <th className={`py-2.5 pr-4 text-left font-normal ${C.note}`}>
