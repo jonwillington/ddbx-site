@@ -11,10 +11,16 @@
  *
  *  - **PUSH / REPLACE** (a link, a redirect) scrolls to the top. This is the
  *    fix.
- *  - **POP** (back / forward) does nothing, leaving the browser's own
- *    restoration to put the reader back where they were. Overriding it would
- *    trade one wrong position for a more annoying one: going back to a list and
- *    losing your place in it.
+ *  - **POP** (back / forward) puts the reader back where they were on that
+ *    entry. This used to be left to the browser, which restores once, at the
+ *    moment of the popstate, against whatever height the page has then. A
+ *    list that renders from data a beat later is still short at that moment,
+ *    so the browser clamped to the top — invisible while a deal opened in a
+ *    drawer over the list, and the first thing anyone noticed once rows
+ *    opened the filing page instead (2026-09-19). So restoration is manual:
+ *    every entry's offset is recorded as the reader scrolls, and on POP it is
+ *    re-applied each frame until the page is tall enough to hold it, the
+ *    reader scrolls for themselves, or a second has passed.
  *  - **A hash** scrolls to that element instead, so in-page anchors keep
  *    working. `/api` links to `#reference` and `#request-access`, and a blanket
  *    scroll-to-top would break both.
@@ -29,9 +35,105 @@
 import { useEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
+/** Scroll offset per history entry, keyed by the router's location key. Held
+ *  in sessionStorage so it survives a reload, like the browser's own. */
+const STORE = "ddbx.scroll";
+const RESTORE_MS = 1000;
+
+function readOffsets(): Record<string, number> {
+  try {
+    return JSON.parse(sessionStorage.getItem(STORE) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+function writeOffset(key: string, y: number) {
+  try {
+    const all = readOffsets();
+
+    all[key] = y;
+    sessionStorage.setItem(STORE, JSON.stringify(all));
+  } catch {
+    // Private mode or full storage: restoration degrades to the top.
+  }
+}
+
 export function ScrollToTop() {
-  const { pathname, hash } = useLocation();
+  const { pathname, hash, key } = useLocation();
   const navigationType = useNavigationType();
+
+  // Take restoration off the browser, which would otherwise race the manual
+  // restore below and win with a clamped offset.
+  useEffect(() => {
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  }, []);
+
+  // Record this entry's offset as the reader scrolls, throttled to a frame.
+  // A new entry (a link, a filter pushed into the URL) is stamped with where
+  // it starts, so coming back to one never scrolled still has a record. Not
+  // on POP: that entry's record is the one about to be restored.
+  useEffect(() => {
+    if (navigationType !== "POP") writeOffset(key, window.scrollY);
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        writeOffset(key, window.scrollY);
+      });
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [key, navigationType]);
+
+  // Back / forward: restore this entry's offset. Keyed on the entry, so a
+  // search-only POP (Back closing an overlay) lands where it was too.
+  useEffect(() => {
+    if (navigationType !== "POP") return;
+
+    // An entry never scrolled has no record, and its offset was the top.
+    const target = readOffsets()[key] ?? 0;
+    const started = performance.now();
+    let raf = 0;
+    let cancelled = false;
+    // The reader taking over ends it: never yank a page they are scrolling.
+    const stop = () => {
+      cancelled = true;
+    };
+    const tick = () => {
+      if (cancelled) return;
+      const room = document.documentElement.scrollHeight - window.innerHeight;
+
+      window.scrollTo({
+        top: Math.min(target, Math.max(0, room)),
+        left: 0,
+        behavior: "instant" as ScrollBehavior,
+      });
+      if (room >= target || performance.now() - started > RESTORE_MS) {
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+
+    window.addEventListener("wheel", stop, { passive: true, once: true });
+    window.addEventListener("touchstart", stop, { passive: true, once: true });
+    window.addEventListener("keydown", stop, { once: true });
+    tick();
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      window.removeEventListener("wheel", stop);
+      window.removeEventListener("touchstart", stop);
+      window.removeEventListener("keydown", stop);
+    };
+  }, [key, navigationType]);
 
   useEffect(() => {
     if (navigationType === "POP") return;

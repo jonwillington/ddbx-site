@@ -600,8 +600,18 @@ export interface MarketConfig<W = unknown> {
    *  because `/dealings/:id` is a UK pipeline route — the US, SE and NL feeds
    *  have no filing route yet and must return null rather than a 404.
    *
-   *  Returning null is the "no page for this one" answer and renders nothing. */
+   *  Returning null is the "no page for this one" answer and renders nothing.
+   *
+   *  Since 2026-09-19 this is also the switch that retires the drawer: a
+   *  market with a filing route opens that page from every row, and the
+   *  drawer only ever opens for markets without one (SE, NL, KR, Congress,
+   *  DJT). */
   filingHref?: (dealing: MarketDealing<W>) => string | null;
+  /** The wire row to hand the filing page with the navigation, so it renders
+   *  on the first frame instead of refetching a row the list already holds.
+   *  Null when the list's row is not the shape the page reads (a US group the
+   *  client collapsed from several server rows). */
+  filingSeed?: (dealing: MarketDealing<W>) => unknown;
 
   /** Component slot rendered in the row's right-most column. Receives the
    *  MarketDealing so it can read raw extras (Form 4 amendment flag, etc).

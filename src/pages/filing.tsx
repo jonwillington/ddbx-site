@@ -94,7 +94,7 @@ import type { ReactNode } from "react";
 import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   ArrowDownRightIcon,
   ArrowUpRightIcon,
@@ -124,7 +124,9 @@ import {
 import {
   FilingStage,
   FilingStageSkeleton,
+  longDate,
 } from "@/components/filing/filing-stage";
+import { IssuerBuys } from "@/components/filing/issuer-buys";
 import { AnalysisPreview } from "@/components/filing/analysis-preview";
 import {
   FilingSectionRows,
@@ -161,13 +163,19 @@ export default function FilingPage({
   market?: "UK" | "US";
 }) {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const fam = filingFamily(market);
   const us = market === "US";
-  const [deal, setDeal] = useState<Dealing | UsDealing | null>(null);
+  // A row the reader clicked in a list arrives with the navigation (see
+  // `filingSeed`), and a filing already read this session is in the cache:
+  // either renders the page on the first frame, the way the drawer used to
+  // open, while the fetch below refreshes it underneath.
+  const initial = id ? seededFiling(id, location.state) : null;
+  const [deal, setDeal] = useState<Dealing | UsDealing | null>(initial);
   // "missing" and "failed" are different pages: an outage must not render as
   // "this filing does not exist".
   const [status, setStatus] = useState<"loading" | "ok" | "missing" | "failed">(
-    "loading",
+    initial ? "ok" : "loading",
   );
   // The numbered run renders two ways: the full stacked sections on md+, and
   // a row list that opens each section in the bottom sheet below it. A JS
@@ -185,22 +193,33 @@ export default function FilingPage({
     }
 
     let live = true;
+    const seeded = seededFiling(id, location.state);
 
-    setStatus("loading");
+    // Seeded: show it now and refresh quietly. A failed refresh leaves the
+    // seeded record standing rather than replacing a page with an error.
+    if (seeded) {
+      setDeal(seeded);
+      setStatus("ok");
+    } else {
+      setDeal(null);
+      setStatus("loading");
+    }
     (us ? api.usDealing(id) : api.dealing(id))
       .then((d) => {
         if (!live) return;
+        FILING_CACHE.set(id, d);
         setDeal(d);
         setStatus("ok");
       })
       .catch((err: Error) => {
-        if (!live) return;
+        if (!live || seeded) return;
         setStatus(/\b404\b/.test(err.message) ? "missing" : "failed");
       });
 
     return () => {
       live = false;
     };
+    // location.state is read once per id: it is the seed for THIS navigation.
   }, [id, us]);
 
   const evidence = useMemo(() => (deal ? evidenceHeadlines(deal) : []), [deal]);
@@ -541,8 +560,14 @@ export default function FilingPage({
         label="Consideration"
         value={fam.value(deal) == null ? "—" : fam.money(fam.value(deal))}
       />
-      <Row label="Traded" value={deal.trade_date} />
-      <Row label="Disclosed" value={deal.disclosed_date} />
+      <Row
+        label="Traded"
+        value={longDate(deal.trade_date, market, { weekday: true })}
+      />
+      <Row
+        label="Disclosed"
+        value={longDate(deal.disclosed_date, market, { weekday: true })}
+      />
       <Row
         label="Disclosure lag"
         value={
@@ -571,7 +596,9 @@ export default function FilingPage({
             // A skeleton, not the word "Filing": loading is not a state with
             // copy. The missing/failed branch above keeps real words — an
             // absent record and an in-flight one are different pages.
-            label: deal?.disclosed_date ?? (
+            label: deal ? (
+              longDate(deal.disclosed_date, market)
+            ) : (
               <Skeleton className="inline-block h-[10px] w-[64px] translate-y-[1px] rounded" />
             ),
           },
@@ -628,7 +655,9 @@ export default function FilingPage({
                 sentence the unfurl carries, so a tweet and its preview agree. */}
             <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
               <p className="max-w-[62ch] text-[12.5px] leading-[1.6] text-foreground/45">
-                {asOf ? `Marked to the close on ${asOf}. ` : ""}
+                {asOf
+                  ? `Marked to the close on ${longDate(asOf, market)}. `
+                  : ""}
                 {FILING_NOTICE}
               </p>
               {id ? (
@@ -693,6 +722,8 @@ export default function FilingPage({
             >
               {recordBody}
             </SeoSection>
+
+            <IssuerBuys company={name} deal={deal} market={market} />
 
             <SeoSection aside="Where to go from here." title="Read next">
               <RelatedCards
@@ -786,6 +817,30 @@ export default function FilingPage({
       </SeoPageShell>
     </DefaultLayout>
   );
+}
+
+/** Filings read this session, by id. Stepping back to one (or across to it
+ *  from the other-buys list and back) renders at once. */
+const FILING_CACHE = new Map<string, Dealing | UsDealing>();
+
+/** The navigation state a list passes when it opens a filing page: the wire
+ *  row it already holds. See `lib/filing-nav.ts`. */
+function seededFiling(id: string, state: unknown): Dealing | UsDealing | null {
+  const seed = (state as { filingSeed?: Dealing | UsDealing } | null)
+    ?.filingSeed;
+
+  if (seed && seed.id === id && isFullRow(seed)) return seed;
+
+  return FILING_CACHE.get(id) ?? null;
+}
+
+/** A lite window row (`fields=lite`) keeps only the rating from `analysis`;
+ *  seeding the page with one would render a rated filing with no checks and
+ *  no findings until the fetch landed. Rated rows must carry the summary. */
+function isFullRow(d: Dealing | UsDealing): boolean {
+  const a = d.analysis as { rating?: unknown; summary?: unknown } | null;
+
+  return !a || !a.rating || typeof a.summary === "string";
 }
 
 /** One cell of the record grid: label over value, both left-set.

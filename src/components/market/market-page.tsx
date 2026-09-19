@@ -210,6 +210,7 @@ export function MarketPage<W>({
   // mode hook (also gives us cross-tab sync). Replaces the older
   // per-market `useMetricMode`.
   const metric = useDashboardMetricMode(config.id);
+
   // Remembered for /api and /mcp, whose per-market previews open on the
   // market the reader came from (lib/last-market).
   useEffect(() => rememberMarket(config.id), [config.id]);
@@ -929,13 +930,15 @@ export function MarketPage<W>({
 
   // Drawer should open for any clicked dealing, even ones the active
   // signal/strength filter would hide, including direct and shared links.
-  const selectedDealing = useMemo(
-    () =>
-      selectedKey
-        ? (dealings.find((d) => d.key === selectedKey) ?? null)
-        : null,
-    [dealings, selectedKey],
-  );
+  // Never a row that has a filing page: that one redirects (below) rather
+  // than flashing the drawer open on its way out.
+  const selectedDealing = useMemo(() => {
+    const d = selectedKey
+      ? (dealings.find((x) => x.key === selectedKey) ?? null)
+      : null;
+
+    return d && config.filingHref?.(d) ? null : d;
+  }, [dealings, selectedKey, config]);
 
   // Raw / vs benchmark switches what the Performance column and the row
   // sparkline show. A market that renders neither has nothing for it to
@@ -1033,10 +1036,50 @@ export function MarketPage<W>({
   // primary) BEFORE any analysis had been shown, which put the ask ahead of
   // the proof. The boundary is still legible: the drawer brackets the freebie
   // with FreeAnalysisNotice, and subsequent opens hit the gated overlay.
+  //
+  // Markets with a filing page (UK, US) open THAT, not the drawer (retired for
+  // them 2026-09-19). The row the list already holds rides along as navigation
+  // state so the page renders on the first frame, the way the drawer used to.
+  // The drawer stays for markets with no filing route.
   const openDealing = useCallback(
-    (d: MarketDealing<W>) => setSelectedKey(d.key),
-    [setSelectedKey],
+    (d: MarketDealing<W>) => {
+      const href = config.filingHref?.(d);
+
+      if (href) {
+        navigate(href, {
+          state: { filingSeed: config.filingSeed?.(d) ?? null },
+        });
+
+        return;
+      }
+      setSelectedKey(d.key);
+    },
+    [config, navigate, setSelectedKey],
   );
+
+  // Old `?deal=<key>` links (shared URLs, GA, the channel's contributor cards)
+  // land on the filing page instead of opening a drawer this market no longer
+  // uses. Replace, so Back does not bounce the reader through the redirect.
+  // Waits for the list: a US key is a group key, resolved through the row.
+  useEffect(() => {
+    if (controlled || !urlDealKey || !config.filingHref) return;
+    const d = dealings.find((x) => x.key === urlDealKey);
+
+    if (d) {
+      const href = config.filingHref(d);
+
+      if (href) navigate(href, { replace: true });
+
+      return;
+    }
+    // A UK key IS the filing id, so a link to a row outside the loaded list
+    // still resolves once the list has had its chance.
+    if (!loading && config.id === "uk") {
+      navigate(`/dealings/${encodeURIComponent(urlDealKey)}`, {
+        replace: true,
+      });
+    }
+  }, [controlled, urlDealKey, config, dealings, loading, navigate]);
 
   // The prominent ("suggested") rows of a day. When the market opts into
   // company clustering, multiple same-company buys on the same day collapse
@@ -1168,10 +1211,10 @@ export function MarketPage<W>({
         <MarketHero
           bullets={config.heroBullets}
           hasRightDrawer={hasNewsSource || supportsChannelPerf}
-          notice={config.topNotice}
           headline={config.heroHeadline}
           marketId={config.id}
           marketLabel={config.marketLabel}
+          notice={config.topNotice}
           primaryCtaHref={appStoreUrlForMarketId(config.id)}
           reportLabel={monthShort(latestRecapMonth)}
           showcase={config.heroShowcase}
@@ -1979,6 +2022,17 @@ export function MarketPage<W>({
           showLogo={logosEnabled}
           onClose={() => setExplainerOpen(false)}
           onViewFiling={(key) => {
+            const d = dealings.find((x) => x.key === key);
+            const href = d ? config.filingHref?.(d) : null;
+
+            if (d && href) {
+              setExplainerOpen(false);
+              navigate(href, {
+                state: { filingSeed: config.filingSeed?.(d) ?? null },
+              });
+
+              return;
+            }
             // Swap panel → deal atomically. Two URL setters in the same tick
             // race and resurrect the cleared param (same gotcha as the
             // day → deal swap below). Controlled wrappers navigate to a
@@ -2004,7 +2058,12 @@ export function MarketPage<W>({
           // UK MarketDealing.key === dealing.id; this surface is UK-only
           // because /api/daily-summary is UK-only. Swap day → deal atomically
           // (two separate setters would race and leave ?day set).
-          setUrlParams({ day: null, deal: deal.id });
+          // The filing page, not the drawer. The day sheet's `?day=` stays in
+          // the history entry being left, so Back reopens the sheet the
+          // reader came from.
+          navigate(`/dealings/${encodeURIComponent(deal.id)}`, {
+            state: { filingSeed: deal },
+          });
         }}
       />
     </DefaultLayout>

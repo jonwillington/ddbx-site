@@ -38,12 +38,15 @@ import { Link } from "react-router-dom";
 
 import {
   cleanName,
+  disclosureLagDays,
   signedPct,
   shares as fmtShares,
 } from "../../../shared/filings.js";
+import { moneyPair } from "../../../shared/leaderboard.js";
 import { filingFamily } from "../../../shared/filing-family.js";
 import { sectorPath } from "../../../shared/sectors.js";
 
+import { CalendarDayChip, chipParts } from "@/components/calendar-day-chip";
 import { CompanyLogo } from "@/components/company-logo";
 import { MiniPriceChart } from "@/components/mini-price-chart";
 import { Skeleton } from "@/components/skeleton";
@@ -63,16 +66,25 @@ import { StageTitle } from "@/components/ui/stage-header";
    primitives (components/ui/stage.tsx), the same ones the story stage uses,
    so the two heroes cannot drift into two panels. */
 
-function longDate(iso: string | null | undefined, market: string): string {
+/** A filing date as a reader says it: "15 September 2026", or with the
+ *  weekday, "Tue 15 September 2026". Every date on the filing page goes
+ *  through here, so no slot on it prints an ISO string. */
+export function longDate(
+  iso: string | null | undefined,
+  market: string,
+  { weekday = false }: { weekday?: boolean } = {},
+): string {
   if (!iso) return "";
-  const d = new Date(`${iso.slice(0, 10)}T00:00:00`);
+  const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
 
   return Number.isNaN(d.getTime())
     ? iso
     : d.toLocaleDateString(localeFor(market), {
+        ...(weekday ? { weekday: "short" as const } : {}),
         day: "numeric",
         month: "long",
         year: "numeric",
+        timeZone: "UTC",
       });
 }
 
@@ -113,14 +125,92 @@ export function filingHeadline(
 
 function shortDate(iso: string | null | undefined, market: string): string {
   if (!iso) return "";
-  const d = new Date(`${iso.slice(0, 10)}T00:00:00`);
+  const d = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
 
   return Number.isNaN(d.getTime())
     ? iso
     : d.toLocaleDateString(localeFor(market), {
         day: "numeric",
         month: "short",
+        timeZone: "UTC",
       });
+}
+
+/** One date on the dateline: the site's calendar leaf, then what happened on
+ *  it and the full date. */
+function DateLeaf({
+  iso,
+  label,
+  market,
+  muted = false,
+}: {
+  iso: string;
+  label: string;
+  market: string;
+  muted?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <CalendarDayChip {...chipParts(iso)} muted={muted} size="lg" />
+      <div className="min-w-0">
+        <p className="micro text-white/50">{label}</p>
+        <p className="mt-1.5 whitespace-nowrap text-lede text-white">
+          {longDate(iso, market)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** WHEN, stated before WHAT.
+ *
+ *  The date used to be the third item in the kicker, mono 11px at 55% white,
+ *  and the trade date lived only in the caption under the chart. But a filing
+ *  is a dated event before it is anything else, and the gap between the trade
+ *  and the disclosure is the single most under-appreciated fact about insider
+ *  filings, so both dates sit at the top of the stage as calendar leaves with
+ *  the gap between them in words. A same-day filing is one leaf. */
+export function FilingDateline({
+  deal,
+  market,
+  className = "",
+}: {
+  deal: Dealing | UsDealing;
+  market: string;
+  className?: string;
+}) {
+  const lag = disclosureLagDays(deal);
+  const sameDay = lag === 0 || deal.trade_date === deal.disclosed_date;
+
+  if (sameDay || !deal.trade_date) {
+    return (
+      <div className={className}>
+        <DateLeaf
+          iso={deal.disclosed_date}
+          label={deal.trade_date ? "Traded and disclosed" : "Disclosed"}
+          market={market}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5 ${className}`.trimEnd()}
+    >
+      <DateLeaf muted iso={deal.trade_date} label="Traded" market={market} />
+      {lag != null && lag > 0 ? (
+        <div className="flex items-center gap-2 pl-6 sm:pl-0">
+          <span aria-hidden className="h-4 w-px bg-white/20 sm:h-px sm:w-6" />
+          <span className="text-small whitespace-nowrap text-brand-amber">
+            {lag} {lag === 1 ? "day" : "days"} later
+          </span>
+          <span aria-hidden className="hidden h-px w-6 bg-white/20 sm:block" />
+        </div>
+      ) : null}
+      <DateLeaf iso={deal.disclosed_date} label="Disclosed" market={market} />
+    </div>
+  );
 }
 
 export function FilingStage({
@@ -152,9 +242,34 @@ export function FilingStage({
   const price = fam.sharePrice(deal);
 
   const figures: StageFigure[] = [];
+  // What the insider's own shares are worth at the latest close: the one
+  // figure the drawer's position card stated that the stage did not. Measured
+  // from the TRADE (their price), not the disclosure, because it is their
+  // stake. Buys only: a disposal has no stake left to mark.
+  const retTrade = lp?.return_pct_trade ?? null;
+  const worthNow =
+    value != null &&
+    value > 0 &&
+    retTrade != null &&
+    !dayZero &&
+    fam.transactionLabel(deal) !== "Disposal"
+      ? value * (1 + retTrade / 100)
+      : null;
+  const symbol = fam.currency === "USD" ? "$" : "£";
+  const [paidLabel, worthLabel] =
+    value != null && value > 0 && worthNow != null
+      ? moneyPair(value, worthNow, symbol)
+      : [value != null && value > 0 ? fam.money(value) : null, null];
 
-  if (value != null && value > 0) {
-    figures.push({ k: "Paid", v: fam.money(value) });
+  if (paidLabel) {
+    figures.push({ k: "Paid", v: paidLabel });
+  }
+  if (worthLabel && worthNow != null && value != null) {
+    figures.push({
+      k: "Their stake now",
+      v: worthLabel,
+      tone: worthNow >= value ? "pos" : "neg",
+    });
   }
   if (hasOutcome) {
     figures.push({
@@ -177,15 +292,13 @@ export function FilingStage({
         <Eyebrow tone="stage">
           {eyebrow}
           {rating ? ` · ${rating}` : ""}
-          {` · ${longDate(deal.disclosed_date, market)}`}
         </Eyebrow>
 
-        <CompanyLogo
-          className="mt-5"
-          market={market}
-          size={80}
-          ticker={deal.ticker}
-        />
+        <FilingDateline className="mt-5" deal={deal} market={market} />
+
+        <div className="mt-7 border-t border-rule-stage pt-7">
+          <CompanyLogo market={market} size={64} ticker={deal.ticker} />
+        </div>
 
         {/* Capped at 44: the headline is a sentence about the trade, and
             54px runs it to four lines. */}
@@ -195,15 +308,15 @@ export function FilingStage({
 
         {summary ? (
           <figure className="mt-5 max-w-[60ch]">
-            <figcaption className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/45">
+            <figcaption className="micro text-white/45">
               From the analysis
             </figcaption>
-            <blockquote className="mt-1.5 text-[15px] leading-[1.6] text-white/70">
+            <blockquote className="mt-1.5 text-lede text-white/70">
               {summary}
             </blockquote>
           </figure>
         ) : (
-          <p className="mt-4 max-w-[58ch] text-[15px] leading-[1.6] text-white/65">
+          <p className="mt-4 max-w-measure text-lede text-white/65">
             {fam.leadSentence(deal)}
           </p>
         )}
@@ -212,7 +325,7 @@ export function FilingStage({
 
         {/* No figure is a state with words, never a dash in a figure slot. */}
         {!hasOutcome ? (
-          <p className="mt-5 max-w-[58ch] text-[13px] leading-[1.55] text-white/55">
+          <p className="mt-5 max-w-measure text-body text-white/55">
             {dayZero
               ? `Not enough data yet on how it has done. The latest close we hold is the disclosure day, ${shortDate(deal.disclosed_date, market)}, so the return since fills in after the next close.`
               : "Not enough data yet on how it has done: we don’t hold a price mark for this filing. The return since fills in once the price panel covers it."}
@@ -246,9 +359,8 @@ export function FilingStage({
 
       <StageFooter className="sm:px-8">
         <span>
-          {fmtShares(deal.shares)} shares{price ? ` at ${price}` : ""}, traded{" "}
-          {shortDate(deal.trade_date, market)}, disclosed{" "}
-          {shortDate(deal.disclosed_date, market)}
+          {/* The dates are the dateline's now; the caption keeps the fill. */}
+          {fmtShares(deal.shares)} shares{price ? ` at ${price}` : ""}
         </span>
         <span className="text-white/45">
           {displayTicker(deal.ticker)} · {market}
@@ -276,8 +388,9 @@ export function FilingStageSkeleton() {
   return (
     <Stage aria-hidden>
       <div className="px-6 pt-7 sm:px-8 sm:pt-9">
-        <Skeleton className="h-[11px] w-[220px] max-w-full" />
-        <Skeleton circle className="mt-5" h={80} w={80} />
+        <Skeleton className="h-[11px] w-[160px] max-w-full" />
+        <Skeleton className="mt-5 h-[52px] w-[420px] max-w-full" />
+        <Skeleton circle className="mt-14" h={64} w={64} />
         <Skeleton className="mt-5 h-[27px] w-[92%] max-w-[560px] sm:h-[37px]" />
         <Skeleton className="mt-2 h-[27px] w-[86%] max-w-[540px] sm:h-[37px]" />
         <Skeleton className="mt-2 h-[27px] w-[64%] max-w-[420px] sm:h-[37px]" />

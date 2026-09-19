@@ -17,7 +17,7 @@
  */
 import type { Dealing, UsDealing } from "@/types/ddbx";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRightIcon, CheckIcon } from "@heroicons/react/20/solid";
 
@@ -25,7 +25,7 @@ import { cleanName } from "../../../shared/filings.js";
 import { filingFamily } from "../../../shared/filing-family.js";
 
 import { CalendarDayChip, chipParts } from "@/components/calendar-day-chip";
-import { api } from "@/lib/api";
+import { useIssuerDeals } from "@/lib/issuer-deals";
 
 const RULE = "border-hairline dark:border-separator";
 
@@ -50,7 +50,7 @@ const monthAbbr = (iso: string) =>
     },
   );
 
-interface Peer {
+export interface Peer {
   id: string;
   name: string;
   role: string;
@@ -75,22 +75,9 @@ export function ClusterPanel({
   // bundle, so the peer rows read `reporter`/`value` on a US row and
   // `director`/`value_gbp` on a UK one without this component knowing which.
   const fam = filingFamily(market);
-  const [deals, setDeals] = useState<Array<Dealing | UsDealing> | null>(null);
+  const deals = useIssuerDeals(market, deal.ticker);
 
   const windowDays = deal.cluster?.window_days ?? 14;
-
-  useEffect(() => {
-    let live = true;
-
-    api
-      .companyPage(market, deal.ticker)
-      .then((r) => live && setDeals(r.deals))
-      .catch(() => live && setDeals([]));
-
-    return () => {
-      live = false;
-    };
-  }, [market, deal.ticker]);
 
   const peers = useMemo<Peer[]>(() => {
     if (!deals) return [];
@@ -281,82 +268,9 @@ export function ClusterPanel({
        *  row reached only through an underline on the name. The whole row is
        *  the link now, with the arrow saying so. */}
       <ul className={`mt-4 border-t ${RULE}`}>
-        {peers.map((p) => {
-          const body = (
-            <>
-              {/* Chip plus month. The chip carries a weekday and a day number,
-                  which is a complete date only inside a known month — and a
-                  cluster window routinely straddles two, so a column reading
-                  29, 3, 17, 6, 1 was unreadable without one. Mirrors
-                  MarketDayHeader, which pairs the same chip with a month label
-                  for the same reason. */}
-              <span className="flex shrink-0 flex-col items-center gap-1">
-                <CalendarDayChip
-                  {...chipParts(p.date)}
-                  muted={!p.isThis}
-                  size="sm"
-                />
-                <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground/40">
-                  {monthAbbr(p.date)}
-                </span>
-              </span>
-
-              <span className="min-w-0 flex-1">
-                <span
-                  className={`block text-[14px] ${
-                    p.isThis
-                      ? "font-semibold text-foreground"
-                      : "text-foreground/85"
-                  }`}
-                >
-                  {p.name}
-                  {p.isThis ? (
-                    <span className="ml-2 rounded bg-brand-brown/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan">
-                      This buy
-                    </span>
-                  ) : null}
-                </span>
-                <span className="mt-0.5 block text-[12px] text-foreground/45">
-                  {p.role || "Insider"}
-                </span>
-              </span>
-
-              <span
-                className={`shrink-0 text-right text-[19px] font-semibold leading-none tabular-nums tracking-[-0.02em] sm:text-[22px] ${
-                  p.isThis ? "text-foreground" : "text-foreground/80"
-                }`}
-              >
-                {fam.money(p.value)}
-              </span>
-
-              {/* A fixed slot either way, so the figures stay in one column
-                  whether or not the row is a link. */}
-              <span className="flex w-4 shrink-0 justify-end">
-                {p.isThis ? null : (
-                  <ArrowRightIcon
-                    aria-hidden
-                    className="h-4 w-4 text-foreground/25 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-foreground/60"
-                  />
-                )}
-              </span>
-            </>
-          );
-
-          return (
-            <li key={p.id} className={`border-b ${RULE}`}>
-              {p.isThis ? (
-                <div className="flex items-center gap-3 py-3">{body}</div>
-              ) : (
-                <Link
-                  className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-3 outline-none transition-colors hover:bg-foreground/[0.03] focus-visible:ring-2 focus-visible:ring-brand-brown/40"
-                  to={fam.path(p.id)}
-                >
-                  {body}
-                </Link>
-              )}
-            </li>
-          );
-        })}
+        {peers.map((p) => (
+          <PeerRow key={p.id} market={market} p={p} />
+        ))}
       </ul>
 
       {/* Deliberately states purchases and value, NOT a headcount.
@@ -379,5 +293,81 @@ export function ClusterPanel({
         one.
       </p>
     </div>
+  );
+}
+
+/** One purchase as a row: the date leaf, who, what they put in, and the way
+ *  to its own page. The cluster list's row, shared with the filing page's
+ *  other-buys list so a filing reached from either reads the same. The row
+ *  for the filing being read is not a link, and is labelled. */
+export function PeerRow({ p, market }: { p: Peer; market?: string }) {
+  const fam = filingFamily(market);
+  const body = (
+    <>
+      {/* Chip plus month. The chip carries a weekday and a day number,
+            which is a complete date only inside a known month — and a
+            cluster window routinely straddles two, so a column reading
+            29, 3, 17, 6, 1 was unreadable without one. Mirrors
+            MarketDayHeader, which pairs the same chip with a month label
+            for the same reason. */}
+      <span className="flex shrink-0 flex-col items-center gap-1">
+        <CalendarDayChip {...chipParts(p.date)} muted={!p.isThis} size="sm" />
+        <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground/40">
+          {monthAbbr(p.date)}
+        </span>
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span
+          className={`block text-[14px] ${
+            p.isThis ? "font-semibold text-foreground" : "text-foreground/85"
+          }`}
+        >
+          {p.name}
+          {p.isThis ? (
+            <span className="ml-2 rounded bg-brand-brown/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan">
+              This buy
+            </span>
+          ) : null}
+        </span>
+        <span className="mt-0.5 block text-[12px] text-foreground/45">
+          {p.role || "Insider"}
+        </span>
+      </span>
+
+      <span
+        className={`shrink-0 text-right text-[19px] font-semibold leading-none tabular-nums tracking-[-0.02em] sm:text-[22px] ${
+          p.isThis ? "text-foreground" : "text-foreground/80"
+        }`}
+      >
+        {fam.money(p.value)}
+      </span>
+
+      {/* A fixed slot either way, so the figures stay in one column
+            whether or not the row is a link. */}
+      <span className="flex w-4 shrink-0 justify-end">
+        {p.isThis ? null : (
+          <ArrowRightIcon
+            aria-hidden
+            className="h-4 w-4 text-foreground/25 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-foreground/60"
+          />
+        )}
+      </span>
+    </>
+  );
+
+  return (
+    <li className={`border-b ${RULE}`}>
+      {p.isThis ? (
+        <div className="flex items-center gap-3 py-3">{body}</div>
+      ) : (
+        <Link
+          className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-3 outline-none transition-colors hover:bg-foreground/[0.03] focus-visible:ring-2 focus-visible:ring-brand-brown/40"
+          to={fam.path(p.id)}
+        >
+          {body}
+        </Link>
+      )}
+    </li>
   );
 }

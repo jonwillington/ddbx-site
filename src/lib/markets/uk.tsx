@@ -413,10 +413,10 @@ const UkAnalysisOverlay = ({ dealing }: { dealing?: { ticker: string } }) => (
 
 export const UkMarket: MarketConfig<Dealing> = {
   id: "uk",
-  // The only market with a filing route today. `MarketDealing.id` is
-  // `Dealing.id` for UK (see toMarketDealing below), which is exactly what
-  // /dealings/:id resolves.
+  // `MarketDealing.id` is `Dealing.id` for UK (see toMarketDealing below),
+  // which is exactly what /dealings/:id resolves.
   filingHref: (d) => (d.id ? filingPath(d.id) : null),
+  filingSeed: (d) => d.raw,
   title: "UK director dealings (preview)",
   // Two lines: the promise first, the offer as a tinted second line beneath it
   // — the old single-line version wrapped mid-clause on a phone

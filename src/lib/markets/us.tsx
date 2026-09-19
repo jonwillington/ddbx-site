@@ -26,6 +26,7 @@ import type {
 import { useEffect, useMemo, useState } from "react";
 
 import { usInsiderDisplayName } from "../../../shared/us-names.js";
+import { usFilingPath } from "../../../shared/filings-us.js";
 
 import { defaultRatingHeroFilters } from "@/lib/markets/types";
 import { buildMarketFaq } from "@/lib/markets/faq";
@@ -708,6 +709,13 @@ const UsAnalysisOverlay = ({ dealing }: { dealing?: { ticker: string } }) => (
 
 export const UsMarket: MarketConfig<UsRowGroup> = {
   id: "us",
+  // /us/dealings/:id takes any leg of a filing and the API expands it to
+  // the whole collapsed group, so the primary leg's id is the group's page.
+  filingHref: (d) =>
+    d.raw.primary?.id ? usFilingPath(d.raw.primary.id) : null,
+  // The server already collapses tranche legs, so a one-leg group IS the row
+  // the page would fetch. A group the client collapsed further is not.
+  filingSeed: (d) => (d.raw.leg_count === 1 ? d.raw.primary : null),
   title: "US Form 4 (preview)",
   // US-market copy uses US English (analyzed, not analysed).
   // The UK hero's shape: the promise, then the offer tinted beneath it, then

@@ -23,9 +23,10 @@ import { barForDate, sanitiseBars } from "@/lib/prices";
 type Period = "around" | "ytd" | "max";
 
 const PERIODS: { key: Period; label: string }[] = [
-  { key: "around", label: "Around buy" },
-  { key: "ytd", label: "YTD" },
-  { key: "max", label: "Max" },
+  { key: "around", label: "Around the buy" },
+  { key: "ytd", label: "This year" },
+  // Relabelled at render to "5 years" or "All" — see maxPeriodLabel.
+  { key: "max", label: "All" },
 ];
 
 /** How many calendar days of pre-buy context to include on the "Around buy"
@@ -60,8 +61,8 @@ const DISCLOSED_MARKER_SIZE = 0.5;
 /** Inline price chart for one dealing. Renders via TradingView's
  *  lightweight-charts (Canvas) — gives crisp lines, built-in crosshair,
  *  proper time axis with date labels, and clean marker support out of the
- *  box. Period switcher narrows the on-screen window (Around buy / YTD /
- *  Max); markers highlight the trade and disclosure dates so the reader
+ *  box. Period switcher narrows the on-screen window (Around the buy / This
+ *  year / 5 years); markers highlight the trade and disclosure dates so the reader
  *  can see the gap between when the deal happened and when it surfaced. */
 export function MiniPriceChart({
   tickerForApi,
@@ -534,92 +535,147 @@ export function MiniPriceChart({
   // resolved to no bar at all.
   const disclosedLabel = placement.discBar ? formatShort(disclosedDate!) : null;
 
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between shrink-0">
-        <span className="text-[10px] text-muted uppercase tracking-wider font-medium">
-          {tickerForDisplay}
-        </span>
-        {hasReturn && showFigures && (
-          <span
-            className={`text-[10px] font-semibold tabular-nums ${trendText}`}
-          >
-            {returnPct >= 0 ? "+" : ""}
-            {returnPct.toFixed(1)}% since buy
-          </span>
-        )}
-      </div>
+  // Chrome for a chart sitting on an always-dark stage, as opposed to the
+  // page's own dark mode, where the foreground tokens already do the work.
+  const onStage = theme === "dark";
+  const maxLabel = maxPeriodLabel(allBars);
 
-      <div className="flex gap-1 shrink-0">
-        {PERIODS.map(({ key, label }) => (
+  const periodControl = (
+    <div
+      aria-label="Chart period"
+      className={`inline-flex shrink-0 gap-0.5 rounded-full p-0.5 ${
+        onStage
+          ? "border border-rule-stage bg-white/[0.06]"
+          : "border border-rule bg-foreground/[0.04]"
+      }`}
+      role="group"
+    >
+      {PERIODS.map(({ key, label }) => {
+        const active = period === key;
+
+        return (
           <button
             key={key}
-            className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
-              period === key
-                ? "border-brand-brown/50 bg-brand-brown/10 text-brand-brown dark:text-[#a88c6e]"
-                : "border-black/10 dark:border-white/10 text-muted hover:border-brand-brown/30"
+            aria-pressed={active}
+            className={`rounded-full font-medium outline-none transition-colors focus-visible:ring-2 ${
+              detailed ? "px-3.5 py-1.5 text-small" : "px-2.5 py-1 text-caption"
+            } ${
+              onStage
+                ? active
+                  ? "bg-white text-ink focus-visible:ring-white/40"
+                  : "text-white/65 hover:bg-white/[0.08] hover:text-white focus-visible:ring-white/40"
+                : active
+                  ? "bg-sheet text-ink shadow-lift dark:bg-white dark:text-ink focus-visible:ring-brand-brown/40"
+                  : "text-foreground/60 hover:text-foreground focus-visible:ring-brand-brown/40"
             }`}
+            type="button"
             onClick={() => setPeriod(key)}
           >
-            {label}
+            {key === "max" ? maxLabel : label}
           </button>
-        ))}
-      </div>
+        );
+      })}
+    </div>
+  );
 
-      {nowPrice !== null && (
-        <div className="flex items-center gap-3 shrink-0 border-t border-black/[0.07] dark:border-white/[0.07] pt-2">
-          {showFigures && (
-            <>
-              <span className="text-[10px] text-muted">
-                Entry{" "}
-                <span className="font-mono tabular-nums text-foreground/70">
-                  {fmt.formatPrice(entryPrice)}
-                </span>
-              </span>
-              <span className="text-[10px] text-muted">
-                Now{" "}
-                <span
-                  className={`font-mono tabular-nums font-semibold ${trendText}`}
-                >
-                  {fmt.formatPrice(nowPrice)}
-                </span>
-              </span>
-            </>
-          )}
-          {periodHigh !== null && periodLow !== null && (
-            <span className="text-[10px] text-muted ml-auto">
-              <span className="font-mono tabular-nums">
-                {fmt.formatPrice(periodLow)}
-              </span>
-              <span className="opacity-40 mx-0.5">–</span>
-              <span className="font-mono tabular-nums">
-                {fmt.formatPrice(periodHigh)}
-              </span>
-            </span>
-          )}
-        </div>
-      )}
-
-      <div className="flex items-center gap-3 shrink-0 text-[10px] text-muted">
+  // The key to the two dots. On the filing page it is the only explanation of
+  // them the chart carries, so it is set at reading size rather than 10px.
+  const legend = (
+    <div
+      className={`flex flex-wrap items-center gap-x-4 gap-y-1 ${
+        detailed
+          ? onStage
+            ? "text-small text-white/70"
+            : "text-small text-foreground/70"
+          : "text-caption text-muted"
+      }`}
+    >
+      <span className="flex items-center gap-1.5">
+        <span
+          aria-hidden
+          className={`inline-block rounded-full ${detailed ? "h-2 w-2" : "h-1.5 w-1.5"}`}
+          style={{ backgroundColor: lineColor }}
+        />
+        {placement.sameDay && disclosedDate ? "Traded and disclosed" : "Traded"}{" "}
+        <span className="tabular-nums">{tradeLabel}</span>
+      </span>
+      {disclosedLabel && (
         <span className="flex items-center gap-1.5">
           <span
             aria-hidden
-            className="inline-block w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: lineColor }}
+            className={`inline-block rounded-full ${detailed ? "h-2 w-2" : "h-1.5 w-1.5"} ${
+              onStage ? "bg-white/50" : "bg-foreground/40"
+            }`}
           />
-          {placement.sameDay && disclosedDate ? "Traded & disclosed" : "Trade"}{" "}
-          <span className="tabular-nums">{tradeLabel}</span>
+          Disclosed <span className="tabular-nums">{disclosedLabel}</span>
         </span>
-        {disclosedLabel && (
-          <span className="flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className="inline-block w-1.5 h-1.5 rounded-full bg-foreground/40"
-            />
-            Disclosed <span className="tabular-nums">{disclosedLabel}</span>
-          </span>
-        )}
-      </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className={`flex flex-col ${detailed ? "gap-4" : "gap-2"}`}>
+      {detailed ? (
+        // The filing page states the ticker, the figures and the range
+        // elsewhere on the stage; here the chart carries only what it alone
+        // knows: which window, and what the two dots are.
+        <div className="flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          {periodControl}
+          {legend}
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between shrink-0">
+            <span className="micro text-muted">{tickerForDisplay}</span>
+            {hasReturn && showFigures && (
+              <span
+                className={`text-caption font-semibold tabular-nums ${trendText}`}
+              >
+                {returnPct >= 0 ? "+" : ""}
+                {returnPct.toFixed(1)}% since buy
+              </span>
+            )}
+          </div>
+
+          {periodControl}
+
+          {nowPrice !== null && (
+            <div className="flex items-center gap-3 shrink-0 border-t border-rule pt-2">
+              {showFigures && (
+                <>
+                  <span className="text-caption text-muted">
+                    Entry{" "}
+                    <span className="font-mono tabular-nums text-foreground/70">
+                      {fmt.formatPrice(entryPrice)}
+                    </span>
+                  </span>
+                  <span className="text-caption text-muted">
+                    Now{" "}
+                    <span
+                      className={`font-mono tabular-nums font-semibold ${trendText}`}
+                    >
+                      {fmt.formatPrice(nowPrice)}
+                    </span>
+                  </span>
+                </>
+              )}
+              {periodHigh !== null && periodLow !== null && (
+                <span className="text-caption text-muted ml-auto">
+                  <span className="font-mono tabular-nums">
+                    {fmt.formatPrice(periodLow)}
+                  </span>
+                  <span className="opacity-40 mx-0.5">–</span>
+                  <span className="font-mono tabular-nums">
+                    {fmt.formatPrice(periodHigh)}
+                  </span>
+                </span>
+              )}
+            </div>
+          )}
+
+          {legend}
+        </>
+      )}
 
       {/* Bleed past the card's p-4 so the plot runs edge-to-edge. The meta
           rows above stay padded; only the canvas reaches the card borders. */}
@@ -631,7 +687,9 @@ export function MiniPriceChart({
           <div ref={containerRef} className="h-full w-full" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <span className="text-xs text-muted/50">
+            <span
+              className={`text-small ${onStage ? "text-white/45" : "text-muted/50"}`}
+            >
               {allBars.length === 0
                 ? "Loading chart…"
                 : "No data for this period"}
@@ -639,14 +697,24 @@ export function MiniPriceChart({
           </div>
         )}
         {scrub && (
-          <div className="pointer-events-none absolute left-4 top-1 z-10 flex items-baseline gap-2 rounded-md border border-black/[0.06] bg-background/90 px-2 py-1 shadow-sm backdrop-blur-sm dark:border-white/[0.08]">
-            <span className="text-[10px] text-muted tabular-nums">
+          <div
+            className={`pointer-events-none absolute left-4 top-1 z-10 flex items-baseline gap-2 rounded-control border px-2 py-1 shadow-sm backdrop-blur-sm ${
+              onStage
+                ? "border-rule-stage bg-ink/90"
+                : "border-rule bg-background/90"
+            }`}
+          >
+            <span
+              className={`text-caption tabular-nums ${onStage ? "text-white/55" : "text-muted"}`}
+            >
               {formatShort(scrub.time)}
             </span>
             <span
-              className={`font-mono text-[12px] font-semibold tabular-nums ${
+              className={`font-mono text-num tabular-nums ${
                 muted
-                  ? "text-foreground/60"
+                  ? onStage
+                    ? "text-white/70"
+                    : "text-foreground/60"
                   : scrub.value >= entryPrice
                     ? upText
                     : downText
@@ -659,4 +727,16 @@ export function MiniPriceChart({
       </div>
     </div>
   );
+}
+
+/** "Max" said nothing about how far back it went. The history request asks
+ *  for five years, so the button says so when the series actually reaches
+ *  that far; a younger listing's is "All", which is what it then is. */
+function maxPeriodLabel(bars: { date: string }[]): string {
+  if (bars.length < 2) return "All";
+  const span =
+    Date.parse(`${bars[bars.length - 1].date}T00:00:00Z`) -
+    Date.parse(`${bars[0].date}T00:00:00Z`);
+
+  return span >= 4.5 * 365 * 86_400_000 ? "5 years" : "All";
 }
