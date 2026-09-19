@@ -677,11 +677,6 @@ export interface MarketConfig<W = unknown> {
    *  "today" is usually empty) read better without it; today's filings, when
    *  any, just fall into the chronological month list as a normal day. */
   hideTodayHero?: boolean;
-  /** Suppress the "Worth a closer look" intro banner that wraps the first
-   *  day with rated rows. For a market with no analysis layer (Korea) the
-   *  banner's copy — a six-point check, rows grouped by rating — describes a
-   *  product the page does not ship. */
-  hideIntroBanner?: boolean;
 
   /** Default value for the top-level "Filter: Signal / All" dropdown. All four
    *  markets currently set this to "all" so the reader sees every disclosure

@@ -244,7 +244,7 @@ function FilterSelect({
 
       {open && (
         <div
-          className={`absolute left-0 mt-2 rounded-xl border border-separator bg-[#f5f0e8] dark:bg-background shadow-lg overflow-hidden z-50 py-1 ${
+          className={`absolute left-0 mt-2 rounded-xl border border-separator bg-[#fcfbf9] dark:bg-background shadow-lg overflow-hidden z-50 py-1 ${
             options.some((o) => o.description) ? "w-72" : "min-w-[180px]"
           }`}
           role="listbox"

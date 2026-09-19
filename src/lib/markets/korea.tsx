@@ -579,7 +579,9 @@ function KrDetailBody({ dealing }: { dealing: MarketDealing<KrDealingGroup> }) {
   const holdingAfter =
     last.shares_before != null ? last.shares_before + last.shares_change : null;
   const holdingSpan =
-    first.shares_before != null && first.shares_before > 0 && holdingAfter != null
+    first.shares_before != null &&
+    first.shares_before > 0 &&
+    holdingAfter != null
       ? `${first.shares_before.toLocaleString("en-GB")} to ${holdingAfter.toLocaleString("en-GB")} shares`
       : null;
 
@@ -1126,12 +1128,6 @@ export const KoreaMarket: MarketConfig<KrDealingGroup> = {
     subtitle:
       "Purchases filed without an advance announcement, or whose announcement is older than this list. Grouped by filing, newest first.",
   },
-
-  /* The shared intro banner ("Each day we score new insider buys against a
-     six-point check") wraps the first day with rated rows. Korea has no
-     rated rows and no check, and with every row a buy the shell was
-     wrapping the first day anyway. */
-  hideIntroBanner: true,
 
   explainer: <KoreaExplainer />,
   explainerSubtitle: "Korea Exchange · DART",

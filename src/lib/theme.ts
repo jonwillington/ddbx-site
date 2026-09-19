@@ -18,7 +18,7 @@ export type Theme = "light" | "dark";
  *  truth for every surface iOS Safari samples its chrome from — the meta tag,
  *  the <html> paint and the <body> paint all come from here.
  *
- *  Light is the cream the layout paints (#f5f0e8), NOT HeroUI's white
+ *  Light is the cream the layout paints (#fcfbf9), NOT HeroUI's white
  *  `--background`.
  *
  *  Dark is `--background` resolved: `oklch(22% 0.022 55)` = #231811. It used to
@@ -32,7 +32,7 @@ export type Theme = "light" | "dark";
  *  Kept in sync with the first-paint seed in index.html and with
  *  `body`/`.dark body` in globals.css. If --background moves, this moves. */
 export const THEME_COLOR: Record<Theme, string> = {
-  light: "#f5f0e8",
+  light: "#fcfbf9",
   dark: "#231811",
 };
 

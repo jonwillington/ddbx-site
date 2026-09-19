@@ -19,7 +19,7 @@ export const METHOD_CHIP = `${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.sm} bg-bra
 /** Inline-code mark, dark-surface variant of TickerPill. */
 export function Path({ children }: { children: React.ReactNode }) {
   return (
-    <code className="inline-block rounded bg-white/[0.07] px-1.5 font-mono text-[11.5px] font-semibold tabular-nums text-[#f5f0e8]/85">
+    <code className="inline-block rounded bg-white/[0.07] px-1.5 font-mono text-[11.5px] font-semibold tabular-nums text-[#fcfbf9]/85">
       {children}
     </code>
   );

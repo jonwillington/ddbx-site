@@ -11,8 +11,8 @@ import {
   ChevronDownIcon,
   CodeBracketIcon,
   CpuChipIcon,
-  MagnifyingGlassIcon,
   NewspaperIcon,
+  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 
@@ -23,6 +23,8 @@ import { ThemeSwitch } from "@/components/theme-switch";
 import { StoreGlyph } from "@/components/store-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { siteConfig } from "@/config/site";
+import { SearchLauncher } from "@/components/search/search-palette";
+import { ConnectBadges } from "@/components/mcp/connect-badges";
 
 /** EXPERIMENT — the masthead as a left rail on the frame, from xl (1280px) up. Behind
  *  `?nav=sidebar` (lib/nav-mode); production still ships the top bar.
@@ -41,7 +43,8 @@ type Icon = ComponentType<SVGProps<SVGSVGElement>>;
 const ICONS: Record<string, Icon> = {
   Deals: ChartBarIcon,
   Learn: AcademicCapIcon,
-  Research: MagnifyingGlassIcon,
+  // Not the magnifier: that is the search field's glyph, directly above.
+  Research: Squares2X2Icon,
   Stories: NewspaperIcon,
   Brokers: BuildingLibraryIcon,
   API: CodeBracketIcon,
@@ -52,7 +55,7 @@ const rowClass = (active: boolean) =>
   clsx(
     "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13.5px] transition-colors",
     active
-      ? "bg-[#f5f0e8] font-medium text-[#5a4128] shadow-[0_1px_2px_rgba(90,65,40,0.08)] dark:bg-white/[0.06] dark:text-[#d8c4af]"
+      ? "bg-[#fcfbf9] font-medium text-[#5a4128] shadow-[0_1px_2px_rgba(90,65,40,0.08)] dark:bg-white/[0.06] dark:text-[#d8c4af]"
       : "text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.05]",
   );
 
@@ -215,9 +218,16 @@ export function SideNav() {
         {!isPinnedTheme && <ThemeSwitch className="ml-auto" />}
       </div>
 
+      {/* Search heads the nav rather than the header row: it is how a reader
+          gets anywhere, so it sits at the top of the list of places. Outside
+          the scroll area so it never scrolls away. */}
+      <div className="shrink-0 px-2 pt-2.5">
+        <SearchLauncher />
+      </div>
+
       <nav
         aria-label="Primary"
-        className="min-h-0 flex-1 overflow-y-auto px-2 py-2"
+        className="min-h-0 flex-1 overflow-y-auto px-2 pb-2 pt-1.5"
       >
         <ul className="space-y-px">
           {navItems.map((item) => {
@@ -244,7 +254,8 @@ export function SideNav() {
         </ul>
       </nav>
 
-      <div className="shrink-0 p-2.5">
+      <div className="shrink-0 border-t border-black/[0.08] p-2.5 dark:border-separator">
+        <ConnectBadges className="mb-3 px-1 pt-1" />
         <a
           className={`flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-3 py-2 text-[13px] font-medium transition-colors`}
           data-ga-event="cta_nav_download_app"

@@ -16,14 +16,21 @@ import { MCP_URL } from "@/lib/mcp";
  *
  *  Copy state resets after two seconds so a second click gives feedback too.
  *  The fallback path (`execCommand`) covers the http://localhost preview and
- *  any browser that has withdrawn the async clipboard from the page. */
+ *  any browser that has withdrawn the async clipboard from the page.
+ *
+ *  `value` swaps the address for another one-liner (the Claude Code command in
+ *  the sidebar's popover) so there is one copy control, not two. */
 export function UrlCopy({
   size = "md",
   gaLabel,
+  value = MCP_URL,
+  label = "Connector address",
   className = "",
 }: {
   size?: "md" | "sm";
   gaLabel: string;
+  value?: string;
+  label?: string;
   className?: string;
 }) {
   const [copied, setCopied] = useState(false);
@@ -37,11 +44,11 @@ export function UrlCopy({
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(MCP_URL);
+      await navigator.clipboard.writeText(value);
     } catch {
       const ta = document.createElement("textarea");
 
-      ta.value = MCP_URL;
+      ta.value = value;
       ta.setAttribute("readonly", "");
       ta.style.position = "fixed";
       ta.style.opacity = "0";
@@ -61,14 +68,14 @@ export function UrlCopy({
     >
       <input
         readOnly
-        aria-label="Connector address"
-        className={`min-w-0 flex-1 bg-transparent font-mono text-[#f5f0e8]/90 outline-none selection:bg-brand-amber/30 ${
+        aria-label={label}
+        className={`min-w-0 flex-1 bg-transparent font-mono text-[#fcfbf9]/90 outline-none selection:bg-brand-amber/30 ${
           md
             ? "px-4 py-3.5 text-[14px] sm:text-[15px]"
             : "px-3.5 py-2.5 text-[13px]"
         }`}
         type="text"
-        value={MCP_URL}
+        value={value}
         onFocus={(e) => e.currentTarget.select()}
       />
       <button

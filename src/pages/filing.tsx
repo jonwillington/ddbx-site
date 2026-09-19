@@ -114,6 +114,7 @@ import {
 import { filingFamily } from "../../shared/filing-family.js";
 import { shareNotificationLine } from "../../shared/share-notification.js";
 import { sectorByLabel, sectorPath } from "../../shared/sectors.js";
+import { usInsiderDisplayName } from "../../shared/us-names.js";
 
 import {
   ContextCards,
@@ -143,7 +144,9 @@ import { Skeleton } from "@/components/skeleton";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { CompanyLogo } from "@/components/company-logo";
 import { api } from "@/lib/api";
-import { companyPath, displayTicker } from "@/lib/company";
+import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
+import { displayCompany } from "@/lib/display-name";
+import { useRememberPage } from "@/lib/search/history";
 
 const RULE = "border-hairline dark:border-separator";
 const R = {
@@ -240,6 +243,24 @@ export default function FilingPage({
 
     return out;
   }, [deal]);
+
+  // Into the search palette's "recently viewed", named by issuer and filer.
+  useRememberPage(
+    deal
+      ? {
+          kind: "filing",
+          label: us
+            ? displayCompany(deal.company, deal.ticker)
+            : cleanCompanyName(deal.company),
+          sub:
+            "reporter" in deal
+              ? usInsiderDisplayName(deal.reporter.name)
+              : deal.director.name,
+          ticker: deal.ticker,
+          market: us ? "US" : "UK",
+        }
+      : null,
+  );
 
   if (status === "missing" || status === "failed") {
     return (

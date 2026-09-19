@@ -1,6 +1,7 @@
 import type { CompanyPage as CompanyPageData } from "@/lib/api";
 import type { Dealing, GovDealing, UsDealing } from "@/types/ddbx";
 import type { StageFigure } from "@/components/boards/stage-figures";
+import type { StatTile } from "@/components/seo/stat-tiles";
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -9,9 +10,11 @@ import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { filingPath } from "../../shared/filings.js";
 import { usFilingPath } from "../../shared/filings-us.js";
 import { sectorPath } from "../../shared/sectors.js";
+import { buyValue } from "../../shared/leaderboard.js";
 import {
   cadence,
   cadenceSentence,
+  sectorForDeals,
   sectorStanding,
   standingSentence,
 } from "../../shared/company-context.js";
@@ -41,7 +44,11 @@ import {
   CompanyStageSkeleton,
 } from "@/components/company/company-stage";
 import { MoreCompanies } from "@/components/company/more-companies";
-import { useCompanyPriceBars } from "@/components/company/price-chart";
+import {
+  fmtPrice,
+  seriesSummary,
+  useCompanyPriceBars,
+} from "@/components/company/price-chart";
 import { MarketFaq } from "@/components/market/market-faq";
 import { DeltaBadge } from "@/components/market/market-row";
 import { NewsSourceLogo } from "@/components/news-source-logo";
@@ -50,6 +57,7 @@ import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
+import { StatTiles } from "@/components/seo/stat-tiles";
 import { TickerPill } from "@/components/ticker-pill";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
@@ -65,35 +73,34 @@ import {
   slugToKey,
 } from "@/lib/company";
 import { localeFor, moneyShort, SYMBOL } from "@/lib/company-format";
+import { useRememberPage } from "@/lib/search/history";
 import { marketForPath } from "@/lib/markets/registry";
 
-/** /company/:key — one issuer's disclosed insider buying.
+/** /company/:key — one issuer, and the insider buying in it.
  *
  *  ---------------------------------------------------------------------------
- *  Stage grammar (2026-09-19)
+ *  Identity first (2026-09-19, second pass)
  *  ---------------------------------------------------------------------------
  *
- *  Moved onto the grammar /insider-index, /reports and the stories share. The
- *  page had been the broker-review composition — the whole record on one white
- *  sheet, a sticky "Buy with …" card beside it, the company's name as the h1
- *  over four cream tiles, a "latest buy" card, and the chart one section down.
- *  Now, in order:
+ *  On the grammar /insider-index, /reports and the stories share. The first
+ *  pass put the buying verdict in the h1 ("Three directors have put £92k into
+ *  Domino's…"), and Jon's read was that it made the page about the last few
+ *  trades. A company page is visited for the company; the trades are why ours
+ *  is worth visiting, not the only thing on it. So, in order:
  *
- *  1. The stage. The verdict is the h1 ("Three directors have put £92k into
- *     Domino's since May 2026. It's worth £97k now."), composed from the
- *     summary and `shared/company-verdict.js`, with the four figures under it
- *     and the twelve-month price line, buys ringed on it, inside the panel.
- *  2. The dated basis line: when the page last changed and what "paid",
- *     "worth now" and alpha mean.
- *  3. The broker ask, as a quiet hairline row (UK only; affiliate revenue).
- *  4. Numbered sections, every one of them: the purchases as `BoardRow`s,
- *     the sector context with its peers as rows, about, stats, Congress (US),
- *     news as rows.
- *  5. The app pitch, onward companies, the FAQ.
+ *  1. The stage. Eyebrow, logo, the company's name as the h1, the first
+ *     sentence of its description with its sector linked, then the figures a
+ *     reader checks first — price and its 12-month change, market cap, yield
+ *     or P/E — and ONE insider figure, "Director buys · 12 months". The
+ *     12-month line with the buys ringed on it stays inside the panel.
+ *  2. The dated basis line, and the broker ask as a quiet hairline row (UK).
+ *  3. Numbered sections: 01 the company (description, then the stats as
+ *     rows), 02 the dealings (the verdict sentence as its lead, the four
+ *     figures, the buys as `BoardRow`s), Congress (US), in context, news.
+ *  4. The app pitch, onward companies, the FAQ.
  *
- *  The "latest buy" card went: it restated the first row of the list under
- *  it. A single-purchase page — most of them — now lists its one row, under
- *  "The purchase", and the stage states everything the card did.
+ *  Every figure is dropped rather than dashed. The thinnest issuer's stage is
+ *  its name, its sector and its line.
  *
  *  The buy rows carry no sparkline. On a board each row is a different company
  *  and the line is news; here every row would be the same price line cropped
@@ -439,57 +446,188 @@ function deck(
   return parts.join(" ");
 }
 
-const stageTone = (ratio: number | null): StageFigure["tone"] => {
+const tileTone = (ratio: number | null): StatTile["tone"] => {
   const dir = direction(ratio);
 
-  return dir === "flat" ? undefined : dir;
+  return dir === "pos" ? "positive" : dir === "neg" ? "negative" : undefined;
 };
 
-/** The verdict in four figures: how many, how much, what it is worth, and
- *  against the market. A slot with nothing true in it is left out —
- *  `StageFigures` refuses a placeholder, and the deck says "not enough data
- *  yet" in words. */
-function stageFigures(
+/** The buying in four figures: how many, how much, what it is worth, and
+ *  against the market. A tile with nothing true in it is left out, and the
+ *  lead says "not enough data yet" in words. */
+function dealingTiles(
   data: CompanyPageData,
   symbol: string,
   outcome: Outcome,
-): StageFigure[] {
+): StatTile[] {
   const { summary } = data;
-  const out: StageFigure[] = [];
+  const out: StatTile[] = [];
 
   if (summary.deals > 0) {
-    out.push({ k: "Disclosed buys", v: String(summary.deals) });
+    out.push({ label: "Disclosed buys", value: String(summary.deals) });
   }
   if (summary.total_value > 0) {
-    out.push({ k: "Total paid", v: shortMoney(summary.total_value, symbol) });
+    out.push({
+      label: "Total paid",
+      value: shortMoney(summary.total_value, symbol),
+      primary: true,
+    });
   }
   if (outcome) {
     out.push({
-      k:
+      label:
         outcome.measured < outcome.count
           ? `Worth now · ${outcome.measured} of ${outcome.count}`
           : "Worth now",
-      v: shortMoney(outcome.worth, symbol),
-      tone: stageTone(outcome.worth / outcome.paid - 1),
+      value: shortMoney(outcome.worth, symbol),
+      tone: tileTone(outcome.worth / outcome.paid - 1),
     });
     // One purchase states its alpha; several state how many beat the index,
     // which a reader takes in at a glance where an average would need a
     // footnote about weighting.
     if (outcome.compared === 1 && outcome.alpha != null) {
       out.push({
-        k: "Vs the index",
-        v: signedPp(outcome.alpha),
-        tone: stageTone(outcome.alpha),
+        label: "Vs the index",
+        value: signedPp(outcome.alpha),
+        tone: tileTone(outcome.alpha),
       });
     } else if (outcome.compared > 1) {
       out.push({
-        k: "Ahead of index",
-        v: `${outcome.ahead} of ${outcome.compared}`,
+        label: "Ahead of index",
+        value: `${outcome.ahead} of ${outcome.compared}`,
       });
     }
   }
 
   return out;
+}
+
+/** Stats currencies arrive as Yahoo spells them, and LSE lines say "GBp".
+ *  Market cap is quoted in pounds either way, so the symbol is the pound's. */
+const statSymbol = (cur: string | null | undefined) =>
+  SYMBOL[String(cur ?? "").toUpperCase()] ?? "";
+
+/** Purchases disclosed in the last twelve months, the one insider figure the
+ *  stage states. */
+function lastYearBuys(deals: Array<Dealing | UsDealing>) {
+  const since = new Date(Date.now() - 365 * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const recent = deals.filter((d) => (d.trade_date ?? "") >= since);
+
+  return {
+    count: recent.length,
+    value: recent.reduce((sum, d) => sum + buyValue(d), 0),
+  };
+}
+
+/** The figures a reader checks first, then the one insider figure. Price
+ *  comes from the same series the chart draws, so the two cannot disagree. */
+function heroFigures(
+  data: CompanyPageData,
+  market: "UK" | "US",
+  series: ReturnType<typeof useCompanyPriceBars>,
+): StageFigure[] {
+  const out: StageFigure[] = [];
+  const currency = data.summary.currency ?? (market === "UK" ? "GBP" : "USD");
+  const price = seriesSummary(series.bars);
+  const stats = data.stats;
+
+  if (price) {
+    // Two places under £1,000 ("$12.56", not the axis's "$12"); the chart's
+    // own formatter keeps four for sub-penny lines.
+    out.push({
+      k: "Share price",
+      v:
+        price.last >= 0.1 && price.last < 1000
+          ? `${SYMBOL[currency] ?? ""}${price.last.toFixed(2)}`
+          : fmtPrice(price.last, currency),
+    });
+    out.push({
+      k: "12 months",
+      v: `${price.changePct >= 0 ? "+" : "−"}${Math.abs(price.changePct).toFixed(1)}%`,
+      tone:
+        price.changePct > 0.05
+          ? "pos"
+          : price.changePct < -0.05
+            ? "neg"
+            : undefined,
+    });
+  }
+  if (stats?.marketCap && statSymbol(stats.currency)) {
+    out.push({
+      k: "Market cap",
+      v: shortMoney(stats.marketCap, statSymbol(stats.currency)),
+    });
+  }
+  // One of the two, not both: a yield when the company pays one, which a
+  // layman reads without a gloss, else the P/E.
+  if (stats?.dividendYield != null && stats.dividendYield > 0) {
+    out.push({
+      k: "Dividend yield",
+      v: `${(stats.dividendYield * 100).toFixed(1)}%`,
+    });
+  } else if (stats?.peRatio != null && stats.peRatio > 0) {
+    out.push({ k: "P/E ratio", v: stats.peRatio.toFixed(1) });
+  }
+
+  // "None in 12 months" is a fact about the company, not a missing figure.
+  const recent = lastYearBuys(data.deals);
+  const symbol = SYMBOL[currency] ?? "";
+
+  out.push({
+    k: `${market === "UK" ? "Director" : "Insider"} buys · 12 months`,
+    v:
+      recent.count === 0
+        ? "None in 12 months"
+        : recent.value > 0
+          ? `${recent.count} · ${shortMoney(recent.value, symbol)}`
+          : String(recent.count),
+  });
+
+  return out;
+}
+
+/** Words that end in a full stop without ending a sentence. */
+const ABBREVIATION =
+  /\b(inc|co|corp|ltd|plc|no|st|mr|mrs|dr|jr|sr|u\.s|n\.v|s\.a|l\.p)\.$/i;
+
+/** The description's first sentence, for the standfirst, and whatever of the
+ *  description it did not use, for the section below. A first sentence past
+ *  240 characters is cut at a word and marked, and then the section repeats
+ *  the whole description rather than starting mid-thought. */
+function splitDescription(desc: string | null | undefined): {
+  lead: string | null;
+  rest: string | null;
+} {
+  const text = (desc ?? "").trim();
+
+  if (!text) return { lead: null, rest: null };
+
+  let end = -1;
+  const re = /[.!?](?=\s+[A-Z])/g;
+
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    if (!ABBREVIATION.test(text.slice(0, m.index + 1))) {
+      end = m.index + 1;
+      break;
+    }
+  }
+
+  const first = end > 0 ? text.slice(0, end) : text;
+
+  if (first.length <= 240) {
+    const rest = text.slice(first.length).trim();
+
+    return { lead: first, rest: rest || null };
+  }
+
+  const cut = first.slice(0, 230);
+
+  return {
+    lead: `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:]$/, "")}…`,
+    rest: text,
+  };
 }
 
 function currentMarket(): "UK" | "US" {
@@ -533,6 +671,17 @@ export default function CompanyPage() {
       live = false;
     };
   }, [slug, market]);
+
+  useRememberPage(
+    data
+      ? {
+          kind: "company",
+          label: cleanCompanyName(data.company),
+          ticker: data.key,
+          market,
+        }
+      : null,
+  );
 
   // The ticker is derivable from the URL, so the rail and the crumb can carry
   // it while the company itself is still in flight — no relabel on load.
@@ -645,40 +794,64 @@ function LoadedHero({
   name: string;
   priceSeries: ReturnType<typeof useCompanyPriceBars>;
 }) {
-  const { summary } = data;
   const ticker = displayTicker(data.key);
-  const currency = summary.currency ?? (market === "UK" ? "GBP" : "USD");
-  const symbol = SYMBOL[currency] ?? "";
-  const outcome = buysOutcome(data.deals);
+  const currency = data.summary.currency ?? (market === "UK" ? "GBP" : "USD");
   const person = market === "UK" ? "director" : "insider";
   const updated = lastUpdated(data);
+  const { lead } = splitDescription(data.stats?.description);
+  const sector = sectorForDeals(data.deals);
+  // Buys the chart can ring: the ones inside its window. Unknown while the
+  // series loads, when the caption keeps its usual wording.
+  const start = priceSeries.bars?.[0]?.date;
+  const ringed = start
+    ? data.deals.filter((d) => d.trade_date >= start).length
+    : null;
 
   return (
     <>
       <CompanyStage
         caption={
           priceSeries.unavailable
-            ? `No price history on file for ${ticker} yet, so there is no chart to draw the buys on.`
-            : `Daily closes over the last 12 months. Each ring is a disclosed ${person} buy at that day’s close; a heavier ring is one we rated.`
+            ? `No price history on file for ${ticker} yet, so there is no chart to draw.`
+            : ringed === 0
+              ? `Daily closes over the last 12 months. No disclosed ${person} buy falls inside it.`
+              : `Daily closes over the last 12 months. Each ring is a disclosed ${person} buy at that day’s close; a heavier ring is one we rated.`
         }
         captionRight={`${ticker} · ${market === "UK" ? "LSE" : "US"}`}
         currency={currency}
         deals={data.deals}
-        deck={deck(data, market, outcome) || undefined}
+        deck={
+          lead || sector ? (
+            <>
+              {lead}
+              {lead && sector ? " " : ""}
+              {sector ? (
+                <>
+                  Sector:{" "}
+                  <Link
+                    className="text-white/85 underline decoration-white/30 underline-offset-4 transition-colors hover:decoration-white/70"
+                    to={sectorPath(sector.slug)}
+                  >
+                    {sector.label.toLowerCase()}
+                  </Link>
+                  .
+                </>
+              ) : null}
+            </>
+          ) : undefined
+        }
         eyebrow={`Company · ${ticker} · ${market === "UK" ? "LSE" : "US-listed"}`}
-        figures={stageFigures(data, symbol, outcome)}
-        headline={headline(data, name, market, symbol, outcome)}
+        figures={heroFigures(data, market, priceSeries)}
+        headline={name}
         logoKey={data.key}
         market={market}
         series={priceSeries}
       />
       <p className="mt-4 max-w-[80ch] text-[12.5px] leading-[1.6] text-foreground/45">
         {updated ? `Updated ${fmtDate(updated, market)}. ` : ""}
-        Paid is what the {person}
-        {summary.people === 1 ? "" : "s"} disclosed; worth now is the same
-        shares at the latest close, if still held. Index comparisons are against{" "}
-        {INDEX_LABEL[market]} from the day each buy was disclosed. Ratings are
-        ours, not the company’s. Not investment advice.
+        Share price is the latest daily close; market data refreshes daily.
+        Insider figures are open-market purchases disclosed in the last twelve
+        months. Not investment advice.
       </p>
     </>
   );
@@ -709,6 +882,11 @@ function CompanyBody({
   const cadenceLine = cadenceSentence(cadence(summary), market);
   const stats = statRows(data.stats, market, ticker);
   const news = data.news.items.slice(0, 6);
+  const { rest: description } = splitDescription(data.stats?.description);
+  const outcome = buysOutcome(data.deals);
+  const person = market === "UK" ? "director" : "insider";
+  const tiles = dealingTiles(data, symbol, outcome);
+  const dealingDeck = deck(data, market, outcome);
 
   // Whether this company clears the bar the index applies (see companies.tsx).
   // Below it, "Browse every company" points at a list this company isn't on.
@@ -716,11 +894,10 @@ function CompanyBody({
 
   // Every section is numbered, in the order they render.
   const run = [
+    (description || stats.length > 0) && "company",
     data.deals.length > 0 && "buys",
-    (standing || cadenceLine) && "context",
-    data.stats?.description && "about",
-    stats.length > 0 && "stats",
     market === "US" && data.gov.length > 0 && "congress",
+    (standing || cadenceLine) && "context",
     news.length > 0 && "news",
   ].filter((s): s is string => !!s);
   const counter = (id: string) =>
@@ -737,29 +914,85 @@ function CompanyBody({
         ticker={ticker}
       />
 
+      {(description || stats.length > 0) && (
+        <SeoSection
+          aside="What the company does, as its data provider describes it, and its market data, refreshed daily."
+          id="company"
+          title={`About ${name}`}
+          {...counter("company")}
+        >
+          {description ? (
+            <p className={`max-w-[62ch] ${C.prose}`}>{description}</p>
+          ) : null}
+          {stats.length > 0 ? (
+            <dl
+              className={`grid gap-x-10 border-t ${C.rule} sm:grid-cols-2 ${description ? "mt-8" : ""}`}
+            >
+              {stats.map(([k, v]) => (
+                <div
+                  key={k}
+                  className={`flex items-baseline justify-between border-b ${C.rule} py-3.5`}
+                >
+                  <dt className="text-[15px] text-foreground/55">{k}</dt>
+                  <dd className="text-[15px] font-semibold tabular-nums text-foreground">
+                    {v}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+        </SeoSection>
+      )}
+
       {data.deals.length > 0 && (
         <SeoSection
-          aside={
-            data.deals.length === 1
-              ? "The filing, with its rating and the reasoning behind it one click away."
-              : "Newest first. Each row opens the filing, with its rating and the reasoning behind it."
-          }
+          aside={`Every disclosed open-market purchase. Paid is what the ${person}${
+            summary.people === 1 ? "" : "s"
+          } disclosed; worth now is the same shares at the latest close, if still held; index comparisons run against ${
+            INDEX_LABEL[market]
+          } from disclosure. Ratings are ours, not the company’s.`}
           id="buys"
-          title={
-            data.deals.length === 1
-              ? "The purchase"
-              : market === "UK"
-                ? "Every director buy"
-                : "Every insider buy"
-          }
+          title={market === "UK" ? "Director dealings" : "Insider dealings"}
           {...counter("buys")}
         >
+          <p className="max-w-[34ch] text-balance text-[22px] font-medium leading-[1.25] tracking-[-0.02em] text-foreground sm:max-w-[44ch] sm:text-[26px]">
+            {headline(data, name, market, symbol, outcome)}
+          </p>
+          {dealingDeck ? (
+            <p className={`mt-3 max-w-[62ch] ${C.prose}`}>{dealingDeck}</p>
+          ) : null}
+          {tiles.length > 0 ? (
+            <StatTiles
+              className="mt-7"
+              cols={Math.max(2, tiles.length) as 2 | 3 | 4}
+              stats={tiles}
+            />
+          ) : null}
+          <div className="mt-10" />
           <BuysList
             deals={data.deals}
             locale={locale}
             market={market}
             symbol={symbol}
           />
+        </SeoSection>
+      )}
+
+      {market === "US" && data.gov.length > 0 && (
+        <SeoSection
+          aside="Disclosed under the STOCK Act. Members report a range, not an exact figure."
+          id="congress"
+          title="Congress"
+          {...counter("congress")}
+        >
+          <CongressTable market={market} rows={data.gov} />
+          <Link
+            className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground underline underline-offset-4"
+            to="/congress"
+          >
+            See all congressional trading
+            <ArrowRightIcon className="h-3.5 w-3.5" />
+          </Link>
         </SeoSection>
       )}
 
@@ -814,58 +1047,6 @@ function CompanyBody({
             </Link>
             .
           </p>
-        </SeoSection>
-      )}
-
-      {data.stats?.description && (
-        <SeoSection
-          aside="The company’s own description, as its data provider carries it."
-          id="about"
-          title={`About ${name}`}
-          {...counter("about")}
-        >
-          <p className={`max-w-[62ch] ${C.prose}`}>{data.stats.description}</p>
-        </SeoSection>
-      )}
-
-      {stats.length > 0 && (
-        <SeoSection
-          aside="Market data, refreshed daily."
-          id="stats"
-          title="Company stats"
-          {...counter("stats")}
-        >
-          <dl className="grid gap-x-10 border-t border-hairline dark:border-separator sm:grid-cols-2">
-            {stats.map(([k, v]) => (
-              <div
-                key={k}
-                className={`flex items-baseline justify-between border-b ${C.rule} py-3.5`}
-              >
-                <dt className="text-[15px] text-foreground/55">{k}</dt>
-                <dd className="text-[15px] font-semibold tabular-nums text-foreground">
-                  {v}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </SeoSection>
-      )}
-
-      {market === "US" && data.gov.length > 0 && (
-        <SeoSection
-          aside="Disclosed under the STOCK Act. Members report a range, not an exact figure."
-          id="congress"
-          title="Congress"
-          {...counter("congress")}
-        >
-          <CongressTable market={market} rows={data.gov} />
-          <Link
-            className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground underline underline-offset-4"
-            to="/congress"
-          >
-            See all congressional trading
-            <ArrowRightIcon className="h-3.5 w-3.5" />
-          </Link>
         </SeoSection>
       )}
 
@@ -1128,7 +1309,12 @@ function statRows(
   const sym = SYMBOL[cur] ?? "";
   const rows = (
     [
-      ["Market cap", stats.marketCap ? moneyShort(stats.marketCap, cur) : null],
+      [
+        "Market cap",
+        stats.marketCap
+          ? shortMoney(stats.marketCap, statSymbol(stats.currency))
+          : null,
+      ],
       [
         "Previous close",
         stats.previousClose != null ? `${sym}${stats.previousClose}` : null,

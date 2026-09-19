@@ -1,18 +1,18 @@
-/** The company page's hero: the verdict, said as the headline, inside a dark
- *  stage over the price line the buys were made on.
+/** The company page's hero: the company itself, inside a dark stage over its
+ *  last twelve months of price, with the insiders' buys ringed on the line.
  *
- *  The same object /insider-index and the stories open with (2026-09-19
- *  uplift). Until then the page opened on a white sheet — logo, the company's
- *  name as the h1, four cream tiles, a counted standfirst and a "latest buy"
- *  card — and the chart that makes the argument sat one section down, on
- *  white, under a numbered heading of its own. Here the order is the
- *  argument's: what the insiders did and what it is worth now, in words and in
- *  figures, then the line it happened on, then the basis in the caption.
+ *  The same object /insider-index and the stories open with. The first cut of
+ *  it (2026-09-19) led with the buying — "Three directors have put £92k into
+ *  Domino's…" as the h1 — and Jon's read was that it made the page about the
+ *  last few trades. A company page is visited for the company: so the h1 is
+ *  its name, the standfirst says what it does and which sector it sits in, and
+ *  the figures are the ones a reader checks first (price, size, valuation or
+ *  yield) with ONE insider figure among them. The buying is still on the
+ *  chart, and it gets its own section below with the verdict as its lead.
  *
- *  The headline is composed from the summary, never written: every number in
- *  it is one the page holds, and the cases with less to say (one purchase, no
- *  price since) say less rather than borrowing a template's holes. The
- *  figures go through `StageFigures`, which refuses a slot with nothing in it.
+ *  Every figure goes through `StageFigures`, which refuses a slot with nothing
+ *  in it, so a thin issuer's hero is its name, its sector and its line rather
+ *  than a row of dashes.
  */
 import type { ReactNode } from "react";
 import type { Dealing, UsDealing } from "@/types/ddbx";
@@ -35,7 +35,7 @@ const CAPTION =
   "flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-white/10 px-5 py-3.5 text-[12.5px] leading-[1.5] text-white/65 sm:px-8";
 
 const H1 =
-  "mt-5 max-w-[26ch] text-balance text-[28px] font-normal leading-[1.1] tracking-[-0.025em] text-white sm:text-[38px] lg:text-[44px]";
+  "mt-5 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.04] tracking-[-0.03em] text-white sm:text-[46px] lg:text-[54px]";
 
 const CHART_H = 240;
 
@@ -56,7 +56,7 @@ export function CompanyStage({
   eyebrow: string;
   /** Exchange-qualified storage key, what the logo proxy is keyed on. */
   logoKey: string;
-  /** The document's h1. */
+  /** The document's h1: the company's name. */
   headline: ReactNode;
   deck?: ReactNode;
   figures: StageFigure[];
@@ -75,7 +75,11 @@ export function CompanyStage({
         {/* The page's own mark: it does not link to the page it is on. */}
         <CompanyLogo className="mt-5" link={false} size={72} ticker={logoKey} />
 
-        <h1 className={H1}>{headline}</h1>
+        {/* data-logo: the shell's sticky header draws the mark beside the
+            name once this h1 scrolls away (shell-page-header.tsx). */}
+        <h1 className={H1} data-logo={logoKey}>
+          {headline}
+        </h1>
 
         {deck ? (
           <p className="mt-4 max-w-[60ch] text-[15px] leading-[1.6] text-white/65 sm:text-[16px]">
@@ -95,6 +99,7 @@ export function CompanyStage({
           <CompanyPriceChart
             currency={currency}
             deals={deals}
+            header={false}
             height={CHART_H}
             market={market}
             series={series}

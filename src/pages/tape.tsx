@@ -250,7 +250,7 @@ export default function TapePage() {
         {tape.pending.length > 0 ? (
           <div className="pointer-events-none sticky top-[84px] z-20 mt-6 flex justify-center">
             <button
-              className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-[#f5f0e8]/70 px-4 py-2 text-[13px] font-medium text-foreground shadow-[0_12px_32px_-20px_rgba(90,65,40,0.45)] backdrop-blur-2xl backdrop-saturate-[2.5] outline-none transition-colors hover:bg-[#f5f0e8]/90 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-white/[0.09] dark:bg-background/70 dark:hover:bg-background/90"
+              className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-[#fcfbf9]/70 px-4 py-2 text-[13px] font-medium text-foreground shadow-[0_12px_32px_-20px_rgba(90,65,40,0.45)] backdrop-blur-2xl backdrop-saturate-[2.5] outline-none transition-colors hover:bg-[#fcfbf9]/90 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-white/[0.09] dark:bg-background/70 dark:hover:bg-background/90"
               type="button"
               onClick={tape.showPending}
             >

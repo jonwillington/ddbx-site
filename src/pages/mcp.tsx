@@ -26,7 +26,7 @@ import { UrlCopy } from "@/components/mcp/url-copy";
 import { RelatedCards } from "@/components/seo/related-cards";
 import DefaultLayout from "@/layouts/default";
 import { appHrefForMarket } from "@/lib/app-store";
-import { MCP_URL } from "@/lib/mcp";
+import { MCP_SNIPPETS } from "@/lib/mcp-setup";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import { usePinnedTheme } from "@/lib/use-pinned-theme";
 
@@ -145,55 +145,6 @@ const BEHIND_THE_LINK = [
   "Key risks",
   "The six-check rating checklist",
   "Return and alpha since disclosure",
-];
-
-/** Per-client set-up. Menu labels drift, so each snippet is short and the
- *  address does the work. Written as plain steps rather than prose: a reader
- *  with the settings screen open wants a list to follow, not a paragraph. */
-const SNIPPETS = [
-  {
-    label: "ChatGPT",
-    title: "Settings → Apps & Connectors",
-    meta: "Developer mode",
-    code: `1. Open Settings, then Apps & Connectors
-2. Turn on Developer mode
-3. Choose Create, and paste the address
-   ${MCP_URL}
-4. Authentication: None
-5. Save. Ask: "What did UK directors buy this week?"`,
-  },
-  {
-    label: "Claude",
-    title: "Settings → Connectors",
-    meta: "web and desktop",
-    code: `1. Open Settings, then Connectors
-2. Choose Add custom connector
-3. Name it ddbx and paste the address
-   ${MCP_URL}
-4. Add. It needs no sign-in.
-5. Ask: "Has anyone at Barclays bought shares lately?"`,
-  },
-  {
-    label: "Claude Code",
-    title: "Terminal",
-    meta: "one command",
-    code: `claude mcp add --transport http ddbx ${MCP_URL}
-
-# then, inside a session:
-# > what did ddbx make of today's US filings?`,
-  },
-  {
-    label: "Cursor / VS Code",
-    title: "MCP settings",
-    meta: "remote HTTP server",
-    code: `// Add a remote (HTTP) MCP server. Cursor: mcp.json;
-// VS Code: .vscode/mcp.json. No headers, no token.
-{
-  "servers": {
-    "ddbx": { "type": "http", "url": "${MCP_URL}" }
-  }
-}`,
-  },
 ];
 
 const FAQ = [
@@ -476,7 +427,7 @@ export default function McpPage() {
               gaLabel="MCP connect"
               size="sm"
             />
-            <CodeTabs className="mt-6" snippets={SNIPPETS} />
+            <CodeTabs className="mt-6" snippets={MCP_SNIPPETS} />
             <p className="mt-5 text-[13.5px] leading-[1.6] text-white/40">
               Anything else that speaks remote MCP works the same way: add a
               remote HTTP server at that address. Tools the assistant will see:{" "}
@@ -563,7 +514,7 @@ export default function McpPage() {
             are for different people: a reader who wants the reasoning gets the
             app; a builder gets the API. One filled button, one ghost, so the
             panel still has a single contrasting object. */}
-        <div className="rounded-[28px] bg-[#f5f0e8] px-6 py-12 text-ink sm:px-10 md:px-14 md:py-16">
+        <div className="rounded-[28px] bg-[#fcfbf9] px-6 py-12 text-ink sm:px-10 md:px-14 md:py-16">
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown">
             Want more than the facts?
           </p>

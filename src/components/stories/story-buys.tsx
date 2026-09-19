@@ -1,4 +1,5 @@
 import type { Story, StoryBuy } from "@/types/ddbx";
+import type { ReturnBasis } from "@/components/stories/story-stage";
 
 import {
   BoardRow,
@@ -9,7 +10,6 @@ import { DeltaBadge } from "@/components/market/market-row";
 import { RatingBadge } from "@/components/rating-badge";
 import { localeFor, moneyShort } from "@/lib/company-format";
 import { resolveStoryLink } from "@/lib/stories";
-import type { ReturnBasis } from "@/components/stories/story-stage";
 
 /** The purchases behind a story, as the exhibit the prose argues about.
  *
@@ -91,9 +91,7 @@ export function StoryBuys({
             name={
               <span className="flex flex-wrap items-center gap-2">
                 <span>{b.director}</span>
-                {b.rating ? (
-                  <RatingBadge rating={b.rating as never} />
-                ) : null}
+                {b.rating ? <RatingBadge rating={b.rating as never} /> : null}
               </span>
             }
             perf={

@@ -163,7 +163,7 @@ function NavMenu({
           author `display` this panel might grow later. */}
       <div
         className={clsx(
-          "absolute left-0 mt-2 rounded-xl border border-separator bg-[#f5f0e8] dark:bg-background shadow-lg overflow-hidden z-50 py-1",
+          "absolute left-0 mt-2 rounded-xl border border-separator bg-[#fcfbf9] dark:bg-background shadow-lg overflow-hidden z-50 py-1",
           wide ? "w-[23rem]" : "w-56",
           !open && "hidden",
         )}
@@ -343,7 +343,7 @@ function MobileMenu({
 
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/50" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-hairline bg-[#f5f0e8] outline-none dark:border-separator dark:bg-background">
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-hairline bg-[#fcfbf9] outline-none dark:border-separator dark:bg-background">
           <div className="mx-auto mb-1 mt-3 h-1.5 w-10 shrink-0 rounded-full bg-black/15 dark:bg-white/20" />
 
           {/* The list scrolls; the CTA below it does not. Twelve rows outrun a
@@ -673,7 +673,7 @@ export const Navbar = () => {
        fill + heavy blur with a saturation boost so what passes underneath
        reads as material, not mud; hairline border and a soft warm shadow do
        the separating the old border-b did. */
-    <nav className="mx-auto max-w-[1280px] rounded-2xl border border-black/[0.07] bg-[#f5f0e8]/60 shadow-[0_12px_32px_-20px_rgba(90,65,40,0.45)] backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60 dark:shadow-[0_12px_32px_-20px_rgba(0,0,0,0.7)]">
+    <nav className="mx-auto max-w-[1280px] rounded-2xl border border-black/[0.07] bg-[#fcfbf9]/60 shadow-[0_12px_32px_-20px_rgba(90,65,40,0.45)] backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60 dark:shadow-[0_12px_32px_-20px_rgba(0,0,0,0.7)]">
       <header className="flex h-14 items-center justify-between gap-3 px-4 md:gap-4 md:px-5">
         <div className="flex items-center gap-6">
           <a className="shrink-0" href={dashboardHref}>

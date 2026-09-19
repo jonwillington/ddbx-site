@@ -48,6 +48,14 @@ const CAST = {
   pltr: { ticker: "PLTR", tradeDate: "2025-01-21", disclosedDate: "2025-01-22", postCap: 250 },
   googl: { ticker: "GOOGL", tradeDate: "2025-01-14", disclosedDate: "2025-01-14", postCap: 250 },
   nvda: { ticker: "NVDA", tradeDate: "2025-01-14", disclosedDate: "2025-01-14", postCap: 250 },
+  // Korea — the event is the ANNOUNCEMENT, which is the filing, so there is
+  // no earlier trade to mark: tradeDate === disclosedDate on every one and
+  // the chart draws a single marker. Symbols are venue-suffixed (.KS KOSPI,
+  // .KQ KOSDAQ), which is how /api/prices keys Korean bars.
+  jusung: { ticker: "036930.KQ", tradeDate: "2026-02-02", disclosedDate: "2026-02-02", postCap: 130 },
+  coway: { ticker: "021240.KS", tradeDate: "2026-04-06", disclosedDate: "2026-04-06" },
+  agabang: { ticker: "013990.KQ", tradeDate: "2026-06-18", disclosedDate: "2026-06-18" },
+  kukil: { ticker: "060480.KQ", tradeDate: "2026-08-11", disclosedDate: "2026-08-11" },
 };
 
 const DEFAULT_POST_CAP = 120;

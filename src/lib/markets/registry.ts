@@ -154,6 +154,49 @@ function safeHostname(hostname?: string): string | null {
   return null;
 }
 
+/** Dev-only: let a non-production origin (localhost, *.pages.dev) stand in for
+ *  one of the real domains, so the host-decided pages (/companies, /sectors,
+ *  the boards) can be seen in their US or EU edition locally.
+ *
+ *    ?host=us | uk | eu   sticks via localStorage `ddbx.devhost`
+ *    ?host=reset          clears it
+ *
+ *  Market resolution only (marketForPath). marketHref keeps links on the
+ *  current origin, so a simulated ddbx.us never sends you to the live one.
+ *  A production host ignores the whole thing: its own name always wins. */
+const DEV_HOST_KEY = "ddbx.devhost";
+const DEV_HOSTS: Record<string, string> = {
+  uk: "ddbx.uk",
+  us: "ddbx.us",
+  eu: "ddbx.eu",
+};
+
+function devHostOverride(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const param = new URLSearchParams(window.location.search).get("host");
+
+    if (param === "reset") window.localStorage.removeItem(DEV_HOST_KEY);
+    else if (param && DEV_HOSTS[param]) {
+      window.localStorage.setItem(DEV_HOST_KEY, param);
+    }
+
+    return DEV_HOSTS[window.localStorage.getItem(DEV_HOST_KEY) ?? ""] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** The host market resolution should use: the real one on a production
+ *  domain, the dev override (if set) anywhere else. */
+function resolutionHostname(hostname?: string): string | null {
+  const host = safeHostname(hostname);
+
+  if (host && host in HOST_DEFAULT_MARKET) return host;
+
+  return devHostOverride() ?? host;
+}
+
 function byId(id: string): MarketRegistryEntry | undefined {
   return MARKETS.find((m) => m.id === id);
 }
@@ -219,6 +262,8 @@ export function marketForPath(
   // host default, longest-prefix fallback) live in shared/seo.js so the edge
   // resolves routes identically. This just maps the id back to its entry.
   return (
-    byId(marketIdForPath(pathname, safeHostname(hostname) ?? undefined)) ?? uk
+    byId(
+      marketIdForPath(pathname, resolutionHostname(hostname) ?? undefined),
+    ) ?? uk
   );
 }

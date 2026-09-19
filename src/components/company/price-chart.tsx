@@ -16,9 +16,11 @@ import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import { buyValue } from "../../../shared/leaderboard.js";
+
 import { Skeleton } from "@/components/skeleton";
 import { api } from "@/lib/api";
-import { localeFor, SYMBOL } from "@/lib/company-format";
+import { localeFor, moneyShort, SYMBOL } from "@/lib/company-format";
 
 /** Directional pair, read through the theme so both modes resolve. Applied via
  *  `style` rather than as SVG presentation attributes — var() substitution in a
@@ -47,6 +49,9 @@ const PALETTE = {
       minor: { ink: "rgba(90,65,40,0.62)", ring: 2 },
     } as Record<string, { ink: string; ring: number }>,
     unrated: { ink: "rgba(90,65,40,0.3)", ring: 1.5 },
+    r: 4.5,
+    halo: null,
+    labels: false,
     core: "text-sheet dark:text-surface",
     drop: "text-foreground/15",
     axis: "fill-foreground/40",
@@ -59,13 +64,19 @@ const PALETTE = {
     up: "var(--stage-pos)",
     down: "var(--stage-neg)",
     rating: {
-      significant: { ink: "#ffffff", ring: 2.4 },
-      noteworthy: { ink: "rgba(255,255,255,0.7)", ring: 2 },
-      minor: { ink: "rgba(255,255,255,0.7)", ring: 2 },
+      significant: { ink: "#ffffff", ring: 3 },
+      noteworthy: { ink: "#ffffff", ring: 2.5 },
+      minor: { ink: "#ffffff", ring: 2.5 },
     } as Record<string, { ink: string; ring: number }>,
-    unrated: { ink: "rgba(255,255,255,0.38)", ring: 1.5 },
+    unrated: { ink: "rgba(255,255,255,0.75)", ring: 2 },
+    // On the stage the buys are the reason the chart is there (Jon,
+    // 2026-09-19: "director buys need to be more prominent"): bigger rings,
+    // a halo that lifts them off the line, and each one says what was paid.
+    r: 6.5,
+    halo: "fill-white/15",
+    labels: true,
     core: "text-[#1a140d]",
-    drop: "text-white/15",
+    drop: "text-white/35",
     axis: "fill-white/40",
     price: "text-white",
     quiet: "text-white/45",
@@ -144,6 +155,8 @@ interface Mark {
   /** Ring colour + weight, by how the buy was rated. */
   ink: string;
   ring: number;
+  /** What was paid, in major units; 0 when the filing states no value. */
+  amount: number;
 }
 
 /** Closes arrive in native MINOR units — pence for LSE issuers, cents for US
@@ -151,7 +164,22 @@ interface Mark {
  *  conversion. */
 const toMajor = (minor: number) => minor / 100;
 
-function fmtPrice(major: number, currency: string): string {
+/** The latest close and the change across the window, in major units — what
+ *  the chart's own header states, for a caller that states it elsewhere (the
+ *  company stage's figures). Null until there are two closes to compare. */
+export function seriesSummary(
+  bars: PriceBar[] | null,
+): { last: number; changePct: number } | null {
+  if (!bars || bars.length < 2) return null;
+  const first = toMajor(bars[0].close);
+  const last = toMajor(bars[bars.length - 1].close);
+
+  if (!(first > 0) || !(last > 0)) return null;
+
+  return { last, changePct: ((last - first) / first) * 100 };
+}
+
+export function fmtPrice(major: number, currency: string): string {
   const sym = SYMBOL[currency] ?? "";
   // Sub-penny stocks are real on AIM (ARK trades at £0.0075) — a 2dp format
   // would render the entire axis as "£0.01".
@@ -214,6 +242,7 @@ export function CompanyPriceChart({
   series,
   theme = "light",
   height = H,
+  header = true,
 }: {
   /** Storage key ("ARK.L" / "FCNCA") — what the prices endpoint speaks. */
   tickerKey: string;
@@ -227,6 +256,9 @@ export function CompanyPriceChart({
   /** "dark" when drawn inside the company stage. */
   theme?: "light" | "dark";
   height?: number;
+  /** False when the price and its change are stated beside the chart
+   *  already, as the company stage's figures do. */
+  header?: boolean;
 }) {
   const { bars, unavailable } = series;
   const P = PALETTE[theme];
@@ -263,8 +295,10 @@ export function CompanyPriceChart({
 
   const xAt = (i: number) =>
     PAD_L + (i / (bars.length - 1)) * (w - PAD_L - PAD_R);
+  // Headroom for the value labels, so a buy at the year's high isn't cut off.
+  const padT = P.labels ? PAD_T + 30 : PAD_T;
   const yAt = (major: number) =>
-    PAD_T + (1 - (major - lo) / range) * (H - PAD_T - PAD_B);
+    padT + (1 - (major - lo) / range) * (H - padT - PAD_B);
 
   const pts = closes.map((c, i) => [xAt(i), yAt(c)] as const);
   const line = pts
@@ -278,6 +312,9 @@ export function CompanyPriceChart({
   const marks: Mark[] = [];
 
   for (const d of deals) {
+    // `findIndex` alone put every pre-window buy on the first bar: the first
+    // close is always "at or after" a trade older than the window.
+    if (d.trade_date < bars[0].date) continue;
     const i = bars.findIndex((b) => b.date >= d.trade_date);
 
     if (i < 0) continue;
@@ -293,12 +330,52 @@ export function CompanyPriceChart({
       }`,
       ink,
       ring,
+      amount: buyValue(d),
     });
+  }
+
+  // Several buys on the same day or week share one label, summed, so a
+  // cluster reads as one figure rather than overprinted ones.
+  const LABEL_GAP = 44;
+  const labels: Array<{ x: number; y: number; text: string }> = [];
+
+  if (P.labels) {
+    const sorted = [...marks].sort((a, b) => a.x - b.x);
+    let group: Mark[] = [];
+    const flush = () => {
+      if (!group.length) return;
+      const top = group.reduce((a, b) => (b.y < a.y ? b : a));
+      const total = group.reduce((sum, m) => sum + m.amount, 0);
+      const money =
+        total > 0
+          ? moneyShort(total, market === "UK" ? "GBP" : currency)
+          : null;
+      const text =
+        group.length > 1
+          ? `${group.length} buys${money ? ` · ${money}` : ""}`
+          : money;
+
+      // A buy with no stated value gets no label rather than a dash.
+      if (text) {
+        labels.push({
+          x: Math.min(Math.max(top.x, PAD_L + 50), w - PAD_R - 50),
+          y: top.y - P.r - 22,
+          text,
+        });
+      }
+      group = [];
+    };
+
+    for (const m of sorted) {
+      if (group.length && m.x - group[group.length - 1].x > LABEL_GAP) flush();
+      group.push(m);
+    }
+    flush();
   }
 
   return (
     <div ref={box}>
-      <div className="flex items-baseline gap-3">
+      <div className={header ? "flex items-baseline gap-3" : "sr-only"}>
         <p
           className={`text-[22px] font-semibold leading-none tracking-[-0.015em] tabular-nums ${P.price}`}
         >
@@ -316,7 +393,7 @@ export function CompanyPriceChart({
 
       <svg
         aria-label={`${tickerKey} share price over the past 12 months, with ${marks.length} disclosed ${market === "UK" ? "director" : "insider"} ${marks.length === 1 ? "buy" : "buys"} marked`}
-        className="mt-3 block w-full"
+        className={`${header ? "mt-3" : ""} block w-full`}
         height={H}
         role="img"
         viewBox={`0 0 ${w} ${H}`}
@@ -350,17 +427,50 @@ export function CompanyPriceChart({
               y1={m.y}
               y2={H - PAD_B}
             />
+            {P.halo && (
+              <circle className={P.halo} cx={m.x} cy={m.y} r={P.r + 5} />
+            )}
             <circle
               className={P.core}
               cx={m.x}
               cy={m.y}
               fill="currentColor"
-              r={4.5}
+              r={P.r}
               stroke={m.ink}
               strokeWidth={m.ring}
             />
           </g>
         ))}
+
+        {/* A solid pill, not bare text: the label sits over the line, and
+            white on the stage is the loudest mark the panel has. Width is
+            estimated from the glyph count; tabular figures keep it close. */}
+        {labels.map((l) => {
+          const pw = l.text.length * 6.9 + 16;
+
+          return (
+            <g key={`${l.x.toFixed(1)}-${l.text}`}>
+              <rect
+                className="fill-white"
+                height={20}
+                rx={10}
+                width={pw}
+                x={l.x - pw / 2}
+                y={l.y - 10}
+              />
+              <text
+                className="fill-[#1a140d] font-semibold tabular-nums"
+                dominantBaseline="central"
+                fontSize={11.5}
+                textAnchor="middle"
+                x={l.x}
+                y={l.y + 0.5}
+              >
+                {l.text}
+              </text>
+            </g>
+          );
+        })}
 
         {/* Endpoint labels instead of a y-axis: two numbers carry the range,
             and gridlines would make a document page look like a terminal. */}

@@ -28,7 +28,18 @@ interface ExtraFilter {
  *  Each accordion shows its current value collapsed and expands to reveal the
  *  control + a one-line explanation, so a many-axis panel stays scannable. The
  *  chart-mode toggle is passed through verbatim (`trailing`). */
-import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import {
+  BUTTON_FILLED,
+  BUTTON_GHOST,
+  BUTTON_RADIUS,
+} from "@/components/button";
+
+/** The browser's blue outline, drawn on Reset when the sheet opened with focus
+ *  in it, read as a third button style. A focus ring in the ink instead,
+ *  keyboard only. */
+const FOCUS =
+  "outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 dark:focus-visible:ring-white/50";
+
 export function MarketFiltersSheet({
   viewMode,
   onViewMode,
@@ -71,8 +82,8 @@ export function MarketFiltersSheet({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const direction = isDesktop ? "right" : "bottom";
   const contentClass = isDesktop
-    ? "fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-sm rounded-2xl border border-hairline dark:border-separator bg-[#f5f0e8] dark:bg-background shadow-2xl flex flex-col overflow-hidden outline-none"
-    : "fixed bottom-0 inset-x-0 z-50 max-h-[88vh] rounded-t-2xl border-t border-hairline dark:border-separator bg-[#f5f0e8] dark:bg-background flex flex-col overflow-hidden outline-none";
+    ? "fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-sm rounded-2xl border border-hairline dark:border-separator bg-[#fcfbf9] dark:bg-background shadow-2xl flex flex-col overflow-hidden outline-none"
+    : "fixed bottom-0 inset-x-0 z-50 max-h-[88vh] rounded-t-2xl border-t border-hairline dark:border-separator bg-[#fcfbf9] dark:bg-background flex flex-col overflow-hidden outline-none";
 
   const strengthValue = heroFilterId ?? heroFilters?.[0]?.id ?? "";
 
@@ -236,7 +247,7 @@ export function MarketFiltersSheet({
           {/* Pinned footer — Reset and Done at 50/50, always reachable. */}
           <div className="shrink-0 flex gap-2.5 border-t border-separator/60 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <button
-              className="flex-1 rounded-full border border-separator py-3 text-sm font-medium text-foreground/70 transition-colors hover:bg-foreground/5 disabled:opacity-40"
+              className={`flex-1 ${BUTTON_RADIUS} ${BUTTON_GHOST} ${FOCUS} py-3 text-sm font-medium transition-colors disabled:opacity-40`}
               disabled={!hasActiveFilter}
               type="button"
               onClick={() => onReset?.()}
@@ -245,7 +256,7 @@ export function MarketFiltersSheet({
             </button>
             <Drawer.Close asChild>
               <button
-                className={`flex-1 ${BUTTON_RADIUS} ${BUTTON_FILLED} py-3 text-sm font-medium transition-colors`}
+                className={`flex-1 ${BUTTON_RADIUS} ${BUTTON_FILLED} ${FOCUS} py-3 text-sm font-medium transition-colors`}
                 type="button"
               >
                 Done

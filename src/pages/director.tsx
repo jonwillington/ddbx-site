@@ -70,6 +70,7 @@ import {
   type UsDirectorDetail,
 } from "@/lib/api";
 import { companyPath, displayTicker } from "@/lib/company";
+import { useRememberPage } from "@/lib/search/history";
 import {
   marketForPath,
   type MarketRegistryEntry,
@@ -479,6 +480,10 @@ export default function DirectorPage() {
   // market-derived, so nothing about it waits on the fetch, and reserving the
   // gutter up front stops the article shifting 320px sideways when the
   // director resolves.
+  useRememberPage(
+    d ? { kind: "insider", label: d.name, sub: d.company } : null,
+  );
+
   const rail = (
     <SeoRail
       marketId={market.id}

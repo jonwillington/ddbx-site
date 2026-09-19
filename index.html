@@ -48,7 +48,7 @@
           var dark = saved
             ? saved === "dark"
             : window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var hex = dark ? "#231811" : "#f5f0e8";
+          var hex = dark ? "#231811" : "#fcfbf9";
           document.documentElement.classList.toggle("dark", dark);
           document.documentElement.style.backgroundColor = hex;
           var meta = document.createElement("meta");
@@ -81,7 +81,7 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="/manifest.json">
-    <meta name="msapplication-TileColor" content="#f5f0e8">
+    <meta name="msapplication-TileColor" content="#fcfbf9">
     <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
     <!-- theme-color is injected by the inline script above (and kept in sync by
          theme-switch.tsx) so it tracks the active theme; no static tag here. -->

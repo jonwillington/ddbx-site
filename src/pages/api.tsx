@@ -437,7 +437,7 @@ function BandAtmosphere() {
         style={{
           background:
             // Alphas run higher here than on the dark layers and still land
-            // softer: white over #f5f0e8 moves each channel by (255 - base) x
+            // softer: white over #fcfbf9 moves each channel by (255 - base) x
             // alpha, so 50% white is a ~7-point lift where 5% white on the
             // warm charcoal is a ~10-point one. Light surfaces need more
             // number for less effect.
@@ -740,7 +740,7 @@ export default function ApiPage() {
 
         {/* ── Request access — the inverted band ───────────────────────────── */}
         <section
-          className={`${FULL_BLEED} isolate mt-6 bg-[#f5f0e8] text-ink`}
+          className={`${FULL_BLEED} isolate mt-6 bg-[#fcfbf9] text-ink`}
           id="request-access"
         >
           <BandAtmosphere />

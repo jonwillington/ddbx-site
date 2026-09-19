@@ -93,20 +93,20 @@ export function HeroLiveGradient({ tick }: { tick: number }) {
         }
         .hlg-0 { background:
           radial-gradient(ellipse 52% 58% at 24% 30%,
-            rgba(196, 168, 130, 0.22) 0%,
-            rgba(196, 168, 130, 0.08) 45%, transparent 70%); }
+            rgba(196, 168, 130, 0.110) 0%,
+            rgba(196, 168, 130, 0.040) 45%, transparent 70%); }
         .hlg-1 { background:
           radial-gradient(ellipse 55% 55% at 74% 26%,
-            rgba(222, 184, 135, 0.20) 0%,
-            rgba(222, 184, 135, 0.07) 45%, transparent 70%); }
+            rgba(222, 184, 135, 0.100) 0%,
+            rgba(222, 184, 135, 0.035) 45%, transparent 70%); }
         .hlg-2 { background:
           radial-gradient(ellipse 55% 60% at 66% 74%,
-            rgba(196, 168, 130, 0.20) 0%,
-            rgba(196, 168, 130, 0.07) 45%, transparent 70%); }
+            rgba(196, 168, 130, 0.100) 0%,
+            rgba(196, 168, 130, 0.035) 45%, transparent 70%); }
         .hlg-3 { background:
           radial-gradient(ellipse 52% 58% at 20% 70%,
-            rgba(210, 172, 128, 0.20) 0%,
-            rgba(210, 172, 128, 0.07) 45%, transparent 70%); }
+            rgba(210, 172, 128, 0.100) 0%,
+            rgba(210, 172, 128, 0.035) 45%, transparent 70%); }
         :is(.dark) .hlg-0 { background:
           radial-gradient(ellipse 52% 58% at 24% 30%,
             rgba(196, 168, 130, 0.11) 0%, transparent 66%); }
@@ -121,6 +121,40 @@ export function HeroLiveGradient({ tick }: { tick: number }) {
             rgba(238, 197, 132, 0.08) 0%, transparent 66%); }
         @media (prefers-reduced-motion: reduce) {
           .hlg-layer { animation: none; transition: none; }
+        }
+        /* Shell layout, from xl: the hero is a dark stage (.board-stage) that
+           clips itself, so the wash no longer needs to break out to the
+           viewport or fade in under a navbar — it spans the stage exactly.
+           The light is carried to the right, behind the proof: a steady
+           left-to-right lift in the base, and the four phase pools all
+           seated in the right half, so the stage reads dark behind the
+           headline and warms towards the alert while the pools still move
+           on each tick. */
+        @media (min-width: 1280px) {
+          .nav-sidebar .hlg {
+            top: 0;
+            left: 0;
+            width: 100%;
+            translate: none;
+            -webkit-mask-image: none;
+            mask-image: none;
+            background: linear-gradient(to right,
+              transparent 0%, transparent 30%,
+              rgba(238, 197, 132, 0.05) 65%,
+              rgba(238, 197, 132, 0.11) 100%);
+          }
+          .nav-sidebar .hlg-0 { background:
+            radial-gradient(ellipse 50% 70% at 78% 30%,
+              rgba(238, 197, 132, 0.12) 0%, transparent 68%); }
+          .nav-sidebar .hlg-1 { background:
+            radial-gradient(ellipse 55% 65% at 90% 55%,
+              rgba(238, 197, 132, 0.12) 0%, transparent 68%); }
+          .nav-sidebar .hlg-2 { background:
+            radial-gradient(ellipse 55% 70% at 72% 78%,
+              rgba(222, 184, 135, 0.11) 0%, transparent 68%); }
+          .nav-sidebar .hlg-3 { background:
+            radial-gradient(ellipse 50% 65% at 86% 20%,
+              rgba(238, 197, 132, 0.11) 0%, transparent 68%); }
         }
 
         /* Arrival ripple — a one-shot double ring that expands from behind
@@ -142,6 +176,25 @@ export function HeroLiveGradient({ tick }: { tick: number }) {
           0%   { opacity: 0;    transform: scale(0.35); }
           12%  { opacity: 0.5; }
           100% { opacity: 0;    transform: scale(2.15); }
+        }
+        /* Shell stage: the ripple crosses the whole hero rather than
+           staying in the demo half — the card and demo stop clipping it
+           (below), the stage's own overflow is the only edge, and the ring
+           grows far enough from the alert to reach the headline side. */
+        @media (min-width: 1280px) {
+          /* Slow, and just inside the 4.2s radar tick so one landing's
+             rings have faded before the next alert's begin. */
+          .nav-sidebar .hero-ping-ring {
+            animation-name: hero-ping-wide;
+            animation-duration: 3.6s;
+            animation-timing-function: cubic-bezier(0.16, 0.5, 0.3, 1);
+          }
+          .nav-sidebar .hero-ping-ring-2 { animation-delay: 0.5s; }
+          @keyframes hero-ping-wide {
+            0%   { opacity: 0;    transform: scale(0.35); }
+            8%   { opacity: 0.5; }
+            100% { opacity: 0;    transform: scale(5.6); }
+          }
         }
         @media (prefers-reduced-motion: reduce) {
           .hero-ping-ring { display: none; }
@@ -266,8 +319,9 @@ export function HeroLiveGradient({ tick }: { tick: number }) {
         /* Shell layout (lib/nav-mode): the page already sits in a rounded
            sheet, so a second card inside it read as a card on a card. The
            hero goes flat on the sheet — no fill, edge or shadow, and the
-           message column starts on the page's own left edge. The hairline
-           between claim and proof stays; it is what makes them one exhibit. */
+           message column starts on the page's own left edge, and the hairline
+           between claim and proof goes too — on the dark stage it read as a
+           seam through one panel rather than as a divider inside a card. */
         @media (min-width: 1280px) {
           .nav-sidebar .hero-card {
             border-color: transparent;
@@ -276,9 +330,52 @@ export function HeroLiveGradient({ tick }: { tick: number }) {
             -webkit-backdrop-filter: none;
             backdrop-filter: none;
             box-shadow: none;
+            overflow: visible;
           }
-          .nav-sidebar .hero-card-msg { padding: 8px 40px 8px 0; }
-          .nav-sidebar .hero-card-demo { padding-right: 0; }
+          /* Lifted so the ripple, now free of the demo half, washes behind
+             the headline rather than across it. */
+          .nav-sidebar .hero-card-msg {
+            position: relative;
+            z-index: 10;
+            padding: 8px 40px 8px 0;
+          }
+          .nav-sidebar .hero-card-demo {
+            overflow: visible;
+            padding-right: 0;
+            border-left: 0;
+          }
+          /* The alert column holds its tallest state (badge 30 + the card's
+             140px max-height clamp + the stack's 34px tail), with the stack
+             seated on its floor. Sized to content, a two-line alert and a
+             four-line one gave the stage two heights and the page beneath
+             jumped on every tick; now the chart and the stage edge never
+             move, and a longer alert grows up into the reserve instead. */
+          .nav-sidebar .hero-alert-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            height: 204px;
+            /* Narrower than the chart and centred on it: on the flat stage
+               there is no card edge for the alert to fill, and at full width
+               it read as a toolbar laid over the chart, not a banner. */
+            width: 82%;
+            margin-inline: auto;
+            /* Clear air between the alert and the chart it lands on (the
+               base rule's -14px tuck ran them together on the stage). */
+            margin-bottom: 4px;
+          }
+          /* And a little more under the chart, so the outcome bar reads as
+             the payoff beneath it rather than the chart's footer. */
+          .nav-sidebar .hero-chart-col { margin-bottom: 6px; }
+        }
+        /* With the card chrome gone the demo half can take more of the
+           stage, and the price series is the thing that wants it — only
+           once there is room, so the headline column never drops below
+           the ~400px the steps above protect. */
+        @media (min-width: 1280px) {
+          @container (min-width: 964px) {
+            .nav-sidebar .hero-card-demo { width: 580px; }
+          }
         }
       `}</style>
       {[0, 1, 2, 3].map((i) => (
@@ -501,7 +598,8 @@ export function MarketHero({
   // tokens to the hero alone, so every theme-keyed class inside it (headline,
   // bullets, store button, notification) takes its dark form with no
   // per-element overrides. A class can't be media-conditional, hence the
-  // query rather than a `shell:xl:` variant.
+  // query rather than a `shell:xl:` variant. `-mb-6` cancels the section's
+  // space-y-6 so the filter bar seats straight onto the stage's bottom edge.
   const isXl = useMediaQuery("(min-width: 1280px)");
   const shellStage = NAV_SIDEBAR && isXl;
   // The two-column showcase needs more room when a right drawer is present, so
@@ -654,7 +752,7 @@ export function MarketHero({
     <header
       className={`relative -mt-4 md:mt-0 md:min-h-[58svh] flex flex-col animate-content-in shell:xl:min-h-0! ${
         shellStage
-          ? "dark board-stage -mt-8! overflow-hidden text-foreground"
+          ? "dark board-stage -mt-8! -mb-6! overflow-hidden text-foreground"
           : ""
       } ${
         appShowcase

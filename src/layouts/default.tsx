@@ -525,7 +525,7 @@ export default function DefaultLayout({
       // leaves a clear gap at the bottom of the scroll.
       // …and in `solo` mode there is no bar to clear, so the reservation goes
       // with it — otherwise every page ends in 7rem of empty ground.
-      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#f5f0e8] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? `xl:mr-0 xl:bg-[var(--shell-frame)] xl:pl-[236px] ${drawerRight && shellRail ? "min-[1440px]:pr-[300px]" : ""}` : ""}`}
+      className={`relative flex flex-col min-h-screen overflow-x-clip bg-[#fcfbf9] dark:bg-background ${bannerOwnsInstallCta ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))]"} md:pb-0 ${drawerRight ? "lg:mr-80" : ""} ${NAV_SIDEBAR ? `xl:mr-0 xl:bg-[var(--shell-frame)] xl:pl-[236px] ${drawerRight && shellRail ? "min-[1440px]:pr-[300px]" : ""}` : ""}`}
     >
       {/* First focusable thing on every page. Off-screen until it takes focus,
           then it parks itself over the navbar — otherwise a keyboard visitor
@@ -568,13 +568,13 @@ export default function DefaultLayout({
             through the glass — the blur keeps something to work on. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-3 bg-[#f5f0e8] dark:bg-background md:h-4"
+          className="pointer-events-none absolute inset-x-0 top-0 h-3 bg-[#fcfbf9] dark:bg-background md:h-4"
         />
         <div className={NAV_SIDEBAR ? "xl:hidden" : undefined}>
           <Navbar />
         </div>
         {ticker && (
-          <div className="mx-auto mt-2 max-w-[1280px] rounded-xl border border-black/[0.07] bg-[#f5f0e8]/60 backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60">
+          <div className="mx-auto mt-2 max-w-[1280px] rounded-xl border border-black/[0.07] bg-[#fcfbf9]/60 backdrop-blur-2xl backdrop-saturate-[2.5] dark:border-white/[0.09] dark:bg-background/60">
             <div className="flex items-stretch px-4 md:px-5">{ticker}</div>
           </div>
         )}
@@ -590,7 +590,7 @@ export default function DefaultLayout({
       <div
         className={
           NAV_SIDEBAR
-            ? "contents xl:mx-3 xl:my-3 xl:flex xl:flex-grow xl:flex-col xl:overflow-clip xl:bg-[#f5f0e8] xl:dark:bg-background"
+            ? "contents xl:mx-3 xl:my-3 xl:flex xl:flex-grow xl:flex-col xl:overflow-clip xl:bg-[#fcfbf9] xl:dark:bg-background"
             : "contents"
         }
       >
@@ -613,7 +613,7 @@ export default function DefaultLayout({
             <FooterTrail />
           </div>
           <div className="relative mx-auto w-full max-w-[1280px] px-4 md:px-6">
-            <div className="rounded-2xl border border-hairline bg-sheet px-5 py-8 md:px-8 md:py-10 shadow-[0_18px_44px_-28px_rgba(90,65,40,0.45),0_1px_2px_rgba(90,65,40,0.03)] text-[10px] leading-4 text-foreground/40 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)] shell:xl:rounded-none! shell:xl:border-x-0! shell:xl:border-b-0! shell:xl:bg-transparent! shell:xl:px-0! shell:xl:pb-0! shell:xl:shadow-none!">
+            <div className="rounded-2xl border border-hairline bg-sheet px-5 py-8 md:px-8 md:py-10 shadow-[0_18px_44px_-28px_rgba(90,65,40,0.45),0_1px_2px_rgba(90,65,40,0.03)] text-[10.5px] leading-4 text-foreground/45 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.75)] shell:xl:rounded-none! shell:xl:border-x-0! shell:xl:border-b-0! shell:xl:bg-transparent! shell:xl:px-0! shell:xl:pb-0! shell:xl:shadow-none!">
               {/* The wordmark is a cell of the ruled band, not a masthead floating
               above it — on desktop it takes the left rail beside the index;
               below lg it stacks inside the same rules. Floating it above the
@@ -625,7 +625,7 @@ export default function DefaultLayout({
                 <div className="mb-6 lg:mb-0 lg:w-44 lg:shrink-0">
                   <img
                     alt="ddbx"
-                    className="h-7 max-w-[90px] opacity-40 dark:invert"
+                    className="h-7 max-w-[90px] opacity-70 dark:invert"
                     src="/logo.svg"
                   />
                 </div>
@@ -691,7 +691,7 @@ export default function DefaultLayout({
                   {LEGAL_LINKS.map(({ label, page, path }) => (
                     <Fragment key={page}>
                       <button
-                        className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2 text-left"
+                        className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-2 text-left"
                         onClick={() => openLegal(path)}
                       >
                         {label}
@@ -705,7 +705,7 @@ export default function DefaultLayout({
                   {/* A real <a>, not a router link: /sitemap.xml is served by a
                   Pages Function, so the SPA has no route for it. */}
                   <a
-                    className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2"
+                    className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-2"
                     data-ga-event="nav_footer_sitemap"
                     href="/sitemap.xml"
                   >
@@ -719,7 +719,7 @@ export default function DefaultLayout({
                   route, and a full page load would throw away the probe
                   results the visitor is about to watch arrive. */}
                   <Link
-                    className="text-foreground/40 hover:text-foreground/70 transition-colors underline underline-offset-2"
+                    className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-2"
                     data-ga-event="nav_footer_status"
                     to="/status"
                   >
@@ -731,7 +731,7 @@ export default function DefaultLayout({
 
                   <button
                     aria-label="Follow on X (Twitter)"
-                    className="flex items-center text-foreground/40 hover:text-foreground/70 transition-colors"
+                    className="flex items-center text-foreground/60 hover:text-foreground transition-colors"
                     data-ga-event="cta_footer_follow_x"
                     type="button"
                     onClick={() => setFollowOpen(true)}
@@ -745,26 +745,26 @@ export default function DefaultLayout({
                     </svg>
                   </button>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <button
                     aria-label="Get it on Google Play"
-                    className="inline-block opacity-80 hover:opacity-100 transition-opacity"
+                    className="inline-block transition-opacity hover:opacity-85"
                     data-ga-event="cta_footer_download"
                     data-ga-label="Footer Google Play"
                     type="button"
                     onClick={() => setAppsOpen("android")}
                   >
-                    <StoreBadgeImg size="sm" store="android" />
+                    <StoreBadgeImg size="md" store="android" />
                   </button>
                   <button
                     aria-label="Download on the App Store"
-                    className="inline-block opacity-80 hover:opacity-100 transition-opacity"
+                    className="inline-block transition-opacity hover:opacity-85"
                     data-ga-event="cta_footer_download"
                     data-ga-label="Footer App Store"
                     type="button"
                     onClick={() => setAppsOpen("ios")}
                   >
-                    <StoreBadgeImg size="sm" store="ios" />
+                    <StoreBadgeImg size="md" store="ios" />
                   </button>
                 </div>
               </div>
@@ -797,7 +797,7 @@ export default function DefaultLayout({
           // the one half of that sample still resolving an oklch custom
           // property, so it disagreed with the body underneath it. #231811 is
           // --background resolved; keep it in step with THEME_COLOR.
-          className="absolute inset-0 bg-gradient-to-t from-[#f5f0e8]/85 via-[#f5f0e8]/40 to-transparent dark:from-[#231811]/85 dark:via-[#231811]/40 backdrop-blur-md [mask-image:linear-gradient(to_top,black_55%,transparent)]"
+          className="absolute inset-0 bg-gradient-to-t from-[#fcfbf9]/85 via-[#fcfbf9]/40 to-transparent dark:from-[#231811]/85 dark:via-[#231811]/40 backdrop-blur-md [mask-image:linear-gradient(to_top,black_55%,transparent)]"
         />
         <div className="relative px-4 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {directAppUrl ? (
@@ -890,7 +890,7 @@ function FooterNav() {
   return (
     <nav
       aria-label="Footer"
-      className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:min-w-0 lg:flex-1 lg:grid-cols-5"
+      className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:flex lg:min-w-0 lg:flex-1 lg:justify-between lg:gap-x-12"
     >
       {/* Whitespace, not rules. The columns were separated by hairlines on the
           argument that a footer is an index and rules say "columns of a table"
@@ -902,14 +902,14 @@ function FooterNav() {
           exceptions. */}
       {groups.map((group) => (
         <div key={group.title}>
-          <h2 className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
+          <h2 className="text-[14px] font-semibold leading-5 text-foreground/85">
             {group.title}
           </h2>
-          <ul className="mt-2.5 space-y-1.5">
+          <ul className="mt-3 space-y-2">
             {group.links.map((link) => (
               <li key={link.href + link.label}>
                 <a
-                  className="text-[11.5px] leading-4 text-foreground/45 transition-colors hover:text-foreground/75"
+                  className="text-[14px] leading-5 text-foreground/65 transition-colors hover:text-foreground"
                   href={link.href}
                 >
                   {link.label}

@@ -60,8 +60,8 @@ export function Tok({
  *  overriding className because `p-0` and `p-4` are the same Tailwind utility
  *  and which one wins is a stylesheet-order coin flip. */
 const BODY_VARIANT = {
-  code: "overflow-x-auto p-4 font-mono text-[12.5px] leading-[1.6] tabular-nums text-[#f5f0e8]/90",
-  bare: "text-[#f5f0e8]/90",
+  code: "overflow-x-auto p-4 font-mono text-[12.5px] leading-[1.6] tabular-nums text-[#fcfbf9]/90",
+  bare: "text-[#fcfbf9]/90",
 } as const;
 
 /** Panel chrome. `title` is the left kicker (e.g. `GET /api/dealings`),

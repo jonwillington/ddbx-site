@@ -38,8 +38,8 @@
      to drift into one-off near-misses (#e7d4bf, #f1eae0, #fffdf9). Values
      unchanged — prefer the utility forms (border-hairline, bg-sheet,
      text-brand-amber, …) over new bracketed literals. */
-  --color-hairline: #e8e0d5;    /* light-mode rule / sheet edge on cream  */
-  --color-sheet: #faf7f2;       /* raised document sheet over the page    */
+  --color-hairline: #e9e6e1;    /* light-mode rule / sheet edge on cream  */
+  --color-sheet: #ffffff;       /* raised document sheet over the page    */
   --color-ink: #1a140d;         /* near-black — same value BUTTON_FILLED uses */
   --color-brand-brown: #5a4128; /* brand accent on light surfaces         */
   --color-brand-amber: #eec584; /* brand accent on dark surfaces          */
@@ -150,8 +150,10 @@
   }
 }
 :root {
-  --shell-frame: #e7dfd1;
-  --shell-panel: #efe8dd;
+  /* 2026-09-19: the sheet went near-white and the beige came out of the
+     chrome around it, per Jon — same lightness steps, chroma cut to a trace. */
+  --shell-frame: #eeece8;
+  --shell-panel: #f5f4f1;
   --shell-panel-edge: rgb(0 0 0 / 0.06);
 }
 .dark {
@@ -235,7 +237,7 @@
 /* ─── Warm light theme ───────────────────────────────────────────────────────
    Light mode ran on HeroUI's stock tokens, which are COLD greys (hue ≈286):
    muted text at L55 cool-grey on the warm beige page, cold hairlines at
-   L90-92 that vanish on #f5f0e8, and a cold-cast ink that goes grey the
+   L90-92 that vanish on #fcfbf9, and a cold-cast ink that goes grey the
    moment any /55-/85 opacity modifier touches it. Cool mid-greys over warm
    cream is exactly the "washed out" recipe.
 
@@ -264,15 +266,15 @@
 
   /* Drawer/modal panels read --background: warm ivory, not stock near-white
      cold grey, so overlays sit in the same family as the page. */
-  --background:         oklch(96.5% 0.010 78);
+  --background:         oklch(98.8% 0.003 78);
 
   /* Chip fills / secondary surfaces — warmed from the stock cold greys. */
-  --surface-secondary:  oklch(94% 0.008 78);
-  --surface-tertiary:   oklch(92% 0.009 78);
-  --default:            oklch(94% 0.008 78);
+  --surface-secondary:  oklch(95.5% 0.004 78);
+  --surface-tertiary:   oklch(93.5% 0.005 78);
+  --default:            oklch(95.5% 0.004 78);
 
-  --border:             oklch(84% 0.014 70);  /* hairlines into visibility */
-  --separator:          oklch(88% 0.012 70);
+  --border:             oklch(85% 0.008 70);  /* hairlines into visibility */
+  --separator:          oklch(90% 0.006 70);
   --scrollbar:          oklch(80% 0.014 70);
 }
 
@@ -297,7 +299,7 @@ body {
      `var(--background)` here, and an oklch value resolved through a custom
      property is exactly what the chrome sampler fails to re-read. Keep these
      three places in step: THEME_COLOR, the index.html seed, and this rule. */
-  background-color: #f5f0e8;
+  background-color: #fcfbf9;
 }
 
 .dark body {
@@ -439,6 +441,29 @@ body {
 
 .animate-content-in {
   animation: content-fade-in 320ms ease-out both;
+}
+
+/* Search palette (components/search). Quick on purpose: it opens on a
+   keystroke, and anything the reader can watch arrive is latency. */
+@keyframes search-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes search-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-search-in {
+  animation: search-in 140ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.animate-search-backdrop {
+  animation: search-backdrop-in 140ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-search-in,
+  .animate-search-backdrop {
+    animation-duration: 1ms;
+  }
 }
 
 /* vaul adds an ::after to bottom drawers (top:100%, height:200%, background

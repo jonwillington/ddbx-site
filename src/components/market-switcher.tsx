@@ -24,7 +24,7 @@ const UPCOMING_MARKETS = [
 ] as const;
 
 const TRIGGER_CLASS =
-  "flex items-center gap-1.5 rounded-full border border-separator/70 bg-surface/60 px-2 py-1 text-sm text-foreground/80 hover:bg-surface transition-colors";
+  "flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-separator/70 bg-surface/60 px-2 py-1 text-sm text-foreground/80 hover:bg-surface transition-colors";
 
 type Section = { region: MarketRegion; markets: MarketRegistryEntry[] };
 type ThemeChoice = "light" | "dark";
@@ -91,10 +91,21 @@ function TriggerContent({
 }) {
   return (
     <>
-      <current.Flag aria-hidden className="h-3.5 w-5 rounded-sm object-cover" />
-      <span className="font-medium">{current.label}</span>
+      <current.Flag
+        aria-hidden
+        className="h-3.5 w-5 shrink-0 rounded-sm object-cover"
+      />
+      {/* Truncates where the trigger is squeezed (the sidebar rail's header,
+          where "Congress" and "Trump Media" meet the theme switch). The full
+          name stays in the title and in the open menu. */}
+      <span className="min-w-0 truncate font-medium" title={current.label}>
+        {current.label}
+      </span>
       <ChevronDownIcon
-        className={clsx("w-3 h-3 transition-transform", open && "rotate-180")}
+        className={clsx(
+          "h-3 w-3 shrink-0 transition-transform",
+          open && "rotate-180",
+        )}
       />
     </>
   );
@@ -131,7 +142,7 @@ function DesktopDropdown({
   }, [open]);
 
   return (
-    <div ref={wrapRef} className="relative">
+    <div ref={wrapRef} className="relative min-w-0">
       <button
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -144,7 +155,7 @@ function DesktopDropdown({
 
       {open && (
         <div
-          className="absolute left-0 mt-2 w-48 rounded-xl border border-separator bg-[#f5f0e8] dark:bg-background shadow-lg overflow-hidden z-50 py-1"
+          className="absolute left-0 mt-2 w-48 rounded-xl border border-separator bg-[#fcfbf9] dark:bg-background shadow-lg overflow-hidden z-50 py-1"
           role="listbox"
         >
           <MarketOptions
@@ -187,7 +198,7 @@ function MobileSheet({
 
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/50 z-40" />
-        <Drawer.Content className="fixed bottom-0 inset-x-0 z-50 flex flex-col rounded-t-2xl border-t border-hairline dark:border-separator bg-[#f5f0e8] dark:bg-background outline-none">
+        <Drawer.Content className="fixed bottom-0 inset-x-0 z-50 flex flex-col rounded-t-2xl border-t border-hairline dark:border-separator bg-[#fcfbf9] dark:bg-background outline-none">
           <div className="mx-auto mt-3 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-black/15 dark:bg-white/20" />
 
           <div className="px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 overflow-y-auto">

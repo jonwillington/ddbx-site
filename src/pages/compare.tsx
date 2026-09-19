@@ -150,7 +150,7 @@ function ChipSelect({
       </button>
       {open && (
         <div
-          className="absolute right-0 z-50 mt-2 min-w-[180px] overflow-hidden rounded-xl border border-separator bg-[#f5f0e8] py-1 shadow-lg dark:bg-background"
+          className="absolute right-0 z-50 mt-2 min-w-[180px] overflow-hidden rounded-xl border border-separator bg-[#fcfbf9] py-1 shadow-lg dark:bg-background"
           role="listbox"
         >
           {options.map((opt) => {

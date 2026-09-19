@@ -31,7 +31,6 @@ import { MarketExplainerExperience } from "./market-explainer-experience";
 import { MarketExplainerSheet } from "./market-explainer-sheet";
 import { MarketFilterBar, type MarketViewMode } from "./market-filter-bar";
 import { MarketHero } from "./market-hero";
-import { MarketIntroBanner, useIntroDismissed } from "./market-intro-banner";
 import {
   MarketClusterRow,
   MarketDayHeader,
@@ -731,27 +730,6 @@ export function MarketPage<W>({
     label: string;
     count: number | null;
   } | null>(null);
-
-  // First dated day-group that actually has analysed ("Significant") rows.
-  // The one-time intro strip rides on top of this day's rows — the first
-  // place the badges appear without context. Skipped-only days don't count.
-  const introDayKey = useMemo(() => {
-    // A market with no analysis layer has nothing for the banner to
-    // introduce — its copy promises a six-point check that never ran.
-    if (config.hideIntroBanner) return null;
-    for (const m of monthBuckets) {
-      for (const d of m.days) {
-        if (d.suggested.length > 0) return d.key;
-      }
-    }
-
-    return null;
-  }, [monthBuckets, config.hideIntroBanner]);
-
-  // Once dismissed, the intro banner hides AND the grouped panel unwraps
-  // back into a plain day-group (no tint/ring/inset). Lifted here so the
-  // day render can react, not just the banner.
-  const intro = useIntroDismissed();
 
   // Daily summaries — UK-only today. The hook collects the unique ISO
   // dates in the open months and fetches a per-date payload in parallel,
@@ -1622,7 +1600,7 @@ export function MarketPage<W>({
                 return (
                   <div key={month.key}>
                     <div
-                      className={`sticky z-10 ${monthIdx === 0 ? "" : "pt-3"} bg-[#f5f0e8] dark:bg-background`}
+                      className={`sticky z-10 ${monthIdx === 0 ? "" : "pt-3"} bg-[#fcfbf9] dark:bg-background`}
                       style={{
                         // Seated on the filter bar, which is itself seated on
                         // --nav-h. A hardcoded 64 here predated --nav-h and
@@ -1746,8 +1724,6 @@ export function MarketPage<W>({
                             </h2>
                           )}
                           {contentDays.map((day, dayIdx) => {
-                            const isIntroDay =
-                              day.key === introDayKey && !intro.dismissed;
                             const collapsed = isDayCollapsed(day.key);
                             const collapsedDeals = collapsed
                               ? [...day.suggested, ...day.skipped]
@@ -1780,13 +1756,7 @@ export function MarketPage<W>({
                                     locale={config.locale}
                                     weekday={day.weekday}
                                   />
-                                  <div
-                                    className={`rounded-xl overflow-hidden bg-white dark:bg-surface-secondary ${
-                                      isIntroDay
-                                        ? ""
-                                        : "divide-y divide-black/[0.06] dark:divide-separator"
-                                    }`}
-                                  >
+                                  <div className="rounded-xl overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-black/[0.06] dark:divide-separator">
                                     {config.id === "uk" &&
                                       !collapsed &&
                                       dailySummaries.get(day.key) && (
@@ -1833,28 +1803,6 @@ export function MarketPage<W>({
                                           ...day.suggested,
                                           ...day.skipped,
                                         ])}
-                                      </>
-                                    ) : isIntroDay ? (
-                                      <>
-                                        {/* Grouped "signal" panel — the intro banner
-                                      as a curved header wrapping the analysed
-                                      rows on a tinted, ringed inset card, so a
-                                      newcomer sees exactly which filings cleared
-                                      the check. Skipped rows sit outside it. */}
-                                        <div className="m-2 overflow-hidden rounded-xl bg-sheet ring-1 ring-black/[0.07] divide-y divide-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10 dark:divide-separator">
-                                          <MarketIntroBanner
-                                            onDismiss={intro.dismiss}
-                                            onExplain={() =>
-                                              setExplainerOpen(true)
-                                            }
-                                          />
-                                          {renderSuggestedRows(day.suggested)}
-                                        </div>
-                                        {day.skipped.length > 0 && (
-                                          <div className="divide-y divide-black/[0.06] border-t border-black/[0.06] dark:divide-separator dark:border-separator">
-                                            {renderSkippedRows(day.skipped)}
-                                          </div>
-                                        )}
                                       </>
                                     ) : (
                                       <>

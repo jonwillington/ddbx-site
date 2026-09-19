@@ -28,7 +28,7 @@ export function RequestAccessModal({
       closeTone="light"
       maxWidthClass="max-w-xl"
       open={open}
-      panelClassName="bg-[#f5f0e8] border-black/10 text-ink"
+      panelClassName="bg-[#fcfbf9] border-black/10 text-ink"
       title="Request access"
       titleClassName="text-[19px] font-semibold tracking-[-0.015em]"
       onClose={onClose}

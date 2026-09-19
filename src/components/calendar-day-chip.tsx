@@ -47,7 +47,7 @@ export function CalendarDayChip({
         className={`text-center font-bold uppercase tracking-[0.08em] ${BAND[size]} ${
           muted
             ? "bg-foreground/15 text-foreground/60"
-            : "bg-brand-brown text-[#f5f0e8] dark:bg-brand-tan dark:text-ink"
+            : "bg-brand-brown text-[#fcfbf9] dark:bg-brand-tan dark:text-ink"
         }`}
       >
         {weekday.slice(0, 3)}
