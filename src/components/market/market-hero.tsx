@@ -28,6 +28,7 @@ import type { ReactNode } from "react";
 
 import { CheckIcon } from "@heroicons/react/20/solid";
 
+import { hasOutcome } from "./hero-deal-data";
 import { useDealRadar, type DealRadar } from "./hero-deal-radar";
 import { HeroNotificationStack } from "./hero-notification-stack";
 import { HeroOutcomeBar, HeroOutcomeLine } from "./hero-outcome-line";
@@ -425,11 +426,15 @@ function NotificationPing({ tick }: { tick: number }) {
  *  MOUNTED at zero opacity so the front card is still measured and nothing
  *  reflows when it comes back. */
 export function HeroShowcaseDemo({ radar }: { radar: DealRadar }) {
+  // A cast with no price line (the Dutch one — see NL_DEALS) is the alert
+  // alone: no chart to draw, and no outcome it could honestly stamp.
+  const withOutcome = hasOutcome(radar.deals[radar.chartIndex]);
+
   return (
     <div className="hero-card-demo">
       <div
         className={`hero-alert-col relative shrink-0 transition-opacity duration-500 ${
-          radar.pending ? "opacity-0" : "opacity-100"
+          radar.pending && withOutcome ? "opacity-0" : "opacity-100"
         }`}
       >
         {radar.landed && <NotificationPing tick={radar.tick} />}
@@ -438,25 +443,29 @@ export function HeroShowcaseDemo({ radar }: { radar: DealRadar }) {
           tick={Math.max(radar.tick, 0)}
         />
       </div>
-      {/* Positioned and lifted: the arrival ripple lives in the alert column
+      {withOutcome && (
+        <>
+          {/* Positioned and lifted: the arrival ripple lives in the alert column
           above, which is a positioned element, so by default its rings
           painted over this card. The chart is the thing being read — the
           ripple washes behind it. */}
-      <div className="hero-chart-col relative z-10">
-        <HeroPriceChart
-          key={radar.cycle}
-          deal={radar.deals[radar.chartIndex]}
-        />
-      </div>
-      {/* The payoff, full width under the chart: keyed with it so the pair
+          <div className="hero-chart-col relative z-10">
+            <HeroPriceChart
+              key={radar.cycle}
+              deal={radar.deals[radar.chartIndex]}
+            />
+          </div>
+          {/* The payoff, full width under the chart: keyed with it so the pair
           re-mount together and the bar stamps in the moment the continuation
           finishes drawing. */}
-      <div className="relative z-10">
-        <HeroOutcomeBar
-          key={radar.cycle}
-          deal={radar.deals[radar.chartIndex]}
-        />
-      </div>
+          <div className="relative z-10">
+            <HeroOutcomeBar
+              key={radar.cycle}
+              deal={radar.deals[radar.chartIndex]}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -465,19 +474,22 @@ export function HeroShowcaseDemo({ radar }: { radar: DealRadar }) {
  *  card: the alert, then the outcome as a line of text beneath it, landing
  *  on the same clock. No chart. */
 export function HeroShowcaseCompact({ radar }: { radar: DealRadar }) {
+  // Same rule as the demo: an alert with no chart behind it has nothing to be
+  // put away for, so it stays up between landings.
+  const withOutcome = hasOutcome(radar.deals[radar.chartIndex]);
   return (
     <div className="relative w-full max-w-[400px]">
       {radar.landed && <NotificationPing tick={radar.tick} />}
       <div
         className={`relative transition-opacity duration-500 ${
-          radar.pending ? "opacity-0" : "opacity-100"
+          radar.pending && withOutcome ? "opacity-0" : "opacity-100"
         }`}
       >
         <HeroNotificationStack
           deals={radar.deals}
           tick={Math.max(radar.tick, 0)}
         />
-        {radar.landed && (
+        {radar.landed && hasOutcome(radar.deals[radar.activeIndex]) && (
           <HeroOutcomeLine
             className="mt-3"
             deal={radar.deals[radar.activeIndex]}
@@ -507,7 +519,7 @@ export function MarketHero({
   headline,
   subhead,
   bullets,
-  hasTopNotice = false,
+  notice,
   hasRightDrawer = false,
   primaryCtaHref,
   showcase = false,
@@ -533,11 +545,11 @@ export function MarketHero({
    *  presence also drops the trial eyebrow chip — the offer is expected to
    *  carry in the headline/bullets themselves (see MarketConfig.heroBullets). */
   bullets?: ReactNode[];
-  /** When the market carries a beta/advisory notice, the floating <BetaTag/>
-   *  sits at the top of the hero. Desktop has room to spare; on the compact
-   *  mobile hero the badge would land on the headline, so we reserve top
-   *  space for it here. */
-  hasTopNotice?: boolean;
+  /** The market's beta/advisory notice (MarketConfig.topNotice), set as the
+   *  message column's eyebrow. It used to float over the hero as a separate
+   *  pill (BetaTag), which sat on the headline on the centred layout and read
+   *  as a second header; now it is part of the one message block. */
+  notice?: ReactNode;
   /** Whether the page reserves a right-hand drawer (`lg:mr-80`). When it does,
    *  the two-column showcase only has room from `xl` up — below that it falls
    *  back to the single-column layout so the drawer never squeezes it. */
@@ -633,6 +645,18 @@ export function MarketHero({
             className={`${chip("lg")} bg-brand-brown/10 text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan`}
           >
             7-day free trial · Cancel any time
+          </span>
+        </div>
+      )}
+      {notice && (
+        <div className={`flex ${ctaJustify}`}>
+          <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/40 bg-amber-100/85 py-1 pl-1.5 pr-3.5 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/60 dark:text-amber-200">
+            <span
+              className={`${chip()} bg-amber-500/25 text-amber-900 dark:text-amber-200`}
+            >
+              BETA
+            </span>
+            {notice}
           </span>
         </div>
       )}
@@ -768,14 +792,7 @@ export function MarketHero({
       <HeroLiveGradient tick={radar.tick} />
 
       <div
-        className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 shell:xl:px-8! shell:xl:pb-12! ${
-          // The beta pill floats at the stage's top edge (BetaTag,
-          // shell:xl:top-7), so a market carrying one clears it here or the
-          // pill lands on the headline.
-          hasTopNotice
-            ? "pt-16 pb-3 md:pb-6 shell:xl:pt-20!"
-            : "py-3 md:py-6 shell:xl:pt-10!"
-        }`}
+        className="relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 py-3 md:py-6 shell:xl:px-8! shell:xl:pt-10! shell:xl:pb-12!"
       >
         {appShowcase ? (
           <>

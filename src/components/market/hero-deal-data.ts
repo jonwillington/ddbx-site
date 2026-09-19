@@ -628,6 +628,163 @@ export function outcomeOf(deal: HeroDeal): { pct: number; days: number } {
   return { pct, days };
 }
 
+// Sweden. Rated buys from Finansinspektionen's insider register, picked the
+// same way as the UK cast: real filings, real closes after them (Yahoo .ST
+// via /api/prices/history, regenerated with scripts/hero-deal-series.mjs).
+// There is no Swedish app, so the banner carries ddbx's own mark, as Korea's
+// does. Figures in the copy are the filing's own; the context is the rating
+// analysis's.
+const SE_DEALS: HeroDeal[] = [
+  {
+    id: "yubico",
+    ticker: "YUBICO.ST",
+    symbol: "YUBICO",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "SIGNAL",
+    lead: "YUBICO · Yubico",
+    body: "Chairman bought SEK 1.7m at SEK 54.34 near 52-week lows, his sixth purchase in five weeks, over SEK 10.8m in all.",
+    buyStyle: "contrarian",
+    buyIndex: 31,
+    disclosedDate: "2026-06-12",
+    asOf: "2026-09-18",
+    series: [
+      70.8, 71.8, 75.1, 85.8, 82.1, 92, 88.9, 94.5, 98, 96.5, 96.6, 101, 99,
+      101.8, 106.9, 109.4, 118.6, 115, 111.7, 110.7, 110.6, 108, 113.5, 113.2,
+      107.4, 105.1, 101, 100.4, 95.9, 97.2, 95.5, 100, 101.2, 101.6, 102.1, 95.5,
+      97.7, 97.4, 98.2, 99.5, 100.9, 102.6, 103.7, 108.9, 107.1, 105.7, 104.1,
+      102, 99.2, 104, 104.9, 106.3, 103.9, 105.6, 111.3, 113.2, 116.1, 116.1,
+      113.2, 107, 107.2, 109.1, 108, 110.6, 108, 111.6, 110.6, 109.1, 111.7,
+      151.3, 155.9, 154.5, 166.3, 160.2, 166.6, 168, 169.2, 168.9, 163.9, 164.6,
+      162.7, 157.3, 158.3, 156.4, 160.8, 159.8, 155.4, 155.5, 153.7, 163.1,
+      163.1, 160.2, 156.7, 156.4, 155.3, 153.7, 158.1, 164.1, 168.9, 168,
+    ],
+  },
+  {
+    id: "story",
+    ticker: "STORY-B.ST",
+    symbol: "STORY-B",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "BREAKING",
+    lead: "STORY-B · Storytel",
+    body: "Board member Lars Wingefors bought SEK 7.5m at SEK 91.59, part of a SEK 45m four-day buying spree into a sharp price drop.",
+    buyIndex: 30,
+    disclosedDate: "2026-06-25",
+    asOf: "2026-09-16",
+    series: [
+      100.1, 98.8, 100.5, 99, 100.2, 105.7, 108.3, 114, 112.5, 108.9, 107.3,
+      106.2, 108.9, 109, 106.4, 104.9, 108.4, 108.1, 110.4, 108.4, 112, 110,
+      110.6, 112.1, 106.4, 105.9, 104.2, 92.4, 95.8, 97.7, 100, 98.4, 97.7, 98.8,
+      101.6, 103, 102, 100.9, 100.5, 98.4, 99.8, 99, 98.8, 96.7, 96.6, 96.7,
+      95.4, 96.8, 94.8, 94.7, 92.6, 93.9, 96, 111.6, 116, 116.8, 113.2, 111.1,
+      110.8, 111.3, 110.6, 110, 110.3, 113, 110.5, 114.1, 117.1, 116.3, 114.6,
+      113, 114.5, 113.4, 111.1, 115, 116.6, 116.9, 116.8, 117.3, 118.4, 121.1,
+      124.3, 123.6, 124, 122, 120.9, 121.9, 122.1, 124.4, 125.2, 126,
+    ],
+  },
+  {
+    id: "ambea",
+    ticker: "AMBEA.ST",
+    symbol: "AMBEA",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "JUST IN",
+    lead: "AMBEA · Ambea",
+    body: "CEO made his first-ever open-market buy, SEK 939k at SEK 144.50, the day Ambea bid SEK 2.96bn for Humana. The CFO bought too.",
+    buyIndex: 30,
+    disclosedDate: "2026-06-29",
+    asOf: "2026-09-18",
+    series: [
+      100.1, 98.5, 100.1, 102.1, 102.5, 101.9, 103.2, 103.3, 103.2, 103.7, 103,
+      99.6, 95.1, 93.3, 95.9, 97.1, 94.9, 94.7, 96.2, 95.9, 96, 94.7, 92.2, 91.2,
+      90.9, 90.1, 91.3, 93.7, 94.9, 95.1, 100, 102.5, 103.4, 109, 107.3, 104.9,
+      106.5, 99, 99.1, 97.7, 97.8, 96.7, 98.6, 99.7, 99.2, 98.5, 95.8, 96.8,
+      95.1, 96.1, 97.8, 97.8, 97.7, 99.5, 98.9, 98.6, 98.3, 98.5, 98.2, 98,
+      96.4, 96.4, 96.6, 96.3, 98, 99.5, 100.2, 113.7, 118.1, 120.1, 116.9, 119,
+      118.2, 119.1, 119.9, 117.8, 119.1, 117.3, 117.7, 117.5, 117, 113.2, 113.4,
+      115.1, 114, 113.2, 116.2, 119.6, 119.3,
+    ],
+  },
+  {
+    id: "bulten",
+    ticker: "BULTEN.ST",
+    symbol: "BULTEN",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "SIGNAL",
+    lead: "BULTEN · Bulten",
+    body: "Chairman's company, a 25% holder, bought SEK 645k at about SEK 52 just after Q2 results and two major divestments.",
+    buyIndex: 32,
+    disclosedDate: "2026-07-29",
+    asOf: "2026-09-18",
+    series: [
+      85.1, 81.4, 81, 81.4, 79.1, 79.1, 77.8, 78.3, 78.7, 78.5, 77.2, 78.2, 78.2,
+      80.6, 81.5, 82, 81.7, 79, 79.4, 92.8, 92.4, 94, 91.3, 92.4, 93.5, 92.6,
+      93.3, 93.7, 91.3, 89.8, 95.5, 99.5, 100, 101.4, 102.7, 103.3, 107.4, 109.2,
+      109.6, 111.6, 109.9, 111, 112.1, 111.8, 109.6, 109, 107.6, 109.4, 109,
+      107.6, 107.2, 107.6, 110.7, 110.8, 115.4, 117, 119.9, 119.2, 126, 127.5,
+      126.2, 125, 125.7, 120.4, 121, 119.7, 121.2, 122.1, 121.3,
+    ],
+  },
+];
+
+// The Netherlands. Alerts only, no price line: Amsterdam's stored history is
+// too short and, until the ddbx-data venue fix, not trustworthy, so there is
+// no outcome this panel could state honestly. `series: []` is what tells the
+// hero (hasOutcome) to show the alert alone, with no chart and no "+X%".
+// Every figure is from the AFM filing; the context from the rating analysis.
+const NL_DEALS: HeroDeal[] = [
+  {
+    id: "micc-ceo",
+    ticker: "MICC.AS",
+    symbol: "MICC",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "SIGNAL",
+    lead: "MICC · Magnum Ice Cream",
+    body: "CEO Peter ter Kulve bought €1.52m on-exchange, part of a CEO, CFO and Chair cluster buying the newly demerged AEX name.",
+    buyIndex: 0,
+    disclosedDate: "2025-12-10",
+    asOf: "2025-12-10",
+    series: [],
+  },
+  {
+    id: "envi",
+    ticker: "ENVI.AS",
+    symbol: "ENVI",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "JUST IN",
+    lead: "ENVI · Envipco",
+    body: "Chairman and ~17% owner Greg Garvey added €133k in Amsterdam, plus larger Oslo legs, alongside other insiders.",
+    buyIndex: 0,
+    disclosedDate: "2026-01-19",
+    asOf: "2026-01-19",
+    series: [],
+  },
+  {
+    id: "micc-cfo",
+    ticker: "MICC.AS",
+    symbol: "MICC",
+    icon: "/apple-icon.png",
+    app: "ddbx",
+    tag: "BREAKING",
+    lead: "MICC · Magnum Ice Cream",
+    body: "CFO Abhijit Bhattacharya bought €1.47m on-exchange into post-results weakness, the same day as the Chair.",
+    buyIndex: 0,
+    disclosedDate: "2025-12-08",
+    asOf: "2025-12-08",
+    series: [],
+  },
+];
+
+/** Whether a deal has a price line to draw and an outcome to state. The
+ *  Dutch cast doesn't (see NL_DEALS), and the hero shows its alert alone. */
+export function hasOutcome(deal: HeroDeal): boolean {
+  return deal.series.length > 1;
+}
+
 /** "107 days" up to about four months, "6 months" beyond — a year-old filing
  *  quoted in days reads as a countdown, not a hold. Months floor, so the
  *  line never rounds a hold up. */
@@ -642,6 +799,8 @@ export function dealsForMarket(marketId?: string): HeroDeal[] {
   if (marketId === "us") return US_DEALS;
   if (marketId === "usg") return USG_DEALS;
   if (marketId === "kr") return KR_DEALS;
+  if (marketId === "se") return SE_DEALS;
+  if (marketId === "nl") return NL_DEALS;
 
   return UK_DEALS;
 }

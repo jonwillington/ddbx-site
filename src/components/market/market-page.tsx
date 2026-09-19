@@ -12,7 +12,6 @@ import {
   CalendarDaysIcon,
   ChevronDownIcon,
   LockClosedIcon,
-  LockOpenIcon,
 } from "@heroicons/react/24/outline";
 import {
   Fragment,
@@ -63,7 +62,6 @@ import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
 import { BrokerReviewsPromo } from "@/components/brokers/broker-reviews-promo";
 import { Skeleton } from "@/components/skeleton";
 import { CollapsedDayTeaser } from "@/components/discretion/collapsed-day-teaser";
-import { Tooltip } from "@/components/tooltip";
 import {
   monthLabel,
   monthShort,
@@ -224,9 +222,6 @@ export function MarketPage<W>({
   const useGating = config.useGating;
   const gating = useGating ? useGating() : undefined;
   const previewMode = gating?.enabled === true;
-  const unlocksLeftToday = previewMode
-    ? Math.max(0, gating.freeQuota - gating.viewedCount)
-    : 0;
   /** Hard-gated teaser list (see MarketConfig.gatedSimpleRows) — active only
    *  while discretion gating is on; flipping preview off restores the full
    *  table. */
@@ -951,47 +946,6 @@ export function MarketPage<W>({
         onChange={setChartMode}
       />
     );
-  const previewStatus =
-    gating &&
-    (() => {
-      const tooltipText = previewMode
-        ? `Web preview is on: you can open ${gating.freeQuota} full analysis${gating.freeQuota === 1 ? "" : "es"} per day on web. Use the app for unlimited full analysis.`
-        : "Web preview is off: full analysis is unlocked on web.";
-
-      return (
-        <Tooltip className="inline-flex" content={tooltipText}>
-          <button
-            aria-label="Explain web preview mode"
-            // px/py match the Filters sheet trigger so the two pills read as
-            // one control row at the same height.
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors cursor-help ${
-              previewMode
-                ? "border-[#d8d0c6] bg-[#f4eee6] text-[#7a634b] dark:border-separator dark:bg-white/[0.03] dark:text-[#c9b49f]"
-                : "border-positive/25 bg-positive/10 text-positive dark:border-positive/30 dark:bg-positive/10"
-            }`}
-            data-ga-event="cta_web_preview_explain"
-            data-ga-label={`Web preview ${previewMode ? "on" : "off"}`}
-            type="button"
-          >
-            {previewMode ? (
-              <LockClosedIcon className="h-4 w-4 shrink-0" />
-            ) : (
-              <LockOpenIcon className="h-4 w-4 shrink-0" />
-            )}
-            <span>
-              Web preview {previewMode ? "on" : "off"}
-              {previewMode &&
-                ` · ${
-                  unlocksLeftToday > 0
-                    ? `${unlocksLeftToday} unlock left`
-                    : "no unlocks left"
-                }`}
-            </span>
-          </button>
-        </Tooltip>
-      );
-    })();
-
   /* ───────── Handlers ────────────────────────────────────────────────── */
 
   const toggleMonth = (key: string) => {
@@ -1205,13 +1159,12 @@ export function MarketPage<W>({
       <section className="pb-8 space-y-6">
         {/* Shared hero — first content under the navbar. Perf moved to
             /performance; the old title + description block is dropped
-            because the hero IS the page heading. Per-market beta notice
-            renders via <BetaTag/> in App.tsx so it persists across route
-            changes instead of remounting with each MarketHero. */}
+            because the hero IS the page heading. The per-market beta notice
+            is the hero's own eyebrow (`notice`). */}
         <MarketHero
           bullets={config.heroBullets}
           hasRightDrawer={hasNewsSource || supportsChannelPerf}
-          hasTopNotice={!!config.topNotice}
+          notice={config.topNotice}
           headline={config.heroHeadline}
           marketId={config.id}
           marketLabel={config.marketLabel}
@@ -1427,7 +1380,6 @@ export function MarketPage<W>({
                     label: f.label,
                   }))}
                   search={search}
-                  searchStatus={previewStatus}
                   showSignalFilter={config.showSignalFilter !== false}
                   showViewMode={!hiddenColumns.has("performance")}
                   signalFilter={signalFilter}

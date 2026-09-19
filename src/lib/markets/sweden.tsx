@@ -585,7 +585,7 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
     <>
       Every Swedish insider deal.
       <span className="block text-brand-brown dark:text-brand-tan">
-        Free on the web.
+        Free to read.
       </span>
     </>
   ),
@@ -594,6 +594,10 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
     <>Each one screened and rated</>,
     <>Straight from Finansinspektionen</>,
   ],
+  // The UK hero's layout too: message left, the proof panel right. Real
+  // filings from this market (hero-deal-data.ts), with no store CTA — the
+  // panel is the market's proof, not an app demo (see korea.tsx).
+  heroShowcase: true,
   faq: buildMarketFaq({
     insiderTerm: "Swedish insider",
     filingPhrase: "to Finansinspektionen",

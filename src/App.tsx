@@ -1,6 +1,5 @@
 import { Route, Routes } from "react-router-dom";
 
-import { BetaTag } from "@/components/market/beta-tag";
 import { CookieBanner } from "@/components/cookie-banner";
 import { DealingsWindowWarmer } from "@/components/dealings-window-warmer";
 import { DocumentTitle } from "@/components/document-title";
@@ -62,7 +61,6 @@ function App() {
       <LinkerParamCleanup />
       <ScrollToTop />
       <DealingsWindowWarmer />
-      <BetaTag />
       <Routes>
         <Route element={<MarketHomePage />} path="/" />
         {/* Deep-link to a monthly recap, e.g. /report/may-2026. Resolves to the

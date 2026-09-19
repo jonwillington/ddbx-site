@@ -498,7 +498,7 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
     <>
       Every Dutch insider deal.
       <span className="block text-brand-brown dark:text-brand-tan">
-        Free on the web.
+        Free to read.
       </span>
     </>
   ),
@@ -507,6 +507,10 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
     <>Each one screened and rated</>,
     <>Straight from the AFM register</>,
   ],
+  // The UK hero's layout too: message left, the proof panel right. Real
+  // filings from this market (hero-deal-data.ts), with no store CTA — the
+  // panel is the market's proof, not an app demo (see korea.tsx).
+  heroShowcase: true,
   faq: buildMarketFaq({
     insiderTerm: "Dutch insider",
     filingPhrase: "to the AFM",

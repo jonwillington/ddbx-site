@@ -56,6 +56,11 @@ const CAST = {
   coway: { ticker: "021240.KS", tradeDate: "2026-04-06", disclosedDate: "2026-04-06" },
   agabang: { ticker: "013990.KQ", tradeDate: "2026-06-18", disclosedDate: "2026-06-18" },
   kukil: { ticker: "060480.KQ", tradeDate: "2026-08-11", disclosedDate: "2026-08-11" },
+  // Sweden — Nasdaq Stockholm / First North, keyed with Yahoo's .ST suffix.
+  yubico: { ticker: "YUBICO.ST", tradeDate: "2026-06-11", disclosedDate: "2026-06-12" },
+  ambea: { ticker: "AMBEA.ST", tradeDate: "2026-06-29", disclosedDate: "2026-06-29" },
+  story: { ticker: "STORY-B.ST", tradeDate: "2026-06-25", disclosedDate: "2026-06-25" },
+  bulten: { ticker: "BULTEN.ST", tradeDate: "2026-07-27", disclosedDate: "2026-07-29" },
 };
 
 const DEFAULT_POST_CAP = 120;
@@ -73,7 +78,10 @@ async function history(ticker) {
   return bars;
 }
 
+const only = process.argv.slice(2);
+
 for (const [id, c] of Object.entries(CAST)) {
+  if (only.length && !only.includes(id)) continue;
   const bars = await history(c.ticker);
   const at = (d) => bars.findIndex((b) => b.date >= d);
   const ti = at(c.tradeDate);
