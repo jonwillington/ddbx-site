@@ -10,6 +10,7 @@ import { ArrowRightIcon } from "@heroicons/react/20/solid";
 
 import { CloseButton } from "@/components/close-button";
 import { CompanyLogo } from "@/components/company-logo";
+import { FilingDateline } from "@/components/filing/filing-stage";
 import { RatingBadge } from "@/components/rating-badge";
 import { ClusterChip } from "@/components/cluster-chip";
 import { BuyStyleChip } from "@/components/buy-style-chip";
@@ -63,14 +64,10 @@ function AppNotice({
         };
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-[#d8d0c6] bg-[#f4eee6] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/[0.04]">
+    <div className="flex flex-col gap-3 rounded-card border border-rule bg-sheet px-5 py-4 shadow-lift sm:flex-row sm:items-center sm:justify-between dark:bg-white/[0.04] dark:shadow-none">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-brand-brown dark:text-[#c9b49f]">
-          {copy.title}
-        </p>
-        <p className="mt-0.5 text-xs leading-relaxed text-[#7a634b] dark:text-brand-tan">
-          {copy.body}
-        </p>
+        <p className="text-title text-foreground">{copy.title}</p>
+        <p className="mt-1 text-small text-foreground/60">{copy.body}</p>
       </div>
       <a
         className={`${BUTTON_RADIUS} ${BUTTON_FILLED} inline-flex shrink-0 items-center justify-center px-4 py-2.5 text-sm font-semibold transition-colors`}
@@ -292,8 +289,8 @@ export function MarketDetailDrawer<W>({
   // rather than a slab welded to the screen edge. Desktop floats off the
   // right; mobile floats up from the bottom.
   const contentClass = isDesktop
-    ? "fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-2xl rounded-2xl bg-background border border-black/10 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden outline-none"
-    : "fixed bottom-2 inset-x-2 z-50 h-[88vh] max-h-[88vh] rounded-2xl bg-background border border-black/10 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden outline-none";
+    ? "fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] max-w-2xl rounded-card bg-background border border-rule shadow-float flex flex-col overflow-hidden outline-none"
+    : "fixed bottom-2 inset-x-2 z-50 h-[88vh] max-h-[88vh] rounded-card bg-background border border-rule shadow-float flex flex-col overflow-hidden outline-none";
 
   return (
     <Drawer.Root
@@ -327,11 +324,7 @@ export function MarketDetailDrawer<W>({
 
               <div
                 className={`shrink-0 flex items-center gap-3 px-5 md:px-8 py-4 border-b transition-[border-color,box-shadow] duration-200
-                ${
-                  scrolled
-                    ? "border-black/10 dark:border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.3)]"
-                    : "border-transparent"
-                }`}
+                ${scrolled ? "border-rule shadow-sm" : "border-transparent"}`}
               >
                 {history.length > 0 && (
                   <button
@@ -413,10 +406,19 @@ export function MarketDetailDrawer<W>({
                         />
                       )}
 
+                      {/* WHEN first, as on the filing page: the same dateline
+                          object, on a light ground. */}
+                      <FilingDateline
+                        disclosedDate={active.disclosedDate}
+                        market={locale === "en-US" ? "US" : "UK"}
+                        tone="page"
+                        tradeDate={active.tradeDate}
+                      />
+
                       {/* Company on top, the person who made the buy beneath,
                         tied together by an org-chart connector so the header
                         reads "this purchase was made by this person". */}
-                      <div>
+                      <div className="border-t border-rule pt-6">
                         <div className="flex items-center gap-4">
                           {showLogo && (
                             <CompanyLogo
@@ -426,7 +428,7 @@ export function MarketDetailDrawer<W>({
                               ticker={rawTicker}
                             />
                           )}
-                          <h1 className="text-3xl font-bold leading-tight tracking-tight flex-1 min-w-0">
+                          <h1 className="text-heading font-semibold flex-1 min-w-0">
                             {company}
                           </h1>
                           <ClusterChip
@@ -476,7 +478,7 @@ export function MarketDetailDrawer<W>({
                               </div>
                             )}
                             <div className="min-w-0">
-                              <div className="text-[10px] uppercase tracking-wide text-muted mb-0.5">
+                              <div className="micro text-muted mb-1.5">
                                 {insiderLabel}
                               </div>
                               <div className="flex items-center gap-1.5 min-w-0">
@@ -498,7 +500,7 @@ export function MarketDetailDrawer<W>({
                         </div>
                       </div>
 
-                      <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 py-4 border-y border-black/10 dark:border-white/10">
+                      <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 py-4 border-y border-rule">
                         {detailFields ? (
                           detailFields(active)
                             .filter(
@@ -507,7 +509,7 @@ export function MarketDetailDrawer<W>({
                             )
                             .map((f) => (
                               <div key={f.label} className="min-w-0">
-                                <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                <dt className="micro text-muted mb-1.5">
                                   {f.label}
                                 </dt>
                                 <dd className="text-sm font-medium">
@@ -518,7 +520,7 @@ export function MarketDetailDrawer<W>({
                         ) : (
                           <>
                             <div>
-                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                              <dt className="micro text-muted mb-1.5">
                                 Action
                               </dt>
                               <dd className="text-sm font-medium">
@@ -526,7 +528,7 @@ export function MarketDetailDrawer<W>({
                               </dd>
                             </div>
                             <div>
-                              <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                              <dt className="micro text-muted mb-1.5">
                                 Amount
                               </dt>
                               <dd className="text-sm font-medium">
@@ -535,7 +537,7 @@ export function MarketDetailDrawer<W>({
                             </div>
                             {active.shares > 0 && (
                               <div>
-                                <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                <dt className="micro text-muted mb-1.5">
                                   Shares
                                 </dt>
                                 <dd className="text-sm font-medium tabular-nums">
@@ -545,7 +547,7 @@ export function MarketDetailDrawer<W>({
                             )}
                             {industryLabel && (
                               <div className="min-w-0">
-                                <dt className="text-[10px] text-muted uppercase tracking-wide mb-0.5">
+                                <dt className="micro text-muted mb-1.5">
                                   Industry
                                 </dt>
                                 <dd className="text-sm font-medium truncate">
@@ -574,7 +576,7 @@ export function MarketDetailDrawer<W>({
                           (see MarketConfig.filingHref). */}
                       {filingHref?.(active) ? (
                         <Link
-                          className="group -mt-2 inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground/60 underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-brand-brown/40"
+                          className="group -mt-2 inline-flex items-center gap-1.5 text-small font-medium text-foreground/60 underline-offset-4 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-brand-brown/40"
                           to={filingHref(active)!}
                           onClick={onClose}
                         >

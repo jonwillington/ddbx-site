@@ -38,7 +38,6 @@ import { Link } from "react-router-dom";
 
 import {
   cleanName,
-  disclosureLagDays,
   signedPct,
   shares as fmtShares,
 } from "../../../shared/filings.js";
@@ -143,18 +142,28 @@ function DateLeaf({
   label,
   market,
   muted = false,
+  tone,
 }: {
   iso: string;
   label: string;
   market: string;
   muted?: boolean;
+  tone: "stage" | "page";
 }) {
   return (
     <div className="flex items-center gap-3">
       <CalendarDayChip {...chipParts(iso)} muted={muted} size="lg" />
       <div className="min-w-0">
-        <p className="micro text-white/50">{label}</p>
-        <p className="mt-1.5 whitespace-nowrap text-lede text-white">
+        <p
+          className={`micro ${tone === "stage" ? "text-white/50" : "text-muted"}`}
+        >
+          {label}
+        </p>
+        <p
+          className={`mt-1.5 whitespace-nowrap text-lede ${
+            tone === "stage" ? "text-white" : "text-foreground"
+          }`}
+        >
           {longDate(iso, market)}
         </p>
       </div>
@@ -168,47 +177,84 @@ function DateLeaf({
  *  and the trade date lived only in the caption under the chart. But a filing
  *  is a dated event before it is anything else, and the gap between the trade
  *  and the disclosure is the single most under-appreciated fact about insider
- *  filings, so both dates sit at the top of the stage as calendar leaves with
- *  the gap between them in words. A same-day filing is one leaf. */
+ *  filings, so both dates sit at the top as calendar leaves with the gap
+ *  between them in words. A same-day filing is one leaf.
+ *
+ *  `tone="page"` is the same object on a light ground: the deal drawer, which
+ *  the markets without a filing page still open. */
 export function FilingDateline({
-  deal,
+  tradeDate,
+  disclosedDate,
   market,
+  tone = "stage",
   className = "",
 }: {
-  deal: Dealing | UsDealing;
+  tradeDate: string | null | undefined;
+  disclosedDate: string;
   market: string;
+  tone?: "stage" | "page";
   className?: string;
 }) {
-  const lag = disclosureLagDays(deal);
-  const sameDay = lag === 0 || deal.trade_date === deal.disclosed_date;
+  // Same arithmetic as disclosureLagDays, on two bare dates rather than a
+  // wire row, since the drawer holds a MarketDealing.
+  const lag = tradeDate
+    ? Math.max(
+        0,
+        Math.round(
+          (Date.parse(`${disclosedDate.slice(0, 10)}T00:00:00Z`) -
+            Date.parse(`${tradeDate.slice(0, 10)}T00:00:00Z`)) /
+            86_400_000,
+        ),
+      )
+    : null;
 
-  if (sameDay || !deal.trade_date) {
+  if (!tradeDate || lag === 0) {
     return (
       <div className={className}>
         <DateLeaf
-          iso={deal.disclosed_date}
-          label={deal.trade_date ? "Traded and disclosed" : "Disclosed"}
+          iso={disclosedDate}
+          label={tradeDate ? "Traded and disclosed" : "Disclosed"}
           market={market}
+          tone={tone}
         />
       </div>
     );
   }
 
+  const rule = tone === "stage" ? "bg-white/20" : "bg-foreground/15";
+
   return (
     <div
       className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5 ${className}`.trimEnd()}
     >
-      <DateLeaf muted iso={deal.trade_date} label="Traded" market={market} />
+      <DateLeaf
+        muted
+        iso={tradeDate}
+        label="Traded"
+        market={market}
+        tone={tone}
+      />
       {lag != null && lag > 0 ? (
         <div className="flex items-center gap-2 pl-6 sm:pl-0">
-          <span aria-hidden className="h-4 w-px bg-white/20 sm:h-px sm:w-6" />
-          <span className="text-small whitespace-nowrap text-brand-amber">
+          <span aria-hidden className={`h-4 w-px sm:h-px sm:w-6 ${rule}`} />
+          <span
+            className={`text-small whitespace-nowrap ${
+              tone === "stage"
+                ? "text-brand-amber"
+                : "text-brand-brown dark:text-brand-tan"
+            }`}
+          >
             {lag} {lag === 1 ? "day" : "days"} later
           </span>
-          <span aria-hidden className="hidden h-px w-6 bg-white/20 sm:block" />
+          <span aria-hidden className={`hidden h-px w-6 sm:block ${rule}`} />
         </div>
       ) : null}
-      <DateLeaf iso={deal.disclosed_date} label="Disclosed" market={market} />
+      <DateLeaf
+        iso={disclosedDate}
+        label="Disclosed"
+        market={market}
+        tone={tone}
+      />
     </div>
   );
 }
@@ -294,7 +340,12 @@ export function FilingStage({
           {rating ? ` · ${rating}` : ""}
         </Eyebrow>
 
-        <FilingDateline className="mt-5" deal={deal} market={market} />
+        <FilingDateline
+          className="mt-5"
+          disclosedDate={deal.disclosed_date}
+          market={market}
+          tradeDate={deal.trade_date}
+        />
 
         <div className="mt-7 border-t border-rule-stage pt-7">
           <CompanyLogo market={market} size={64} ticker={deal.ticker} />

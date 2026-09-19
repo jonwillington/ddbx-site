@@ -15,6 +15,8 @@ import type {
   MarketStats,
 } from "@/lib/markets/types";
 
+import { usFilingPath } from "../../../shared/filings-us.js";
+
 import { api } from "@/lib/api";
 import { buildMarketFaq } from "@/lib/markets/faq";
 import {
@@ -58,6 +60,10 @@ function DjtRowActionCell({ dealing }: { dealing: MarketDealing<UsRowGroup> }) {
 
 export const DjtMarket: MarketConfig<UsRowGroup> = {
   id: "djt",
+  // Trump Media rows are ordinary Form 4 rows: same page, same rules as US.
+  filingHref: (d) =>
+    d.raw.primary?.id ? usFilingPath(d.raw.primary.id) : null,
+  filingSeed: (d) => (d.raw.leg_count === 1 ? d.raw.primary : null),
   title: "Trump Media insiders",
   heroHeadline: "Every Trump Media insider trade.",
   heroSubhead:
