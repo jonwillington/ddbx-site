@@ -566,6 +566,47 @@ export interface PerformanceRow {
   as_of_date: string | null;
 }
 
+/** One purchase's fixed-horizon outcome, as `/api/outcomes` serves it.
+ *
+ *  A row exists only once the horizon has elapsed: the close on/before the
+ *  anchor date to the close on/before anchor + `horizon_days`, beside the
+ *  market benchmark over the identical window (`^FTAS` UK, `^GSPC` US). Unlike
+ *  `LivePerformance`, every purchase in a slice is measured over the SAME
+ *  number of days, which is what a comparison between groups of purchases
+ *  needs.
+ *
+ *  `event_id` joins back to the feed: UK `Dealing.id`; US
+ *  `${filing_id}|${transaction_code}|${reporter.cik}`, one logical Form 4
+ *  purchase (direct holdings outside 10b5-1 plans only, as the outcomes pass
+ *  defines it).
+ *
+ *  PERCENTS, like the `outcomes` table (12.3 = +12.3%). `flags` is the table's
+ *  vocabulary: `extreme` (close-to-close move outside 0.34x-3x, usually an
+ *  unadjusted split), `stale_exit` / `stale_entry` (the bar used is more than
+ *  ten days from the date wanted: the series stopped), `no_bench`
+ *  (`abnormal_return_pct` is null). Rows are served flagged, never dropped;
+ *  which flags to exclude is the consumer's stated choice. */
+export interface OutcomeEvent {
+  event_id: string;
+  anchor_date: string;
+  entry_date: string;
+  exit_date: string;
+  return_pct: number;
+  bench_return_pct: number | null;
+  abnormal_return_pct: number | null;
+  flags: string[];
+}
+
+export interface OutcomesResponse {
+  market: "UK" | "US";
+  anchor: "trade" | "disclosed";
+  horizon_days: 90 | 180 | 365 | 730;
+  benchmark: string;
+  /** Latest `exit_date` in the slice, or null when it is empty. */
+  resolved_through: string | null;
+  outcomes: OutcomeEvent[];
+}
+
 /** Server-precomputed "as of the latest cached close" performance, attached to
  *  every dealing so consumers render the row's return / alpha badge instantly
  *  from the dealings payload — no per-visitor /api/prices round-trips (which
@@ -2721,4 +2762,182 @@ export interface StoryListItem {
 
 export interface StoriesResponse {
   stories: StoryListItem[];
+}
+
+// ---------------------------------------------------------------------------
+// Research (/api/research/studies, /api/research/insider-index)
+//
+// The living studies and the Insider Index, computed in the Worker from the
+// same modules the website runs (worker/research/shared, vendored from
+// ddbx-site/shared), so every client draws one verdict. Numbers only, plus a
+// `plain` block: the reader-facing copy for the apps, written for someone who
+// has never met a confidence interval (ddbx-ios-app
+// investigations/2026-09-19-research-tab.md, "Language"). The website keeps
+// its own wording; `headline` / `detail` carry it for reference.
+//
+// Rates are RATIOS (0.62 = 62%), unlike OutcomeEvent's percents.
+// ---------------------------------------------------------------------------
+
+/** What the reader sees: "We have an answer", "Too close to call", "Still
+ *  collecting". */
+export type ResearchState = "answered" | "open" | "waiting";
+
+/** A purchase already filed whose 90 days have not passed, in a group that is
+ *  still short of the floor. Enough to draw the staircase to the date. */
+export interface ResearchQueuedBuy {
+  /** ISO date its 90 days end. */
+  matures_on: string;
+  /** True when it would add a company the group does not have yet. */
+  new_company: boolean;
+}
+
+export interface ResearchCell {
+  id: string;
+  /** The website's label: "Chief financial officers". */
+  label: string;
+  /** The apps' label: "Finance bosses". */
+  plain_label: string;
+  /** Id of the group this one is a breakdown of (shown, never compared). */
+  nested: string | null;
+  /** Resolved purchases. */
+  n: number;
+  beats: number;
+  companies: number;
+  /** Purchases that still move as separate bets once purchases in one company
+   *  are allowed to move together: n / design effect, rounded. */
+  effective: number;
+  /** Filed and waiting for their 90 days. */
+  pending: number;
+  /** Null below the floor: not stated, rather than unknown. */
+  beat_rate: number | null;
+  low: number | null;
+  high: number | null;
+  median_alpha: number | null;
+  /** Null once the group has cleared both floors. */
+  clearance: {
+    needed: number;
+    needed_companies: number;
+    queued: number;
+    clears_on: string | null;
+    from_queue: boolean;
+  } | null;
+  /** Only for a group still short of the floor, in maturity order. */
+  queue: ResearchQueuedBuy[];
+  /** One line for the reader: "About 6 in 10 did better than the market". */
+  plain_line: string;
+}
+
+export interface ResearchPlain {
+  /** The question as a person would ask it: "Do bigger buys do better?" */
+  question: string;
+  /** "We have an answer" | "Too close to call" | "Still collecting". */
+  status: string;
+  /** One or two short sentences. */
+  headline: string;
+  /** A short paragraph: what was measured and what it found. */
+  summary: string;
+  /** The rating check this study tests, as named in the app. */
+  check: string;
+  /** One line tying the study to the rating: why the reader should care. */
+  check_line: string;
+}
+
+export interface ResearchStudy {
+  slug: string;
+  kind: "difference" | "trend";
+  state: ResearchState;
+  /** Website wording, for reference and for the collapsed method section. */
+  title: string;
+  standfirst: string;
+  headline: string;
+  detail: string;
+  method: string[];
+  caveats: string[];
+  plain: ResearchPlain;
+  cells: ResearchCell[];
+  /** Subject first for a difference; smallest first for a trend. */
+  compare_ids: string[];
+  /** The company-clustered test. For a difference, `estimate` is the gap in
+   *  beat rate (first compared minus second); for a trend, the change per
+   *  band, with `intercept` the fitted rate at the first band. Null while
+   *  waiting. */
+  test: {
+    estimate: number;
+    intercept: number;
+    low: number;
+    high: number;
+    p: number;
+    companies: number;
+  } | null;
+  universe: {
+    scored: number;
+    companies: number;
+    beat_rate: number | null;
+    pending: number;
+    resolution_yield: number;
+    arrivals_weekly: number;
+  };
+  horizon_days: number;
+  min_purchases: number;
+  min_companies: number;
+  /** Latest exit date in the sample. */
+  as_of: string | null;
+  dataset_id: string;
+}
+
+export interface ResearchStudiesResponse {
+  market: "UK" | "US";
+  /** ISO day the results were computed for. */
+  computed_on: string;
+  /** "FTSE All-Share" | "S&P 500". */
+  benchmark: string;
+  /** False when the feed could not be read in full: say so, never draw it. */
+  complete: boolean;
+  studies: ResearchStudy[];
+}
+
+export interface ResearchIndexReading {
+  date: string;
+  score: number;
+  tier: "very-quiet" | "quiet" | "normal" | "busy" | "very-busy";
+  count: number;
+  breadth: number;
+  value: number;
+  count_pct: number | null;
+  breadth_pct: number | null;
+  value_pct: number | null;
+  window_start: string;
+}
+
+export interface ResearchIndexTier {
+  id: ResearchIndexReading["tier"];
+  min: number;
+  label: string;
+  /** Plain meaning, one or two short sentences. */
+  meaning: string;
+}
+
+export interface ResearchIndexResponse {
+  market: "UK";
+  computed_on: string;
+  complete: boolean;
+  /** Every published reading, oldest first. Empty until the index has enough
+   *  history; `publishes_from` then says when. */
+  readings: ResearchIndexReading[];
+  publishes_from: string | null;
+  tiers: ResearchIndexTier[];
+  /** Five sessions back, or null. */
+  week_change: number | null;
+  /** Consecutive readings, ending today, in today's tier. */
+  run_length: number;
+  /** Website sentence for the latest reading. */
+  sentence: string | null;
+  window_sentence: string | null;
+  plain: {
+    question: string;
+    headline: string;
+    summary: string;
+    /** "Very quiet for 16 days in a row", or null for a run under two. */
+    run_line: string | null;
+  };
 }
