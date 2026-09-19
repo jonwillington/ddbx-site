@@ -32,8 +32,7 @@ import { MarketFilterBar, type MarketViewMode } from "./market-filter-bar";
 import { MarketHero } from "./market-hero";
 import {
   MarketClusterRow,
-  MarketDayHeader,
-  MarketDaySummaryRow,
+  MarketDayLead,
   MarketRow,
   MarketRowHeader,
   MarketRowSkeleton,
@@ -1474,23 +1473,16 @@ export function MarketPage<W>({
               </div>
               <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-card">
                 {[3, 2].map((rowCount, dayIdx) => (
-                  <div
-                    key={dayIdx}
-                    className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:items-start xl:gap-3"
-                  >
-                    {/* Date chip — rail on xl, inline strip below. */}
-                    <div className="hidden xl:block pt-2">
-                      <Skeleton className="h-12 w-10 rounded-control" />
-                    </div>
-                    <div className="mb-2 flex items-center gap-3 px-1 xl:hidden">
-                      <Skeleton className="h-10 w-9 rounded-control" />
-                      <Skeleton className="h-3 w-10 rounded" />
-                      <span
-                        aria-hidden
-                        className="h-px flex-1 bg-foreground/10"
-                      />
-                    </div>
+                  <div key={dayIdx}>
                     <div className="rounded-card overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-hairline dark:divide-separator">
+                      {/* The dated lead row every day card opens with. */}
+                      <div className="flex items-center gap-3 px-3 py-2.5 md:px-5">
+                        <Skeleton className="h-11 w-9 rounded-control" />
+                        <div className="space-y-1.5">
+                          <Skeleton className="h-3 w-40 rounded" />
+                          <Skeleton className="h-2.5 w-16 rounded" />
+                        </div>
+                      </div>
                       {Array.from({ length: rowCount }).map((_, i) => (
                         <MarketRowSkeleton
                           key={i}
@@ -1699,10 +1691,7 @@ export function MarketPage<W>({
                         {/* Teaser mode has no table columns to head — the rows
                           are flat avatar → logos links. */}
                         {!simpleGatedRows && (
-                          <div className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:gap-3 xl:px-3 xl:bg-black/[0.04] dark:xl:bg-white/[0.05]">
-                            <div className="hidden xl:flex items-center border-b border-rule py-1.5 micro text-muted/80">
-                              Date
-                            </div>
+                          <div className="xl:px-3 xl:bg-black/[0.04] dark:xl:bg-white/[0.05]">
                             <MarketRowHeader
                               hideDate
                               inset
@@ -1746,41 +1735,38 @@ export function MarketPage<W>({
                             return (
                               <Fragment key={day.key}>
                                 {weekendBreak && <WeekendBreak />}
-                                <div className="xl:grid xl:grid-cols-[3rem_minmax(0,1fr)] xl:items-start xl:gap-3">
-                                  <MarketDayHeader
-                                    day={day.day}
-                                    isoDate={day.key}
-                                    locale={config.locale}
-                                    variant="rail"
-                                    weekday={day.weekday}
-                                  />
-                                  {/* Below xl the date sits above the card on
-                                    the well, mirroring the desktop rail, so
-                                    the scroll reads as a dated timeline. */}
-                                  <MarketDayHeader
-                                    day={day.day}
-                                    isoDate={day.key}
-                                    locale={config.locale}
-                                    weekday={day.weekday}
-                                  />
+                                <div>
                                   <div className="rounded-card overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-hairline dark:divide-separator">
-                                    {config.id === "uk" &&
-                                      !collapsed &&
-                                      dailySummaries.get(day.key) && (
-                                        <MarketDaySummaryRow
-                                          headline={
-                                            dailySummaries.get(day.key)!
-                                              .headline
-                                          }
-                                          isToday={day.key === todayIso}
-                                          valueColumnClass={
-                                            config.priceFormat.valueColumnClass
-                                          }
-                                          onOpen={() =>
-                                            setOpenSummaryDate(day.key)
-                                          }
-                                        />
-                                      )}
+                                    {/* The card dates itself: the chip sits
+                                      in the first row's ticker cell, beside
+                                      the day in review where there is one. */}
+                                    <MarketDayLead
+                                      count={
+                                        day.suggested.length +
+                                        day.skipped.length
+                                      }
+                                      day={day.day}
+                                      isoDate={day.key}
+                                      locale={config.locale}
+                                      summary={
+                                        config.id === "uk" &&
+                                        !collapsed &&
+                                        dailySummaries.get(day.key)
+                                          ? {
+                                              headline: dailySummaries.get(
+                                                day.key,
+                                              )!.headline,
+                                              isToday: day.key === todayIso,
+                                              onOpen: () =>
+                                                setOpenSummaryDate(day.key),
+                                            }
+                                          : null
+                                      }
+                                      valueColumnClass={
+                                        config.priceFormat.valueColumnClass
+                                      }
+                                      weekday={day.weekday}
+                                    />
                                     {collapsed ? (
                                       // Older day under discretion: no real rows —
                                       // an avatar-group teaser card with one smart
@@ -1826,7 +1812,7 @@ export function MarketPage<W>({
                                   config.id === "uk" &&
                                   dayIdx === 1 && (
                                     <BrokerReviewsPromo
-                                      className="hidden md:flex xl:ml-[3.75rem]"
+                                      className="hidden md:flex"
                                       variant="bar"
                                     />
                                   )}

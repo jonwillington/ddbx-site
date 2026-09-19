@@ -8,7 +8,7 @@ import type {
 
 import { useState } from "react";
 import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
-import { InformationCircleIcon } from "@heroicons/react/20/solid";
+import { InformationCircleIcon, MoonIcon } from "@heroicons/react/20/solid";
 
 import { MarketRowSpark, type SparkBar } from "./market-row-spark";
 import { computeRowMetric, livePerfValue, shortDate } from "./market-utils";
@@ -157,55 +157,6 @@ export function MarketRowHeader({
  *  entirely in CSS (no image assets), so repeating it for every day in the
  *  list costs nothing. Brand-toned rather than the classic red so thirty of
  *  them read as structure, not decoration. */
-/** Date marker rendered for each day inside an open month. At wide desktop
- *  widths `variant="rail"` sits in a dedicated gutter to the left of the day
- *  card. Below `xl` the default inline variant sits ABOVE the day card on the
- *  well background — same calendar chip laid horizontally with the month and
- *  a hairline running to the right edge, so the scroll still reads as a
- *  dated timeline where the table can't spare a gutter. */
-export function MarketDayHeader({
-  weekday,
-  day,
-  isoDate,
-  locale = "en-US",
-  variant = "inline",
-}: {
-  weekday: string;
-  day: string;
-  isoDate: string;
-  locale?: string;
-  variant?: "inline" | "rail";
-}) {
-  const dateObj = new Date(isoDate);
-  const monthLabel = !Number.isNaN(dateObj.getTime())
-    ? dateObj.toLocaleString(locale, { month: "short" })
-    : "";
-  // `day` arrives as an ordinal ("17th") — the chip wants the bare number.
-  const dayNum = day.match(/^\d+/)?.[0] ?? day;
-
-  if (variant === "rail") {
-    return (
-      <div className="hidden xl:block pt-2 text-left">
-        <time className="inline-block" dateTime={isoDate}>
-          <CalendarDayChip dayNum={dayNum} weekday={weekday} />
-        </time>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mb-2 flex items-center gap-3 px-1 xl:hidden">
-      <time className="flex items-center gap-2" dateTime={isoDate}>
-        <CalendarDayChip dayNum={dayNum} size="sm" weekday={weekday} />
-        <span className="micro text-foreground/55">
-          {monthLabel}
-        </span>
-      </time>
-      <span aria-hidden className="h-px flex-1 bg-foreground/10" />
-    </div>
-  );
-}
-
 /** Separator rendered between two days whose gap straddles a weekend, in
  *  both the xl rail view and the sub-xl stacked timeline — a dashed rule
  *  with a small centred label, so the list reads in trading weeks rather
@@ -213,12 +164,13 @@ export function MarketDayHeader({
  *  headers on either side carry the actual dates. */
 export function WeekendBreak() {
   return (
-    <div aria-hidden className="flex items-center gap-3 px-1">
-      <span className="flex-1 border-t border-dashed border-foreground/15" />
-      <span className="micro text-foreground/40">
-        Weekend
+    <div aria-hidden className="flex items-center gap-3 px-1 py-1">
+      <span className="flex-1 border-t-2 border-dashed border-foreground/20" />
+      <span className="flex items-center gap-2 rounded-full border border-foreground/15 bg-background/70 px-3 py-1 eyebrow text-foreground/60">
+        <MoonIcon className="h-3.5 w-3.5" />
+        Weekend · markets closed
       </span>
-      <span className="flex-1 border-t border-dashed border-foreground/15" />
+      <span className="flex-1 border-t-2 border-dashed border-foreground/20" />
     </div>
   );
 }
@@ -248,67 +200,111 @@ function AiAvatar({ size = 28 }: { size?: number }) {
   );
 }
 
-/** Standalone "Day in review" row, rendered at the top of each day inside
- *  an open month. Mirrors MarketRow's column geometry so it slots into the
- *  same table — no ticker, AI-style avatar in place of the company logo,
- *  headline in the company/insider slot. The whole row is the click target
- *  for opening the daily summary sheet. */
-export function MarketDaySummaryRow({
-  isToday,
-  headline,
-  onOpen,
+/** The first row of every day card: the date, set in the table's own ticker
+ *  column (the one cell a day-level row leaves empty), then either the day in
+ *  review (UK, when a summary exists) or the date written out with the day's
+ *  count. It replaced a 3rem date rail beside the card at xl and a date strip
+ *  above it below xl (Jon, 2026-09-19): the card now dates itself and the
+ *  feed gets that width and those lines back. Mirrors MarketRow's column
+ *  geometry so it slots into the same table. */
+export function MarketDayLead({
+  weekday,
+  day,
+  isoDate,
+  locale = "en-US",
+  count,
+  summary,
   valueColumnClass = "w-24",
 }: {
-  isToday?: boolean;
-  headline: string;
-  onOpen: () => void;
+  weekday: string;
+  day: string;
+  isoDate: string;
+  locale?: string;
+  /** Filings on the day, for the dated row. */
+  count: number;
+  summary?: { headline: string; isToday?: boolean; onOpen: () => void } | null;
   valueColumnClass?: string;
 }) {
-  const label = isToday ? "Today's summary" : "Day in review";
+  const dateObj = new Date(`${isoDate}T00:00:00Z`);
+  const valid = !Number.isNaN(dateObj.getTime());
+  const monthLabel = valid
+    ? dateObj.toLocaleString(locale, { month: "short", timeZone: "UTC" })
+    : "";
+  const longDate = valid
+    ? dateObj.toLocaleDateString(locale, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: "UTC",
+      })
+    : "";
+  // `day` arrives as an ordinal ("17th") — the chip wants the bare number.
+  const dayNum = day.match(/^\d+/)?.[0] ?? day;
+  const label = summary?.isToday ? "Today’s summary" : "Day in review";
+  const countLine = `${count} ${count === 1 ? "filing" : "filings"}`;
 
-  return (
-    <button
-      className="w-full text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40"
-      data-ga-event="open_day_summary"
-      data-ga-label={label}
-      type="button"
-      onClick={onOpen}
-    >
+  const chip = (
+    <time className="flex flex-col items-center gap-1" dateTime={isoDate}>
+      <CalendarDayChip dayNum={dayNum} size="sm" weekday={weekday} />
+      <span className="micro text-foreground/45">{monthLabel}</span>
+    </time>
+  );
+
+  const text = summary ? (
+    <>
+      <div className="micro text-brand-brown dark:text-brand-tan">{label}</div>
+      <div className="mt-0.5 truncate text-small font-medium text-foreground/90">
+        {summary.headline}
+      </div>
+    </>
+  ) : (
+    <>
+      <div className="text-small font-semibold text-foreground/85">
+        {longDate}
+      </div>
+      <div className="mt-0.5 text-caption text-foreground/45">{countLine}</div>
+    </>
+  );
+
+  const inner = (
+    <>
       {/* ── Mobile (<md) ── */}
-      <div className="md:hidden px-3 py-2.5 flex items-center gap-2.5">
-        <AiAvatar />
-        <div className="flex-1 min-w-0">
-          <div className="micro text-brand-brown dark:text-brand-tan">
-            {label}
-          </div>
-          <div className="text-small font-medium text-foreground/90 mt-0.5 truncate">
-            {headline}
-          </div>
-        </div>
+      <div className="flex items-center gap-3 px-3 py-2.5 md:hidden">
+        {chip}
+        <div className="min-w-0 flex-1">{text}</div>
       </div>
 
       {/* ── Desktop (md+) ── */}
-      <div className="hidden md:flex items-stretch">
-        <div className="w-20 shrink-0 px-2 py-2.5 border-r border-rule" />
-        <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-2.5 border-r border-rule">
-          <AiAvatar />
-          <div className="flex-1 min-w-0">
-            <div className="micro text-brand-brown dark:text-brand-tan">
-              {label}
-            </div>
-            <div className="text-small font-medium text-foreground/90 mt-0.5 truncate">
-              {headline}
-            </div>
-          </div>
+      <div className="hidden items-stretch md:flex">
+        <div className="flex w-20 shrink-0 items-center justify-center border-r border-rule px-2 py-2.5">
+          {chip}
+        </div>
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 border-r border-rule px-3 py-2.5">
+          {summary ? <AiAvatar /> : null}
+          <div className="min-w-0 flex-1">{text}</div>
         </div>
         <div
-          className={`${valueColumnClass} shrink-0 px-3 py-2.5 border-r border-rule`}
+          className={`${valueColumnClass} shrink-0 border-r border-rule px-3 py-2.5`}
         />
-        <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
-        <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
-        <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
+        <div className="w-24 shrink-0 border-r border-rule px-2 py-2.5" />
+        <div className="w-24 shrink-0 border-r border-rule px-2 py-2.5" />
+        <div className="w-24 shrink-0 border-r border-rule px-2 py-2.5" />
         <div className="w-40 shrink-0 px-2 py-2.5" />
       </div>
+    </>
+  );
+
+  if (!summary) return <div className="w-full">{inner}</div>;
+
+  return (
+    <button
+      className="w-full text-left transition-colors hover:bg-black/3 dark:hover:bg-white/5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40"
+      data-ga-event="open_day_summary"
+      data-ga-label={label}
+      type="button"
+      onClick={summary.onOpen}
+    >
+      {inner}
     </button>
   );
 }
