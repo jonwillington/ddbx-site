@@ -47,6 +47,7 @@ const COUNTER =
 function parseDate(iso: string | null): Date | null {
   if (!iso) return null;
   const d = new Date(iso.replace(" ", "T"));
+
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
@@ -90,7 +91,6 @@ export default function StoriesPage() {
   return (
     <DefaultLayout>
       <SeoPageShell
-        crumbs={[{ label: "Stories" }]}
         eyebrow="Case studies"
         loading={stories === null}
         skeleton={<SeoSkeleton rows={10} variant="ruled-list" />}
@@ -149,14 +149,35 @@ export default function StoriesPage() {
                           }
                         : undefined
                     }
+                    /* The return since the buy is why the story exists, so it is
+                       the row's figure, in the direction's colour. The source
+                       count stands in only where the price panel can't resolve
+                       a return. */
                     figure={
-                      s.source_count > 0
+                      s.return_pct != null
                         ? {
-                            srLabel: "external sources cited",
-                            unit: s.source_count === 1 ? "source" : "sources",
-                            value: s.source_count,
+                            srLabel: "return since the buy",
+                            unit: "since the buy",
+                            value: (
+                              <span
+                                className={
+                                  s.return_pct >= 0
+                                    ? "text-positive"
+                                    : "text-negative"
+                                }
+                              >
+                                {s.return_pct >= 0 ? "+" : "−"}
+                                {Math.abs(s.return_pct).toFixed(1)}%
+                              </span>
+                            ),
                           }
-                        : undefined
+                        : s.source_count > 0
+                          ? {
+                              srLabel: "external sources cited",
+                              unit: s.source_count === 1 ? "source" : "sources",
+                              value: s.source_count,
+                            }
+                          : undefined
                     }
                     logo={
                       /* Up to three, stacked. A sector story is about several

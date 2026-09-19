@@ -34,6 +34,7 @@ import { StoryBuys } from "@/components/stories/story-buys";
 import { StoryStage, type ReturnBasis } from "@/components/stories/story-stage";
 import { api } from "@/lib/api";
 import { STORY_KIND_LABEL } from "@/lib/stories";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 
 function dateLabel(iso: string | null): string {
   if (!iso) return "";
@@ -146,29 +147,38 @@ export default function StoryPage() {
 
             {s.sources.length > 0 ? (
               <SeoSection title="Sources">
-                <ol className="mt-3 list-decimal space-y-2 pl-5 text-[13px] leading-relaxed text-foreground/60">
-                  {s.sources.map((src) => (
-                    <li key={src.url}>
-                      <a
-                        className="underline decoration-hairline underline-offset-2"
-                        href={src.url}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                      >
-                        {src.title || src.url}
-                      </a>
-                      {src.publisher ? (
-                        <span className="text-foreground/40">
-                          {" "}
-                          · {src.publisher}
-                        </span>
-                      ) : null}
-                      {src.date ? (
-                        <span className="text-foreground/40">
-                          {" "}
-                          · {src.date}
-                        </span>
-                      ) : null}
+                {/* Each source leads with its publisher's favicon, so a list
+                    of thirteen links reads as thirteen different outlets at a
+                    glance rather than one block of underlines. */}
+                <ol className="mt-4 divide-y divide-hairline/70 border-y border-hairline/70 dark:divide-separator/60 dark:border-separator/60">
+                  {s.sources.map((src, n) => (
+                    <li
+                      key={src.url}
+                      className="flex items-start gap-3 py-2.5 text-[13.5px] leading-[1.5]"
+                    >
+                      <span className="w-5 shrink-0 pt-px text-right font-mono text-[11px] tabular-nums text-foreground/35">
+                        {n + 1}
+                      </span>
+                      <span className="mt-[3px] flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-white ring-1 ring-black/[0.06] dark:ring-white/10">
+                        <NewsSourceLogo size={14} url={src.url} />
+                      </span>
+                      <span className="min-w-0">
+                        <a
+                          className="text-foreground/85 underline decoration-hairline underline-offset-2 transition-colors hover:text-foreground dark:decoration-separator"
+                          href={src.url}
+                          rel="noopener noreferrer"
+                          target="_blank"
+                        >
+                          {src.title || src.url}
+                        </a>
+                        {src.publisher || src.date ? (
+                          <span className="mt-0.5 block text-[12px] text-foreground/45">
+                            {[src.publisher, src.date]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                        ) : null}
+                      </span>
                     </li>
                   ))}
                 </ol>

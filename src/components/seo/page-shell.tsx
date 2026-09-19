@@ -157,7 +157,10 @@ export function SeoPageShell({
   }, [loading, holdSkeleton]);
 
   const handoff = loading || holdSkeleton;
-  const sectionEyebrow = useSectionEyebrow(eyebrow);
+  const sectionEyebrow = useSectionEyebrow(
+    eyebrow,
+    typeof title === "string" ? title : undefined,
+  );
 
   // The article measure applies to the DOCUMENT — furniture, standfirst,
   // sections — not to the terminal band. The band is a conversion surface,

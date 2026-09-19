@@ -32,6 +32,7 @@ function Inline({ text }: { text: string }) {
     if (m.index > last) nodes.push(text.slice(last, m.index));
     if (m[1] != null && m[2] != null) {
       const { href, internal } = resolveStoryLink(m[2]);
+
       nodes.push(
         internal ? (
           <Link key={key++} className={A_EXTERNAL} to={href}>
@@ -48,7 +49,10 @@ function Inline({ text }: { text: string }) {
             {m[1]}
             {/* Only external links carry the mark, so a reader can see at a
                 glance which ones leave the site. */}
-            <span aria-hidden className="ml-0.5 text-[0.85em] text-foreground/40">
+            <span
+              aria-hidden
+              className="ml-0.5 text-[0.85em] text-foreground/40"
+            >
               ↗
             </span>
           </a>
@@ -64,6 +68,7 @@ function Inline({ text }: { text: string }) {
     last = re.lastIndex;
   }
   if (last < text.length) nodes.push(text.slice(last));
+
   return <>{nodes}</>;
 }
 
@@ -127,6 +132,7 @@ export function StoryBody({ markdown }: { markdown: string }) {
     // Tables: a header row, a separator row, then body rows.
     if (line.trim().startsWith("|") && lines[i + 1]?.includes("---")) {
       const rows: string[] = [];
+
       while (i < lines.length && lines[i].trim().startsWith("|")) {
         rows.push(lines[i]);
         i += 1;
@@ -136,9 +142,11 @@ export function StoryBody({ markdown }: { markdown: string }) {
     }
 
     const heading = line.match(/^(#{2,4})\s+(.*)$/);
+
     if (heading) {
       const level = heading[1].length;
       const text = heading[2];
+
       out.push(
         level === 2 ? (
           /* Ruled, so the article's own sections and the page's (The
@@ -146,14 +154,14 @@ export function StoryBody({ markdown }: { markdown: string }) {
              heading in the same column. */
           <h2
             key={key++}
-            className="mt-10 border-t border-hairline pt-7 text-[17px] font-semibold leading-snug text-foreground dark:border-separator"
+            className="mt-12 border-t border-hairline pt-9 text-[24px] font-semibold leading-[1.18] tracking-[-0.02em] text-balance text-foreground sm:text-[30px] dark:border-separator"
           >
             <Inline text={text} />
           </h2>
         ) : (
           <h3
             key={key++}
-            className="mt-8 text-[16px] font-medium text-foreground"
+            className="mt-9 text-[19px] font-semibold leading-snug tracking-[-0.01em] text-foreground sm:text-[21px]"
           >
             <Inline text={text} />
           </h3>
@@ -165,6 +173,7 @@ export function StoryBody({ markdown }: { markdown: string }) {
 
     if (line.trim().startsWith(">")) {
       const quote: string[] = [];
+
       while (i < lines.length && lines[i].trim().startsWith(">")) {
         quote.push(lines[i].replace(/^\s*>\s?/, ""));
         i += 1;
@@ -191,6 +200,7 @@ export function StoryBody({ markdown }: { markdown: string }) {
 
     if (/^\s*[-*]\s+/.test(line)) {
       const items: string[] = [];
+
       while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
         items.push(lines[i].replace(/^\s*[-*]\s+/, ""));
         i += 1;
@@ -223,6 +233,7 @@ export function StoryBody({ markdown }: { markdown: string }) {
     }
 
     const para: string[] = [];
+
     while (
       i < lines.length &&
       lines[i].trim() &&

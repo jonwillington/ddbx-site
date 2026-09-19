@@ -54,8 +54,15 @@ export function withSection(section: SiteSection | null, kind: string): string {
   return `${section} · ${kind}`;
 }
 
-export function useSectionEyebrow(kind: string): string {
+/** `title` is the page's h1. A section's own index (/stories, h1
+ *  "Stories") already names the section in its title, so its eyebrow stays
+ *  the bare kind rather than saying "Stories" twice in two lines. */
+export function useSectionEyebrow(kind: string, title?: string): string {
   const { pathname } = useLocation();
+  const section = sectionForPath(pathname);
 
-  return withSection(sectionForPath(pathname), kind);
+  if (section && title && title.trim().toLowerCase() === section.toLowerCase())
+    return kind;
+
+  return withSection(section, kind);
 }
