@@ -167,7 +167,7 @@ export default function DirectorsIndexPage() {
         title={copy.title}
       >
         {failed ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the directory just now. That’s a fault at our end
             rather than an empty register. Try again shortly.
           </p>
@@ -186,7 +186,7 @@ export default function DirectorsIndexPage() {
                 { label: "With a measured return", value: totals.resolved },
               ]}
             />
-            <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
+            <p className={`mt-3 max-w-measure text-caption text-foreground/50`}>
               An {copy.filer} gets an indexable page once we hold{" "}
               {MIN_DIRECTOR_BUYS} purchases for them and at least one has been
               held long enough to measure a return. Everyone we hold a purchase
@@ -245,7 +245,7 @@ export default function DirectorsIndexPage() {
               title="Also on record"
               total={3}
             >
-              <p className={`mb-5 max-w-[62ch] ${R.body}`}>
+              <p className={`mb-5 max-w-measure ${R.body}`}>
                 We hold a purchase for each of these, but not yet enough of a
                 record to describe. Their pages render and say exactly what is
                 missing and when it will arrive — they are simply not put in

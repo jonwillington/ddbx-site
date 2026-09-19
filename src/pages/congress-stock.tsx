@@ -263,14 +263,14 @@ export default function CongressStockPage() {
               // came for one answer gets it in the first panel.
               <aside className={`mt-6 ${PANEL} p-5 sm:p-6`}>
                 <p className={R.eyebrow}>The verdict</p>
-                <p className="mt-3 max-w-[68ch] text-[15px] leading-[1.65] text-foreground/85">
+                <p className="mt-3 max-w-[68ch] text-lede text-foreground/85">
                   {stockVerdict(s)}
                 </p>
               </aside>
             ) : (
               <aside className={`mt-6 ${PANEL} p-5 sm:p-6`}>
                 <p className={R.eyebrow}>Not enough data yet</p>
-                <p className="mt-3 max-w-[68ch] text-[15px] leading-[1.65] text-foreground/85">
+                <p className="mt-3 max-w-[68ch] text-lede text-foreground/85">
                   {belowBarSentence(s)}
                 </p>
               </aside>
@@ -374,7 +374,7 @@ export default function CongressStockPage() {
                   total={5}
                 >
                   <PurchasesTable rows={shown} />
-                  <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
+                  <p className={`mt-3 max-w-measure ${R.label}`}>
                     “Since filing” runs from the close on the day each filing
                     was published, the first price a reader could have paid, to
                     the latest close we hold, and the line beneath each figure
@@ -480,7 +480,7 @@ export default function CongressStockPage() {
               />
             </SeoSection>
 
-            <p className={`mt-8 max-w-[62ch] ${R.label} leading-[1.6]`}>
+            <p className={`mt-8 max-w-measure ${R.label}`}>
               {CONGRESS_SOURCE}{" "}
               <Link className="underline underline-offset-4" to="/how-it-works">
                 How we put this together

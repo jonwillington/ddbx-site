@@ -250,7 +250,7 @@ export default function CongressMemberPage() {
         skeleton={
           <>
             <div className="mt-6 flex items-start gap-5">
-              <Skeleton className="h-[84px] w-[84px] rounded-2xl" />
+              <Skeleton className="h-[84px] w-[84px] rounded-card" />
               <div className="flex-1">
                 <Skeleton className="h-[30px] w-2/3 max-w-[18ch]" />
                 <Skeleton className="mt-3 h-[14px] w-1/3 max-w-[14ch]" />
@@ -270,12 +270,12 @@ export default function CongressMemberPage() {
             <MemberSeatLine member={member} />
 
             {detail?.reporter.bio ? (
-              <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+              <p className={`mt-4 max-w-measure ${R.body}`}>
                 {detail.reporter.bio}
               </p>
             ) : null}
 
-            <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+            <p className={`mt-4 max-w-measure ${R.body}`}>
               {memberLeadSentence(member)}
             </p>
 
@@ -332,7 +332,7 @@ export default function CongressMemberPage() {
               <FilingsBoard
                 rows={(detail?.dealings ?? []).slice(0, MEMBER_ROWS)}
               />
-              <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
+              <p className={`mt-3 max-w-measure ${R.label}`}>
                 “Since disclosure” is the return from the closing price on the
                 day the filing was published, the first price a reader could
                 have paid, marked to the latest cached close, not live. Past
@@ -387,7 +387,7 @@ export default function CongressMemberPage() {
               />
             </SeoSection>
 
-            <p className={`mt-8 max-w-[62ch] ${R.label} leading-[1.6]`}>
+            <p className={`mt-8 max-w-measure ${R.label}`}>
               {CONGRESS_SOURCE}{" "}
               <Link className="underline underline-offset-4" to="/how-it-works">
                 How we put this together

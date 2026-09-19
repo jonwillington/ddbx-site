@@ -364,7 +364,7 @@ export default function CongressStocksPage() {
                   ),
                 )}
               </ul>
-              <p className={`mt-4 max-w-[62ch] ${R.label} leading-[1.6]`}>
+              <p className={`mt-4 max-w-measure ${R.label}`}>
                 Another {listed.toLocaleString(LOCALE)} companies have a
                 purchase on record but not from enough members, or often enough,
                 for a page to say anything. Their pages exist and are linked
@@ -439,7 +439,7 @@ export default function CongressStocksPage() {
               />
             </SeoSection>
 
-            <p className={`mt-8 max-w-[62ch] ${R.label} leading-[1.6]`}>
+            <p className={`mt-8 max-w-measure ${R.label}`}>
               {CONGRESS_SOURCE}
             </p>
           </>

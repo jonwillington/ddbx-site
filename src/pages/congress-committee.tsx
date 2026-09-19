@@ -224,13 +224,13 @@ export default function CongressCommitteePage() {
         {lane ? (
           <>
             {!publishable ? (
-              <p className={`mt-8 max-w-[62ch] ${R.body}`}>
+              <p className={`mt-8 max-w-measure ${R.body}`}>
                 Fewer than {MIN_COMMITTEE_MEMBERS} members of this committee
                 have a disclosed purchase on record, which is not enough to
                 describe the committee. The members we do hold are listed below.
               </p>
             ) : (
-              <p className={`mt-8 max-w-[62ch] ${R.body}`}>
+              <p className={`mt-8 max-w-measure ${R.body}`}>
                 {committeeLeadSentence(lane, onCommittee)}
               </p>
             )}
@@ -268,7 +268,7 @@ export default function CongressCommitteePage() {
                     <li key={sec}>
                       {s ? (
                         <a
-                          className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1.5 text-[13px] text-foreground/75 transition-colors hover:text-foreground dark:border-separator"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-3 py-1.5 text-small text-foreground/75 transition-colors hover:text-foreground dark:border-separator"
                           href={sectorPath(s.slug)}
                         >
                           <SectorIcon
@@ -278,7 +278,7 @@ export default function CongressCommitteePage() {
                           {sec}
                         </a>
                       ) : (
-                        <span className="inline-flex rounded-full border border-hairline px-3 py-1.5 text-[13px] text-foreground/75 dark:border-separator">
+                        <span className="inline-flex rounded-full border border-hairline px-3 py-1.5 text-small text-foreground/75 dark:border-separator">
                           {sec}
                         </span>
                       )}
@@ -294,7 +294,7 @@ export default function CongressCommitteePage() {
               title="Members with disclosed purchases"
               total={3}
             >
-              <ul className="mt-4 border-t border-hairline dark:border-separator">
+              <ul className="mt-4 border-t border-rule">
                 {onCommittee.map((m) => (
                   <MemberRow key={m.id} member={m} />
                 ))}
@@ -314,7 +314,7 @@ export default function CongressCommitteePage() {
                   rows={inLane}
                 />
               ) : (
-                <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+                <p className={`mt-4 max-w-measure ${R.body}`}>
                   No purchases from members of this committee in its own sectors
                   in the recent filings we hold. Their other purchases are on
                   their individual pages.
@@ -350,7 +350,7 @@ export default function CongressCommitteePage() {
               />
             </SeoSection>
 
-            <p className={`mt-8 max-w-[62ch] ${R.label} leading-[1.6]`}>
+            <p className={`mt-8 max-w-measure ${R.label}`}>
               {CONGRESS_SOURCE} We map sector jurisdiction for House committees
               only, so no Senate committee has a page here.
             </p>

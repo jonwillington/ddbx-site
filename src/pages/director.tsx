@@ -62,6 +62,7 @@ import { SeoRail } from "@/components/seo/seo-rail";
 import { SeoSection } from "@/components/seo/section";
 import { StatTiles } from "@/components/seo/stat-tiles";
 import { TickerPill } from "@/components/ticker-pill";
+import { panel } from "@/components/ui/panel";
 import DefaultLayout from "@/layouts/default";
 import {
   api,
@@ -255,7 +256,7 @@ function NameList({ names }: { names: { id: string; name: string }[] }) {
 
 function NotYet({ from }: { from?: string | null }) {
   return (
-    <span className="text-[13px] font-medium leading-[1.35] tracking-normal text-foreground/40">
+    <span className="text-small font-medium leading-snug tracking-normal text-foreground/40">
       {from ? `From ${from}` : "Not enough data yet"}
     </span>
   );
@@ -581,18 +582,18 @@ export default function DirectorPage() {
                 />
                 {issuer.href ? (
                   <Link
-                    className="text-[15px] font-medium text-foreground underline-offset-4 hover:underline"
+                    className="text-lede font-medium text-foreground underline-offset-4 hover:underline"
                     to={issuer.href}
                   >
                     {d.company || issuer.display}
                   </Link>
                 ) : (
-                  <span className="text-[15px] font-medium text-foreground">
+                  <span className="text-lede font-medium text-foreground">
                     {d.company || issuer.display}
                   </span>
                 )}
                 <TickerPill ticker={issuer.display} />
-                <span className="text-[12.5px] text-foreground/45">
+                <span className="text-small text-foreground/45">
                   {dealings.length}{" "}
                   {dealings.length === 1
                     ? "disclosed purchase"
@@ -603,7 +604,7 @@ export default function DirectorPage() {
 
             {otherSpellings.variants.length > 0 ||
             otherSpellings.joint.length > 0 ? (
-              <p className="mt-3 text-[12.5px] leading-[1.6] text-foreground/45">
+              <p className="mt-3 text-small text-foreground/45">
                 {otherSpellings.variants.length > 0 ? (
                   <>
                     Includes filings made as{" "}
@@ -622,27 +623,27 @@ export default function DirectorPage() {
             ) : null}
 
             {d.profile && (
-              <div className="mt-6 space-y-3 rounded-2xl border border-hairline bg-white/70 p-5 dark:border-border/60 dark:bg-surface-secondary/40">
+              <div className={`mt-6 space-y-3 ${panel({ variant: "inset", size: "roomy" })}`}>
                 <div>
-                  <h2 className="mb-1 text-[13px] font-semibold">Biography</h2>
-                  <p className="text-[14px] leading-[1.6] text-foreground/80">
+                  <h2 className="mb-1 text-small font-semibold">Biography</h2>
+                  <p className="text-body text-foreground/80">
                     {d.profile.biography}
                   </p>
                 </div>
                 <div>
-                  <h2 className="mb-1 text-[13px] font-semibold">
+                  <h2 className="mb-1 text-small font-semibold">
                     Track record
                   </h2>
-                  <p className="text-[14px] leading-[1.6] text-foreground/80">
+                  <p className="text-body text-foreground/80">
                     {d.profile.track_record_summary}
                   </p>
                 </div>
                 {d.profile.flags.length > 0 && (
                   <div>
-                    <h2 className="mb-1 text-[13px] font-semibold text-negative">
+                    <h2 className="mb-1 text-small font-semibold text-negative">
                       Flags
                     </h2>
-                    <ul className="list-disc pl-5 text-[14px] leading-[1.6] text-negative/90">
+                    <ul className="list-disc pl-5 text-body text-negative/90">
                       {d.profile.flags.map((f, i) => (
                         <li key={i}>{f}</li>
                       ))}
@@ -667,7 +668,7 @@ export default function DirectorPage() {
                   and it was bad. What is actually true is that the clock has
                   not run yet, and we know exactly when it will have. */}
               {!record.marked ? (
-                <div className="mb-4 flex items-center gap-4 rounded-xl border border-hairline bg-white/70 px-4 py-3.5 dark:border-border/60 dark:bg-surface-secondary/40">
+                <div className={`mb-4 flex items-center gap-4 ${panel({ variant: "inset", size: "compact" })}`}>
                   {/* The viewfinder over nothing — the same object the market
                       page shows while a session waits on its first filing.
                       Still, not sweeping: nothing on this page is live. The
@@ -679,7 +680,7 @@ export default function DirectorPage() {
                     motion="none"
                     scene="market-scanning"
                   />
-                  <p className="text-[13.5px] leading-[1.6] text-foreground/70">
+                  <p className="text-body text-foreground/70">
                     {dealings.length === 0 ? (
                       <>
                         We hold no disclosed open-market purchases for this{" "}
@@ -786,7 +787,7 @@ export default function DirectorPage() {
               total={2}
             >
               {dealings.length === 0 ? (
-                <p className="text-[14px] leading-[1.65] text-foreground/70">
+                <p className="text-body text-foreground/70">
                   Nothing on record for this {insider} yet. They appear here the
                   first time they disclose an open-market purchase in their own
                   company.
@@ -855,18 +856,18 @@ export default function DirectorPage() {
                             ) : null}
                             {companyHref ? (
                               <Link
-                                className="text-[15px] font-semibold text-foreground underline-offset-4 hover:underline"
+                                className="text-lede font-semibold text-foreground underline-offset-4 hover:underline"
                                 to={companyHref}
                               >
                                 {group.company}
                               </Link>
                             ) : (
-                              <span className="text-[15px] font-semibold text-foreground">
+                              <span className="text-lede font-semibold text-foreground">
                                 {group.company}
                               </span>
                             )}
                             <TickerPill ticker={groupTicker} />
-                            <span className="text-[12.5px] text-foreground/45">
+                            <span className="text-small text-foreground/45">
                               {group.items.length}{" "}
                               {group.items.length === 1
                                 ? "purchase"
@@ -940,7 +941,7 @@ export default function DirectorPage() {
               aside="What you are looking at, and how to read it."
               title="Reading an insider filing"
             >
-              <div className="max-w-[62ch] space-y-4 text-[14px] leading-[1.7] text-foreground/70">
+              <div className="max-w-measure space-y-4 text-body text-foreground/70">
                 <p>
                   ddbx tracks share purchases company insiders make in their own
                   employers. {market.id === "uk" ? "UK" : "US"} rules oblige
@@ -1040,7 +1041,7 @@ function DirectorSkeleton() {
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-2xl border border-hairline bg-white/70 px-4 py-3.5 dark:border-border/60 dark:bg-surface-secondary/40"
+            className={panel({ variant: "inset", size: "compact" })}
           >
             <Skeleton className="h-[11px] w-14" />
             <Skeleton className="mt-2 h-[26px] w-16" />
@@ -1052,7 +1053,7 @@ function DirectorSkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="flex gap-4 rounded-lg border border-separator/50 p-4"
+            className="flex gap-4 rounded-control border border-separator/50 p-4"
           >
             <Skeleton className="h-10 w-16 shrink-0" />
             <div className="flex-1 space-y-2">

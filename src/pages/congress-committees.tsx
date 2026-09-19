@@ -98,7 +98,7 @@ export default function CongressCommitteesPage() {
         title="Congressional committees and the sectors they oversee"
       >
         {failed ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the committee list just now. That’s a fault at our
             end rather than an empty register. Try again shortly.
           </p>
@@ -110,18 +110,18 @@ export default function CongressCommitteesPage() {
               title="Committees we map"
               total={2}
             >
-              <ul className="mt-4 border-t border-hairline dark:border-separator">
+              <ul className="mt-4 border-t border-rule">
                 {ranked.map((c) => (
                   <li
                     key={c.committee}
-                    className="border-b border-hairline dark:border-separator"
+                    className="border-b border-rule"
                   >
                     <Link
                       className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3.5 transition-colors hover:bg-foreground/[0.02]"
                       to={committeePath(committeeSlug(c.committee))}
                     >
                       <span className="min-w-0">
-                        <span className="block text-[14.5px] font-medium text-foreground">
+                        <span className="block text-body font-medium text-foreground">
                           {shortCommittee(c.committee)}
                         </span>
                         <span className={`mt-0.5 block ${R.label}`}>
@@ -129,7 +129,7 @@ export default function CongressCommitteesPage() {
                           {listSentence(c.sectors.map((s) => s.toLowerCase()))}
                         </span>
                       </span>
-                      <span className="shrink-0 text-[13px] tabular-nums text-foreground/60">
+                      <span className="shrink-0 text-small tabular-nums text-foreground/60">
                         {c.members.length}{" "}
                         {c.members.length === 1 ? "member" : "members"}
                       </span>
@@ -145,7 +145,7 @@ export default function CongressCommitteesPage() {
               title="What this list leaves out"
               total={2}
             >
-              <p className={`mt-4 max-w-[62ch] ${R.body}`}>
+              <p className={`mt-4 max-w-measure ${R.body}`}>
                 Our jurisdiction map covers House committees only, so no Senate
                 committee has a page here. That is a gap in what we model, not a
                 statement about the Senate: {senators} of the members whose
@@ -154,7 +154,7 @@ export default function CongressCommitteesPage() {
                 which we do not map a jurisdiction for and therefore do not
                 publish.
               </p>
-              <p className={`mt-3 max-w-[62ch] ${R.body}`}>
+              <p className={`mt-3 max-w-measure ${R.body}`}>
                 A member sitting on a committee that oversees a sector is a
                 matter of public record. It is not evidence that any purchase
                 was informed by it, and nothing on these pages should be read
@@ -194,7 +194,7 @@ export default function CongressCommitteesPage() {
               />
             </SeoSection>
 
-            <p className={`mt-8 max-w-[62ch] ${R.label} leading-[1.6]`}>
+            <p className={`mt-8 max-w-measure ${R.label}`}>
               {CONGRESS_SOURCE}
             </p>
           </>

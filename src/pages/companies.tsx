@@ -18,8 +18,8 @@ import { marketForPath } from "@/lib/markets/registry";
 
 /** Shared with company.tsx — see the note there. */
 const R = {
-  rule: "border-hairline dark:border-separator",
-  label: "text-[11px] leading-none text-foreground/50",
+  rule: "border-rule",
+  label: "text-caption leading-none text-foreground/50",
 } as const;
 
 /** The bar a company clears to appear here, mirroring the one in
@@ -57,12 +57,12 @@ function CompaniesSkeleton() {
       <span className="sr-only">Loading…</span>
 
       <div className="mt-6">
-        <Skeleton className="h-[39px] w-full rounded-lg sm:max-w-[22rem]" />
+        <Skeleton className="h-[39px] w-full rounded-control sm:max-w-[22rem]" />
       </div>
 
       <div className="-mx-2 mt-6 flex gap-1.5 overflow-hidden px-2 py-2">
         {Array.from({ length: 14 }, (_, i) => (
-          <Skeleton key={i} className="h-[29px] w-9 shrink-0 rounded-lg" />
+          <Skeleton key={i} className="h-[29px] w-9 shrink-0 rounded-control" />
         ))}
       </div>
 
@@ -205,7 +205,7 @@ export default function CompaniesPage() {
                 <span className="sr-only">Search companies</span>
                 <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/35" />
                 <input
-                  className={`w-full rounded-lg border ${R.rule} bg-sheet py-2 pl-9 pr-3 text-base sm:text-[14px] text-foreground outline-none transition-colors placeholder:text-foreground/35 focus-visible:border-brand-brown/40 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:bg-surface dark:focus-visible:ring-brand-tan/40`}
+                  className={`w-full rounded-control border ${R.rule} bg-sheet py-2 pl-9 pr-3 text-base sm:text-body text-foreground outline-none transition-colors placeholder:text-foreground/35 focus-visible:border-brand-brown/40 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:bg-surface dark:focus-visible:ring-brand-tan/40`}
                   placeholder="Search name or ticker"
                   type="search"
                   value={query}
@@ -213,7 +213,7 @@ export default function CompaniesPage() {
                 />
               </label>
               {query.trim() ? (
-                <p className="text-[12.5px] text-foreground/50">
+                <p className="text-small text-foreground/50">
                   {matches.length}{" "}
                   {matches.length === 1 ? "company" : "companies"}
                 </p>
@@ -232,7 +232,7 @@ export default function CompaniesPage() {
                 {groups.map(([letter]) => (
                   <a
                     key={letter}
-                    className={`rounded-lg border ${R.rule} bg-black/[0.02] px-2.5 py-1 text-[12.5px] font-semibold text-foreground/70 hover:text-foreground dark:bg-white/[0.04]`}
+                    className={`rounded-control border ${R.rule} bg-black/[0.02] px-2.5 py-1 text-small font-semibold text-foreground/70 hover:text-foreground dark:bg-white/[0.04]`}
                     href={`#${letter === "#" ? "num" : letter}`}
                   >
                     {letter}
@@ -242,7 +242,7 @@ export default function CompaniesPage() {
             ) : null}
 
             {groups.length === 0 && query.trim() ? (
-              <p className="mt-10 text-[14px] leading-[1.65] text-foreground/70">
+              <p className="mt-10 text-body text-foreground/70">
                 No company matches “{query.trim()}”. Try the ticker instead, the
                 index is named as each issuer files.
               </p>
@@ -258,7 +258,7 @@ export default function CompaniesPage() {
                 className="mt-10 scroll-mt-[calc(var(--nav-clear)_+_2.75rem)]"
               >
                 <h2
-                  className={`${R.label} border-b ${R.rule} pb-2 font-semibold uppercase tracking-[0.12em]`}
+                  className={`eyebrow text-foreground/50 border-b ${R.rule} pb-2`}
                   id={letter === "#" ? "num" : letter}
                 >
                   {letter}
@@ -293,10 +293,10 @@ export default function CompaniesPage() {
                               total beside it, so the first thing the eye found
                               in a row was the money rather than the company
                               the row is about. */}
-                          <span className="block truncate text-[16px] font-medium leading-[1.3] tracking-[-0.01em] text-foreground underline-offset-4 group-hover:underline">
+                          <span className="block truncate text-lede font-medium leading-tight text-foreground underline-offset-4 group-hover:underline">
                             {cleanCompanyName(c.company) || c.key}
                           </span>
-                          <span className="mt-1.5 flex items-center gap-1.5 text-[11.5px] leading-none text-foreground/45">
+                          <span className="mt-1.5 flex items-center gap-1.5 text-caption leading-none text-foreground/45">
                             <TickerPill ticker={displayTicker(c.key)} />
                             <span className="truncate">
                               {c.deals} {c.deals === 1 ? "buy" : "buys"}
@@ -305,7 +305,7 @@ export default function CompaniesPage() {
                           </span>
                         </span>
                         {c.total_value ? (
-                          <span className="shrink-0 text-right text-[15px] font-semibold tabular-nums tracking-[-0.01em] text-foreground">
+                          <span className="shrink-0 text-right text-lede font-semibold tabular-nums text-foreground">
                             {moneyShort(
                               c.total_value,
                               market === "UK" ? "GBP" : "USD",

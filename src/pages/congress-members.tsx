@@ -111,7 +111,7 @@ export default function CongressMembersPage() {
         title="Members of Congress who file stock purchases"
       >
         {failed ? (
-          <p className={`mt-10 max-w-[62ch] ${R.body}`}>
+          <p className={`mt-10 max-w-measure ${R.body}`}>
             We couldn’t load the directory just now. That’s a fault at our end
             rather than an empty register. Try again shortly.
           </p>
@@ -131,7 +131,7 @@ export default function CongressMembersPage() {
                 { label: "With a page", value: totals.published },
               ]}
             />
-            <p className={`mt-3 max-w-[62ch] ${R.label} leading-[1.6]`}>
+            <p className={`mt-3 max-w-measure ${R.label}`}>
               A member gets an indexable page once we hold {MIN_MEMBER_FILINGS}{" "}
               separate filings for them. The rest are listed here and their
               pages render, but they stay out of search until there is enough on
@@ -145,7 +145,7 @@ export default function CongressMembersPage() {
               total={2}
             >
               <ul
-                className={`mt-4 border-t border-hairline dark:border-separator`}
+                className={`mt-4 border-t border-rule`}
               >
                 {house.map((m) => (
                   <MemberRow key={m.id} member={m} />
@@ -160,7 +160,7 @@ export default function CongressMembersPage() {
               total={2}
             >
               <ul
-                className={`mt-4 border-t border-hairline dark:border-separator`}
+                className={`mt-4 border-t border-rule`}
               >
                 {senate.map((m) => (
                   <MemberRow key={m.id} member={m} />
@@ -200,7 +200,7 @@ export default function CongressMembersPage() {
               />
             </SeoSection>
 
-            <p className={`mt-8 max-w-[62ch] ${R.label} leading-[1.6]`}>
+            <p className={`mt-8 max-w-measure ${R.label}`}>
               {CONGRESS_SOURCE}
             </p>
           </>
