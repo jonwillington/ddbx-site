@@ -367,12 +367,16 @@ export function HeroLiveGradient({ tick }: { tick: number }) {
           }
           /* And a little more under the chart, so the outcome bar reads as
              the payoff beneath it rather than the chart's footer. */
-          /* No chart on the stage. A market without the news rail (Korea)
-             got a wide enough hero to draw one and one with the rail didn't,
-             so the same component was two heights and two layouts depending
-             on the market. The alert and its outcome bar tell the story on
-             every market alike, and the stage stays short. */
-          .nav-sidebar .hero-chart-col { display: none; }
+          /* The chart on every market, at one fixed height. Sized by the
+             container it came and went: a market without the news rail
+             (Korea) was wide enough to draw it and the rest weren't, so the
+             same hero was two heights. Here it always draws, and at a height
+             that holds the stage to one size everywhere. */
+          .nav-sidebar .hero-chart-col {
+            display: block;
+            height: 168px;
+            margin-bottom: 6px;
+          }
         }
         /* With the card chrome gone the demo half can take more of the
            stage, and the price series is the thing that wants it — only
