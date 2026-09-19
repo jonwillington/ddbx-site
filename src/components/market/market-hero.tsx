@@ -653,7 +653,8 @@ export function MarketHero({
           </span>
         </div>
       )}
-      {notice && (
+      {/* On the shell (xl + sidebar) the notice heads the side rail instead. */}
+      {notice && !shellStage && (
         <div className={`flex ${ctaJustify}`}>
           <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/40 bg-amber-100/85 py-1 pl-1.5 pr-3.5 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/60 dark:text-amber-200">
             <span

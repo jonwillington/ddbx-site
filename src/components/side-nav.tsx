@@ -22,6 +22,7 @@ import { MarketSwitcher } from "@/components/market-switcher";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { StoreGlyph } from "@/components/store-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import { chip } from "@/components/chip";
 import { siteConfig } from "@/config/site";
 import { SearchLauncher } from "@/components/search/search-palette";
 import { ConnectBadges } from "@/components/mcp/connect-badges";
@@ -217,6 +218,23 @@ export function SideNav() {
         <MarketSwitcher />
         {!isPinnedTheme && <ThemeSwitch className="ml-auto" />}
       </div>
+
+      {/* The market's beta/advisory notice (MarketConfig.topNotice). On the
+          shell it lives here, at the top of the rail, rather than over the
+          hero: it is a fact about the market, and it stays in view on every
+          page of it. Below xl there is no rail and the hero carries it. */}
+      {market.config.topNotice && (
+        <div className="shrink-0 px-2 pt-2.5">
+          <p className="flex items-start gap-2 rounded-[10px] border border-amber-300/50 bg-amber-100/70 px-2.5 py-2 text-[12px] leading-[1.4] text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-200">
+            <span
+              className={`${chip("sm")} mt-px shrink-0 bg-amber-500/25 text-amber-900 dark:text-amber-200`}
+            >
+              BETA
+            </span>
+            <span>{market.config.topNotice}</span>
+          </p>
+        </div>
+      )}
 
       {/* Search heads the nav rather than the header row: it is how a reader
           gets anywhere, so it sits at the top of the list of places. Outside
