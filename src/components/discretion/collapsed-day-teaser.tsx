@@ -228,7 +228,7 @@ export function CollapsedDayTeaser<W>({
       ))}
       {extra > 0 && (
         <span
-          className="inline-flex items-center justify-center rounded-full bg-[#f1ebe2] text-[10px] font-semibold text-[#7a634b] ring-2 ring-white dark:bg-white/[0.08] dark:text-[#c9b49f] dark:ring-surface-secondary"
+          className="inline-flex items-center justify-center rounded-full bg-[#f1ebe2] micro text-[#7a634b] ring-2 ring-white dark:bg-white/8 dark:text-[#c9b49f] dark:ring-surface-secondary"
           style={{ width: avatarSize, height: avatarSize }}
         >
           +{extra}
@@ -238,7 +238,7 @@ export function CollapsedDayTeaser<W>({
   );
 
   const text = (
-    <span className="block min-w-0 flex-1 text-[17px] leading-snug text-foreground/90">
+    <span className="block min-w-0 flex-1 text-title font-normal text-foreground/90">
       {headline}
     </span>
   );
@@ -251,7 +251,7 @@ export function CollapsedDayTeaser<W>({
   const cta = (
     <span
       aria-hidden
-      className="hidden shrink-0 items-center gap-1 rounded-full border border-brand-brown/25 px-3 py-1 text-[11px] font-medium text-brand-brown opacity-0 transition-[transform,opacity] duration-200 -translate-x-1 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 sm:inline-flex dark:border-brand-tan/25 dark:text-brand-tan"
+      className="hidden shrink-0 items-center gap-1 rounded-full border border-brand-brown/25 px-3 py-1 text-caption font-medium text-brand-brown opacity-0 transition-[transform,opacity] duration-200 -translate-x-1 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 sm:inline-flex dark:border-brand-tan/25 dark:text-brand-tan"
     >
       Full day in the app <span aria-hidden>→</span>
     </span>
@@ -259,7 +259,7 @@ export function CollapsedDayTeaser<W>({
 
   const ariaLabel = `${deals.length} ${deals.length === 1 ? "filing" : "filings"} recorded on this day, view in the app`;
   const rowClass =
-    "group flex w-full items-center gap-4 px-4 py-5 text-left transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]";
+    "group flex w-full items-center gap-4 px-4 py-5 text-left transition-colors hover:bg-black/2 dark:hover:bg-white/3";
 
   if (isDesktop) {
     // Desktop clicks get the handoff modal (pitch + QR + store choice)

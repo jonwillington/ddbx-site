@@ -33,7 +33,7 @@ export function GatedAnalysisShape() {
     <div aria-hidden className="space-y-6">
       {/* Header: logo bubble + headline */}
       <div className="flex items-center gap-4">
-        <div className="h-14 w-14 shrink-0 rounded-2xl bg-foreground/20" />
+        <div className="h-14 w-14 shrink-0 rounded-card bg-foreground/20" />
         <div className="min-w-0 flex-1 space-y-2">
           <div className="h-[22px] w-3/4 rounded bg-foreground/25" />
           <Bar className="w-2/5" />

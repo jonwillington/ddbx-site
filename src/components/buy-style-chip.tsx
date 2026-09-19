@@ -6,7 +6,7 @@ import {
 } from "@heroicons/react/24/solid";
 import clsx from "clsx";
 
-import { chip } from "@/components/chip";
+import { CHIP_TONE, chip } from "@/components/chip";
 import { Tooltip } from "@/components/tooltip";
 
 /** Buy-style signal chip — what kind of price action the director bought into,
@@ -25,7 +25,7 @@ const STYLES = {
   },
   momentum: {
     label: "Momentum",
-    tint: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    tint: CHIP_TONE.up,
     Icon: ArrowTrendingUpIcon,
   },
 } as const;

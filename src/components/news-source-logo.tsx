@@ -37,7 +37,7 @@ export function NewsSourceLogo({
   return (
     <img
       alt=""
-      className={`shrink-0 rounded-sm ${className}`}
+      className={`shrink-0 rounded-mark ${className}`}
       height={size}
       loading="lazy"
       src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size * 2}`}

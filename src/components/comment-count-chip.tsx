@@ -10,7 +10,7 @@ import { Tooltip } from "@/components/tooltip";
  *  nothing to tease (count 0), so callers drop it in unconditionally. See
  *  src/lib/comment-counts.ts for how the count is derived. */
 
-const BASE = `${chip()} bg-black/[0.06] text-muted dark:bg-white/[0.08] dark:text-foreground/55`;
+const BASE = `${chip()} bg-black/6 text-muted dark:bg-white/8 dark:text-foreground/55`;
 
 export function CommentCountChip({
   count,

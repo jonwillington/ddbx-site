@@ -7,7 +7,7 @@
  *  mobile bar). They agreed on the fill and disagreed on everything else.
  *
  *    button   filled ink button, glyph + label. `size` sm (side rail),
- *             md (menu sheet), lg (floating mobile bar).
+ *             md (sheets and dialogs), lg (floating mobile bar).
  *    compact  the small inline pill that rides in a bar (navbar).
  *    badge    Apple's / Google's badge artwork. `size` is the artwork height.
  *
@@ -94,8 +94,11 @@ export function StoreBadgeImg({
 /** Padding, gap and label type per shape. Colour and radius come from
  *  button.ts, so a store CTA is never a different species of button. */
 const BUTTON_SIZE: Record<StoreCtaSize, string> = {
+  /** The side rail's foot. */
   sm: "gap-2 px-3 py-2 text-small font-medium",
-  md: "gap-2 px-4 py-3 text-base font-medium",
+  /** Sheets and dialogs: the unlock gates, the mobile menu. 48px tall. */
+  md: "gap-2 px-5 py-3.5 text-sm font-semibold",
+  /** The floating mobile install bar. */
   lg: "gap-2.5 px-5 py-4 text-base font-semibold",
 };
 const COMPACT = "gap-1.5 px-4 py-1.5 text-sm font-medium";

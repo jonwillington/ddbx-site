@@ -28,9 +28,14 @@ const SIZES = {
   md: { button: "h-8 w-8", icon: "h-4.5 w-4.5" },
 } as const;
 
+/** The theme-aware circle. Exported because ShareRow's channel buttons are
+ *  the same object at a different job. */
+export const CLOSE_FILL =
+  "bg-black/5 text-muted hover:bg-black/9 hover:text-foreground dark:bg-white/8 dark:hover:bg-white/14 dark:hover:text-foreground focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40";
+
 const TONES = {
   /** Theme-aware: light-contrast circle against the page background. */
-  auto: "bg-black/5 text-muted hover:bg-black/9 hover:text-foreground dark:bg-white/8 dark:hover:bg-white/14 dark:hover:text-foreground focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40",
+  auto: CLOSE_FILL,
   /** For always-dark surfaces (explainer stage) in either theme. */
   dark: "bg-white/8 text-[#f3ecdf]/60 hover:bg-white/14 hover:text-[#f3ecdf] focus-visible:ring-white/40",
   /** For always-cream surfaces in either theme. `auto`'s light half, literal. */

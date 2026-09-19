@@ -16,8 +16,6 @@
  */
 import type { ReactNode } from "react";
 
-const RULE = "border-hairline dark:border-separator";
-
 /** The container: owns the top rule; rows own their bottom rules, so the
  *  list closes cleanly whatever renders last. Ordered by default because
  *  every list so far has been a sequence; pass `ordered={false}` for one
@@ -33,7 +31,7 @@ export function RowList({
 }) {
   const Tag = ordered ? "ol" : "ul";
 
-  return <Tag className={`border-t ${RULE} ${className}`}>{children}</Tag>;
+  return <Tag className={`border-t border-rule ${className}`}>{children}</Tag>;
 }
 
 export function Row({
@@ -65,7 +63,7 @@ export function Row({
 }) {
   return (
     <li
-      className={`grid gap-x-10 gap-y-3 border-b ${RULE} py-7 sm:py-9 ${
+      className={`grid gap-x-10 gap-y-3 border-b border-rule py-7 sm:py-9 ${
         split === "description"
           ? "sm:grid-cols-[minmax(0,4fr)_minmax(0,7fr)]"
           : "sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]"
@@ -78,15 +76,13 @@ export function Row({
             {title}
           </h3>
           {kicker ? (
-            <p className="mt-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-foreground/40">
-              {kicker}
-            </p>
+            <p className="micro mt-2 text-foreground/40">{kicker}</p>
           ) : null}
         </div>
       </div>
       <div className={`min-w-0 sm:pt-1 ${glyph ? "pl-10 sm:pl-0" : ""}`}>
         {typeof children === "string" ? (
-          <p className="max-w-[58ch] text-[15px] leading-[1.65] text-foreground/75">
+          <p className="max-w-[58ch] text-lede text-foreground/75">
             {children}
           </p>
         ) : (

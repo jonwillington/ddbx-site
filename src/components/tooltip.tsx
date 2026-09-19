@@ -40,7 +40,7 @@ export function Tooltip({
       {pos &&
         createPortal(
           <span
-            className="pointer-events-none fixed z-[100] max-w-[220px] -translate-x-1/2 -translate-y-full rounded-md bg-neutral-900 px-2.5 py-1.5 text-[11px] leading-snug text-white shadow-lg dark:bg-neutral-800"
+            className="pointer-events-none fixed z-[100] max-w-[220px] -translate-x-1/2 -translate-y-full rounded-control bg-neutral-900 px-2.5 py-1.5 text-caption text-white shadow-lg dark:bg-neutral-800"
             role="tooltip"
             style={{ top: pos.top - 6, left: pos.left }}
           >

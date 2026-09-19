@@ -93,7 +93,7 @@ function TriggerContent({
     <>
       <current.Flag
         aria-hidden
-        className="h-3.5 w-5 shrink-0 rounded-sm object-cover"
+        className="h-3.5 w-5 shrink-0 rounded-mark object-cover"
       />
       {/* Truncates where the trigger is squeezed (the sidebar rail's header,
           where "Congress" and "Trump Media" meet the theme switch). The full
@@ -155,7 +155,7 @@ function DesktopDropdown({
 
       {open && (
         <div
-          className="absolute left-0 mt-2 w-48 rounded-xl border border-separator bg-[#fcfbf9] dark:bg-background shadow-lg overflow-hidden z-50 py-1"
+          className="absolute left-0 mt-2 w-48 rounded-card border border-separator bg-page dark:bg-background shadow-lg overflow-hidden z-50 py-1"
           role="listbox"
         >
           <MarketOptions
@@ -198,7 +198,7 @@ function MobileSheet({
 
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/50 z-40" />
-        <Drawer.Content className="fixed bottom-0 inset-x-0 z-50 flex flex-col rounded-t-2xl border-t border-hairline dark:border-separator bg-[#fcfbf9] dark:bg-background outline-none">
+        <Drawer.Content className="fixed bottom-0 inset-x-0 z-50 flex flex-col rounded-t-card border-t border-rule bg-page dark:bg-background outline-none">
           <div className="mx-auto mt-3 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-black/15 dark:bg-white/20" />
 
           <div className="px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 overflow-y-auto">
@@ -241,14 +241,14 @@ function MarketOptions({
   const isSheet = variant === "sheet";
   const busy = loadingCode != null;
   const rowClass = isSheet
-    ? "flex items-center gap-3 w-full rounded-lg px-2 py-3 text-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+    ? "flex items-center gap-3 w-full rounded-control px-2 py-3 text-base hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
     : "flex items-center gap-2 w-full px-2.5 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors";
   const flagClass = isSheet
-    ? "h-4 w-6 rounded-sm object-cover"
-    : "h-3.5 w-5 rounded-sm object-cover";
+    ? "h-4 w-6 rounded-mark object-cover"
+    : "h-3.5 w-5 rounded-mark object-cover";
   const headingClass = isSheet
-    ? "px-2 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-foreground/45"
-    : "px-2.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-foreground/45";
+    ? "micro px-2 pt-3 pb-1 text-foreground/45"
+    : "micro px-2.5 pt-1.5 pb-1 text-foreground/45";
   const dividerClass = isSheet
     ? "my-1.5 border-t border-separator/60"
     : "my-1 border-t border-separator/60";
@@ -311,9 +311,7 @@ function MarketOptions({
         >
           <m.Flag aria-hidden className={clsx(flagClass, "opacity-70")} />
           <span className="flex-1 text-left">{m.label}</span>
-          <span className="text-[10px] uppercase tracking-wider text-foreground/40">
-            Soon
-          </span>
+          <span className="micro text-foreground/40">Soon</span>
         </div>
       ))}
     </div>

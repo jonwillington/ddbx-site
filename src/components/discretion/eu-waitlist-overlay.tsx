@@ -6,6 +6,7 @@ import { LockClosedIcon } from "@heroicons/react/20/solid";
 import { CompanyLogo } from "@/components/company-logo";
 import { Turnstile } from "@/components/api/turnstile";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import { panel } from "@/components/ui/panel";
 import { API_BASE } from "@/lib/api";
 
 /** The gate card for markets with no app behind the gate (NL/SE today).
@@ -33,7 +34,9 @@ export function EuWaitlistOverlay({
   body?: string;
 }) {
   return (
-    <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-hairline dark:border-separator bg-sheet/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
+    <div
+      className={`pointer-events-auto w-full max-w-md px-6 py-6 text-center shadow-float ${panel({ variant: "translucent" })}`}
+    >
       <span className="relative mb-4 inline-block">
         {ticker ? (
           <CompanyLogo
@@ -162,7 +165,7 @@ export function AppWaitlistForm({
           <input
             required
             autoComplete="email"
-            className="w-full rounded-lg border border-black/15 bg-white px-3.5 py-2.5 text-base sm:text-sm text-ink outline-none placeholder:text-ink/35 focus:border-brand-brown/50 focus:ring-2 focus:ring-brand-brown/25 dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground dark:placeholder:text-foreground/35"
+            className="w-full rounded-control border border-black/15 bg-white px-3.5 py-2.5 text-base sm:text-sm text-ink outline-none placeholder:text-ink/35 focus:border-brand-brown/50 focus:ring-2 focus:ring-brand-brown/25 dark:border-white/15 dark:bg-white/6 dark:text-foreground dark:placeholder:text-foreground/35"
             inputMode="email"
             name="email"
             placeholder="you@example.com"
@@ -186,11 +189,11 @@ export function AppWaitlistForm({
       </form>
 
       {state === "error" ? (
-        <p className="mt-2.5 text-[12.5px] text-negative" role="alert">
+        <p className="mt-2.5 text-small text-negative" role="alert">
           Unable to register that address. Check your connection and try again.
         </p>
       ) : (
-        <p className="mt-2.5 text-[11px] text-muted/60">
+        <p className="mt-2.5 text-caption text-muted/60">
           One email when it launches. That&apos;s it.
         </p>
       )}

@@ -14,9 +14,9 @@
 
 const WIDTH = { sm: "w-9", md: "w-10", lg: "w-12" } as const;
 const BAND = {
-  sm: "py-[2px] text-[7px]",
-  md: "py-[2px] text-[8px]",
-  lg: "py-[3px] text-[9px]",
+  sm: "py-0.5 text-[7px]",
+  md: "py-0.5 text-[8px]",
+  lg: "py-0.5 text-[9px]",
 } as const;
 const NUM = {
   sm: "py-1 text-base",
@@ -41,13 +41,13 @@ export function CalendarDayChip({
 }) {
   return (
     <span
-      className={`flex shrink-0 flex-col overflow-hidden rounded-lg border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-surface-secondary ${WIDTH[size]} ${className}`}
+      className={`flex shrink-0 flex-col overflow-hidden rounded-control border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-surface-secondary ${WIDTH[size]} ${className}`}
     >
       <span
-        className={`text-center font-bold uppercase tracking-[0.08em] ${BAND[size]} ${
+        className={`text-center font-bold uppercase tracking-wider ${BAND[size]} ${
           muted
             ? "bg-foreground/15 text-foreground/60"
-            : "bg-brand-brown text-[#fcfbf9] dark:bg-brand-tan dark:text-ink"
+            : "bg-brand-brown text-page dark:bg-brand-tan dark:text-ink"
         }`}
       >
         {weekday.slice(0, 3)}

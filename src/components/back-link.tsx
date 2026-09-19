@@ -31,7 +31,7 @@ export function BackLink({
 
   return (
     <button
-      className={`group -ml-1 inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 text-[12.5px] text-foreground/55 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand-brown/40 ${className}`}
+      className={`group -ml-1 inline-flex items-center gap-1.5 rounded-control px-1 py-0.5 text-small text-foreground/55 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand-brown/40 ${className}`}
       type="button"
       onClick={() => navigate(-1)}
     >

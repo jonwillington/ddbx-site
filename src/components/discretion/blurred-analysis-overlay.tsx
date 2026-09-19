@@ -1,6 +1,7 @@
 import { LockClosedIcon } from "@heroicons/react/20/solid";
 
 import { StoreBadges } from "@/components/app-store-badge";
+import { panel } from "@/components/ui/panel";
 import { CompanyLogo } from "@/components/company-logo";
 import { PRICING, formatPrice } from "@/lib/pricing";
 
@@ -49,7 +50,9 @@ export function BlurredAnalysisOverlay({
   return (
     // Just the card — the caller positions it (the gated drawer centers it in
     // a locked, non-scrolling viewport).
-    <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-hairline dark:border-separator bg-sheet/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
+    <div
+      className={`pointer-events-auto w-full max-w-md px-6 py-6 text-center shadow-float ${panel({ variant: "translucent" })}`}
+    >
       {/* The thing being locked, at poster size: the company whose analysis
           sits under the blur, padlocked in the corner. Sells the specific
           unlock, not the brand in the abstract. */}
@@ -90,7 +93,7 @@ export function BlurredAnalysisOverlay({
         placement="Analysis overlay"
         size="md"
       />
-      <p className="text-[11px] text-muted/60 mt-3">{resolvedFootnote}</p>
+      <p className="mt-3 text-caption text-muted/60">{resolvedFootnote}</p>
     </div>
   );
 }

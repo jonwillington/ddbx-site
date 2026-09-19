@@ -1,8 +1,8 @@
 import { Drawer } from "vaul";
 import { LockClosedIcon } from "@heroicons/react/20/solid";
 
-import { StoreGlyph } from "@/components/store-glyph";
-import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import { MODAL_PANEL } from "@/components/app-modal";
+import { StoreCta } from "@/components/store-cta";
 import { CloseButton } from "@/components/close-button";
 import { CompanyLogo } from "@/components/company-logo";
 
@@ -40,7 +40,9 @@ export function DayUnlockSheet({
     >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-40 bg-black/50" />
-        <Drawer.Content className="unlock-confirm-sheet fixed bottom-2 inset-x-2 z-50 rounded-2xl border border-black/10 bg-background shadow-2xl outline-none dark:border-white/10">
+        <Drawer.Content
+          className={`unlock-confirm-sheet fixed bottom-2 inset-x-2 z-50 ${MODAL_PANEL}`}
+        >
           <div className="flex shrink-0 justify-center pb-1 pt-3">
             <Drawer.Handle className="!w-10 !bg-black/15 dark:!bg-white/20" />
           </div>
@@ -65,7 +67,7 @@ export function DayUnlockSheet({
               ))}
             </div>
 
-            <Drawer.Title className="mt-4 text-lg font-semibold tracking-[-0.02em]">
+            <Drawer.Title className="mt-4 text-title">
               {dealCount === 1 ? "This deal is" : "These deals are"} in the app
             </Drawer.Title>
             <Drawer.Description className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-muted">
@@ -78,18 +80,16 @@ export function DayUnlockSheet({
               every buy that cleared checks.
             </Drawer.Description>
 
-            <a
-              className={`mt-5 flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3.5 text-sm font-semibold transition-colors`}
+            <StoreCta
+              block
+              className="mt-5"
               data-ga-event="cta_day_unlock_open_app"
               data-ga-label={`Day unlock · ${dateLabel}`}
               href={appHref}
-              rel="noopener noreferrer"
-              target="_blank"
             >
-              <StoreGlyph className="h-4 w-4 shrink-0" />
               Start your free trial
-            </a>
-            <p className="mt-2.5 text-[11px] text-muted/70">
+            </StoreCta>
+            <p className="mt-2.5 text-caption text-muted/70">
               Free for 7 days, cancel any time.
             </p>
           </div>

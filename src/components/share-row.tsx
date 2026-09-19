@@ -34,6 +34,8 @@
 import { useEffect, useState } from "react";
 import { CheckIcon, LinkIcon, ShareIcon } from "@heroicons/react/24/outline";
 
+import { CLOSE_FILL } from "@/components/close-button";
+
 /** The X account the site posts from — appended as `via` so a reshare is
  *  attributable. Same handle as the `twitter:site` card meta in
  *  components/document-title.tsx; changing one means changing both. */
@@ -65,10 +67,9 @@ const SIZES = {
   md: { button: "h-9 w-9", icon: "h-[18px] w-[18px]", gap: "gap-2" },
 } as const;
 
-/** CloseButton's `tone="auto"` circle, verbatim. If that fill changes, this
- *  changes with it — they are the same object at two jobs. */
-const FILL =
-  "bg-black/[0.05] text-muted hover:bg-black/[0.09] hover:text-foreground dark:bg-white/[0.08] dark:hover:bg-white/[0.14] dark:hover:text-foreground focus-visible:ring-brand-brown/40 dark:focus-visible:ring-brand-tan/40";
+/** CloseButton's `tone="auto"` circle — imported, so the two can't drift:
+ *  they are the same object at two jobs. */
+const FILL = CLOSE_FILL;
 
 const SHAPE =
   "inline-flex shrink-0 items-center justify-center rounded-full outline-none transition-colors focus-visible:ring-2";
@@ -135,11 +136,7 @@ export function ShareRow({
 
   return (
     <div className={`flex items-center ${s.gap} ${className}`}>
-      {label ? (
-        <span className="mr-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted">
-          {label}
-        </span>
-      ) : null}
+      {label ? <span className="micro mr-1 text-muted">{label}</span> : null}
 
       <ChannelLink
         className={s.button}

@@ -63,14 +63,27 @@ export const CHIP_HAIRLINE_FILLED = "border-black/15";
 export const CHIP_SIZE = {
   /** Dense in-row markers: cluster, party, chamber, options, comment counts. */
   sm: "px-2 py-0.5 text-[10px] leading-4",
-  /** The default. Standalone markers, ± performance pills, mid-tier ratings. */
-  md: "px-2.5 py-0.5 text-[11px] leading-4",
+  /** The default. Standalone markers and mid-tier ratings. */
+  md: "px-2.5 py-0.5 text-caption leading-4",
   /** Emphasis — the top rating tier only. */
-  lg: "px-3 py-1 text-[12px] leading-4",
+  lg: "px-3 py-1 text-small leading-4",
 } as const;
 
 export type ChipSize = keyof typeof CHIP_SIZE;
 
-/** The common case: base + hairline + size, ready for a tint class. */
-export const chip = (size: ChipSize = "sm") =>
-  `${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE[size]}`;
+/** Direction tints, for the rare LABEL chip whose meaning is up or down
+ *  (the Momentum buy style). Not for returns: a number is never a chip —
+ *  it renders as <Delta> text. Colour follows the positive/negative tokens,
+ *  which mean direction and nothing else. */
+export const CHIP_TONE = {
+  up: "bg-positive/10 text-positive",
+  down: "bg-negative/10 text-negative",
+  neutral: "bg-foreground/5 text-foreground/60",
+} as const;
+
+export type ChipTone = keyof typeof CHIP_TONE;
+
+/** The common case: base + hairline + size, ready for a tint class — or pass
+ *  a `tone` to take one of the direction tints. */
+export const chip = (size: ChipSize = "sm", tone?: ChipTone) =>
+  `${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE[size]}${tone ? ` ${CHIP_TONE[tone]}` : ""}`;
