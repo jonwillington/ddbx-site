@@ -367,7 +367,12 @@ export function HeroLiveGradient({ tick }: { tick: number }) {
           }
           /* And a little more under the chart, so the outcome bar reads as
              the payoff beneath it rather than the chart's footer. */
-          .nav-sidebar .hero-chart-col { margin-bottom: 6px; }
+          /* No chart on the stage. A market without the news rail (Korea)
+             got a wide enough hero to draw one and one with the rail didn't,
+             so the same component was two heights and two layouts depending
+             on the market. The alert and its outcome bar tell the story on
+             every market alike, and the stage stays short. */
+          .nav-sidebar .hero-chart-col { display: none; }
         }
         /* With the card chrome gone the demo half can take more of the
            stage, and the price series is the thing that wants it — only
@@ -664,7 +669,7 @@ export function MarketHero({
         className={`${headlineAlign} text-balance font-semibold tracking-tight ${
           promotedSubhead
             ? "max-w-[560px] text-[24px] leading-[1.25] md:text-[32px] md:leading-[1.2]"
-            : "max-w-[600px] text-[40px] leading-[1.05] md:text-[64px] md:leading-[1.02]"
+            : "max-w-[600px] text-[40px] leading-[1.05] md:text-[64px] md:leading-[1.02] shell:xl:text-[56px]!"
         }`}
       >
         {resolvedHeadline}
@@ -792,7 +797,7 @@ export function MarketHero({
       <HeroLiveGradient tick={radar.tick} />
 
       <div
-        className="relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 py-3 md:py-6 shell:xl:px-8! shell:xl:pt-10! shell:xl:pb-12!"
+        className="relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 py-3 md:py-6 shell:xl:px-8! shell:xl:pt-8! shell:xl:pb-9!"
       >
         {appShowcase ? (
           <>

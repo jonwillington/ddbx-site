@@ -999,14 +999,14 @@ export const KoreaMarket: MarketConfig<KrDealingGroup> = {
   /* The templated fallback reads "Which directors have been buying shares in
      Korea companies?", which is both ungrammatical and a promise this page
      does not keep: the first thing under it is a list of purchases nobody has
-     made yet. So the headline states Korea's actual rule, in the shortest
-     form it survives in, with the consequence for the reader on the tinted
-     second line. The UK shape (two short lines, fact then payoff). */
+     made yet. The headline now runs the shape every market shares ("Every
+     UK insider deal. / 7 days free.", "Every Swedish insider deal. / Free to
+     read."), and Korea's rule is carried by the first bullet instead. */
   heroHeadline: (
     <>
-      Korean insiders announce
+      Every Korean insider deal.
       <span className="block text-brand-brown dark:text-brand-tan">
-        before they buy.
+        Free to read.
       </span>
     </>
   ),
