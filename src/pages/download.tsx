@@ -48,6 +48,7 @@ import {
 } from "@/components/download/download-hero";
 import { IncludedList, PricingCard } from "@/components/download/pricing-card";
 import { SectionHeader } from "@/components/download/section-header";
+import { band } from "@/components/ui/band";
 import { StoryFilm } from "@/components/download/story-film";
 import {
   WinnersBoard,
@@ -81,7 +82,7 @@ type MarketId = "uk" | "us";
 
 /** The page's one section box. Shared verbatim with `pages/api.tsx` — the two
  *  pages use the same `SectionHeader` grammar and must sit on the same grid. */
-const SECTION = "mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20";
+const SECTION = band();
 
 // Credibility guardrails for the winners wall. The wall is social proof, so it
 // must read as "smart money", not a penny-stock pump screen.

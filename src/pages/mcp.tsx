@@ -20,6 +20,7 @@ import { BUTTON_RADIUS } from "@/components/button";
 import { CHIP_BASE, CHIP_HAIRLINE, CHIP_SIZE } from "@/components/chip";
 import { Reveal } from "@/components/download/reveal";
 import { SectionHeader } from "@/components/download/section-header";
+import { band } from "@/components/ui/band";
 import { ComparisonTable } from "@/components/mcp/comparison-table";
 import { LiveSample } from "@/components/mcp/live-sample";
 import { UrlCopy } from "@/components/mcp/url-copy";
@@ -60,7 +61,7 @@ import { usePinnedTheme } from "@/lib/use-pinned-theme";
  *  "AI assistant" is unavoidable on a page about connecting one; the
  *  vendor names are the products a reader owns, not our pipeline. */
 
-const SECTION = "mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20";
+const SECTION = band();
 const TOTAL = 4;
 
 /** Hero proof cards. Each figure carries the line that stops it being a bare

@@ -30,6 +30,7 @@ import { useState, type ReactNode, type UIEvent } from "react";
 
 import { DeviceFrame } from "./device-frame";
 import { SectionHeader } from "./section-header";
+import { band } from "@/components/ui/band";
 
 import {
   EYEBROW,
@@ -175,7 +176,7 @@ export function AppTour({
   const tick = useNotificationTick(true);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-24">
+    <section className={`${band({ y: false })} py-14 md:py-24`}>
       <SectionHeader
         index={index}
         kicker={kicker}

@@ -38,6 +38,7 @@ import { BuySparkline } from "@/components/boards/buy-sparkline";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { CompanyLogo } from "@/components/company-logo";
 import { SectionHeader } from "@/components/download/section-header";
+import { band } from "@/components/ui/band";
 import { CAPTION, RULE } from "@/components/how-it-works/shared";
 import { Skeleton } from "@/components/skeleton";
 import { StoreButtons } from "@/components/store-buttons";
@@ -45,7 +46,7 @@ import { TickerPill } from "@/components/ticker-pill";
 
 /** The page's one section box, shared verbatim with `pages/download.tsx` and
  *  `pages/api.tsx`: same `SectionHeader` grammar, same grid. No band. */
-const SECTION = "mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20";
+const SECTION = band();
 
 /** Rows the loading state stands at. The page shows `WINNERS_SHOWN` (6) and
  *  can say so with `loadingRows`; the default is that number so the skeleton

@@ -16,6 +16,7 @@ import { CHIP_BASE, CHIP_HAIRLINE, CHIP_SIZE } from "@/components/chip";
 import { FULL_BLEED } from "@/components/full-bleed";
 import { Reveal } from "@/components/download/reveal";
 import { SectionHeader } from "@/components/download/section-header";
+import { band } from "@/components/ui/band";
 import { AccumulationChart } from "@/components/api/accumulation-chart";
 import { ApiFaq } from "@/components/api/api-faq";
 import { CodeTabs } from "@/components/api/code-tabs";
@@ -60,7 +61,7 @@ import { usePinnedTheme } from "@/lib/use-pinned-theme";
  *      a full stop.
  */
 
-const SECTION = "mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20";
+const SECTION = band();
 
 /** Hero proof cards. Each carries a figure AND the line that stops it being a
  *  bare number: "6" alone invites "six what?", which is the failure mode of

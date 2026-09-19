@@ -27,6 +27,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { SectionHeader } from "./section-header";
+import { band } from "@/components/ui/band";
 
 import { CAPTION, EYEBROW } from "@/components/how-it-works/shared";
 
@@ -111,7 +112,7 @@ export function StoryFilm({
   const { ref, blocked } = usePlayInView(reduced);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
+    <section className={band()}>
       <SectionHeader
         index={index}
         kicker={kicker}
