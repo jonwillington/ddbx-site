@@ -78,9 +78,9 @@ import {
   episodeId,
 } from "@/components/boards/stages/cluster-stage";
 import { STAGE_LINK, StageHeader } from "@/components/ui/stage-header";
+import { NOTICE } from "@/components/ui/notice";
 
-const CAVEAT =
-  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
+const CAVEAT = NOTICE;
 
 /** The span, without the preposition `spanLabel` supplies — the column heading
  *  says "Span", so "over 9 days" underneath it says "over" twice. The stage

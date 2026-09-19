@@ -58,6 +58,9 @@
   /* "Live / open / operational" — a STATUS green, deliberately not
      --color-positive, which means direction (up) and nothing else. */
   --color-live: var(--live);
+  /* Congress party affiliation — identity colours, NOT direction. */
+  --color-party-dem: var(--party-dem);
+  --color-party-rep: var(--party-rep);
 
   /* Type ramp — size + leading (+ weight / tracking) in one class.
      Mono, uppercase and responsive steps can't live in a --text token, so
@@ -72,6 +75,13 @@
   --text-num: 13px;
   --text-num--line-height: 1.4;
   --text-num--font-weight: 600;
+  --text-label: 15px;          /* button / control labels */
+  --text-label--line-height: 1.25;
+  --text-chip: 10px;           /* chip sm label (chip.ts) */
+  --text-chip--line-height: 16px;
+  --text-figure: 26px;         /* stage + tile figures */
+  --text-figure--line-height: 1;
+  --text-figure--letter-spacing: -0.02em;
   --text-title: 17px;
   --text-title--line-height: 1.3;
   --text-title--letter-spacing: -0.015em;
@@ -171,10 +181,28 @@
     font-size: 84px;
   }
 }
+/* Row/card titles and small section heads between title (17) and heading
+   (26/34): the 19–24px band the sweeps left as literals. */
+@utility text-subheading {
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  @media (min-width: 40rem) {
+    font-size: 22px;
+  }
+}
 /* Hairlines: one on the page, one on a dark stage. */
 @utility border-rule {
   border-color: var(--color-hairline);
   &:where(.dark *) {
+    border-color: var(--separator);
+  }
+}
+@utility divide-rule {
+  & > :not(:last-child) {
+    border-color: var(--color-hairline);
+  }
+  &:where(.dark *) > :not(:last-child) {
     border-color: var(--separator);
   }
 }
@@ -393,6 +421,8 @@
   --positive: oklch(45% 0.13 145);
   --negative: oklch(44% 0.145 25);
   --live: #2e7d32;   /* status, not direction — see --color-live */
+  --party-dem: #1d4ed8;
+  --party-rep: #b91c1c;
 
   --foreground:         oklch(20% 0.010 65);  /* warm near-black ink       */
   --surface-foreground: oklch(20% 0.010 65);
@@ -491,6 +521,8 @@ body {
   --positive:           oklch(78%   0.19  145);
   --negative:           oklch(64%   0.185 25);
   --live:               #7bbe7f;
+  --party-dem:          #93c5fd;
+  --party-rep:          #fca5a5;
 
   /* bg-content1 shim value — shadows --surface, so it moves with it or
      modals read a step darker than the cards they sit above. */

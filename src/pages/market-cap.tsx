@@ -65,9 +65,9 @@ import {
 import { TickerPill } from "@/components/ticker-pill";
 import { API_BASE } from "@/lib/api";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
+import { NOTICE } from "@/components/ui/notice";
 
-const CAVEAT =
-  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
+const CAVEAT = NOTICE;
 
 const CROSS_LINKS: RelatedCard[] = [
   { to: "/sectors", title: "Buying by sector", description: "Where it went" },

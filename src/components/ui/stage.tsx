@@ -84,7 +84,7 @@ export function StageFooter({
 /** The tooltip surface over a stage's chart: stage glass, never under the
  *  pointer. Position (left/top) comes in through `style`; the minimum width
  *  through `className`, since it depends on what the tip says. */
-export const STAGE_TIP = `pointer-events-none absolute z-20 rounded-xl px-3 py-2 text-small ${glass("stage")}`;
+export const STAGE_TIP = `pointer-events-none absolute z-20 rounded-control px-3 py-2 text-small ${glass("stage")}`;
 
 export function StageTooltip({
   className,

@@ -94,13 +94,13 @@ import {
   toBoardRows,
 } from "@/components/boards/board-model";
 import { STAGE_LINK, StageHeader } from "@/components/ui/stage-header";
+import { NOTICE } from "@/components/ui/notice";
 
 /** Caveats are risk-amber wells rather than another line of grey small print.
  *  A truncated window and a held-back company both change how the ranking
  *  should be read, and they were set in the same 11px grey as the row meta —
  *  which is to say, invisible. */
-const CAVEAT =
-  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
+const CAVEAT = NOTICE;
 
 /** Onward links, shaped as RelatedCards so the page has one card vocabulary. */
 const CROSS_LINKS: RelatedCard[] = [

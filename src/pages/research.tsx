@@ -83,10 +83,10 @@ import {
   StateTag,
   VerdictPanel,
 } from "@/components/research/study-objects";
+import { NOTICE } from "@/components/ui/notice";
 
 const EYEBROW = "Living study";
-const CAVEAT =
-  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
+const CAVEAT = NOTICE;
 
 /** The number the index and the study pages both call the room: purchases
  *  per week entering the studies’ universe, from the last ARRIVAL_WEEKS. */

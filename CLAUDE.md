@@ -114,22 +114,26 @@ restyling any UI.** The rules:
 1. **No new bracketed literals.** Not `text-[13px]`, `tracking-[0.14em]`,
    `leading-[1.55]`, `rounded-[20px]`, `shadow-[…]`, or a raw `#hex`. Use:
    - **Type:** `eyebrow` (mono 11 uppercase label), `micro` (mono 10 label),
-     `text-caption`, `text-small`, `text-body`, `text-num` (table figures,
-     with `tabular-nums`), `text-lede`, `text-title` (card h3), `text-heading`
-     (section h2), `display-doc` (document h1, weight 600), `display-stage`
-     (dark-stage h1, weight 400), `text-figure-xl`. Don't add tracking or
+     `text-chip` (chip sm), `text-caption`, `text-small`, `text-body`,
+     `text-num` (table figures, with `tabular-nums`), `text-label` (button
+     labels), `text-lede`, `text-title` (card h3, 17), `text-subheading`
+     (row/card titles and small heads, 20→22), `text-heading` (section h2,
+     26→34), `text-figure` (stage/tile figures, 26), `display-doc` (document
+     h1, weight 600), `display-stage` / `display-stage-capped` (dark-stage h1,
+     weight 400), `text-figure-xl`. Don't add tracking or
      leading on top of a step; it's baked in.
    - **Radius:** `rounded-mark` 3 / `rounded-control` 8 / `rounded-card` 16 /
      `rounded-stage` 28 / `rounded-full`. Nothing else.
    - **Shadow:** `shadow-lift` (cards), `shadow-float` (glass, modals),
      `shadow-stage`.
-   - **Hairlines:** `border-rule` on the page, `border-rule-stage` on dark
-     grounds. Don't declare a local `RULE` const, and don't use
+   - **Hairlines:** `border-rule` / `divide-rule` on the page,
+     `border-rule-stage` on dark grounds. Don't declare a local `RULE` const, and don't use
      `border-black/[0.06]`.
    - **Colour:** `bg-page` (the cream, never `#fcfbf9`), `ink`,
      `ink-hover`, `hairline`, `sheet`, `brand-*`. Use `positive`/`negative`
      **only for direction** (up/down, gain/loss). Use `live` for
-     status/open/operational. Never emerald/rose/green-*/red-*.
+     status/open/operational, `party-dem`/`party-rep` for Congress party
+     identity, `risk` for caveats. Never emerald/rose/green-*/red-*/blue-*.
    - **Measure:** `max-w-measure` (62ch), not `max-w-[62ch]`. (`max-w-prose` is Tailwind's 65ch.)
    - **Returns and deltas are plain text, never chips** (Jon, 2026-09-19).
      `+12.4%` / `−3.1%` renders as coloured `tabular-nums` text
@@ -140,12 +144,22 @@ restyling any UI.** The rules:
    rule); block `mt-10`; group `mt-6`; stack `gap-3`; tight `gap-1.5`. No pixel
    nudges (`py-[3px]`, `ml-[17px]`). Arbitrary values are allowed only for
    safe-area `max()`, shell geometry and `em` baseline alignment.
-3. **Reuse before you build.** Class-string helpers first (`button.ts`,
-   `chip.ts`, and the `src/components/ui/*` helpers as they land), components
-   only where there's structure or behaviour. Check `src/components/ui/`,
-   `seo/*`, `boards/board-row.tsx`, `close-button.tsx`, `section-eyebrow.tsx`
-   and `store-buttons.tsx` before writing a new eyebrow, panel, stage, chip,
-   toggle, store button, modal or row. If you find yourself pasting a class
+3. **Reuse before you build.** Class-string helpers first, components only
+   where there's structure or behaviour. The kit:
+   - `src/components/ui/`: `panel()` (cards: sheet / inset / translucent),
+     `band()` (marketing section), `glass()` / `glass("stage")`,
+     `FULL_BLEED` / `SCROLL_BLEED` (bleed.ts), `NOTICE` (caveat callout),
+     `<Eyebrow>` / `eyebrow()`, `<Stage>` / `StageFooter` / `StageTooltip`,
+     `<StageHeader>`, and `<Delta>` (every return).
+   - `button.ts`, `chip.ts`, `close-button.tsx`, `store-cta.tsx` (every app
+     store button), `app-modal.tsx` (`ModalDialog`, `ModalBackdrop`),
+     `skeleton.tsx`.
+   - `seo/*`: `SeoPageShell` (including `error={{what}}` for failed loads)
+     and `SeoSection` (including `more={{to,label}}` for "see all").
+   - `boards/board-row.tsx`, `section-eyebrow.tsx`.
+
+   Check these before writing a new eyebrow, panel, stage, chip, toggle,
+   store button, modal, notice or row. If you find yourself pasting a class
    string a second time, it belongs in a helper.
 4. **Components pass through.** Every shared component spreads `...rest` and
    accepts `className`. `data-ga-*`, `@container` and `shell:` classes must

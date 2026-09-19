@@ -53,9 +53,9 @@ import { useTape } from "@/components/tape/use-tape";
 import { TAPE_FLAGS, WorldClock } from "@/components/tape/world-clock";
 import { glass } from "@/components/ui/glass";
 import DefaultLayout from "@/layouts/default";
+import { NOTICE } from "@/components/ui/notice";
 
-const CAVEAT =
-  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
+const CAVEAT = NOTICE;
 
 const CROSS_LINKS: RelatedCard[] = [
   {

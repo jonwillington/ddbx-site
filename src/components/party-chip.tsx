@@ -10,8 +10,8 @@ type Party = "D" | "R" | "I";
 // Tint + label colour only — the hairline derives from the label via
 // CHIP_HAIRLINE, so each party gets its own border for free.
 const STYLE: Record<Party, string> = {
-  D: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  R: "bg-red-500/10 text-red-700 dark:text-red-300",
+  D: "bg-party-dem/10 text-party-dem",
+  R: "bg-party-rep/10 text-party-rep",
   I: "bg-foreground/5 text-foreground/60",
 };
 

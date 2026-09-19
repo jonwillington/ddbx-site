@@ -62,7 +62,7 @@ export const CHIP_HAIRLINE_FILLED = "border-black/15";
  *  moved to SF Mono. */
 export const CHIP_SIZE = {
   /** Dense in-row markers: cluster, party, chamber, options, comment counts. */
-  sm: "px-2 py-0.5 text-[10px] leading-4",
+  sm: "px-2 py-0.5 text-chip",
   /** The default. Standalone markers and mid-tier ratings. */
   md: "px-2.5 py-0.5 text-caption leading-4",
   /** Emphasis — the top rating tier only. */

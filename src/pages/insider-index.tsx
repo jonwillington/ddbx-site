@@ -69,6 +69,7 @@ import { StageNotice } from "@/components/boards/stage-notice";
 import { IndexStage } from "@/components/insider-index/index-stage";
 import { StageHeader } from "@/components/ui/stage-header";
 import { panel } from "@/components/ui/panel";
+import { NOTICE } from "@/components/ui/notice";
 
 const MARKET = {
   id: "UK" as const,
@@ -83,8 +84,7 @@ const R = {
   rule: "border-rule",
 };
 
-const CAVEAT =
-  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
+const CAVEAT = NOTICE;
 
 const LINK =
   "underline decoration-foreground/30 underline-offset-4 transition-colors hover:decoration-foreground/70";

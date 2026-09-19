@@ -61,12 +61,12 @@ import {
 import { sectorCta } from "@/components/seo/cta-copy";
 import { TrackingNotice } from "@/components/seo/tracking-notice";
 import { STAGE_LINK, StageHeader } from "@/components/ui/stage-header";
+import { NOTICE } from "@/components/ui/notice";
 
 /** Caveats are risk-amber wells rather than another line of grey small print.
  *  A truncated window changes how every total above it should be read, and set
  *  in the same grey as the row meta it was, in practice, invisible. */
-const CAVEAT =
-  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
+const CAVEAT = NOTICE;
 
 export default function SectorsPage() {
   const market = useSectorMarket();

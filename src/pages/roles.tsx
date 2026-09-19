@@ -81,9 +81,9 @@ import {
   RolesStage,
 } from "@/components/boards/stages/roles-stage";
 import { StageHeader } from "@/components/ui/stage-header";
+import { NOTICE } from "@/components/ui/notice";
 
-const CAVEAT =
-  "rounded-control bg-risk/[0.08] px-3.5 py-2.5 text-small text-foreground/70";
+const CAVEAT = NOTICE;
 
 function signedPp(ratio: number | null): string {
   if (ratio == null) return "n/a";
