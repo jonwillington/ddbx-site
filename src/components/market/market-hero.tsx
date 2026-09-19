@@ -40,6 +40,8 @@ import {
 } from "@/components/button";
 import { chip } from "@/components/chip";
 import { StoreButtons } from "@/components/store-buttons";
+import { NAV_SIDEBAR } from "@/lib/nav-mode";
+import { useMediaQuery } from "@/lib/use-media-query";
 
 /** The header's living backdrop: a soft pool of the brand warmth that
  *  relocates on every advance of the shared radar clock, so the light in the
@@ -493,6 +495,15 @@ export function MarketHero({
   // Shared deal-radar clock — drives the showcase panel's queue and the
   // notification stack from one source so they stay in lockstep.
   const radar = useDealRadar(marketId, appShowcase);
+  // Shell layout (lib/nav-mode), from xl: the hero becomes a dark stage like
+  // the board pages' headers — the same fixed #1a140d panel run edge to edge
+  // of the sheet (.board-stage, globals.css). `dark` scopes the site's dark
+  // tokens to the hero alone, so every theme-keyed class inside it (headline,
+  // bullets, store button, notification) takes its dark form with no
+  // per-element overrides. A class can't be media-conditional, hence the
+  // query rather than a `shell:xl:` variant.
+  const isXl = useMediaQuery("(min-width: 1280px)");
+  const shellStage = NAV_SIDEBAR && isXl;
   // The two-column showcase needs more room when a right drawer is present, so
   // it switches on at `xl` then; otherwise `lg`. Alignment + visibility classes
   // track that same breakpoint so the headline only goes left-aligned once the
@@ -642,6 +653,10 @@ export function MarketHero({
   return (
     <header
       className={`relative -mt-4 md:mt-0 md:min-h-[58svh] flex flex-col animate-content-in shell:xl:min-h-0! ${
+        shellStage
+          ? "dark board-stage -mt-8! overflow-hidden text-foreground"
+          : ""
+      } ${
         appShowcase
           ? hasRightDrawer
             ? "xl:min-h-[560px]"
@@ -655,7 +670,7 @@ export function MarketHero({
       <HeroLiveGradient tick={radar.tick} />
 
       <div
-        className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 shell:xl:px-0! shell:xl:pt-6! shell:xl:pb-10! ${
+        className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 shell:xl:px-8! shell:xl:pt-10! shell:xl:pb-12! ${
           hasTopNotice ? "pt-16 pb-3 md:pb-6" : "py-3 md:py-6"
         }`}
       >
