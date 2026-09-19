@@ -41,8 +41,8 @@ export function AppDrawer({
   // reads as a card lifted off the page. Desktop floats off the right; mobile
   // floats up from the bottom.
   const contentClass = isDesktop
-    ? `fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] ${maxWidthClass} rounded-2xl bg-background border border-black/10 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden outline-none`
-    : "fixed bottom-2 inset-x-2 z-50 h-[88vh] max-h-[88vh] rounded-2xl bg-background border border-black/10 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden outline-none";
+    ? `fixed top-3 bottom-3 right-3 z-50 w-[calc(100vw-1.5rem)] ${maxWidthClass} rounded-card bg-background border border-black/10 dark:border-white/10 shadow-float flex flex-col overflow-hidden outline-none`
+    : "fixed bottom-2 inset-x-2 z-50 h-[88vh] max-h-[88vh] rounded-card bg-background border border-black/10 dark:border-white/10 shadow-float flex flex-col overflow-hidden outline-none";
 
   return (
     <Drawer.Root

@@ -95,7 +95,7 @@ export function MarketChooserModal({
               <div
                 key={c.id}
                 aria-disabled="true"
-                className="flex items-center gap-3 rounded-xl border border-black/[0.06] bg-black/[0.01] p-3.5 opacity-60 dark:border-white/[0.06] dark:bg-white/[0.035]"
+                className="flex items-center gap-3 rounded-card border border-rule bg-black/1 p-3.5 opacity-60 dark:bg-white/4"
               >
                 {inner}
                 <span className={`${chip()} shrink-0 text-muted`}>
@@ -108,7 +108,7 @@ export function MarketChooserModal({
           return (
             <a
               key={c.id}
-              className="group flex items-center gap-3 rounded-xl border border-black/10 bg-black/[0.02] p-3.5 transition-colors hover:border-brand-brown/40 hover:bg-brand-brown/[0.05] dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-brand-tan/40 dark:hover:bg-brand-tan/[0.07]"
+              className="group flex items-center gap-3 rounded-card border border-black/10 bg-black/2 p-3.5 transition-colors hover:border-brand-brown/40 hover:bg-brand-brown/5 dark:border-white/10 dark:bg-white/3 dark:hover:border-brand-tan/40 dark:hover:bg-brand-tan/7"
               data-ga-event="cta_chooser_open_store"
               data-ga-label={c.id}
               href={c.href}
