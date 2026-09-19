@@ -128,7 +128,7 @@ export function MarketRowHeader({
         <HeaderLabel help={help.value}>Value</HeaderLabel>
       </div>
       {!hiddenColumns.has("trend") && (
-        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-rule">
+        <div className="w-24 shrink-0 px-2 py-1.5 text-center leading-snug border-r border-rule">
           <HeaderLabel help={help.trend}>
             {showLegCount ? "Qty / Trend" : "Trend"}
           </HeaderLabel>
