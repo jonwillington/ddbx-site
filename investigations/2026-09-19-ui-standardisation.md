@@ -272,6 +272,11 @@ work happens on branches; each sweep passes a headless before/after render
 7. **Caption size**: 11 or 12? Decide after the render pass (§2.1).
 8. **Doubled gutter**: remove it, or keep the text in line with the api hero card? Decide after the render pass (§4).
 
+**Added by Jon, 2026-09-19:** returns and deltas render as plain coloured
+text, not chips. One `<Delta value>` component (sign, %, `tabular-nums`,
+positive/negative ink, no background) replaces every return chip, tinted wash
+and `deltaStyle().bg` fill. It lands before the sweeps.
+
 ## 9. Review log
 
 **Fable, 2026-09-19** — independent pass over v1 against the code. Held: 8 (now

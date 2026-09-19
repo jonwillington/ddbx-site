@@ -131,6 +131,11 @@ restyling any UI.** The rules:
      **only for direction** (up/down, gain/loss). Use `live` for
      status/open/operational. Never emerald/rose/green-*/red-*.
    - **Measure:** `max-w-measure` (62ch), not `max-w-[62ch]`. (`max-w-prose` is Tailwind's 65ch.)
+   - **Returns and deltas are plain text, never chips** (Jon, 2026-09-19).
+     `+12.4%` / `−3.1%` renders as coloured `tabular-nums` text
+     (`text-positive` / `text-negative`), with no filled pill, tinted wash or
+     border behind it. Use the shared `<Delta>` (`src/components/ui/delta.tsx`)
+     rather than formatting a sign by hand. Chips are for labels, not numbers.
 2. **Spacing tiers.** Band `py-14 md:py-20`; section `mt-12` (+`pt-5` over a
    rule); block `mt-10`; group `mt-6`; stack `gap-3`; tight `gap-1.5`. No pixel
    nudges (`py-[3px]`, `ml-[17px]`). Arbitrary values are allowed only for
