@@ -377,7 +377,7 @@ export function CompanyPriceChart({
     <div ref={box}>
       <div className={header ? "flex items-baseline gap-3" : "sr-only"}>
         <p
-          className={`text-[22px] font-semibold leading-none tracking-[-0.015em] tabular-nums ${P.price}`}
+          className={`text-subheading font-semibold leading-none tabular-nums ${P.price}`}
         >
           {fmtPrice(last, currency)}
         </p>

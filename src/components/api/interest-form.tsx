@@ -359,7 +359,7 @@ export function InterestForm() {
       ) : null}
 
       <button
-        className={`${BUTTON_RADIUS} ${SUBMIT_FILL} w-full px-6 py-3.5 text-[15px] font-semibold transition-colors disabled:opacity-60`}
+        className={`${BUTTON_RADIUS} ${SUBMIT_FILL} w-full px-6 py-3.5 text-label font-semibold transition-colors disabled:opacity-60`}
         data-ga-event="cta_api_request_access"
         data-ga-label="API interest form"
         disabled={status === "sending"}

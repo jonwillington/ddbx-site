@@ -135,7 +135,7 @@ export default function StoryPage() {
             </p>
 
             {s.take ? (
-              <p className="mt-8 text-[19px] leading-normal text-foreground/90 sm:text-[22px]">
+              <p className="mt-8 text-subheading leading-normal text-foreground/90">
                 {s.take}
               </p>
             ) : null}

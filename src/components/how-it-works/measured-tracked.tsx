@@ -222,7 +222,7 @@ function TrackedRow({
                 date. So the sentence names the buyer, what they spent and what
                 they bought, in that order, and the company is the object of
                 the verb rather than the subject of the row. */}
-            <p className="text-[22px] font-semibold leading-[1.2] tracking-[-0.02em] text-foreground group-hover:underline group-hover:underline-offset-4 @min-[540px]:text-[24px]">
+            <p className="text-subheading font-semibold text-foreground group-hover:underline group-hover:underline-offset-4">
               {filing.name} bought {filing.value} of {filing.company}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">

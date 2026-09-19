@@ -161,7 +161,7 @@ export function StoryBody({ markdown }: { markdown: string }) {
         ) : (
           <h3
             key={key++}
-            className="mt-10 text-[19px] font-semibold leading-snug tracking-[-0.01em] text-foreground sm:text-[21px]"
+            className="mt-10 text-subheading font-semibold text-foreground"
           >
             <Inline text={text} />
           </h3>

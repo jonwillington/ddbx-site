@@ -258,7 +258,7 @@ export function PipelineLedger({
               {/* The stage. */}
               <div className="col-start-2 row-start-1 min-w-0">
                 <p className={eyebrow()}>{stage.label}</p>
-                <h3 className="mt-2 text-balance text-[22px] font-semibold leading-[1.2] tracking-[-0.02em] text-foreground sm:text-[24px]">
+                <h3 className="mt-2 text-balance text-subheading font-semibold text-foreground">
                   {stage.title}
                 </h3>
                 <p className="mt-3 max-w-measure text-lede text-foreground/75">

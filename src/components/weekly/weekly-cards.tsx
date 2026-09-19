@@ -42,7 +42,7 @@ export function WeeklyCards({
           <p className="eyebrow text-brand-brown dark:text-brand-tan">
             {card.copy.eyebrow}
           </p>
-          <h3 className="mt-2 text-balance text-[19px] font-semibold leading-tight tracking-[-0.015em] text-foreground sm:text-[22px]">
+          <h3 className="mt-2 text-balance text-subheading font-semibold text-foreground">
             {card.copy.headline}
           </h3>
           {card.copy.subhead ? (

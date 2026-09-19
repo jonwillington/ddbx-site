@@ -316,7 +316,7 @@ export function Fact({ k, v }: { k: string; v: ReactNode }) {
   return (
     <div>
       <dt className="micro text-foreground/45">{k}</dt>
-      <dd className="mt-1 text-[20px] font-semibold leading-none tabular-nums tracking-tight text-foreground">
+      <dd className="mt-1 text-subheading font-semibold leading-none tabular-nums text-foreground">
         {v}
       </dd>
     </div>

@@ -40,7 +40,7 @@ const DL =
 
 const DT = "micro text-white/45";
 
-const DD = "mt-1.5 text-[26px] font-medium leading-none tracking-tight";
+const DD = "mt-1.5 text-figure font-medium";
 
 function toneClass(tone: StageFigure["tone"]): string {
   if (tone === "pos") return "text-[var(--stage-pos)]";

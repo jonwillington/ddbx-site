@@ -347,7 +347,7 @@ export default function BiggestBuysPage() {
                         <div key={f.k}>
                           <dt className="micro text-white/45">{f.k}</dt>
                           <dd
-                            className={`mt-1.5 text-[26px] font-medium leading-none tracking-tight ${f.tone || "text-white"}`}
+                            className={`mt-1.5 text-figure font-medium ${f.tone || "text-white"}`}
                           >
                             {f.v}
                           </dd>

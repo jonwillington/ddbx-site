@@ -788,7 +788,7 @@ function TheRead({
 
   return (
     <div className="max-w-measure">
-      <h3 className="text-[20px] font-semibold leading-tight tracking-[-0.018em] text-foreground">
+      <h3 className="text-subheading font-semibold text-foreground">
         {summary.headline}
       </h3>
       <div className="mt-4 space-y-3.5 text-lede text-foreground/85">

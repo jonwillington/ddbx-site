@@ -63,7 +63,7 @@ export function HeroOutcomeBar({ deal }: { deal: HeroDeal }) {
         decimals={0}
         value={pct}
       />
-      <span className="text-[14px] leading-tight text-foreground/65">
+      <span className="text-body leading-tight text-foreground/65">
         in {formatHold(days)} {deal.sinceLabel ?? "since the alert"}
       </span>
     </div>
@@ -89,7 +89,7 @@ export function HeroOutcomeLine({
   return (
     <p
       key={tick}
-      className={`hol flex items-center justify-center gap-1.5 text-[15px] leading-none ${className}`}
+      className={`hol flex items-center justify-center gap-1.5 text-label leading-none ${className}`}
       style={{ "--hol-delay": `${POST_MS}ms` } as React.CSSProperties}
     >
       <style>{`

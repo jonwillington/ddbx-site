@@ -519,7 +519,7 @@ export default function McpPage() {
                 phone the day it files.
               </p>
               <a
-                className={`mt-7 inline-flex items-center gap-2.5 ${BUTTON_RADIUS} ${INK_FILL} px-6 py-3.5 text-[15px] font-semibold transition-colors`}
+                className={`mt-7 inline-flex items-center gap-2.5 ${BUTTON_RADIUS} ${INK_FILL} px-6 py-3.5 text-label font-semibold transition-colors`}
                 data-ga-event="cta_mcp_band_app"
                 data-ga-label="MCP closing band"
                 rel="noopener noreferrer"
@@ -542,7 +542,7 @@ export default function McpPage() {
                 building and we will come back with scope and a number.
               </p>
               <button
-                className={`mt-7 ${BUTTON_RADIUS} bg-ink/[0.07] px-6 py-3.5 text-[15px] font-semibold text-ink transition-colors hover:bg-ink/[0.12]`}
+                className={`mt-7 ${BUTTON_RADIUS} bg-ink/[0.07] px-6 py-3.5 text-label font-semibold text-ink transition-colors hover:bg-ink/[0.12]`}
                 data-ga-event="cta_mcp_band_request"
                 data-ga-label="MCP closing band"
                 type="button"

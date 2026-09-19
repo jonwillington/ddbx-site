@@ -262,7 +262,7 @@ function MarketCell({ view }: { view: CellView }) {
         </span>
       </div>
       <div
-        className={`mt-2 text-[26px] font-semibold leading-none tabular-nums tracking-tight ${
+        className={`mt-2 text-figure font-semibold tabular-nums ${
           live ? "text-foreground" : "text-foreground/75"
         }`}
       >

@@ -205,7 +205,7 @@ function VerdictEntry({
           <span className="flex items-start gap-3.5">
             <CompanyLogo size={44} ticker={filing.ticker} />
             <span className="min-w-0">
-              <span className="block text-[19px] font-semibold leading-tight tracking-[-0.015em] text-foreground underline-offset-4 group-hover:underline sm:text-[20px]">
+              <span className="block text-subheading font-semibold text-foreground underline-offset-4 group-hover:underline">
                 {filing.name}
                 {filing.role ? (
                   <span className="font-normal text-foreground/60">

@@ -317,7 +317,7 @@ export function MoreCompanies({
                         strokeWidth={2.2}
                       />
                     ) : null}
-                    <span className="truncate text-[21px] font-semibold tabular-nums tracking-[-0.02em] text-foreground">
+                    <span className="truncate text-subheading font-semibold tabular-nums text-foreground">
                       {hasValue
                         ? moneyShort(
                             valueOf(c),

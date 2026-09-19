@@ -72,7 +72,7 @@ export function Row({
       <div className="flex gap-4">
         {glyph ? <span className="mt-1 shrink-0">{glyph}</span> : null}
         <div className="min-w-0">
-          <h3 className="text-balance text-[21px] font-semibold leading-[1.15] tracking-[-0.022em] text-foreground sm:text-[24px]">
+          <h3 className="text-balance text-subheading font-semibold text-foreground">
             {title}
           </h3>
           {kicker ? (

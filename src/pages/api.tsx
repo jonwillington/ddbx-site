@@ -482,7 +482,7 @@ export default function ApiPage() {
                 </p>
                 <div className="mt-8 flex flex-wrap items-center gap-3">
                   <button
-                    className={`${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink transition-colors hover:bg-white/90`}
+                    className={`${BUTTON_RADIUS} bg-white px-6 py-3.5 text-label font-semibold text-ink transition-colors hover:bg-white/90`}
                     data-ga-event="cta_api_hero_request"
                     data-ga-label="API hero"
                     type="button"
@@ -491,7 +491,7 @@ export default function ApiPage() {
                     Request access
                   </button>
                   <a
-                    className={`${BUTTON_RADIUS} ${BUTTON_GHOST} px-6 py-3.5 text-[15px] font-semibold transition-colors`}
+                    className={`${BUTTON_RADIUS} ${BUTTON_GHOST} px-6 py-3.5 text-label font-semibold transition-colors`}
                     href="#reference"
                   >
                     Read the reference
@@ -691,7 +691,7 @@ export default function ApiPage() {
                 </p>
               </div>
               <Link
-                className={`${BUTTON_RADIUS} ${BUTTON_GHOST} shrink-0 px-6 py-3.5 text-center text-[15px] font-semibold transition-colors`}
+                className={`${BUTTON_RADIUS} ${BUTTON_GHOST} shrink-0 px-6 py-3.5 text-center text-label font-semibold transition-colors`}
                 data-ga-event="cta_api_to_mcp"
                 data-ga-label="API page MCP strip"
                 to="/mcp"
@@ -749,7 +749,7 @@ export default function ApiPage() {
             </p>
 
             <button
-              className={`${BUTTON_RADIUS} ${INK_FILL} mt-9 px-8 py-4 text-[15px] font-semibold transition-colors`}
+              className={`${BUTTON_RADIUS} ${INK_FILL} mt-9 px-8 py-4 text-label font-semibold transition-colors`}
               data-ga-event="cta_api_band_request"
               data-ga-label="API closing band"
               type="button"

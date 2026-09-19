@@ -300,7 +300,7 @@ function FeaturedRow({
 
           <span className="min-w-0">
             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="min-w-0 truncate text-title text-foreground lg:text-[20px]">
+              <span className="min-w-0 truncate text-title text-foreground lg:text-subheading">
                 {cleanCompanyName(item.company) || ticker}
               </span>
               <TickerPill ticker={ticker} />

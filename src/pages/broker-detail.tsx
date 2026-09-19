@@ -720,7 +720,7 @@ function ReviewBody({
       </div>
 
       {b.summary ? (
-        <p className="mt-9 max-w-measure text-[19px] leading-[1.55] tracking-[-0.008em] text-foreground/90 sm:text-[21px]">
+        <p className="mt-9 max-w-measure text-subheading leading-normal text-foreground/90">
           {b.summary}
         </p>
       ) : null}
@@ -998,7 +998,7 @@ function Offer({ broker: b }: { broker: BrokerOffer }) {
       className={`grid gap-x-10 gap-y-5 border-y border-rule py-7 sm:py-9 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]`}
     >
       <div>
-        <p className="flex items-start gap-3 text-balance text-[21px] font-semibold leading-[1.2] tracking-[-0.022em] text-foreground sm:text-[24px]">
+        <p className="flex items-start gap-3 text-balance text-subheading font-semibold text-foreground">
           <GiftIcon className="mt-1 h-5 w-5 shrink-0 text-brand-brown dark:text-brand-tan" />
           <span>{b.offer_headline}</span>
         </p>

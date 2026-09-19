@@ -83,8 +83,10 @@ export function StatTiles({
           >
             <dt className={eyebrow("quiet")}>{s.label}</dt>
             <dd
-              className={`mt-2 font-semibold leading-none tabular-nums tracking-[-0.02em] ${
-                s.primary ? "text-[32px]" : "text-[26px]"
+              className={`mt-2 font-semibold tabular-nums ${
+                s.primary
+                  ? "text-[32px] leading-none tracking-[-0.02em]"
+                  : "text-figure"
               } ${
                 s.tone === "positive"
                   ? "text-positive"

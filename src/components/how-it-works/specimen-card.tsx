@@ -45,7 +45,7 @@ export function SpecimenStrip({ specimen }: { specimen: ExampleFiling }) {
             <SpecimenMark onStage />
             The worked example · {rating}
           </p>
-          <p className="mt-2 text-[19px] font-medium leading-[1.35] tracking-[-0.01em] text-white sm:text-[21px]">
+          <p className="mt-2 text-subheading font-medium text-white">
             {specimen.name}
             {specimen.role ? (
               <span className="text-white/60">, {specimen.role}</span>

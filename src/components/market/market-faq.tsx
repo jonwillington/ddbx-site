@@ -42,7 +42,7 @@ export function MarketFaq({
           <p className="eyebrow text-muted">
             {copy.kicker}
           </p>
-          <h2 className="mt-2 text-[20px] font-semibold leading-[1.2] tracking-[-0.015em] text-foreground sm:text-[22px]">
+          <h2 className="mt-2 text-subheading font-semibold text-foreground">
             {copy.title}
           </h2>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">

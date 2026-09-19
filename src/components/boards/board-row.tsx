@@ -593,7 +593,7 @@ export function BoardRow({
                   down, which is the whole point of the aligned columns. */}
               {name != null ? (
                 <span
-                  className={`${wrapName ? "" : "line-clamp-2 "}min-w-0 text-title text-foreground xl:text-[20px]`}
+                  className={`${wrapName ? "" : "line-clamp-2 "}min-w-0 text-title text-foreground xl:text-subheading`}
                 >
                   {name}
                 </span>
