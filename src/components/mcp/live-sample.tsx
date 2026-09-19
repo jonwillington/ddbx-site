@@ -5,6 +5,7 @@ import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { GB, NL, SE, US } from "country-flag-icons/react/3x2";
 
 import { Terminal } from "@/components/api/terminal";
+import { lastMarketId } from "@/lib/last-market";
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { Skeleton } from "@/components/skeleton";
@@ -136,7 +137,12 @@ function DealingRow({ d }: { d: McpDealing }) {
 }
 
 export function LiveSample() {
-  const [market, setMarket] = useState<McpMarket>("UK");
+  // Opens on the market the reader came from (lib/last-market), matched on
+  // the tab's own id ("usg" → "USG"); anything else starts on the UK.
+  const [market, setMarket] = useState<McpMarket>(
+    () =>
+      MARKETS.find((m) => m.id === lastMarketId()?.toUpperCase())?.id ?? "UK",
+  );
   const [states, setStates] = useState<Partial<Record<McpMarket, State>>>({});
   const [attempt, setAttempt] = useState(0);
 

@@ -6,6 +6,8 @@ import { GB, NL, SE, US } from "country-flag-icons/react/3x2";
 
 import { JsonBlock, Terminal, elide, gain, inline, loss } from "./terminal";
 
+import { lastMarketId } from "@/lib/last-market";
+
 /** The hero's response panel, switchable by feed.
  *
  *  Three problems with the static version this replaces, all the same problem:
@@ -186,7 +188,13 @@ const FEEDS: Feed[] = [
 ];
 
 export function ResponseExplorer() {
-  const [active, setActive] = useState(0);
+  // Opens on the feed of the market the reader came from (lib/last-market).
+  const [active, setActive] = useState(() =>
+    Math.max(
+      0,
+      FEEDS.findIndex((f) => f.id === lastMarketId()),
+    ),
+  );
   const feed = FEEDS[active];
 
   return (

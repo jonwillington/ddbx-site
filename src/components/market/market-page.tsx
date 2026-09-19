@@ -71,6 +71,7 @@ import {
 import { MonthUnlockModal } from "@/components/discretion/month-unlock-modal";
 import { MonthlyRecapModal } from "@/components/monthly/monthly-recap-modal";
 import { appHrefForMarket, appStoreUrlForMarketId } from "@/lib/app-store";
+import { rememberMarket } from "@/lib/last-market";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import { buildChannelPerformance } from "@/lib/performance/channel-summary";
 import { isSignalDealing } from "@/lib/markets/types";
@@ -209,6 +210,9 @@ export function MarketPage<W>({
   // mode hook (also gives us cross-tab sync). Replaces the older
   // per-market `useMetricMode`.
   const metric = useDashboardMetricMode(config.id);
+  // Remembered for /api and /mcp, whose per-market previews open on the
+  // market the reader came from (lib/last-market).
+  useEffect(() => rememberMarket(config.id), [config.id]);
   const chartMode: ChartMode = useMemo(
     () => ({ axis: metric.comparison, anchor: metric.anchor }),
     [metric.comparison, metric.anchor],
