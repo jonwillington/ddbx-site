@@ -22,8 +22,8 @@
  *  object already translated out of the dark palette. So the spec comes from
  *  there rather than being invented again:
  *
- *    card    rounded-2xl, hairline border, bg-white/70 (surface-secondary/40 dark)
- *    label   font-mono 11px semibold uppercase tracking-[0.16em]
+ *    card    panel({ variant: "inset", size: "compact" })
+ *    label   the `eyebrow` utility
  *    figure  26px (32px primary), semibold, leading-none, tabular-nums
  *
  *  The mono uppercase label is the load-bearing part. It is the same eyebrow
@@ -32,6 +32,11 @@
  *  someone set in the body face.
  */
 import type { ReactNode } from "react";
+
+import { eyebrow } from "@/components/ui/eyebrow";
+import { panel } from "@/components/ui/panel";
+
+const TILE = panel({ variant: "inset", size: "compact" });
 
 export interface StatTile {
   label: string;
@@ -74,11 +79,9 @@ export function StatTiles({
             // rather than a bare tint: the tint alone disappeared against the
             // page on the light palette, and the border is what makes a row of
             // these read as a set of objects rather than as banding.
-            className="h-full rounded-2xl border border-hairline bg-white/70 px-4 py-3.5 dark:border-border/60 dark:bg-surface-secondary/40"
+            className={`h-full ${TILE}`}
           >
-            <dt className="font-mono text-[11px] font-semibold uppercase leading-tight tracking-[0.16em] text-foreground/45">
-              {s.label}
-            </dt>
+            <dt className={eyebrow("quiet")}>{s.label}</dt>
             <dd
               className={`mt-2 font-semibold leading-none tabular-nums tracking-[-0.02em] ${
                 s.primary ? "text-[32px]" : "text-[26px]"
@@ -96,9 +99,7 @@ export function StatTiles({
         ))}
       </dl>
       {note ? (
-        <p className="mt-3 text-[12.5px] leading-[1.45] text-foreground/50">
-          {note}
-        </p>
+        <p className="mt-3 text-small text-foreground/50">{note}</p>
       ) : null}
     </div>
   );

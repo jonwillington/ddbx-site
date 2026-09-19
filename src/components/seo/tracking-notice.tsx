@@ -40,9 +40,7 @@ export function TrackingNotice({
   marketId?: string | null;
 }) {
   return (
-    <p
-      className={`text-[12.5px] leading-[1.5] text-foreground/45 ${className}`}
-    >
+    <p className={`text-small text-foreground/45 ${className}`}>
       {trackingNotice(marketId)}
     </p>
   );

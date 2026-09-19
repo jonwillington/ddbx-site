@@ -115,7 +115,7 @@ export function RelatedCards({
         return (
           <li key={item.to} className="min-w-0">
             <Link
-              className="group flex h-full items-start gap-3 rounded-xl border border-hairline bg-sheet px-4 py-3.5 outline-none transition-colors hover:border-brand-brown/25 hover:bg-white focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-white/[0.07] dark:bg-surface dark:hover:border-white/[0.16] dark:hover:bg-surface-secondary"
+              className="group flex h-full items-start gap-3 rounded-card border border-rule bg-sheet px-4 py-3.5 outline-none transition-colors hover:border-brand-brown/25 hover:bg-white focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:bg-surface dark:hover:border-white/16 dark:hover:bg-surface-secondary"
               to={item.to}
             >
               {/* The mark, in a tinted well so it reads as a fixture of the
@@ -128,18 +128,18 @@ export function RelatedCards({
               ) : (
                 <span
                   aria-hidden
-                  className="mt-px inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-brown/[0.07] text-brand-brown dark:bg-brand-tan/[0.1] dark:text-brand-tan"
+                  className="mt-px inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-brand-brown/[0.07] text-brand-brown dark:bg-brand-tan/[0.1] dark:text-brand-tan"
                 >
                   <Icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
                 </span>
               )}
 
               <span className="min-w-0 flex-1">
-                <span className="block text-[14px] font-medium leading-[1.35] text-foreground">
+                <span className="block text-body font-medium text-foreground">
                   {item.title}
                 </span>
                 {item.description ? (
-                  <span className="mt-1 line-clamp-2 block text-[12px] leading-[1.5] text-foreground/45">
+                  <span className="mt-1 line-clamp-2 block text-small text-foreground/45">
                     {item.description}
                   </span>
                 ) : null}

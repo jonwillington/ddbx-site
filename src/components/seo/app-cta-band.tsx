@@ -108,7 +108,7 @@ export function AppCtaBand({
 
   return (
     <section
-      className={`mt-16 overflow-hidden rounded-[28px] bg-ink text-white dark:bg-[oklch(17%_0.02_55)] ${className}`}
+      className={`mt-16 overflow-hidden rounded-stage bg-ink text-white dark:bg-[oklch(17%_0.02_55)] ${className}`}
     >
       <div className="px-6 py-14 sm:px-10 md:px-14 md:py-16">
         <div
@@ -117,19 +117,15 @@ export function AppCtaBand({
           }
         >
           <div>
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
-              {kicker}
-            </p>
+            <p className="eyebrow text-brand-amber">{kicker}</p>
             {/* Sized for a contained panel, not a full-bleed band: the old
                 40px was set against the page's full width and reads as a
                 headline shouting in a small room once the panel is held
-                inside the column. Same scale as CompanyAppPitch's h2. */}
-            <p className="mt-3 text-balance text-[30px] font-semibold leading-[1.05] tracking-[-0.028em] sm:text-[38px] lg:text-[42px]">
+                inside the column. The document display step (34/44). */}
+            <p className="mt-3 text-balance font-semibold display-doc">
               {headline}
             </p>
-            <p className="mt-4 max-w-[36em] text-[16px] leading-[1.6] text-white/65">
-              {body}
-            </p>
+            <p className="mt-4 max-w-[36em] text-lede text-white/65">{body}</p>
 
             <div className="mt-8 flex flex-col items-start gap-2.5">
               {/* Light fill: BUTTON_FILLED is near-black, which is the band. */}
@@ -141,7 +137,7 @@ export function AppCtaBand({
                 marketId={marketId}
                 platform={platform}
               />
-              <p className="text-[12.5px] text-white/50">{note}</p>
+              <p className="text-small text-white/50">{note}</p>
             </div>
           </div>
 
@@ -156,7 +152,7 @@ export function AppCtaBand({
             // Desktop only, unchanged: on mobile the stacked column would put
             // the photo BELOW the store buttons — a picture of the app under
             // the button that installs it, pushing the fold for nothing.
-            <div className="hidden overflow-hidden rounded-3xl border border-white/[0.09] bg-black/20 lg:block">
+            <div className="hidden overflow-hidden rounded-card border border-rule-stage bg-black/20 lg:block">
               <img
                 alt={`The ddbx ${marketId.toUpperCase()} app showing the week's insider buys`}
                 className="aspect-[5/4] h-full w-full object-cover"

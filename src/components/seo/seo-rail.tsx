@@ -102,21 +102,21 @@ function AppPromoAside({
   return (
     <aside className="page-rail fixed bottom-0 right-0 top-0 z-20 hidden w-80 flex-col border-l border-hairline bg-sheet dark:border-separator dark:bg-surface lg:flex">
       <div className="flex h-16 shrink-0 items-center border-b border-hairline px-4 dark:border-separator">
-        <h2 className="text-sm font-semibold text-foreground/80">
+        <h2 className="text-body font-semibold text-foreground/80">
           Get the app
         </h2>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-        <div className="rounded-xl border border-hairline bg-background/40 p-4 dark:border-separator">
-          <p className="text-[13px] font-semibold text-foreground">
+        <div className="rounded-card border border-rule bg-background/40 p-4">
+          <p className="text-small font-semibold text-foreground">
             Every filing, the day it files
           </p>
           {/* Deliberately NOT the AppCtaBand's claim: on short pages the rail
               and the terminal band sit a scroll apart, and the same sentence
               twice reads as templating. The band sells the live feed; this
               card sells completeness. */}
-          <p className="mt-2 text-xs leading-[1.6] text-foreground/55">
+          <p className="mt-2 text-caption text-foreground/55">
             The site shows a slice. The app is the whole record, every
             disclosure, every rating, searchable back to the start.
           </p>
@@ -128,7 +128,7 @@ function AppPromoAside({
             gaLabel={placement}
             marketId={marketId}
           />
-          <p className="mt-2.5 text-[11px] text-foreground/45">
+          <p className="mt-2.5 text-caption text-foreground/45">
             Free for 7 days, cancel any time.
           </p>
         </div>
@@ -137,7 +137,7 @@ function AppPromoAside({
           {links.map(([label, href]) => (
             <li key={href}>
               <Link
-                className="block rounded-lg px-2 py-2 text-[13px] font-medium text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.05]"
+                className="block rounded-control px-2 py-2 text-small font-medium text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.05]"
                 to={href}
               >
                 {label}

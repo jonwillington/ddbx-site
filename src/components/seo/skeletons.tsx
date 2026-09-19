@@ -13,8 +13,6 @@
  */
 import { Skeleton } from "@/components/skeleton";
 
-const RULE = "border-hairline dark:border-separator";
-
 export type SeoSkeletonVariant =
   | "ruled-list" // sectors index, reports index, learn examples, sector's lists
   | "ranked-board" // biggest-buys: rank gutter + logo + lines + meter + value
@@ -88,9 +86,9 @@ export function SeoSkeleton({
       <span className="sr-only">Loading…</span>
 
       {variant === "ruled-list" ? (
-        <ul className={`mt-10 border-t ${RULE}`}>
+        <ul className={`mt-10 border-t border-rule`}>
           {keys.map((i) => (
-            <li key={i} className={`border-b ${RULE} py-4`}>
+            <li key={i} className={`border-b border-rule py-4`}>
               <div className="flex items-start justify-between gap-6">
                 <div className="min-w-0 flex-1">
                   <Skeleton className="h-[16px] w-2/5 max-w-[220px]" />
@@ -105,9 +103,9 @@ export function SeoSkeleton({
       ) : null}
 
       {variant === "ranked-board" ? (
-        <ol className={`mt-8 border-t ${RULE}`}>
+        <ol className={`mt-8 border-t border-rule`}>
           {keys.map((i) => (
-            <li key={i} className={`border-b ${RULE} py-3.5`}>
+            <li key={i} className={`border-b border-rule py-3.5`}>
               <div
                 className={`flex items-start gap-3 ${board ? "sm:gap-4" : ""}`}
               >
@@ -159,7 +157,7 @@ export function SeoSkeleton({
       {variant === "sheet-stack" ? (
         <div className="mt-8 space-y-3">
           {keys.map((i) => (
-            <Skeleton key={i} className="w-full rounded-2xl" h={116} />
+            <Skeleton key={i} className="w-full rounded-card" h={116} />
           ))}
         </div>
       ) : null}
@@ -169,7 +167,7 @@ export function SeoSkeleton({
           {keys.map((i) => (
             <div
               key={i}
-              className={`grid gap-x-10 gap-y-4 border-t ${RULE} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
+              className={`grid gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9`}
             >
               <Skeleton className="h-[17px] w-24" />
               <div className="min-w-0">
@@ -193,7 +191,7 @@ export function SeoSkeleton({
           }`}
         >
           {keys.map((i) => (
-            <Skeleton key={i} className="w-full rounded-xl" h={64} />
+            <Skeleton key={i} className="w-full rounded-card" h={64} />
           ))}
         </div>
       ) : null}

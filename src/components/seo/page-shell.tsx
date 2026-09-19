@@ -30,6 +30,7 @@ import { Link } from "react-router-dom";
 
 import { useSectionEyebrow } from "@/lib/section";
 import { AppCtaBand, type CtaMedia } from "@/components/seo/app-cta-band";
+import { eyebrow as eyebrowClass } from "@/components/ui/eyebrow";
 
 export interface ShellCrumb {
   /** Usually a string; a loading page may pass a small <Skeleton /> so the
@@ -47,6 +48,20 @@ export interface ShellCta {
   media?: CtaMedia;
 }
 
+/** A page whose data failed to arrive — distinct from one whose data is
+ *  empty (static-page rules: "empty and failed are different states"). */
+export interface ShellError {
+  /** What didn't load, finishing "Couldn’t load …": "this filing",
+   *  "the platform data". */
+  what: string;
+  /** Replaces the default standfirst. Say whose fault it is and what the
+   *  reader can do next; the default says both. */
+  detail?: ReactNode;
+}
+
+const ERROR_DETAIL =
+  "That’s a fault at our end rather than a missing record. Try a refresh in a moment, or browse from here.";
+
 export function SeoPageShell({
   hero,
   back,
@@ -63,6 +78,7 @@ export function SeoPageShell({
   titleInHero = false,
   loading = false,
   skeleton,
+  error,
   children,
 }: {
   /** An object that comes BEFORE the page's own furniture — above the back
@@ -98,8 +114,8 @@ export function SeoPageShell({
   crumbs?: ShellCrumb[];
   title: ReactNode;
   standfirst?: ReactNode;
-  /** "body" is the guide-page 14px grey; "lede" is the document standfirst
-   *  (16.5px/85) for pages that open with a stated thesis. */
+  /** "body" is the guide-page 14px grey (`text-body`); "lede" is the
+   *  document standfirst (`text-lede`) for pages that open with a thesis. */
   standfirstSize?: "body" | "lede";
   /** TrackingNotice / truncation caveat slot, directly under the standfirst. */
   notice?: ReactNode;
@@ -136,8 +152,29 @@ export function SeoPageShell({
    *  nothing below the fold pre-renders and then jumps. */
   loading?: boolean;
   skeleton?: ReactNode;
+  /** The failed state. When set the shell renders one consistent header —
+   *  h1 "Couldn’t load {what}", a standfirst saying the fault is ours — in
+   *  place of `title` / `standfirst`, and drops everything that would
+   *  describe a record it doesn't have: `hero`, `stage`, `notice`, `share`
+   *  and the terminal band. `children` still render, so pass the page's
+   *  "Browse instead" section (a `SeoSection` of `RelatedCards`) as the way
+   *  out. Never use it for an empty record: that page says "Not enough data
+   *  yet" and when there will be. */
+  error?: ShellError | null;
   children: ReactNode;
 }) {
+  if (error) {
+    title = `Couldn’t load ${error.what}`;
+    standfirst = error.detail ?? ERROR_DETAIL;
+    hero = undefined;
+    stage = undefined;
+    notice = undefined;
+    share = undefined;
+    cta = false;
+    titleInHero = false;
+    loading = false;
+  }
+
   // The skeleton outlives `loading` by the length of its fade so the two can
   // overlap. Without this the swap is a cut: skeleton unmounts, content mounts
   // mid-fade, and the reader gets an empty frame between them.
@@ -200,7 +237,7 @@ export function SeoPageShell({
           {crumbs && crumbs.length > 0 ? (
             <nav
               aria-label="Breadcrumb"
-              className={`text-[11px] leading-[1.5] text-foreground/50 ${
+              className={`text-caption text-foreground/50 ${
                 back ? "mt-2" : hero ? "mt-8" : "pt-2"
               }`}
             >
@@ -225,7 +262,7 @@ export function SeoPageShell({
           {titleInHero ? null : (
             <>
               <p
-                className={`font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan ${
+                className={`${eyebrowClass("brand")} ${
                   (crumbs && crumbs.length > 0) || back
                     ? "mt-4"
                     : hero
@@ -236,12 +273,10 @@ export function SeoPageShell({
                 {sectionEyebrow}
               </p>
 
-              {/* Levelled off /api's hero h1 (34/44/58). Stepped to 34/44 for the
-          860px document measure: the top rung is for a full-width marketing
-          hero, not a column with a rail beside it. Supersedes the 30/38
-          "guide page" species in the 2026-07-27 type conventions — the
-          record-page species (28/34, company and broker detail) is unchanged. */}
-              <h1 className="mt-2 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-foreground sm:text-[44px]">
+              {/* The document h1 species, `display-doc` (34/44, weight 600) —
+                  static-page rules §5. Stage pages carry `display-stage`
+                  inside their own hero instead. */}
+              <h1 className="mt-2 text-balance font-semibold text-foreground display-doc">
                 {title}
               </h1>
 
@@ -249,8 +284,8 @@ export function SeoPageShell({
                 <p
                   className={
                     standfirstSize === "lede"
-                      ? "mt-5 max-w-[58ch] text-[16.5px] leading-[1.55] tracking-[-0.006em] text-foreground/75"
-                      : "mt-4 max-w-[62ch] text-[14px] leading-[1.65] text-foreground/70"
+                      ? "mt-5 max-w-[58ch] text-lede text-foreground/75"
+                      : "mt-4 max-w-measure text-body text-foreground/70"
                   }
                 >
                   {standfirst}
@@ -259,7 +294,7 @@ export function SeoPageShell({
 
               {notice ? (
                 <div
-                  className={width === "wide" ? "mt-3" : "mt-3 max-w-[62ch]"}
+                  className={width === "wide" ? "mt-3" : "mt-3 max-w-measure"}
                 >
                   {notice}
                 </div>

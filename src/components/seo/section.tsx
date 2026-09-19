@@ -7,7 +7,7 @@
  *  why their headings are nowhere near the same size and neither is wrong:
  *
  *    "stacked" mirrors the page's SectionHeader — a ruled opener with a mono
- *    counter and a DISPLAY-scale title (34/46/58 there, 26/34 here for the
+ *    counter and a DISPLAY-scale title (display-doc 34/44 there, text-heading 26/34 here for the
  *    narrower document measure).
  *    "rail" mirrors the page's reference section, which composes at
  *    `sm:grid-cols-[10rem_minmax(0,1fr)]` with a 17px h3 in the rail. A
@@ -18,8 +18,9 @@
  *  system answering two different column widths.
  *
  *  Two variants, one grammar:
- *  - "stacked" — ruled section on a document page: `border-t pt-7 mt-10`,
- *    h2 at 17px, optional aside line under the title. What the SEO pages'
+ *  - "stacked" — ruled section on a document page: `border-t pt-5 mt-12`
+ *    (the section tier), h2 at `text-heading`, optional aside under the
+ *    title, optional `more` link after the content. What the SEO pages'
  *    private Sections already were, so migration is mechanical.
  *  - "rail" — the broker/company two-column composition: heading in a 10rem
  *    left rail, content at measure on the right. Methodology-as-document is
@@ -35,11 +36,40 @@
  */
 import type { ReactNode } from "react";
 
-const RULE = "border-hairline dark:border-separator";
+import { ArrowRightIcon } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
 
 /** The house eyebrow spec, here carrying a figure rather than a word. */
-const COUNTER =
-  "shrink-0 font-mono text-[11px] font-semibold tabular-nums tracking-[0.16em] text-foreground/35";
+const COUNTER = "eyebrow shrink-0 tabular-nums text-foreground/35";
+
+/** The "see all" link under a section's content — the company page's
+ *  Congress link, which was the commonest of the six hand-rolled styles. */
+export const SECTION_MORE =
+  "mt-4 inline-flex items-center gap-1.5 text-small font-medium text-foreground underline underline-offset-4 transition-colors hover:text-foreground/70";
+
+export interface SectionMore {
+  to: string;
+  label: ReactNode;
+  /** GA attrs pass through to the link. */
+  gaEvent?: string;
+  gaLabel?: string;
+}
+
+function MoreLink({ more }: { more: SectionMore }) {
+  return (
+    <div>
+      <Link
+        className={SECTION_MORE}
+        data-ga-event={more.gaEvent}
+        data-ga-label={more.gaLabel}
+        to={more.to}
+      >
+        {more.label}
+        <ArrowRightIcon aria-hidden className="h-3.5 w-3.5" />
+      </Link>
+    </div>
+  );
+}
 
 export function SeoSection({
   id,
@@ -48,6 +78,7 @@ export function SeoSection({
   index,
   total,
   variant = "stacked",
+  more,
   className = "",
   children,
 }: {
@@ -61,6 +92,9 @@ export function SeoSection({
   index?: number;
   total?: number;
   variant?: "stacked" | "rail";
+  /** A "see all" link after the content: `{ to, label }`. One style for the
+   *  family rather than one per page. */
+  more?: SectionMore;
   className?: string;
   children: ReactNode;
 }) {
@@ -74,7 +108,7 @@ export function SeoSection({
   if (variant === "rail") {
     return (
       <section
-        className={`grid scroll-mt-24 shell:xl:scroll-mt-[76px]! gap-x-10 gap-y-4 border-t ${RULE} py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9 ${className}`}
+        className={`grid scroll-mt-24 shell:xl:scroll-mt-[76px]! gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:py-9 ${className}`}
         id={id}
       >
         <div>
@@ -82,12 +116,13 @@ export function SeoSection({
               it: the left column is 10rem wide, and a heading and a figure
               competing for that measure wraps the heading every time. */}
           {counter ? <div className="mb-2">{counter}</div> : null}
-          <h2 className="text-[17px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground">
-            {title}
-          </h2>
+          <h2 className="text-title text-foreground">{title}</h2>
           {aside ? <div className="mt-3">{aside}</div> : null}
         </div>
-        <div className="min-w-0">{children}</div>
+        <div className="min-w-0">
+          {children}
+          {more ? <MoreLink more={more} /> : null}
+        </div>
       </section>
     );
   }
@@ -98,11 +133,11 @@ export function SeoSection({
   // a subheading, in a family whose sections are the page's structure. The
   // /api page's own SectionHeader carries the argument in a comment worth
   // repeating: "a section opener on a page this long has to carry the weight
-  // of a headline, not a subheading". It runs 34/46/58px there.
+  // of a headline, not a subheading". It runs at display-doc (34/44) there.
   //
   // Matched here in structure and stepped down in scale, because the target is
   // a different column: /api composes at max-w-6xl full width, these pages at
-  // the 860px document measure with a rail beside them, where 58px would give
+  // the 860px document measure with a rail beside them, where 44px would give
   // a section title four words a line. 26/34px is the same gesture at the
   // measure it has to live in.
   //
@@ -112,25 +147,28 @@ export function SeoSection({
   // against a 34px heading pinned the heading's size to the counter's.
   return (
     <section
-      className={`mt-12 scroll-mt-24 shell:xl:scroll-mt-[76px]! border-t ${RULE} pt-5 ${className}`}
+      className={`mt-12 scroll-mt-24 shell:xl:scroll-mt-[76px]! border-t border-rule pt-5 ${className}`}
       id={id}
     >
       {counter ? <div className="flex justify-end">{counter}</div> : null}
       {/* min-w-0: a flex child defaults to min-width:auto, which would let a
           long unbroken title push past the container instead of wrapping. */}
       <h2
-        className={`min-w-0 max-w-[24ch] text-balance text-[26px] font-semibold leading-[1.08] tracking-[-0.025em] text-foreground sm:text-[34px] ${
+        className={`min-w-0 max-w-[24ch] text-balance text-heading font-semibold text-foreground ${
           counter ? "mt-2" : ""
         }`}
       >
         {title}
       </h2>
       {aside ? (
-        <div className="mt-3 max-w-[54ch] text-[15px] leading-[1.55] text-foreground/60">
+        <div className="mt-3 max-w-[54ch] text-lede text-foreground/60">
           {aside}
         </div>
       ) : null}
-      <div className="mt-6 min-w-0">{children}</div>
+      <div className="mt-6 min-w-0">
+        {children}
+        {more ? <MoreLink more={more} /> : null}
+      </div>
     </section>
   );
 }
