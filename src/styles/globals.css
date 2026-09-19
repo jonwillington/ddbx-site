@@ -178,6 +178,34 @@
   border: 1px solid var(--shell-panel-edge);
   box-shadow: 0 0 0 100vmax var(--shell-frame);
 }
+/* Dark board stages (boards, insider index, story) run edge to edge of the
+   sheet rather than floating inside it as a card on a card. The breakout is
+   the FULL_BLEED trick measured against the sheet: every container between
+   here and the sheet is centred, so half the sheet's width either side of
+   the containing block's centre lands on its edges. Square corners — the
+   frame mask rounds the sheet's own. When the stage opens the page (the
+   SeoPageShell hero slot) it also pulls up over main's pt-8 + the slot's
+   pt-2, so it meets the sheet's top edge. */
+@media (min-width: 1280px) {
+  :root.nav-sidebar .board-stage {
+    --sheet-w: calc(100vw - var(--shell-l) - var(--shell-r));
+    width: var(--sheet-w);
+    max-width: none;
+    margin-left: calc(50% - var(--sheet-w) / 2);
+    margin-right: calc(50% - var(--sheet-w) / 2);
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
+  }
+  :root.nav-sidebar .seo-hero:first-child:has(.board-stage) {
+    margin-top: -40px;
+    padding-top: 0;
+  }
+  :root.nav-sidebar .seo-hero:first-child .board-stage {
+    border-top: 0;
+  }
+}
 /* Fixed overlays that centre on "the page" centre on the sheet instead. */
 @media (min-width: 1280px) {
   :root.nav-sidebar .shell-center {

@@ -202,7 +202,7 @@ export function SeoPageShell({
     <div className="w-full pb-16">
       <div className={`${leadMeasure} ${headerWrap}`}>
         <div>
-          {hero ? <div className="pt-2">{hero}</div> : null}
+          {hero ? <div className="seo-hero pt-2">{hero}</div> : null}
 
           {back ? <div className={hero ? "mt-8" : "pt-2"}>{back}</div> : null}
 
