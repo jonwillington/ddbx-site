@@ -221,6 +221,7 @@ export function CollapsedDayTeaser<W>({
         <CompanyLogo
           key={t}
           className="ring-2 ring-white dark:ring-surface-secondary"
+          link={false}
           size={avatarSize}
           ticker={t}
         />

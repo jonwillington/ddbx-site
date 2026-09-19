@@ -112,6 +112,7 @@ function FlaggedLogo({ row }: { row: TapeRow }) {
     <span className="relative inline-flex">
       <CompanyLogo
         domain={row.logoDomain}
+        market={row.market}
         monogramText={row.logoTicker ? undefined : row.company}
         size={56}
         ticker={row.logoTicker ?? row.ticker ?? row.company}

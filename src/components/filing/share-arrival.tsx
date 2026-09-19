@@ -82,6 +82,7 @@ export function ShareArrivalCard({
           top padding reserves the overhanging half. */}
       <CompanyLogo
         className="absolute left-1/2 top-0 z-10 -translate-x-1/2 rounded-full border-2 border-white/90 shadow-[0_10px_24px_-8px_rgba(0,0,0,0.45)] dark:border-white/[0.18]"
+        link={false}
         size={56}
         ticker={deal.ticker}
       />

@@ -47,6 +47,7 @@ const COUNTER =
 function parseDate(iso: string | null): Date | null {
   if (!iso) return null;
   const d = new Date(iso.replace(" ", "T"));
+
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
@@ -169,6 +170,7 @@ export default function StoriesPage() {
                             className={
                               n > 0 ? "-ml-3 ring-2 ring-background" : ""
                             }
+                            market={s.market}
                             size={56}
                             ticker={t}
                           />

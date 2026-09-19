@@ -9,6 +9,8 @@
 // functions/company/[key].js mirrors these two functions for the crawler
 // pre-render. If you change the URL shape, change it there too.
 
+import { MARKETS, marketHref } from "./markets/registry";
+
 /** Storage key → URL slug. "MTLN.L" -> "mtln", "FCNCA" -> "fcnca". */
 export function tickerToSlug(key: string): string {
   return String(key ?? "")
@@ -29,6 +31,34 @@ export function slugToKey(slug: string, market: string): string {
 /** Path to a company page on its own market's domain. */
 export function companyPath(key: string): string {
   return `/company/${tickerToSlug(key)}`;
+}
+
+/** Company page for a ticker on a named market, as an href that works from
+ *  whichever domain the reader is on: relative on the market's own domain,
+ *  absolute (https://ddbx.us/company/aapl) when a UK page links a US issuer.
+ *  Null for markets with no company pages (SE, NL, KR, Congress-only), so a
+ *  caller never links a reader into a 404. The market has to be named: SE and
+ *  US tickers are both bare symbols, so the ticker alone cannot tell them
+ *  apart. */
+export function companyHref(
+  key: string,
+  market: string | null | undefined,
+): string | null {
+  if (!key) return null;
+  const m = String(market ?? "").toLowerCase();
+  const id =
+    m === "uk" ? "uk" : m === "us" || m === "usg" || m === "djt" ? "us" : null;
+
+  if (!id) return null;
+  const entry = MARKETS.find((x) => x.id === id);
+
+  if (!entry) return null;
+
+  return marketHref(
+    entry,
+    companyPath(key),
+    typeof window === "undefined" ? undefined : window.location.hostname,
+  );
 }
 
 /** Display name, cleaned of the noise each source appends.

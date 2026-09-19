@@ -616,7 +616,8 @@ export default function CompanyPage() {
           <div className={`min-w-0 px-5 py-6 sm:px-8 sm:py-8 ${C.sheet}`}>
             <header>
               <div className="flex items-start gap-4">
-                <CompanyLogo className="mt-0.5" size={56} ticker={data.key} />
+                <CompanyLogo
+        link={false} className="mt-0.5" size={56} ticker={data.key} />
                 <div className="min-w-0">
                   <h1 className="text-[30px] font-bold leading-[1.05] tracking-[-0.024em] text-foreground sm:text-[40px]">
                     {name}

@@ -97,7 +97,10 @@ export function StoryStage({
       : null,
     ret != null
       ? {
-          k: basis === "today" ? "Since then, today" : "Since then, at publication",
+          k:
+            basis === "today"
+              ? "Since then, today"
+              : "Since then, at publication",
           tone: (ret >= 0 ? "pos" : "neg") as "pos" | "neg",
           v: `${ret >= 0 ? "+" : ""}${ret.toFixed(1)}%`,
         }
@@ -122,7 +125,12 @@ export function StoryStage({
             identity rather than a bullet beside the text, and the headline
             keeps a measure instead of running the full width of the panel:
             a 44px line set across 900px is a banner, not a sentence. */}
-        <CompanyLogo className="mt-5" size={80} ticker={chart.ticker} />
+        <CompanyLogo
+          className="mt-5"
+          market={chart.market}
+          size={80}
+          ticker={chart.ticker}
+        />
 
         <h1 className="mt-5 max-w-[19ch] text-[28px] font-normal leading-[1.12] tracking-[-0.02em] text-white sm:text-[38px] sm:max-w-[17ch] lg:text-[44px]">
           {story.headline}
@@ -137,8 +145,7 @@ export function StoryStage({
         {figures.length > 0 ? <StageFigures items={figures} /> : null}
 
         {/* One control for the whole page: the table below follows it. */}
-        {anchor?.return_pct != null &&
-        anchor?.return_pct_at_publish != null ? (
+        {anchor?.return_pct != null && anchor?.return_pct_at_publish != null ? (
           <div className="mt-6 inline-flex rounded-full border border-white/15 p-0.5 text-[11px]">
             {(
               [
@@ -153,8 +160,8 @@ export function StoryStage({
                     ? "bg-white/15 text-white"
                     : "text-white/55 hover:text-white/80"
                 }`}
-                onClick={() => onBasis(k)}
                 type="button"
+                onClick={() => onBasis(k)}
               >
                 {lbl}
               </button>
