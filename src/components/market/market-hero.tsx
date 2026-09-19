@@ -623,6 +623,10 @@ export function MarketHero({
   // space-y-6 so the filter bar seats straight onto the stage's bottom edge.
   const isXl = useMediaQuery("(min-width: 1280px)");
   const shellStage = NAV_SIDEBAR && isXl;
+  // Below xl (phones, tablets) the shell has no sheet to run edge to edge of,
+  // so the same dark stage is a contained panel instead — rounded, inside the
+  // page gutter, the way the board pages' StagePanel sits on a phone.
+  const panelStage = NAV_SIDEBAR && !isXl;
   // The two-column showcase needs more room when a right drawer is present, so
   // it switches on at `xl` then; otherwise `lg`. Alignment + visibility classes
   // track that same breakpoint so the headline only goes left-aligned once the
@@ -787,7 +791,9 @@ export function MarketHero({
       className={`relative -mt-4 md:mt-0 md:min-h-[58svh] flex flex-col animate-content-in shell:xl:min-h-0! ${
         shellStage
           ? "dark board-stage -mt-8! -mb-6! overflow-hidden text-foreground"
-          : ""
+          : panelStage
+            ? "dark board-stage mt-0! overflow-hidden rounded-[24px] border border-white/10 text-foreground"
+            : ""
       } ${
         appShowcase
           ? hasRightDrawer
@@ -802,7 +808,9 @@ export function MarketHero({
       <HeroLiveGradient tick={radar.tick} />
 
       <div
-        className="relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 py-3 md:py-6 shell:xl:px-8! shell:xl:pt-8! shell:xl:pb-9!"
+        className={`relative z-10 flex-1 flex flex-col px-4 md:px-10 md:py-16 py-3 md:py-6 shell:xl:px-8! shell:xl:pt-8! shell:xl:pb-9! ${
+          panelStage ? "pt-7! pb-8! md:py-12!" : ""
+        }`}
       >
         {appShowcase ? (
           <>
