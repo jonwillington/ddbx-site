@@ -11,15 +11,11 @@ import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { InformationCircleIcon } from "@heroicons/react/20/solid";
 
 import { MarketRowSpark, type SparkBar } from "./market-row-spark";
-import {
-  computeRowMetric,
-  deltaStyle,
-  livePerfValue,
-  shortDate,
-} from "./market-utils";
+import { computeRowMetric, livePerfValue, shortDate } from "./market-utils";
 
 import { CalendarDayChip } from "@/components/calendar-day-chip";
 import { Skeleton } from "@/components/skeleton";
+import { Delta } from "@/components/ui/delta";
 import { CompanyLogo } from "@/components/company-logo";
 import { chip } from "@/components/chip";
 import { BuyStyleChip } from "@/components/buy-style-chip";
@@ -384,7 +380,7 @@ export function MarketRowSkeleton({
         )}
         {!hiddenColumns.has("performance") && (
           <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
-            <Skeleton className="h-5 w-14 rounded-full" />
+            <Skeleton className="h-3 w-12 rounded" />
           </div>
         )}
         {!hiddenColumns.has("comments") && (
@@ -399,30 +395,6 @@ export function MarketRowSkeleton({
         )}
       </div>
     </div>
-  );
-}
-
-export function DeltaBadge({
-  value,
-  suffix = "%",
-}: {
-  value: number;
-  suffix?: string;
-}) {
-  const sign = value >= 0 ? "+" : "";
-  const { bg, text } = deltaStyle(value);
-
-  return (
-    <span
-      className={`${chip("md")} tabular-nums`}
-      // border-current/25 in the hairline picks this up, so the edge tracks
-      // the magnitude-scaled colour without a second computed value.
-      style={{ backgroundColor: bg, color: text }}
-    >
-      {value >= 0 ? "▲" : "▼"} {sign}
-      {value.toFixed(1)}
-      {suffix}
-    </span>
   );
 }
 
@@ -856,12 +828,11 @@ export function MemberClusterRow({
             <span className="text-sm font-semibold tabular-nums">
               {totalValueLabel}
             </span>
-            {aggReturnPct != null && (
-              <DeltaBadge
-                suffix={aggShowAlpha ? "pp" : undefined}
-                value={aggReturnPct}
-              />
-            )}
+            <Delta
+              size="num"
+              suffix={aggShowAlpha ? "pp" : undefined}
+              value={aggReturnPct}
+            />
             <SignalChip />
           </div>
         </div>
@@ -904,7 +875,8 @@ export function MemberClusterRow({
           </div>
           <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
             {aggReturnPct != null ? (
-              <DeltaBadge
+              <Delta
+                size="num"
                 suffix={aggShowAlpha ? "pp" : undefined}
                 value={aggReturnPct}
               />
@@ -1136,12 +1108,12 @@ export function MarketRow<W>({
         {!hiddenColumns.has("performance") && (
           <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-black/[0.06] dark:border-white/[0.06]">
             {metricPct != null ? (
-              <span className="animate-content-in">
-                <DeltaBadge
-                  suffix={showAlpha ? "pp" : undefined}
-                  value={metricPct}
-                />
-              </span>
+              <Delta
+                className="animate-content-in"
+                size="num"
+                suffix={showAlpha ? "pp" : undefined}
+                value={metricPct}
+              />
             ) : noPosteriorData ? (
               <span className="text-[11px] text-muted/60">No data yet</span>
             ) : (

@@ -50,7 +50,7 @@ import {
   useCompanyPriceBars,
 } from "@/components/company/price-chart";
 import { MarketFaq } from "@/components/market/market-faq";
-import { DeltaBadge } from "@/components/market/market-row";
+import { Delta } from "@/components/ui/delta";
 import { NewsSourceLogo } from "@/components/news-source-logo";
 import { RatingBadge } from "@/components/rating-badge";
 import { SeoPageShell } from "@/components/seo/page-shell";
@@ -1168,7 +1168,7 @@ function BuysList({
                   ) : null}
                   {r.alpha != null ? (
                     <span className="inline-flex items-center gap-1.5">
-                      <DeltaBadge suffix="pp" value={r.alpha * 100} />
+                      <Delta ratio size="num" suffix="pp" value={r.alpha} />
                       <span className="text-foreground/45">vs the index</span>
                     </span>
                   ) : null}

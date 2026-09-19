@@ -429,7 +429,7 @@ export interface BoardRowProps {
   /** Widen the money track: /biggest-buys tells a pair and an arrow there,
    *  which is not a thing 5.5rem can hold. */
   moneyPair?: boolean;
-  /** An AlphaBadge or a DeltaBadge. */
+  /** An AlphaBadge or a `<Delta>`. */
   perf?: ReactNode;
   /** The ranked quantity, with the noun under it. */
   figure?: { value: ReactNode; unit?: string; srLabel?: string };

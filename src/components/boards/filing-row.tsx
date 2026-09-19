@@ -12,35 +12,28 @@
  *  callers; the import path is what those pages know it by, so renaming the
  *  module would be a change to four files to fix a filename.
  */
-import { DeltaBadge } from "@/components/market/market-row";
+import { Delta } from "@/components/ui/delta";
 
-/** The alpha badge, for pages that show it inside a denser row.
+/** Alpha in pp, for pages that show it inside a denser row. Plain text since
+ *  2026-09-19 (returns are never chips) — the name is what four callers know
+ *  it by.
  *
  *  Three states, not two. `null` is unmeasured; a figure that rounds to zero at
- *  one decimal place is measured and flat, and it gets neutral type rather than
- *  a badge. DeltaBadge colours and points its arrow on the sign alone, so a
- *  median alpha of +0.04pp renders as a green "▲ +0.0PP" — an arrow claiming a
- *  rise above a number saying there wasn't one. The 2026-08-02 round logged the
- *  same shape ("+0.0% against +0.0%") as a defect on the filing pages.
- *
- *  Contained here rather than fixed in DeltaBadge: that component is on the
- *  market rows, the drawer and /biggest-buys, and changing how every one of
- *  them renders a flat figure is a live-page decision, not a side effect of
- *  adding four pages. Noted as a follow-up in the round-three investigation. */
+ *  one decimal place is measured and flat, and `<Delta>` gives it neutral ink
+ *  and no sign — the 2026-08-02 round logged "+0.0% against +0.0%" as a defect
+ *  on the filing pages. */
 export function AlphaBadge({ ratio }: { ratio: number | null }) {
-  if (ratio == null) {
-    return (
-      <span className="text-[13px] tabular-nums text-foreground/40">n/a</span>
-    );
-  }
-
-  const pp = ratio * 100;
-
-  if (Math.abs(pp) < 0.05) {
-    return (
-      <span className="text-[13px] tabular-nums text-foreground/50">0.0pp</span>
-    );
-  }
-
-  return <DeltaBadge suffix="pp" value={pp} />;
+  return (
+    <Delta
+      ratio
+      fallback={
+        <span className="text-num tabular-nums font-normal text-foreground/40">
+          n/a
+        </span>
+      }
+      size="num"
+      suffix="pp"
+      value={ratio}
+    />
+  );
 }

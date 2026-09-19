@@ -238,8 +238,8 @@ export function MiniPriceChart({
     (typeof document !== "undefined" &&
       document.documentElement.classList.contains("dark"));
 
-  const upText = "text-[#1e6b18] dark:text-[#5cd84a]";
-  const downText = "text-[#8b2020] dark:text-[#e84d4d]";
+  const upText = "text-positive";
+  const downText = "text-negative";
   // Non-open-market trades drop the green/red framing — the price path is
   // real but the director didn't buy at the entry price, so the movement
   // isn't a "win".

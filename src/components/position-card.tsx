@@ -1,3 +1,5 @@
+import { Delta } from "@/components/ui/delta";
+
 /** Market-agnostic price formatting bundle. Each market supplies one of these
  *  so the component can render quote prices, domestic-currency values, and
  *  multiply quote units → domestic units (pence → GBP = 0.01, USD → USD = 1). */
@@ -59,8 +61,8 @@ export function BenchmarkVerdict({
     year: "numeric",
   });
 
-  const upText = "text-[#1e6b18] dark:text-[#5cd84a]";
-  const downText = "text-[#8b2020] dark:text-[#e84d4d]";
+  const upText = "text-positive";
+  const downText = "text-negative";
 
   // A non-open-market entry isn't a price anyone paid, so "outperformed"
   // would be claiming a result that wasn't earned. State the benchmark's
@@ -118,8 +120,8 @@ export function PositionCard({
   originalValue?: number;
   fmt: PriceFormat;
   /** When true, the Now / Return cells render in neutral styling
-   *  instead of buy-green / sell-red, and the Return tile drops its coloured
-   *  fill. Used for non-open-market trades (awards, schemes, placings) where
+   *  instead of buy-green / sell-red, and the Return figure reads "N/A".
+   *  Used for non-open-market trades (awards, schemes, placings) where
    *  the % is real but the green "winner" framing would mislead — the director
    *  didn't buy at this price. Mirrors the iOS PositionCard `isMuted` flag. */
   muted?: boolean;
@@ -154,19 +156,16 @@ export function PositionCard({
   const gainLoss = currentValue - originalValue;
   const gainSign = gainLoss >= 0 ? "+" : "";
 
-  const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${(n * 100).toFixed(1)}%`;
-
-  const upText = "text-[#1e6b18] dark:text-[#5cd84a]";
-  const downText = "text-[#8b2020] dark:text-[#e84d4d]";
-  const upBg = "bg-[#1e6b18]/[0.12] dark:bg-[#5cd84a]/[0.12]";
-  const downBg = "bg-[#8b2020]/[0.12] dark:bg-[#e84d4d]/[0.12]";
-  const neutralBg = "bg-black/[0.04] dark:bg-white/[0.06]";
-
   // For non-open-market trades the % is real but green/red "winner" framing
-  // would mislead — the director didn't buy at this price. Strip the colour
-  // and the Return tile's coloured fill, keeping the numbers in neutral ink.
-  const trendText = muted ? "text-foreground" : up ? upText : downText;
-  const returnBg = muted ? neutralBg : up ? upBg : downBg;
+  // would mislead — the director didn't buy at this price. Strip the colour,
+  // keeping the numbers in neutral ink. The Return tile sits on the same
+  // neutral ground as Entry / Now either way: a return is coloured text, never
+  // a tinted wash (2026-09-19).
+  const trendText = muted
+    ? "text-foreground"
+    : up
+      ? "text-positive"
+      : "text-negative";
 
   return (
     <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
@@ -198,15 +197,15 @@ export function PositionCard({
         )}
       </div>
 
-      <div className={`rounded-xl px-4 py-4 ${returnBg}`}>
+      <div className="rounded-xl bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
         <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
           Return
         </div>
-        <div
-          className={`text-2xl font-bold tabular-nums ${muted ? "text-muted" : trendText}`}
-        >
-          {muted ? "N/A" : fmtPct(stockPct)}
-        </div>
+        {muted ? (
+          <div className="text-2xl font-bold tabular-nums text-muted">N/A</div>
+        ) : (
+          <Delta ratio className="block text-2xl font-bold" value={stockPct} />
+        )}
         {!muted && !hideAmounts && (
           <div className={`text-xs font-medium mt-1 opacity-70 ${trendText}`}>
             {gainSign}

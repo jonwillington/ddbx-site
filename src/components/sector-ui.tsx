@@ -17,7 +17,7 @@ import {
 import { marketForPath } from "@/lib/markets/registry";
 import { SectorIcon } from "@/components/sector-icon";
 import { StatTiles } from "@/components/seo/stat-tiles";
-import { DeltaBadge } from "@/components/market/market-row";
+import { Delta } from "@/components/ui/delta";
 
 export const R = {
   rule: "border-hairline dark:border-separator",
@@ -175,10 +175,12 @@ export function SectorComparisonRow({
             {signedPct(null)}
           </span>
         ) : (
-          <span className="mt-0.5 inline-flex sm:mt-0">
-            {/* DeltaBadge reads PERCENT; medianAlpha is a ratio. */}
-            <DeltaBadge value={row.medianAlpha * 100} />
-          </span>
+          <Delta
+            ratio
+            className="mt-0.5 block font-semibold sm:mt-0"
+            size="lede"
+            value={row.medianAlpha}
+          />
         )}
       </div>
 

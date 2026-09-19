@@ -4,7 +4,7 @@
  *  Korea it is an announcement of a purchase yet to be made, not an alert
  *  about one already filed.
  *
- *  `HeroOutcomeBar` is the desktop card's: a full-width tinted row seated
+ *  `HeroOutcomeBar` is the desktop card's: a full-width hairline row seated
  *  under the chart, so the payoff is the most visible object in the demo
  *  half rather than a footer inside the chart. Keyed by the radar's cycle
  *  like the chart above it, it stamps in the moment the continuation
@@ -25,6 +25,8 @@ import {
 import { formatHold, outcomeOf } from "./hero-deal-data";
 import { DRAW_MS, POST_MS } from "./hero-deal-radar";
 
+import { Delta } from "@/components/ui/delta";
+
 export function HeroOutcomeBar({ deal }: { deal: HeroDeal }) {
   const { pct, days } = outcomeOf(deal);
 
@@ -34,11 +36,9 @@ export function HeroOutcomeBar({ deal }: { deal: HeroDeal }) {
 
   return (
     <div
-      className={`hob flex w-full items-center gap-3 rounded-2xl border px-4 py-3 ${
-        up
-          ? "border-positive/20 bg-positive/[0.08] dark:border-positive/25 dark:bg-positive/10"
-          : "border-hairline bg-sheet/60 dark:border-white/10"
-      }`}
+      // One neutral panel whichever way the deal went: the return is coloured
+      // text, never a tinted wash (returns are plain text, 2026-09-19).
+      className="hob flex w-full items-center gap-3 rounded-2xl border border-hairline bg-sheet/60 px-4 py-3 dark:border-white/10"
       style={{ "--hob-delay": `${DRAW_MS + POST_MS}ms` } as React.CSSProperties}
     >
       <style>{`
@@ -56,16 +56,13 @@ export function HeroOutcomeBar({ deal }: { deal: HeroDeal }) {
       `}</style>
       <Icon
         aria-hidden
-        className={`h-5 w-5 shrink-0 ${up ? "text-positive" : "text-foreground/50"}`}
+        className={`h-5 w-5 shrink-0 ${up ? "text-positive" : "text-negative"}`}
       />
-      <span
-        className={`font-mono text-[22px] font-semibold leading-none tabular-nums ${
-          up ? "text-positive" : "text-foreground/60"
-        }`}
-      >
-        {up ? "+" : ""}
-        {pct}%
-      </span>
+      <Delta
+        className="font-mono text-[22px] font-semibold leading-none"
+        decimals={0}
+        value={pct}
+      />
       <span className="text-[14px] leading-tight text-foreground/65">
         in {formatHold(days)} {deal.sinceLabel ?? "since the alert"}
       </span>

@@ -10,6 +10,7 @@ import { Bars3Icon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { Drawer } from "vaul";
 
 import { Spinner } from "@/components/spinner";
+import { Delta } from "@/components/ui/delta";
 import { api } from "@/lib/api";
 import { StoreGlyph } from "@/components/store-glyph";
 import {
@@ -206,19 +207,11 @@ function NavMenu({
                         <span className="rounded bg-hairline px-1.5 font-mono text-[11px] font-semibold tabular-nums text-foreground/70 dark:bg-surface-secondary">
                           {link.row.ticker}
                         </span>
-                        {link.row.deltaPct != null ? (
-                          <span
-                            className={clsx(
-                              "font-mono text-[12px] font-semibold tabular-nums",
-                              link.row.deltaPct >= 0
-                                ? "text-[#1e6b18] dark:text-[#5cd84a]"
-                                : "text-[#8b2020] dark:text-[#e84d4d]",
-                            )}
-                          >
-                            {link.row.deltaPct >= 0 ? "+" : ""}
-                            {link.row.deltaPct.toFixed(2)}%
-                          </span>
-                        ) : null}
+                        <Delta
+                          className="font-mono text-[12px] font-semibold"
+                          decimals={2}
+                          value={link.row.deltaPct}
+                        />
                         <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-foreground/40">
                           {link.row.date}
                         </span>

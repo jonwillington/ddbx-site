@@ -423,16 +423,18 @@ export function benchmarkReturnPct(
   return ((currentClose - entryClose) / entryClose) * 100;
 }
 
-/** Tone ramp used by the delta badge. Magnitude grows up to ~30% before
- *  saturating. Mirrors the UK dashboard styling so all markets get the same
- *  visual language.
+/** Magnitude-scaled line colour for the row sparklines. Grows up to ~30%
+ *  before saturating.
  *
- *  Each colour is a light-dark() pair (globals.css sets color-scheme per
- *  mode): light mode darkens ink with magnitude, dark mode brightens it.
- *  Both ramps are anchored on the canonical --positive/--negative hues
- *  (145 green / 25 red) so chips and sparklines land on the same green as
- *  the channel rail and teasers instead of a private emerald. */
-export function deltaStyle(delta: number): { bg: string; text: string } {
+ *  A light-dark() pair (globals.css sets color-scheme per mode): light mode
+ *  darkens with magnitude, dark mode brightens. Anchored on the canonical
+ *  --positive/--negative hues (145 green / 25 red).
+ *
+ *  Chart ink only. It used to fill the return badge too (`.bg`); returns are
+ *  plain `<Delta>` text since 2026-09-19, on the flat text-positive /
+ *  text-negative tokens — a figure's colour carries direction, not size, so
+ *  two "+4%" in two tables are the same green. */
+export function deltaStyle(delta: number): { text: string } {
   const abs = Math.abs(delta);
   const t = Math.min(abs / 30, 1);
   const pos = delta >= 0;
@@ -444,17 +446,10 @@ export function deltaStyle(delta: number): { bg: string; text: string } {
   const lDark = pos ? Math.round(72 + t * 8) : Math.round(62 + t * 8);
   const cLight = (0.1 + t * 0.14).toFixed(3);
   const cDark = (0.12 + t * 0.08).toFixed(3);
-  const bgAlphaLight = (0.08 + t * 0.22).toFixed(2);
-  // The bright dark-mode ink needs less wash behind it to register.
-  const bgAlphaDark = (0.1 + t * 0.14).toFixed(2);
-
   const inkLight = `oklch(${lLight}% ${cLight} ${hue})`;
   const inkDark = `oklch(${lDark}% ${cDark} ${hue})`;
 
-  return {
-    bg: `light-dark(oklch(${lLight}% ${cLight} ${hue} / ${bgAlphaLight}), oklch(${lDark}% ${cDark} ${hue} / ${bgAlphaDark}))`,
-    text: `light-dark(${inkLight}, ${inkDark})`,
-  };
+  return { text: `light-dark(${inkLight}, ${inkDark})` };
 }
 
 export function shortDate(iso: string, locale = "en-US"): string {

@@ -13,7 +13,7 @@ import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { moneyDelta, moneyPair } from "../../../shared/leaderboard.js";
 
 import { money } from "@/components/sector-ui";
-import { DeltaBadge } from "@/components/market/market-row";
+import { Delta } from "@/components/ui/delta";
 
 export function toneClass(dir: BoardRow["dir"]): string {
   return dir === "pos"
@@ -82,7 +82,7 @@ export function AlphaCell({ alpha }: { alpha: number | null }) {
           no mark yet
         </span>
       ) : (
-        <DeltaBadge suffix="pp" value={alpha * 100} />
+        <Delta ratio size="num" suffix="pp" value={alpha} />
       )}
     </>
   );

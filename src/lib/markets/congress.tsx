@@ -24,6 +24,7 @@ import { DUMMY_ANALYSIS } from "@/components/discretion/dummy-analysis";
 import { RatingBadge } from "@/components/rating-badge";
 import { BenchmarkVerdict, PositionCard } from "@/components/position-card";
 import { MiniPriceChart } from "@/components/mini-price-chart";
+import { Delta } from "@/components/ui/delta";
 import { useDiscretion } from "@/lib/discretion";
 import { PRICING, PROMO_NOTE, formatPrice } from "@/lib/pricing";
 
@@ -253,14 +254,6 @@ function closeOnOrBefore(
   return best?.close_pence ?? null;
 }
 
-const fmtSignedPct = (n: number, unit: "%" | "pp"): string =>
-  `${n >= 0 ? "+" : "−"}${Math.abs(n).toFixed(1)}${unit}`;
-
-const deltaToneClass = (n: number): string =>
-  n >= 0
-    ? "text-emerald-600 dark:text-emerald-400"
-    : "text-rose-600 dark:text-rose-400";
-
 /** The disclosure-gap story — the single most powerful read for Congress:
  *  PTRs disclose weeks late, so the move BETWEEN the trade and its public
  *  filing is return the public never had a chance to act on. We surface both
@@ -290,25 +283,19 @@ function DisclosureGapCallout({
     <div className="space-y-2 rounded-xl border border-foreground/10 bg-foreground/[0.02] p-3">
       <div className="flex items-center justify-between text-sm">
         <span className="text-foreground/60">Since the trade</span>
-        <span className={`font-semibold tabular-nums ${deltaToneClass(rt)}`}>
-          {fmtSignedPct(rt, "%")}
-        </span>
+        <Delta className="font-semibold" value={rt} />
       </div>
       <div className="flex items-center justify-between text-sm">
         <span className="text-foreground/60">Since public disclosure</span>
-        <span className={`font-semibold tabular-nums ${deltaToneClass(rd)}`}>
-          {fmtSignedPct(rd, "%")}
-        </span>
+        <Delta className="font-semibold" value={rd} />
       </div>
       {lagDays > 1 && (
         <div className="flex items-start gap-1.5 border-t border-foreground/10 pt-2 text-[13px] leading-snug text-foreground/80">
           <BoltIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-500" />
           <span>
-            <span className={`font-semibold ${deltaToneClass(gap)}`}>
-              {fmtSignedPct(gap, "pp")}
-            </span>{" "}
-            of that move happened in the {lagDays} days between the trade and
-            its public disclosure, before anyone could act on it.
+            <Delta className="font-semibold" suffix="pp" value={gap} /> of that
+            move happened in the {lagDays} days between the trade and its public
+            disclosure, before anyone could act on it.
           </span>
         </div>
       )}
@@ -627,9 +614,9 @@ function CongressDetailBody({
                     aria-hidden="true"
                     className={`mt-px shrink-0 font-semibold tabular-nums ${
                       f.sign === "pos"
-                        ? "text-emerald-600 dark:text-emerald-400"
+                        ? "text-positive"
                         : f.sign === "neg"
-                          ? "text-rose-600 dark:text-rose-400"
+                          ? "text-negative"
                           : "text-foreground/35"
                     }`}
                   >

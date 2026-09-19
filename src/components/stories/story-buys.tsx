@@ -6,7 +6,7 @@ import {
   BoardRowHeader,
   BoardRowList,
 } from "@/components/boards/board-row";
-import { DeltaBadge } from "@/components/market/market-row";
+import { Delta } from "@/components/ui/delta";
 import { RatingBadge } from "@/components/rating-badge";
 import { localeFor, moneyShort } from "@/lib/company-format";
 import { resolveStoryLink } from "@/lib/stories";
@@ -97,7 +97,8 @@ export function StoryBuys({
             perf={
               (basis === "today" ? b.return_pct : b.return_pct_at_publish) !=
               null ? (
-                <DeltaBadge
+                <Delta
+                  size="num"
                   value={
                     (basis === "today"
                       ? b.return_pct

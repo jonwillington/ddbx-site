@@ -23,6 +23,7 @@ import { ThemeSwitch } from "@/components/theme-switch";
 import { StoreGlyph } from "@/components/store-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { chip } from "@/components/chip";
+import { Delta } from "@/components/ui/delta";
 import { siteConfig } from "@/config/site";
 import { SearchLauncher } from "@/components/search/search-palette";
 import { ConnectBadges } from "@/components/mcp/connect-badges";
@@ -81,19 +82,10 @@ function SubLink({ link, current }: { link: ResearchLink; current: boolean }) {
               <span className="font-mono text-[11px] font-semibold tabular-nums text-foreground/70">
                 {link.row.ticker}
               </span>
-              {link.row.deltaPct != null && (
-                <span
-                  className={clsx(
-                    "font-mono text-[11px] font-semibold tabular-nums",
-                    link.row.deltaPct >= 0
-                      ? "text-[#1e6b18] dark:text-[#5cd84a]"
-                      : "text-[#8b2020] dark:text-[#e84d4d]",
-                  )}
-                >
-                  {link.row.deltaPct >= 0 ? "+" : ""}
-                  {link.row.deltaPct.toFixed(1)}%
-                </span>
-              )}
+              <Delta
+                className="font-mono text-[11px] font-semibold"
+                value={link.row.deltaPct}
+              />
               <span className="ml-auto font-mono text-[10.5px] tabular-nums text-foreground/40">
                 {link.row.date}
               </span>

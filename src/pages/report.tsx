@@ -89,7 +89,7 @@ import {
   BoardRowList,
 } from "@/components/boards/board-row";
 import { CompanyLogo, LogoDevAttribution } from "@/components/company-logo";
-import { DeltaBadge } from "@/components/market/market-row";
+import { Delta } from "@/components/ui/delta";
 import { api } from "@/lib/api";
 import { cleanCompanyName, companyPath, displayTicker } from "@/lib/company";
 import { marketForPath } from "@/lib/markets/registry";
@@ -640,7 +640,7 @@ function ReportCard({
                     No mark yet
                   </span>
                 ) : (
-                  <DeltaBadge value={item.return_now * 100} />
+                  <Delta ratio size="num" value={item.return_now} />
                 )
               }
               position={i + 1}
