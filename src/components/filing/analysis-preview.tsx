@@ -49,12 +49,16 @@ import type { AnalysisShape, EvidenceHeadline } from "../../../shared/filings";
 import { useState } from "react";
 import {
   ArrowTopRightOnSquareIcon,
+  CheckIcon,
+  ExclamationTriangleIcon,
   LockClosedIcon,
+  XMarkIcon,
 } from "@heroicons/react/20/solid";
 
 import { AnalysisUnlockModal } from "@/components/discretion/analysis-unlock-modal";
 import { StoreGlyph } from "@/components/store-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 import { DISCRETION_ENABLED } from "@/lib/discretion";
 import { appHrefForMarket } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
@@ -69,28 +73,42 @@ const LABEL =
 const SIDE = {
   for: {
     heading: "Why this is interesting",
-    rule: "bg-positive/40",
     ink: "text-positive",
+    disc: "bg-positive",
+    plate: "border-positive/25 bg-positive/10",
+    Icon: CheckIcon,
   },
   against: {
     heading: "Why it might not be",
-    rule: "bg-negative/40",
     ink: "text-negative",
+    disc: "bg-negative",
+    plate: "border-negative/25 bg-negative/10",
+    Icon: XMarkIcon,
   },
 } as const;
 
 /* ─── Discretion off ─────────────────────────────────────────────────────── */
 
-/** The side's heading: the house eyebrow in the side's own ink, after a short
- *  rule in the same colour. The only colour in the section, and it means one
- *  thing: which way the finding points. */
+/** The side's heading: a filled disc in the side's colour, the heading in the
+ *  same ink, and the count. Sized as a subheading, not an eyebrow — it names
+ *  which way half the argument points, and at eyebrow scale it read as a
+ *  label a reader skipped (Jon, 2026-09-19). */
 function SideHeading({ d, count }: { d: "for" | "against"; count: number }) {
+  const { Icon } = SIDE[d];
+
   return (
-    <p className={`flex items-center gap-2.5 ${LABEL} ${SIDE[d].ink}`}>
-      <span aria-hidden className={`h-px w-6 shrink-0 ${SIDE[d].rule}`} />
+    <h3 className={`flex items-center gap-3 text-subheading font-semibold ${SIDE[d].ink}`}>
+      <span
+        aria-hidden
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white ${SIDE[d].disc}`}
+      >
+        <Icon className="h-5 w-5" />
+      </span>
       {SIDE[d].heading}
-      <span className="text-foreground/35">· {count}</span>
-    </p>
+      <span className="text-title font-medium text-foreground/40">
+        {count}
+      </span>
+    </h3>
   );
 }
 
@@ -105,14 +123,15 @@ function Source({
   if (!label) return null;
 
   return (
-    <p className="mt-2 text-small text-foreground/45">
+    <p className="mt-3 text-small text-foreground/55">
       {url ? (
         <a
-          className="inline-flex items-center gap-1 underline-offset-4 hover:text-foreground/70 hover:underline"
+          className="inline-flex items-center gap-2 underline-offset-4 hover:text-foreground hover:underline"
           href={url}
           rel="nofollow noopener noreferrer"
           target="_blank"
         >
+          <NewsSourceLogo size={16} url={url} />
           {label}
           <ArrowTopRightOnSquareIcon aria-hidden className="h-3 w-3 shrink-0" />
         </a>
@@ -123,24 +142,35 @@ function Source({
   );
 }
 
-/** One finding as a hairline row: the claim left, what stands behind it and
- *  its source right. The shape of `RowList`, one step down in scale, because
- *  an evidence headline is a sentence rather than a four-word claim and at
- *  24px a list of them reads as a stack of banners. */
-function EvidenceRows({ points }: { points: EvidencePoint[] }) {
+/** One finding as a tinted plate: green for, red against, always open.
+ *
+ *  Rows on flat ground (the week before) gave the two halves of the argument
+ *  the same weight as the record table below them; Jon asked for the drawer's
+ *  green and red plates back, without its accordion (2026-09-19). So the
+ *  plate carries the side, and the headline, detail and source all show. */
+function EvidenceRows({
+  points,
+  d,
+}: {
+  points: EvidencePoint[];
+  d: "for" | "against";
+}) {
+  const { Icon } = SIDE[d];
+
   return (
-    <ul className={`mt-4 border-t border-rule`}>
+    <ul className="mt-5 space-y-3">
       {points.map((p, i) => (
         <li
           key={`${i}-${p.headline}`}
-          className={`grid gap-x-10 gap-y-2 border-b border-rule py-5 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-6`}
+          className={`flex gap-4 rounded-card border p-5 sm:p-6 ${SIDE[d].plate}`}
         >
-          <h4 className="text-balance text-lede font-semibold leading-tight text-foreground sm:text-title">
-            {p.headline}
-          </h4>
+          <Icon aria-hidden className={`mt-0.5 h-6 w-6 shrink-0 ${SIDE[d].ink}`} />
           <div className="min-w-0">
+            <h4 className="text-balance text-title font-semibold text-foreground">
+              {p.headline}
+            </h4>
             {p.detail ? (
-              <p className="max-w-[58ch] text-body text-foreground/70">
+              <p className="mt-2 max-w-measure text-body text-foreground/75">
                 {p.detail}
               </p>
             ) : null}
@@ -223,31 +253,43 @@ function OpenCase({
         if (points.length === 0) return null;
 
         return (
-          <div key={d} className="mt-10">
+          <div key={d} className="mt-12">
             <SideHeading count={points.length} d={d} />
-            <EvidenceRows points={points} />
+            <EvidenceRows d={d} points={points} />
           </div>
         );
       })}
 
       {analysis.key_risks.length > 0 ? (
-        <div className="mt-10">
-          <p className={LABEL}>Key risks · {analysis.key_risks.length}</p>
-          <ol className={`mt-4 border-t border-rule`}>
+        <div className="mt-12">
+          {/* Risk-amber, not the against-red: a risk is a caveat to weigh,
+              not a finding against the deal (see --color-risk). */}
+          <h3 className="flex items-center gap-3 text-subheading font-semibold text-risk">
+            <span
+              aria-hidden
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-risk text-white"
+            >
+              <ExclamationTriangleIcon className="h-5 w-5" />
+            </span>
+            Key risks
+            <span className="text-title font-medium text-foreground/40">
+              {analysis.key_risks.length}
+            </span>
+          </h3>
+          <ul className="mt-5 space-y-3">
             {analysis.key_risks.map((r, i) => (
               <li
                 key={i}
-                className={`flex gap-5 border-b border-rule py-4 sm:py-5`}
+                className="flex gap-4 rounded-card border border-risk/30 bg-risk/10 p-5 sm:p-6"
               >
-                <span className="mt-[3px] shrink-0 font-mono text-caption font-semibold tabular-nums tracking-widest text-foreground/35">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <p className="max-w-measure text-lede text-foreground/80">
-                  {r}
-                </p>
+                <ExclamationTriangleIcon
+                  aria-hidden
+                  className="mt-0.5 h-6 w-6 shrink-0 text-risk"
+                />
+                <p className="max-w-measure text-lede text-foreground/85">{r}</p>
               </li>
             ))}
-          </ol>
+          </ul>
         </div>
       ) : null}
 

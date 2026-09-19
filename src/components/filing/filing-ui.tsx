@@ -94,10 +94,33 @@ export function RatingChecks({
 
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-4">
-        <p className="eyebrow text-foreground/45">
-          {met} of {CHECKS.length} met
-        </p>
+      {/* THE TALLY, set as the section's verdict (Jon, 2026-09-19: "the
+          states need to be so much clearer"). A number and a row of discs a
+          reader takes in without reading a word; the rows below are the
+          working. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="flex items-center gap-4">
+          <p
+            className={`text-heading font-semibold tabular-nums ${
+              met === CHECKS.length ? "text-positive" : "text-foreground"
+            }`}
+          >
+            {met} of {CHECKS.length}
+            <span className="ml-2 text-title font-semibold text-foreground/70">
+              checks met
+            </span>
+          </p>
+          <span aria-hidden className="flex gap-1.5">
+            {CHECKS.map((c) => (
+              <span
+                key={c.key}
+                className={`h-3 w-3 rounded-full ${
+                  checklist[c.key] ? "bg-positive" : "bg-negative"
+                }`}
+              />
+            ))}
+          </span>
+        </div>
         <Link
           className="text-small text-foreground/50 underline-offset-4 hover:text-foreground hover:underline"
           to="/how-it-works"
@@ -110,12 +133,12 @@ export function RatingChecks({
           step down in scale, so the method reads the same on the page that
           teaches it and the filing that applies it. The question is the row's claim on the left; what
           we found for THIS filing is the description on the right.
-          The verdict used to be a filled green or red disc at the head of
-          each row inside a white card. The discs went with the card: the
-          house boolean is a small check in the positive ink for yes, and a
-          miss is the only row that also says so in words, in the negative
-          ink, because a failed check is the one fact here a reader must not
-          skim past. Colour carries that meaning and nothing else. */}
+          Each row leads with a filled disc: white check on green for met,
+          white cross on red for missed. It went to a small thin tick for a
+          week and read as decoration; Jon asked for the state to jump off
+          the page (2026-09-19), so the disc is back, larger, and the kicker
+          says Met / Not met in words in the same ink. Colour still carries
+          one meaning: pass or fail. */}
       <RowList className="mt-4">
         {CHECKS.map((c, i) => {
           const ok = Boolean(checklist[c.key]);
@@ -125,24 +148,24 @@ export function RatingChecks({
             <CheckRow
               key={c.key}
               glyph={
-                ok ? (
-                  <CheckIcon
-                    aria-label="Met"
-                    className="h-5 w-5 text-positive"
-                  />
-                ) : (
-                  <XMarkIcon
-                    aria-label="Not met"
-                    className="h-5 w-5 text-negative"
-                  />
-                )
+                <span
+                  className={`flex h-10 w-10 items-center justify-center rounded-full text-white shadow-lift ${
+                    ok ? "bg-positive" : "bg-negative"
+                  }`}
+                >
+                  {ok ? (
+                    <CheckIcon aria-label="Met" className="h-6 w-6" />
+                  ) : (
+                    <XMarkIcon aria-label="Not met" className="h-6 w-6" />
+                  )}
+                </span>
               }
               kicker={
                 <>
-                  Check {i + 1}
-                  {ok ? null : (
-                    <span className="text-negative"> · Not met</span>
-                  )}
+                  Check {i + 1} ·{" "}
+                  <span className={ok ? "text-positive" : "text-negative"}>
+                    {ok ? "Met" : "Not met"}
+                  </span>
                 </>
               }
               more={
@@ -204,18 +227,18 @@ function CheckRow({
     <li
       className={`grid gap-x-10 gap-y-2 border-b border-rule py-6 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-7`}
     >
-      <div className="flex gap-3">
-        <span className="mt-0.5 shrink-0">{glyph}</span>
+      <div className="flex items-start gap-4">
+        <span className="shrink-0">{glyph}</span>
         <div className="min-w-0">
-          <h3 className="text-balance text-title font-semibold text-foreground">
+          <h3 className="text-balance pt-1.5 text-title font-semibold text-foreground">
             {title}
           </h3>
-          <p className="mt-1.5 micro text-foreground/40">
+          <p className="mt-1.5 micro font-semibold text-foreground/45">
             {kicker}
           </p>
         </div>
       </div>
-      <div className="min-w-0 pl-8 sm:pl-0 sm:pt-0.5">
+      <div className="min-w-0 pl-14 sm:pl-0 sm:pt-1.5">
         {children}
         {more}
       </div>

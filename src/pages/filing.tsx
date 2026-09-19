@@ -589,20 +589,11 @@ export default function FilingPage({
       <SeoRail marketId={fam.marketId} placement="filing_rail" />
       <SeoPageShell
         titleInHero
-        crumbs={[
-          { label: "Companies", to: "/companies" },
-          ...(deal ? [{ label: name, to: companyPath(deal.ticker) }] : []),
-          {
-            // A skeleton, not the word "Filing": loading is not a state with
-            // copy. The missing/failed branch above keeps real words — an
-            // absent record and an in-flight one are different pages.
-            label: deal ? (
-              longDate(deal.disclosed_date, market)
-            ) : (
-              <Skeleton className="inline-block h-[10px] w-[64px] translate-y-[1px] rounded" />
-            ),
-          },
-        ]}
+        /* No visible crumbs (Jon, 2026-09-19): the bar above the stage read
+           as chrome between the reader and the filing. The stage's eyebrow
+           and company link carry the way back, and the BreadcrumbList
+           JSON-LD is emitted by the pre-render (shared/prerender.js), not
+           from this prop, so search keeps it. */
         cta={{
           body: "This page is one filing. The app is the running feed: every disclosure the day it files, already rated, with the written case attached and an alert when the price moves after a buy you’re following.",
           gaLabel: `${share ? "Share" : "Filing"} · ${id ?? ""}`,
@@ -622,7 +613,7 @@ export default function FilingPage({
         loading={status === "loading"}
         skeleton={
           <>
-            <div className="mt-6">
+            <div className={share ? "mt-6" : "pt-2"}>
               <FilingStageSkeleton />
             </div>
             <Skeleton className="mt-5 h-[12px] w-[70%] rounded" />
