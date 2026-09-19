@@ -47,17 +47,17 @@ export function LanguageStrip() {
           <li key={code}>
             <Flag
               aria-hidden="true"
-              className="h-8 w-12 rounded-[4px] ring-1 ring-white/15"
+              className="h-8 w-12 rounded-mark ring-1 ring-white/15"
             />
             <span className="sr-only">{label}</span>
           </li>
         ))}
       </ul>
 
-      <h3 className="mt-7 text-[22px] font-semibold leading-snug tracking-[-0.02em] text-white sm:text-[26px]">
+      <h3 className="mt-7 text-heading font-semibold text-white">
         Written in the language you need
       </h3>
-      <p className="mx-auto mt-3 max-w-[50ch] text-[15px] leading-[1.6] text-white/55">
+      <p className="mx-auto mt-3 max-w-[50ch] text-lede text-white/55">
         Summary, thesis, evidence and risks are written per row, so the language
         they land in is a scope question rather than a rebuild. Source fields
         keep the register&rsquo;s own words: a Swedish filing stays Swedish.

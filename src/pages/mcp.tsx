@@ -13,6 +13,7 @@ import {
 
 import { ApiFaq } from "@/components/api/api-faq";
 import { CodeTabs } from "@/components/api/code-tabs";
+import { INK_FILL } from "@/components/api/interest-form";
 import { Path } from "@/components/api/endpoint-table";
 import { RequestAccessModal } from "@/components/api/request-access-modal";
 import { useAppHandoff } from "@/components/app-handoff-modal";
@@ -21,6 +22,7 @@ import { CHIP_BASE, CHIP_HAIRLINE, CHIP_SIZE } from "@/components/chip";
 import { Reveal } from "@/components/download/reveal";
 import { SectionHeader } from "@/components/download/section-header";
 import { band } from "@/components/ui/band";
+import { panel } from "@/components/ui/panel";
 import { ComparisonTable } from "@/components/mcp/comparison-table";
 import { LiveSample } from "@/components/mcp/live-sample";
 import { UrlCopy } from "@/components/mcp/url-copy";
@@ -62,6 +64,10 @@ import { usePinnedTheme } from "@/lib/use-pinned-theme";
  *  vendor names are the products a reader owns, not our pipeline. */
 
 const SECTION = band();
+
+/** The inset tile on the pinned-dark page (see /api). */
+const TILE = panel({ variant: "inset", size: "compact" });
+const CARD = panel({ variant: "inset", size: "roomy" });
 const TOTAL = 4;
 
 /** Hero proof cards. Each figure carries the line that stops it being a bare
@@ -206,7 +212,7 @@ function Tick() {
   return (
     <span
       aria-hidden
-      className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-amber"
+      className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-amber"
     />
   );
 }
@@ -215,7 +221,7 @@ function Lock() {
   return (
     <span
       aria-hidden
-      className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full border border-white/40"
+      className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full border border-white/40"
     />
   );
 }
@@ -235,7 +241,9 @@ export default function McpPage() {
     <DefaultLayout>
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="pt-2 md:pt-6">
-        <div className="rounded-3xl border border-white/[0.08] bg-[oklch(19%_0.022_55)] p-6 md:p-10 lg:p-12">
+        {/* Stage radius and hairline on its own ground — not a <Stage>; see
+            the hero note on /api. */}
+        <div className="rounded-stage border border-rule-stage bg-[oklch(19%_0.022_55)] p-6 md:p-10 lg:p-12">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_minmax(0,540px)] lg:gap-14">
             <div>
               <span
@@ -243,10 +251,10 @@ export default function McpPage() {
               >
                 MCP connector · Free
               </span>
-              <h1 className="mt-6 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-white sm:text-[44px] lg:text-[56px]">
+              <h1 className="mt-6 text-balance font-semibold text-white display-doc">
                 Ask ChatGPT or Claude about insider buying.
               </h1>
-              <p className="mt-5 max-w-[46ch] text-[16.5px] leading-[1.55] text-white/60">
+              <p className="mt-5 max-w-[46ch] text-lede text-white/60">
                 ddbx is a connector for AI assistants. Paste one address and
                 yours can look up who bought shares in their own company this
                 week, how ddbx rated it, and where the analysis is. No sign-in,
@@ -255,7 +263,7 @@ export default function McpPage() {
 
               <UrlCopy className="mt-8 max-w-[34rem]" gaLabel="MCP hero" />
 
-              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13.5px] text-white/50">
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-body text-white/50">
                 <a
                   className="font-medium text-white/80 underline-offset-4 transition-colors hover:text-white hover:underline"
                   href="#connect"
@@ -274,21 +282,14 @@ export default function McpPage() {
             <LiveSample />
           </div>
 
-          <dl className="mt-10 grid grid-cols-2 gap-3 border-t border-white/[0.08] pt-8 sm:grid-cols-4 lg:mt-12">
+          <dl className="mt-10 grid grid-cols-2 gap-3 border-t border-rule-stage pt-8 sm:grid-cols-4 lg:mt-12">
             {FACTS.map((s) => (
-              <div
-                key={s.k}
-                className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3.5"
-              >
-                <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-                  {s.k}
-                </dt>
-                <dd className="mt-1.5 text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-white">
+              <div key={s.k} className={TILE}>
+                <dt className="eyebrow text-white/40">{s.k}</dt>
+                <dd className="mt-1.5 text-heading font-semibold tabular-nums text-white">
                   {s.v}
                 </dd>
-                <p className="mt-2 text-[12px] leading-[1.45] text-white/40">
-                  {s.note}
-                </p>
+                <p className="mt-2 text-small text-white/40">{s.note}</p>
               </div>
             ))}
           </dl>
@@ -309,19 +310,17 @@ export default function McpPage() {
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {QUESTIONS.map((c, i) => (
             <Reveal key={c.q} delay={(i % 3) * 60}>
-              <div className="h-full rounded-3xl border border-white/[0.08] bg-white/[0.035] p-5">
+              <div className={`h-full ${CARD}`}>
                 <c.Icon
                   aria-hidden="true"
                   className="h-6 w-6 text-brand-amber"
                   strokeWidth={1.4}
                 />
-                <h3 className="mt-4 text-[17px] font-semibold leading-snug text-white">
+                <h3 className="mt-4 text-title text-white">
                   &ldquo;{c.q}&rdquo;
                 </h3>
-                <p className="mt-2.5 text-[14px] leading-[1.6] text-white/55">
-                  {c.note}
-                </p>
-                <p className="mt-4 font-mono text-[11px] tracking-[0.1em] text-brand-tan">
+                <p className="mt-2.5 text-body text-white/55">{c.note}</p>
+                <p className="mt-4 font-mono text-caption text-brand-tan">
                   {c.tool}
                 </p>
               </div>
@@ -341,12 +340,10 @@ export default function McpPage() {
           total={TOTAL}
         />
 
-        <div className="mt-10 grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
+        <div className="mt-10 grid gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
           <div>
-            <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
-              In the answer
-            </h3>
-            <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
+            <h3 className="text-title text-white">In the answer</h3>
+            <p className="mt-3 text-body text-white/45">
               Every filing the connector returns carries these.
             </p>
           </div>
@@ -354,7 +351,7 @@ export default function McpPage() {
             {IN_THE_ANSWER.map((t) => (
               <li
                 key={t}
-                className="flex items-start gap-3 text-[14.5px] leading-[1.5] text-white/80"
+                className="flex items-start gap-3 text-body text-white/80"
               >
                 <Tick />
                 {t}
@@ -363,12 +360,10 @@ export default function McpPage() {
           </ul>
         </div>
 
-        <div className="grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
+        <div className="grid gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
           <div>
-            <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
-              Behind the link
-            </h3>
-            <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
+            <h3 className="text-title text-white">Behind the link</h3>
+            <p className="mt-3 text-body text-white/45">
               On the filing&rsquo;s ddbx page and in the app. Not sent to the
               assistant.
             </p>
@@ -378,14 +373,14 @@ export default function McpPage() {
               {BEHIND_THE_LINK.map((t) => (
                 <li
                   key={t}
-                  className="flex items-start gap-3 text-[14.5px] leading-[1.5] text-white/55"
+                  className="flex items-start gap-3 text-body text-white/55"
                 >
                   <Lock />
                   {t}
                 </li>
               ))}
             </ul>
-            <p className="mt-6 max-w-[64ch] text-[13.5px] leading-[1.6] text-white/40">
+            <p className="mt-6 max-w-[64ch] text-body text-white/40">
               One exception: the daily recap. <Path>get_daily_summary</Path>{" "}
               returns ddbx&rsquo;s written summary of the day&rsquo;s UK or US
               filings in full, because it is already published here every day.
@@ -413,12 +408,10 @@ export default function McpPage() {
           total={TOTAL}
         />
 
-        <div className="mt-10 grid gap-x-10 gap-y-6 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
+        <div className="mt-10 grid gap-x-10 gap-y-6 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
           <div>
-            <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
-              The address
-            </h3>
-            <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
+            <h3 className="text-title text-white">The address</h3>
+            <p className="mt-3 text-body text-white/45">
               Streamable HTTP. No token, no header.
             </p>
           </div>
@@ -429,7 +422,7 @@ export default function McpPage() {
               size="sm"
             />
             <CodeTabs className="mt-6" snippets={MCP_SNIPPETS} />
-            <p className="mt-5 text-[13.5px] leading-[1.6] text-white/40">
+            <p className="mt-5 text-body text-white/40">
               Anything else that speaks remote MCP works the same way: add a
               remote HTTP server at that address. Tools the assistant will see:{" "}
               <Path>search_dealings</Path>, <Path>get_dealing</Path>,{" "}
@@ -454,7 +447,7 @@ export default function McpPage() {
         <Reveal className="mt-10">
           <ComparisonTable />
         </Reveal>
-        <p className="mt-6 max-w-[64ch] text-[13.5px] leading-[1.6] text-white/40">
+        <p className="mt-6 max-w-[64ch] text-body text-white/40">
           The API is described in full on{" "}
           <Link
             className="text-white/70 underline-offset-2 hover:text-white hover:underline"
@@ -477,9 +470,7 @@ export default function McpPage() {
 
       {/* ── Read next ────────────────────────────────────────────────────── */}
       <section className={`${SECTION} pt-0 md:pt-0`}>
-        <p className="mb-4 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
-          Read next
-        </p>
+        <p className="eyebrow mb-4 text-brand-amber">Read next</p>
         <RelatedCards
           items={[
             {
@@ -515,22 +506,20 @@ export default function McpPage() {
             are for different people: a reader who wants the reasoning gets the
             app; a builder gets the API. One filled button, one ghost, so the
             panel still has a single contrasting object. */}
-        <div className="rounded-[28px] bg-[#fcfbf9] px-6 py-12 text-ink sm:px-10 md:px-14 md:py-16">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown">
-            Want more than the facts?
-          </p>
+        <div className="rounded-stage bg-page px-6 py-12 text-ink sm:px-10 md:px-14 md:py-16">
+          <p className="eyebrow text-brand-brown">Want more than the facts?</p>
           <div className="mt-6 grid gap-10 md:grid-cols-2 md:gap-14">
             <div>
-              <h2 className="text-balance text-[28px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[34px]">
+              <h2 className="text-balance text-heading font-semibold">
                 The reasoning is in the app.
               </h2>
-              <p className="mt-4 max-w-[40ch] text-[15.5px] leading-[1.6] text-ink/65">
+              <p className="mt-4 max-w-[40ch] text-lede text-ink/65">
                 Every rated filing carries its thesis, the evidence for and
                 against, the key risks and how it has done since. Pushed to your
                 phone the day it files.
               </p>
               <a
-                className={`mt-7 inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-ink px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118]`}
+                className={`mt-7 inline-flex items-center gap-2.5 ${BUTTON_RADIUS} ${INK_FILL} px-6 py-3.5 text-[15px] font-semibold transition-colors`}
                 data-ga-event="cta_mcp_band_app"
                 data-ga-label="MCP closing band"
                 rel="noopener noreferrer"
@@ -539,15 +528,15 @@ export default function McpPage() {
               >
                 Get the app
               </a>
-              <p className="mt-3 text-[12.5px] text-ink/50">
+              <p className="mt-3 text-small text-ink/50">
                 Free for 7 days, cancel any time.
               </p>
             </div>
             <div className="border-t border-ink/10 pt-10 md:border-l md:border-t-0 md:pl-14 md:pt-0">
-              <h2 className="text-balance text-[28px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[34px]">
+              <h2 className="text-balance text-heading font-semibold">
                 Building something? That is the API.
               </h2>
-              <p className="mt-4 max-w-[40ch] text-[15.5px] leading-[1.6] text-ink/65">
+              <p className="mt-4 max-w-[40ch] text-lede text-ink/65">
                 The full record over JSON, with the written analysis, under a
                 licence that says what you may pass on. Tell us what you are
                 building and we will come back with scope and a number.
@@ -561,12 +550,12 @@ export default function McpPage() {
               >
                 Request API access
               </button>
-              <p className="mt-3 text-[12.5px] text-ink/50">
+              <p className="mt-3 text-small text-ink/50">
                 Two working days. No newsletter, no onward sharing.
               </p>
             </div>
           </div>
-          <p className="mt-12 max-w-[64ch] text-[11.5px] leading-[1.6] text-ink/40">
+          <p className="mt-12 max-w-[64ch] text-caption text-ink/40">
             Research output, not investment advice. Ratings are not
             recommendations to trade. The connector is provided as is and may
             change; tool names are kept stable where assistants depend on them.

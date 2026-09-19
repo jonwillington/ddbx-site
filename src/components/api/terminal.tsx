@@ -60,8 +60,8 @@ export function Tok({
  *  overriding className because `p-0` and `p-4` are the same Tailwind utility
  *  and which one wins is a stylesheet-order coin flip. */
 const BODY_VARIANT = {
-  code: "overflow-x-auto p-4 font-mono text-[12.5px] leading-[1.6] tabular-nums text-[#fcfbf9]/90",
-  bare: "text-[#fcfbf9]/90",
+  code: "overflow-x-auto p-4 font-mono text-small tabular-nums text-page/90",
+  bare: "text-page/90",
 } as const;
 
 /** Panel chrome. `title` is the left kicker (e.g. `GET /api/dealings`),
@@ -83,14 +83,14 @@ export function Terminal({
 }) {
   return (
     <div
-      className={`overflow-hidden rounded-2xl bg-[oklch(15%_0.018_55)] shadow-sm ring-1 ring-white/[0.06] ${className}`}
+      className={`overflow-hidden rounded-card bg-[oklch(15%_0.018_55)] shadow-sm ring-1 ring-white/[0.06] ${className}`}
     >
-      <div className="flex items-baseline justify-between gap-4 border-b border-white/[0.08] px-4 py-2.5">
-        <p className="truncate font-mono text-[11px] font-semibold tracking-[0.16em] text-brand-amber">
+      <div className="flex items-baseline justify-between gap-4 border-b border-rule-stage px-4 py-2.5">
+        <p className="truncate font-mono text-caption font-semibold tracking-widest text-brand-amber">
           {title}
         </p>
         {meta ? (
-          <p className="shrink-0 font-mono text-[11px] tabular-nums text-white/40">
+          <p className="shrink-0 font-mono text-caption tabular-nums text-white/40">
             {meta}
           </p>
         ) : null}

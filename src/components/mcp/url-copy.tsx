@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckIcon, ClipboardIcon } from "@heroicons/react/20/solid";
 
-import { BUTTON_RADIUS } from "@/components/button";
+import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
 import { MCP_URL } from "@/lib/mcp";
 
 /** The connector address with a one-click copy: the hero's whole job.
@@ -64,15 +64,13 @@ export function UrlCopy({
 
   return (
     <div
-      className={`flex items-stretch overflow-hidden rounded-xl bg-[oklch(15%_0.018_55)] ring-1 ring-white/[0.08] ${className}`}
+      className={`flex items-stretch overflow-hidden rounded-control bg-[oklch(15%_0.018_55)] ring-1 ring-white/[0.08] ${className}`}
     >
       <input
         readOnly
         aria-label={label}
-        className={`min-w-0 flex-1 bg-transparent font-mono text-[#fcfbf9]/90 outline-none selection:bg-brand-amber/30 ${
-          md
-            ? "px-4 py-3.5 text-[14px] sm:text-[15px]"
-            : "px-3.5 py-2.5 text-[13px]"
+        className={`min-w-0 flex-1 bg-transparent font-mono text-page/90 outline-none selection:bg-brand-amber/30 ${
+          md ? "px-4 py-3.5 text-body sm:text-lede" : "px-3.5 py-2.5 text-small"
         }`}
         type="text"
         value={value}
@@ -82,8 +80,8 @@ export function UrlCopy({
         aria-live="polite"
         className={`m-1.5 inline-flex shrink-0 items-center gap-1.5 ${BUTTON_RADIUS} font-semibold transition-colors ${
           md
-            ? "bg-white px-4 text-[14px] text-ink hover:bg-white/90"
-            : "bg-white/[0.08] px-3 text-[12.5px] text-white/85 hover:bg-white/[0.14]"
+            ? "bg-white px-4 text-body text-ink hover:bg-white/90"
+            : `${BUTTON_GHOST} px-3 text-small`
         }`}
         data-ga-event="mcp_copy_url"
         data-ga-label={gaLabel}

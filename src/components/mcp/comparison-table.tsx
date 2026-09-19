@@ -68,8 +68,7 @@ export const COMPARISON: ComparisonRow[] = [
   },
 ];
 
-const TH =
-  "pb-3 text-left font-mono text-[11px] font-semibold uppercase tracking-[0.16em]";
+const TH = "eyebrow pb-3 text-left";
 
 export function ComparisonTable({
   rows = COMPARISON,
@@ -88,20 +87,14 @@ export function ComparisonTable({
             key={r.label}
             className="border-t border-white/[0.1] py-5 first:border-t-0 first:pt-0"
           >
-            <dt className="text-[15px] font-semibold leading-[1.4] tracking-[-0.01em] text-white">
-              {r.label}
-            </dt>
+            <dt className="text-lede font-semibold text-white">{r.label}</dt>
             <dd className="mt-3">
               <p className={`${TH} pb-1 text-brand-amber`}>MCP connector</p>
-              <p className="text-[14px] leading-[1.55] text-white/70">
-                {r.mcp}
-              </p>
+              <p className="text-body text-white/70">{r.mcp}</p>
             </dd>
             <dd className="mt-3">
               <p className={`${TH} pb-1 text-brand-tan`}>ddbx API</p>
-              <p className="text-[14px] leading-[1.55] text-white/70">
-                {r.api}
-              </p>
+              <p className="text-body text-white/70">{r.api}</p>
             </dd>
           </div>
         ))}
@@ -130,15 +123,15 @@ export function ComparisonTable({
           {rows.map((r) => (
             <tr key={r.label} className="border-t border-white/[0.1]">
               <th
-                className="py-4 pr-4 text-left align-top text-[14.5px] font-semibold leading-[1.4] tracking-[-0.01em] text-white"
+                className="py-4 pr-4 text-left align-top text-body font-semibold text-white"
                 scope="row"
               >
                 {r.label}
               </th>
-              <td className="py-4 pr-6 align-top text-[14px] leading-[1.55] text-white/70">
+              <td className="py-4 pr-6 align-top text-body text-white/70">
                 {r.mcp}
               </td>
-              <td className="py-4 align-top text-[14px] leading-[1.55] text-white/70">
+              <td className="py-4 align-top text-body text-white/70">
                 {r.api}
               </td>
             </tr>

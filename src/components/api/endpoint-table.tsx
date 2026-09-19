@@ -19,7 +19,7 @@ export const METHOD_CHIP = `${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.sm} bg-bra
 /** Inline-code mark, dark-surface variant of TickerPill. */
 export function Path({ children }: { children: React.ReactNode }) {
   return (
-    <code className="inline-block rounded bg-white/[0.07] px-1.5 font-mono text-[11.5px] font-semibold tabular-nums text-[#fcfbf9]/85">
+    <code className="inline-block rounded-mark bg-white/[0.07] px-1.5 font-mono text-caption font-semibold tabular-nums text-page/85">
       {children}
     </code>
   );
@@ -62,14 +62,14 @@ export const RETURNS_OFFSET = "22.5rem";
 export function EndpointTable({ rows }: { rows: Endpoint[] }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[42rem] table-fixed text-sm">
+      <table className="w-full min-w-[42rem] table-fixed text-body">
         <colgroup>
           <col style={{ width: COL_METHOD }} />
           <col style={{ width: COL_PATH }} />
           <col />
         </colgroup>
         <thead>
-          <tr className="text-xs text-white/40">
+          <tr className="text-caption text-white/40">
             <th className="pb-2 text-left font-normal">Method</th>
             <th className="pb-2 text-left font-normal">Path</th>
             <th className="pb-2 text-left font-normal">Returns</th>
@@ -77,7 +77,7 @@ export function EndpointTable({ rows }: { rows: Endpoint[] }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.path} className="border-t border-white/[0.08]">
+            <tr key={r.path} className="border-t border-rule">
               <td className="py-2.5 pr-3 align-top">
                 <span className={METHOD_CHIP}>{r.method ?? "GET"}</span>
               </td>
@@ -91,7 +91,7 @@ export function EndpointTable({ rows }: { rows: Endpoint[] }) {
                   </span>
                 ) : null}
               </td>
-              <td className="py-2.5 align-top text-[13.5px] leading-[1.5] text-white/55">
+              <td className="py-2.5 align-top text-body text-white/55">
                 {r.returns}
               </td>
             </tr>
@@ -122,12 +122,10 @@ export function ParamList({
     >
       {params.map((p) => (
         <div key={p.name} className="contents">
-          <dt className="pr-4 font-mono text-[12px] font-medium text-brand-tan">
+          <dt className="pr-4 font-mono text-small font-medium text-brand-tan">
             {p.name}
           </dt>
-          <dd className="text-[13.5px] leading-[1.55] text-white/55">
-            {p.desc}
-          </dd>
+          <dd className="text-body text-white/55">{p.desc}</dd>
         </div>
       ))}
     </dl>

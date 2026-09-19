@@ -79,15 +79,13 @@ export function MarketGrid() {
           and the last cell waits 240ms for no reason a reader can see. */}
       {COVERAGE.map((c, i) => (
         <Reveal key={c.name} delay={(i % 3) * 60}>
-          <div className="h-full border-t border-white/[0.08] pt-5">
+          <div className="h-full border-t border-rule pt-5">
             <div className="flex items-center gap-3">
               {/* Rounded rather than square: a bare 3x2 flag on a dark surface
                   reads as a sticker. The ring gives it an edge on the two
                   flags (SE, NL) whose fields go light at the boundary. */}
-              <c.Flag className="h-6 w-9 shrink-0 rounded-[3px] ring-1 ring-white/15" />
-              <p className="text-[16px] font-semibold leading-snug text-white">
-                {c.name}
-              </p>
+              <c.Flag className="h-6 w-9 shrink-0 rounded-mark ring-1 ring-white/15" />
+              <p className="text-title text-white">{c.name}</p>
               {c.beta ? (
                 <span
                   className={`${CHIP_BASE} ${CHIP_HAIRLINE} ${CHIP_SIZE.sm} ml-auto bg-brand-amber/15 text-brand-amber`}
@@ -99,18 +97,16 @@ export function MarketGrid() {
 
             {/* Authored casing: these are proper nouns (Finansinspektionen,
                 EDGAR), which an uppercase transform would flatten. */}
-            <p className="mt-3 font-mono text-[11px] tracking-[0.1em] text-brand-tan">
+            <p className="mt-3 font-mono text-caption text-brand-tan">
               {c.source}
             </p>
-            <p className="mt-2.5 text-[13.5px] leading-[1.6] text-white/55">
-              {c.note}
-            </p>
+            <p className="mt-2.5 text-body text-white/55">{c.note}</p>
 
             <ul className="mt-4 flex flex-wrap gap-1.5">
               {c.has.map((h) => (
                 <li
                   key={h}
-                  className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] text-white/50"
+                  className="rounded-full bg-white/[0.06] px-2 py-0.5 text-caption text-white/50"
                 >
                   {h}
                 </li>

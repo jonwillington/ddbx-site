@@ -5,6 +5,7 @@ import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { GB, NL, SE, US } from "country-flag-icons/react/3x2";
 
 import { Terminal } from "@/components/api/terminal";
+import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
 import { lastMarketId } from "@/lib/last-market";
 import { CompanyLogo } from "@/components/company-logo";
 import { RatingBadge } from "@/components/rating-badge";
@@ -68,7 +69,7 @@ function verb(d: McpDealing): string {
 
 function RowSkeleton() {
   return (
-    <li className="flex items-center gap-3 border-t border-white/[0.06] px-4 py-3 first:border-t-0">
+    <li className="flex items-center gap-3 border-t border-rule-stage px-4 py-3 first:border-t-0">
       <Skeleton circle className="shrink-0" h={36} w={36} />
       <div className="min-w-0 flex-1">
         <Skeleton h={14} w="58%" />
@@ -81,7 +82,7 @@ function RowSkeleton() {
 
 function DealingRow({ d }: { d: McpDealing }) {
   return (
-    <li className="border-t border-white/[0.06] first:border-t-0">
+    <li className="border-t border-rule-stage first:border-t-0">
       <a
         className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.03]"
         href={d.url}
@@ -98,19 +99,19 @@ function DealingRow({ d }: { d: McpDealing }) {
               the dates as caption. Nothing here truncates: a name wraps to a
               second line rather than losing its end, and the figure lives in
               its own column so it can never be cut mid-number. */}
-          <span className="block text-[14px] font-semibold leading-snug text-white">
+          <span className="block text-body font-semibold text-white">
             {d.company}
             {d.ticker ? (
-              <span className="ml-1.5 font-mono text-[11px] font-medium text-white/40">
+              <span className="ml-1.5 font-mono text-caption font-medium text-white/40">
                 {d.ticker}
               </span>
             ) : null}
           </span>
-          <span className="mt-0.5 block text-[12.5px] leading-snug text-white/60">
+          <span className="mt-0.5 block text-small text-white/60">
             {d.insider.name}
             {d.insider.role ? `, ${d.insider.role}` : ""}
           </span>
-          <span className="mt-0.5 block text-[11px] leading-snug tabular-nums text-white/40">
+          <span className="mt-0.5 block text-caption tabular-nums text-white/40">
             {shortDate(d.trade_date)}, disclosed {shortDate(d.disclosed_date)}
             {d.sector ? ` · ${d.sector}` : ""}
             {d.cluster
@@ -119,8 +120,8 @@ function DealingRow({ d }: { d: McpDealing }) {
           </span>
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1.5">
-          <span className="text-[13.5px] font-semibold leading-none tabular-nums text-white/90">
-            <span className="mr-1 text-[11px] font-normal text-white/45">
+          <span className="text-num tabular-nums text-white/90">
+            <span className="mr-1 text-caption font-normal text-white/45">
               {verb(d)}
             </span>
             {valueText(d)}
@@ -195,7 +196,7 @@ export function LiveSample() {
               key={m.id}
               aria-controls="mcp-sample-panel"
               aria-pressed={on}
-              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-amber/40 ${
+              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-caption font-semibold uppercase tracking-wider outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-amber/40 ${
                 on
                   ? "border-brand-amber/45 bg-brand-amber/15 text-brand-amber"
                   : "border-white/10 text-white/45 hover:border-white/20 hover:text-white/70"
@@ -204,7 +205,7 @@ export function LiveSample() {
               type="button"
               onClick={() => setMarket(m.id)}
             >
-              <m.Flag className="h-3 w-4 shrink-0 rounded-[2px]" />
+              <m.Flag className="h-3 w-4 shrink-0 rounded-mark" />
               {m.code}
             </button>
           );
@@ -227,15 +228,15 @@ export function LiveSample() {
 
           {state.kind === "failed" ? (
             <div className="px-4 py-8 text-center">
-              <p className="text-[14px] font-medium text-white/85">
+              <p className="text-body font-medium text-white/85">
                 Couldn&rsquo;t reach the connector just now.
               </p>
-              <p className="mt-1.5 text-[12.5px] leading-[1.5] text-white/50">
+              <p className="mt-1.5 text-small text-white/50">
                 The address above is still right. This is the browser&rsquo;s
                 call failing, not the data.
               </p>
               <button
-                className="mt-4 rounded-lg bg-white/[0.08] px-3.5 py-2 text-[12.5px] font-semibold text-white/85 transition-colors hover:bg-white/[0.14]"
+                className={`mt-4 ${BUTTON_RADIUS} ${BUTTON_GHOST} px-3.5 py-2 text-small font-semibold transition-colors`}
                 type="button"
                 onClick={() => setAttempt((a) => a + 1)}
               >
@@ -246,10 +247,10 @@ export function LiveSample() {
 
           {state.kind === "ready" && state.rows.length === 0 ? (
             <div className="px-4 py-8 text-center">
-              <p className="text-[14px] font-medium text-white/85">
+              <p className="text-body font-medium text-white/85">
                 Nothing rated in this market on the latest page.
               </p>
-              <p className="mt-1.5 text-[12.5px] leading-[1.5] text-white/50">
+              <p className="mt-1.5 text-small text-white/50">
                 The call succeeded and came back empty. Try another market.
               </p>
             </div>
@@ -265,7 +266,7 @@ export function LiveSample() {
         </div>
       </Terminal>
 
-      <p className="mt-3 text-[12.5px] leading-[1.5] text-white/40">
+      <p className="mt-3 text-small text-white/40">
         Fetched from the connector as this page loaded, with the same fields an
         assistant receives. Each row links to its ddbx page, which is where the
         assistant is told to send you for the analysis.

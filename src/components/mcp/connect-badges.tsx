@@ -82,7 +82,7 @@ const BADGES: Badge[] = [
 ];
 
 const PILL =
-  "inline-flex items-center gap-1.5 rounded-md border px-2 py-[5px] text-[12px] font-medium transition-colors";
+  "inline-flex items-center gap-1.5 rounded-control border px-2 py-1 text-small font-medium transition-colors";
 
 export function ConnectBadges({ className = "" }: { className?: string }) {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -111,9 +111,7 @@ export function ConnectBadges({ className = "" }: { className?: string }) {
 
   return (
     <div ref={wrapRef} className={clsx("relative", className)}>
-      <p className="px-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-foreground/45">
-        Use ddbx in
-      </p>
+      <p className="micro px-1 text-foreground/45">Use ddbx in</p>
       <ul className="mt-2 flex flex-wrap gap-1">
         {BADGES.map((b) => {
           const Glyph = b.icon;
@@ -122,7 +120,7 @@ export function ConnectBadges({ className = "" }: { className?: string }) {
             PILL,
             current
               ? "border-transparent bg-ink text-white dark:bg-white dark:text-ink"
-              : "border-black/[0.08] text-foreground/80 hover:bg-black/[0.04] hover:text-foreground dark:border-white/[0.09] dark:hover:bg-white/[0.05]",
+              : "border-rule text-foreground/80 hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.05]",
           );
           const inner = (
             <>
@@ -177,16 +175,14 @@ function Popover({ badge, onClose }: { badge: Badge; onClose: () => void }) {
   return (
     <div
       aria-label={`Use ddbx in ${badge.label}`}
-      className="absolute bottom-0 left-[calc(100%+22px)] z-50 w-[360px] overflow-hidden rounded-2xl bg-[oklch(15%_0.018_55)] shadow-xl ring-1 ring-white/[0.08]"
+      className="absolute bottom-0 left-[calc(100%+22px)] z-50 w-[360px] overflow-hidden rounded-card bg-[oklch(15%_0.018_55)] shadow-xl ring-1 ring-white/[0.08]"
       id="mcp-connect-popover"
       role="dialog"
     >
       <div className="flex items-start justify-between gap-3 px-4 pt-4">
         <div>
-          <p className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-brand-amber">
-            {snippet.title}
-          </p>
-          <p className="mt-1.5 flex items-center gap-2 text-[15px] font-semibold text-[#fcfbf9]">
+          <p className="micro text-brand-amber">{snippet.title}</p>
+          <p className="mt-1.5 flex items-center gap-2 text-lede font-semibold text-page">
             <badge.icon className="h-4 w-4 shrink-0" />
             Use ddbx in {badge.label}
           </p>
@@ -197,7 +193,7 @@ function Popover({ badge, onClose }: { badge: Badge; onClose: () => void }) {
       <div className="space-y-3 px-4 pb-4 pt-3">
         {badge.install && (
           <a
-            className={`flex w-full items-center justify-center gap-1.5 ${BUTTON_RADIUS} bg-white px-3 py-2 text-[13px] font-semibold text-ink transition-colors hover:bg-white/90`}
+            className={`flex w-full items-center justify-center gap-1.5 ${BUTTON_RADIUS} bg-white px-3 py-2 text-small font-semibold text-ink transition-colors hover:bg-white/90`}
             data-ga-event="mcp_install"
             data-ga-label={`Sidebar ${badge.id}`}
             href={badge.install.href}
@@ -208,12 +204,12 @@ function Popover({ badge, onClose }: { badge: Badge; onClose: () => void }) {
         )}
 
         {badge.install && (
-          <p className="text-[12px] leading-[1.5] text-white/45">
+          <p className="text-small text-white/45">
             Nothing happened? Add it by hand:
           </p>
         )}
 
-        <pre className="whitespace-pre-wrap break-words rounded-lg bg-white/[0.04] px-3 py-2.5 font-mono text-[11.5px] leading-[1.6] text-[#fcfbf9]/85">
+        <pre className="whitespace-pre-wrap break-words rounded-control bg-white/[0.04] px-3 py-2.5 font-mono text-caption text-page/85">
           {snippet.code}
         </pre>
 
@@ -224,7 +220,7 @@ function Popover({ badge, onClose }: { badge: Badge; onClose: () => void }) {
           value={badge.copy?.value}
         />
 
-        <p className="text-[12px] leading-[1.5] text-white/45">
+        <p className="text-small text-white/45">
           Free, read-only, no sign-in.{" "}
           <Link
             className="text-white/70 underline decoration-white/25 underline-offset-2 hover:text-white"

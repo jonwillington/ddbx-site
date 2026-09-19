@@ -212,7 +212,7 @@ export function ResponseExplorer() {
               key={f.id}
               aria-controls="api-response-panel"
               aria-pressed={on}
-              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-amber/40 ${
+              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-caption font-semibold uppercase tracking-wider outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-amber/40 ${
                 on
                   ? "border-brand-amber/45 bg-brand-amber/15 text-brand-amber"
                   : "border-white/10 text-white/45 hover:border-white/20 hover:text-white/70"
@@ -221,7 +221,7 @@ export function ResponseExplorer() {
               type="button"
               onClick={() => setActive(i)}
             >
-              <f.Flag className="h-3 w-4 shrink-0 rounded-[2px]" />
+              <f.Flag className="h-3 w-4 shrink-0 rounded-mark" />
               {f.code}
             </button>
           );
@@ -257,7 +257,7 @@ export function ResponseExplorer() {
 
       {/* Same trick for the caption: the notes run to one or two lines
           depending on the feed and the width. */}
-      <div className="mt-3 grid text-[12.5px] leading-[1.5] text-white/40">
+      <div className="mt-3 grid text-small text-white/40">
         {FEEDS.map((f, i) => (
           <p
             key={f.id}

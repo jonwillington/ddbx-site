@@ -466,7 +466,7 @@ export function AccumulationChart() {
         // Chip FIRST. The title truncates, and on a phone it truncates hard;
         // "Illustrative" is the one word here that cannot fall off the end.
         <span className="flex items-center gap-2">
-          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9.5px] uppercase tracking-[0.12em] text-white/50">
+          <span className="micro rounded-full bg-white/10 px-2 py-0.5 text-white/50">
             Illustrative
           </span>
           One issuer · 90 days
@@ -476,7 +476,7 @@ export function AccumulationChart() {
     >
       {/* Scrub readout. Reserves its own height so the chart never shifts when
           the pointer enters or leaves the plot. */}
-      <div className="flex min-h-[2.4rem] flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-white/[0.08] px-4 py-2.5 text-[12.5px]">
+      <div className="flex min-h-[2.4rem] flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-rule-stage px-4 py-2.5 text-small">
         {scrub ? (
           <>
             <span className="font-mono text-white/40">

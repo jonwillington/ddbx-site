@@ -11,15 +11,17 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 
-import { BUTTON_RADIUS } from "@/components/button";
+import { BUTTON_GHOST, BUTTON_RADIUS } from "@/components/button";
 import { CHIP_BASE, CHIP_HAIRLINE, CHIP_SIZE } from "@/components/chip";
 import { FULL_BLEED } from "@/components/full-bleed";
 import { Reveal } from "@/components/download/reveal";
 import { SectionHeader } from "@/components/download/section-header";
 import { band } from "@/components/ui/band";
+import { panel } from "@/components/ui/panel";
 import { AccumulationChart } from "@/components/api/accumulation-chart";
 import { ApiFaq } from "@/components/api/api-faq";
 import { CodeTabs } from "@/components/api/code-tabs";
+import { INK_FILL } from "@/components/api/interest-form";
 import {
   EndpointTable,
   ParamList,
@@ -62,6 +64,12 @@ import { usePinnedTheme } from "@/lib/use-pinned-theme";
  */
 
 const SECTION = band();
+
+/** The inset tile on the pinned-dark page: the proof figures, the feature
+ *  cards and the MCP strip. `panel`'s dark forms apply because `.dark` is
+ *  pinned here. */
+const TILE = panel({ variant: "inset", size: "compact" });
+const CARD = panel({ variant: "inset", size: "roomy" });
 
 /** Hero proof cards. Each carries a figure AND the line that stops it being a
  *  bare number: "6" alone invites "six what?", which is the failure mode of
@@ -245,18 +253,20 @@ const FAQ = [
   },
 ];
 
-/** The page's atmosphere — the surface the hero panel sits ON, not a texture
- *  inside it.
+/** The hero's atmosphere — the light inside the hero panel.
  *
  *  The API page was a dark rectangle on a flat dark page, which on a page
- *  selling a data product read as an empty slide. The fix belongs behind the
- *  content rather than inside it: the panel stays a clean flat card, and what
- *  gives the page character is what you can see around and through it.
+ *  selling a data product read as an empty slide. This first shipped as a
+ *  page-wide layer the panel sat ON, bleeding off both sides of the viewport
+ *  and dissolving into the page across its foot. Contained 2026-09-19
+ *  (design language tenet 1: the frame is the edge — no dissolves melting a
+ *  visual into the page): the same layers now live inside the hero panel,
+ *  and the panel's rounded hairline is where they stop.
  *
  *  It gives the page shape without giving it colour — nothing here is a hue the
  *  brand doesn't already own.
  *
- *  Five layers, all of them percentage-positioned gradients painted on
+ *  Four layers, all of them percentage-positioned gradients painted on
  *  full-size `inset-0` divs:
  *
  *  1. A 64px lattice at 5% white, masked to a soft lobe around the response
@@ -269,47 +279,25 @@ const FAQ = [
  *     instead of being one symmetric glow.
  *  4. Two broad diagonal rakes of white crossing the blooms. These are the
  *     "shape" — the thing that stops the rest reading as a vignette. They run
- *     off both sides of the viewport on purpose: a band that bleeds off the
- *     edge reads as a shape passing through, where one that stops inside the
- *     frame reads as an object someone forgot to finish.
- *  5. A fade to the page background across the bottom, so the whole thing
- *     dissolves before the lower sections rather than ending.
+ *     edge to edge of the panel, so the frame cuts them rather than the rakes
+ *     stopping short inside it.
  *
- *  NOTHING MAY TERMINATE AT THIS ELEMENT'S BOX EDGE. The first version clipped
- *  the lattice — its radial mask was still at ~85% strength where the layer's
- *  right edge met the root's `overflow-x-clip`, which put a hard vertical seam
- *  down the page and made the whole effect read as something cut off. Hence:
- *  no `overflow-hidden` here, no child positioned outside the box, every radial
- *  reaching full transparency inside its own extent, and the bottom handled by
- *  a fade layer rather than a `mask-image` on this element (a mask would tile
- *  by default over anything that overflowed).
+ *  (A fifth layer, a fade to the page background across the foot, went with
+ *  the page-wide version: inside a framed panel there is nothing to dissolve
+ *  into.)
  *
  *  All static gradients: no blur filters, no animation, nothing to repaint on
  *  scroll.
  *
- *  Positioning: `absolute` inside an `isolate`d page wrapper rather than
- *  `fixed`. The layout root paints an opaque background, so a negative-z layer
- *  outside a stacking context of its own would sit behind that background and
- *  never be seen. `isolate` on the wrapper is what lets `-z-10` mean "behind
- *  this page's content" instead of "behind the site". */
+ *  Positioning: `absolute inset-0 -z-10` inside the panel, which is `isolate`
+ *  and `overflow-hidden`: the panel paints its own ground first, the layers
+ *  sit on it and under its content, and the rounded corners clip them. */
 function PageAtmosphere() {
   const latticeMask =
     "radial-gradient(46% 40% at 72% 20%, #000 0%, rgba(0,0,0,0.5) 45%, transparent 76%)";
 
   return (
-    <div
-      aria-hidden
-      // The break-out is written out rather than reusing FULL_BLEED: that
-      // constant carries `relative`, and which of `relative`/`absolute` wins
-      // depends on their order in the generated stylesheet, not on the order
-      // they appear here. Not a bet worth taking on a positioning-critical
-      // layer.
-      //
-      // `-top-24` runs it up behind the sticky navbar, which paints its own
-      // background over the top: the layer's top edge is never a line you can
-      // see, for the same reason nothing else here stops at a boundary.
-      className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-[1700px] w-screen -translate-x-1/2"
-    >
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
       <div
         className="absolute inset-0"
         style={{
@@ -341,17 +329,6 @@ function PageAtmosphere() {
             "linear-gradient(104deg, transparent 20%, rgba(255,255,255,0.055) 40%, transparent 58%), linear-gradient(76deg, transparent 42%, rgba(255,255,255,0.038) 62%, transparent 82%)",
         }}
       />
-      <div
-        className="absolute inset-x-0 bottom-0 h-[620px]"
-        style={{
-          background:
-            // `--background`, not `--color-background`: globals.css defines the
-            // raw custom property and Tailwind's `bg-background` maps onto it.
-            // The page is theme-pinned dark, so this always resolves to the
-            // warm charcoal the layout root is painting.
-            "linear-gradient(to bottom, transparent, var(--background, oklch(22% 0.022 55)) 88%)",
-        }}
-      />
     </div>
   );
 }
@@ -369,7 +346,11 @@ function PageAtmosphere() {
  *  Anchored to the section rather than to a pixel offset from the top of the
  *  page: it hangs off the section's own box with negative insets, so it stays
  *  put when the copy above it changes length. Every gradient dies inside its
- *  own extent — see PageAtmosphere for why that rule is absolute here. */
+ *  own extent, well inside the viewport: the layer is not framed, so the one
+ *  thing it may never do is present an edge (an early page-wide version's
+ *  lattice met the layout root's `overflow-x-clip` at ~85% strength and drew
+ *  a hard seam down the page). This is the page's one masked wash, which
+ *  design language tenet 4 allows; the hero's layers are framed in its panel. */
 function ReferenceAtmosphere() {
   const latticeMask =
     "radial-gradient(52% 40% at 30% 46%, #000 0%, rgba(0,0,0,0.45) 46%, transparent 76%)";
@@ -377,6 +358,10 @@ function ReferenceAtmosphere() {
   return (
     <div
       aria-hidden
+      // The break-out is written out rather than using FULL_BLEED: that
+      // constant carries `relative`, and which of `relative`/`absolute` wins
+      // depends on their order in the generated stylesheet, not on the order
+      // they appear here. Not a bet worth taking on a positioning layer.
       className="pointer-events-none absolute -bottom-40 -top-40 left-1/2 -z-10 w-screen -translate-x-1/2"
     >
       <div
@@ -463,14 +448,16 @@ export default function ApiPage() {
 
   return (
     <DefaultLayout>
-      {/* `isolate` scopes the atmosphere's negative z-index to this page —
-          See PageAtmosphere for why it can't just be a fixed layer. */}
+      {/* `isolate` scopes the reference section's atmosphere (negative
+          z-index) to this page rather than behind the layout root. */}
       <div className="relative isolate">
-        <PageAtmosphere />
-
         {/* ── Hero ───────────────────────────────────────────────────────── */}
         <section className="pt-2 md:pt-6">
-          <div className="rounded-3xl border border-white/[0.08] bg-[oklch(19%_0.022_55)] p-6 md:p-10 lg:p-12">
+          {/* Not a <Stage>: the board-stage class that carries breaks out
+              edge to edge of the sidebar shell's sheet, which is a board's
+              geometry, not this hero's. Stage radius and hairline, own ground. */}
+          <div className="relative isolate overflow-hidden rounded-stage border border-rule-stage bg-[oklch(19%_0.022_55)] p-6 md:p-10 lg:p-12">
+            <PageAtmosphere />
             {/* `grid-cols-1` rather than bare `grid`: the implicit column is
               `auto`-sized, so the response panel's <pre> (which is ~500px of
               unbreakable monospace) widened the whole column past the viewport
@@ -484,10 +471,10 @@ export default function ApiPage() {
                 >
                   Developer API · Private beta
                 </span>
-                <h1 className="mt-6 text-balance text-[34px] font-semibold leading-[1.05] tracking-[-0.028em] text-white sm:text-[44px] lg:text-[58px]">
+                <h1 className="mt-6 text-balance font-semibold text-white display-doc">
                   Four insider registers, one JSON schema.
                 </h1>
-                <p className="mt-5 max-w-[46ch] text-[16.5px] leading-[1.55] text-white/60">
+                <p className="mt-5 max-w-[46ch] text-lede text-white/60">
                   Every director and insider purchase across the UK, US, Sweden
                   and the Netherlands: screened, rated with a written rationale,
                   and benchmarked against the index from the day it was
@@ -504,7 +491,7 @@ export default function ApiPage() {
                     Request access
                   </button>
                   <a
-                    className={`${BUTTON_RADIUS} bg-white/[0.08] px-6 py-3.5 text-[15px] font-semibold text-white/85 transition-colors hover:bg-white/[0.14]`}
+                    className={`${BUTTON_RADIUS} ${BUTTON_GHOST} px-6 py-3.5 text-[15px] font-semibold transition-colors`}
                     href="#reference"
                   >
                     Read the reference
@@ -519,21 +506,14 @@ export default function ApiPage() {
               the hero, where four bare figures on an empty band read as filler
               between two real sections. Inside the hero they are what the
               headline is standing on. */}
-            <dl className="mt-10 grid grid-cols-2 gap-3 border-t border-white/[0.08] pt-8 sm:grid-cols-4 lg:mt-12">
+            <dl className="mt-10 grid grid-cols-2 gap-3 border-t border-rule-stage pt-8 sm:grid-cols-4 lg:mt-12">
               {STATS.map((s) => (
-                <div
-                  key={s.k}
-                  className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3.5"
-                >
-                  <dt className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-                    {s.k}
-                  </dt>
-                  <dd className="mt-1.5 text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums text-white">
+                <div key={s.k} className={TILE}>
+                  <dt className="eyebrow text-white/40">{s.k}</dt>
+                  <dd className="mt-1.5 text-heading font-semibold tabular-nums text-white">
                     {s.v}
                   </dd>
-                  <p className="mt-2 text-[12px] leading-[1.45] text-white/40">
-                    {s.note}
-                  </p>
+                  <p className="mt-2 text-small text-white/40">{s.note}</p>
                 </div>
               ))}
             </dl>
@@ -557,18 +537,14 @@ export default function ApiPage() {
               reading as the page being slow. */}
             {FEATURES.map((c, i) => (
               <Reveal key={c.h} delay={(i % 3) * 60}>
-                <div className="h-full rounded-3xl border border-white/[0.08] bg-white/[0.035] p-5">
+                <div className={`h-full ${CARD}`}>
                   <c.Icon
                     aria-hidden="true"
                     className="h-6 w-6 text-brand-amber"
                     strokeWidth={1.4}
                   />
-                  <h3 className="mt-4 text-[16px] font-semibold leading-snug text-white">
-                    {c.h}
-                  </h3>
-                  <p className="mt-2.5 text-[14px] leading-[1.6] text-white/55">
-                    {c.b}
-                  </p>
+                  <h3 className="mt-4 text-title text-white">{c.h}</h3>
+                  <p className="mt-2.5 text-body text-white/55">{c.b}</p>
                 </div>
               </Reveal>
             ))}
@@ -596,7 +572,7 @@ export default function ApiPage() {
           <Reveal className="mt-10">
             <AccumulationChart />
           </Reveal>
-          <p className="mt-4 max-w-[64ch] text-[12.5px] leading-[1.55] text-white/40">
+          <p className="mt-4 max-w-[64ch] text-small text-white/40">
             Illustrative series, not a real issuer. The fields it is drawn from
             are real: <Path>disclosed_date</Path>, <Path>value_gbp</Path>,{" "}
             <Path>cluster</Path> and <Path>live_performance</Path>. Price bars
@@ -616,12 +592,10 @@ export default function ApiPage() {
             total={4}
           />
 
-          <div className="mt-10 grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
+          <div className="mt-10 grid gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
             <div>
-              <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
-                Dealings
-              </h3>
-              <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
+              <h3 className="text-title text-white">Dealings</h3>
+              <p className="mt-3 text-body text-white/45">
                 The core feeds. One per regulator family.
               </p>
             </div>
@@ -647,12 +621,10 @@ export default function ApiPage() {
             </div>
           </div>
 
-          <div className="grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
+          <div className="grid gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
             <div>
-              <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
-                Context
-              </h3>
-              <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
+              <h3 className="text-title text-white">Context</h3>
+              <p className="mt-3 text-body text-white/45">
                 Everything you join a dealing against.
               </p>
             </div>
@@ -661,18 +633,16 @@ export default function ApiPage() {
             </div>
           </div>
 
-          <div className="grid gap-x-10 gap-y-4 border-t border-white/[0.12] py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
+          <div className="grid gap-x-10 gap-y-4 border-t border-rule py-8 sm:grid-cols-[10rem_minmax(0,1fr)]">
             <div>
-              <h3 className="text-[17px] font-semibold tracking-[-0.015em] text-white">
-                Quickstart
-              </h3>
-              <p className="mt-3 text-[13.5px] leading-[1.6] text-white/45">
+              <h3 className="text-title text-white">Quickstart</h3>
+              <p className="mt-3 text-body text-white/45">
                 Authenticate with a bearer token. That&rsquo;s the whole setup.
               </p>
             </div>
             <div className="min-w-0">
               <CodeTabs snippets={SNIPPETS} />
-              <p className="mt-5 text-[13.5px] leading-[1.6] text-white/40">
+              <p className="mt-5 text-body text-white/40">
                 Full reference, schema documentation and an OpenAPI spec ship
                 with access. Field-level definitions for <Path>analysis</Path>,{" "}
                 <Path>cluster</Path> and <Path>buy_style</Path> are included.
@@ -702,15 +672,17 @@ export default function ApiPage() {
             an aside rather than a fifth pillar. */}
         <section className={`${SECTION} pt-0 md:pt-0`}>
           <Reveal>
-            <div className="flex flex-col gap-6 rounded-3xl border border-white/[0.08] bg-white/[0.035] p-6 md:flex-row md:items-center md:justify-between md:p-8">
+            <div
+              className={`flex flex-col gap-6 ${panel({ variant: "inset" })} p-6 md:flex-row md:items-center md:justify-between md:p-8`}
+            >
               <div className="min-w-0">
-                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-amber">
+                <p className="eyebrow text-brand-amber">
                   Not building anything?
                 </p>
-                <h2 className="mt-3 text-[22px] font-semibold leading-[1.15] tracking-[-0.02em] text-white sm:text-[26px]">
+                <h2 className="mt-3 text-heading font-semibold text-white">
                   Ask ChatGPT or Claude instead.
                 </h2>
-                <p className="mt-2.5 max-w-[56ch] text-[14.5px] leading-[1.6] text-white/55">
+                <p className="mt-2.5 max-w-[56ch] text-body text-white/55">
                   ddbx also works as an MCP connector. Paste one address into
                   your assistant and it can look up who bought, how much and how
                   ddbx rated it, with a link to each filing. The written
@@ -719,7 +691,7 @@ export default function ApiPage() {
                 </p>
               </div>
               <Link
-                className={`${BUTTON_RADIUS} shrink-0 bg-white/[0.08] px-6 py-3.5 text-center text-[15px] font-semibold text-white/85 transition-colors hover:bg-white/[0.14]`}
+                className={`${BUTTON_RADIUS} ${BUTTON_GHOST} shrink-0 px-6 py-3.5 text-center text-[15px] font-semibold transition-colors`}
                 data-ga-event="cta_api_to_mcp"
                 data-ga-label="API page MCP strip"
                 to="/mcp"
@@ -741,7 +713,7 @@ export default function ApiPage() {
 
         {/* ── Request access — the inverted band ───────────────────────────── */}
         <section
-          className={`${FULL_BLEED} isolate mt-6 bg-[#fcfbf9] text-ink`}
+          className={`${FULL_BLEED} isolate mt-6 bg-page text-ink`}
           id="request-access"
         >
           <BandAtmosphere />
@@ -762,10 +734,8 @@ export default function ApiPage() {
             and restated in the modal the button opens. Third time on one
             screen was reading, not information. */}
           <div className="relative mx-auto max-w-[1280px] px-4 py-20 text-center md:px-6 md:py-28">
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown">
-              Request access
-            </p>
-            <h2 className="mx-auto mt-5 max-w-[20ch] text-balance text-[32px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[44px]">
+            <p className="eyebrow text-brand-brown">Request access</p>
+            <h2 className="mx-auto mt-5 max-w-[20ch] text-balance font-semibold display-doc">
               Get in touch for pricing.
             </h2>
             {/* The headline used to carry "quoted per use case", which stated
@@ -773,13 +743,13 @@ export default function ApiPage() {
                 tail of this line: still the one commercial fact worth knowing
                 before you click, now in the sentence that already promises a
                 reply rather than in the position that should be selling. */}
-            <p className="mx-auto mt-4 max-w-[42ch] text-balance text-[16.5px] leading-[1.6] text-ink/65">
+            <p className="mx-auto mt-4 max-w-[42ch] text-balance text-lede text-ink/65">
               Tell us what you&rsquo;re building and we&rsquo;ll come back with
               scope and a number, priced to your use case.
             </p>
 
             <button
-              className={`${BUTTON_RADIUS} mt-9 bg-ink px-8 py-4 text-[15px] font-semibold text-white transition-colors hover:bg-[#2a2118]`}
+              className={`${BUTTON_RADIUS} ${INK_FILL} mt-9 px-8 py-4 text-[15px] font-semibold transition-colors`}
               data-ga-event="cta_api_band_request"
               data-ga-label="API closing band"
               type="button"
@@ -787,11 +757,11 @@ export default function ApiPage() {
             >
               Request pricing
             </button>
-            <p className="mt-4 text-[13px] text-ink/50">
+            <p className="mt-4 text-small text-ink/50">
               Two working days. No newsletter, no onward sharing.
             </p>
 
-            <p className="mx-auto mt-16 max-w-[58ch] text-[11.5px] leading-[1.6] text-ink/40">
+            <p className="mx-auto mt-16 max-w-[58ch] text-caption text-ink/40">
               Research output, not investment advice. Ratings carry a stated
               confidence and are not recommendations to trade. Redistribution
               rights vary by source and are agreed per contract.

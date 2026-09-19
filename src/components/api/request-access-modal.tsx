@@ -28,12 +28,12 @@ export function RequestAccessModal({
       closeTone="light"
       maxWidthClass="max-w-xl"
       open={open}
-      panelClassName="bg-[#fcfbf9] border-black/10 text-ink"
+      panelClassName="bg-page border-black/10 text-ink"
       title="Request access"
-      titleClassName="text-[19px] font-semibold tracking-[-0.015em]"
+      titleClassName="text-title"
       onClose={onClose}
     >
-      <p className="mb-6 text-[14.5px] leading-[1.55] text-ink/65">
+      <p className="mb-6 text-body text-ink/65">
         A nightly bulk sync, a live product surface and a research backtest are
         different shapes. Tell us which one you are building and we will come
         back with scope and a number.

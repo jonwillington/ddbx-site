@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 
 import { Turnstile } from "./turnstile";
 
-import { BUTTON_RADIUS } from "@/components/button";
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { API_BASE } from "@/lib/api";
 
 /** "Request access" form — the page's one conversion point.
@@ -77,9 +77,9 @@ const USE_CASES = [
    `focus-within` rather than `focus-visible-within` — support for the latter is
    still thin, and a ring on a clicked text field is conventional anyway. */
 const SHELL =
-  "rounded-xl border border-black/15 bg-white/70 px-4 pb-2.5 pt-2.5 transition-colors focus-within:border-brand-brown/60 focus-within:ring-2 focus-within:ring-brand-brown/30";
+  "rounded-control border border-black/15 bg-white/70 px-4 pb-2.5 pt-2.5 transition-colors focus-within:border-brand-brown/60 focus-within:ring-2 focus-within:ring-brand-brown/30";
 
-const FIELD_LABEL = "block text-[11.5px] font-medium leading-none text-ink/45";
+const FIELD_LABEL = "block text-caption font-medium leading-none text-ink/45";
 
 /* 16px on mobile, 15px from `sm` up: below 16 iOS Safari zooms the page the
    moment a field takes focus, and we no longer suppress that with a viewport
@@ -87,9 +87,17 @@ const FIELD_LABEL = "block text-[11.5px] font-medium leading-none text-ink/45";
 const CONTROL =
   "mt-2 w-full bg-transparent text-base sm:text-[15px] leading-[1.4] text-ink placeholder:text-ink/30 focus:outline-none";
 
-/** BUTTON_FILLED's light-mode half, hardcoded — see the note above. */
-const SUBMIT_FILL =
-  "bg-ink text-white hover:bg-[#2a2118] disabled:hover:bg-ink";
+/** BUTTON_FILLED's light-mode half — see the note above. Derived from
+ *  button.ts rather than copied, so the ink button has one definition: the
+ *  classes are all literal in button.ts, which is what Tailwind scans. For
+ *  the cream surfaces on the pinned-dark developer pages (this form, the
+ *  /api and /mcp closing bands), where BUTTON_FILLED's `dark:` half would
+ *  turn the button white on cream. */
+export const INK_FILL = BUTTON_FILLED.split(" ")
+  .filter((c) => !c.startsWith("dark:"))
+  .join(" ");
+
+const SUBMIT_FILL = `${INK_FILL} disabled:hover:bg-ink`;
 
 /** The one thing a `<select>` needs that an `<input>` doesn't: a chevron. The
  *  native one goes with `appearance-none`, and without a replacement the
@@ -200,13 +208,11 @@ export function InterestForm() {
 
   if (status === "done") {
     return (
-      <div className="rounded-2xl border border-black/10 bg-white/60 p-6">
+      <div className="rounded-card border border-black/10 bg-white/60 p-6">
         {/* This one KEEPS the mono eyebrow: it's a status heading you read
             once, which is exactly what that device is for. */}
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown">
-          Request received
-        </p>
-        <p className="mt-3 text-[16px] leading-[1.55] text-ink">
+        <p className="eyebrow text-brand-brown">Request received</p>
+        <p className="mt-3 text-lede text-ink">
           Thanks. We&rsquo;ll be in touch within two working days with scope and
           pricing for what you described.
         </p>
@@ -302,7 +308,7 @@ export function InterestForm() {
                 // Sentence case, sans: these are toggles you press, not the
                 // uppercase mono chips that label a rating. Capsule shape is
                 // retained because that part IS the chip system.
-                className={`rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+                className={`rounded-full border px-3.5 py-1.5 text-small font-medium transition-colors ${
                   on
                     ? "border-brand-brown/50 bg-brand-brown/12 text-brand-brown"
                     : "border-black/15 text-ink/60 hover:border-black/30 hover:text-ink/80"
@@ -347,7 +353,7 @@ export function InterestForm() {
       {/* role="alert" so a submit that fails is spoken rather than silently
           appearing above a button the reader is still focused on. */}
       {status === "error" && error ? (
-        <p className="text-[13.5px] text-negative" role="alert">
+        <p className="text-body text-negative" role="alert">
           {error}
         </p>
       ) : null}
@@ -361,7 +367,7 @@ export function InterestForm() {
       >
         {status === "sending" ? "Sending…" : "Request pricing"}
       </button>
-      <p className="text-[12.5px] text-ink/50">
+      <p className="text-small text-ink/50">
         We reply within two working days. No newsletter, no onward sharing.
       </p>
     </form>
