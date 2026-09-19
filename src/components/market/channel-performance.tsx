@@ -169,8 +169,12 @@ export function ChannelPerformance({
 }: Props) {
   const index = benchmarkLabel ?? "the market";
 
+  // A container, so the narrow-rail adjustments below key on the rail's own
+  // width, not the viewport: the shell layout (lib/nav-mode) seats this in a
+  // 280px panel, the top-bar layout in a 320px one, and only the former
+  // needs them. The `@max-[19rem]:` variants all mean "narrow rail".
   return (
-    <div className="px-5 lg:px-4 py-3.5 space-y-4">
+    <div className="@container px-5 lg:px-4 py-3.5 space-y-4 @max-[19rem]:px-3.5">
       <Story index={index} summary={summary} />
 
       <Picks
@@ -226,12 +230,12 @@ function Story({
         className="pointer-events-none absolute -right-12 -top-16 h-36 w-36 rounded-full bg-positive/10 blur-2xl"
       />
       <div className="relative">
-        <div className="flex items-baseline justify-between gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
           <Eyebrow>
             Last {CHANNEL_WINDOW_DAYS} days · {totalBuys}{" "}
             {totalBuys === 1 ? "buy" : "buys"}
           </Eyebrow>
-          <span className="font-mono text-[10px] text-muted tabular-nums">
+          <span className="whitespace-nowrap font-mono text-[10px] text-muted tabular-nums">
             {lastUpdated ? `to ${formatDay(lastUpdated, "short")}` : ""}
           </span>
         </div>
@@ -241,15 +245,15 @@ function Story({
             Not enough data yet
           </p>
         ) : (
-          <p className="mt-2 flex items-baseline gap-2">
+          <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span
-              className={`text-[1.85rem] font-semibold leading-none tracking-[-0.03em] tabular-nums ${figureTone}`}
+              className={`text-[1.85rem] @max-[19rem]:text-[1.6rem] font-semibold leading-none tracking-[-0.03em] tabular-nums ${figureTone}`}
             >
               {level
                 ? "Level"
                 : `${ahead ? "+" : "−"}${Math.abs(pp).toFixed(1)}pp`}
             </span>
-            <span className="text-[12px] leading-tight text-foreground/60">
+            <span className="whitespace-nowrap text-[12px] leading-tight text-foreground/60">
               {level
                 ? `with the ${index}`
                 : ahead
@@ -385,7 +389,7 @@ function Edge({
 
   return (
     <section className="border-t border-hairline pt-3 dark:border-border/60">
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <Eyebrow>Where the edge came from</Eyebrow>
         <span className="shrink-0 text-[10px] text-muted">vs {index}</span>
       </div>
@@ -437,7 +441,7 @@ function Picks({
 
   return (
     <section>
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <Eyebrow>Best recent picks</Eyebrow>
         <span className="shrink-0 text-[10px] text-muted">
           share price since disclosure
@@ -521,7 +525,7 @@ function HeroPick({
         type="button"
         onClick={() => onOpen(row)}
       >
-        <span className="flex items-center gap-2.5">
+        <span className="flex items-center gap-2.5 @max-[19rem]:gap-2">
           <CompanyLogo size={36} ticker={row.ticker} />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[13.5px] font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
@@ -532,7 +536,7 @@ function HeroPick({
             </span>
           </span>
           <span
-            className={`shrink-0 text-2xl font-bold leading-none tabular-nums ${toneClass(row.returnPct)}`}
+            className={`shrink-0 text-2xl @max-[19rem]:text-[1.2rem] font-bold leading-none tabular-nums ${toneClass(row.returnPct)}`}
           >
             {formatSignedPct(row.returnPct)}
           </span>
@@ -753,7 +757,7 @@ function ContributorExplainer({
  *  size. One repeated label lets the sentences and figures carry the panel. */
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55">
+    <h3 className="whitespace-nowrap font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/55 @max-[19rem]:tracking-[0.1em]">
       {children}
     </h3>
   );
