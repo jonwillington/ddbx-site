@@ -1,6 +1,6 @@
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { LockClosedIcon } from "@heroicons/react/20/solid";
 
 import { CompanyLogo } from "@/components/company-logo";
@@ -32,12 +32,73 @@ export function EuWaitlistOverlay({
   ticker?: string;
   body?: string;
 }) {
+  return (
+    <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-hairline dark:border-separator bg-sheet/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
+      <span className="relative mb-4 inline-block">
+        {ticker ? (
+          <CompanyLogo
+            className="shadow-lg"
+            link={false}
+            size={80}
+            ticker={ticker}
+          />
+        ) : (
+          <img
+            alt=""
+            className="h-20 w-20 rounded-[1.25rem] border border-black/10 shadow-lg dark:border-white/10"
+            src="/ios-app-logo.svg"
+          />
+        )}
+        <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-ink text-white ring-2 ring-sheet dark:bg-white dark:text-ink dark:ring-surface">
+          <LockClosedIcon className="h-3.5 w-3.5" />
+        </span>
+      </span>
+
+      <h3 className="text-lg font-semibold mb-1">
+        This analysis lives in the app
+      </h3>
+
+      <AppWaitlistForm
+        body={body}
+        doneText={
+          <>
+            You&apos;re on the list. We&apos;ll email you when the EU app is
+            ready — nothing else, no newsletter.
+          </>
+        }
+        marketId={marketId}
+        submitLabel="Register for the EU app"
+      />
+    </div>
+  );
+}
+
+/** The waitlist capture itself — email field, spam layers, the POST to the
+ *  worker's /app-waitlist and its three end states. Shared by the analysis
+ *  gate above and the "app coming soon" modal the download CTAs open on
+ *  app-less markets (AppComingSoonModal). */
+export function AppWaitlistForm({
+  marketId,
+  body,
+  submitLabel,
+  doneText,
+}: {
+  /** Waitlist market tag stored with the registration. The worker keeps
+   *  nl/se/eu and files anything else under "eu" (source_path still says
+   *  where it came from). */
+  marketId: string;
+  /** Lead-in above the field; omitted when the caller has its own. */
+  body?: ReactNode;
+  submitLabel: string;
+  doneText: ReactNode;
+}) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">(
     "idle",
   );
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const mountedAt = useRef(Date.now());
+  const fieldId = useId();
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -70,97 +131,69 @@ export function EuWaitlistOverlay({
     }
   };
 
+  if (state === "done") {
+    return <p className="text-sm text-muted leading-relaxed">{doneText}</p>;
+  }
+
   return (
-    <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-hairline dark:border-separator bg-sheet/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
-      <span className="relative mb-4 inline-block">
-        {ticker ? (
-          <CompanyLogo
-            className="shadow-lg"
-            link={false}
-            size={80}
-            ticker={ticker}
-          />
-        ) : (
-          <img
-            alt=""
-            className="h-20 w-20 rounded-[1.25rem] border border-black/10 shadow-lg dark:border-white/10"
-            src="/ios-app-logo.svg"
-          />
-        )}
-        <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-ink text-white ring-2 ring-sheet dark:bg-white dark:text-ink dark:ring-surface">
-          <LockClosedIcon className="h-3.5 w-3.5" />
-        </span>
-      </span>
+    <>
+      {body && (
+        <p className="text-sm text-muted leading-relaxed mb-4">{body}</p>
+      )}
 
-      <h3 className="text-lg font-semibold mb-1">
-        This analysis lives in the app
-      </h3>
+      <form className="space-y-3" onSubmit={submit}>
+        {/* Honeypot — only a bot fills a visually hidden field. */}
+        <div aria-hidden className="absolute left-[-9999px] top-auto">
+          <label htmlFor={fieldId}>Company URL</label>
+          <input
+            autoComplete="off"
+            id={fieldId}
+            name="company_url"
+            tabIndex={-1}
+            type="text"
+          />
+        </div>
 
-      {state === "done" ? (
-        <p className="text-sm text-muted leading-relaxed">
-          You&apos;re on the list. We&apos;ll email you when the EU app is ready
-          — nothing else, no newsletter.
+        {/* `you@example.com` is a format example, not a name — it vanishes
+            the moment anything is typed. The real label rides along hidden
+            so the field still announces as one. */}
+        <label className="block">
+          <span className="sr-only">Email address</span>
+          <input
+            required
+            autoComplete="email"
+            className="w-full rounded-lg border border-black/15 bg-white px-3.5 py-2.5 text-base sm:text-sm text-ink outline-none placeholder:text-ink/35 focus:border-brand-brown/50 focus:ring-2 focus:ring-brand-brown/25 dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground dark:placeholder:text-foreground/35"
+            inputMode="email"
+            name="email"
+            placeholder="you@example.com"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </label>
+
+        <Turnstile onToken={setTurnstileToken} />
+
+        <button
+          className={`w-full ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3 text-sm font-semibold transition-colors disabled:opacity-60`}
+          data-ga-event="cta_eu_waitlist_register"
+          data-ga-label={`EU waitlist · ${marketId}`}
+          disabled={state === "sending"}
+          type="submit"
+        >
+          {state === "sending" ? "Registering…" : submitLabel}
+        </button>
+      </form>
+
+      {state === "error" ? (
+        <p className="mt-2.5 text-[12.5px] text-negative" role="alert">
+          Unable to register that address. Check your connection and try again.
         </p>
       ) : (
-        <>
-          <p className="text-sm text-muted leading-relaxed mb-4">{body}</p>
-
-          <form className="space-y-3" onSubmit={submit}>
-            {/* Honeypot — only a bot fills a visually hidden field. */}
-            <div aria-hidden className="absolute left-[-9999px] top-auto">
-              <label htmlFor="eu-waitlist-company-url">Company URL</label>
-              <input
-                autoComplete="off"
-                id="eu-waitlist-company-url"
-                name="company_url"
-                tabIndex={-1}
-                type="text"
-              />
-            </div>
-
-            {/* `you@example.com` is a format example, not a name — it vanishes
-                the moment anything is typed. The real label rides along hidden
-                so the field still announces as one. */}
-            <label className="block">
-              <span className="sr-only">Email address</span>
-              <input
-                required
-                autoComplete="email"
-                className="w-full rounded-lg border border-black/15 bg-white px-3.5 py-2.5 text-base sm:text-sm text-ink outline-none placeholder:text-ink/35 focus:border-brand-brown/50 focus:ring-2 focus:ring-brand-brown/25 dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground dark:placeholder:text-foreground/35"
-                inputMode="email"
-                name="email"
-                placeholder="you@example.com"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </label>
-
-            <Turnstile onToken={setTurnstileToken} />
-
-            <button
-              className={`w-full ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3 text-sm font-semibold transition-colors disabled:opacity-60`}
-              data-ga-event="cta_eu_waitlist_register"
-              data-ga-label={`EU waitlist · ${marketId}`}
-              disabled={state === "sending"}
-              type="submit"
-            >
-              {state === "sending" ? "Registering…" : "Register for the EU app"}
-            </button>
-          </form>
-
-          {state === "error" ? (
-            <p className="mt-2.5 text-[12.5px] text-negative" role="alert">
-              Unable to register that address. Check your connection and try
-              again.
-            </p>
-          ) : (
-            <p className="mt-2.5 text-[11px] text-muted/60">
-              One email when it launches. That&apos;s it.
-            </p>
-          )}
-        </>
+        <p className="mt-2.5 text-[11px] text-muted/60">
+          One email when it launches. That&apos;s it.
+        </p>
       )}
-    </div>
+    </>
   );
 }

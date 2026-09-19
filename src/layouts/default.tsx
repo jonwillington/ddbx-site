@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AU, CA, EU, GB, US } from "country-flag-icons/react/3x2";
 
 import { AppDrawer } from "@/components/app-drawer";
+import { AppComingSoonModal } from "@/components/app-coming-soon-modal";
 import { StoreGlyph } from "@/components/store-glyph";
 import { Navbar } from "@/components/navbar";
 import { SideNav } from "@/components/side-nav";
@@ -15,6 +16,7 @@ import {
 } from "@/components/market-chooser-modal";
 import {
   buildAppChoices,
+  COMING_SOON_APPS,
   IOS_APP_LOGO_BY_MARKET,
   storeUrlForMarketId,
 } from "@/lib/app-store";
@@ -495,13 +497,18 @@ export default function DefaultLayout({
   // Undefined — app-less markets (SE/NL on iOS) and platforms with no
   // truthful listing (US on Android) — falls back to the chooser, which
   // shows honest per-market availability.
-  const directAppUrl = storeUrlForMarketId(
-    marketForPath(
-      location.pathname,
-      typeof window === "undefined" ? undefined : window.location.hostname,
-    ).id,
-    platform,
-  );
+  const floatMarketId = marketForPath(
+    location.pathname,
+    typeof window === "undefined" ? undefined : window.location.hostname,
+  ).id;
+  // A market whose app is coming soon (SE/NL/KR) gets no store link at all —
+  // storeUrlForMarketId would hand Android the UK app — and the bar opens the
+  // coming-soon modal instead.
+  const comingSoonApp = COMING_SOON_APPS[floatMarketId];
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const directAppUrl = comingSoonApp
+    ? undefined
+    : storeUrlForMarketId(floatMarketId, platform);
   const closeLegal = useCallback(() => {
     navigate("/");
   }, [navigate]);
@@ -815,13 +822,16 @@ export default function DefaultLayout({
               <span>{t.startTrial}</span>
             </a>
           ) : (
-            // App-less market (SE/NL): no trial to offer — opens the chooser.
+            // App-less market: no trial to offer. A coming-soon market opens
+            // its modal (UK/US apps + waitlist); anything else the chooser.
             <button
               className={DOWNLOAD_CTA_CLASS}
               data-ga-event="cta_floating_download_chooser"
               data-ga-label="Floating mobile CTA"
               type="button"
-              onClick={() => setAppsOpen("auto")}
+              onClick={() =>
+                comingSoonApp ? setComingSoonOpen(true) : setAppsOpen("auto")
+              }
             >
               <StoreGlyph className="h-5 w-5 shrink-0" />
               <span>Download the app</span>
@@ -830,10 +840,19 @@ export default function DefaultLayout({
           <p className="pointer-events-none mt-2 text-center text-xs text-foreground/55">
             {directAppUrl
               ? t.floatingTrialNote
-              : "Start your 7-day free trial."}
+              : comingSoonApp
+                ? `The ${comingSoonApp} app is coming soon.`
+                : "Start your 7-day free trial."}
           </p>
         </div>
       </div>
+
+      <AppComingSoonModal
+        marketId={floatMarketId}
+        open={comingSoonOpen}
+        placement="Floating mobile CTA"
+        onClose={() => setComingSoonOpen(false)}
+      />
 
       <LegalDrawer page={legalPage} onClose={closeLegal} />
 

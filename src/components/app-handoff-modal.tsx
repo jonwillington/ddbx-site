@@ -4,7 +4,9 @@ import { createPortal } from "react-dom";
 import { CloseButton } from "@/components/close-button";
 import { QrInstall } from "@/components/download/qr-install";
 import { StoreBadges } from "@/components/app-store-badge";
+import { AppComingSoonModal } from "@/components/app-coming-soon-modal";
 import {
+  COMING_SOON_APPS,
   IOS_APP_LOGO_BY_MARKET,
   appStoreUrlForMarketId,
 } from "@/lib/app-store";
@@ -175,6 +177,23 @@ export function useAppHandoff(
     },
     [setOpen],
   );
+
+  // A market with no app of its own (COMING_SOON_APPS) has no listing for the
+  // click to reach on any device, so phones are intercepted too and every
+  // platform gets the coming-soon modal: the UK/US apps, and a waitlist.
+  if (COMING_SOON_APPS[marketId]) {
+    return {
+      anchorProps: { href, onClick, "data-ga-store-intercepted": "true" },
+      modal: (
+        <AppComingSoonModal
+          marketId={marketId}
+          open={open}
+          placement={placement}
+          onClose={() => setOpen(false)}
+        />
+      ),
+    };
+  }
 
   if (isMobile) {
     return { anchorProps: { href }, modal: null };

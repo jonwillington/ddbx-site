@@ -33,6 +33,18 @@ export const PLAY_STORE_URLS: Record<string, string> = {
   uk: "https://play.google.com/store/apps/details?id=uk.ddbx.app",
 };
 
+/** Markets whose data is live on the web but whose app is not out yet, by
+ *  the name the "coming soon" modal gives them ("The Sweden app is coming
+ *  soon"). Every download CTA on these markets opens that modal — the UK and
+ *  US apps as the thing you can have today, and a waitlist for this one —
+ *  instead of an install target that isn't this product. Drop a market from
+ *  here the day its listing goes into APP_STORE_URLS. */
+export const COMING_SOON_APPS: Record<string, string> = {
+  nl: "Netherlands",
+  se: "Sweden",
+  kr: "Korea",
+};
+
 /** Direct App Store URL for the market that owns a route, or undefined when
  *  that market has no live iOS app. Congress (`usg`) ships inside the US app,
  *  so it resolves to the US listing; SE/NL have no app yet (caller falls back
