@@ -580,9 +580,17 @@ body {
   to   { opacity: 1; }
 }
 
+/* The radius is a default, layered so a `rounded-*` utility on <Skeleton>
+   overrides it; the fill and motion stay unlayered on purpose (a stray bg-*
+   on a skeleton should not repaint it). */
+@layer components {
+  .skeleton {
+    border-radius: 0.375rem;
+  }
+}
+
 .skeleton {
   background-color: rgb(0 0 0 / 0.075);
-  border-radius: 0.375rem;
   animation:
     skeleton-in 300ms ease-out 140ms both,
     skeleton-pulse 2.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) 140ms infinite;
