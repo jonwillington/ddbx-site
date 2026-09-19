@@ -104,6 +104,63 @@ Reference implementation: the app-market hero
 (`src/components/market/market-hero.tsx` + `hero-deal-showcase.tsx`) and
 the floating navbar.
 
+## UI conventions — tokens, not literals (enforced)
+
+Every font size, letter-spacing, radius, shadow and brand colour comes from the
+token system in `src/styles/globals.css`. Spec and rationale:
+`investigations/2026-09-19-ui-standardisation.md`. **Read it before building or
+restyling any UI.** The rules:
+
+1. **No new bracketed literals.** Not `text-[13px]`, `tracking-[0.14em]`,
+   `leading-[1.55]`, `rounded-[20px]`, `shadow-[…]`, or a raw `#hex`. Use:
+   - **Type:** `eyebrow` (mono 11 uppercase label), `micro` (mono 10 label),
+     `text-caption`, `text-small`, `text-body`, `text-num` (table figures,
+     with `tabular-nums`), `text-lede`, `text-title` (card h3), `text-heading`
+     (section h2), `display-doc` (document h1, weight 600), `display-stage`
+     (dark-stage h1, weight 400), `text-figure-xl`. Don't add tracking or
+     leading on top of a step; it's baked in.
+   - **Radius:** `rounded-mark` 3 / `rounded-control` 8 / `rounded-card` 16 /
+     `rounded-stage` 28 / `rounded-full`. Nothing else.
+   - **Shadow:** `shadow-lift` (cards), `shadow-float` (glass, modals),
+     `shadow-stage`.
+   - **Hairlines:** `border-rule` on the page, `border-rule-stage` on dark
+     grounds. Don't declare a local `RULE` const, and don't use
+     `border-black/[0.06]`.
+   - **Colour:** `bg-page` (the cream, never `#fcfbf9`), `ink`,
+     `ink-hover`, `hairline`, `sheet`, `brand-*`. Use `positive`/`negative`
+     **only for direction** (up/down, gain/loss). Use `live` for
+     status/open/operational. Never emerald/rose/green-*/red-*.
+   - **Measure:** `max-w-measure` (62ch), not `max-w-[62ch]`. (`max-w-prose` is Tailwind's 65ch.)
+2. **Spacing tiers.** Band `py-14 md:py-20`; section `mt-12` (+`pt-5` over a
+   rule); block `mt-10`; group `mt-6`; stack `gap-3`; tight `gap-1.5`. No pixel
+   nudges (`py-[3px]`, `ml-[17px]`). Arbitrary values are allowed only for
+   safe-area `max()`, shell geometry and `em` baseline alignment.
+3. **Reuse before you build.** Class-string helpers first (`button.ts`,
+   `chip.ts`, and the `src/components/ui/*` helpers as they land), components
+   only where there's structure or behaviour. Check `src/components/ui/`,
+   `seo/*`, `boards/board-row.tsx`, `close-button.tsx`, `section-eyebrow.tsx`
+   and `store-buttons.tsx` before writing a new eyebrow, panel, stage, chip,
+   toggle, store button, modal or row. If you find yourself pasting a class
+   string a second time, it belongs in a helper.
+4. **Components pass through.** Every shared component spreads `...rest` and
+   accepts `className`. `data-ga-*`, `@container` and `shell:` classes must
+   survive.
+5. **Responsive type steps at `sm:`** (and `lg:` for stage display only). No
+   new `md:` type bumps.
+6. **The ratchet.** `npm run check:ui` (also in `npm test` and CI,
+   `.github/workflows/ui-conventions.yml`) counts the literals above across
+   `src/` and fails if any count rises. When a sweep lowers the counts, lock
+   them in with `npm run check:ui -- --update`. It refuses to raise the
+   baseline. If a new literal is genuinely needed, add it to `ALLOW` in
+   `scripts/check-ui-conventions.mjs` with a reason. Don't hand-edit the
+   baseline upwards.
+7. **Look at it.** Any visual change gets a headless render at desktop and
+   520px before it merges (see memory: headless screenshots). `main`
+   auto-deploys; UI refactors go on a branch.
+
+Migration of the ~1,200 existing literals is in progress (spec §6). When you
+touch a file for any reason, migrate the literals in the lines you touch.
+
 ## UI patterns
 
 - **Close/dismiss ("X") buttons**: ALWAYS use `CloseButton` from

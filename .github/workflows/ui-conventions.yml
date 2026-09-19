@@ -1,0 +1,21 @@
+name: UI conventions
+
+# Ratchet on one-off UI values (bracketed font sizes, tracking, radii, raw
+# brand hexes). Counts may fall, never rise. See CLAUDE.md "UI conventions"
+# and investigations/2026-09-19-ui-standardisation.md. Needs no install —
+# the check is plain Node over src/.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/check-ui-conventions.mjs

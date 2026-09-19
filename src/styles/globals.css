@@ -44,6 +44,125 @@
   --color-brand-brown: #5a4128; /* brand accent on light surfaces         */
   --color-brand-amber: #eec584; /* brand accent on dark surfaces          */
   --color-brand-tan: #ad9479;   /* mid-brown support on dark surfaces     */
+
+  /* ─── UI standardisation tokens (2026-09-19) ─────────────────────────────
+     Spec: investigations/2026-09-19-ui-standardisation.md. Additive — nothing
+     reads these until the sweeps migrate call sites onto them. New UI uses
+     these, never a bracketed literal (see CLAUDE.md "UI conventions"). */
+
+  /* Page cream behind the sheet / glass chrome. Light only: every call site
+     pairs it with its own dark: sibling today. */
+  --color-page: #fcfbf9;
+  /* BUTTON_FILLED hover — the ink one step lifted. */
+  --color-ink-hover: #2a2118;
+  /* "Live / open / operational" — a STATUS green, deliberately not
+     --color-positive, which means direction (up) and nothing else. */
+  --color-live: var(--live);
+
+  /* Type ramp — size + leading (+ weight / tracking) in one class.
+     Mono, uppercase and responsive steps can't live in a --text token, so
+     eyebrow / micro / heading / display-* / figure-xl are @utility below. */
+  --text-caption: 11px;
+  --text-caption--line-height: 1.45;
+  --text-small: 12.5px;
+  --text-small--line-height: 1.5;
+  --text-body: 14px;
+  --text-body--line-height: 1.6;
+  --text-num: 13px;
+  --text-num--line-height: 1.4;
+  --text-num--font-weight: 600;
+  --text-lede: 16px;
+  --text-lede--line-height: 1.55;
+  --text-lede--letter-spacing: -0.005em;
+  --text-title: 17px;
+  --text-title--line-height: 1.3;
+  --text-title--letter-spacing: -0.015em;
+  --text-title--font-weight: 600;
+
+  /* Radius — five, and only five. */
+  --radius-mark: 3px;      /* bars, ticks, micro marks              */
+  --radius-control: 8px;   /* buttons, inputs, small tiles (= lg)   */
+  --radius-card: 16px;     /* cards, panels, modals, shell (= 2xl)  */
+  --radius-stage: 28px;    /* dark stages, bands                    */
+
+  /* Shadows — one per job. */
+  --shadow-lift: 0 18px 44px -28px rgba(90, 65, 40, 0.45),
+    0 1px 2px rgba(90, 65, 40, 0.03);                 /* cards on the page   */
+  --shadow-float: 0 18px 44px -16px rgba(30, 21, 6, 0.26); /* glass, modals */
+  --shadow-stage: 0 24px 60px -30px rgba(40, 25, 10, 0.55); /* dark stages */
+
+  /* Reading measure: max-w-measure (Tailwind pins max-w-prose at 65ch). */
+  --container-measure: 62ch;
+
+  /* Motion. */
+  --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ─── Type utilities that tokens can't express ───────────────────────────── */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+@utility micro {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+@utility text-heading {
+  font-size: 26px;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  @media (min-width: 40rem) {
+    font-size: 34px;
+  }
+}
+/* The two h1 species (static-page-rules §5). Weight is set at the call site:
+   600 on documents, 400 on stages. */
+@utility display-doc {
+  font-size: 34px;
+  line-height: 1.05;
+  letter-spacing: -0.028em;
+  @media (min-width: 40rem) {
+    font-size: 44px;
+  }
+}
+@utility display-stage {
+  font-size: 34px;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  @media (min-width: 40rem) {
+    font-size: 44px;
+  }
+  @media (min-width: 64rem) {
+    font-size: 54px;
+  }
+}
+@utility text-figure-xl {
+  font-size: 72px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  @media (min-width: 40rem) {
+    font-size: 84px;
+  }
+}
+/* Hairlines: one on the page, one on a dark stage. */
+@utility border-rule {
+  border-color: var(--color-hairline);
+  &:where(.dark *) {
+    border-color: var(--separator);
+  }
+}
+@utility border-rule-stage {
+  border-color: rgb(255 255 255 / 0.1);
 }
 
 /* ─── Navbar clearance ───────────────────────────────────────────────────────
@@ -256,6 +375,7 @@
   color-scheme: light;
   --positive: oklch(45% 0.13 145);
   --negative: oklch(44% 0.145 25);
+  --live: #2e7d32;   /* status, not direction — see --color-live */
 
   --foreground:         oklch(20% 0.010 65);  /* warm near-black ink       */
   --surface-foreground: oklch(20% 0.010 65);
@@ -353,6 +473,7 @@ body {
      (≈ #5cd84a / #e84d4d, the greens the channel rail proved out). */
   --positive:           oklch(78%   0.19  145);
   --negative:           oklch(64%   0.185 25);
+  --live:               #7bbe7f;
 
   /* bg-content1 shim value — shadows --surface, so it moves with it or
      modals read a step darker than the cards they sit above. */

@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "sync:types": "scripts/sync-ddbx-types.sh",
     "check:types": "scripts/check-ddbx-types.sh",
+    "check:ui": "node scripts/check-ui-conventions.mjs",
     "shots": "scripts/app-shots.sh",
     "test": "node --test tests/"
   },
