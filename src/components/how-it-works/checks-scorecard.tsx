@@ -72,7 +72,6 @@ import {
   EYEBROW,
   Fold,
   KICKER,
-  PANEL,
   RULE,
   StepNode,
   shortDate,
@@ -81,7 +80,6 @@ import {
   SpecimenMark,
   VerdictDisc,
 } from "@/components/how-it-works/specimen-mark";
-import { RatingBadge } from "@/components/rating-badge";
 import { Row, RowList } from "@/components/row-list";
 import { CHECKS } from "@/lib/methodology";
 import { specimenContext } from "@/lib/methodology-examples";
@@ -104,13 +102,13 @@ export function ChecksScorecard({
   const s = examples.specimen;
 
   return (
-    <div className={`mt-9 ${PANEL} px-5 py-6 sm:px-8 sm:py-7`}>
+    <div className={`mt-9 border-y ${RULE} py-7`}>
+      {/* No panel and no rating badge since 2026-09-19: the section sits on
+          the page ground like every other, and the rating is already stated
+          on the stage's footer row. */}
       <div className="flex items-center gap-2.5">
         <SpecimenMark />
         <p className={EYEBROW}>The worked example, scored</p>
-        <span className="ml-auto shrink-0">
-          <RatingBadge rating={s.rating} />
-        </span>
       </div>
 
       {/* The strip, full width. One position per check, in the order they are
@@ -144,10 +142,9 @@ export function ChecksScorecard({
         >
           {s.name}’s {s.value} purchase of {s.company}
         </Link>{" "}
-        <span className="text-foreground/90">cleared all six</span>, which is
-        what a significant rating means. A ticked disc{" "}
-        <VerdictDisc cleared size={15} /> is a check this purchase cleared; a
-        crossed ring <VerdictDisc cleared={false} size={15} /> is one it did
+        <span className="text-foreground/90">cleared all six</span>. A ticked
+        disc <VerdictDisc cleared size={15} /> is a check this purchase cleared;
+        a crossed ring <VerdictDisc cleared={false} size={15} /> is one it did
         not. Every check below shows two real trades: this one clearing it, and
         another that failed it.
       </p>
@@ -185,12 +182,14 @@ function VerdictEntry({
 }) {
   return (
     <li>
-      {/* A white card per trade, on Jon's 2026-09-07 note: "make these
-          larger, the two buys, the yes and the no, with white BG and a green
-          check and red x". White rather than the sheet tint so the pair lifts
-          off the cream row it sits in; the verdict column takes the colour. */}
+      {/* A hairline row per trade. These were white cards from Jon's
+          2026-09-07 note ("larger, the two buys, the yes and the no, with
+          white BG and a green check and red x"); the size and the green
+          check / red cross stay, the card went on 2026-09-19 when the page
+          moved to the reference grammar — lists are full-width hairline rows,
+          never cards. */}
       <Link
-        className="group grid gap-x-6 gap-y-3 rounded-2xl border border-hairline bg-white px-5 py-4 outline-none transition-colors @xl:grid-cols-[150px_minmax(0,1fr)] hover:border-brand-brown/30 focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-white/[0.08] dark:bg-white/[0.04] dark:hover:border-white/20 sm:px-6 sm:py-5"
+        className={`group grid gap-x-6 gap-y-3 border-t ${RULE} py-5 outline-none transition-colors @xl:grid-cols-[150px_minmax(0,1fr)] focus-visible:ring-2 focus-visible:ring-brand-brown/40`}
         to={filing.path}
       >
         {/* The verdict, as its own column once the card is wide enough to
@@ -257,7 +256,7 @@ export function CheckVerdicts({
   const counter = examples.counters[check.key];
 
   return (
-    <ul className="@container mt-6 space-y-3">
+    <ul className={`@container mt-6 border-b ${RULE}`}>
       <VerdictEntry cleared filing={examples.specimen}>
         {check.passLine(specimenContext(examples.specimen))}
       </VerdictEntry>

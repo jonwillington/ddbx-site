@@ -170,8 +170,9 @@ function Figure({
  *  venue and the read cadence, neither of which the feed table knows. */
 function HostFacts({ copy }: { copy: MarketCopy }) {
   const facts: Array<{ label: string; value: string }> = [
+    // "Checked every 15 minutes" went on 2026-09-19: the pipeline's watch
+    // stage already says it, two sections up.
     { label: "Exchange", value: copy.exchangeFullName },
-    { label: "Checked", value: "Every 15 minutes, through the trading day" },
   ];
 
   return (
@@ -214,14 +215,7 @@ function FeedRow({
 
   return (
     <li className={`border-t ${RULE}`}>
-      <div
-        className={`${ROW_GRID} py-5 ${
-          home
-            ? "-mx-3 rounded-lg bg-brand-brown/[0.045] px-3 dark:bg-brand-tan/[0.08]"
-            : ""
-        }`}
-        style={ROW_STYLE}
-      >
+      <div className={`${ROW_GRID} py-5`} style={ROW_STYLE}>
         <Flag
           aria-hidden
           className="mt-0.5 h-[1.5rem] w-[2.25rem] rounded-[3px] ring-1 ring-black/10 dark:ring-white/15"
@@ -329,7 +323,7 @@ export function SourcesRegister({
         do gets the vocabulary wrong before it gets anything else wrong. In{" "}
         {copy.regionName} that means reading {copy.regulatorFullName}, filed by
         the people local rules call {copy.insiderTermPlural}, in their own
-        format, standardised here, and never a third party’s summary of them.
+        format, standardised here.
       </p>
 
       <p className="mt-4 max-w-[70ch] text-[16px] leading-[1.65] text-foreground/80">

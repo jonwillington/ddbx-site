@@ -10,11 +10,9 @@ import { useEffect } from "react";
 import { PipelineLedger } from "@/components/how-it-works/pipeline-ledger";
 import { SeoSection } from "@/components/seo/section";
 import { useCoverage } from "@/lib/coverage";
-import { examplesFor } from "@/lib/methodology-examples";
 
 export default function PipelinePreview() {
   const { data: coverage } = useCoverage();
-  const examples = examplesFor("uk");
 
   useEffect(() => {
     const theme = new URLSearchParams(window.location.search).get("theme");
@@ -33,10 +31,7 @@ export default function PipelinePreview() {
         title="What happens to a disclosure"
         total={6}
       >
-        <PipelineLedger
-          specimen={examples?.specimen ?? null}
-          totals={coverage.totals}
-        />
+        <PipelineLedger totals={coverage.totals} />
       </SeoSection>
     </div>
   );

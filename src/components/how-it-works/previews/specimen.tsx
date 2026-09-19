@@ -1,4 +1,5 @@
-/** Preview: the worked-example card, on the document ground it sits on.
+/** Preview: the worked-example strip, in a bare stage panel (it is the hero
+ *  stage's footer row on the real page).
  *  Dev-only harness — see src/pages/lab-how-it-works.tsx.
  *
  *  The card lives in the page's opening block rather than in a SeoSection, so
@@ -8,7 +9,7 @@
  */
 import { useEffect } from "react";
 
-import { SpecimenCard } from "@/components/how-it-works/specimen-card";
+import { SpecimenStrip } from "@/components/how-it-works/specimen-card";
 import { examplesFor } from "@/lib/methodology-examples";
 
 export default function SpecimenPreview() {
@@ -30,7 +31,9 @@ export default function SpecimenPreview() {
         Every rating on this site starts as one disclosure and ends as a number
         that can be checked. Here is the filing the rest of this page follows.
       </p>
-      <SpecimenCard specimen={examples.specimen} />
+      <div className="board-stage mt-8 overflow-hidden rounded-[28px] border border-white/10 text-white">
+        <SpecimenStrip specimen={examples.specimen} />
+      </div>
     </div>
   );
 }

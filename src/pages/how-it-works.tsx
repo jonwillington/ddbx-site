@@ -15,14 +15,12 @@
  *  proof objects are about METHOD rather than populations, so each section
  *  draws the element it actually needs. In order:
  *
- *    hero      HeroStage — the one dark stage on the page. The record drawn to
- *              scale as a bed of hairlines thinning left to right (disclosed →
- *              bought on market → sorted → read in full and rated), with one
- *              tan hairline running the whole way: the worked example. The h1,
- *              standfirst, thesis and live figures sit in the stage's message
- *              column; the finding in words sits in its caption strip.
- *    (intro)   SpecimenCard — the worked example introduced once, in full
- *              (who, role, value, price, date). Then the contents strip.
+ *    hero      HeroStage — the one dark stage on the page (2026-09-19, the
+ *              insider-index recipe). Eyebrow and h1, the verdict ("about one
+ *              filing in seventeen gets read in full") and the standfirst, the
+ *              record drawn to scale as three columns (disclosed → bought on
+ *              market → read in full and rated), and the worked example as the
+ *              stage's footer row. The dated basis line sits under it.
  *    01        PipelineLedger — six gates as full-width rows on a static
  *              spine: stage left, "what leaves" the pipe right of a vertical
  *              hairline. The finding falls out of the geometry: two stages
@@ -88,7 +86,6 @@ import { PipelineLedger } from "@/components/how-it-works/pipeline-ledger";
 import { RatingLadder } from "@/components/how-it-works/ratings-ladder";
 import { DIVIDE, Fold, RULE } from "@/components/how-it-works/shared";
 import { SourcesRegister } from "@/components/how-it-works/sources-register";
-import { SpecimenCard } from "@/components/how-it-works/specimen-card";
 import { RelatedCards } from "@/components/seo/related-cards";
 import { SeoPageShell } from "@/components/seo/page-shell";
 import { SeoRail } from "@/components/seo/seo-rail";
@@ -101,11 +98,15 @@ import { CHECK_COUNT_WORD } from "@/lib/methodology";
 import { examplesFor } from "@/lib/methodology-examples";
 
 const EYEBROW = "Methodology";
+/** The stage's eyebrow: where the page sits, then what it is, the way the
+ *  reference stages carry theirs. */
+const STAGE_EYEBROW = "Learn · Methodology";
 
-/** The numbered run, in reading order. Kept as data because it drives two
- *  things that have to agree: the contents strip at the top and the `NN / 06`
- *  counter on each section rule. Hand-numbering those was how the page would
- *  eventually end up with two section fives.
+/** The numbered run, in reading order. Kept as data because it drives the
+ *  `NN / 06` counter on each section rule; hand-numbering those was how the
+ *  page would eventually end up with two section fives. (It also drove a chip
+ *  contents strip under the hero until 2026-09-19. The numbered sections do
+ *  that job, so the strip went.)
  *
  *  The old standalone "What we’ve read" section dissolved when the funnel
  *  learned to carry the real counts: its headline figures live on the funnel
@@ -170,9 +171,9 @@ export default function HowItWorksPage() {
     (sum, m) => (m.open_market_buys != null ? sum + m.open_market_buys : sum),
     0,
   );
-  const funnelCaption = `${
+  const basis = `${
     source === "snapshot" ? "Stored counts from" : "Counted"
-  } ${monthLabel(coverage.generated_at)} · open-market figure is a floor`;
+  } ${monthLabel(coverage.generated_at)}, across all five feeds. The open-market figure is a floor: it counts only the buys a classifier has confirmed.`;
 
   const standfirst = `Several hundred ${copy.insiderTermPlural} disclose share dealings every month, and almost none of them mean anything. This is how a filing becomes a rating, what the ${CHECK_COUNT_WORD} checks actually test, and where the method stops${examples ? ", shown on real filings you can check" : ""}.`;
   const title = (
@@ -209,25 +210,22 @@ export default function HowItWorksPage() {
         }}
         eyebrow={EYEBROW}
         hero={
-          <HeroStage
-            analyses={coverage.totals.analyses}
-            caption={funnelCaption}
-            disclosures={coverage.totals.disclosures}
-            eyebrow={EYEBROW}
-            finding="Almost everything filed is a grant, a vesting or an option exercise, with the purchases buried among them, so the work is almost entirely in the sorting."
-            openMarketFloor={openMarketFloor}
-            specimenCompany={examples?.specimen.company ?? null}
-            standfirst={standfirst}
-            thesis={
-              <>
-                {copy.insiderTermPlural.charAt(0).toUpperCase() +
-                  copy.insiderTermPlural.slice(1)}{" "}
-                know their companies better than the market does. When one of
-                them buys with their own money, that is worth a look.
-              </>
-            }
-            title={title}
-          />
+          <>
+            <HeroStage
+              analyses={coverage.totals.analyses}
+              disclosures={coverage.totals.disclosures}
+              eyebrow={STAGE_EYEBROW}
+              openMarketFloor={openMarketFloor}
+              specimen={examples?.specimen ?? null}
+              standfirst={standfirst}
+              title={title}
+            />
+            {/* The dated basis, directly under the stage, the way the
+                reference pages carry theirs. */}
+            <p className="mt-5 text-[12.5px] leading-[1.6] text-foreground/45">
+              {basis}
+            </p>
+          </>
         }
         standfirst={standfirst}
         title={title}
@@ -238,40 +236,6 @@ export default function HowItWorksPage() {
             the rail leaves free, and each object decides for itself where a
             prose measure (max-w on a paragraph) is worth an indent. */}
         <div className="w-full">
-          {/* The specimen — one real filing the reader meets before the
-            machinery, then follows through it. Introduced here so every
-            "this filing" below already means something. */}
-          {examples ? <SpecimenCard specimen={examples.specimen} /> : null}
-
-          {/* The contents strip. Every one of these sections has carried an `id`
-            and a scroll margin since the page shipped and nothing has ever
-            linked to them, so a reader arriving for "what are the six checks"
-            has had to scroll past the pipeline to find out.
-
-            Deliberately NOT sticky. The sticky version wrapped to three or four
-            rows of chips on a phone, which put its own bottom edge below the
-            96px scroll margin the sections reserve: clicking a link scrolled
-            the target underneath the bar it was clicked from, and the page
-            appeared not to respond. A contents list at the top of a document is
-            the ordinary shape and has none of that risk. */}
-          <nav
-            aria-label="On this page"
-            className={`mt-8 flex flex-wrap gap-1.5 border-t ${RULE} pt-5`}
-          >
-            {CONTENTS.map((c, i) => (
-              <a
-                key={c.id}
-                className={`rounded-full border border-hairline bg-sheet px-2.5 py-1 text-[11.5px] leading-4 text-foreground/70 transition-colors hover:border-brand-brown/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:border-separator dark:bg-surface dark:hover:border-white/20`}
-                href={`#${c.id}`}
-              >
-                <span className="mr-1.5 font-mono text-[10px] tabular-nums text-foreground/40">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                {c.label}
-              </a>
-            ))}
-          </nav>
-
           <SeoSection
             aside="Filing to rating, in six stages, and where the pipe narrows."
             id="pipeline"
@@ -279,10 +243,7 @@ export default function HowItWorksPage() {
             title="What happens to a disclosure"
             total={CONTENTS.length}
           >
-            <PipelineLedger
-              specimen={examples?.specimen ?? null}
-              totals={coverage.totals}
-            />
+            <PipelineLedger totals={coverage.totals} />
           </SeoSection>
 
           <SeoSection
@@ -394,9 +355,7 @@ export default function HowItWorksPage() {
                 these, nothing has been bought yet.
               </p>
 
-              <dl
-                className={`mt-5 overflow-hidden rounded-xl border ${RULE} divide-y ${DIVIDE}`}
-              >
+              <dl className={`mt-5 border-y ${RULE} divide-y ${DIVIDE}`}>
                 <MetaRow
                   label="When it applies"
                   value="A planned trade that, with the previous six months of dealing, reaches 1% of the company's shares or 50bn won"
@@ -474,7 +433,7 @@ export default function HowItWorksPage() {
 
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-6 px-4 py-3">
+    <div className="flex items-baseline justify-between gap-6 py-3">
       <dt className="shrink-0 font-mono text-[10.5px] uppercase tracking-[0.14em] text-foreground/45">
         {label}
       </dt>
