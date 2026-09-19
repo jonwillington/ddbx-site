@@ -228,44 +228,64 @@ export function FeeTiles({
 export function CostBars({
   rows,
   max: maxProp,
+  tone = "page",
   className = "",
 }: {
   rows: { label: string; value: number; primary?: boolean }[];
   max?: number;
+  /** "stage" draws the same object in the fixed-dark board-stage material,
+   *  for the review's hero panel. Default "page" is the themed original. */
+  tone?: "page" | "stage";
   className?: string;
 }) {
   const max = maxProp ?? Math.max(...rows.map((row) => row.value), 1);
+  const ink =
+    tone === "stage"
+      ? {
+          primary: "font-semibold text-white",
+          label: "text-white/55",
+          value: "font-medium text-white/60",
+          rule: "border-white/15",
+          bar: "bg-[var(--color-brand-amber)]",
+          rest: "bg-white/20",
+        }
+      : {
+          primary: "font-semibold text-foreground",
+          label: "text-foreground/55",
+          value: "font-medium text-foreground/60",
+          rule: R.rule,
+          bar: "bg-foreground/80",
+          rest: "bg-foreground/20 dark:bg-white/20",
+        };
 
   return (
     <div
-      className={`grid grid-cols-[minmax(0,9.5rem)_1fr_auto] items-center gap-x-4 gap-y-3 sm:grid-cols-[minmax(0,11rem)_1fr_auto] ${className}`}
+      className={`grid items-center gap-x-4 gap-y-3 ${
+        tone === "stage"
+          ? "grid-cols-[minmax(0,10rem)_1fr_auto] sm:grid-cols-[minmax(0,15rem)_1fr_auto]"
+          : "grid-cols-[minmax(0,9.5rem)_1fr_auto] sm:grid-cols-[minmax(0,11rem)_1fr_auto]"
+      } ${className}`}
     >
       {rows.map((row) => (
         <div key={row.label} className="contents">
           <span
             className={`truncate text-[13px] leading-none ${
-              row.primary
-                ? "font-semibold text-foreground"
-                : "text-foreground/55"
+              row.primary ? ink.primary : ink.label
             }`}
           >
             {row.label}
           </span>
-          <span className={`h-[12px] self-center border-l ${R.rule}`}>
+          <span className={`h-[12px] self-center border-l ${ink.rule}`}>
             <span
               className={`block h-full rounded-r-[4px] ${
-                row.primary
-                  ? "bg-foreground/80"
-                  : "bg-foreground/20 dark:bg-white/20"
+                row.primary ? ink.bar : ink.rest
               }`}
               style={{ width: `${Math.max((row.value / max) * 100, 1.5)}%` }}
             />
           </span>
           <span
             className={`text-right text-[13px] leading-none tabular-nums ${
-              row.primary
-                ? "font-semibold text-foreground"
-                : "font-medium text-foreground/60"
+              row.primary ? ink.primary : ink.value
             }`}
           >
             {fmtMoneyRound(row.value)}

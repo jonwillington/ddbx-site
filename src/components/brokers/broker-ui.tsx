@@ -121,7 +121,7 @@ export function BadgeChip({ badge }: { badge: BrokerBadge }) {
   );
 }
 
-/** Boolean cell: check / em dash / ? for true / false / unknown(null). The one
+/** Boolean cell: check / "No" / ? for true / false / unknown(null). The one
  *  vocabulary every broker surface uses, so a tick never means two things. */
 export function Tick({ value }: { value: boolean | null | undefined }) {
   if (value === true)
@@ -135,7 +135,7 @@ export function Tick({ value }: { value: boolean | null | undefined }) {
   if (value === false)
     return (
       <span aria-label="No" className="text-foreground/30">
-        ,
+        No
       </span>
     );
 
