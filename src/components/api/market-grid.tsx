@@ -4,6 +4,7 @@ import { GB, NL, SE, US } from "country-flag-icons/react/3x2";
 
 import { Reveal } from "@/components/download/reveal";
 import { CHIP_BASE, CHIP_HAIRLINE, CHIP_SIZE } from "@/components/chip";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 
 /** Coverage, as hairline-ruled cells across a grid.
  *
@@ -97,7 +98,8 @@ export function MarketGrid() {
 
             {/* Authored casing: these are proper nouns (Finansinspektionen,
                 EDGAR), which an uppercase transform would flatten. */}
-            <p className="mt-3 font-mono text-caption text-brand-tan">
+            <p className="mt-3 flex items-center gap-1.5 font-mono text-caption text-brand-tan">
+              <NewsSourceLogo ground="dark" name={c.source} size="caption" />
               {c.source}
             </p>
             <p className="mt-2.5 text-body text-white/55">{c.note}</p>

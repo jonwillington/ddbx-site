@@ -6,6 +6,7 @@ import { AppDrawer } from "@/components/app-drawer";
 import { AppComingSoonModal } from "@/components/app-coming-soon-modal";
 import { StoreCta } from "@/components/store-cta";
 import { glass } from "@/components/ui/glass";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 import { Navbar } from "@/components/navbar";
 import { SideNav } from "@/components/side-nav";
 import { NAV_SIDEBAR } from "@/lib/nav-mode";
@@ -679,6 +680,11 @@ export default function DefaultLayout({
                   rel="noopener noreferrer"
                   target="_blank"
                 >
+                  <NewsSourceLogo
+                    className="mr-1"
+                    domain="logo.dev"
+                    size="caption"
+                  />
                   Logo.dev
                 </a>
                 .

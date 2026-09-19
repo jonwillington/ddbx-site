@@ -11,6 +11,7 @@ import { featureBadge, returnTextClass, sentimentOrder } from "./monthly-utils";
 import { chip } from "@/components/chip";
 import { formatSignedPct } from "@/lib/performance/format";
 import { CompanyLogo } from "@/components/company-logo";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 import { BOARD_ROW_GRID } from "@/components/boards/board-row";
 import { TickerPill } from "@/components/ticker-pill";
 import { cleanCompanyName, displayTicker } from "@/lib/company";
@@ -150,11 +151,12 @@ function FeaturedCard({
           {item.sources.map((src, i) => (
             <a
               key={i}
-              className="text-brand-brown underline-offset-2 hover:underline dark:text-brand-tan"
+              className="inline-flex items-center gap-1 text-brand-brown underline-offset-2 hover:underline dark:text-brand-tan"
               href={src}
               rel="noreferrer noopener"
               target="_blank"
             >
+              <NewsSourceLogo size="caption" url={src} />
               {hostOf(src)}
             </a>
           ))}

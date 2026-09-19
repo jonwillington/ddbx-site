@@ -25,6 +25,10 @@ import { RatingBadge } from "@/components/rating-badge";
 import { BenchmarkVerdict, PositionCard } from "@/components/position-card";
 import { MiniPriceChart } from "@/components/mini-price-chart";
 import { Delta } from "@/components/ui/delta";
+import {
+  MARKET_SOURCE_DOMAIN,
+  NewsSourceLogo,
+} from "@/components/news-source-logo";
 import { useDiscretion } from "@/lib/discretion";
 import { PRICING, PROMO_NOTE, formatPrice } from "@/lib/pricing";
 
@@ -536,11 +540,12 @@ function CongressTraderProfile({
       )}
       {p.source && (
         <a
-          className="inline-block text-xs text-foreground/45 underline underline-offset-2 hover:text-foreground/70"
+          className="inline-flex items-center gap-1 text-xs text-foreground/45 underline underline-offset-2 hover:text-foreground/70"
           href={p.source}
           rel="noreferrer"
           target="_blank"
         >
+          <NewsSourceLogo size="caption" url={p.source} />
           Source
         </a>
       )}
@@ -681,11 +686,16 @@ function CongressDetailBody({
       <div className="text-xs text-foreground/45">
         Amounts are disclosed as ranges (STOCK Act). ·{" "}
         <a
-          className="underline underline-offset-2 hover:text-foreground/70"
+          className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-foreground/70"
           href={d.ptr_link}
           rel="noreferrer"
           target="_blank"
         >
+          <NewsSourceLogo
+            size="caption"
+            url={d.ptr_link}
+            domain={MARKET_SOURCE_DOMAIN.USG}
+          />
           View original filing
         </a>
       </div>
@@ -850,6 +860,9 @@ function CongressExplainer() {
                 {m.label}
               </dt>
               <dd className="text-right text-sm text-foreground/85">
+                {m.label === "Source" ? (
+                  <NewsSourceLogo className="mr-1.5" name={m.value} />
+                ) : null}
                 {m.value}
               </dd>
             </div>

@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { API_BASE } from "@/lib/api";
 import { companyHref } from "@/lib/company";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 import { marketForPath } from "@/lib/markets/registry";
 
 /**
@@ -251,6 +252,7 @@ export function LogoDevAttribution({ className }: { className?: string }) {
         rel="noopener noreferrer"
         target="_blank"
       >
+        <NewsSourceLogo className="mr-1" domain="logo.dev" size="caption" />
         Logo.dev
       </a>
     </div>

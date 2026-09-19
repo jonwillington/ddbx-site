@@ -61,6 +61,7 @@ import { panel } from "@/components/ui/panel";
 import { TickerPill } from "@/components/ticker-pill";
 import DefaultLayout from "@/layouts/default";
 import { api } from "@/lib/api";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 import {
   cleanCompanyName,
   cleanInsiderName,
@@ -346,11 +347,12 @@ export default function LearnEntryPage() {
               {entry.sources.map((s) => (
                 <li key={s.url}>
                   <a
-                    className="text-body text-foreground/85 underline underline-offset-4 hover:text-foreground"
+                    className="inline-flex items-center gap-2 text-body text-foreground/85 underline underline-offset-4 hover:text-foreground"
                     href={s.url}
                     rel="nofollow noopener noreferrer"
                     target="_blank"
                   >
+                    <NewsSourceLogo size="body" url={s.url} />
                     {s.label}
                   </a>
                 </li>

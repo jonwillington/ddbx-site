@@ -37,6 +37,7 @@ import {
   HeroShowcaseDemo,
 } from "@/components/market/market-hero";
 import { Skeleton } from "@/components/skeleton";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 import { panel } from "@/components/ui/panel";
 import { StoreButtons } from "@/components/store-buttons";
 import { useDownloadCopy } from "@/lib/download/copy";
@@ -118,7 +119,10 @@ function HeroFigures({
       </dl>
       {/* Provenance under the figures it belongs to — it was a stray line
           under three cards before. */}
-      <p className={`mt-3 ${CAPTION}`}>{sourceLine}</p>
+      <p className={`mt-3 ${CAPTION}`}>
+        <NewsSourceLogo className="mr-1.5" name={sourceLine} size="small" />
+        {sourceLine}
+      </p>
     </>
   );
 }

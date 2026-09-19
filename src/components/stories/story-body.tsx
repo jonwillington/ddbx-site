@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import { resolveStoryLink } from "@/lib/stories";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 
 /** Renderer for a story's markdown body.
  *
@@ -46,6 +47,8 @@ function Inline({ text }: { text: string }) {
             rel="noopener noreferrer"
             target="_blank"
           >
+            {/* The source's mark before the words, as on every citation. */}
+            <NewsSourceLogo className="mr-1" size="small" url={href} />
             {m[1]}
             {/* Only external links carry the mark, so a reader can see at a
                 glance which ones leave the site. */}

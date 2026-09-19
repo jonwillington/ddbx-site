@@ -61,6 +61,7 @@ import { GB, NL, SE, US } from "country-flag-icons/react/3x2";
 
 import { Fold } from "@/components/how-it-works/shared";
 import { eyebrow } from "@/components/ui/eyebrow";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 import { FEEDS, FEED_ORDER, count, monthLabel } from "@/lib/coverage";
 
 /** Flags identify a FEED, not a country: the congressional corpus flies the US
@@ -231,7 +232,10 @@ function FeedRow({
               </span>
             ) : null}
           </div>
-          <p className={`mt-1.5 ${eyebrow()}`}>{feed.source}</p>
+          <p className={`mt-1.5 flex items-center gap-1.5 ${eyebrow()}`}>
+            <NewsSourceLogo name={feed.source} size="caption" />
+            {feed.source}
+          </p>
           <p className="mt-1.5 text-body text-foreground/55">{feed.filer}</p>
         </div>
 

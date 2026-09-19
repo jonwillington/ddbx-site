@@ -74,6 +74,7 @@ import { chip } from "@/components/chip";
 import { DisclosureSection } from "@/components/disclosure-section";
 import { api, type KrDealingWire, type KrPlanWire } from "@/lib/api";
 import { HOW_IT_WORKS_PATH } from "@/lib/methodology";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 
 /** KRX continuous trading, 09:00–15:30 KST. */
 export const KRX_SESSION = {
@@ -823,6 +824,9 @@ function KoreaExplainer() {
                 {m.label}
               </dt>
               <dd className="text-right text-sm text-foreground/85">
+                {m.label === "Source" ? (
+                  <NewsSourceLogo className="mr-1.5" name={m.value} />
+                ) : null}
                 {m.value}
               </dd>
             </div>

@@ -41,6 +41,7 @@ import {
 } from "../../shared/tape.js";
 
 import { LogoDevAttribution } from "@/components/company-logo";
+import { NewsSourceLogo } from "@/components/news-source-logo";
 import { R } from "@/components/sector-ui";
 import { tapeCta } from "@/components/seo/cta-copy";
 import { SeoPageShell } from "@/components/seo/page-shell";
@@ -138,7 +139,10 @@ function CoverageRow({
           </>
         ) : null}
         <dt className="text-foreground/45">Source</dt>
-        <dd className="text-foreground/80">{market.source}</dd>
+        <dd className="text-foreground/80">
+          <NewsSourceLogo className="mr-1.5" name={market.source} size="body" />
+          {market.source}
+        </dd>
         <dt className="text-foreground/45">Who files</dt>
         <dd className="text-foreground/80">{market.filers}</dd>
         <dt className="text-foreground/45">On the tape</dt>

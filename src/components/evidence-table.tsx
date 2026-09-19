@@ -3,6 +3,8 @@ import type { EvidencePoint } from "@/types/ddbx";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/react/16/solid";
 import { ChevronDownIcon } from "@heroicons/react/16/solid";
 
+import { NewsSourceLogo } from "@/components/news-source-logo";
+
 /** Evidence for / against, as collapsible tone-tinted cards.
  *
  *  Mirrors `EvidenceCard` in the iOS deal detail view: the headline is the
@@ -76,16 +78,20 @@ export function EvidenceTable({
                 <p className="text-xs mt-2">
                   {sourceUrl ? (
                     <a
-                      className="inline-flex items-center gap-0.5 text-brand-brown dark:text-[#a88c6e] hover:underline underline-offset-2"
+                      className="inline-flex items-center gap-1 text-brand-brown dark:text-brand-tan hover:underline underline-offset-2"
                       href={sourceUrl}
                       rel="noopener noreferrer"
                       target="_blank"
                     >
+                      <NewsSourceLogo size="caption" url={sourceUrl} />
                       {sourceLabel}
                       <ArrowTopRightOnSquareIcon className="w-3 h-3 shrink-0" />
                     </a>
                   ) : (
-                    <span className="text-muted">{sourceLabel}</span>
+                    <span className="inline-flex items-center gap-1 text-muted">
+                      <NewsSourceLogo name={sourceLabel} size="caption" />
+                      {sourceLabel}
+                    </span>
                   )}
                 </p>
               )}
