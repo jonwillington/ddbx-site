@@ -49,7 +49,8 @@ import type { ReactNode } from "react";
 import type { DevicePlatform } from "@/lib/use-device-platform";
 
 import { QrInstall } from "@/components/download/qr-install";
-import { StoreButtons } from "@/components/store-buttons";
+import { useStoreTarget } from "@/components/store-buttons";
+import { StoreCta } from "@/components/store-cta";
 import { BUTTON_RADIUS } from "@/components/button";
 import { storeUrlForMarketId } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
@@ -94,6 +95,7 @@ export function AppCtaBand({
   className?: string;
 }) {
   const sniffed = useDevicePlatform();
+  const store = useStoreTarget(marketId, platform);
   // The QR opens the store the button opens, so it follows the forced platform
   // where there is one.
   const qrUrl = storeUrlForMarketId(marketId, platform ?? sniffed);
@@ -129,14 +131,17 @@ export function AppCtaBand({
 
             <div className="mt-8 flex flex-col items-start gap-2.5">
               {/* Light fill: BUTTON_FILLED is near-black, which is the band. */}
-              <StoreButtons
-                buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-[15px] font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
-                className="items-start"
-                gaEvent={gaEvent}
-                gaLabel={gaLabel}
-                marketId={marketId}
-                platform={platform}
-              />
+              {store ? (
+                <StoreCta
+                  data-ga-event={gaEvent}
+                  data-ga-label={`${gaLabel} · ${store.store}`}
+                  href={store.href}
+                  recipe={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-label font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
+                  store={store.store}
+                >
+                  {store.label}
+                </StoreCta>
+              ) : null}
               <p className="text-small text-white/50">{note}</p>
             </div>
           </div>

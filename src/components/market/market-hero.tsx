@@ -40,7 +40,8 @@ import {
   BUTTON_RADIUS,
 } from "@/components/button";
 import { chip } from "@/components/chip";
-import { StoreButtons } from "@/components/store-buttons";
+import { useStoreTarget } from "@/components/store-buttons";
+import { StoreCta } from "@/components/store-cta";
 import { NAV_SIDEBAR } from "@/lib/nav-mode";
 import { useMediaQuery } from "@/lib/use-media-query";
 
@@ -613,6 +614,8 @@ export function MarketHero({
   // Shared deal-radar clock — drives the showcase panel's queue and the
   // notification stack from one source so they stay in lockstep.
   const radar = useDealRadar(marketId, appShowcase);
+  // The one store this visitor is sent to (StoreButtons' resolution).
+  const store = useStoreTarget(marketId ?? "uk");
   // Shell layout (lib/nav-mode), from xl: the hero becomes a dark stage like
   // the board pages' headers — the same fixed #1a140d panel run edge to edge
   // of the sheet (.board-stage, globals.css). `dark` scopes the site's dark
@@ -688,7 +691,7 @@ export function MarketHero({
           {bullets.map((b, i) => (
             <li
               key={i}
-              className="flex items-start gap-2.5 text-[15px] leading-snug text-foreground/70"
+              className="flex items-start gap-2.5 text-lede leading-snug text-foreground/70"
             >
               <CheckIcon
                 aria-hidden
@@ -753,13 +756,16 @@ export function MarketHero({
   // stray 24px under the bullets.
   const ctaRowDesktop = (!!primaryCtaHref || onExplain || onViewReport) && (
     <div className={`flex flex-wrap items-center gap-3 ${ctaJustify}`}>
-      {!!primaryCtaHref && (
-        <StoreButtons
-          buttonClassName={FILLED_CTA}
-          gaEvent="cta_hero_download_app"
-          gaLabel="Hero desktop download"
-          marketId={marketId ?? "uk"}
-        />
+      {!!primaryCtaHref && store && (
+        <StoreCta
+          data-ga-event="cta_hero_download_app"
+          data-ga-label={`Hero desktop download · ${store.store}`}
+          href={store.href}
+          recipe={FILLED_CTA}
+          store={store.store}
+        >
+          {store.label}
+        </StoreCta>
       )}
       {onExplain && (
         <button
@@ -792,7 +798,7 @@ export function MarketHero({
         shellStage
           ? "dark board-stage -mt-8! -mb-6! overflow-hidden text-foreground"
           : panelStage
-            ? "dark board-stage mt-0! overflow-hidden rounded-[24px] border border-white/10 text-foreground"
+            ? "dark board-stage mt-0! overflow-hidden rounded-stage border border-white/10 text-foreground"
             : ""
       } ${
         appShowcase
@@ -874,15 +880,17 @@ export function MarketHero({
               {/* Keyed on the store link, not the layout — a showcase market
                   with no app has nothing to stand in for the floating
                   download bar. */}
-              {!!primaryCtaHref && (
-                <div className="hidden md:block">
-                  <StoreButtons
-                    buttonClassName={`inline-flex items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
-                    className="items-center sm:flex-row"
-                    gaEvent="cta_hero_download_app"
-                    gaLabel="Hero compact download"
-                    marketId={marketId ?? "uk"}
-                  />
+              {!!primaryCtaHref && store && (
+                <div className="hidden md:flex">
+                  <StoreCta
+                    data-ga-event="cta_hero_download_app"
+                    data-ga-label={`Hero compact download · ${store.store}`}
+                    href={store.href}
+                    recipe={`inline-flex items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-6 py-3 text-base font-semibold shadow-md transition-[background-color,box-shadow] hover:shadow-lg`}
+                    store={store.store}
+                  >
+                    {store.label}
+                  </StoreCta>
                 </div>
               )}
               {ctaRow}

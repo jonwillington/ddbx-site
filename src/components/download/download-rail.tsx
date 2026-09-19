@@ -19,9 +19,8 @@
 
 import type { AppPlatform } from "@/lib/app-screenshots";
 
-import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
-import { KICKER } from "@/components/how-it-works/shared";
-import { StoreButtons } from "@/components/store-buttons";
+import { useStoreTarget } from "@/components/store-buttons";
+import { StoreCta } from "@/components/store-cta";
 import { IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
 import { useDownloadCopy } from "@/lib/download/copy";
 import { annualPerMonth, formatPrice, PRICING } from "@/lib/pricing";
@@ -41,6 +40,8 @@ export function DownloadRail({
 }) {
   const pricing = PRICING[marketId];
   const t = useDownloadCopy();
+  // The route's platform, not the device's (see `platform` above).
+  const store = useStoreTarget(marketId, platform);
   const latestFilings = marketId === "us" ? "/us" : "/";
   // Onward paths out of the landing page. It has none today short of the
   // navbar — a reader who isn't ready to install has to leave rather than
@@ -72,10 +73,10 @@ export function DownloadRail({
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         <div className="rounded-card border border-rule bg-background/40 p-4">
-          <p className={`${KICKER} text-foreground/55`}>
+          <p className="micro text-foreground/55">
             {t.railFreeForDays(pricing.trialDays)}
           </p>
-          <p className="mt-2 text-[22px] font-semibold leading-none tracking-[-0.02em] text-foreground">
+          <p className="mt-2 text-subheading font-semibold leading-none text-foreground">
             {formatPrice(pricing, annualPerMonth(pricing))}
             <span className="text-small font-normal text-foreground/55">
               {" "}
@@ -97,14 +98,19 @@ export function DownloadRail({
             ) : null}
           </p>
 
-          <StoreButtons
-            buttonClassName={`inline-flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-4 py-2.5 text-small font-semibold transition-colors`}
-            className="mt-4"
-            gaEvent="cta_download_rail"
-            gaLabel={gaLabel}
-            marketId={marketId}
-            platform={platform}
-          />
+          {store ? (
+            <StoreCta
+              block
+              className="mt-4"
+              data-ga-event="cta_download_rail"
+              data-ga-label={`${gaLabel} · ${store.store}`}
+              href={store.href}
+              size="sm"
+              store={store.store}
+            >
+              {store.label}
+            </StoreCta>
+          ) : null}
         </div>
 
         <ul className="mt-4 space-y-0.5">

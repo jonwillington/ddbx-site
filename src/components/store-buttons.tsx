@@ -1,6 +1,6 @@
 import type { DevicePlatform } from "@/lib/use-device-platform";
 
-import { StoreCta } from "@/components/store-cta";
+import { StoreCta, type Store } from "@/components/store-cta";
 import { storeTargetsForMarket } from "@/lib/app-store";
 import { useDownloadCopy } from "@/lib/download/copy";
 import { useDevicePlatform } from "@/lib/use-device-platform";
@@ -36,16 +36,7 @@ export function StoreButtons({
    *  platform there; leave unset everywhere the device really does decide. */
   platform?: DevicePlatform | null;
 }) {
-  const detected = useDevicePlatform();
-  const platform = forcedPlatform ?? detected;
-  // Apple's and Google's own badge wording for the reader's language. English
-  // everywhere except the /zh-hk download pages, which are the only routes that
-  // provide a non-default copy context.
-  const { storeButton } = useDownloadCopy();
-  // `storeTargetsForMarket` returns [App Store] on iOS/desktop and [Play] on
-  // Android (with the UK app as the Android fallback), so the first entry is
-  // always the single store this visitor should see.
-  const target = storeTargetsForMarket(marketId, platform)[0];
+  const target = useStoreTarget(marketId, forcedPlatform);
 
   if (!target) return null;
 
@@ -59,8 +50,32 @@ export function StoreButtons({
         recipe={buttonClassName}
         store={target.store}
       >
-        {storeButton[target.store]}
+        {target.label}
       </StoreCta>
     </div>
   );
+}
+
+/** The single store this visitor should be sent to, with its button label —
+ *  the resolution `StoreButtons` does, for call sites that render `StoreCta`
+ *  themselves. `null` when the market has no listing for the platform (the US
+ *  app on Android before its Play listing): render availability copy, not a
+ *  wrong-product button.
+ *
+ *  `platform` overrides the device sniff, for routes that declare theirs. */
+export function useStoreTarget(
+  marketId: string,
+  platform?: DevicePlatform | null,
+): { store: Store; href: string; label: string } | null {
+  const detected = useDevicePlatform();
+  // Apple's and Google's own badge wording for the reader's language. English
+  // everywhere except the /zh-hk download pages, which are the only routes that
+  // provide a non-default copy context.
+  const { storeButton } = useDownloadCopy();
+  // `storeTargetsForMarket` returns [App Store] on iOS/desktop and [Play] on
+  // Android (with the UK app as the Android fallback), so the first entry is
+  // always the single store this visitor should see.
+  const target = storeTargetsForMarket(marketId, platform ?? detected)[0];
+
+  return target ? { ...target, label: storeButton[target.store] } : null;
 }

@@ -20,7 +20,8 @@
 import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { CompanyLogo } from "@/components/company-logo";
-import { StoreButtons } from "@/components/store-buttons";
+import { useStoreTarget } from "@/components/store-buttons";
+import { StoreCta } from "@/components/store-cta";
 import { BUTTON_RADIUS } from "@/components/button";
 
 export function CompanyAppPitch({
@@ -39,6 +40,7 @@ export function CompanyAppPitch({
   market: string;
 }) {
   const marketId = market === "UK" ? "uk" : "us";
+  const store = useStoreTarget(marketId);
 
   // A company page with no disclosures has nothing to promise alerts about,
   // so it doesn't ask. Same guard as before, read off the deals directly now
@@ -106,14 +108,18 @@ export function CompanyAppPitch({
 
             <div className="mt-9 flex flex-col items-start gap-2.5">
               {/* Light fill: BUTTON_FILLED is near-black, which is the panel. */}
-              <StoreButtons
-                buttonClassName={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-lede font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
-                className="items-start"
-                gaEvent="cta_company_download"
-                gaLabel={`Company pitch · ${ticker}`}
-                glyphClassName="h-4 w-4 shrink-0"
-                marketId={marketId}
-              />
+              {store ? (
+                <StoreCta
+                  data-ga-event="cta_company_download"
+                  data-ga-label={`Company pitch · ${ticker} · ${store.store}`}
+                  glyphClassName="h-4 w-4"
+                  href={store.href}
+                  recipe={`inline-flex items-center gap-2.5 ${BUTTON_RADIUS} bg-white px-6 py-3.5 text-lede font-semibold text-ink shadow-sm transition-colors hover:bg-white/90`}
+                  store={store.store}
+                >
+                  {store.label}
+                </StoreCta>
+              ) : null}
               <p className="text-small text-white/50">
                 Free for 7 days, cancel any time.
               </p>
