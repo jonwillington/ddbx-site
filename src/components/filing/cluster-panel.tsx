@@ -1,33 +1,46 @@
-/** The cluster, shown rather than asserted.
+/** The cluster, shown as one sentence and a list of people.
  *
- *  `cluster.count` says "2 insiders bought inside a 14-day window" and the
- *  first version printed exactly that, as a sentence, in a card. It is the most
- *  interesting fact on a filing page — breadth is the one signal a single
- *  purchase cannot give you — and it was the least visual thing on the page.
+ *  `cluster.count` says "2 insiders bought inside a 14-day window", and this
+ *  panel exists to make that the most legible thing on the page rather than
+ *  the most technical. The previous drawing (2026-09) was a ten-column
+ *  calendar strip of every day in the span, weekend columns shaded, a tick
+ *  under each purchase day, then calendar-chip rows, then a summary sentence
+ *  saying the total again. Three devices, each restating the same two
+ *  numbers, and Jon's verdict on it was "very hard to understand".
  *
- *  So this fetches the issuer's other filings and draws the cluster: every
- *  purchase in the window on a shared date axis, with this one marked, and the
- *  people underneath ranked by what they put in. That turns "a strong cluster"
- *  from a label into something a reader can count for themselves.
+ *  So now: a verdict line at heading scale, the way the checks section opens
+ *  with its tally ("2 purchases 9 days apart, £910k in total"), then one
+ *  contained panel (design language, tenet 1) holding one row per purchase
+ *  in date order, the filing being read washed in the brand colour and
+ *  tagged, every other row a door to its own page, and one quiet line saying
+ *  exactly which purchases these are. Nothing here is called a cluster, a
+ *  window or breadth.
  *
- *  Degrades to nothing. The company bundle is a second request for supporting
- *  evidence, so a failure leaves the page standing on the rest of its content
- *  rather than showing an empty frame — the caller renders the cluster's
- *  one-line summary either way, which is also what the pre-render emits.
+ *  Every figure is computed from the co-buyers this component loaded, never
+ *  from the detector's own `count`: the two can disagree (the detector does
+ *  not treat a person-closely-associated filing as a separate member), and
+ *  the detector's number belongs to the section aside, where it is stated
+ *  once. The panel counts *purchases*, not people, for the same reason.
+ *
+ *  Degrades to a sentence. The company bundle is a second request for
+ *  supporting evidence, so while it loads, and if it fails, the caller's
+ *  `fallback` (the detector's one-line summary, also what the pre-render
+ *  emits) stands in, and the section is never empty.
  */
 import type { Dealing, UsDealing } from "@/types/ddbx";
 
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRightIcon, CheckIcon } from "@heroicons/react/20/solid";
+import { ArrowRightIcon } from "@heroicons/react/20/solid";
 
 import { cleanName } from "../../../shared/filings.js";
 import { filingFamily } from "../../../shared/filing-family.js";
 
-import { CalendarDayChip, chipParts } from "@/components/calendar-day-chip";
+import { CHIP_BASE, CHIP_HAIRLINE, CHIP_SIZE } from "@/components/chip";
+import { panel } from "@/components/ui/panel";
 import { useIssuerDeals } from "@/lib/issuer-deals";
 
-const RULE = "border-hairline dark:border-separator";
+const DAY = 86_400_000;
 
 /** Days either side of this trade to treat as "the window".
  *  `cluster.window_days` is the detector's own span, so it is used directly
@@ -38,17 +51,50 @@ function inWindow(iso: string, anchor: string, days: number) {
 
   if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
 
-  return Math.abs(b - a) <= days * 86_400_000;
+  return Math.abs(b - a) <= days * DAY;
 }
 
-const monthAbbr = (iso: string) =>
-  new Date(`${String(iso).slice(0, 10)}T00:00:00Z`).toLocaleDateString(
-    "en-GB",
-    {
+/** "Wed" and "2 Sept", from an ISO date. UTC throughout: filing dates are
+ *  calendar dates with no time, and letting the local zone interpret them
+ *  moves a purchase to the previous day for anyone west of London. */
+function dateParts(iso: string) {
+  const d = new Date(`${String(iso).slice(0, 10)}T00:00:00Z`);
+
+  if (Number.isNaN(d.getTime())) return { weekday: "", day: "" };
+
+  return {
+    weekday: d.toLocaleDateString("en-GB", {
+      weekday: "short",
+      timeZone: "UTC",
+    }),
+    day: d.toLocaleDateString("en-GB", {
+      day: "numeric",
       month: "short",
       timeZone: "UTC",
-    },
-  );
+    }),
+  };
+}
+
+/** The role as the filing states it, with the one formula a lay reader
+ *  cannot parse rewritten. "Person Closely Associated with a Shareholder
+ *  Nominated Non-Executive Director" is the regulation's phrase for a
+ *  spouse, dependant or controlled company of the named insider; "Close
+ *  associate of a …" says the same thing in words a reader has met before.
+ *  Everything else is left exactly as filed, because it is the record. */
+export function plainRole(role: string) {
+  const m = role.match(/^person\s+closely\s+associated\s+with\s+(.+)$/i);
+
+  if (!m) return role;
+  const rest = m[1].trim();
+
+  // Keep an article the filing supplied; a bare title gets "the"; a named
+  // person (Mr, Mrs, Ms, Dr …) gets neither.
+  if (/^(?:an?|the)\s/i.test(rest)) return `Close associate of ${rest}`;
+  if (/^(?:mr|mrs|ms|miss|dr|sir|dame|lord|lady)\b/i.test(rest))
+    return `Close associate of ${rest}`;
+
+  return `Close associate of the ${rest}`;
+}
 
 export interface Peer {
   id: string;
@@ -65,20 +111,23 @@ export function ClusterPanel({
   market = "UK",
 }: {
   deal: Dealing | UsDealing;
-  /** Rendered instead of the drawing when the co-buyers cannot be loaded, so
-   *  the section is never empty and the cluster is always stated exactly once
-   *  somewhere on the page. */
+  /** Rendered instead of the panel while the co-buyers load and when they
+   *  cannot be loaded, so the section is never empty and the cluster is
+   *  always stated exactly once somewhere on the page. */
   fallback: string;
   market?: string;
 }) {
-  // Both markets now. `market` picks the formatter family AND the company
-  // bundle, so the peer rows read `reporter`/`value` on a US row and
-  // `director`/`value_gbp` on a UK one without this component knowing which.
+  // Both markets. `market` picks the formatter family AND the company bundle,
+  // so the rows read `reporter`/`value` on a US row and `director`/`value_gbp`
+  // on a UK one without this component knowing which.
   const fam = filingFamily(market);
   const deals = useIssuerDeals(market, deal.ticker);
 
   const windowDays = deal.cluster?.window_days ?? 14;
 
+  // Date order, oldest first. The old list ranked by value, which is a fact
+  // about size; the section's claim is about timing, and a reader following
+  // the dates down the list should meet them in order.
   const peers = useMemo<Peer[]>(() => {
     if (!deals) return [];
 
@@ -96,255 +145,126 @@ export function ClusterPanel({
           isThis: d.id === deal.id,
         };
       })
-      .sort((a, b) => b.value - a.value);
-  }, [deals, deal.id, deal.trade_date, windowDays]);
+      .sort((a, b) =>
+        a.date === b.date ? b.value - a.value : a.date < b.date ? -1 : 1,
+      );
+  }, [deals, deal.id, deal.trade_date, windowDays, fam]);
 
   if (!deals || peers.length < 2) {
     return (
-      <p className="mt-5 max-w-[62ch] text-[14px] leading-[1.65] text-foreground/70">
+      <p className="mt-5 max-w-measure text-body text-foreground/70">
         {fallback}
       </p>
     );
   }
 
   const dates = peers.map((p) => Date.parse(`${p.date}T00:00:00Z`));
-  const min = Math.min(...dates);
-  const max = Math.max(...dates);
+  const spanDays = Math.round((Math.max(...dates) - Math.min(...dates)) / DAY);
   const total = peers.reduce((n, p) => n + p.value, 0);
+  const company = cleanName(deal.company);
 
-  // A day per column across the whole window, not two labelled endpoints.
-  // The claim being made is about TIMING, and a bare line with a dot at each
-  // end told a reader nothing about the shape of it: whether five purchases
-  // landed on one afternoon or trickled over three weeks, and whether the gaps
-  // are weekends or actual silence. Every calendar day is drawn, weekends are
-  // marked as non-trading, and the days with a purchase carry the site's
-  // calendar chip.
-  const days: {
-    iso: string;
-    weekday: string;
-    dayNum: string;
-    weekend: boolean;
-    monthStart: boolean;
-    buys: Peer[];
-  }[] = [];
-
-  for (let t = min; t <= max; t += 86_400_000) {
-    const d = new Date(t);
-    const iso = d.toISOString().slice(0, 10);
-    const dow = d.getUTCDay();
-
-    days.push({
-      iso,
-      ...chipParts(iso),
-      weekend: dow === 0 || dow === 6,
-      monthStart: days.length === 0 || d.getUTCDate() === 1,
-      buys: peers.filter((p) => p.date === iso),
-    });
-  }
-
-  const monthSpan = [
-    ...new Set(
-      days.map((d) =>
-        new Date(`${d.iso}T00:00:00Z`).toLocaleDateString("en-GB", {
-          month: "long",
-          year: "numeric",
-          timeZone: "UTC",
-        }),
-      ),
-    ),
-  ].join(" to ");
+  // "9 days apart" is how two events relate; nine purchases are not "apart",
+  // they happen "over 14 days" (the inclusive span, the count a reader gets
+  // from the first and last dates on the rows below).
+  const spanPhrase =
+    spanDays === 0
+      ? "on the same day"
+      : peers.length === 2
+        ? `${spanDays} ${spanDays === 1 ? "day" : "days"} apart`
+        : `over ${spanDays + 1} days`;
 
   return (
-    <div className="mt-5">
-      <div className="flex items-baseline justify-between gap-4">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45">
-          {monthSpan}
-        </p>
-        <p className="text-[12px] text-foreground/45">
-          {days.length} days, {peers.length} purchases
-        </p>
-      </div>
-
-      {/* Horizontal scroll rather than squeezing: a 30-day cluster at the
-          document measure would give each day 28px, which is narrower than the
-          chip and unreadable. The strip scrolls; the list below is complete
-          either way. */}
-      <div className="-mx-4 mt-3 overflow-x-auto px-4 pb-1">
-        <div className="flex min-w-full gap-1">
-          {days.map((d) => {
-            const has = d.buys.length > 0;
-            const isThis = d.buys.some((b) => b.isThis);
-
-            return (
-              <div
-                key={d.iso}
-                className={`flex min-w-[34px] flex-1 flex-col items-center gap-1.5 rounded-lg py-2 ${
-                  d.weekend ? "bg-foreground/[0.03]" : ""
-                }`}
-                title={
-                  has
-                    ? d.buys
-                        .map((b) => `${b.name}, ${fam.money(b.value)}`)
-                        .join("\n")
-                    : undefined
-                }
-              >
-                {/* Plain type, not a calendar chip.
-                    The chips are the LIST's device below; repeating them here
-                    put five boxed dates immediately above five more, so the
-                    strip stopped reading as a continuous run of days and
-                    started reading as a second, competing list. A purchase day
-                    is marked by weight and colour on the number instead, which
-                    is all the strip needs to say. */}
-                <span className="flex h-9 flex-col items-center justify-center">
-                  <span
-                    className={`text-[8.5px] font-semibold uppercase tracking-[0.1em] ${
-                      has ? "text-foreground/45" : "text-foreground/25"
-                    }`}
-                  >
-                    {d.weekday.slice(0, has ? 3 : 1)}
-                  </span>
-                  <span
-                    className={`mt-0.5 tabular-nums ${
-                      isThis
-                        ? "text-[17px] font-semibold text-brand-brown dark:text-brand-tan"
-                        : has
-                          ? "text-[15px] font-semibold text-foreground/80"
-                          : "text-[12px] text-foreground/30"
-                    }`}
-                  >
-                    {d.dayNum}
-                  </span>
-                </span>
-                {/* The month, on its first day in the window (and on the very
-                    first cell, which may not be a 1st). Without it the run
-                    reads 29, 30, 1, 2 with no indication that it turned over. */}
-                <span className="h-3 text-[8.5px] font-semibold uppercase tracking-[0.1em] text-brand-brown dark:text-brand-tan">
-                  {d.monthStart ? monthAbbr(d.iso) : ""}
-                </span>
-
-                {/* A TICK PER PURCHASE, NOT A TALLY STEM.
-                    These were 1px-wide stems of two different heights, which
-                    at strip scale is a smudge: nothing about them said "a
-                    purchase landed here" rather than "this column has some
-                    quantity in it", and the days with no buy looked the same as
-                    the days with one until you counted pixels. A tick is the
-                    one mark that reads as an event at 14px. This filing's own
-                    is knocked out of a filled disc so it stays the anchor. */}
-                <span className="flex h-5 items-center justify-center gap-0.5">
-                  {d.buys.map((b) =>
-                    b.isThis ? (
-                      <span
-                        key={b.id}
-                        className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-brown text-white dark:bg-brand-tan dark:text-[#1a140d]"
-                      >
-                        <CheckIcon className="h-3.5 w-3.5" />
-                      </span>
-                    ) : (
-                      <CheckIcon
-                        key={b.id}
-                        className="h-4 w-4 text-brand-brown/55 dark:text-brand-tan/60"
-                      />
-                    ),
-                  )}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* WHAT EACH PERSON PUT IN IS THE ROW'S HEADLINE, AND EVERY ROW IS A DOOR.
-       *
-       *  Two things were wrong here. The value was 13px grey at the end of the
-       *  row, quieter than the name beside it, on a panel whose entire argument
-       *  is how much money went in — and the bar in front of it was drawn
-       *  against the largest peer, so the top row was always full and the
-       *  bottom always a stub, which is a restatement of the sort order rather
-       *  than a fact about any purchase. The figure is now the largest thing on
-       *  the row and the bar is gone.
-       *
-       *  And every one of these peers has a filing page of its own, which the
-       *  row reached only through an underline on the name. The whole row is
-       *  the link now, with the arrow saying so. */}
-      <ul className={`mt-4 border-t ${RULE}`}>
-        {peers.map((p) => (
-          <PeerRow key={p.id} market={market} p={p} />
-        ))}
-      </ul>
-
-      {/* Deliberately states purchases and value, NOT a headcount.
-          `cluster.count` is the detector's own figure and the only authoritative
-          one; counting distinct names in this list produced a different number
-          (it picked up a person-closely-associated filing the detector does
-          not treat as a separate member) and printed it three lines from the
-          detector's, disagreeing. One idea, one source. */}
-      {/* "inside {windowDays} days" was wrong, and visibly so: `inWindow`
-          collects purchases up to `windowDays` EITHER SIDE of this trade, so
-          the drawn set spans up to twice the detector's window and the strip
-          above it was printing "19 days" three lines from a sentence claiming
-          14. The span is stated as what it is. The detector's own headline
-          figure still lives in the section aside, which is the one place it is
-          authoritative. */}
-      <p className="mt-3 text-[13px] leading-[1.6] text-foreground/55">
-        {fam.money(total)} across {peers.length}{" "}
-        {peers.length === 1 ? "disclosed purchase" : "disclosed purchases"} at{" "}
-        {cleanName(deal.company)}, within {windowDays} days either side of this
-        one.
+    <div className="mt-6">
+      {/* THE VERDICT, set the way the checks section sets its tally (one
+          figure at heading scale, the rest of the sentence a step down in
+          quieter ink), so the two sections open the same way and a reader
+          who stops at this line has the whole story: how many, how close,
+          how much. The second clause takes its own line in a phone sheet. */}
+      <p className="text-heading font-semibold tabular-nums text-foreground">
+        {peers.length} purchases
+        <span className="mt-1 block text-title font-semibold text-foreground/70 sm:ml-2 sm:mt-0 sm:inline">
+          {spanPhrase}, {fam.money(total)} in total
+        </span>
       </p>
+
+      <div className={`mt-5 overflow-hidden ${panel()}`}>
+        {/* ONE ROW PER PURCHASE, in date order. The filing being read is
+            washed in the brand colour and tagged, so a reader arriving cold
+            can see where they are in the list without reading a name. */}
+        <ul className="divide-y divide-rule">
+          {peers.map((p) => (
+            <PeerRow key={p.id} className="px-5" market={market} p={p} />
+          ))}
+        </ul>
+
+        {/* Which purchases these are, exactly. `inWindow` collects purchases
+            up to `windowDays` EITHER SIDE of this trade, so the set can span
+            up to twice the detector's window, and the line says so rather
+            than letting the verdict above imply otherwise. */}
+        <p className="border-t border-rule px-5 py-3 text-small text-foreground/50">
+          Every disclosed purchase at {company} within {windowDays} days
+          either side of this one.
+        </p>
+      </div>
     </div>
   );
 }
 
-/** One purchase as a row: the date leaf, who, what they put in, and the way
- *  to its own page. The cluster list's row, shared with the filing page's
- *  other-buys list so a filing reached from either reads the same. The row
- *  for the filing being read is not a link, and is labelled. */
-export function PeerRow({ p, market }: { p: Peer; market?: string }) {
+/** One purchase as a row: the date, who and what they are, what they put
+ *  in, and the way to its own page. Shared with the filing page's other-buys
+ *  list (issuer-buys.tsx) so a filing reached from either reads the same.
+ *
+ *  The row for the filing being read is not a link, is tagged, and carries
+ *  the brand wash. Rows own no rules of their own: the list that holds them
+ *  draws them with `divide-y divide-rule`, so the same row sits inside a
+ *  rounded panel here and between page hairlines there. */
+export function PeerRow({
+  p,
+  market,
+  className = "",
+}: {
+  p: Peer;
+  market?: string;
+  /** Horizontal padding, for a row inside a panel. */
+  className?: string;
+}) {
   const fam = filingFamily(market);
+  const { weekday, day } = dateParts(p.date);
   const body = (
     <>
-      {/* Chip plus month. The chip carries a weekday and a day number,
-            which is a complete date only inside a known month — and a
-            cluster window routinely straddles two, so a column reading
-            29, 3, 17, 6, 1 was unreadable without one. Mirrors
-            MarketDayHeader, which pairs the same chip with a month label
-            for the same reason. */}
-      <span className="flex shrink-0 flex-col items-center gap-1">
-        <CalendarDayChip {...chipParts(p.date)} muted={!p.isThis} size="sm" />
-        <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground/40">
-          {monthAbbr(p.date)}
+      {/* The date, as words a reader already knows: weekday over "2 Sept".
+          A fixed column so the names line up down the list. */}
+      <span className="w-16 shrink-0">
+        <span className="micro block text-foreground/45">{weekday}</span>
+        <span className="mt-1 block text-body font-semibold tabular-nums text-foreground/80">
+          {day}
         </span>
       </span>
 
       <span className="min-w-0 flex-1">
-        <span
-          className={`block text-[14px] ${
-            p.isThis ? "font-semibold text-foreground" : "text-foreground/85"
-          }`}
-        >
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body font-semibold text-foreground">
           {p.name}
           {p.isThis ? (
-            <span className="ml-2 rounded bg-brand-brown/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan">
-              This buy
+            <span
+              className={`${CHIP_BASE} ${CHIP_SIZE.sm} ${CHIP_HAIRLINE} bg-brand-brown/10 text-brand-brown dark:bg-brand-tan/15 dark:text-brand-tan`}
+            >
+              This purchase
             </span>
           ) : null}
         </span>
-        <span className="mt-0.5 block text-[12px] text-foreground/45">
-          {p.role || "Insider"}
+        <span className="mt-0.5 block text-small text-foreground/55">
+          {p.role ? plainRole(p.role) : "Insider"}
         </span>
       </span>
 
-      <span
-        className={`shrink-0 text-right text-[19px] font-semibold leading-none tabular-nums tracking-[-0.02em] sm:text-[22px] ${
-          p.isThis ? "text-foreground" : "text-foreground/80"
-        }`}
-      >
+      {/* What they put in is the row's headline: the panel's whole argument
+          is how much money went in, so it is the largest thing on the row. */}
+      <span className="shrink-0 text-right text-subheading font-semibold tabular-nums text-foreground">
         {fam.money(p.value)}
       </span>
 
-      {/* A fixed slot either way, so the figures stay in one column
-            whether or not the row is a link. */}
+      {/* A fixed slot either way, so the figures stay in one column whether
+          or not the row is a link. */}
       <span className="flex w-4 shrink-0 justify-end">
         {p.isThis ? null : (
           <ArrowRightIcon
@@ -357,12 +277,16 @@ export function PeerRow({ p, market }: { p: Peer; market?: string }) {
   );
 
   return (
-    <li className={`border-b ${RULE}`}>
+    <li
+      className={
+        p.isThis ? "bg-brand-brown/10 dark:bg-brand-tan/15" : undefined
+      }
+    >
       {p.isThis ? (
-        <div className="flex items-center gap-3 py-3">{body}</div>
+        <div className={`flex items-center gap-4 py-4 ${className}`}>{body}</div>
       ) : (
         <Link
-          className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-3 outline-none transition-colors hover:bg-foreground/[0.03] focus-visible:ring-2 focus-visible:ring-brand-brown/40"
+          className={`group flex items-center gap-4 py-4 outline-none transition-colors hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 ${className}`}
           to={fam.path(p.id)}
         >
           {body}

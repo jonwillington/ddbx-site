@@ -405,14 +405,28 @@ export default function FilingPage({
 
   if (deal) {
     if (context.length > 0 || hasCluster) {
+      // The detector's window, in words a reader uses. 14 and 30 are the two
+      // spans it runs; anything else is stated as a count of days rather
+      // than rounded to a phrase it does not match.
+      const windowDays = deal.cluster?.window_days ?? 14;
+      const windowWord =
+        windowDays === 14
+          ? "two weeks"
+          : windowDays === 30
+            ? "a month"
+            : `${windowDays} days`;
+
       sections.push({
         key: "context",
         title: hasCluster ? "They were not the only one" : "Context",
+        // No "cluster", "window" or "breadth" (Jon, 2026-09-19: "very hard
+        // to understand"). The detector's count is stated here, once, and
+        // the panel below counts purchases from the filings it loads.
         aside: hasCluster
-          ? `A ${deal.cluster?.tier} cluster: ${deal.cluster?.count} insiders bought inside a ${deal.cluster?.window_days}-day window. Breadth is a signal one purchase on its own cannot give you.`
+          ? `${deal.cluster?.count} insiders at ${name} bought shares within ${windowWord} of each other. One insider buying can mean many things. Several buying at the same time is harder to explain away.`
           : "What else was happening around this purchase.",
         hint: hasCluster
-          ? `${deal.cluster?.count} insiders bought inside a ${deal.cluster?.window_days}-day window.`
+          ? `${deal.cluster?.count} insiders bought within ${windowWord} of each other.`
           : "What else was happening around this purchase.",
         body: (
           <>
