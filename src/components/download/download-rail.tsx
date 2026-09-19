@@ -19,7 +19,7 @@
 
 import type { AppPlatform } from "@/lib/app-screenshots";
 
-import { BUTTON_RADIUS } from "@/components/button";
+import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { KICKER } from "@/components/how-it-works/shared";
 import { StoreButtons } from "@/components/store-buttons";
 import { IOS_APP_LOGO_BY_MARKET } from "@/lib/app-store";
@@ -65,24 +65,24 @@ export function DownloadRail({
           src={IOS_APP_LOGO_BY_MARKET[marketId]}
           width={28}
         />
-        <h2 className="text-sm font-semibold text-foreground/80">
+        <h2 className="text-body font-semibold text-foreground/80">
           ddbx {marketId.toUpperCase()}
         </h2>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-        <div className="rounded-xl border border-hairline bg-background/40 p-4 dark:border-separator">
+        <div className="rounded-card border border-rule bg-background/40 p-4">
           <p className={`${KICKER} text-foreground/55`}>
             {t.railFreeForDays(pricing.trialDays)}
           </p>
           <p className="mt-2 text-[22px] font-semibold leading-none tracking-[-0.02em] text-foreground">
             {formatPrice(pricing, annualPerMonth(pricing))}
-            <span className="text-[13px] font-normal text-foreground/55">
+            <span className="text-small font-normal text-foreground/55">
               {" "}
               {t.railPerMonth}
             </span>
           </p>
-          <p className="mt-1.5 text-xs leading-[1.6] text-foreground/55">
+          <p className="mt-1.5 text-caption text-foreground/55">
             {t.railBilled(
               formatPrice(pricing, pricing.annual),
               formatPrice(pricing, pricing.monthly),
@@ -98,7 +98,7 @@ export function DownloadRail({
           </p>
 
           <StoreButtons
-            buttonClassName={`inline-flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} bg-ink px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#2a2118] dark:bg-white dark:text-ink dark:hover:bg-white/90`}
+            buttonClassName={`inline-flex w-full items-center justify-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-4 py-2.5 text-small font-semibold transition-colors`}
             className="mt-4"
             gaEvent="cta_download_rail"
             gaLabel={gaLabel}
@@ -111,7 +111,7 @@ export function DownloadRail({
           {onward.map(([label, href]) => (
             <li key={href}>
               <a
-                className="block rounded-lg px-2 py-2 text-[13px] font-medium text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.05]"
+                className="block rounded-control px-2 py-2 text-small font-medium text-foreground/70 transition-colors hover:bg-black/[0.04] hover:text-foreground dark:hover:bg-white/[0.05]"
                 href={href}
               >
                 {label}

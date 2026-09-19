@@ -31,8 +31,8 @@ import {
   EYEBROW,
   EYEBROW_QUIET,
   KICKER,
-  RULE,
 } from "@/components/how-it-works/shared";
+import { panel } from "@/components/ui/panel";
 import { useDownloadCopy } from "@/lib/download/copy";
 import {
   annualPerMonth,
@@ -49,7 +49,7 @@ import {
 function cellRule(index: number): string {
   return index === 0
     ? ""
-    : `mt-5 border-t ${RULE} pt-5 sm:mt-0 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0`;
+    : `mt-5 border-t border-rule pt-5 sm:mt-0 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0`;
 }
 
 export function PricingCard({
@@ -64,7 +64,9 @@ export function PricingCard({
   const t = useDownloadCopy();
 
   return (
-    <div className="max-w-lg rounded-2xl border border-hairline bg-white/70 px-5 py-6 dark:border-border/60 dark:bg-surface-secondary/40 sm:px-7 sm:py-7">
+    <div
+      className={`max-w-lg ${panel({ variant: "inset" })} px-5 py-6 sm:px-7 sm:py-7`}
+    >
       <div className="flex items-center justify-between gap-x-4">
         <p className={EYEBROW}>{t.freeForDays(pricing.trialDays)}</p>
         {/* A promotion has to say it is one, in the same object as the numbers
@@ -79,16 +81,14 @@ export function PricingCard({
           </span>
         ) : null}
       </div>
-      <p className="mt-2 text-[16px] leading-[1.5] text-foreground/70">
-        {t.fullAccessNote}
-      </p>
+      <p className="mt-2 text-lede text-foreground/70">{t.fullAccessNote}</p>
 
       <div
-        className={`mt-6 grid border-t ${RULE} pt-6 sm:grid-cols-2 sm:gap-x-6`}
+        className={`mt-6 grid border-t border-rule pt-6 sm:grid-cols-2 sm:gap-x-6`}
       >
         <div className={`min-w-0 ${cellRule(0)}`}>
           <p className={`${KICKER} text-foreground/45`}>{t.monthly}</p>
-          <p className="mt-2 text-[26px] font-semibold leading-[1.1] tracking-[-0.025em] tabular-nums text-foreground sm:text-[30px]">
+          <p className="mt-2 text-heading font-semibold tabular-nums text-foreground">
             {formatPrice(pricing, pricing.monthly)}
           </p>
           <p className={`mt-1.5 ${CAPTION}`}>{t.perMonth}</p>
@@ -107,7 +107,7 @@ export function PricingCard({
               </span>
             ) : null}
           </p>
-          <p className="mt-2 text-[26px] font-semibold leading-[1.1] tracking-[-0.025em] tabular-nums text-foreground sm:text-[30px]">
+          <p className="mt-2 text-heading font-semibold tabular-nums text-foreground">
             {formatPrice(pricing, annualPerMonth(pricing))}
           </p>
           <p className={`mt-1.5 tabular-nums ${CAPTION}`}>
@@ -116,7 +116,7 @@ export function PricingCard({
         </div>
       </div>
 
-      <p className={`mt-6 border-t ${RULE} pt-5 ${CAPTION}`}>
+      <p className={`mt-6 border-t border-rule pt-5 ${CAPTION}`}>
         {t.billedThrough(storeLabel, pricing.code)}
       </p>
     </div>
@@ -148,11 +148,11 @@ export function IncludedList({ benefits }: { benefits: string[] }) {
   return (
     <div>
       <p className={EYEBROW_QUIET}>{t.everythingIncluded}</p>
-      <ul className={`mt-5 border-t ${RULE}`}>
+      <ul className="mt-5 border-t border-rule">
         {benefits.map((b) => (
           <li
             key={b}
-            className={`border-b ${RULE} py-3.5 text-[16px] leading-[1.4] text-foreground/85 sm:text-[17px]`}
+            className="border-b border-rule py-3.5 text-lede text-foreground/85"
           >
             {b}
           </li>

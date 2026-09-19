@@ -45,10 +45,7 @@ export function SectionHeader({
   align?: "left" | "center";
   className?: string;
 }) {
-  const rule =
-    tone === "dark"
-      ? "border-white/15"
-      : "border-hairline dark:border-border/50";
+  const rule = tone === "dark" ? "border-rule-stage" : "border-rule";
   const kickerTone =
     tone === "dark"
       ? "text-brand-amber"
@@ -60,26 +57,21 @@ export function SectionHeader({
     <Reveal className={className}>
       <div className={`border-t ${rule} pt-5`}>
         <div className="flex items-baseline justify-between gap-6">
-          <p
-            className={`font-mono text-[11px] font-semibold uppercase tracking-[0.16em] ${kickerTone}`}
-          >
-            {kicker}
-          </p>
+          <p className={`eyebrow ${kickerTone}`}>{kicker}</p>
           {index != null && total != null ? (
-            <p
-              className={`font-mono text-[11px] font-semibold tabular-nums tracking-[0.16em] ${numTone}`}
-            >
+            <p className={`eyebrow tabular-nums ${numTone}`}>
               {String(index).padStart(2, "0")} /{" "}
               {String(total).padStart(2, "0")}
             </p>
           ) : null}
         </div>
 
-        {/* Display scale, left-set. The old centred h2 topped out at 42px; a
-            section opener on a page this long has to carry the weight of a
-            headline, not a subheading. */}
+        {/* Display scale, left-set: a section opener on a page this long has
+            to carry the weight of a headline, not a subheading. The document
+            display step (34/44) since 2026-09-19 — it ran to 58 at lg, which
+            put every section opener above the page's own h1. */}
         <h2
-          className={`mt-5 max-w-[18ch] text-balance text-[34px] font-semibold leading-[1.03] tracking-[-0.028em] sm:text-[46px] lg:text-[58px] ${
+          className={`mt-5 max-w-[18ch] text-balance font-semibold display-doc ${
             align === "center" ? "mx-auto text-center" : ""
           }`}
         >
@@ -87,7 +79,7 @@ export function SectionHeader({
         </h2>
         {sub ? (
           <p
-            className={`mt-4 max-w-[52ch] text-[16.5px] leading-[1.55] ${subTone} ${
+            className={`mt-4 max-w-[52ch] text-lede ${subTone} ${
               align === "center" ? "mx-auto text-center" : ""
             }`}
           >

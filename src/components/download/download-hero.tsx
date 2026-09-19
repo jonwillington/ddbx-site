@@ -37,6 +37,7 @@ import {
   HeroShowcaseDemo,
 } from "@/components/market/market-hero";
 import { Skeleton } from "@/components/skeleton";
+import { panel } from "@/components/ui/panel";
 import { StoreButtons } from "@/components/store-buttons";
 import { useDownloadCopy } from "@/lib/download/copy";
 
@@ -57,8 +58,7 @@ export interface HeroFigure {
  */
 const DL =
   "mt-6 flex flex-wrap justify-center gap-x-9 gap-y-4 xl:justify-start xl:gap-x-10";
-const DT =
-  "font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/45";
+const DT = "micro text-foreground/45";
 const DD =
   "mt-1.5 text-[26px] font-medium leading-none tracking-[-0.02em] tabular-nums";
 
@@ -172,10 +172,10 @@ export function DownloadHero({
       {/* A step under the market hero's 64px: this page's claim is a full
           sentence rather than four words, and inside a card half it has to
           hold to four lines. */}
-      <h1 className="mx-auto mt-4 text-balance text-[34px] font-semibold leading-[1.04] tracking-[-0.028em] sm:text-[40px] xl:mx-0 xl:text-[46px]">
+      <h1 className="mx-auto mt-4 text-balance font-semibold display-doc xl:mx-0">
         {headline}
       </h1>
-      <p className="mx-auto mt-4 max-w-[460px] text-balance text-[16px] leading-relaxed text-foreground/65 xl:mx-0 xl:text-[17px]">
+      <p className="mx-auto mt-4 max-w-[460px] text-balance text-lede text-foreground/65 xl:mx-0">
         {sub}
       </p>
 
@@ -210,7 +210,7 @@ export function DownloadHero({
             links to. */}
         {altLocale ? (
           <a
-            className="mt-1 text-sm font-medium text-foreground/50 underline underline-offset-4 transition-colors hover:text-foreground/80"
+            className="mt-1 text-body font-medium text-foreground/50 underline underline-offset-4 transition-colors hover:text-foreground/80"
             data-ga-event="cta_download_locale"
             data-ga-label={`${gaLabel} hero · ${altLocale.label}`}
             href={altLocale.href}
@@ -268,13 +268,15 @@ export function StoreUnavailable({
   alternatives: { label: string; href: string; gaLabel: string }[];
 }) {
   return (
-    <div className="w-full max-w-[420px] rounded-2xl border border-hairline bg-white/70 p-5 text-left dark:border-border/60 dark:bg-surface-secondary/40">
-      <p className="text-sm leading-relaxed text-foreground/70">{message}</p>
+    <div
+      className={`w-full max-w-[420px] ${panel({ variant: "inset", size: "roomy" })} text-left`}
+    >
+      <p className="text-body text-foreground/70">{message}</p>
       <div className="mt-4 flex flex-wrap gap-2.5">
         {alternatives.map((a) => (
           <a
             key={a.href}
-            className={`inline-flex items-center ${BUTTON_RADIUS} ${BUTTON_GHOST} px-4 py-2 text-sm font-medium transition-colors`}
+            className={`inline-flex items-center ${BUTTON_RADIUS} ${BUTTON_GHOST} px-4 py-2 text-body font-medium transition-colors`}
             data-ga-event="cta_download_lp_alt"
             data-ga-label={a.gaLabel}
             href={a.href}

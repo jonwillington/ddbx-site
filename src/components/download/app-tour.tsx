@@ -30,8 +30,8 @@ import { useState, type ReactNode, type UIEvent } from "react";
 
 import { DeviceFrame } from "./device-frame";
 import { SectionHeader } from "./section-header";
-import { band } from "@/components/ui/band";
 
+import { band } from "@/components/ui/band";
 import {
   EYEBROW,
   EYEBROW_QUIET,
@@ -225,10 +225,10 @@ export function AppTour({
                   {/* The beat's claim is the thing worth reading on this
                       band — sized to lead it rather than to sit level with the
                       body copy under it. */}
-                  <h3 className="mt-6 max-w-[18ch] text-balance text-[42px] font-semibold leading-[1.04] tracking-[-0.028em] xl:text-[46px]">
+                  <h3 className="mt-6 max-w-[18ch] text-balance font-semibold display-doc">
                     {b.title}
                   </h3>
-                  <p className="mt-5 max-w-[46ch] text-[17px] leading-[1.6] text-foreground/65">
+                  <p className="mt-5 max-w-[46ch] text-lede text-foreground/65">
                     {b.body}
                   </p>
                 </div>
@@ -368,12 +368,10 @@ function MobileTour({
               />
               <span className="text-foreground/45">{b.kicker}</span>
             </p>
-            <h3 className="mt-2 text-balance text-[22px] font-semibold leading-[1.15] tracking-[-0.02em]">
+            <h3 className="mt-2 text-balance text-heading font-semibold">
               {b.title}
             </h3>
-            <p className="mt-1.5 text-[14px] leading-[1.55] text-foreground/65">
-              {b.body}
-            </p>
+            <p className="mt-1.5 text-body text-foreground/65">{b.body}</p>
             <span className="sr-only">{t.beatOf(i + 1, beats.length)}</span>
           </div>
         ))}

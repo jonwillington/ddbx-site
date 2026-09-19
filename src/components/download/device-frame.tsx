@@ -212,7 +212,7 @@ export function DeviceFrame({
           overflow: hidden;
           border-radius: 13%;
           border-radius: var(--dvf-radius);
-          background: #fcfbf9;
+          background: var(--color-page);
         }
         :is(.dark) .dvf-screen { background: oklch(22% 0.022 55); }
         .dvf-screen > img {

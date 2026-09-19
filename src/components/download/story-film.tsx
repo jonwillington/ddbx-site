@@ -27,8 +27,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import { SectionHeader } from "./section-header";
-import { band } from "@/components/ui/band";
 
+import { band } from "@/components/ui/band";
 import { CAPTION, EYEBROW } from "@/components/how-it-works/shared";
 
 export interface FilmBeat {
@@ -141,10 +141,10 @@ export function StoryFilm({
               <p className={`${EYEBROW} tabular-nums`}>
                 {String(i + 1).padStart(2, "0")}
               </p>
-              <h3 className="mt-2 max-w-[20ch] text-balance text-[26px] font-semibold leading-[1.1] tracking-[-0.022em] sm:text-[30px]">
+              <h3 className="mt-2 max-w-[20ch] text-balance text-heading font-semibold">
                 {b.title}
               </h3>
-              <p className="mt-2.5 max-w-[46ch] text-[16.5px] leading-[1.55] text-foreground/65">
+              <p className="mt-2.5 max-w-[46ch] text-lede text-foreground/65">
                 {b.body}
               </p>
             </li>
@@ -155,7 +155,7 @@ export function StoryFilm({
           {/* The panel. `bg-ink` under the video so the poster's fade-in and
               any letterbox rounding land on the film's own ground, not on
               cream. */}
-          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-hairline bg-ink shadow-[0_1px_2px_rgba(0,0,0,0.06)] dark:border-border/60">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-card border border-rule bg-ink shadow-xs">
             <video
               ref={ref}
               disablePictureInPicture

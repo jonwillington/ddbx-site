@@ -75,7 +75,7 @@ export function QrInstall({
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className="rounded-2xl bg-white p-3 shadow-sm">
+      <div className="rounded-card bg-white p-3 shadow-sm">
         <canvas
           ref={canvasRef}
           aria-label="QR code linking to the app store listing"

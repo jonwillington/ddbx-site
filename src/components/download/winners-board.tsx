@@ -39,7 +39,7 @@ import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { CompanyLogo } from "@/components/company-logo";
 import { SectionHeader } from "@/components/download/section-header";
 import { band } from "@/components/ui/band";
-import { CAPTION, RULE } from "@/components/how-it-works/shared";
+import { CAPTION } from "@/components/how-it-works/shared";
 import { Skeleton } from "@/components/skeleton";
 import { StoreButtons } from "@/components/store-buttons";
 import { TickerPill } from "@/components/ticker-pill";
@@ -211,7 +211,9 @@ export function WinnersBoard({
         // Empty and failed are the same sentence, because to the reader they
         // are the same thing: there is nothing here yet. Silence is the one
         // answer rule 2 forbids.
-        <p className={`mt-12 border-t ${RULE} pt-5 ${CAPTION} max-w-[56ch]`}>
+        <p
+          className={`mt-12 border-t border-rule pt-5 ${CAPTION} max-w-[56ch]`}
+        >
           {emptyNote}
         </p>
       ) : (
@@ -296,7 +298,7 @@ export function WinnersBoard({
             marketId={marketId}
             platform={platform}
           />
-          <p className="text-sm text-foreground/55">{ctaSub}</p>
+          <p className="text-body text-foreground/55">{ctaSub}</p>
         </div>
       ) : null}
     </section>
@@ -324,7 +326,7 @@ function WinnersSkeleton({ rows }: { rows: number }) {
     <div aria-busy="true">
       <BoardRowList>
         {Array.from({ length: rows }, (_, i) => (
-          <li key={i} className={`border-b ${RULE} py-3.5`}>
+          <li key={i} className="border-b border-rule py-3.5">
             <div className={grid.className} style={grid.style}>
               <Skeleton className="mt-0.5 h-[15px] w-5" />
               <Skeleton circle className="shrink-0" h={56} w={56} />
@@ -337,7 +339,7 @@ function WinnersSkeleton({ rows }: { rows: number }) {
                     them below `xl`. */}
                 <Skeleton className="mt-2 h-[11px] w-24 xl:hidden" />
                 <Skeleton
-                  className="mt-2 block w-full max-w-[240px] rounded-md xl:hidden"
+                  className="mt-2 block w-full max-w-[240px] rounded-control xl:hidden"
                   h={44}
                 />
               </span>
@@ -347,7 +349,7 @@ function WinnersSkeleton({ rows }: { rows: number }) {
               />
 
               <span className={`self-start pt-[3px] ${grid.cell.visual}`}>
-                <Skeleton className="w-full rounded-md" h={44} />
+                <Skeleton className="w-full rounded-control" h={44} />
               </span>
 
               <span className={`flex flex-col items-end ${grid.cell.figure}`}>
