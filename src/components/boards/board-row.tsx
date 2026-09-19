@@ -569,7 +569,7 @@ export function BoardRow({
           {position != null ? (
             <span
               aria-hidden
-              className={`font-mono text-lede tabular-nums ${
+              className={`font-mono text-lede leading-snug tabular-nums ${
                 position <= 3 ? "text-foreground" : "text-foreground/35"
               }`}
             >
@@ -673,7 +673,7 @@ export function BoardRow({
 
           {money != null ? (
             <span
-              className={`text-right text-body font-semibold tabular-nums text-foreground ${grid.cell.money}`}
+              className={`text-right text-body font-semibold leading-snug tabular-nums text-foreground ${grid.cell.money}`}
             >
               {money}
             </span>
@@ -725,7 +725,7 @@ function RowDate({ iso, locale }: { iso: string; locale: string }) {
   const year = d.getUTCFullYear();
 
   return (
-    <span className="font-mono text-lede font-medium tabular-nums text-foreground">
+    <span className="font-mono text-lede font-medium leading-snug tabular-nums text-foreground">
       <span className="block whitespace-nowrap">{dayMonth}</span>
       {year !== new Date().getUTCFullYear() ? (
         <span className="mt-0.5 block text-caption font-normal text-foreground/45">

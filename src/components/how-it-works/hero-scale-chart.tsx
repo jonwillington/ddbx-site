@@ -215,7 +215,7 @@ function StageLabel({ stage }: { stage: ScaleStage }) {
         {stage.label}
       </p>
       {stage.sub ? (
-        <p className="mt-1 text-body text-white/45">{stage.sub}</p>
+        <p className="mt-1 text-body leading-snug text-white/45">{stage.sub}</p>
       ) : null}
     </div>
   );

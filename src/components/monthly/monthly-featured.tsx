@@ -285,7 +285,7 @@ function FeaturedRow({
         <span className={grid.className} style={grid.style}>
           <span
             aria-hidden
-            className={`font-mono text-lede tabular-nums ${
+            className={`font-mono text-lede leading-snug tabular-nums ${
               position <= 3 ? "text-foreground" : "text-foreground/35"
             }`}
           >

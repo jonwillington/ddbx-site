@@ -284,7 +284,7 @@ export function PipelineLedger({
                   {items.map((item) => (
                     <li
                       key={item}
-                      className="py-2.5 text-lede text-foreground/70"
+                      className="py-2.5 text-lede leading-snug text-foreground/70"
                     >
                       {item}
                     </li>

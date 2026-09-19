@@ -232,7 +232,7 @@ export function HorizonRail({
         {horizons.map((h) => (
           <p
             key={h.horizon_days}
-            className="text-center text-body tabular-nums text-foreground/70"
+            className="text-center text-body leading-snug tabular-nums text-foreground/70"
           >
             {h.horizon_days} days
           </p>

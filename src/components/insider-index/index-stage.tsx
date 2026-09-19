@@ -136,7 +136,7 @@ function HeroReading({
       </p>
       {/* Proportional figures at this size: tabular-nums makes "121" loose. */}
       <p className="mt-1 text-figure-xl text-white">{reading.score}</p>
-      <p className="mt-2 text-lede font-medium text-white/85">
+      <p className="mt-2 text-lede font-medium leading-snug text-white/85">
         {reading.tier.label}
         <span className="text-white/45"> · out of 100</span>
       </p>
