@@ -150,18 +150,14 @@ export function MeasuredExamples({
     );
   }
 
-  const hasSpecimen = rows?.some((r) => r.isSpecimen) ?? true;
   const benchmark = marketId === "us" ? "the S&P 500" : "the FTSE All-Share";
 
   return (
     <>
       <p className="mt-9 max-w-[70ch] text-[16px] leading-[1.65] text-foreground/80">
-        Two of those measurements up close. Two rated buys
-        {hasSpecimen
-          ? ", one of them the worked example threaded through this page"
-          : ""}
-        , each scored against {benchmark} over its own window. The figures are
-        read from the API as you load the page and move with the market:
+        Two of those measurements up close, each scored against {benchmark} over
+        its own window. The figures are read from the API as you load the page
+        and move with the market:
       </p>
 
       <div className={`@container mt-6 border-t ${RULE}`}>

@@ -85,7 +85,7 @@ export function CompanyAppPitch({
                 still sits as an eyebrow rather than a header. Deliberately no
                 company NAME here — the headline says it 6px below. */}
             <div className="flex items-center gap-3">
-              <CompanyLogo size={40} ticker={logoKey} />
+              <CompanyLogo link={false} size={40} ticker={logoKey} />
               <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.14em] text-white">
                 {ticker}
               </span>

@@ -9,21 +9,11 @@ import { RatingChecklistView } from "@/components/rating-checklist-view";
  *  US wrapped it in a bordered card. The lighter UK look wins — the drawer
  *  is already a card.
  *
- *  Also the analysis block on the per-filing pages when discretion is off, so
- *  the two surfaces reading the same document read the same way. That page
- *  built its own version first and the result was two designs for one thing:
- *  flat rows against the drawer's collapsible tone-tinted plates, "The case
- *  for" against "Why this is interesting". A reader who has used the app and
- *  then lands on a filing page from search should recognise what they're
- *  looking at.
- *
- *  `showChecklist` and `showRationale` are the two things that page turns
- *  off, and not for style: it already devotes a numbered section to the six
- *  checks with the methodology copy and what was found for this filing, which
- *  is strictly more than the compact view here. Rendering both put the same
- *  six ticks on the page twice — and the rationale paragraph ("all six
- *  checklist items pass…") is a prose restatement of that same section,
- *  arriving two screens after it. */
+ *  The per-filing pages used this block too until 2026-09-19, when they moved
+ *  to their own flat renderer (components/filing/analysis-preview.tsx,
+ *  `OpenCase`). `showChecklist` and `showRationale` were the two things that
+ *  page turned off; no caller passes them now, but they are kept for any
+ *  surface that already shows the six checks elsewhere. */
 export function AnalysisSection({
   analysis,
   showChecklist = true,

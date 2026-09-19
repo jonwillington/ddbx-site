@@ -83,6 +83,7 @@ export function StoryRow({ story: s }: { story: StoryListItem }) {
             <CompanyLogo
               key={t}
               className={n > 0 ? "-ml-3 ring-2 ring-background" : ""}
+              market={s.market}
               size={56}
               ticker={t}
             />

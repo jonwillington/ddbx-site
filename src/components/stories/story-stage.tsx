@@ -127,7 +127,12 @@ export function StoryStage({
             identity rather than a bullet beside the text, and the headline
             keeps a measure instead of running the full width of the panel:
             a 44px line set across 900px is a banner, not a sentence. */}
-        <CompanyLogo className="mt-5" size={80} ticker={chart.ticker} />
+        <CompanyLogo
+          className="mt-5"
+          market={chart.market}
+          size={80}
+          ticker={chart.ticker}
+        />
 
         <h1 className="mt-5 max-w-[19ch] text-[28px] font-normal leading-[1.12] tracking-[-0.02em] text-white sm:text-[38px] sm:max-w-[17ch] lg:text-[44px]">
           {story.headline}

@@ -2,8 +2,8 @@
  *
  *  Two renderers behind one component, chosen by `DISCRETION_ENABLED`. With the
  *  gate on, `AnalysisPreview` below: headlines as locks, counts for what stays
- *  in the app. With it off, `OpenCase`, which hands the whole analysis to the
- *  drawer's own `AnalysisSection` so the two surfaces agree.
+ *  in the app. With it off, `OpenCase`, the whole analysis as prose and
+ *  hairline rows on the page's own type scale.
  *
  *  Everything from here to `OpenCase` is the reasoning behind the GATED
  *  version, which is the one with a design problem to solve.
@@ -43,7 +43,7 @@
  *  click. The lock icon on every row is the affordance, and the gate quotes the
  *  line back before it asks.
  */
-import type { Analysis, Dealing, UsDealing } from "@/types/ddbx";
+import type { Analysis, Dealing, EvidencePoint, UsDealing } from "@/types/ddbx";
 import type { AnalysisShape, EvidenceHeadline } from "../../../shared/filings";
 
 import { useState } from "react";
@@ -53,15 +53,13 @@ import {
 } from "@heroicons/react/20/solid";
 
 import { AnalysisUnlockModal } from "@/components/discretion/analysis-unlock-modal";
-import { AnalysisSection } from "@/components/analysis-section";
 import { StoreGlyph } from "@/components/store-glyph";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { DISCRETION_ENABLED } from "@/lib/discretion";
 import { appHrefForMarket } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 
-const CARD =
-  "rounded-3xl border border-hairline bg-white/70 dark:border-border/60 dark:bg-surface-secondary/40";
+const RULE = "border-hairline dark:border-separator";
 const LABEL =
   "font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/45";
 
@@ -71,12 +69,12 @@ const LABEL =
  *  fact the list carries. */
 const SIDE = {
   for: {
-    heading: "The case for",
+    heading: "Why this is interesting",
     rule: "bg-positive/40",
     ink: "text-positive",
   },
   against: {
-    heading: "The case against",
+    heading: "Why it might not be",
     rule: "bg-negative/40",
     ink: "text-negative",
   },
@@ -84,21 +82,93 @@ const SIDE = {
 
 /* ─── Discretion off ─────────────────────────────────────────────────────── */
 
-/** The same section with nothing withheld — and rendered by the same
- *  components the drawer uses.
+/** The side's heading: the house eyebrow in the side's own ink, after a short
+ *  rule in the same colour. The only colour in the section, and it means one
+ *  thing: which way the finding points. */
+function SideHeading({ d, count }: { d: "for" | "against"; count: number }) {
+  return (
+    <p className={`flex items-center gap-2.5 ${LABEL} ${SIDE[d].ink}`}>
+      <span aria-hidden className={`h-px w-6 shrink-0 ${SIDE[d].rule}`} />
+      {SIDE[d].heading}
+      <span className="text-foreground/35">· {count}</span>
+    </p>
+  );
+}
+
+/** A cited source, set as the small print it is. */
+function Source({
+  label,
+  url,
+}: {
+  label?: string | null;
+  url?: string | null;
+}) {
+  if (!label) return null;
+
+  return (
+    <p className="mt-2 text-[12px] leading-[1.5] text-foreground/45">
+      {url ? (
+        <a
+          className="inline-flex items-center gap-1 underline-offset-4 hover:text-foreground/70 hover:underline"
+          href={url}
+          rel="nofollow noopener noreferrer"
+          target="_blank"
+        >
+          {label}
+          <ArrowTopRightOnSquareIcon aria-hidden className="h-3 w-3 shrink-0" />
+        </a>
+      ) : (
+        label
+      )}
+    </p>
+  );
+}
+
+/** One finding as a hairline row: the claim left, what stands behind it and
+ *  its source right. The shape of `RowList`, one step down in scale, because
+ *  an evidence headline is a sentence rather than a four-word claim and at
+ *  24px a list of them reads as a stack of banners. */
+function EvidenceRows({ points }: { points: EvidencePoint[] }) {
+  return (
+    <ul className={`mt-4 border-t ${RULE}`}>
+      {points.map((p, i) => (
+        <li
+          key={`${i}-${p.headline}`}
+          className={`grid gap-x-10 gap-y-2 border-b ${RULE} py-5 sm:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] sm:py-6`}
+        >
+          <h4 className="text-balance text-[16.5px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground sm:text-[18px]">
+            {p.headline}
+          </h4>
+          <div className="min-w-0">
+            {p.detail ? (
+              <p className="max-w-[58ch] text-[14.5px] leading-[1.65] text-foreground/70">
+                {p.detail}
+              </p>
+            ) : null}
+            <Source label={p.source_label} url={p.source_url} />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The whole assessment, nothing withheld, on the page's own type scale.
  *
- *  When discretion mode is off the site is not selling the app, so this stops
- *  describing the analysis and prints it. The first version of this printed it
- *  in a layout invented here: flat rows, "The case for" / "The case against",
- *  a numbered thesis. That produced two designs for one document — the drawer
- *  had collapsible tone-tinted evidence plates under "Why this is interesting"
- *  / "Why it might not be", and someone who reads an analysis in the app and
- *  then lands on a filing page from search met an unfamiliar object saying the
- *  same thing. `AnalysisSection` is now shared by both.
+ *  Until 2026-09-19 this handed the analysis to the drawer's `AnalysisSection`
+ *  inside a white card, on the argument that the two surfaces should read the
+ *  same. They still say the same things in the same order; what changed is the
+ *  treatment, because the drawer's tone-tinted accordion plates and bulleted
+ *  risks were the last card-and-pill furniture on a page that is otherwise
+ *  flat ground, prose and hairline rows. The drawer keeps its own version.
  *
- *  The checklist is the one part suppressed, because the page already gives the
- *  six checks a numbered section of their own with the methodology copy and
- *  what was found for this filing. See `AnalysisSection`.
+ *  The thesis is set as prose at the story body's measure and size, because it
+ *  is prose. The findings for and against, and the risks, are rows.
+ *
+ *  Two omissions, both deliberate. The summary is not printed here because
+ *  with discretion off it is already the stage's standfirst, and the checklist
+ *  and rationale are not because the page gives the six checks a numbered
+ *  section of their own.
  *
  *  One asymmetry to know about: the pre-rendered HTML
  *  (`shared/filing-prerender.js`) always carries the gated shape, because it
@@ -117,53 +187,105 @@ function OpenCase({
 }) {
   const platform = useDevicePlatform();
   const appHref = appHrefForMarket(marketId, platform);
+  const confidence = Number.isFinite(analysis.confidence)
+    ? Math.round(analysis.confidence * 100)
+    : null;
 
   return (
-    <div className={`mt-4 overflow-hidden ${CARD}`}>
-      <div className="p-5 sm:p-6">
-        <AnalysisSection
-          analysis={analysis}
-          showChecklist={false}
-          showRationale={false}
-        />
+    <div>
+      <p className={LABEL}>
+        {confidence != null ? `${confidence}% stated confidence` : "Assessment"}
+        {analysis.catalyst_window
+          ? ` · ${analysis.catalyst_window} catalyst window`
+          : ""}
+      </p>
 
-        {/* The ask, at read-out.
-            The page still terminates with `AppCtaBand`, and two filled asks in
-            one document is how a page starts reading as a funnel — so this one
-            is deliberately the quieter object: a hairline rule and a single
-            button, not a second dark slab. It earns its place by position
-            rather than weight. Someone who has just read a full written case
-            is the most qualified reader this page produces, and the band is
-            several sections below them.
-
-            What it claims matters more than usual here, because the gated
-            version's argument ("the rest is in the app") is now false — they
-            have just had all of it. The honest remainder is timing and
-            follow-up: the app reaches you the day a filing lands, which no
-            page a reader has to remember to visit can do. */}
-        <div className="mt-8 border-t border-hairline pt-5 dark:border-border/60">
-          <p className="text-[14.5px] font-semibold leading-[1.35] text-foreground">
-            Get the next one the day it files.
-          </p>
-          <p className="mt-1 text-[13.5px] leading-[1.55] text-foreground/60">
-            This filing is already public record. The app pushes each new rated
-            buy as it’s disclosed, with the written case attached.
-          </p>
-          <a
-            className={`mt-4 inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3 text-sm font-semibold transition-colors`}
-            data-ga-event="cta_open_case_download"
-            data-ga-label={`Open case download · ${dealId}`}
-            href={appHref}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <StoreGlyph className="h-4 w-4 shrink-0" />
-            Download the app
-          </a>
-          <p className="mt-2 text-[11.5px] text-foreground/45">
-            Free for 7 days, cancel any time.
-          </p>
+      {analysis.thesis_points.length > 0 ? (
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          {analysis.thesis_points.map((p, i) => (
+            <p
+              key={i}
+              className={
+                i === 0
+                  ? "text-[17px] leading-[1.6] text-foreground/90"
+                  : "text-[15px] leading-[1.7] text-foreground/80"
+              }
+            >
+              {p}
+            </p>
+          ))}
         </div>
+      ) : null}
+
+      {(["for", "against"] as const).map((d) => {
+        const points =
+          d === "for" ? analysis.evidence_for : analysis.evidence_against;
+
+        if (points.length === 0) return null;
+
+        return (
+          <div key={d} className="mt-10">
+            <SideHeading count={points.length} d={d} />
+            <EvidenceRows points={points} />
+          </div>
+        );
+      })}
+
+      {analysis.key_risks.length > 0 ? (
+        <div className="mt-10">
+          <p className={LABEL}>Key risks · {analysis.key_risks.length}</p>
+          <ol className={`mt-4 border-t ${RULE}`}>
+            {analysis.key_risks.map((r, i) => (
+              <li
+                key={i}
+                className={`flex gap-5 border-b ${RULE} py-4 sm:py-5`}
+              >
+                <span className="mt-[3px] shrink-0 font-mono text-[11px] font-semibold tabular-nums tracking-[0.16em] text-foreground/35">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <p className="max-w-[62ch] text-[15px] leading-[1.65] text-foreground/80">
+                  {r}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
+
+      {/* The ask, at read-out.
+          The page still terminates with `AppCtaBand`, and two filled asks in
+          one document is how a page starts reading as a funnel — so this one
+          is deliberately the quieter object: a hairline rule and a single
+          button, not a second dark slab. It earns its place by position
+          rather than weight. Someone who has just read a full written case
+          is the most qualified reader this page produces.
+
+          What it claims matters more than usual here, because the gated
+          version's argument ("the rest is in the app") is now false — they
+          have just had all of it. The honest remainder is timing and
+          follow-up: the app reaches you the day a filing lands. */}
+      <div className="mt-10">
+        <p className="text-[16px] font-semibold leading-[1.35] text-foreground">
+          Get the next one the day it files.
+        </p>
+        <p className="mt-1 max-w-[58ch] text-[14px] leading-[1.6] text-foreground/60">
+          This filing is already public record. The app pushes each new rated
+          buy as it’s disclosed, with the written case attached.
+        </p>
+        <a
+          className={`mt-4 inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FILLED} px-5 py-3 text-sm font-semibold transition-colors`}
+          data-ga-event="cta_open_case_download"
+          data-ga-label={`Open case download · ${dealId}`}
+          href={appHref}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <StoreGlyph className="h-4 w-4 shrink-0" />
+          Download the app
+        </a>
+        <p className="mt-2 text-[11.5px] text-foreground/45">
+          Free for 7 days, cancel any time.
+        </p>
       </div>
     </div>
   );
@@ -211,8 +333,8 @@ export function AnalysisPreview({
     .filter((s) => s.rows.length > 0);
 
   return (
-    <div className={`mt-4 overflow-hidden ${CARD}`}>
-      <div className="p-5 sm:p-6">
+    <div>
+      <div>
         <p className={`flex items-center gap-2 ${LABEL}`}>
           <LockClosedIcon aria-hidden className="h-3.5 w-3.5" />
           In the app
@@ -239,31 +361,31 @@ export function AnalysisPreview({
         ) : null}
 
         {sides.map(({ d, rows }) => (
-          <div key={d} className="mt-6">
-            <p className={`flex items-center gap-2.5 ${LABEL} ${SIDE[d].ink}`}>
-              <span
-                aria-hidden
-                className={`h-px w-6 shrink-0 ${SIDE[d].rule}`}
-              />
-              {SIDE[d].heading}
-            </p>
+          <div key={d} className="mt-8">
+            <SideHeading count={rows.length} d={d} />
 
-            <ul className="mt-2.5 space-y-1.5">
+            {/* Hairline rows, not tinted pills: the headline is the row,
+                the lock sits at its right end, the citation under it. The
+                whole row is the gate's button. */}
+            <ul className={`mt-4 border-t ${RULE}`}>
               {rows.map((e) => (
-                <li key={`${e.direction}-${e.headline}`}>
+                <li
+                  key={`${e.direction}-${e.headline}`}
+                  className={`border-b ${RULE} py-4 sm:py-5`}
+                >
                   <button
-                    className={`group flex w-full items-start gap-3 ${BUTTON_RADIUS} bg-foreground/[0.035] px-4 py-3 text-left transition-colors hover:bg-foreground/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-brown/40 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]`}
+                    className="group flex w-full items-start gap-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-brown/40"
                     data-ga-event="cta_analysis_row"
                     data-ga-label={`Analysis row · ${deal.id}`}
                     type="button"
                     onClick={() => openGate(e.headline)}
                   >
-                    <span className="min-w-0 flex-1 text-[14.5px] leading-[1.45] text-foreground/85">
+                    <span className="min-w-0 flex-1 text-balance text-[16.5px] font-semibold leading-[1.3] tracking-[-0.015em] text-foreground transition-colors group-hover:text-foreground/70 sm:text-[18px]">
                       {e.headline}
                     </span>
                     <LockClosedIcon
                       aria-hidden
-                      className="mt-0.5 h-4 w-4 shrink-0 text-foreground/25 transition-colors group-hover:text-foreground/50"
+                      className="mt-1 h-4 w-4 shrink-0 text-foreground/25 transition-colors group-hover:text-foreground/50"
                     />
                     <span className="sr-only">Read this in the app</span>
                   </button>
@@ -275,26 +397,7 @@ export function AnalysisPreview({
                       destination from the gate, and nesting one interactive
                       element in another gives a keyboard user one target for
                       two actions. */}
-                  {e.label ? (
-                    <p className="mt-1 pl-4 text-[12px] leading-[1.5] text-foreground/45">
-                      {e.url ? (
-                        <a
-                          className="inline-flex items-center gap-1 underline-offset-4 hover:text-foreground/70 hover:underline"
-                          href={e.url}
-                          rel="nofollow noopener noreferrer"
-                          target="_blank"
-                        >
-                          {e.label}
-                          <ArrowTopRightOnSquareIcon
-                            aria-hidden
-                            className="h-3 w-3 shrink-0"
-                          />
-                        </a>
-                      ) : (
-                        e.label
-                      )}
-                    </p>
-                  ) : null}
+                  <Source label={e.label} url={e.url} />
                 </li>
               ))}
             </ul>

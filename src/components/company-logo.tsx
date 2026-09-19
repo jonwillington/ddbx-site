@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
+import type { MouseEvent, KeyboardEvent } from "react";
+
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { API_BASE } from "@/lib/api";
+import { companyHref } from "@/lib/company";
+import { marketForPath } from "@/lib/markets/registry";
 
 /**
  * Logo.dev is now reached through our own Worker proxy (`/api/logo/*`) rather
@@ -73,6 +78,15 @@ interface CompanyLogoProps {
   /** Rendered diameter in px. Defaults to 40. */
   size?: number;
   className?: string;
+  /** Market the ticker trades on ("UK", "US", "uk", "us"…). Defaults to the
+   *  market of the page it is drawn on, which is right everywhere except a
+   *  surface that mixes markets (the global tape) — that passes it per row. */
+  market?: string | null;
+  /** House rule (2026-09-19): wherever a company logo is drawn, it opens that
+   *  company's page. Pass `false` only where it cannot — the company page's
+   *  own header (a link to itself) and illustrative surfaces (the hero
+   *  notification demo, the explainer, blurred teaser overlays). */
+  link?: boolean;
 }
 
 /**
@@ -80,7 +94,106 @@ interface CompanyLogoProps {
  * ticker monogram when the network image fails or fires nothing useful.
  * Mirrors `CompanyLogo` in the iOS app.
  */
-export function CompanyLogo({
+export function CompanyLogo(props: CompanyLogoProps) {
+  const { ticker, market, link = true, monogramText } = props;
+  const location = useLocation();
+  const pageMarket = marketForPath(
+    location.pathname,
+    typeof window === "undefined" ? undefined : window.location.hostname,
+  ).id;
+  const href = link ? companyHref(ticker, market ?? pageMarket) : null;
+
+  if (!href) return <LogoDisc {...props} />;
+
+  return (
+    <LogoLink href={href} label={monogramText ?? ticker}>
+      <LogoDisc {...props} />
+    </LogoLink>
+  );
+}
+
+/** The link around a logo. Most logos sit inside a row that already links
+ *  somewhere (usually the filing), and an anchor inside an anchor is invalid
+ *  HTML the browser silently re-parents. So the logo renders as a real <a> only
+ *  where no ancestor is one; inside a link it becomes a role="link" span that
+ *  takes the click for itself — the row still opens the filing, the logo opens
+ *  the company. Starts as the span so the first paint never nests anchors. */
+function LogoLink({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [nested, setNested] = useState(true);
+  const navigate = useNavigate();
+  const external = /^https?:/.test(href);
+  const aria = `${label} company page`;
+
+  useLayoutEffect(() => {
+    setNested(!!ref.current?.parentElement?.closest("a"));
+  }, []);
+
+  const go = (newTab: boolean) => {
+    if (newTab) window.open(href, "_blank", "noopener");
+    else if (external) window.location.assign(href);
+    else navigate(href);
+  };
+
+  if (!nested) {
+    return external ? (
+      <a
+        aria-label={aria}
+        className="inline-flex shrink-0 rounded-full"
+        href={href}
+      >
+        {children}
+      </a>
+    ) : (
+      <Link
+        aria-label={aria}
+        className="inline-flex shrink-0 rounded-full"
+        to={href}
+      >
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <span
+      ref={ref}
+      aria-label={aria}
+      className="inline-flex shrink-0 cursor-pointer rounded-full transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+      role="link"
+      tabIndex={0}
+      onAuxClick={(e: MouseEvent) => {
+        if (e.button !== 1) return;
+        e.preventDefault();
+        e.stopPropagation();
+        go(true);
+      }}
+      onClick={(e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        go(e.metaKey || e.ctrlKey);
+      }}
+      onKeyDown={(e: KeyboardEvent) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        e.stopPropagation();
+        go(false);
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function LogoDisc({
   ticker,
   domain,
   monogramText,

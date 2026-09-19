@@ -55,7 +55,12 @@ export function BlurredAnalysisOverlay({
           unlock, not the brand in the abstract. */}
       <span className="relative mb-4 inline-block">
         {ticker ? (
-          <CompanyLogo className="shadow-lg" size={80} ticker={ticker} />
+          <CompanyLogo
+            className="shadow-lg"
+            link={false}
+            size={80}
+            ticker={ticker}
+          />
         ) : (
           <img
             alt=""

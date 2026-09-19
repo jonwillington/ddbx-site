@@ -1,5 +1,7 @@
 import type { StoryKind } from "@/types/ddbx";
 
+import { companyHref } from "@/lib/company";
+
 /** Resolving the `ddbx://` link scheme that story bodies carry.
  *
  *  A story is rendered by the website AND (later) natively by the iOS and
@@ -10,7 +12,8 @@ import type { StoryKind } from "@/types/ddbx";
  *    ddbx://filing/UK/<id>    -> /t/<id>           (app: filing detail)
  *    ddbx://filing/US/<id>    -> /us/t/<id>        (app: filing detail)
  *    ddbx://company/UK/<key>  -> /company/<key>    (app: company screen)
- *    ddbx://company/US/<key>  -> /us/company/<key>
+ *    ddbx://company/US/<key>  -> ddbx.us/company/<key>  (no /us/company route:
+ *                                company pages take their market from the host)
  *
  *  Anything else stays an external link and opens in a new tab.
  */
@@ -27,19 +30,22 @@ export function resolveStoryLink(raw: string): ResolvedLink {
   const parts = raw.slice("ddbx://".length).split("/");
   const [type, market, ...rest] = parts;
   const id = rest.join("/");
+
   if (!type || !market || !id) return { href: raw, internal: false };
 
   const us = market.toUpperCase() === "US";
+
   if (type === "filing") {
     return { href: us ? `/us/t/${id}` : `/t/${id}`, internal: true };
   }
   if (type === "company") {
-    const key = id.toLowerCase();
-    return {
-      href: us ? `/us/company/${key}` : `/company/${key}`,
-      internal: true,
-    };
+    const href = companyHref(id, us ? "US" : "UK");
+
+    if (!href) return { href: raw, internal: false };
+
+    return { href, internal: !/^https?:/.test(href) };
   }
+
   return { href: raw, internal: false };
 }
 

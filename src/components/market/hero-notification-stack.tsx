@@ -232,6 +232,7 @@ export function HeroNotificationStack({
           key={tick}
           className="hns-avatar"
           domain={frontDeal.logoDomain}
+          link={false}
           monogramText={frontDeal.logoMonogram}
           size={56}
           ticker={frontDeal.ticker}

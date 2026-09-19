@@ -49,8 +49,9 @@
  *  good. Maybe it needs some brown in there." It was two grey slabs and a
  *  brown sliver, and the grey was doing nothing — it said "not the accent"
  *  when the drawing needed it to say "before the accent". So the three columns
- *  are one ramp in the brand family: sand, tan, brown (amber on dark), light to
- *  dark left to right, so the eye is led down the drawing to the smallest
+ *  are one ramp in the brand family, quiet to loud left to right (since
+ *  2026-09-19 on the dark stage: a white tint, tan, then amber), so the eye
+ *  is led down the drawing to the smallest
  *  and darkest block, which is the one the page is about. The survivors'
  *  figure is set larger and heavier than the other two and in the same brand
  *  colour as its column, and the specimen mark is drawn INTO the block in the
@@ -124,23 +125,20 @@ const ACCENT_SCALE = 1.3;
 const MARK_MIN = 20;
 const MARK_RUN = 48;
 
-const BASELINE = "border-hairline dark:border-white/[0.12]";
+const BASELINE = "border-white/15";
 /** A column's level, carried across the gap it drops into. Dashed and in the
  *  brand colour so it reads as a leader for the annotation hanging from it,
  *  not as a grid rule. */
-const LEVEL = "border-dashed border-brand-brown/30 dark:border-brand-tan/35";
+const LEVEL = "border-dashed border-brand-tan/35";
 
-/** The ramp. One family, light to dark, in the order the reader meets them;
+/** The ramp. One family, quiet to loud, in the order the reader meets them;
  *  the last is the one every other element points at. */
-const RAMP = [
-  "bg-brand-tan/35 dark:bg-brand-tan/22",
-  "bg-brand-tan dark:bg-brand-tan/55",
-];
-const ACCENT = "bg-brand-brown dark:bg-brand-amber";
+const RAMP = ["bg-white/[0.13]", "bg-brand-tan/60"];
+const ACCENT = "bg-brand-amber";
 /** The survivors' figure and the mark-in-block, in the column's own colour
  *  and the ground colour respectively. */
-const ACCENT_TEXT = "text-brand-brown dark:text-brand-amber";
-const GROUND_ON_ACCENT = "text-sheet dark:text-ink";
+const ACCENT_TEXT = "text-brand-amber";
+const GROUND_ON_ACCENT = "text-ink";
 
 /** Mount-in: the columns grow from the baseline once, then nothing on this
  *  page moves again (grammar 5). Reduced motion skips straight to the end. */
@@ -185,7 +183,7 @@ function Figure({
           inline, it pushed the figure 50px right of the column it belongs to
           and broke the one alignment the drawing depends on. */}
       {stage.prefix ? (
-        <span className="mb-1.5 block font-mono text-[11px] font-semibold uppercase leading-[1.2] tracking-[0.14em] text-foreground/45">
+        <span className="mb-1.5 block font-mono text-[11px] font-semibold uppercase leading-[1.2] tracking-[0.14em] text-white/45">
           {stage.prefix}
         </span>
       ) : null}
@@ -193,7 +191,7 @@ function Figure({
         className={`block tabular-nums ${
           stage.accent
             ? `font-semibold tracking-[-0.045em] ${ACCENT_TEXT}`
-            : "font-medium tracking-[-0.035em] text-foreground/80"
+            : "font-medium tracking-[-0.035em] text-white/85"
         }`}
         style={{ fontSize: size, lineHeight: 1 }}
       >
@@ -210,14 +208,14 @@ function StageLabel({ stage }: { stage: ScaleStage }) {
       <p
         className={`text-[16px] leading-[1.25] sm:text-[18px] ${
           stage.accent
-            ? "font-semibold text-foreground"
-            : "font-medium text-foreground/80"
+            ? "font-semibold text-white"
+            : "font-medium text-white/80"
         }`}
       >
         {stage.label}
       </p>
       {stage.sub ? (
-        <p className="mt-1 text-[14px] leading-[1.35] text-foreground/45">
+        <p className="mt-1 text-[14px] leading-[1.35] text-white/45">
           {stage.sub}
         </p>
       ) : null}
@@ -237,11 +235,11 @@ function SpecimenLine({
 }) {
   return (
     <p
-      className={`flex items-start gap-2 text-[13.5px] leading-[1.45] text-foreground/55 ${className}`}
+      className={`flex items-start gap-2 text-[13.5px] leading-[1.45] text-white/55 ${className}`}
     >
-      <SpecimenMark className="mt-[2px]" />
+      <SpecimenMark className="mt-[2px]" onStage />
       <span>
-        <span className="font-semibold text-foreground">{company}</span>, one of
+        <span className="font-semibold text-white">{company}</span>, one of
         these {count(survivors)}.
       </span>
     </p>
@@ -281,7 +279,7 @@ function BandNote({
 }) {
   return (
     <p
-      className={`max-w-[38ch] leading-[1.5] text-foreground/60 ${className}`}
+      className={`max-w-[38ch] leading-[1.5] text-white/60 ${className}`}
       style={{ fontSize: size, ...style }}
     >
       {text}

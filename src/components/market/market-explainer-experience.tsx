@@ -489,6 +489,7 @@ function IntroScene({
           <span className="exp-hero-land block h-full w-full">
             <CompanyLogo
               className="!h-full !w-full"
+              link={false}
               size={56}
               ticker={logoTicker}
             />

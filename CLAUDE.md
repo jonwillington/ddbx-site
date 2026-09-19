@@ -114,6 +114,14 @@ the floating navbar.
   with a fixed dark background (e.g. the explainer walkthrough).
   Position via `className` (e.g. `absolute right-4 top-4`); GA
   `data-ga-*` attrs pass straight through.
+- **Company logos always open the company page** (house rule, 2026-09-19).
+  `CompanyLogo` does it by default — a real link where it stands alone, a
+  `role="link"` span that takes the click where it sits inside a row that
+  already links elsewhere. Don't wrap logos in your own company links. Pass
+  `market` on surfaces that mix markets (SE/US tickers are both bare);
+  `link={false}` only for a company page's own header and demo/teaser
+  surfaces. SE/NL/KR resolve to no link (no company pages there). US issuers
+  read from ddbx.uk link cross-domain via `companyHref` in `src/lib/company.ts`.
 - Shared button/chip styling tokens live in `src/components/button.ts`
   and `src/components/chip.ts` — reuse them before inventing new fills.
 

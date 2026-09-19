@@ -9,12 +9,13 @@
  *
  *    what happened  ->  what it did  ->  how we judged it  ->  what's behind it
  *
- *  1. `VerdictBand` — the purchase and its outcome, side by side, as the two
- *     largest objects on the page.
- *  2. The price chart, interactive, with the trade and the disclosure marked.
- *     The gap between those two markers is the single most under-appreciated
- *     fact about insider filings and it is the one thing a static table can
- *     never show.
+ *  1. `FilingStage` — the dark hero the research family shares (the story
+ *     page's stage is the model): the headline, what was paid and what it has
+ *     done since as the figure band, and the price chart inside the panel with
+ *     the trade and the disclosure marked. The gap between those two markers
+ *     is the single most under-appreciated fact about insider filings and it
+ *     is the one thing a static table can never show.
+ *  2. The dated basis under the stage, and the share control beside it.
  *  3. `RatingChecks` — the six checks, each expandable to what it asks and what
  *     we found here. This is the method demonstrated on a real filing rather
  *     than described in the abstract, which is why it sits on this page rather
@@ -23,12 +24,13 @@
  *     its source and each gated on click. The ask.
  *
  *  The reference table comes last, because it is the part a reader consults
- *  rather than reads.
+ *  rather than reads. It is numbered with the rest on desktop (2026-09-19):
+ *  every section of a research page carries its counter.
  *
  *  On a PHONE the numbered run renders as a list of hairline rows instead of
  *  stacked sections — each opens its body in the house bottom sheet — because
- *  stacked, the chart and the cluster calendar put three screens of scroll
- *  between the header and the written analysis. Same sections, same order of
+ *  stacked, the cluster calendar and the checks put screens of scroll between
+ *  the stage and the written analysis. Same sections, same order of
  *  argument reversed (written material first), authored once in `sections`
  *  and rendered by whichever layout the viewport picks.
  *
@@ -57,9 +59,10 @@
  *  So the two are one component now, and `share` only ADDS: the arrival hero
  *  (the filing as the push notification it would have been), and a directory
  *  section pointing at the rest of the site. It changes nothing about what the
- *  page publishes except `analysis.summary`, which appears on the share route
- *  alone — see the note at that block in components/filing/share-arrival.tsx
- *  for why, and why it is an attributed excerpt rather than the standfirst.
+ *  page publishes except `analysis.summary`, which with the discretion gate on
+ *  appears on the share route alone. Since 2026-09-19 it is the stage's
+ *  labelled standfirst wherever it may be published, rather than a quoted excerpt inside
+ *  the analysis section.
  *  The share route canonicalises to /dealings/{id}, so the two are never
  *  competing documents.
  *
@@ -112,13 +115,15 @@ import { filingFamily } from "../../shared/filing-family.js";
 import { shareNotificationLine } from "../../shared/share-notification.js";
 import { sectorByLabel, sectorPath } from "../../shared/sectors.js";
 
-import { SectorIcon } from "@/components/sector-icon";
 import {
   ContextCards,
   RatingChecks,
   TrialNudge,
-  VerdictBand,
 } from "@/components/filing/filing-ui";
+import {
+  FilingStage,
+  FilingStageSkeleton,
+} from "@/components/filing/filing-stage";
 import { AnalysisPreview } from "@/components/filing/analysis-preview";
 import {
   FilingSectionRows,
@@ -136,19 +141,13 @@ import { SeoSection } from "@/components/seo/section";
 import { SeoSkeleton } from "@/components/seo/skeletons";
 import { Skeleton } from "@/components/skeleton";
 import { RelatedCards } from "@/components/seo/related-cards";
-import { RatingBadge } from "@/components/rating-badge";
 import { CompanyLogo } from "@/components/company-logo";
-import { MiniPriceChart } from "@/components/mini-price-chart";
-import { TickerPill } from "@/components/ticker-pill";
 import { api } from "@/lib/api";
 import { companyPath, displayTicker } from "@/lib/company";
-import { UkMarket } from "@/lib/markets/uk";
-import { UsMarket } from "@/lib/markets/us";
 
 const RULE = "border-hairline dark:border-separator";
 const R = {
   body: "text-[14px] leading-[1.65] text-foreground/70",
-  label: "text-[12px] text-foreground/45",
 };
 
 export default function FilingPage({
@@ -365,45 +364,6 @@ export default function FilingPage({
   const sections: FilingSection[] = [];
 
   if (deal) {
-    sections.push({
-      key: "price",
-      title: "The price around the buy",
-      // Three lines of preamble on a phone before the reader reached the
-      // chart, one of them an instruction they will discover by touching it.
-      aside:
-        "Both the trade and the disclosure are marked, with the price paid drawn as a level.",
-      hint: "The chart either side of the buy, both dates marked.",
-      body: (
-        <>
-          <div className="mt-4">
-            <MiniPriceChart
-              detailed
-              disclosedDate={deal.disclosed_date}
-              // UK prices are pence, US are dollars — each market's own
-              // unit, matched to the formatter on the next line. Reading
-              // the wrong one draws the entry level two orders of
-              // magnitude off the series.
-              entryPrice={
-                (us
-                  ? (deal as UsDealing).price
-                  : (deal as Dealing).price_pence) ?? 0
-              }
-              fmt={us ? UsMarket.priceFormat : UkMarket.priceFormat}
-              muted={deal.is_open_market_buy === false}
-              tickerForApi={deal.ticker}
-              tickerForDisplay={displayTicker(deal.ticker)}
-              tradeDate={deal.trade_date}
-            />
-          </div>
-          {/* Standing note, set as the small print it is rather than as
-              five lines of body copy between the chart and the argument. */}
-          <p className="mt-4 max-w-[62ch] text-[11px] leading-[1.55] text-muted">
-            {FILING_NOTICE}
-          </p>
-        </>
-      ),
-    });
-
     if (context.length > 0 || hasCluster) {
       sections.push({
         key: "context",
@@ -445,8 +405,9 @@ export default function FilingPage({
             <p className={`mt-4 max-w-[62ch] ${R.body}`}>
               That is a judgement made on the day it filed, on what was known
               then, not a view on the company, and not a prediction. The price
-              since is the chart above, and it is why this filing can appear
-              among the best performers with nothing written about it.
+              since is the chart at the top of the page, and it is why this
+              filing can appear among the best performers with nothing written
+              about it.
             </p>
           </>
         ),
@@ -483,38 +444,105 @@ export default function FilingPage({
             evidence={evidence}
             marketId={fam.marketId}
             shape={shape}
-            // The summary is published on the share route only — unless
-            // discretion is off, in which case nothing here is withheld.
-            summary={
-              share || !DISCRETION_ENABLED ? deal.analysis?.summary : null
-            }
+            // Never printed here any more: wherever the page may publish the
+            // summary (share route, or discretion off) it is the stage's
+            // standfirst, and a second statement of it two screens down is
+            // the repetition this section was rebuilt to stop.
+            summary={null}
           />
         ),
       });
     }
   }
 
-  // The row list runs in reverse: the argument reads what-happened → price →
-  // context → checks → analysis, but a reader tapping rows wants the written
-  // material first, so the mobile list leads with the analysis (or, on a
-  // screened filing, the screening reason) and ends on the chart. The rows
+  // The row list runs in reverse: the argument reads context → checks →
+  // analysis, but a reader tapping rows wants the written material first, so
+  // the mobile list leads with the analysis (or, on a screened filing, the
+  // screening reason) and ends on the context. The rows
   // renumber themselves in their own order — the desktop counters are never
   // on screen at the same time.
   const mobileSections = [...sections].reverse().map((s) => ({
     ...s,
     // The ask still meets the reader at the pause after the content — at the
     // foot of each sheet, in the section's own words, as it does between the
-    // stacked sections on desktop. The price section has no themed lead
-    // there either, so it carries none here.
+    // stacked sections on desktop.
     drawerFoot: themedLead[s.key] ? (
       <TrialNudge lead={themedLead[s.key]} marketId={fam.marketId} />
     ) : undefined,
   }));
 
+  // The analysis summary, where the page may publish it — the share route, or
+  // anywhere with discretion off (the rule shared/filings.js sets and
+  // AnalysisPreview enforces). The stage sets it as a labelled standfirst
+  // under a headline composed from the filing's own fields.
+  const summary =
+    deal && analysed && (share || !DISCRETION_ENABLED)
+      ? deal.analysis?.summary?.trim() || null
+      : null;
+  const asOf = deal?.live_performance?.as_of ?? null;
+
+  // The reference grid, numbered as the run's last section on desktop and set
+  // inline after the rows on a phone (it is two screens of short facts, not
+  // something to open in a sheet).
+  //
+  // A GRID, NOT TEN FULL-WIDTH ROWS. As `label ......... value` across the
+  // whole 860px measure every pair had 500px of empty carpet between its two
+  // halves. Two columns, not three: there are ten fields, so two divides
+  // evenly and every row of the grid is full. Two up on the phone as well;
+  // long values wrap inside their own cell.
+  const recordBody = deal ? (
+    <dl className={`mt-4 grid grid-cols-2 gap-x-6 border-t ${RULE} sm:gap-x-8`}>
+      <Row label="Insider" value={insider.name} />
+      <Row label="Role" value={insider.role ?? "—"} />
+      <Row
+        label="Company"
+        value={
+          <Link
+            className="underline underline-offset-4"
+            to={companyPath(deal.ticker)}
+          >
+            {name}
+          </Link>
+        }
+      />
+      <Row label="Shares" value={shares(deal.shares)} />
+      {/* A US leg can be footnote-priced rather than stating a price
+            (distributions, complex transactions), where a UK row always
+            carries one. An em dash is the honest cell; a fabricated
+            $0.00 is not. */}
+      <Row label="Price paid" value={fam.sharePrice(deal) ?? "—"} />
+      {/* Currency is pinned by the family, never read from
+            `deal.currency` — see the note on `sharePrice` in
+            shared/filings.js. On a UK row `value_gbp` is the
+            FX-converted canonical figure while `currency` describes the
+            original RNS. */}
+      <Row
+        label="Consideration"
+        value={fam.value(deal) == null ? "—" : fam.money(fam.value(deal))}
+      />
+      <Row label="Traded" value={deal.trade_date} />
+      <Row label="Disclosed" value={deal.disclosed_date} />
+      <Row
+        label="Disclosure lag"
+        value={
+          lag == null
+            ? "—"
+            : lag === 0
+              ? "Same day"
+              : `${lag} ${lag === 1 ? "day" : "days"}`
+        }
+      />
+      <Row label="Transaction" value={fam.transactionLabel(deal)} />
+    </dl>
+  ) : null;
+
+  const totalSections = sections.length + 1;
+
   return (
     <DefaultLayout drawerRight>
       <SeoRail marketId={fam.marketId} placement="filing_rail" />
       <SeoPageShell
+        titleInHero
         crumbs={[
           { label: "Companies", to: "/companies" },
           ...(deal ? [{ label: name, to: companyPath(deal.ticker) }] : []),
@@ -534,217 +562,115 @@ export default function FilingPage({
           marketId: fam.marketId,
         }}
         eyebrow={share ? "Shared filing" : "Disclosure"}
-        // The notification, above the crumbs and the h1 — the share route's
-        // one job above the fold. Only once the row has arrived: an empty
-        // card slot that later pushes the whole document down is the loading
-        // behaviour the shell exists to prevent.
         hero={
+          // The notification, above the crumbs — the share route's one job
+          // above the fold. Only once the row has arrived: an empty card slot
+          // that later pushes the whole document down is the loading
+          // behaviour the shell exists to prevent.
           share && deal ? (
             <ShareArrivalCard deal={deal} marketId={fam.marketId} />
           ) : undefined
         }
         loading={status === "loading"}
-        // Always /t/{id}, on BOTH routes — the canonical page's readers are
-        // sharing the filing, not the URL they happen to be reading it at, and
-        // the share route is the one with the unfurl card and the Universal
-        // Link. `sharePath` per market, so /us/dealings/{id} hands out
-        // /us/t/{id}. The text is the same sentence the unfurl carries, so a
-        // tweet and its preview agree.
-        share={
-          deal && id ? (
-            <ShareRow
-              context={us ? "filing-us" : "filing"}
-              title={
-                shareNotificationLine(deal, market) ?? fam.leadSentence(deal)
-              }
-              url={fam.sharePath(id)}
-            />
-          ) : undefined
-        }
         skeleton={
           <>
-            <Skeleton className="mt-7 h-[168px] w-full rounded-2xl" />
-            {/* The chart panel only arrives inline on desktop; on mobile the
-                run lands as hairline rows, which the ruled list below already
-                describes. A block that loads and then vanishes is a redraw
-                wearing a loading state. */}
-            {isDesktop ? (
-              <Skeleton className="mt-6 h-[220px] w-full rounded-2xl" />
-            ) : null}
+            <div className="mt-6">
+              <FilingStageSkeleton />
+            </div>
+            <Skeleton className="mt-5 h-[12px] w-[70%] rounded" />
             <SeoSkeleton rows={6} variant="ruled-list" />
           </>
         }
-        // No standfirst on the share route. `filingLeadSentence` and the
-        // notification card directly above it are the same sentence twice
-        // ("bought £113k on 6 Aug" / "bought 50,000 shares … for £113k on
-        // 2026-08-06"), 200px apart, and the card says it better. The share
-        // count and the disclosure lag it also carried are both in the verdict
-        // band and the record grid below.
-        standfirst={share || !deal ? undefined : fam.leadSentence(deal)}
-        standfirstSize="lede"
-        title={
-          deal ? (
-            <span className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <CompanyLogo
-                className="shrink-0"
-                size={40}
-                ticker={deal.ticker}
-              />
-              <span>{name}</span>
-            </span>
-          ) : (
-            // Logo disc + name bar, sized to the h1 line so the header
-            // doesn't reflow when the record lands. Never the word "Filing".
-            <span className="flex items-center gap-x-3">
-              <Skeleton circle className="shrink-0" h={40} w={40} />
-              <Skeleton className="h-[30px] w-[240px] max-w-full rounded-lg sm:h-[38px] sm:w-[320px]" />
-            </span>
-          )
-        }
+        /* The stage carries the h1, the eyebrow and the standfirst (hence
+           `titleInHero` above), so the shell prints none of its own header
+           furniture. `title` still names the page for the shell. */
+        title={name}
       >
         {deal ? (
           <>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <TickerPill ticker={displayTicker(deal.ticker)} />
-              {deal.analysis?.rating ? (
-                <RatingBadge rating={deal.analysis.rating} />
-              ) : null}
-              {sector ? (
-                <Link
-                  className={`inline-flex items-center gap-1.5 ${R.label} underline-offset-4 hover:underline`}
-                  to={sectorPath(sector.slug)}
-                >
-                  <SectorIcon
-                    className="h-[13px] w-[13px] shrink-0 text-foreground/35"
-                    slug={sector.slug}
-                  />
-                  {sector.label}
-                </Link>
+            <div className="mt-6">
+              <FilingStage
+                deal={deal}
+                eyebrow={share ? "Shared filing" : "Disclosure"}
+                market={market}
+                sector={sector}
+                summary={summary}
+              />
+            </div>
+
+            {/* The dated basis, then the share control: the two pieces of
+                small print every stage in the family sets directly under its
+                panel. Share is always /t/{id}, on BOTH routes: the canonical
+                page's readers are sharing the filing, not the URL they happen
+                to be reading it at, and the share route is the one with the
+                unfurl card and the Universal Link. The text is the same
+                sentence the unfurl carries, so a tweet and its preview agree. */}
+            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+              <p className="max-w-[62ch] text-[12.5px] leading-[1.6] text-foreground/45">
+                {asOf ? `Marked to the close on ${asOf}. ` : ""}
+                {FILING_NOTICE}
+              </p>
+              {id ? (
+                <ShareRow
+                  className="shrink-0"
+                  context={us ? "filing-us" : "filing"}
+                  title={
+                    shareNotificationLine(deal, market) ??
+                    fam.leadSentence(deal)
+                  }
+                  url={fam.sharePath(id)}
+                />
               ) : null}
             </div>
 
-            {/* Above the verdict on the share route, and only there. Someone
-                who followed a link needs to know within one screen what they
-                landed on and what it has to do with the app; someone who
-                arrived at /dealings/{id} from a search result came for the
-                filing and gets it first. */}
-            <VerdictBand deal={deal} market={market} />
-
-            {/* The chart carries its own period switcher and crosshair, so
-                it is the one genuinely interactive object on an otherwise
-                static document. Markers on both the trade and the disclosure
-                make the lag visible instead of merely stated.
-
-                DESKTOP: the stacked numbered run, with the ask threaded
+            {/* DESKTOP: the stacked numbered run, with the ask threaded
                 between the sections rather than inside any of them, so the
                 reader meets it at each natural pause in the argument, never
-                mid-checklist. Each slot carries its own lead — the same
-                sentence three times down one page stopped reading as a
-                reminder and started reading as an ad unit — but every one
+                mid-checklist. Each slot carries its own lead, but every one
                 ends on the identical trial terms.
 
                 MOBILE: the same sections as one screen of hairline rows, each
-                opening its body in the bottom sheet. The three threaded
-                nudges collapse to a single one after the rows, carrying the
-                lag line (the strongest sentence the page has); the themed
-                leads ride at the foot of each sheet instead. */}
+                opening its body in the bottom sheet. The threaded nudges
+                collapse to a single one after the rows, carrying the lag line
+                (the strongest sentence the page has); the themed leads ride
+                at the foot of each sheet instead. */}
             {isDesktop ? (
               sections.map((s, i) => (
                 <Fragment key={s.key}>
                   {i > 0 ? (
-                    <TrialNudge
-                      lead={i === 1 ? lagLead : themedLead[s.key]}
-                      marketId={fam.marketId}
-                    />
+                    <div className="mt-12">
+                      <TrialNudge
+                        lead={i === 1 ? lagLead : themedLead[s.key]}
+                        marketId={fam.marketId}
+                      />
+                    </div>
                   ) : null}
                   <SeoSection
                     aside={s.aside}
                     index={i + 1}
                     title={s.title}
-                    total={sections.length}
+                    total={totalSections}
                   >
                     {s.body}
                   </SeoSection>
                 </Fragment>
               ))
-            ) : (
+            ) : sections.length > 0 ? (
               <>
                 <FilingSectionRows sections={mobileSections} />
-                <TrialNudge lead={lagLead} marketId={fam.marketId} />
+                <div className="mt-6">
+                  <TrialNudge lead={lagLead} marketId={fam.marketId} />
+                </div>
               </>
-            )}
+            ) : null}
 
-            {/* Reference, not narrative, so it sits below the argument and
-                outside the numbered run. */}
             <SeoSection
               aside="The filing, as it was disclosed."
+              index={isDesktop ? totalSections : undefined}
               title="The record"
+              total={isDesktop ? totalSections : undefined}
             >
-              {/* A GRID, NOT TEN FULL-WIDTH ROWS.
-                  As `label ......... value` across the whole 860px measure,
-                  every pair had 500px of empty carpet between its two halves,
-                  so reading it meant tracking a line across the page ten times
-                  and the block occupied a screen and a half to carry ten short
-                  facts. Two and three up puts each label next to its own value
-                  and lets the reference section read as the spec sheet it is.
-
-                  Two columns, not three: there are ten fields, so two divides
-                  evenly and every row of the grid is full. Three would leave a
-                  single cell on the last row with its rule running a third of
-                  the way across, which reads as a table that failed to finish.
-
-                  Two up on the phone as well. Every value here is short (a
-                  name, a date, a figure), and ten full-width rows put 700px of
-                  reference between the argument and "Read next" on the screen
-                  where scroll is dearest. Long values wrap inside their own
-                  cell — Row sets break-words for exactly this. */}
-              <dl
-                className={`mt-4 grid grid-cols-2 gap-x-6 border-t ${RULE} sm:gap-x-8`}
-              >
-                <Row label="Insider" value={insider.name} />
-                <Row label="Role" value={insider.role ?? "—"} />
-                <Row
-                  label="Company"
-                  value={
-                    <Link
-                      className="underline underline-offset-4"
-                      to={companyPath(deal.ticker)}
-                    >
-                      {name}
-                    </Link>
-                  }
-                />
-                <Row label="Shares" value={shares(deal.shares)} />
-                {/* A US leg can be footnote-priced rather than stating a price
-                    (distributions, complex transactions), where a UK row always
-                    carries one. An em dash is the honest cell; a fabricated
-                    $0.00 is not. */}
-                <Row label="Price paid" value={fam.sharePrice(deal) ?? "—"} />
-                {/* Currency is pinned by the family, never read from
-                    `deal.currency` — see the note on `sharePrice` in
-                    shared/filings.js. On a UK row `value_gbp` is the
-                    FX-converted canonical figure while `currency` describes the
-                    original RNS. */}
-                <Row
-                  label="Consideration"
-                  value={
-                    fam.value(deal) == null ? "—" : fam.money(fam.value(deal))
-                  }
-                />
-                <Row label="Traded" value={deal.trade_date} />
-                <Row label="Disclosed" value={deal.disclosed_date} />
-                <Row
-                  label="Disclosure lag"
-                  value={
-                    lag == null
-                      ? "—"
-                      : lag === 0
-                        ? "Same day"
-                        : `${lag} ${lag === 1 ? "day" : "days"}`
-                  }
-                />
-                <Row label="Transaction" value={fam.transactionLabel(deal)} />
-              </dl>
+              {recordBody}
             </SeoSection>
 
             <SeoSection aside="Where to go from here." title="Read next">

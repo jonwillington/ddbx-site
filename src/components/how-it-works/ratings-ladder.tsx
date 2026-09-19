@@ -44,11 +44,9 @@
  *  future reader adds a per-rung count here, they are inventing a rule the
  *  product does not have.
  *
- *  The specimen mark (the page-wide filled brand-brown disc with its offset
- *  ring) sits on whichever rung the worked example actually landed on, read
- *  from `examples.specimen.rating` rather than pinned to significant — the
- *  checklist moves by design, and a hard-coded rung would eventually be
- *  arguing with the filing it links to.
+ *  The worked example's rung used to be marked here too, in a tinted band.
+ *  Cut 2026-09-19: the stage's footer row already states its rating and the
+ *  checks scorecard shows why, so a third statement was repetition.
  */
 import type { CSSProperties } from "react";
 import type { Rating } from "@/types/ddbx";
@@ -61,20 +59,14 @@ import { ChevronRightIcon } from "@heroicons/react/20/solid";
 import { Link } from "react-router-dom";
 
 import { CompanyLogo } from "@/components/company-logo";
-import {
-  DIVIDE,
-  KICKER,
-  PANEL as SHEET,
-  shortDate,
-} from "@/components/how-it-works/shared";
-import {
-  SpecimenMark,
-  VerdictDisc,
-} from "@/components/how-it-works/specimen-mark";
+import { DIVIDE, KICKER, shortDate } from "@/components/how-it-works/shared";
+import { VerdictDisc } from "@/components/how-it-works/specimen-mark";
 import { RatingBadge } from "@/components/rating-badge";
 import { CHECK_COUNT, CHECK_COUNT_WORD, RATING_SCALE } from "@/lib/methodology";
 
-const PANEL = `@container overflow-hidden ${SHEET}`;
+/** No sheet since 2026-09-19: the ladder sits on the page ground between
+ *  hairlines, like every other list on the page. */
+const PANEL = `@container border-y border-hairline dark:border-separator`;
 const MONO = `${KICKER} text-foreground/45`;
 
 /** One column spec for the rungs and the cap band, keyed on the PANEL'S OWN
@@ -100,9 +92,6 @@ const COL_STYLE = {
   "--rung-medium": "11rem minmax(0,1fr)",
   "--rung-wide": "11rem minmax(0,1fr) 22rem",
 } as CSSProperties;
-
-/** Anything that runs the whole rung: the specimen band. */
-const FULL = "@min-[540px]:col-span-2 @min-[840px]:col-span-3";
 
 /** The third track, and where it lives before it exists: under the meaning at
  *  medium, under everything on a phone. Placed rather than duplicated, so the
@@ -174,7 +163,7 @@ function ExampleRow({ example }: { example: ExampleFiling }) {
 function CapBand() {
   return (
     <div
-      className={`${COLS} border-t border-black/[0.07] bg-brand-brown/[0.07] dark:border-white/[0.09] dark:bg-brand-tan/[0.10]`}
+      className={`${COLS} border-t border-black/[0.07] dark:border-white/[0.09]`}
       style={COL_STYLE}
     >
       <div>
@@ -208,14 +197,11 @@ export function RatingLadder({
    *  it just has no filings to point at. */
   examples: MethodologyExamples | null;
 }) {
-  const specimen = examples?.specimen;
-
   return (
     <>
       <p className="max-w-[68ch] text-[16px] leading-[1.65] text-foreground/80">
         Every buy we read properly comes out with one of four labels. Where it
-        lands depends on how the {CHECK_COUNT_WORD} checks went, and the top of
-        the scale needs all {CHECK_COUNT_WORD}.
+        lands depends on how the {CHECK_COUNT_WORD} checks went.
       </p>
 
       <div className={`mt-7 ${PANEL} divide-y ${DIVIDE}`}>
@@ -223,7 +209,6 @@ export function RatingLadder({
           const rating = r.rating as Rating;
           const example = examples?.ratings[rating];
           const top = i === 0;
-          const specimenHere = specimen != null && specimen.rating === rating;
 
           return (
             <div key={rating}>
@@ -258,24 +243,6 @@ export function RatingLadder({
                 {example ? (
                   <div className={SIDECAR}>
                     <ExampleRow example={example} />
-                  </div>
-                ) : null}
-
-                {specimenHere && specimen ? (
-                  <div
-                    className={`${FULL} flex items-start gap-3 rounded-xl border border-hairline bg-brand-brown/[0.05] px-4 py-3.5 dark:border-white/[0.07] dark:bg-brand-tan/[0.07]`}
-                  >
-                    <SpecimenMark className="mt-[3px]" />
-                    <p className="text-[14px] leading-[1.6] text-foreground/70">
-                      The worked example at the top of this page,{" "}
-                      <Link
-                        className="font-medium text-foreground underline underline-offset-4"
-                        to={specimen.path}
-                      >
-                        {specimen.company}
-                      </Link>
-                      , landed on this rung.
-                    </p>
                   </div>
                 ) : null}
               </div>

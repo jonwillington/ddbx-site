@@ -50,14 +50,32 @@ const TICK = "M6.4 12.4 L10 16 L17.6 7.9";
 const CROSS = "M8.4 8.4 L15.6 15.6 M15.6 8.4 L8.4 15.6";
 
 /** The worked example. Nothing else on the page uses this mark. */
-export function SpecimenMark({ className = "" }: { className?: string }) {
+export function SpecimenMark({
+  className = "",
+  onStage = false,
+}: {
+  className?: string;
+  /** Drawn on the hero's dark stage, which is dark in both themes, so the
+   *  mark takes the amber rather than reading its colour through the theme. */
+  onStage?: boolean;
+}) {
   return (
     <span
       aria-hidden
       className={`relative inline-flex h-4 w-4 shrink-0 items-center justify-center ${className}`}
     >
-      <span className="absolute inset-0 rounded-full border-2 border-brand-brown/30 dark:border-brand-tan/30" />
-      <span className="h-2 w-2 rounded-full bg-brand-brown dark:bg-brand-tan" />
+      <span
+        className={`absolute inset-0 rounded-full border-2 ${
+          onStage
+            ? "border-brand-amber/35"
+            : "border-brand-brown/30 dark:border-brand-tan/30"
+        }`}
+      />
+      <span
+        className={`h-2 w-2 rounded-full ${
+          onStage ? "bg-brand-amber" : "bg-brand-brown dark:bg-brand-tan"
+        }`}
+      />
     </span>
   );
 }

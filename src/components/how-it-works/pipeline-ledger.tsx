@@ -78,7 +78,6 @@
  *  stages. Any total that arrives as zero or missing renders nothing at all
  *  rather than a dash: static-page rule 2.
  */
-import type { ExampleFiling } from "@/lib/methodology-examples";
 import type { CoverageResponse } from "@/types/ddbx";
 import type { ComponentType, SVGProps } from "react";
 
@@ -90,16 +89,13 @@ import {
   FunnelIcon,
   ScaleIcon,
 } from "@heroicons/react/24/outline";
-import { Link } from "react-router-dom";
 
 import {
   EYEBROW,
   EYEBROW_QUIET,
   RULE,
   StepNode,
-  shortDate,
 } from "@/components/how-it-works/shared";
-import { SpecimenMark } from "@/components/how-it-works/specimen-mark";
 import { PIPELINE } from "@/lib/methodology";
 import { count } from "@/lib/coverage";
 
@@ -135,7 +131,13 @@ const STAGE_ICON: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
  *
  *  "Nothing" is rendered as an item rather than as an absence, so the column
  *  is the same object on all six rows and the difference in height is the
- *  finding rather than a formatting accident. */
+ *  finding rather than a formatting accident.
+ *
+ *  A note is only kept where it says something the stage's body beside it
+ *  does not. Until 2026-09-19 classify's, triage's and track's notes restated
+ *  their own bodies a few centimetres to the left ("with the buyer’s own
+ *  money", "never quietly dropped", "a rating can change"), so they are empty
+ *  and not rendered. */
 const GATE: Record<string, { leaves: string[]; note: string }> = {
   watch: {
     leaves: [],
@@ -150,15 +152,15 @@ const GATE: Record<string, { leaves: string[]; note: string }> = {
       "Scheme releases",
       "Disposals",
     ],
-    note: "What is left is a purchase on the open market, made with the buyer’s own money.",
+    note: "",
   },
   triage: {
     leaves: ["Most of the buys that got this far"],
-    note: "Fixed rules can push a filing back up, so a large buy by a chief executive is never quietly dropped.",
+    note: "",
   },
   analyse: {
     leaves: [],
-    note: "The filing stays. What gets dropped is any claim in the read with no working link to its source: evidence that cannot be checked is removed rather than softened.",
+    note: "The filing stays.",
   },
   rate: {
     leaves: [],
@@ -166,42 +168,42 @@ const GATE: Record<string, { leaves: string[]; note: string }> = {
   },
   track: {
     leaves: [],
-    note: "A rating can change later, as the record it is measured against builds.",
+    note: "",
   },
 };
 
-/** The quiet trailing line on a stage: its cadence qualifier, and a live
- *  figure where this section honestly has one. Returns the cadence alone when
- *  the count is missing or zero, so the slot never renders an empty quantity. */
+/** The quiet trailing line on a stage: a live figure where this section
+ *  honestly has one, and null otherwise, so the slot never renders an empty
+ *  quantity.
+ *
+ *  It used to lead with the stage's `meta` ("Every 15 minutes", "Most filings
+ *  stop here", "Measured against the index"), and every one of those six
+ *  taglines is already said in the stage's own title or body. Cut 2026-09-19;
+ *  the explainer walkthrough still uses `meta`. */
 function stageFootnote(
   stageId: string,
-  meta: string,
   totals?: CoverageResponse["totals"] | null,
-): string {
+): string | null {
   if (stageId === "watch" && totals?.pipeline_runs) {
-    return `${meta} · ${count(totals.pipeline_runs)} pipeline runs so far`;
+    return `${count(totals.pipeline_runs)} pipeline runs so far`;
   }
   if (stageId === "triage" && totals?.triage_decisions) {
     const llm = totals.triage_llm
       ? `, ${count(totals.triage_llm)} of them by a model and the rest by fixed rules`
       : "";
 
-    return `${meta} · ${count(totals.triage_decisions)} sorting decisions so far${llm}`;
+    return `${count(totals.triage_decisions)} sorting decisions so far${llm}`;
   }
 
-  return meta;
+  return null;
 }
 
 export function PipelineLedger({
   totals,
-  specimen,
 }: {
   /** Live counts from `useCoverage()`. Optional: the ledger reads perfectly
-   *  without them, it just loses two footnote clauses. */
+   *  without them, it just loses two footnotes. */
   totals?: CoverageResponse["totals"] | null;
-  /** The filing the page threads through everything. Null on markets with no
-   *  analysis layer (SE, NL), where the closing line simply does not render. */
-  specimen?: ExampleFiling | null;
 }) {
   return (
     <div>
@@ -211,9 +213,8 @@ export function PipelineLedger({
           and the watch row's own footnote; saying them here too put the same
           fact on screen three times. */}
       <p className="max-w-[64ch] text-[16px] leading-[1.65] text-foreground/80">
-        Six stages stand between a filing appearing and a rating existing. Only
-        two of them throw filings away; the other four read, score and measure
-        what survives.
+        Only two of the six throw filings away; the other four read, score and
+        measure what survives.
       </p>
 
       <ol className={`relative mt-8 border-t ${RULE}`}>
@@ -221,6 +222,7 @@ export function PipelineLedger({
           const gate = GATE[stage.id] ?? { leaves: [], note: "" };
           const items = gate.leaves.length > 0 ? gate.leaves : ["Nothing"];
           const Icon = STAGE_ICON[stage.id];
+          const footnote = stageFootnote(stage.id, totals);
 
           return (
             <li
@@ -266,9 +268,11 @@ export function PipelineLedger({
                 <p className="mt-3 max-w-[62ch] text-[16px] leading-[1.65] text-foreground/75">
                   {stage.body}
                 </p>
-                <p className="mt-3.5 text-[14px] leading-[1.5] tabular-nums text-foreground/50">
-                  {stageFootnote(stage.id, stage.meta, totals)}
-                </p>
+                {footnote ? (
+                  <p className="mt-3.5 text-[14px] leading-[1.5] tabular-nums text-foreground/50">
+                    {footnote}
+                  </p>
+                ) : null}
               </div>
 
               {/* The discard margin. Past the vertical rule is out of the
@@ -292,36 +296,16 @@ export function PipelineLedger({
                     </li>
                   ))}
                 </ul>
-                <p className="mt-3.5 max-w-[46ch] text-[14px] leading-[1.55] text-foreground/55">
-                  {gate.note}
-                </p>
+                {gate.note ? (
+                  <p className="mt-3.5 max-w-[46ch] text-[14px] leading-[1.55] text-foreground/55">
+                    {gate.note}
+                  </p>
+                ) : null}
               </div>
             </li>
           );
         })}
       </ol>
-
-      {/* The specimen, taken through the ledger in one sentence. The page
-          introduces this filing above the contents strip and narrates its
-          verdict under every check below; here it is simply the thing that
-          survived all six gates, which is what the ledger is a picture of. */}
-      {specimen ? (
-        <div className={`mt-7 flex items-start gap-3 border-t ${RULE} pt-5`}>
-          <SpecimenMark className="mt-[3px]" />
-          <p className="max-w-[68ch] text-[16px] leading-[1.6] text-foreground/70">
-            The worked example cleared every gate.{" "}
-            <Link
-              className="font-medium text-foreground underline underline-offset-4"
-              to={specimen.path}
-            >
-              {specimen.name}’s purchase of {specimen.company} shares
-            </Link>{" "}
-            on {shortDate(specimen.date)} was classified as an open-market buy,
-            kept by triage, read against the record, rated {specimen.rating},
-            and is now measured against the index.
-          </p>
-        </div>
-      ) : null}
     </div>
   );
 }

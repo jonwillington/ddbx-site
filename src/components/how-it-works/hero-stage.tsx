@@ -2,74 +2,65 @@
  *  one filing that came all the way through it.
  *
  *  ---------------------------------------------------------------------------
- *  Light, not dark (2026-09-07)
+ *  Dark again (2026-09-19)
  *  ---------------------------------------------------------------------------
  *
- *  This was the page's one dark stage, built on BoardStagePanel so it shared
- *  material with the seven board heroes. Jon's review asked for the inversion,
- *  and the inversion is right for this page specifically: a board hero is a
- *  population of purchases and reads as an instrument panel, whereas this page
- *  is a document about method. Its opening object should read as the top of a
- *  document, on the same ground as everything under it, with one contained
- *  edge around it. So: a light hairline panel (`bg-sheet` on cream, `surface`
- *  in dark), foreground ink, brand brown/tan for the accent. Tenet 1 of the
- *  design language is unchanged — contained, crisp edge, no scrim, no fade.
- *
- *  It deliberately does NOT use BoardStagePanel or StageFigures. Those are the
- *  dark material: fixed white opacities, a #1a140d ground in both themes, a
- *  skeleton keyed to that ground. Reusing them here would have meant a theme
- *  fork inside every one of them.
+ *  2026-09-07 turned this light, on the argument that a methodology page
+ *  should open like a document rather than an instrument panel. Jon reversed
+ *  that on 2026-09-19: the site's newer pages (/insider-index, /reports, the
+ *  stories) all open on the same dark stage, and this page reading as a
+ *  different species was the bigger cost. So it is the board-stage material
+ *  again (`.board-stage`, #1a140d in both themes, white opacities and the
+ *  brand amber inside), built to the insider-index recipe rather than on
+ *  BoardStagePanel — that panel owns an SVG plot and a mode toggle, and this
+ *  drawing is HTML with neither.
  *
  *  ---------------------------------------------------------------------------
  *  The parts
  *  ---------------------------------------------------------------------------
  *
- *    header    Eyebrow, the document's h1 (the page passes `titleInHero`, so
- *              the shell renders no header of its own), the standfirst and the
- *              thesis. Two columns from xl: the h1 takes 7fr and the prose 5fr,
- *              top-aligned. Not lg — at 1024 the SEO rail leaves a 560px
- *              content column, and splitting that in two broke the h1 over
- *              four lines. Jon's width note — "we are still not using 100%
- *              of the screen space" — is the reason. Stacked, an h1 held to a
- *              19ch measure leaves a third of a 912px column empty, and there
- *              is nothing to put in it that is not filler.
+ *    header    Eyebrow and the document's h1 left (the page passes
+ *              `titleInHero`); the verdict — "about one filing in seventeen
+ *              gets read in full" — and the standfirst right. Two columns from
+ *              xl; not lg, because at 1024 the SEO rail leaves 560px and a
+ *              split broke the h1 over four lines.
  *    chart     HeroScaleChart: three counts drawn to one linear scale, the
- *              number on each column, what leaves written in the gap. See that
- *              file for why the old bed of hairlines went.
- *    caption   The ratio in words, then the finding, then the provenance. The
- *              ratio sentence is derived from the same two live counts the
- *              chart draws, rounded, and hedged with "about" — it is a fact
- *              about the drawing, not a second measurement.
+ *              number on each column, what leaves written in the gap.
+ *    footer    SpecimenStrip: the worked example, named in full, as the
+ *              stage's last row. It used to be a second hero-sized card under
+ *              the stage; one hero object only.
+ *
+ *  The provenance ("Counted Sep 2026 …") is not in the stage: it is the dated
+ *  basis line directly under it, the way the reference pages carry theirs.
  *
  *  Every figure is live. A stage with no number is not drawn and not named
  *  (grammar 7): with no open-market floor reported, the chart falls to two
- *  columns and the middle band's copy absorbs what the missing one said.
+ *  columns and the middle band's copy absorbs what the missing one said. The
+ *  verdict is derived from the same two live counts the chart draws, rounded
+ *  and hedged with "about" — it is a reading of the drawing, not a second
+ *  measurement — and it is withheld when either count is missing.
  */
 import type { ReactNode } from "react";
 import type { ScaleStage } from "@/components/how-it-works/hero-scale-chart";
+import type { ExampleFiling } from "@/lib/methodology-examples";
 
 import { useMemo } from "react";
 
 import { HeroScaleChart } from "@/components/how-it-works/hero-scale-chart";
+import { SpecimenStrip } from "@/components/how-it-works/specimen-card";
 import { count } from "@/lib/coverage";
 import { SectionEyebrow } from "@/components/section-eyebrow";
 
-/** The panel. The homepage hero-card's warm shadow, so the object sits ON the
- *  page rather than being drawn on it; relative + clipped so the wash below
- *  stays inside the rounded edge. In the shell layout (lib/nav-mode) the
- *  page is already a rounded sheet, so the panel goes flat on it. */
+/** The board-stage material, verbatim from the insider-index and story
+ *  stages: dark in both themes, rounded, one hairline, the warm drop. */
 const PANEL =
-  "relative overflow-hidden rounded-[28px] border border-hairline bg-sheet px-5 py-8 shadow-[0_26px_64px_-36px_rgba(90,65,40,0.5),0_1px_2px_rgba(90,65,40,0.03)] sm:px-8 sm:py-10 lg:px-12 lg:py-12 dark:border-white/[0.07] dark:bg-surface dark:shadow-[0_28px_68px_-36px_rgba(0,0,0,0.85)] shell:xl:rounded-none! shell:xl:border-0! shell:xl:bg-transparent! shell:xl:px-0! shell:xl:pt-4! shell:xl:shadow-none!";
-const RULE = "border-hairline dark:border-white/[0.09]";
+  "board-stage relative overflow-hidden rounded-[28px] border border-white/10 text-white shadow-[0_24px_60px_-30px_rgba(40,25,10,0.55)]";
 
-/** The page's one sub-perceptual wash (design language, tenet 4): a static
- *  pool of the brand warmth under the right-hand end of the drawing, where the
- *  survivors' block sits, so the ground itself leans toward the thing the eye
- *  should land on. Radial and masked, so it never presents an edge; the light
- *  value is the homepage phase layer's tan at a lower alpha, the dark value is
- *  the amber the dark accent uses. */
+/** The design language's one sub-perceptual wash (tenet 4): a static pool of
+ *  amber under the right-hand end of the drawing, where the survivors' block
+ *  sits. Radial and masked, so it never presents an edge. */
 const WASH =
-  "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_58%_60%_at_82%_70%,rgba(173,148,121,0.19)_0%,rgba(173,148,121,0.07)_42%,transparent_72%)] dark:bg-[radial-gradient(ellipse_58%_60%_at_82%_70%,rgba(238,197,132,0.085)_0%,rgba(238,197,132,0.03)_42%,transparent_72%)]";
+  "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_58%_55%_at_82%_62%,rgba(238,197,132,0.09)_0%,rgba(238,197,132,0.03)_42%,transparent_72%)]";
 
 /** Cardinals to twenty, then the tens, which is as far as this ratio can
  *  plausibly go before "one in n" stops being a sentence a reader parses. */
@@ -120,20 +111,13 @@ function inWords(n: number): string | null {
 }
 
 export interface HeroStageProps {
-  /** "Methodology". */
+  /** "Learn · Methodology". */
   eyebrow: string;
   /** The document's h1 — rendered here, so the page passes `titleInHero`. */
   title: ReactNode;
   /** The shell's standfirst, which the shell does not render under
    *  `titleInHero`. */
   standfirst: ReactNode;
-  /** The page's one idea, set as the brightest line in the header. Kept as a
-   *  node because the market vocabulary ("directors" / "insiders") belongs to
-   *  the page. */
-  thesis: ReactNode;
-  /** The finding in words, for the caption strip under the drawing: why the
-   *  sorting is the whole job. */
-  finding: ReactNode;
   /** `coverage.totals.disclosures`. */
   disclosures: number;
   /** Open-market buys summed over the markets that report one; 0 when none
@@ -141,24 +125,19 @@ export interface HeroStageProps {
   openMarketFloor: number;
   /** `coverage.totals.analyses`. */
   analyses: number;
-  /** The provenance line the page builds (`funnelCaption`). */
-  caption: string;
-  /** Company name for the worked example, from `examples.specimen`. Null
-   *  outside UK/US, which leaves the survivors column unmarked and silent. */
-  specimenCompany?: string | null;
+  /** The worked example, from `examples.specimen`. Null outside UK/US, which
+   *  leaves the survivors column unmarked and the stage without a footer. */
+  specimen?: ExampleFiling | null;
 }
 
 export function HeroStage({
   eyebrow,
   title,
   standfirst,
-  thesis,
-  finding,
   disclosures,
   openMarketFloor,
   analyses,
-  caption,
-  specimenCompany = null,
+  specimen = null,
 }: HeroStageProps) {
   const { stages, bands } = useMemo(() => {
     const out: ScaleStage[] = [];
@@ -177,7 +156,6 @@ export function HeroStage({
         value: openMarketFloor,
         prefix: "at least",
         label: "Bought on the open market",
-        sub: "a purchase, not a grant",
       });
     }
     if (analyses > 0) {
@@ -204,8 +182,8 @@ export function HeroStage({
     return { stages: out, bands: between };
   }, [disclosures, openMarketFloor, analyses]);
 
-  /** The ratio the drawing is about, said once, in words. Rounded and hedged,
-   *  because it moves every time the record grows. */
+  /** The verdict, said once, in words. Rounded and hedged, because it moves
+   *  every time the record grows. */
   const ratio = useMemo(() => {
     if (disclosures <= 0 || analyses <= 0) return null;
     const n = Math.round(disclosures / analyses);
@@ -219,55 +197,43 @@ export function HeroStage({
   return (
     <section className={PANEL}>
       <div aria-hidden className={WASH} />
-      <div className="relative grid gap-x-12 gap-y-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
+
+      <div className="relative grid gap-x-12 gap-y-6 px-6 pt-7 sm:px-8 sm:pt-9 lg:px-10 lg:pt-10 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
         <div>
-          <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-brown dark:text-brand-tan">
+          <SectionEyebrow className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
             {eyebrow}
           </SectionEyebrow>
-          <h1 className="mt-3 text-balance text-[34px] font-normal leading-[1.03] tracking-[-0.03em] text-foreground sm:text-[44px] lg:text-[52px]">
+          <h1 className="mt-3 max-w-[22ch] text-balance text-[34px] font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-[44px] lg:text-[50px]">
             {title}
           </h1>
         </div>
-        <div className="xl:pt-1">
-          <p className="max-w-[54ch] text-[16px] leading-[1.65] text-foreground/70">
-            {standfirst}
-          </p>
-          <p className="mt-4 max-w-[48ch] text-[18px] font-medium leading-[1.45] tracking-[-0.008em] text-foreground sm:text-[19px]">
-            {thesis}
-          </p>
-        </div>
-      </div>
-
-      <div className="relative mt-12 lg:mt-14">
-        <HeroScaleChart
-          bands={bands}
-          specimenCompany={specimenCompany}
-          stages={stages}
-        />
-      </div>
-
-      {/* The caption strip: the ratio is the drawing's one-line reading and
-          gets the size to be read as such; the finding follows at prose
-          weight; the provenance sits to the right at the caption size. */}
-      <div
-        className={`relative mt-9 grid gap-x-12 gap-y-3 border-t ${RULE} pt-5 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start`}
-      >
-        <div>
+        <div className="xl:pt-7">
           {ratio ? (
-            <p className="text-[19px] font-medium leading-[1.3] tracking-[-0.01em] text-foreground sm:text-[21px]">
+            <p className="max-w-[24ch] text-balance text-[22px] font-medium leading-[1.25] tracking-[-0.015em] text-brand-amber sm:text-[26px]">
               {ratio}
             </p>
           ) : null}
           <p
-            className={`max-w-[66ch] text-[15px] leading-[1.6] text-foreground/65 ${ratio ? "mt-2" : ""}`}
+            className={`max-w-[52ch] text-[15px] leading-[1.55] tracking-[-0.004em] text-white/65 sm:text-[16px] ${ratio ? "mt-4" : ""}`}
           >
-            {finding}
+            {standfirst}
           </p>
         </div>
-        <p className="text-[13px] leading-[1.5] text-foreground/40 xl:pt-1.5 xl:text-right">
-          {caption}
-        </p>
       </div>
+
+      <div className="relative mt-12 px-6 pb-9 sm:px-8 lg:mt-14 lg:px-10 lg:pb-10">
+        <HeroScaleChart
+          bands={bands}
+          specimenCompany={specimen?.company ?? null}
+          stages={stages}
+        />
+      </div>
+
+      {specimen ? (
+        <div className="relative">
+          <SpecimenStrip specimen={specimen} />
+        </div>
+      ) : null}
     </section>
   );
 }

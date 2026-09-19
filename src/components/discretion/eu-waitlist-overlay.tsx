@@ -74,7 +74,12 @@ export function EuWaitlistOverlay({
     <div className="pointer-events-auto w-full max-w-md rounded-2xl border border-hairline dark:border-separator bg-sheet/95 dark:bg-surface/95 backdrop-blur-md shadow-2xl px-6 py-6 text-center">
       <span className="relative mb-4 inline-block">
         {ticker ? (
-          <CompanyLogo className="shadow-lg" size={80} ticker={ticker} />
+          <CompanyLogo
+            className="shadow-lg"
+            link={false}
+            size={80}
+            ticker={ticker}
+          />
         ) : (
           <img
             alt=""

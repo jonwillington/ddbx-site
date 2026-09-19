@@ -26,6 +26,54 @@ import { localeFor, SYMBOL } from "@/lib/company-format";
 const UP = "var(--positive)";
 const DOWN = "var(--negative)";
 
+/** Marker ink by rating (`rating`). The chart could draw every buy
+ *  identically, but the rating IS the product — inking by it means the graphic
+ *  teaches the scale in passing (a solid, heavy ring is a conviction buy; a
+ *  hollow one is a disclosure we didn't think worth writing up) instead of
+ *  being a finance widget any site could ship. Kept to one hue at three
+ *  strengths: this page spends its colour on price direction, and a second
+ *  palette here would compete with it.
+ *
+ *  Inside the company page's dark stage the theme tokens are wrong in both
+ *  modes — the panel is #1a140d whatever the page is — so the chart takes the
+ *  stage's own fixed pair and white inks instead (see `.board-stage`). */
+const PALETTE = {
+  light: {
+    up: UP,
+    down: DOWN,
+    rating: {
+      significant: { ink: "#5a4128", ring: 2.4 },
+      noteworthy: { ink: "rgba(90,65,40,0.62)", ring: 2 },
+      minor: { ink: "rgba(90,65,40,0.62)", ring: 2 },
+    } as Record<string, { ink: string; ring: number }>,
+    unrated: { ink: "rgba(90,65,40,0.3)", ring: 1.5 },
+    core: "text-sheet dark:text-surface",
+    drop: "text-foreground/15",
+    axis: "fill-foreground/40",
+    price: "text-foreground",
+    quiet: "text-foreground/45",
+    keyRated: "border-brand-brown bg-sheet dark:bg-surface",
+    keyUnrated: "border-brand-brown/30 bg-sheet dark:bg-surface",
+  },
+  dark: {
+    up: "var(--stage-pos)",
+    down: "var(--stage-neg)",
+    rating: {
+      significant: { ink: "#ffffff", ring: 2.4 },
+      noteworthy: { ink: "rgba(255,255,255,0.7)", ring: 2 },
+      minor: { ink: "rgba(255,255,255,0.7)", ring: 2 },
+    } as Record<string, { ink: string; ring: number }>,
+    unrated: { ink: "rgba(255,255,255,0.38)", ring: 1.5 },
+    core: "text-[#1a140d]",
+    drop: "text-white/15",
+    axis: "fill-white/40",
+    price: "text-white",
+    quiet: "text-white/45",
+    keyRated: "border-white bg-[#1a140d]",
+    keyUnrated: "border-white/40 bg-[#1a140d]",
+  },
+} as const;
+
 const H = 220;
 const PAD_T = 14;
 const PAD_B = 26;
@@ -98,20 +146,6 @@ interface Mark {
   ring: number;
 }
 
-/** Marker ink by rating. The chart could draw every buy identically, but the
- *  rating IS the product — inking by it means the graphic teaches the scale in
- *  passing (a solid, heavy ring is a conviction buy; a hollow one is a
- *  disclosure we didn't think worth writing up) instead of being a finance
- *  widget any site could ship. Kept to one hue at three strengths: this page
- *  spends its colour on price direction, and a second palette here would
- *  compete with it. */
-const RATING_INK: Record<string, { ink: string; ring: number }> = {
-  significant: { ink: "#5a4128", ring: 2.4 },
-  noteworthy: { ink: "rgba(90,65,40,0.62)", ring: 2 },
-  minor: { ink: "rgba(90,65,40,0.62)", ring: 2 },
-};
-const UNRATED_INK = { ink: "rgba(90,65,40,0.3)", ring: 1.5 };
-
 /** Closes arrive in native MINOR units — pence for LSE issuers, cents for US
  *  ones (see the note on `price_pence` in the API). Always /100, never an FX
  *  conversion. */
@@ -178,6 +212,8 @@ export function CompanyPriceChart({
   deals,
   market,
   series,
+  theme = "light",
+  height = H,
 }: {
   /** Storage key ("ARK.L" / "FCNCA") — what the prices endpoint speaks. */
   tickerKey: string;
@@ -188,15 +224,32 @@ export function CompanyPriceChart({
   /** From `useCompanyPriceBars`, called by the page so it can drop the whole
    *  section when there's no series to draw. */
   series: PriceSeries;
+  /** "dark" when drawn inside the company stage. */
+  theme?: "light" | "dark";
+  height?: number;
 }) {
   const { bars, unavailable } = series;
+  const P = PALETTE[theme];
+  const H = height;
   const [box, width] = useMeasuredWidth();
 
   if (unavailable) return null;
 
   // House skeleton, not a private pulse: the page skeleton this hands over
   // from uses the same primitive, so the two don't pulse out of step.
-  if (!bars) return <Skeleton className="w-full rounded-xl" h={H} />;
+  //
+  // It carries the measuring ref too. The layout effect runs once, on the
+  // first render, and it used to be this bare skeleton that rendered first:
+  // the ref was never attached, the width stayed 0, and every chart drew at
+  // the 640px fallback whatever the column (unnoticed while the column was
+  // about that wide).
+  if (!bars) {
+    return (
+      <div ref={box}>
+        <Skeleton className="w-full rounded-xl" h={H} />
+      </div>
+    );
+  }
 
   const w = width || 640;
   const closes = bars.map((b) => toMajor(b.close));
@@ -206,7 +259,7 @@ export function CompanyPriceChart({
   const first = closes[0];
   const last = closes[closes.length - 1];
   const changePct = first ? ((last - first) / first) * 100 : 0;
-  const color = changePct >= 0 ? UP : DOWN;
+  const color = changePct >= 0 ? P.up : P.down;
 
   const xAt = (i: number) =>
     PAD_L + (i / (bars.length - 1)) * (w - PAD_L - PAD_R);
@@ -229,7 +282,7 @@ export function CompanyPriceChart({
 
     if (i < 0) continue;
     const rating = d.analysis?.rating;
-    const { ink, ring } = (rating && RATING_INK[rating]) || UNRATED_INK;
+    const { ink, ring } = (rating && P.rating[rating]) || P.unrated;
 
     marks.push({
       x: xAt(i),
@@ -246,7 +299,9 @@ export function CompanyPriceChart({
   return (
     <div ref={box}>
       <div className="flex items-baseline gap-3">
-        <p className="text-[22px] font-semibold leading-none tracking-[-0.015em] tabular-nums text-foreground">
+        <p
+          className={`text-[22px] font-semibold leading-none tracking-[-0.015em] tabular-nums ${P.price}`}
+        >
           {fmtPrice(last, currency)}
         </p>
         <p
@@ -256,7 +311,7 @@ export function CompanyPriceChart({
           {changePct >= 0 ? "+" : ""}
           {changePct.toFixed(1)}%
         </p>
-        <p className="text-[12px] text-foreground/45">past 12 months</p>
+        <p className={`text-[12px] ${P.quiet}`}>past 12 months</p>
       </div>
 
       <svg
@@ -286,7 +341,7 @@ export function CompanyPriceChart({
           <g key={`${m.date}-${m.x.toFixed(1)}`}>
             <title>{m.label}</title>
             <line
-              className="text-foreground/15"
+              className={P.drop}
               stroke="currentColor"
               strokeDasharray="2 3"
               strokeWidth={1}
@@ -296,7 +351,7 @@ export function CompanyPriceChart({
               y2={H - PAD_B}
             />
             <circle
-              className="text-sheet dark:text-surface"
+              className={P.core}
               cx={m.x}
               cy={m.y}
               fill="currentColor"
@@ -309,16 +364,11 @@ export function CompanyPriceChart({
 
         {/* Endpoint labels instead of a y-axis: two numbers carry the range,
             and gridlines would make a document page look like a terminal. */}
-        <text
-          className="fill-foreground/40"
-          fontSize={11}
-          x={PAD_L}
-          y={H - PAD_B + 16}
-        >
+        <text className={P.axis} fontSize={11} x={PAD_L} y={H - PAD_B + 16}>
           {fmtMonth(bars[0].date, market)}
         </text>
         <text
-          className="fill-foreground/40"
+          className={P.axis}
           fontSize={11}
           textAnchor="end"
           x={w - PAD_R}
@@ -328,20 +378,22 @@ export function CompanyPriceChart({
         </text>
       </svg>
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[11.5px] text-foreground/45">
+      <div
+        className={`mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[11.5px] ${P.quiet}`}
+      >
         {marks.length > 0 && (
           <>
             <span className="flex items-center gap-1.5">
               <span
                 aria-hidden
-                className="h-2.5 w-2.5 rounded-full border-[2.4px] border-brand-brown bg-sheet dark:bg-surface"
+                className={`h-2.5 w-2.5 rounded-full border-[2.4px] ${P.keyRated}`}
               />
               Rated buy
             </span>
             <span className="flex items-center gap-1.5">
               <span
                 aria-hidden
-                className="h-2.5 w-2.5 rounded-full border-[1.5px] border-brand-brown/30 bg-sheet dark:bg-surface"
+                className={`h-2.5 w-2.5 rounded-full border-[1.5px] ${P.keyUnrated}`}
               />
               Unrated
             </span>
@@ -352,7 +404,7 @@ export function CompanyPriceChart({
         </span>
       </div>
 
-      {marks.length > 0 && (
+      {marks.length > 0 && theme === "light" && (
         <p className="mt-2 text-[12px] leading-[1.6] text-foreground/45">
           Every disclosed buy, plotted at the close on the day it was made.
           Ratings are ours, not the company&rsquo;s.
