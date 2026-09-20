@@ -403,9 +403,7 @@ export function MarketExplainerExperience({
                     {checkPassed ? "✓" : "✗"}
                   </span>
                   <div>
-                    <p className="micro text-[#f3ecdf]/40">
-                      This filing
-                    </p>
+                    <p className="micro text-[#f3ecdf]/40">This filing</p>
                     <p className="mt-1 text-sm leading-relaxed text-[#f3ecdf]/90">
                       {checkPassed
                         ? check.passLine(ctx)
@@ -554,9 +552,7 @@ function FinaleScene({
 }) {
   return (
     <>
-      <p className="eyebrow text-brand-tan">
-        The verdict
-      </p>
+      <p className="eyebrow text-brand-tan">The verdict</p>
       <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight sm:text-5xl sm:leading-none">
         {dealing ? "Six for six." : "That's the bar."}
       </h2>

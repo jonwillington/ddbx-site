@@ -23,6 +23,7 @@ import {
   INDEX_LABEL,
   shortMoney,
 } from "../../shared/company-verdict.js";
+import { sharePrice } from "../../shared/share-price.js";
 
 import {
   BoardRow,
@@ -74,7 +75,6 @@ import {
 import { localeFor, moneyShort, SYMBOL } from "@/lib/company-format";
 import { useRememberPage } from "@/lib/search/history";
 import { marketForPath } from "@/lib/markets/registry";
-import { sharePrice } from "../../shared/share-price.js";
 
 /** /company/:key — one issuer, and the insider buying in it.
  *

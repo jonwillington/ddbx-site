@@ -172,9 +172,7 @@ function SummaryBody({
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <div className="micro text-muted">
-          {formatDate(summary.date)}
-        </div>
+        <div className="micro text-muted">{formatDate(summary.date)}</div>
         <h2 className="text-2xl font-bold leading-tight tracking-tight">
           {summary.headline}
         </h2>
@@ -260,9 +258,7 @@ function CitedSection({
 }) {
   return (
     <section className="space-y-2.5 pt-2">
-      <h3 className="micro text-muted">
-        Cited dealings
-      </h3>
+      <h3 className="micro text-muted">Cited dealings</h3>
       <div className="rounded-card border border-rule divide-y divide-hairline dark:divide-separator overflow-hidden">
         {cited.map((deal) => (
           <button

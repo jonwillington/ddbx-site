@@ -36,7 +36,6 @@ import { Row, RowList } from "@/components/row-list";
 import { downloadPagePathForMarketId } from "@/lib/app-store";
 import { formatPrice, PRICING } from "@/lib/pricing";
 
-
 /** One icon per check, keyed on `RatingChecklist`.
  *
  *  Presentation only, so it lives here rather than in shared/methodology.js —

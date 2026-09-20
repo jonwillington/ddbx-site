@@ -202,8 +202,8 @@ export function ClusterPanel({
             up to twice the detector's window, and the line says so rather
             than letting the verdict above imply otherwise. */}
         <p className="border-t border-rule px-5 py-3 text-small text-foreground/50">
-          Every disclosed purchase at {company} within {windowDays} days
-          either side of this one.
+          Every disclosed purchase at {company} within {windowDays} days either
+          side of this one.
         </p>
       </div>
     </div>
@@ -283,7 +283,9 @@ export function PeerRow({
       }
     >
       {p.isThis ? (
-        <div className={`flex items-center gap-4 py-4 ${className}`}>{body}</div>
+        <div className={`flex items-center gap-4 py-4 ${className}`}>
+          {body}
+        </div>
       ) : (
         <Link
           className={`group flex items-center gap-4 py-4 outline-none transition-colors hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-brown/40 ${className}`}

@@ -29,7 +29,6 @@ import { ChevronRightIcon } from "@heroicons/react/20/solid";
 
 import { AppDrawer } from "@/components/app-drawer";
 
-
 export interface FilingSectionEntry {
   key: string;
   title: string;

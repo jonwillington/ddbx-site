@@ -381,10 +381,7 @@ export function CompanyPriceChart({
         >
           {fmtPrice(last, currency)}
         </p>
-        <p
-          className="text-body font-semibold tabular-nums"
-          style={{ color }}
-        >
+        <p className="text-body font-semibold tabular-nums" style={{ color }}>
           {changePct >= 0 ? "+" : ""}
           {changePct.toFixed(1)}%
         </p>

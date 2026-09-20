@@ -12,9 +12,7 @@ export function DetailField({
 }) {
   return (
     <div>
-      <dt className="micro text-muted mb-0.5">
-        {label}
-      </dt>
+      <dt className="micro text-muted mb-0.5">{label}</dt>
       <dd className={`text-sm font-medium truncate ${mono ? "font-mono" : ""}`}>
         {value}
       </dd>

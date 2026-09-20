@@ -109,7 +109,9 @@ export declare function formatNative(
 export declare function formatGbpApprox(
   gbp: number | null | undefined,
 ): string | null;
-export declare function formatShares(n: number | null | undefined): string | null;
+export declare function formatShares(
+  n: number | null | undefined,
+): string | null;
 export declare function formatLocalClock(ms: number, timeZone: string): string;
 export declare function formatDayLong(isoDate: string): string;
 export declare function formatDayShort(isoDate: string): string;

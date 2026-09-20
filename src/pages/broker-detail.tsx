@@ -592,7 +592,10 @@ function ReviewBody({
         <SeoSection id="faq" index={i} title="Questions and answers" total={n}>
           <div className={`border-t border-rule`}>
             {faqs.map((item) => (
-              <details key={item.question} className={`group border-b border-rule`}>
+              <details
+                key={item.question}
+                className={`group border-b border-rule`}
+              >
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-5 text-title text-foreground transition-colors hover:text-foreground/70 [&::-webkit-details-marker]:hidden">
                   {item.question}
                   <ChevronDownIcon className="mt-1 h-5 w-5 shrink-0 text-foreground/35 transition-transform group-open:rotate-180" />

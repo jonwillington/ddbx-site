@@ -81,23 +81,47 @@ export interface ArchiveFetch {
 }
 
 export declare const DAILY_MARKETS: Record<DailyMarketId, DailyMarket>;
-export declare function dailyMarket(market: string | null | undefined): DailyMarket;
+export declare function dailyMarket(
+  market: string | null | undefined,
+): DailyMarket;
 
 export declare function isDateSlug(slug: string): boolean;
 export declare function addDays(iso: string, days: number): string;
-export declare function closureReason(iso: string, market: string): ClosureReason | null;
+export declare function closureReason(
+  iso: string,
+  market: string,
+): ClosureReason | null;
 export declare function isTradingDay(iso: string, market: string): boolean;
-export declare function prevTradingDay(iso: string, market: string): string | null;
-export declare function nextTradingDay(iso: string, market: string): string | null;
+export declare function prevTradingDay(
+  iso: string,
+  market: string,
+): string | null;
+export declare function nextTradingDay(
+  iso: string,
+  market: string,
+): string | null;
 export declare function todayInMarket(market: string, now?: Date): string;
-export declare function latestEditionDate(market: string, now?: Date): string | null;
-export declare function dayStatus(iso: string, market: string, now?: Date): DayStatus;
-export declare function nearestEditionDate(iso: string, market: string, now?: Date): string | null;
+export declare function latestEditionDate(
+  market: string,
+  now?: Date,
+): string | null;
+export declare function dayStatus(
+  iso: string,
+  market: string,
+  now?: Date,
+): DayStatus;
+export declare function nearestEditionDate(
+  iso: string,
+  market: string,
+  now?: Date,
+): string | null;
 
 export declare function dailyIndexPath(market: string): string;
 export declare function dailyPath(market: string, iso: string): string;
 export declare function todayPath(market: string): string;
-export declare function dailyFromPath(path: string): { market: DailyMarketId; date: string | null } | null;
+export declare function dailyFromPath(
+  path: string,
+): { market: DailyMarketId; date: string | null } | null;
 export declare function isTodayPath(path: string): boolean;
 
 export declare function dayLabel(iso: string): string;
@@ -110,22 +134,51 @@ export declare const US_SCREEN_FLOOR: number;
 export declare const INDEX_MIN_FILINGS: number;
 export declare const EDITION_VIEW: Record<DailyMarketId, string | null>;
 export declare function isRated(d: AnyRow | null | undefined): boolean;
-export declare function verdictLine(d: AnyRow | null | undefined, market?: string): string;
-export declare function verdictWord(d: AnyRow | null | undefined, market?: string): string;
-export declare function isHolderOnly(d: AnyRow | null | undefined, market: string): boolean;
+export declare function verdictLine(
+  d: AnyRow | null | undefined,
+  market?: string,
+): string;
+export declare function verdictWord(
+  d: AnyRow | null | undefined,
+  market?: string,
+): string;
+export declare function isHolderOnly(
+  d: AnyRow | null | undefined,
+  market: string,
+): boolean;
 export declare function disclosedDay(d: AnyRow | null | undefined): string;
-export declare function insiderOf(d: AnyRow, market: string): { name: string; role: string | null };
+export declare function insiderOf(
+  d: AnyRow,
+  market: string,
+): { name: string; role: string | null };
 export declare function filingHref(d: AnyRow, market: string): string | null;
 
-export declare function editionModel(dealings: AnyRow[], market: string, date: string): EditionModel;
+export declare function editionModel(
+  dealings: AnyRow[],
+  market: string,
+  date: string,
+): EditionModel;
 export declare function editionMeetsBar(
   day: Pick<EditionModel, "count" | "rated"> | ArchiveDay | null | undefined,
   hasSummary?: boolean,
 ): boolean;
-export declare function editionLeadSentence(model: EditionModel, status?: DayStatus): string;
-export declare function archiveLeadSentence(days: ArchiveDay[], market: string): string;
-export declare function closedSentence(iso: string, market: string, status: DayStatus): string;
-export declare function groupByDay(dealings: AnyRow[], market: string): { days: ArchiveDay[]; stranded: number };
+export declare function editionLeadSentence(
+  model: EditionModel,
+  status?: DayStatus,
+): string;
+export declare function archiveLeadSentence(
+  days: ArchiveDay[],
+  market: string,
+): string;
+export declare function closedSentence(
+  iso: string,
+  market: string,
+  status: DayStatus,
+): string;
+export declare function groupByDay(
+  dealings: AnyRow[],
+  market: string,
+): { days: ArchiveDay[]; stranded: number };
 
 export declare function fetchEdition(opts: {
   apiBase: string;
@@ -159,13 +212,17 @@ export declare function sitemapDays(opts: {
   summaryCf?: unknown;
 }): Promise<{ days: ArchiveDay[]; complete: boolean; failed: boolean }>;
 
-export declare function summaryBody(summary: DailySummary | null | undefined): string;
+export declare function summaryBody(
+  summary: DailySummary | null | undefined,
+): string;
 export declare function citedFilings(
   model: EditionModel | null | undefined,
   cited: AnyRow[] | null | undefined,
 ): { rows: AnyRow[]; ids: Set<string> };
 
-export declare function overviewNarrative(summary: DailySummary | null | undefined): string;
+export declare function overviewNarrative(
+  summary: DailySummary | null | undefined,
+): string;
 export declare function clusterBuyers(
   group: ClusterGroup,
   market: string,

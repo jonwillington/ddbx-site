@@ -112,10 +112,7 @@ export default function CongressCommitteesPage() {
             >
               <ul className="mt-4 border-t border-rule">
                 {ranked.map((c) => (
-                  <li
-                    key={c.committee}
-                    className="border-b border-rule"
-                  >
+                  <li key={c.committee} className="border-b border-rule">
                     <Link
                       className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3.5 transition-colors hover:bg-foreground/[0.02]"
                       to={committeePath(committeeSlug(c.committee))}
@@ -194,9 +191,7 @@ export default function CongressCommitteesPage() {
               />
             </SeoSection>
 
-            <p className={`mt-8 max-w-measure ${R.label}`}>
-              {CONGRESS_SOURCE}
-            </p>
+            <p className={`mt-8 max-w-measure ${R.label}`}>{CONGRESS_SOURCE}</p>
           </>
         )}
       </SeoPageShell>

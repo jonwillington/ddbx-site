@@ -170,9 +170,7 @@ export function PositionCard({
   return (
     <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
       <div className="rounded-card bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
-        <div className="micro text-muted mb-2">
-          Entry
-        </div>
+        <div className="micro text-muted mb-2">Entry</div>
         <div className="text-2xl font-bold tabular-nums">
           {fmt.formatPrice(entry)}
         </div>
@@ -184,9 +182,7 @@ export function PositionCard({
       </div>
 
       <div className="rounded-card bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
-        <div className="micro text-muted mb-2">
-          Now
-        </div>
+        <div className="micro text-muted mb-2">Now</div>
         <div className={`text-2xl font-bold tabular-nums ${trendText}`}>
           {fmt.formatPrice(current)}
         </div>
@@ -198,9 +194,7 @@ export function PositionCard({
       </div>
 
       <div className="rounded-card bg-black/[0.04] dark:bg-white/[0.06] px-4 py-4">
-        <div className="micro text-muted mb-2">
-          Return
-        </div>
+        <div className="micro text-muted mb-2">Return</div>
         {muted ? (
           <div className="text-2xl font-bold tabular-nums text-muted">N/A</div>
         ) : (

@@ -39,9 +39,7 @@ export function MarketFaq({
     >
       <div className="grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)] md:gap-16">
         <div className="md:sticky md:top-24 md:self-start shell:xl:top-[76px]!">
-          <p className="eyebrow text-muted">
-            {copy.kicker}
-          </p>
+          <p className="eyebrow text-muted">{copy.kicker}</p>
           <h2 className="mt-2 text-subheading font-semibold text-foreground">
             {copy.title}
           </h2>
@@ -52,10 +50,7 @@ export function MarketFaq({
 
         <div className="border-t border-rule">
           {items.map((item, i) => (
-            <details
-              key={i}
-              className="group border-b border-rule"
-            >
+            <details key={i} className="group border-b border-rule">
               <summary className="flex cursor-pointer list-none select-none items-center justify-between gap-4 py-5 text-left">
                 <span className="text-lede font-medium leading-snug tracking-tight text-foreground/90 transition-colors duration-200 group-hover:text-foreground">
                   {item.question}

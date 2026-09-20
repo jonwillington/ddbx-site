@@ -644,7 +644,6 @@ function ProsCons({ broker: b }: { broker: BrokerOffer }) {
  *  pair sheets, then the ruled sections on the same 10rem rail grid. The
  *  previous version was ~460px of boxes standing in for ~1,750px of page. */
 function ComparisonSkeleton() {
-
   return (
     <div aria-busy="true">
       <span className="sr-only">Loading platforms…</span>

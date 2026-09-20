@@ -627,7 +627,9 @@ export default function DirectorPage() {
             ) : null}
 
             {d.profile && (
-              <div className={`mt-6 space-y-3 ${panel({ variant: "inset", size: "roomy" })}`}>
+              <div
+                className={`mt-6 space-y-3 ${panel({ variant: "inset", size: "roomy" })}`}
+              >
                 <div>
                   <h2 className="mb-1 text-small font-semibold">Biography</h2>
                   <p className="text-body text-foreground/80">
@@ -672,7 +674,9 @@ export default function DirectorPage() {
                   and it was bad. What is actually true is that the clock has
                   not run yet, and we know exactly when it will have. */}
               {!record.marked ? (
-                <div className={`mb-4 flex items-center gap-4 ${panel({ variant: "inset", size: "compact" })}`}>
+                <div
+                  className={`mb-4 flex items-center gap-4 ${panel({ variant: "inset", size: "compact" })}`}
+                >
                   {/* The viewfinder over nothing — the same object the market
                       page shows while a session waits on its first filing.
                       Still, not sweeping: nothing on this page is live. The
@@ -1043,10 +1047,7 @@ function DirectorSkeleton() {
       </div>
       <div className="mt-12 grid grid-cols-2 gap-2 sm:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className={panel({ variant: "inset", size: "compact" })}
-          >
+          <div key={i} className={panel({ variant: "inset", size: "compact" })}>
             <Skeleton className="h-[11px] w-14" />
             <Skeleton className="mt-2 h-[26px] w-16" />
           </div>

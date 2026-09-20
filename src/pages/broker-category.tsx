@@ -464,7 +464,6 @@ function ComparisonTable({
  *  that follow it. The previous version was four 96px boxes standing in for a
  *  ~1,600px document, so the page redrew rather than filled in. */
 function CategorySkeleton({ rows }: { rows: number }) {
-
   return (
     <div aria-busy="true">
       <span className="sr-only">Loading platforms…</span>

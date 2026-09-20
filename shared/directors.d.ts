@@ -36,10 +36,14 @@ export const DIRECTORS_INDEX_PATH: string;
 export const DIRECTOR_ROWS: number;
 export const INDEX_ROWS: number;
 
-export function directorMeetsBar(d: DirectorBarInput | null | undefined): boolean;
+export function directorMeetsBar(
+  d: DirectorBarInput | null | undefined,
+): boolean;
 export function directorPath(id: string, market?: string): string;
 export function companySlug(ticker: string): string;
-export function directorLeadSentence(d: DirectorBarInput | null | undefined): string;
+export function directorLeadSentence(
+  d: DirectorBarInput | null | undefined,
+): string;
 export function directorRateSentence(
   d: DirectorBarInput | null | undefined,
 ): string | null;

@@ -396,13 +396,9 @@ export function MarketPlans({
 
   return (
     <section className="mt-8">
-      <h2 className="text-title font-semibold text-foreground">
-        {title}
-      </h2>
+      <h2 className="text-title font-semibold text-foreground">{title}</h2>
       {subtitle ? (
-        <p className="mt-1 text-body text-foreground/60">
-          {subtitle}
-        </p>
+        <p className="mt-1 text-body text-foreground/60">{subtitle}</p>
       ) : null}
 
       {/* The statute, one click down. It used to sit here as a card: roughly
@@ -417,9 +413,7 @@ export function MarketPlans({
         <div className="mt-6">
           <Skeleton className="h-4 w-52 rounded" />
           <Skeleton className="mt-2 h-3 w-80 rounded" />
-          <div
-            className={`mt-3 overflow-hidden ${panel()}`}
-          >
+          <div className={`mt-3 overflow-hidden ${panel()}`}>
             <PlanRowHeader valueColumnClass={valueColumnClass} />
             <div className="divide-y divide-hairline dark:divide-separator">
               {[0, 1, 2].map((i) => (
@@ -545,14 +539,10 @@ function PlanGroup({
           </button>
         ) : null}
       </div>
-      <p className="mt-0.5 text-small text-foreground/55">
-        {blurb}
-      </p>
+      <p className="mt-0.5 text-small text-foreground/55">{blurb}</p>
 
       {open ? (
-        <div
-          className={`mt-3 overflow-hidden ${panel()}`}
-        >
+        <div className={`mt-3 overflow-hidden ${panel()}`}>
           <PlanRowHeader valueColumnClass={valueColumnClass} />
           <ul className="divide-y divide-hairline dark:divide-separator">
             {rows.map(({ plan, s }) => (
@@ -798,9 +788,7 @@ function PlanRow({
         <span className="shrink-0 text-right leading-tight">
           <span
             className={`block tabular-nums ${
-              valueStated
-                ? "text-lede font-semibold"
-                : "text-small text-muted"
+              valueStated ? "text-lede font-semibold" : "text-small text-muted"
             }`}
           >
             {lead}

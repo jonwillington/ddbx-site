@@ -144,9 +144,7 @@ export default function CongressMembersPage() {
               title="House"
               total={2}
             >
-              <ul
-                className={`mt-4 border-t border-rule`}
-              >
+              <ul className={`mt-4 border-t border-rule`}>
                 {house.map((m) => (
                   <MemberRow key={m.id} member={m} />
                 ))}
@@ -159,9 +157,7 @@ export default function CongressMembersPage() {
               title="Senate"
               total={2}
             >
-              <ul
-                className={`mt-4 border-t border-rule`}
-              >
+              <ul className={`mt-4 border-t border-rule`}>
                 {senate.map((m) => (
                   <MemberRow key={m.id} member={m} />
                 ))}
@@ -200,9 +196,7 @@ export default function CongressMembersPage() {
               />
             </SeoSection>
 
-            <p className={`mt-8 max-w-measure ${R.label}`}>
-              {CONGRESS_SOURCE}
-            </p>
+            <p className={`mt-8 max-w-measure ${R.label}`}>{CONGRESS_SOURCE}</p>
           </>
         )}
       </SeoPageShell>

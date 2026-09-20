@@ -13,7 +13,6 @@
  *  is a route onward, and an empty route is not worth a heading.
  */
 import type { Dealing, UsDealing } from "@/types/ddbx";
-
 import type { SparkBar } from "@/components/market/market-row-spark";
 
 import { useEffect, useMemo, useState } from "react";
@@ -48,8 +47,10 @@ function useIssuerBars(ticker: string): SparkBar[] | null {
     setBars(null);
     api
       .priceHistory(ticker, 365)
-      .then((b) =>
-        live && setBars(b.map((x) => ({ date: x.date, close: x.close_pence }))),
+      .then(
+        (b) =>
+          live &&
+          setBars(b.map((x) => ({ date: x.date, close: x.close_pence }))),
       )
       .catch(() => live && setBars([]));
 
@@ -128,7 +129,11 @@ export function IssuerBuys({
                 to={fam.path(d.id)}
               >
                 <span className="flex shrink-0 flex-col items-center gap-1">
-                  <CalendarDayChip {...chipParts(d.trade_date)} muted size="sm" />
+                  <CalendarDayChip
+                    {...chipParts(d.trade_date)}
+                    muted
+                    size="sm"
+                  />
                   <span className="micro text-foreground/40">
                     {monthAbbr(d.trade_date)}
                   </span>
@@ -139,7 +144,8 @@ export function IssuerBuys({
                     {who.name || "Insider"}
                   </span>
                   <span className="mt-0.5 block truncate text-small text-foreground/45">
-                    {who.role || "Insider"} · {fam.money(Number(fam.value(d) ?? 0))}
+                    {who.role || "Insider"} ·{" "}
+                    {fam.money(Number(fam.value(d) ?? 0))}
                   </span>
                 </span>
 
@@ -159,7 +165,7 @@ export function IssuerBuys({
                 </span>
 
                 <span className="w-24 shrink-0 text-right">
-                  <Delta size="title" className="font-semibold" value={ret} />
+                  <Delta className="font-semibold" size="title" value={ret} />
                   {ret != null ? (
                     <span className="block text-caption text-foreground/40">
                       since disclosed

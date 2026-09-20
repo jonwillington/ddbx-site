@@ -69,9 +69,7 @@ export function UkHomeSpotlights({
   return (
     <section aria-label="Company focus" className="w-full pt-14 md:pt-20">
       <header className="space-y-2">
-        <p className="eyebrow text-muted">
-          Company focus · last 90 days
-        </p>
+        <p className="eyebrow text-muted">Company focus · last 90 days</p>
         <h2 className="text-subheading font-semibold text-foreground">
           Where the buying is concentrated
         </h2>

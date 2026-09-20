@@ -436,9 +436,7 @@ export default function CongressStocksPage() {
               />
             </SeoSection>
 
-            <p className={`mt-8 max-w-measure ${R.label}`}>
-              {CONGRESS_SOURCE}
-            </p>
+            <p className={`mt-8 max-w-measure ${R.label}`}>{CONGRESS_SOURCE}</p>
           </>
         ) : null}
       </SeoPageShell>

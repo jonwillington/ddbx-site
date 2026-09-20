@@ -88,9 +88,7 @@ export function CompanyAppPitch({
                 company NAME here — the headline says it 6px below. */}
             <div className="flex items-center gap-3">
               <CompanyLogo link={false} size={40} ticker={logoKey} />
-              <span className="eyebrow text-white">
-                {ticker}
-              </span>
+              <span className="eyebrow text-white">{ticker}</span>
               <span className="eyebrow text-brand-amber">
                 {marketId.toUpperCase()}
               </span>

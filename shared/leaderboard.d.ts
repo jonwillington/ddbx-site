@@ -50,7 +50,9 @@ export declare function archiveYears(
   today: Date | string | number,
 ): number[];
 export declare function rollingAxisStart(windowSince: string): string;
-export declare function rollingPeriodLabel(today: Date | string | number): string;
+export declare function rollingPeriodLabel(
+  today: Date | string | number,
+): string;
 export declare function moneyPair(
   paid: number,
   worthNow: number,

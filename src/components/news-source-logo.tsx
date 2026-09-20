@@ -47,7 +47,10 @@ const SOURCE_DOMAINS: [RegExp, string][] = [
   [/\bafm\b/i, "afm.nl"],
   [/\bfinansinspektionen\b|\bfi\b|\binsynsregister\b/i, "fi.se"],
   [/\bdart\b|\bfinancial supervisory service\b/i, "dart.fss.or.kr"],
-  [/\bcompanies house\b/i, "find-and-update.company-information.service.gov.uk"],
+  [
+    /\bcompanies house\b/i,
+    "find-and-update.company-information.service.gov.uk",
+  ],
 ];
 
 /** Each market's primary disclosure feed, for surfaces keyed by market id

@@ -22,14 +22,12 @@ const TONE = {
   for: {
     icon: "✓",
     text: "text-positive",
-    plate:
-      "bg-positive/6 border-positive/15",
+    plate: "bg-positive/6 border-positive/15",
   },
   against: {
     icon: "✗",
     text: "text-negative",
-    plate:
-      "bg-negative/6 border-negative/15",
+    plate: "bg-negative/6 border-negative/15",
   },
 } as const;
 

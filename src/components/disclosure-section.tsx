@@ -32,9 +32,7 @@ export function DisclosureSection({
           )}
         </span>
       </summary>
-      <div className="border-t border-rule px-4 pb-4 pt-3">
-        {children}
-      </div>
+      <div className="border-t border-rule px-4 pb-4 pt-3">{children}</div>
     </details>
   );
 }

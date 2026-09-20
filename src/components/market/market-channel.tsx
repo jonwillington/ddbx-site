@@ -221,7 +221,9 @@ function PerfSkeleton() {
 
       <div>
         <Skeleton className="h-2.5 w-28" />
-        <div className={`mt-2 divide-y divide-hairline/80 dark:divide-border/50 ${panel({ variant: "inset", lift: true })}`}>
+        <div
+          className={`mt-2 divide-y divide-hairline/80 dark:divide-border/50 ${panel({ variant: "inset", lift: true })}`}
+        >
           <div className="px-3 py-3">
             <div className="flex items-center gap-2.5">
               <Skeleton className="h-9 w-9 shrink-0 rounded-full" />

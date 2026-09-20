@@ -243,7 +243,9 @@ export function MoreCompanies({
         {loading
           ? Array.from({ length: SHOWN }, (_, i) => (
               <li key={i}>
-                <div className={`flex h-full flex-col ${panel({ size: "compact" })}`}>
+                <div
+                  className={`flex h-full flex-col ${panel({ size: "compact" })}`}
+                >
                   <span className="flex items-start gap-2.5">
                     <Skeleton circle className="shrink-0" h={30} w={30} />
                     <span className="min-w-0 flex-1">

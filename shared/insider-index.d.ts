@@ -185,9 +185,7 @@ export declare function feedGap(
   market?: IndexMarket,
 ): number;
 
-export declare function readingMeetsBar(
-  r: Reading | null | undefined,
-): boolean;
+export declare function readingMeetsBar(r: Reading | null | undefined): boolean;
 export declare function publishable(
   all: Reading[] | null | undefined,
 ): Reading[];

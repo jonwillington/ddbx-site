@@ -45,10 +45,8 @@ import { panel } from "@/components/ui/panel";
 export const R = {
   body: "text-body text-foreground/70",
   label: "text-small text-foreground/45",
-  eyebrow:
-    "eyebrow text-brand-brown dark:text-brand-tan",
+  eyebrow: "eyebrow text-brand-brown dark:text-brand-tan",
 };
-
 
 /** The house card: the shared inset panel, so a reader moving between a
  *  member page and a filing page sees one object, not two near-misses. */

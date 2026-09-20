@@ -63,8 +63,7 @@ import { DISCRETION_ENABLED } from "@/lib/discretion";
 import { appHrefForMarket } from "@/lib/app-store";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 
-const LABEL =
-  "eyebrow text-foreground/45";
+const LABEL = "eyebrow text-foreground/45";
 
 /** Direction styling. The site already owns a colour for each side of an
  *  argument, and the whole point of the section is that the assessment argues
@@ -97,7 +96,9 @@ function SideHeading({ d, count }: { d: "for" | "against"; count: number }) {
   const { Icon } = SIDE[d];
 
   return (
-    <h3 className={`flex items-center gap-3 text-subheading font-semibold ${SIDE[d].ink}`}>
+    <h3
+      className={`flex items-center gap-3 text-subheading font-semibold ${SIDE[d].ink}`}
+    >
       <span
         aria-hidden
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white ${SIDE[d].disc}`}
@@ -105,9 +106,7 @@ function SideHeading({ d, count }: { d: "for" | "against"; count: number }) {
         <Icon className="h-5 w-5" />
       </span>
       {SIDE[d].heading}
-      <span className="text-title font-medium text-foreground/40">
-        {count}
-      </span>
+      <span className="text-title font-medium text-foreground/40">{count}</span>
     </h3>
   );
 }
@@ -164,7 +163,10 @@ function EvidenceRows({
           key={`${i}-${p.headline}`}
           className={`flex gap-4 rounded-card border p-5 sm:p-6 ${SIDE[d].plate}`}
         >
-          <Icon aria-hidden className={`mt-0.5 h-6 w-6 shrink-0 ${SIDE[d].ink}`} />
+          <Icon
+            aria-hidden
+            className={`mt-0.5 h-6 w-6 shrink-0 ${SIDE[d].ink}`}
+          />
           <div className="min-w-0">
             <h4 className="text-balance text-title font-semibold text-foreground">
               {p.headline}
@@ -286,7 +288,9 @@ function OpenCase({
                   aria-hidden
                   className="mt-0.5 h-6 w-6 shrink-0 text-risk"
                 />
-                <p className="max-w-measure text-lede text-foreground/85">{r}</p>
+                <p className="max-w-measure text-lede text-foreground/85">
+                  {r}
+                </p>
               </li>
             ))}
           </ul>

@@ -145,9 +145,7 @@ export function MarketExplainerSheet({
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4 px-3.5 py-2.5">
-      <dt className="shrink-0 eyebrow text-muted">
-        {label}
-      </dt>
+      <dt className="shrink-0 eyebrow text-muted">{label}</dt>
       <dd className="text-right text-sm text-foreground/85">{value}</dd>
     </div>
   );

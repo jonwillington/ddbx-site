@@ -72,9 +72,7 @@ export function CompanyStage({
         </StageTitle>
 
         {deck ? (
-          <p className={`mt-4 max-w-[60ch] ${STAGE_DEK}`}>
-            {deck}
-          </p>
+          <p className={`mt-4 max-w-[60ch] ${STAGE_DEK}`}>{deck}</p>
         ) : null}
 
         <StageFigures items={figures} />

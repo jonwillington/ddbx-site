@@ -483,10 +483,7 @@ function SwedenDetailBody({ dealing }: { dealing: MarketDealing<EuRowGroup> }) {
             </thead>
             <tbody className="tabular-nums">
               {g.legs.map((leg) => (
-                <tr
-                  key={leg.id}
-                  className="border-t border-rule"
-                >
+                <tr key={leg.id} className="border-t border-rule">
                   <td className="py-1">{leg.trade_date.slice(0, 10)}</td>
                   <td className="py-1 text-right">
                     {leg.volume.toLocaleString("en-GB")}
