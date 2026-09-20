@@ -52,6 +52,9 @@ export type HiddenColumns = ReadonlySet<MarketColumnKey>;
 
 const NO_HIDDEN: HiddenColumns = new Set<MarketColumnKey>();
 
+/** The page hairline. Named here because WeekendBreak draws two of them. */
+const R_RULE = "border-rule";
+
 /** A column header label with an info tooltip explaining what the column means
  *  for the active market. */
 function HeaderLabel({
@@ -149,19 +152,27 @@ export function MarketRowHeader({
  *  list costs nothing. Brand-toned rather than the classic red so thirty of
  *  them read as structure, not decoration. */
 /** Separator rendered between two days whose gap straddles a weekend, in
- *  both the xl rail view and the sub-xl stacked timeline — a dashed rule
- *  with a small centred label, so the list reads in trading weeks rather
- *  than one undifferentiated run of days. Purely decorative: the day
- *  headers on either side carry the actual dates. */
+ *  both the xl rail view and the sub-xl stacked timeline — a ruled label, so
+ *  the list reads in trading weeks rather than one undifferentiated run of
+ *  days. Purely decorative: the day headers on either side carry the actual
+ *  dates.
+ *
+ *  It used to be a 2px dashed rule plus a bordered mono capsule, which made
+ *  the quietest thing in the timeline — the fact that nothing happened —
+ *  the loudest object in it: the only dashed line on the page, at twice the
+ *  weight of every hairline around it, wrapped around a chip. Jon,
+ *  2026-09-20. Same treatment as the rating badges' bottom tiers: the mono
+ *  label stays, the capsule goes. No `px` inset either, so the rules run
+ *  exactly to the day cards' edges rather than stopping 4px inside them. */
 export function WeekendBreak() {
   return (
-    <div aria-hidden className="flex items-center gap-3 px-1 py-1">
-      <span className="flex-1 border-t-2 border-dashed border-foreground/20" />
-      <span className="flex items-center gap-2 rounded-full border border-foreground/15 bg-background/70 px-3 py-1 eyebrow text-foreground/60">
-        <MoonIcon className="h-3.5 w-3.5" />
+    <div aria-hidden className="flex items-center gap-3 py-1.5">
+      <span className={`flex-1 border-t ${R_RULE}`} />
+      <span className="flex items-center gap-1.5 micro text-foreground/40">
+        <MoonIcon className="h-3 w-3" />
         Weekend · markets closed
       </span>
-      <span className="flex-1 border-t-2 border-dashed border-foreground/20" />
+      <span className={`flex-1 border-t ${R_RULE}`} />
     </div>
   );
 }

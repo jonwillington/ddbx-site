@@ -586,36 +586,38 @@ function HeaderLabel({
 /** Header for the programmes table. Deliberately not MarketRowHeader: the
  *  labels all differ (a plan has no disclosure, no trend and no return), and
  *  its column set is driven by MarketConfig.hiddenColumns, which describes the
- *  dealings feed. The styling is copied verbatim.
+ *  dealings feed. The styling is copied verbatim — including, since
+ *  2026-09-20, carrying no wash and no vertical rules: the header titles the
+ *  columns, the rows draw them.
  *
  *  Every help string is written for someone who has never seen one of these
  *  filings before. No statute, no "declaration", no "consideration". */
 function PlanRowHeader({ valueColumnClass }: { valueColumnClass: string }) {
   return (
-    <div className="hidden md:flex items-center micro text-muted/80 select-none border-b border-rule bg-black/[0.04] dark:bg-white/[0.05]">
-      <div className={`${COL.date} shrink-0 px-3 py-1.5 ${CELL}`}>
+    <div className="hidden md:flex items-center micro text-muted/80 select-none border-b border-rule">
+      <div className={`${COL.date} shrink-0 px-3 py-1.5`}>
         <HeaderLabel help="The day the insider told the market they intended to buy. Nothing had been bought yet at this point.">
           Announced
         </HeaderLabel>
       </div>
-      <div className={`${COL.ticker} shrink-0 px-2 py-1.5 text-center ${CELL}`}>
+      <div className={`${COL.ticker} shrink-0 px-2 py-1.5 text-center`}>
         <HeaderLabel help="The exchange code for the company being bought.">
           Ticker
         </HeaderLabel>
       </div>
-      <div className={`flex-1 min-w-0 px-3 py-1.5 ${CELL}`}>
+      <div className={`flex-1 min-w-0 px-3 py-1.5`}>
         <HeaderLabel help="The company, the person or firm doing the buying, and what they are to it. Someone who already owns a lot of the company is usually more telling than a job title.">
           Who and where
         </HeaderLabel>
       </div>
       <div
-        className={`${valueColumnClass} shrink-0 px-3 py-1.5 text-right ${CELL}`}
+        className={`${valueColumnClass} shrink-0 px-3 py-1.5 text-right`}
       >
         <HeaderLabel help="How much they said they would spend, in pounds at today's rate, with the figure they actually filed underneath. Intended, not spent.">
           Plans to buy
         </HeaderLabel>
       </div>
-      <div className={`${COL.window} shrink-0 px-3 py-1.5 ${CELL}`}>
+      <div className={`${COL.window} shrink-0 px-3 py-1.5`}>
         <HeaderLabel help="How far the plan has got: announced and waiting, buying right now, finished, or called off. Where anything has been bought, how much of the plan that covers.">
           Where it stands
         </HeaderLabel>
