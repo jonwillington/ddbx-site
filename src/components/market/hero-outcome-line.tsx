@@ -38,7 +38,12 @@ export function HeroOutcomeBar({ deal }: { deal: HeroDeal }) {
     <div
       // One neutral panel whichever way the deal went: the return is coloured
       // text, never a tinted wash (returns are plain text, 2026-09-19).
-      className="hob flex w-full items-center gap-3 rounded-card border border-hairline bg-sheet/60 px-4 py-3 dark:border-white/10"
+      //
+      // `--color-sheet` is light-only by design — every call site supplies its
+      // own dark fill. This one supplied a dark BORDER and forgot the fill, so
+      // on the dark hero stage the bar rendered as 60% white: a pale slab with
+      // near-white text on it (Jon, 2026-09-20).
+      className="hob flex w-full items-center gap-3 rounded-card border border-hairline bg-sheet/60 px-4 py-3 dark:border-white/10 dark:bg-white/[0.07]"
       style={{ "--hob-delay": `${DRAW_MS + POST_MS}ms` } as React.CSSProperties}
     >
       <style>{`

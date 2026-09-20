@@ -330,10 +330,13 @@
   --shell-frame: #0b0908;
   --shell-panel: #171411;
   --shell-panel-edge: rgb(255 255 255 / 0.06);
-  /* The feed gutter's dark twin — the same relation to the dark sheet that
-     #f2f1ee has to the light one. Was `bg-black/15`, which compounded with
-     whatever it sat on. */
-  --color-gutter: #14110f;
+  /* The feed gutter's dark twin. It has to hold the SAME relation to the dark
+     sheet that #f2f1ee holds to the light one — a step toward the page, not a
+     hole in it. #14110f was two and a half times that step and read as a void
+     under the cards. One below --background, so the ladder is
+     gutter 21 → page 22 → sheet 26 → card 30. (Was `bg-black/15`, which
+     compounded with whatever it sat on.) */
+  --color-gutter: oklch(21% 0.022 55);
 }
 /* The frame: a fixed rect exactly over the sheet, transparent inside, whose
    100vmax spread shadow paints the frame colour everywhere else. The shadow
