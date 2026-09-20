@@ -102,6 +102,103 @@ const R = {
   link: "text-brand-brown underline-offset-4 hover:underline dark:text-brand-tan",
 };
 
+/* ─── The archive row ────────────────────────────────────────────────────── */
+
+/** Most ticks a day's strip will draw before it starts counting instead. The
+ *  archive's busiest days run to sixteen or so; past about this many the ticks
+ *  are narrower than the gaps between them and the strip stops being a
+ *  picture of anything. */
+const MAX_TICKS = 18;
+
+/** One trading day, drawn as its own shape.
+ *
+ *  The archive used to be a hairline list of `Friday 18 September 2026` on the
+ *  left and `10 filings · £7.6m · 5 rated` on the right, a hundred and
+ *  twenty-nine times. Every row was the same row. Jon, 2026-09-20: "find an
+ *  imaginative way to display this, looks boring on each row currently."
+ *
+ *  So each day draws itself: one tick per disclosed filing, inked for the
+ *  ones that cleared the rating bar and hollow for the ones that did not.
+ *  Nothing is invented to do it — `count` and `rated` are both on the wire
+ *  (shared/days.js `ArchiveDay`), and the strip is only those two numbers
+ *  given a shape. Scanned down the page it turns the archive into the thing
+ *  it actually is: a year of trading days, most of them quiet, some of them
+ *  not, and a rating bar that only a fraction of filings clear.
+ *
+ *  The money keeps a column of its own, because it is the one quantity the
+ *  strip cannot show — a single £7m cheque and ten £20k ones draw the same
+ *  ten ticks.
+ *
+ *  The strip is `aria-hidden`: it is a picture of the caption beneath it,
+ *  which states all three figures in words. */
+function ArchiveDayRow({
+  day,
+  href,
+  currency,
+}: {
+  day: ArchiveDay;
+  href: string;
+  currency: string;
+}) {
+  const ticks = Math.min(day.count, MAX_TICKS);
+  // Rated ticks lead, so the inked run reads as one block rather than as
+  // speckle. Which filing was which is the edition's business, not the
+  // archive's.
+  const ratedTicks = Math.min(day.rated, ticks);
+  const overflow = day.count - ticks;
+
+  return (
+    <li className={`border-b ${R.rule}`}>
+      <Link
+        className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-5 gap-y-1.5 py-3.5 transition-colors hover:bg-foreground/[0.02] sm:grid-cols-[14rem_minmax(0,1fr)_auto] sm:gap-x-6"
+        to={href}
+      >
+        {/* Three tracks at sm and up: date, shape, money. On a phone the
+            date and the money share the first line and the shape drops under
+            both, full width, where it still reads as a strip — so the
+            placements are set rather than left to auto-flow, which put the
+            money on a row of its own under the strip. */}
+        <span className="text-body font-medium text-foreground sm:col-start-1">
+          {dayLabel(day.date)}
+        </span>
+
+        <span
+          className={`col-start-2 row-start-1 text-right tabular-nums sm:col-start-3 ${R.label}`}
+        >
+          {dayMoney(day.value, currency)}
+        </span>
+
+        <span
+          aria-hidden
+          className="col-span-2 flex items-end gap-[3px] sm:col-span-1 sm:col-start-2 sm:row-start-1"
+        >
+          {Array.from({ length: ticks }, (_, i) => (
+            <span
+              key={i}
+              className={
+                i < ratedTicks
+                  ? "h-4 w-[3px] rounded-mark bg-brand-brown/75 dark:bg-brand-tan/80"
+                  : "h-2 w-[3px] rounded-mark bg-foreground/15"
+              }
+            />
+          ))}
+          {overflow > 0 ? (
+            <span className="ml-1.5 micro text-foreground/35">+{overflow}</span>
+          ) : null}
+        </span>
+
+        <span className={`col-span-2 sm:col-span-3 sm:col-start-1 ${R.label}`}>
+          {day.count} {day.count === 1 ? "filing" : "filings"}
+          {" · "}
+          {day.companies} {day.companies === 1 ? "company" : "companies"}
+          {" · "}
+          {day.rated > 0 ? `${day.rated} rated` : "none rated"}
+        </span>
+      </Link>
+    </li>
+  );
+}
+
 /* ─── /today ─────────────────────────────────────────────────────────────── */
 
 /** The client-side half of /today. The edge Function 302s before React ever
@@ -163,7 +260,6 @@ export function DailyIndexPage({ market }: { market: MarketId }) {
     <DefaultLayout drawerRight>
       <SeoRail marketId={m.marketId} placement="daily_rail" />
       <SeoPageShell
-        crumbs={[{ label: "Daily editions" }]}
         cta={{
           body: dailyCta.body,
           gaLabel: "Daily index",
@@ -174,9 +270,16 @@ export function DailyIndexPage({ market }: { market: MarketId }) {
         loading={days === null}
         skeleton={<SeoSkeleton rows={14} variant="ruled-list" />}
         standfirst={
-          rows.length > 0 && complete
-            ? archiveLeadSentence(rows, m.id)
-            : `Every trading day of disclosed ${m.label} insider buying: what was filed, what it was worth, and which purchases cleared the rating bar.`
+          <>
+            {rows.length > 0 && complete
+              ? archiveLeadSentence(rows, m.id)
+              : `Every trading day of disclosed ${m.label} insider buying: what was filed, what it was worth, and which purchases cleared the rating bar.`}{" "}
+            <span className="text-foreground/50">
+              {rows.length === 0 || complete
+                ? "Newest first. A trading day with nothing filed has no entry; a weekend or a holiday never does."
+                : "Newest first. We couldn’t load the whole record, so the oldest days may be missing below."}
+            </span>
+          </>
         }
         standfirstSize="lede"
         title={`${m.label} insider buying, day by day`}
@@ -194,42 +297,25 @@ export function DailyIndexPage({ market }: { market: MarketId }) {
           </p>
         ) : (
           <>
-            <SeoSection
-              aside={
-                complete
-                  ? "Newest first. A trading day with nothing filed has no entry; a weekend or a holiday never does."
-                  : "Newest first. We couldn’t load the whole record, so the oldest days may be missing from this list."
-              }
-              title="Every trading day"
-            >
+            {/* No section head over the list: the h1 says "day by day" and
+                the month rules are the structure (see the header note). */}
+            <div className="mt-10">
               {months.map((group) => (
-                <div key={group.heading} className="mt-6 first:mt-2">
+                <div key={group.heading} className="mt-8 first:mt-0">
                   <p className="eyebrow text-foreground/45">{group.heading}</p>
                   <ul className={`mt-2 border-t ${R.rule}`}>
                     {group.days.map((d) => (
-                      <li key={d.date} className={`border-b ${R.rule}`}>
-                        <Link
-                          className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3.5 transition-colors hover:bg-foreground/[0.02]"
-                          to={dailyPath(m.id, d.date)}
-                        >
-                          <span className="text-body font-medium text-foreground">
-                            {dayLabel(d.date)}
-                          </span>
-                          <span className={`tabular-nums ${R.label}`}>
-                            {d.count} {d.count === 1 ? "filing" : "filings"}
-                            {" · "}
-                            {dayMoney(d.value, m.currency)}
-                            {d.rated > 0
-                              ? ` · ${d.rated} rated`
-                              : " · none rated"}
-                          </span>
-                        </Link>
-                      </li>
+                      <ArchiveDayRow
+                        key={d.date}
+                        currency={m.currency}
+                        day={d}
+                        href={dailyPath(m.id, d.date)}
+                      />
                     ))}
                   </ul>
                 </div>
               ))}
-            </SeoSection>
+            </div>
 
             <WhatThisIs market={m.id} />
 

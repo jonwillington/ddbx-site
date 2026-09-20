@@ -53,6 +53,12 @@
   /* Page cream behind the sheet / glass chrome. Light only: every call site
      pairs it with its own dark: sibling today. */
   --color-page: #fcfbf9;
+  /* The gutter a list of cards floats on, INSIDE a sheet — the market feed's
+     day cards. It was a raw #ece8e5 carried over from the warm sheet, and
+     when the sheet went near-white on 2026-09-19 it became the warmest thing
+     on the page. Same step as --shell-panel, so the gutter inside the sheet
+     and the chrome outside it are one family. */
+  --color-gutter: #f2f1ee;
   /* BUTTON_FILLED hover — the ink one step lifted. */
   --color-ink-hover: #2a2118;
   /* "Live / open / operational" — a STATUS green, deliberately not
@@ -324,6 +330,10 @@
   --shell-frame: #0b0908;
   --shell-panel: #171411;
   --shell-panel-edge: rgb(255 255 255 / 0.06);
+  /* The feed gutter's dark twin — the same relation to the dark sheet that
+     #f2f1ee has to the light one. Was `bg-black/15`, which compounded with
+     whatever it sat on. */
+  --color-gutter: #14110f;
 }
 /* The frame: a fixed rect exactly over the sheet, transparent inside, whose
    100vmax spread shadow paints the frame colour everywhere else. The shadow

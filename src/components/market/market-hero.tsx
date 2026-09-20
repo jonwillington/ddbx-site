@@ -487,6 +487,7 @@ export function HeroShowcaseCompact({ radar }: { radar: DealRadar }) {
   // Same rule as the demo: an alert with no chart behind it has nothing to be
   // put away for, so it stays up between landings.
   const withOutcome = hasOutcome(radar.deals[radar.chartIndex]);
+
   return (
     <div className="relative w-full max-w-[400px]">
       {radar.landed && <NotificationPing tick={radar.tick} />}
@@ -722,11 +723,11 @@ export function MarketHero({
         <button
           className={primaryCtaHref ? GHOST_CTA : FILLED_CTA}
           data-ga-event="cta_hero_open_explainer"
-          data-ga-label="What are we looking for"
+          data-ga-label="How does this work"
           type="button"
           onClick={onExplain}
         >
-          What are we looking for?
+          How does this work?
         </button>
       )}
       {onViewReport && (
@@ -771,11 +772,11 @@ export function MarketHero({
         <button
           className={primaryCtaHref ? GHOST_CTA : FILLED_CTA}
           data-ga-event="cta_hero_open_explainer"
-          data-ga-label="What are we looking for"
+          data-ga-label="How does this work"
           type="button"
           onClick={onExplain}
         >
-          What are we looking for?
+          How does this work?
         </button>
       )}
       {onViewReport && (

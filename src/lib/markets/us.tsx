@@ -605,10 +605,7 @@ export function UsDetailBody({
             </thead>
             <tbody className="tabular-nums">
               {group.legs.map((leg) => (
-                <tr
-                  key={leg.id}
-                  className="border-t border-rule"
-                >
+                <tr key={leg.id} className="border-t border-rule">
                   <td className="py-1">{leg.trade_date}</td>
                   <td className="py-1 text-right">
                     {leg.shares.toLocaleString()}
@@ -772,12 +769,6 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
       "Stock return since the trade, or alpha vs the S&P 500 when that view is selected.",
     action: "How this filing was screened, and the rating it earned.",
   },
-  // Form 4 leg counts and same-day cluster counts sat in the trend column as a
-  // bare number, so a row with no price history showed a lone "2" where its
-  // neighbours showed a sparkline — it read as a broken cell rather than as
-  // data. The cluster count is already spelled out ("4 insider buys") in the
-  // name column, so nothing is lost by dropping it here.
-  showLegCount: false,
   formatTickerDisplay: (ticker) => ticker,
   isRowMuted: (d) => !d.rating || !d.isPurchase,
   isSkipped: (d) => !d.rating,

@@ -178,7 +178,7 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
 
   return (
     <figure
-      className="hpc m-0 flex h-full flex-col overflow-hidden rounded-2xl px-3.5 pb-2.5 pt-2.5"
+      className="hpc m-0 flex h-full flex-col overflow-hidden rounded-card px-3.5 pb-2.5 pt-2.5"
       style={
         {
           "--hpc-draw": `${DRAW_MS}ms`,
@@ -194,12 +194,14 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
           --hpc-line: var(--color-brand-brown);
           /* What followed the alert. Positive only when the outcome is. */
           --hpc-after: ${up ? "var(--color-positive)" : "var(--color-brand-brown)"};
-          --hpc-after-opacity: ${up ? 1 : 0.4};
+          --hpc-after-opacity: ${up ? 1 : 0.6};
           /* The card's own fill. Marker rings use it, so a marker sitting on
              the line reads as punched out of it rather than outlined. */
-          --hpc-fill: #fffdfa;
+          --hpc-fill: var(--color-sheet);
           --hpc-edge: var(--color-hairline);
-          --hpc-grid: rgba(90, 65, 40, 0.055);
+          /* Quiet, but present. At 0.055 the grid was invisible and the plot
+             read as loose ink rather than as an instrument. */
+          --hpc-grid: rgba(90, 65, 40, 0.11);
           background: var(--hpc-fill);
           border: 1px solid var(--hpc-edge);
         }
@@ -209,8 +211,8 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
           /* One step up from the recessed panel behind it, so the nesting
              reads as a card on a surface rather than a hole in a hole. */
           --hpc-fill: oklch(22.5% 0.021 55);
-          --hpc-edge: rgba(255, 255, 255, 0.07);
-          --hpc-grid: rgba(255, 255, 255, 0.05);
+          --hpc-edge: rgba(255, 255, 255, 0.12);
+          --hpc-grid: rgba(255, 255, 255, 0.09);
         }
 
         /* Left-to-right reveal. A clip wipe rather than stroke-dashoffset so
@@ -272,12 +274,10 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
       `}</style>
 
       <figcaption className="mb-1.5 flex items-baseline justify-between gap-2">
-        <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-foreground/75">
-          {deal.symbol}
-        </span>
+        <span className="eyebrow text-foreground/85">{deal.symbol}</span>
         {caption && (
           <span
-            className={`hpc-fade ${twoMarkers ? "hpc-fade-alert" : ""} text-[10px] font-medium ${caption.tint}`}
+            className={`hpc-fade ${twoMarkers ? "hpc-fade-alert" : ""} text-caption font-medium ${caption.tint}`}
           >
             {caption.label}
           </span>
@@ -363,7 +363,7 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeOpacity="var(--hpc-after-opacity)"
-              strokeWidth="2"
+              strokeWidth="2.25"
             />
           </g>
 
@@ -375,7 +375,7 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
               stroke="var(--hpc-line)"
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth="2"
+              strokeWidth="2.25"
             />
           </g>
 
@@ -386,7 +386,7 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
             className={`hpc-fade ${twoMarkers ? "" : "hpc-fade-alert"}`}
             stroke="var(--hpc-line)"
             strokeDasharray="2 4"
-            strokeOpacity="0.45"
+            strokeOpacity="0.6"
             strokeWidth="1"
           >
             <line x1={buyPt.x} x2={w} y1={buyPt.y} y2={buyPt.y} />
@@ -417,8 +417,8 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
             <text
               className="hpc-fade hpc-fade-alert"
               fill="currentColor"
-              fontSize="9"
-              opacity="0.5"
+              fontSize="10"
+              opacity="0.7"
               textAnchor="middle"
               x={Math.min(Math.max(buyPt.x, 18), w - 18)}
               y={floor + 20}
@@ -443,8 +443,8 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
               <text
                 className="hpc-fade"
                 fill="currentColor"
-                fontSize="9"
-                opacity="0.5"
+                fontSize="10"
+                opacity="0.7"
                 textAnchor="middle"
                 x={buyPt.x}
                 y={floor + 20}
@@ -454,8 +454,8 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
               <text
                 className="hpc-fade hpc-fade-alert"
                 fill="currentColor"
-                fontSize="9"
-                opacity="0.5"
+                fontSize="10"
+                opacity="0.7"
                 textAnchor="middle"
                 x={Math.min(alertPt.x, w - 14)}
                 y={floor + 20}
@@ -479,7 +479,7 @@ export function HeroPriceChart({ deal }: { deal: HeroDeal }) {
 
       {/* Legend for the continuation. The figures it adds up to live on
           the outcome bar beneath the card, where they get the width. */}
-      <div className="mt-2 flex items-center gap-1.5 text-[9.5px] font-medium uppercase tracking-wider text-foreground/40">
+      <div className="mt-2 flex items-center gap-1.5 micro text-foreground/60">
         <span
           aria-hidden
           className="h-[2px] w-3.5 rounded-full"

@@ -191,14 +191,21 @@ touch a file for any reason, migrate the literals in the lines you touch.
   Position via `className` (e.g. `absolute right-4 top-4`); GA
   `data-ga-*` attrs pass straight through.
 - **Every source gets its favicon** (house rule, 2026-09-19). Wherever the
-  site cites where something came from (a news publisher, an evidence item's
-  source line, a filing link to RNS/SEC/AFM/FI/DART, a research or story
-  citation), the source's favicon sits before its name. Use
-  `NewsSourceLogo` from `src/components/news-source-logo.tsx`, never a
-  hand-rolled `<img>` against the favicon service. With no URL on the wire,
-  map the regulator/feed to its domain in the component's shared map rather
-  than leaving the mark off. Store badges, share buttons and broker links are
-  not sources (brokers carry their own logos).
+  site cites where something came from *as its own object* (a news
+  publisher, an evidence item's source line, a filing link to
+  RNS/SEC/AFM/FI/DART, a row in a story's Sources list), the source's favicon
+  sits before its name. Use `NewsSourceLogo` from
+  `src/components/news-source-logo.tsx`, never a hand-rolled `<img>` against
+  the favicon service. With no URL on the wire, map the regulator/feed to its
+  domain in the component's shared map rather than leaving the mark off.
+  Store badges, share buttons and broker links are not sources (brokers carry
+  their own logos).
+  **Not inside body prose** (Jon, 2026-09-20). A citation *within* a
+  paragraph is a link, not an object: a long read carries a dozen of them and
+  a 12px coloured square mid-sentence a dozen times over turns the paragraph
+  into confetti. Inline citations keep their underline and their `↗`; the
+  numbered Sources section under the piece carries the marks. See
+  `src/components/stories/story-body.tsx`.
 - **Company logos always open the company page** (house rule, 2026-09-19).
   `CompanyLogo` does it by default — a real link where it stands alone, a
   `role="link"` span that takes the click where it sits inside a row that

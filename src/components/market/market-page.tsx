@@ -1006,7 +1006,6 @@ export function MarketPage<W>({
       noPosteriorData={stockNoPosteriorData(d)}
       pricesPending={livePricesEnabled && !pricesSettled}
       selected={selectedKey === d.key}
-      showLegCount={config.showLegCount}
       showLogo={logosEnabled}
       stockBars={stockBars[d.ticker]}
       stockCurrentMajor={stockCurrent(d.ticker)}
@@ -1158,12 +1157,14 @@ export function MarketPage<W>({
       group.count > 1 ? (
         <MarketClusterRow
           key={`cluster-${group.key}`}
+          benchmarkBars={benchmarkBars}
+          chartMode={chartMode}
           company={group.company}
           count={group.count}
           formatTickerDisplay={config.formatTickerDisplay}
           representative={group.representative}
-          showLegCount={config.showLegCount}
           showLogo={logosEnabled}
+          stockBars={stockBars[group.representative.ticker]}
           totalValueLabel={
             group.totalValue != null
               ? config.priceFormat.formatValue(group.totalValue)
@@ -1226,6 +1227,7 @@ export function MarketPage<W>({
           reportLabel={monthShort(latestRecapMonth)}
           showcase={config.heroShowcase}
           subhead={config.heroSubhead}
+          onExplain={() => setExplainerOpen(true)}
           onViewReport={
             config.id !== "uk" && latestRecapMonth
               ? () => openRecap(latestRecapMonth)
@@ -1472,7 +1474,7 @@ export function MarketPage<W>({
                 </div>
                 <Skeleton className="h-3 w-24 rounded" />
               </div>
-              <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-card">
+              <div className="px-3 pb-3 pt-2.5 space-y-2.5 bg-gutter rounded-b-card">
                 {[3, 2].map((rowCount, dayIdx) => (
                   <div key={dayIdx}>
                     <div className="rounded-card overflow-hidden bg-white dark:bg-surface-secondary divide-y divide-hairline dark:divide-separator">
@@ -1532,7 +1534,6 @@ export function MarketPage<W>({
                 chartMode={chartMode}
                 columnHelp={config.columnHelp}
                 hiddenColumns={hiddenColumns}
-                showLegCount={config.showLegCount}
                 valueColumnClass={config.priceFormat.valueColumnClass}
               />
               <div className="divide-y divide-hairline dark:divide-separator overflow-hidden rounded-b-card">
@@ -1555,7 +1556,6 @@ export function MarketPage<W>({
                     noPosteriorData={stockNoPosteriorData(d)}
                     pricesPending={livePricesEnabled && !pricesSettled}
                     selected={selectedKey === d.key}
-                    showLegCount={config.showLegCount}
                     showLogo={logosEnabled}
                     stockBars={stockBars[d.ticker]}
                     stockCurrentMajor={stockCurrent(d.ticker)}
@@ -1689,37 +1689,39 @@ export function MarketPage<W>({
                     </div>
                     {monthOpen && (
                       <div className="bg-sheet dark:bg-surface rounded-b-card">
+                        {/* Plain-English claim above the first day — names
+                          the market's own insider term and the one fact that
+                          matters: their own money.
+                          
+                          ABOVE the column header, not between it and the
+                          rows: a heading landing in the middle of a table
+                          cut the header off from the columns it titles, and
+                          that break was most of what read as a gap. */}
+                        {monthIdx === 0 && config.timelineTitle && (
+                          <h2 className="px-4 pb-3 pt-1 text-subheading font-semibold text-foreground/90">
+                            {config.timelineTitle}
+                            <TimelineSwoosh
+                              aria-hidden
+                              className="ml-2 inline h-6 w-6 translate-y-1 text-brand-brown/60 dark:text-brand-tan/70 md:h-7 md:w-7"
+                            />
+                          </h2>
+                        )}
                         {/* Teaser mode has no table columns to head — the rows
                           are flat avatar → logos links. */}
                         {!simpleGatedRows && (
-                          <div className="xl:px-3 xl:bg-black/[0.04] dark:xl:bg-white/[0.05]">
-                            <MarketRowHeader
-                              hideDate
-                              inset
-                              benchmarkLabel={config.benchmarkLabel}
-                              chartMode={chartMode}
-                              columnHelp={config.columnHelp}
-                              hiddenColumns={hiddenColumns}
-                              showLegCount={config.showLegCount}
-                              valueColumnClass={
-                                config.priceFormat.valueColumnClass
-                              }
-                            />
-                          </div>
+                          <MarketRowHeader
+                            hideDate
+                            inset
+                            benchmarkLabel={config.benchmarkLabel}
+                            chartMode={chartMode}
+                            columnHelp={config.columnHelp}
+                            hiddenColumns={hiddenColumns}
+                            valueColumnClass={
+                              config.priceFormat.valueColumnClass
+                            }
+                          />
                         )}
-                        <div className="px-3 py-3 space-y-4 bg-[#ece8e5] dark:bg-black/15 rounded-b-card">
-                          {/* Plain-English claim above the first day — names
-                            the market's own insider term and the one fact
-                            that matters: their own money. */}
-                          {monthIdx === 0 && config.timelineTitle && (
-                            <h2 className="px-1 pt-2 pb-1 text-xl font-semibold leading-snug tracking-tight text-foreground/90 sm:text-2xl">
-                              {config.timelineTitle}
-                              <TimelineSwoosh
-                                aria-hidden
-                                className="ml-2 inline h-6 w-6 translate-y-1 text-brand-brown/60 dark:text-brand-tan/70 md:h-7 md:w-7"
-                              />
-                            </h2>
-                          )}
+                        <div className="px-3 pb-3 pt-2.5 space-y-2.5 bg-gutter rounded-b-card">
                           {contentDays.map((day, dayIdx) => {
                             const collapsed = isDayCollapsed(day.key);
                             const collapsedDeals = collapsed

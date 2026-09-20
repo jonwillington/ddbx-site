@@ -38,7 +38,7 @@ export function HeroOutcomeBar({ deal }: { deal: HeroDeal }) {
     <div
       // One neutral panel whichever way the deal went: the return is coloured
       // text, never a tinted wash (returns are plain text, 2026-09-19).
-      className="hob flex w-full items-center gap-3 rounded-2xl border border-hairline bg-sheet/60 px-4 py-3 dark:border-white/10"
+      className="hob flex w-full items-center gap-3 rounded-card border border-hairline bg-sheet/60 px-4 py-3 dark:border-white/10"
       style={{ "--hob-delay": `${DRAW_MS + POST_MS}ms` } as React.CSSProperties}
     >
       <style>{`
@@ -59,7 +59,7 @@ export function HeroOutcomeBar({ deal }: { deal: HeroDeal }) {
         className={`h-5 w-5 shrink-0 ${up ? "text-positive" : "text-negative"}`}
       />
       <Delta
-        className="font-mono text-[22px] font-semibold leading-none"
+        className="text-figure font-semibold leading-none"
         decimals={0}
         value={pct}
       />

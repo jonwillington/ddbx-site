@@ -692,9 +692,9 @@ function CongressDetailBody({
           target="_blank"
         >
           <NewsSourceLogo
+            domain={MARKET_SOURCE_DOMAIN.USG}
             size="caption"
             url={d.ptr_link}
-            domain={MARKET_SOURCE_DOMAIN.USG}
           />
           View original filing
         </a>
@@ -856,9 +856,7 @@ function CongressExplainer() {
               key={m.label}
               className="flex items-baseline justify-between gap-4 px-3.5 py-2.5"
             >
-              <dt className="shrink-0 eyebrow text-muted">
-                {m.label}
-              </dt>
+              <dt className="shrink-0 eyebrow text-muted">{m.label}</dt>
               <dd className="text-right text-sm text-foreground/85">
                 {m.label === "Source" ? (
                   <NewsSourceLogo className="mr-1.5" name={m.value} />
@@ -1004,8 +1002,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
       "The company and the member of Congress (or their spouse) who bought it.",
     value:
       "Disclosed amount band, the STOCK Act reports ranges, not exact figures.",
-    trend:
-      "Number of buys in this row, plus the stock's 1-year price trend (trade date marked).",
+    trend: "The stock's 1-year price trend, with the trade date marked.",
     performance:
       "Stock return since the trade, or alpha vs the S&P 500 when that view is selected.",
     action:

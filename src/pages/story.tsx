@@ -151,7 +151,7 @@ export default function StoryPage() {
                 {/* Each source leads with its publisher's favicon, so a list
                     of thirteen links reads as thirteen different outlets at a
                     glance rather than one block of underlines. */}
-                <ol className="mt-4 divide-y divide-hairline/70 border-y border-rule/70 dark:divide-separator/60/60">
+                <ol className="mt-4 divide-y divide-hairline/70 dark:divide-separator/60">
                   {s.sources.map((src, n) => (
                     <li
                       key={src.url}

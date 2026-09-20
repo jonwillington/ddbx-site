@@ -102,8 +102,7 @@ export const DjtMarket: MarketConfig<UsRowGroup> = {
     ticker: "US exchange ticker symbol (DJT common, DJTWW warrants).",
     company: "The Trump Media insider, officer, director, or 10% owner.",
     value: "Value of the transaction in USD (grants show at $0).",
-    trend:
-      "Number of legs in this filing, plus the stock's 1-year price trend (trade date marked).",
+    trend: "The stock's 1-year price trend, with the trade date marked.",
     performance:
       "Stock return since the trade, or alpha vs the S&P 500 when that view is selected.",
     action: "What kind of transaction this Form 4 reports.",

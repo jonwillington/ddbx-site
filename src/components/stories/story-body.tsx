@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 
 import { resolveStoryLink } from "@/lib/stories";
-import { NewsSourceLogo } from "@/components/news-source-logo";
 
 /** Renderer for a story's markdown body.
  *
@@ -15,6 +14,15 @@ import { NewsSourceLogo } from "@/components/news-source-logo";
  *  Links are the reason this exists at all. `ddbx://` targets route in-app via
  *  react-router so a reader stays on the site; external citations open in a new
  *  tab with rel="noopener noreferrer". Nothing else is clickable.
+ *
+ *  NO SOURCE MARK INSIDE THE PROSE. The house rule is that every source gets
+ *  its favicon, and it holds everywhere the page cites where something came
+ *  from as a distinct object — the Sources list below, an evidence line, a
+ *  filing link. A body paragraph is not that: a long read carries a dozen
+ *  citations, and a 12px coloured square mid-sentence a dozen times over
+ *  turns a paragraph into confetti and breaks its rhythm at every clause
+ *  (Jon, 2026-09-20). The link keeps its underline and its ↗, and the
+ *  numbered Sources section carries the marks.
  */
 
 const A_EXTERNAL =
@@ -47,8 +55,6 @@ function Inline({ text }: { text: string }) {
             rel="noopener noreferrer"
             target="_blank"
           >
-            {/* The source's mark before the words, as on every citation. */}
-            <NewsSourceLogo className="mr-1" size="small" url={href} />
             {m[1]}
             {/* Only external links carry the mark, so a reader can see at a
                 glance which ones leave the site. */}

@@ -36,8 +36,7 @@ const DEFAULT_COLUMN_HELP: Record<MarketColumnKey, string> = {
   ticker: "The stock's exchange ticker symbol.",
   company: "The company traded and the insider who traded it.",
   value: "Approximate size of the purchase.",
-  trend:
-    "Quantity (the number of buys folded into this row), alongside the share price's recent trend.",
+  trend: "The share price's recent trend, with the trade date marked.",
   performance:
     "Price change since the trade, or the return vs the market benchmark when that view is selected.",
   comments:
@@ -85,7 +84,6 @@ export function MarketRowHeader({
   valueColumnClass = "w-24",
   columnHelp,
   hiddenColumns = NO_HIDDEN,
-  showLegCount = true,
 }: {
   hideDate?: boolean;
   benchmarkLabel: string;
@@ -99,9 +97,6 @@ export function MarketRowHeader({
   valueColumnClass?: string;
   /** Per-market header tooltip copy; unset columns fall back to defaults. */
   columnHelp?: Partial<Record<MarketColumnKey, string>>;
-  /** Mirrors MarketConfig.showLegCount — drops "Qty /" from the label when the
-   *  rows aren't rendering a count. */
-  showLegCount?: boolean;
 }) {
   const perfLabel =
     chartMode.axis === "market" ? `vs ${benchmarkLabel}` : "Return";
@@ -109,38 +104,34 @@ export function MarketRowHeader({
 
   return (
     <div
-      className={`hidden md:flex items-center micro text-muted/80 select-none border-b border-rule bg-black/[0.04] dark:bg-white/[0.05] ${inset ? "px-3" : ""}`}
+      className={`hidden md:flex items-center micro text-muted/80 select-none border-b border-rule ${inset ? "px-3" : ""}`}
     >
       {!hideDate && (
-        <div className="w-28 shrink-0 px-3 py-1.5 border-r border-rule">
+        <div className="w-28 shrink-0 px-3 py-1.5">
           <HeaderLabel help={help.disclosed}>Disclosed</HeaderLabel>
         </div>
       )}
-      <div className="w-20 shrink-0 px-2 py-1.5 text-center border-r border-rule">
+      <div className="w-20 shrink-0 px-2 py-1.5 text-center">
         <HeaderLabel help={help.ticker}>Ticker</HeaderLabel>
       </div>
-      <div className="flex-1 min-w-0 px-3 py-1.5 border-r border-rule">
+      <div className="flex-1 min-w-0 px-3 py-1.5">
         <HeaderLabel help={help.company}>Company / Insider</HeaderLabel>
       </div>
-      <div
-        className={`${valueColumnClass} shrink-0 px-3 py-1.5 text-right border-r border-rule`}
-      >
+      <div className={`${valueColumnClass} shrink-0 px-3 py-1.5 text-right`}>
         <HeaderLabel help={help.value}>Value</HeaderLabel>
       </div>
       {!hiddenColumns.has("trend") && (
-        <div className="w-24 shrink-0 px-2 py-1.5 text-center leading-snug border-r border-rule">
-          <HeaderLabel help={help.trend}>
-            {showLegCount ? "Qty / Trend" : "Trend"}
-          </HeaderLabel>
+        <div className="w-24 shrink-0 px-2 py-1.5 text-center leading-snug">
+          <HeaderLabel help={help.trend}>Trend</HeaderLabel>
         </div>
       )}
       {!hiddenColumns.has("performance") && (
-        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-rule">
+        <div className="w-24 shrink-0 px-2 py-1.5 text-center">
           <HeaderLabel help={help.performance}>{perfLabel}</HeaderLabel>
         </div>
       )}
       {!hiddenColumns.has("comments") && (
-        <div className="w-24 shrink-0 px-2 py-1.5 text-center border-r border-rule">
+        <div className="w-24 shrink-0 px-2 py-1.5 text-center">
           <HeaderLabel help={help.comments}>Comments</HeaderLabel>
         </div>
       )}
@@ -470,9 +461,6 @@ interface MarketRowProps<W> {
    *  Set from MarketConfig.enableLogos by the shell — used by Sweden where
    *  logo.dev coverage is too thin to bother. */
   showLogo?: boolean;
-  /** When false, the trend cell renders the sparkline alone — no leg-count
-   *  prefix. Set from MarketConfig.showLegCount. Default true. */
-  showLegCount?: boolean;
   /** Drives the right-most Performance cell — raw stock return when
    *  `axis === "raw"`, alpha vs benchmark when `axis === "market"`. */
   chartMode: ChartMode;
@@ -500,17 +488,21 @@ interface MarketRowProps<W> {
  *  rows. Holds its own open/closed state; this is purely a presentation
  *  grouping — the children are ordinary MarketRows that still open their own
  *  drawer on click. Column geometry matches MarketRow's `hideDate` layout so
- *  the master aligns with the table; spark / return / action columns are left
- *  empty (those numbers are per-deal, not per-cluster). */
+ *  the master aligns with the table. Return and action stay empty — those
+ *  numbers are per-deal — but the trend cell draws the representative's
+ *  sparkline, because every leg of a cluster is the same ticker on the same
+ *  day and therefore the same price path. */
 export function MarketClusterRow<W>({
   representative,
   company,
   count,
   totalValueLabel,
   showLogo = true,
-  showLegCount = true,
   formatTickerDisplay,
   valueColumnClass = "w-24",
+  benchmarkBars,
+  chartMode,
+  stockBars,
   children,
 }: {
   representative: MarketDealing<W>;
@@ -518,12 +510,13 @@ export function MarketClusterRow<W>({
   count: number;
   totalValueLabel: string;
   showLogo?: boolean;
-  /** When false the trend cell stays empty rather than repeating the cluster
-   *  count that the name column already spells out. See
-   *  MarketConfig.showLegCount. */
-  showLegCount?: boolean;
   formatTickerDisplay?: (ticker: string) => string;
   valueColumnClass?: string;
+  /** The same three the child rows get, resolved off the representative —
+   *  see the trend cell below. */
+  benchmarkBars?: SparkBar[];
+  chartMode: ChartMode;
+  stockBars?: SparkBar[];
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -560,9 +553,7 @@ export function MarketClusterRow<W>({
               <span className="font-mono text-caption font-semibold px-1.5 py-0 rounded bg-hairline dark:bg-surface-secondary shrink-0">
                 {ticker}
               </span>
-              <span className="text-small font-medium truncate">
-                {company}
-              </span>
+              <span className="text-small font-medium truncate">{company}</span>
             </div>
             <div className="text-caption text-muted mt-0.5">{countLabel}</div>
           </div>
@@ -605,11 +596,14 @@ export function MarketClusterRow<W>({
             </span>
           </div>
           <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
-            {showLegCount && (
-              <span className="text-caption font-semibold tabular-nums text-muted/70">
-                {count}
-              </span>
-            )}
+            <MarketRowSpark
+              bars={stockBars}
+              benchmarkBars={benchmarkBars}
+              chartMode={chartMode}
+              disclosedDate={representative.disclosedDate}
+              tradeDate={representative.tradeDate}
+              width={52}
+            />
           </div>
           <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
           <div className="w-24 shrink-0 px-2 py-2.5 border-r border-rule" />
@@ -935,7 +929,6 @@ export function MarketRow<W>({
   formatTickerDisplay,
   locale,
   showLogo = true,
-  showLegCount = true,
   chartMode,
   noPosteriorData = false,
   pricesPending = false,
@@ -981,9 +974,14 @@ export function MarketRow<W>({
     ? formatTickerDisplay(rawTicker)
     : rawTicker;
   const company = dealing.company || "—";
-  const insiderLine = dealing.insiderRole
-    ? `${capitalisedRole(dealing.insiderRole)} · ${dealing.insiderName}`
-    : dealing.insiderName;
+  const insiderLine = [
+    dealing.insiderRole
+      ? `${capitalisedRole(dealing.insiderRole)} · ${dealing.insiderName}`
+      : dealing.insiderName,
+    dealing.legCount > 1 ? `${dealing.legCount} trades` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const valueLabel =
     dealing.value != null ? fmt.formatValue(dealing.value) : "—";
   const compactValueLabel =
@@ -1099,12 +1097,7 @@ export function MarketRow<W>({
           )}
         </div>
         {!hiddenColumns.has("trend") && (
-          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center gap-1.5 border-r border-rule">
-            {showLegCount && dealing.legCount > 1 && (
-              <span className="text-caption font-semibold tabular-nums text-muted/70">
-                {dealing.legCount}
-              </span>
-            )}
+          <div className="w-24 shrink-0 px-2 py-2.5 flex items-center justify-center border-r border-rule">
             <MarketRowSpark
               bars={stockBars}
               benchmarkBars={benchmarkBars}

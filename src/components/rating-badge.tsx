@@ -8,6 +8,7 @@ import {
   CHIP_BASE,
   CHIP_HAIRLINE,
   CHIP_HAIRLINE_FILLED,
+  CHIP_LABEL,
   CHIP_SIZE,
   type ChipSize,
 } from "@/components/chip";
@@ -69,6 +70,28 @@ const ICON: Partial<Record<BadgeRating, "solid" | "outline">> = {
   noteworthy: "outline",
 };
 
+/** The bottom of the taper is not a badge at all.
+ *
+ *  Jon, 2026-09-20: "just use plain text, this looks lame as a chip in the
+ *  mono." Routine and skipped are the two tiers that say we looked and found
+ *  nothing — a capsule and a hairline give that the same object-weight as
+ *  SIGNIFICANT, which is the opposite of what the Action column is for. They
+ *  keep the chip's mono label so the column still reads as one vocabulary,
+ *  and drop the shape.
+ *
+ *  `minor` stays a chip: it is a rating, the smallest one, and dropping its
+ *  shape would put a genuine verdict in the same voice as "we didn't rate
+ *  this." */
+const PLAIN: ReadonlySet<BadgeRating> = new Set<BadgeRating>([
+  "routine",
+  "skipped",
+]);
+
+const PLAIN_TINT: Partial<Record<BadgeRating, string>> = {
+  routine: "text-foreground/45",
+  skipped: "text-foreground/35",
+};
+
 // Size steps down by tier so the badge's physical prominence tapers evenly
 // significant → noteworthy → minor → routine → skipped, reinforcing the
 // colour gradient above.
@@ -96,6 +119,23 @@ export function RatingBadge({
 }) {
   const normalized: BadgeRating = LEGACY[rating as string] ?? rating;
   const icon = ICON[normalized];
+
+  if (PLAIN.has(normalized)) {
+    return (
+      <span
+        className={clsx(
+          // The chip's label spec at the sm step's type size, without the
+          // capsule's padding — the shape is the whole thing being dropped.
+          CHIP_LABEL,
+          "text-chip",
+          PLAIN_TINT[normalized],
+          className,
+        )}
+      >
+        {LABELS[normalized] ?? rating}
+      </span>
+    );
+  }
 
   return (
     <span

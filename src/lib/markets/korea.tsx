@@ -672,10 +672,7 @@ function KrDetailBody({ dealing }: { dealing: MarketDealing<KrDealingGroup> }) {
             </thead>
             <tbody className="tabular-nums">
               {legs.map((leg) => (
-                <tr
-                  key={leg.id}
-                  className="border-t border-rule"
-                >
+                <tr key={leg.id} className="border-t border-rule">
                   <td className="py-1">{iso(leg.trade_date)}</td>
                   <td className="py-1 text-right">
                     {leg.shares_change.toLocaleString("en-GB")}
@@ -744,9 +741,7 @@ function DetailPair({
 }) {
   return (
     <div>
-      <dt className="eyebrow text-foreground/45">
-        {label}
-      </dt>
+      <dt className="eyebrow text-foreground/45">{label}</dt>
       <dd className="mt-0.5 text-foreground/85">
         {value}
         {sub ? (
@@ -820,9 +815,7 @@ function KoreaExplainer() {
               key={m.label}
               className="flex items-baseline justify-between gap-4 px-3.5 py-2.5"
             >
-              <dt className="shrink-0 eyebrow text-muted">
-                {m.label}
-              </dt>
+              <dt className="shrink-0 eyebrow text-muted">{m.label}</dt>
               <dd className="text-right text-sm text-foreground/85">
                 {m.label === "Source" ? (
                   <NewsSourceLogo className="mr-1.5" name={m.value} />
@@ -1072,10 +1065,6 @@ export const KoreaMarket: MarketConfig<KrDealingGroup> = {
   // By DOMAIN, not by ticker: the provider 404s on a 6-digit stock code but
   // knows the issuer's homepage, which DART publishes. See `logoDomain`.
   enableLogos: true,
-  /* One row is now one FILING, and a filing can report any number of trades —
-     one reports forty-nine. The count is the only thing on the row that says
-     so, so it has to be on. See `foldFilings`. */
-  showLegCount: true,
 
   /* Written for someone reading their first Korean filing. No statute, no
      "consideration", no "disclosure" where "reported" will do. */
@@ -1088,8 +1077,7 @@ export const KoreaMarket: MarketConfig<KrDealingGroup> = {
       "The company bought, the person or firm who bought it, and the board it trades on.",
     value:
       "What they paid, in won as filed, with a rough pound figure beneath it.",
-    trend:
-      "How many separate trades this one report covers, and the share price over the past year, marked where the buying falls.",
+    trend: "The share price over the past year, marked where the buying falls.",
     performance:
       "How the price has moved since, measured from whichever date the toggle is set to: the day it was reported, or the day the trade settled. On the vs-market view it is that move with the KOSPI's move taken out.",
     action:
