@@ -157,7 +157,7 @@ function ContactContent() {
 function PrivacyContent() {
   return (
     <>
-      <p>Last updated: 2 August 2026</p>
+      <p>Last updated: 21 September 2026</p>
       <p>
         DDBX (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates the
         website ddbx.uk. This Privacy Policy explains how we collect, use, and
@@ -198,6 +198,24 @@ function PrivacyContent() {
         Accepting the cookie banner additionally loads the X (Twitter) Ads
         conversion pixel (to measure ad-driven installs). See the Cookie Policy
         for details.
+      </p>
+
+      <SectionTitle>AI assistant connector</SectionTitle>
+      <p>
+        We run a read-only connector at api.ddbx.uk/mcp that AI assistants such
+        as ChatGPT and Claude can call on your behalf. It needs no account and
+        receives only the request the assistant sends, not your conversation.
+        For each request we record the kind of client (for example
+        &quot;ChatGPT&quot; or &quot;Claude&quot;), which tool was called, the
+        market asked about, whether it succeeded and how long it took. We do
+        not record your prompt, search terms, tickers, filing ids, IP address
+        or full browser string.
+      </p>
+      <p>
+        To prevent abuse, requests are rate-limited per IP address. The address
+        is used in the moment to apply the limit and is not stored by us.
+        Cloudflare may log request metadata as described above, and we keep
+        operational logs for up to seven days.
       </p>
 
       <SectionTitle>Your rights</SectionTitle>
