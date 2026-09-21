@@ -403,6 +403,50 @@
     border-top: 0;
   }
 }
+/* The market home's hero sits above the sheet rather than in it: a panel on
+   the frame like the nav and the rail, with the sheet starting beneath it.
+   The frame's hole (.shell-frame) is fixed to the viewport, so the hero can't
+   move it; instead this ground paints the frame colour over the top of the
+   sheet, scrolls away with the page, and hands the sheet's own top edge back
+   to the fixed hole once it has gone. z 36 lifts it over the frame's side
+   hairlines. It spans the sheet (the FULL_BLEED trick, as above), pulls up
+   over main's pt-8 so the hero's top lines up with the side panels, leaves
+   one panel gutter beneath, and zeroes the section's space-y-6 gap (Tailwind
+   v4 puts it on this element's margin-bottom) so the filter bar is the
+   sheet's first edge. The ::after rounds that edge's
+   corners out of the same frame colour. */
+@media (min-width: 1280px) {
+  :root.nav-sidebar .shell-hero-ground {
+    --sheet-w: calc(100vw - var(--shell-l) - var(--shell-r));
+    position: relative;
+    z-index: 36;
+    width: var(--sheet-w);
+    margin-left: calc(50% - var(--sheet-w) / 2);
+    margin-right: calc(50% - var(--sheet-w) / 2);
+    margin-top: -32px;
+    margin-bottom: 0;
+    padding-bottom: 20px;
+    background: var(--shell-frame);
+  }
+  :root.nav-sidebar .shell-hero-ground::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 16px;
+    pointer-events: none;
+    background:
+      radial-gradient(
+          circle at 100% 100%,
+          transparent 15.5px,
+          var(--shell-frame) 16px
+        )
+        left top / 16px 16px no-repeat,
+      radial-gradient(circle at 0 100%, transparent 15.5px, var(--shell-frame) 16px)
+        right top / 16px 16px no-repeat;
+  }
+}
 /* Fixed overlays that centre on "the page" centre on the sheet instead. */
 @media (min-width: 1280px) {
   :root.nav-sidebar .shell-center {
