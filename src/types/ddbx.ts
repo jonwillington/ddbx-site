@@ -517,6 +517,46 @@ export interface Dealing {
    *  Null/absent for a first buy, a sell, or a row stamped before
    *  migration 066. */
   accumulation_run?: AccumulationRunInfo | null;
+  /** This insider's earlier open-market buys of the same stock, with the price
+   *  action each was bought into, plus a one-line comparison against this buy.
+   *  See InsiderHistory. Null/absent for a sell, a first buy, or when no
+   *  earlier buy has buy-style data. */
+  insider_history?: InsiderHistory | null;
+}
+
+/**
+ * The same insider's earlier buys of this stock, set against the price action
+ * each was bought into. Answers "is this buy different from the ones before
+ * it?": a CEO who bought 20% and 11% below the high and now buys AT the high,
+ * after a 26% rise, is doing something different from the first two times.
+ *
+ * Built at read time from the stored buy-style fields (drawdown from the
+ * trailing 90-day high and the 90-day move, see BuyStyle), so it needs no
+ * price fetch and no model call. The sentence is built once, server-side, so
+ * the site and the apps say the same thing.
+ */
+export interface InsiderHistory {
+  /** Lookback for earlier buys, in days. */
+  window_days: number;
+  /** Earlier buys, oldest first, at most 5 (the most recent). Excludes this
+   *  buy. Only buys with buy-style data are included. */
+  prior: InsiderHistoryPoint[];
+  /** This buy's own point, or null when it has no buy-style data yet. */
+  current: InsiderHistoryPoint | null;
+  /** Plain-English comparison, e.g. "William Truman's two earlier buys were
+   *  made 20% and 11% below the 90-day high, after falls of 17% and 7% over
+   *  three months. This one is at the high, after a 26% rise." */
+  summary: string;
+}
+
+export interface InsiderHistoryPoint {
+  dealing_id: string;
+  trade_date: string;
+  value_gbp: number;
+  /** Signed; ≤ 0. Close vs trailing 90-day high, as a ratio (−0.2 = 20% below). */
+  drawdown_from_high_pct: number;
+  /** Signed. 90-day move into the buy, as a ratio (−0.17 = fell 17%). */
+  trailing_return_pct: number;
 }
 
 /**
@@ -2314,6 +2354,72 @@ export interface GovCommitteesResponse {
   /** Stated so consumers can caveat correctly rather than inferring it from an
    *  all-House list. */
   chambers_modelled: GovChamber[];
+}
+
+/** One member's committee lane for one issuer, as the rating engine computes
+ *  it (`committeeJurisdictionDetail`: SIC first, ICB sector as the fallback,
+ *  in lane at a score of 0.5 or more, the member detail's `in_lane` rule).
+ *
+ *  Four values, not a boolean, because the last three are different facts:
+ *   - "in"           sits on a committee whose jurisdiction covers the issuer
+ *   - "out"          sits on at least one modelled committee; none covers it
+ *   - "unmodelled"   none of their committees is one we model (every senator)
+ *   - "unclassified" we hold neither a SIC nor a sector for the issuer, so the
+ *                    question was never asked of anyone */
+export type GovStockLane = "in" | "out" | "unmodelled" | "unclassified";
+
+/** One buyer of one ticker, inside `GovStockSummary.buyers`. */
+export interface GovStockBuyer {
+  /** Bioguide id (the filed name for the rare unresolved reporter). */
+  id: string;
+  purchases: number;
+  lane: GovStockLane;
+  /** The committee the lane holds through. Null unless `lane` is "in". */
+  via: string | null;
+}
+
+/** One ticker in GET /api/gov-stocks. */
+export interface GovStockSummary {
+  ticker: string;
+  /** The most common filed issuer name, raw (share-class suffixes and all). */
+  company: string;
+  /** Most common sector across the ticker's rows; null when no row maps. */
+  sector_normalized: SectorNormalized | null;
+  /** Distinct members with a purchase of this ticker. */
+  members: number;
+  /** Purchase rows. Ingest stores purchases only today, so this equals the
+   *  row count `/api/gov-dealings?view=all&ticker=` returns; if sales are ever
+   *  stored, it stays purchases and that count will not. */
+  purchases: number;
+  /** Distinct PTR documents. */
+  filings: number;
+  /** Buyers whose lane is "in". */
+  in_lane_members: number;
+  first_disclosed: string;
+  last_disclosed: string;
+  /** A fund rather than an issuer (ETF, ETN, index fund), by its filed names.
+   *  PTRs file these under the "stock" asset class, so the name decides. */
+  is_fund: boolean;
+  /** Most purchases first. */
+  buyers: GovStockBuyer[];
+}
+
+/** GET /api/gov-stocks — every ticker a member of Congress has a purchase of,
+ *  with the counts a consumer needs to build a by-stock index or apply a
+ *  publishing bar. The bar itself lives in the consumer, the /api/companies
+ *  posture: what counts as thin is an SEO judgement, and moving it should not
+ *  need a Worker deploy. */
+export interface GovStocksResponse {
+  /** Latest disclosure date in the record. Null on an empty table. */
+  as_of: string | null;
+  corpus: {
+    /** Distinct members with at least one purchase. */
+    members: number;
+    purchases: number;
+    tickers: number;
+  };
+  /** Most members first, then most purchases, then ticker. */
+  stocks: GovStockSummary[];
 }
 
 // ============================================================================

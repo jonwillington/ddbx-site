@@ -135,6 +135,7 @@ import {
 import { DISCRETION_ENABLED } from "@/lib/discretion";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { ClusterPanel } from "@/components/filing/cluster-panel";
+import { InsiderHistoryPanel } from "@/components/filing/insider-history";
 import { ShareArrivalCard } from "@/components/filing/share-arrival";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
@@ -324,6 +325,12 @@ export default function FilingPage({
   }
 
   const hasCluster = !!(deal?.cluster?.count && deal.cluster.count >= 2);
+  // The same insider's earlier buys of this stock. A structural read rather
+  // than a market branch: only the UK wire row carries the field today.
+  const history =
+    deal && "insider_history" in deal && deal.insider_history?.prior?.length
+      ? deal.insider_history
+      : null;
   const lag = deal ? disclosureLagDays(deal) : null;
   const sector = deal?.sector_normalized
     ? sectorByLabel(deal.sector_normalized)
@@ -404,7 +411,7 @@ export default function FilingPage({
   const sections: FilingSection[] = [];
 
   if (deal) {
-    if (context.length > 0 || hasCluster) {
+    if (context.length > 0 || hasCluster || history) {
       // The detector's window, in words a reader uses. 14 and 30 are the two
       // spans it runs; anything else is stated as a count of days rather
       // than rounded to a phrase it does not match.
@@ -439,6 +446,9 @@ export default function FilingPage({
               market={market}
             />
             <ContextCards items={context} />
+            {/* The insider's own earlier buys, placed against the 90-day
+                high: derived context like buy style, so ungated. */}
+            <InsiderHistoryPanel history={history} />
           </>
         ),
       });
