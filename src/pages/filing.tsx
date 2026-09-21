@@ -166,6 +166,10 @@ export default function FilingPage({
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const fam = filingFamily(market);
+  // The share route's notification card leads the page on UK only. On US it
+  // is gone (Jon, 2026-09-21): the shared page opens on the stage, exactly as
+  // the canonical page does, with the eyebrow saying it was shared.
+  const arrivalCard = share && fam.marketId !== "us";
   const us = market === "US";
   // A row the reader clicked in a list arrives with the navigation (see
   // `filingSeed`), and a filing already read this session is in the cache:
@@ -630,7 +634,7 @@ export default function FilingPage({
           // above the fold. Only once the row has arrived: an empty card slot
           // that later pushes the whole document down is the loading
           // behaviour the shell exists to prevent.
-          share && deal ? (
+          arrivalCard && deal ? (
             <ShareArrivalCard deal={deal} marketId={fam.marketId} />
           ) : deal ? (
             // Off the share route the stage IS the hero: in the hero slot the
@@ -639,7 +643,7 @@ export default function FilingPage({
             // cream band sits above it. In the body it kept main's padding.
             <FilingStage
               deal={deal}
-              eyebrow="Disclosure"
+              eyebrow={share ? "Shared filing" : "Disclosure"}
               market={market}
               sector={sector}
               summary={summary}
@@ -663,7 +667,7 @@ export default function FilingPage({
       >
         {deal ? (
           <>
-            {share ? (
+            {arrivalCard ? (
               <div className="mt-6">
                 <FilingStage
                   deal={deal}
