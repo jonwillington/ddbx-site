@@ -618,13 +618,15 @@ export function MarketHero({
   // The one store this visitor is sent to (StoreButtons' resolution).
   const store = useStoreTarget(marketId ?? "uk");
   // Shell layout (lib/nav-mode), from xl: the hero becomes a dark stage like
-  // the board pages' headers — the same fixed #1a140d panel run edge to edge
-  // of the sheet (.board-stage, globals.css). `dark` scopes the site's dark
+  // the board pages' headers — the same fixed #1a140d panel, but contained:
+  // rounded and inside the sheet's gutter (.stage-contained opts it out of
+  // the boards' edge-to-edge breakout, globals.css), with its own gap above
+  // the filter bar so it reads as a block of its own rather than the table's
+  // lid. `dark` scopes the site's dark
   // tokens to the hero alone, so every theme-keyed class inside it (headline,
   // bullets, store button, notification) takes its dark form with no
   // per-element overrides. A class can't be media-conditional, hence the
-  // query rather than a `shell:xl:` variant. `-mb-6` cancels the section's
-  // space-y-6 so the filter bar seats straight onto the stage's bottom edge.
+  // query rather than a `shell:xl:` variant.
   const isXl = useMediaQuery("(min-width: 1280px)");
   const shellStage = NAV_SIDEBAR && isXl;
   // Below xl (phones, tablets) the shell has no sheet to run edge to edge of,
@@ -797,7 +799,7 @@ export function MarketHero({
     <header
       className={`relative -mt-4 md:mt-0 md:min-h-[58svh] flex flex-col animate-content-in shell:xl:min-h-0! ${
         shellStage
-          ? "dark board-stage -mt-8! -mb-6! overflow-hidden text-foreground"
+          ? "dark board-stage stage-contained mt-0! mb-4 overflow-hidden rounded-stage border border-white/10 text-foreground"
           : panelStage
             ? "dark board-stage mt-0! overflow-hidden rounded-stage border border-white/10 text-foreground"
             : ""

@@ -366,7 +366,7 @@
    SeoPageShell hero slot) it also pulls up over main's pt-8 + the slot's
    pt-2, so it meets the sheet's top edge. */
 @media (min-width: 1280px) {
-  :root.nav-sidebar .board-stage {
+  :root.nav-sidebar .board-stage:not(.stage-contained) {
     --sheet-w: calc(100vw - var(--shell-l) - var(--shell-r));
     width: var(--sheet-w);
     max-width: none;
