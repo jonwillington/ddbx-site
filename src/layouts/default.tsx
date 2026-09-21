@@ -212,10 +212,10 @@ function PrivacyContent() {
         or full browser string.
       </p>
       <p>
-        To prevent abuse, requests are rate-limited per IP address. The address
-        is used in the moment to apply the limit and is not stored by us.
-        Cloudflare may log request metadata as described above, and we keep
-        operational logs for up to seven days.
+        To prevent abuse, requests are rate-limited per IP address. If an
+        address goes over the limit, we log it and may email it to ourselves so
+        we can investigate. Cloudflare may log request metadata as described
+        above, and we keep operational logs for up to seven days.
       </p>
 
       <SectionTitle>Your rights</SectionTitle>
