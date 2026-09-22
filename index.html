@@ -38,6 +38,28 @@
       // seconds the pre-render is let back through.
       (function () {
         try {
+          // BrowserRouter manages scroll per history entry. Take native
+          // restoration out of the race before first paint; doing this after
+          // React mounts is too late on full document navigations.
+          if ("scrollRestoration" in history) {
+            history.scrollRestoration = "manual";
+          }
+          // BrowserRouter calls every document-loaded entry "default". Give
+          // the actual browser history entry a durable id so two hard
+          // navigations cannot overwrite each other's saved scroll offset.
+          // history.state survives Back/Forward and is preserved when React
+          // Router adds its own state alongside it.
+          if (!history.state || !history.state.ddbxScrollKey) {
+            history.replaceState(
+              Object.assign({}, history.state, {
+                ddbxScrollKey:
+                  Date.now().toString(36) +
+                  "-" +
+                  Math.random().toString(36).slice(2),
+              }),
+              "",
+            );
+          }
           document.documentElement.classList.add("js");
           setTimeout(function () {
             if (!document.documentElement.classList.contains("mounted")) {

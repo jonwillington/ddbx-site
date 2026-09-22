@@ -11,8 +11,11 @@
  *
  *  - **PUSH / REPLACE** (a link, a redirect) scrolls to the top. This is the
  *    fix.
- *  - **POP** (back / forward) puts the reader back where they were on that
- *    entry. This used to be left to the browser, which restores once, at the
+ *  - **POP** after the app has mounted (back / forward) puts the reader back
+ *    where they were on that entry. React Router also labels every initial
+ *    document load POP, so the browser's navigation timing distinguishes a
+ *    real cross-document back/forward from a fresh navigation or reload.
+ *    This used to be left to the browser, which restores once, at the
  *    moment of the popstate, against whatever height the page has then. A
  *    list that renders from data a beat later is still short at that moment,
  *    so the browser clamped to the top — invisible while a deal opened in a
@@ -34,14 +37,21 @@
  *  navigation for this purpose: the effect keys on `pathname` alone, so
  *  toggling a filter leaves the reader looking at the rows they were reading.
  *
+ *  The inline head script sets `history.scrollRestoration = "manual"` before
+ *  first paint. Doing it here in an effect is too late for a full document
+ *  navigation: the browser may already have restored the old document's
+ *  offset before React starts.
+ *
  *  `instant`, not smooth: this is a page change, not a movement within a page,
  *  and animating it makes the new page appear to arrive already scrolled.
  */
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
-/** Scroll offset per history entry, keyed by the router's location key. Held
- *  in sessionStorage so it survives a reload, like the browser's own. */
+/** Scroll offset per history entry. SPA entries use the router's location key;
+ *  document-loaded entries use the durable id installed by index.html because
+ *  BrowserRouter calls every one of those "default". Held in sessionStorage
+ *  so it survives a reload, like the browser's own. */
 const STORE = "ddbx.scroll";
 const RESTORE_MS = 2500;
 
@@ -54,6 +64,7 @@ let restoring = false;
 interface Offset {
   y: number;
   h: number;
+  url: string;
 }
 
 function readOffsets(): Record<string, Offset> {
@@ -64,23 +75,56 @@ function readOffsets(): Record<string, Offset> {
   }
 }
 
-function writeOffset(key: string, y: number) {
+function writeOffset(key: string, url: string, y: number) {
   try {
     const all = readOffsets();
 
-    all[key] = { y, h: document.documentElement.scrollHeight };
+    all[key] = { y, h: document.documentElement.scrollHeight, url };
     sessionStorage.setItem(STORE, JSON.stringify(all));
   } catch {
     // Private mode or full storage: restoration degrades to the top.
   }
 }
 
-export function ScrollToTop() {
-  const { pathname, hash, key } = useLocation();
-  const navigationType = useNavigationType();
+function scrollEntryKey(routerKey: string, url: string): string {
+  const state = history.state as { ddbxScrollKey?: unknown } | null;
 
-  // Take restoration off the browser, which would otherwise race the manual
-  // restore below and win with a clamped offset.
+  if (routerKey === "default" && typeof state?.ddbxScrollKey === "string") {
+    return state.ddbxScrollKey;
+  }
+
+  // The path-qualified fallback covers unusual shells where the inline script
+  // was removed or blocked. It cannot distinguish two visits to the same URL,
+  // but it still prevents unrelated pages from sharing an offset.
+  return routerKey === "default" ? `default:${url}` : routerKey;
+}
+
+export function ScrollToTop() {
+  const { pathname, search, hash, key } = useLocation();
+  const navigationType = useNavigationType();
+  const firstRenderRef = useRef(true);
+  const pageTargetRef = useRef<string | null>(null);
+  const isInitialRender = firstRenderRef.current;
+  const url = `${pathname}${search}${hash}`;
+  const entryKey = scrollEntryKey(key, url);
+  const documentNavigationType = (
+    performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined
+  )?.type;
+  const shouldRestore =
+    navigationType === "POP" &&
+    (!isInitialRender || documentNavigationType === "back_forward");
+
+  // Capturing the render-time value above matters in Strict Mode: React runs
+  // the first render's effects twice, but both runs must still be classified
+  // as the initial document load.
+  useEffect(() => {
+    firstRenderRef.current = false;
+  }, []);
+
+  // Defence in depth for documents whose inline head script did not run. The
+  // head owns the timing-critical assignment; this keeps the invariant true.
   useEffect(() => {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   }, []);
@@ -90,15 +134,15 @@ export function ScrollToTop() {
   // it starts, so coming back to one never scrolled still has a record. Not
   // on POP: that entry's record is the one about to be restored.
   useEffect(() => {
-    if (navigationType !== "POP" && !restoring) {
-      writeOffset(key, window.scrollY);
+    if (!shouldRestore && !restoring) {
+      writeOffset(entryKey, url, window.scrollY);
     }
     let raf = 0;
     const onScroll = () => {
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
-        if (!restoring) writeOffset(key, window.scrollY);
+        if (!restoring) writeOffset(entryKey, url, window.scrollY);
       });
     };
 
@@ -108,18 +152,26 @@ export function ScrollToTop() {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(raf);
     };
-  }, [key, navigationType]);
+  }, [entryKey, shouldRestore, url]);
 
   // Back / forward: restore this entry's offset. Keyed on the entry, so a
   // search-only POP (Back closing an overlay) lands where it was too.
   useEffect(() => {
-    if (navigationType !== "POP") return;
+    if (!shouldRestore) return;
 
     // An entry never scrolled has no record, and its offset was the top.
-    const saved = readOffsets()[key];
-    const target = typeof saved === "object" && saved ? saved.y : 0;
+    const candidate = readOffsets()[entryKey];
+    // BrowserRouter calls every initial document entry "default". Guarding
+    // the URL prevents one hard-loaded page from inheriting another page's
+    // offset through that shared key. Records written before this guard have
+    // no URL and safely degrade to the top.
+    const saved =
+      typeof candidate === "object" && candidate?.url === url
+        ? candidate
+        : undefined;
+    const target = saved?.y ?? 0;
     // Within a couple of percent: a live list can gain or lose a row.
-    const height = typeof saved === "object" && saved ? saved.h * 0.98 : 0;
+    const height = saved ? saved.h * 0.98 : 0;
     const started = performance.now();
     let raf = 0;
     let cancelled = false;
@@ -162,10 +214,18 @@ export function ScrollToTop() {
       window.removeEventListener("touchstart", stop);
       window.removeEventListener("keydown", stop);
     };
-  }, [key, navigationType]);
+  }, [entryKey, shouldRestore, url]);
 
   useEffect(() => {
-    if (navigationType === "POP") return;
+    const pageTarget = `${pathname}${hash}`;
+    const targetChanged = pageTargetRef.current !== pageTarget;
+
+    pageTargetRef.current = pageTarget;
+
+    if (shouldRestore) return;
+    // Query-only entries drive overlays and filters. They are new history
+    // entries, but not new documents from the reader's point of view.
+    if (!isInitialRender && !targetChanged) return;
 
     if (hash) {
       // The target may not be mounted on the first paint after a route change,
@@ -192,7 +252,7 @@ export function ScrollToTop() {
     }
 
     window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
-  }, [pathname, hash, navigationType]);
+  }, [pathname, hash, isInitialRender, shouldRestore]);
 
   return null;
 }
