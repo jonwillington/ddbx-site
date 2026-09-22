@@ -167,6 +167,10 @@ export async function onRequest(context) {
     routePath === "/congress/stocks" ||
     /^\/congress\/stocks\/[^/]+$/.test(routePath) ||
     routePath === "/how-it-works" ||
+    // Story articles, added 2026-09-22: functions/stories/[id].js owns the
+    // head so the unfurl is the per-story card, not the wordmark. The /stories
+    // index keeps this module's pass.
+    /^\/stories\/[^/]+$/.test(routePath) ||
     // Daily editions (functions/daily/*, functions/us/daily/*) and the /today
     // redirects (functions/today.js, functions/us/today.js), added 2026-09-16.
     // The index and the day pages own their head; the redirects have no head
