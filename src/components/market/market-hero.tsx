@@ -341,8 +341,13 @@ export function HeroLiveGradient({ tick }: { tick: number }) {
             z-index: 10;
             padding: 8px 40px 8px 0;
           }
+          /* No vertical padding: on the flat stage there's no card edge to
+             inset from, and the stage's own padding already frames it. The
+             demo half is the taller column, so every px here is stage
+             height. */
           .nav-sidebar .hero-card-demo {
             overflow: visible;
+            padding-block: 0;
             padding-right: 0;
             border-left: 0;
           }
@@ -375,7 +380,7 @@ export function HeroLiveGradient({ tick }: { tick: number }) {
              that holds the stage to one size everywhere. */
           .nav-sidebar .hero-chart-col {
             display: block;
-            height: 168px;
+            height: 140px;
             margin-bottom: 6px;
           }
         }
@@ -427,14 +432,14 @@ function NotificationPing({ tick }: { tick: number }) {
  *  column beside it. Stacked, the chart gets the landscape aspect a price
  *  series wants and the alert sits at a believable notification width.
  *
- *  The alert is put AWAY while the next price draws, rather than being
- *  replaced with a placeholder. Two earlier passes tried standing something in
- *  for it — the rims of the stack as a "closed pile" — and a contentless dark
- *  slab in a hero panel reads as a skeleton loader, not as notifications
- *  waiting. An empty half beside a drawing chart reads as what it is: the
- *  alert hasn't happened yet. It also makes the landing land. The stack stays
- *  MOUNTED at zero opacity so the front card is still measured and nothing
- *  reflows when it comes back. */
+ *  While the next price draws, the previous alert STEPS BACK (dimmed) rather
+ *  than going away. Blanking it left the top of the demo half an empty dark
+ *  block for the first second of every cycle — and for the first second after
+ *  load, which is the visitor's first look. Dimmed, it can't be read as
+ *  belonging to the chart drawing beneath it, and the landing still lands:
+ *  the new card drops in at full strength. (A contentless stand-in — the
+ *  stack's rims as a "closed pile" — was tried earlier and read as a skeleton
+ *  loader; this is the real previous alert, not a placeholder.) */
 export function HeroShowcaseDemo({ radar }: { radar: DealRadar }) {
   // A cast with no price line (the Dutch one — see NL_DEALS) is the alert
   // alone: no chart to draw, and no outcome it could honestly stamp.
@@ -444,7 +449,7 @@ export function HeroShowcaseDemo({ radar }: { radar: DealRadar }) {
     <div className="hero-card-demo">
       <div
         className={`hero-alert-col relative shrink-0 transition-opacity duration-500 ${
-          radar.pending && withOutcome ? "opacity-0" : "opacity-100"
+          radar.pending && withOutcome ? "opacity-35" : "opacity-100"
         }`}
       >
         {radar.landed && <NotificationPing tick={radar.tick} />}
@@ -484,18 +489,14 @@ export function HeroShowcaseDemo({ radar }: { radar: DealRadar }) {
  *  card: the alert, then the outcome as a line of text beneath it, landing
  *  on the same clock. No chart. */
 export function HeroShowcaseCompact({ radar }: { radar: DealRadar }) {
-  // Same rule as the demo: an alert with no chart behind it has nothing to be
-  // put away for, so it stays up between landings.
-  const withOutcome = hasOutcome(radar.deals[radar.chartIndex]);
-
+  // No chart here, so there's no price for the alert to be mismatched with:
+  // it stays up between landings and the next one simply drops in on top.
+  // Hiding it left the top of a phone hero an empty dark block for a second
+  // of every cycle, including the first second after load.
   return (
     <div className="relative w-full max-w-[400px]">
       {radar.landed && <NotificationPing tick={radar.tick} />}
-      <div
-        className={`relative transition-opacity duration-500 ${
-          radar.pending && withOutcome ? "opacity-0" : "opacity-100"
-        }`}
-      >
+      <div className="relative">
         <HeroNotificationStack
           deals={radar.deals}
           tick={Math.max(radar.tick, 0)}
@@ -523,6 +524,33 @@ const FILLED_CTA = `inline-flex items-center gap-2 ${BUTTON_RADIUS} ${BUTTON_FIL
  *  hairline border does the affordance work here: the 7% tint alone dissolved
  *  into the hero's cream wash and read as a disabled chip. */
 const GHOST_CTA = `inline-flex items-center ${BUTTON_RADIUS} ${BUTTON_GHOST} border border-ink/[0.18] dark:border-white/20 px-6 py-3 text-base font-semibold backdrop-blur-sm transition-colors`;
+
+/** The explainer beside a store button: a text link, not a second button.
+ *  As a ghost button it wrapped under the store button at 1440 and gave the
+ *  hero a second CTA row; and on a phone, where the floating bar carries the
+ *  install, it was the hero's only button and read as a weak primary. */
+const TEXT_CTA =
+  "group inline-flex items-center gap-1.5 py-1 text-base font-semibold text-foreground/75 transition-colors hover:text-foreground";
+
+function ExplainLink({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      className={TEXT_CTA}
+      data-ga-event="cta_hero_open_explainer"
+      data-ga-label="How does this work"
+      type="button"
+      onClick={onClick}
+    >
+      How it works
+      <span
+        aria-hidden
+        className="transition-transform group-hover:translate-x-0.5"
+      >
+        →
+      </span>
+    </button>
+  );
+}
 
 export function MarketHero({
   marketId,
@@ -721,17 +749,20 @@ export function MarketHero({
       {/* On app markets the App Store button (right) is the primary CTA, so the
           explainer reads as secondary (ghost). On markets without an app link it
           has nothing to defer to and becomes the primary (filled) anchor. */}
-      {onExplain && (
-        <button
-          className={primaryCtaHref ? GHOST_CTA : FILLED_CTA}
-          data-ga-event="cta_hero_open_explainer"
-          data-ga-label="How does this work"
-          type="button"
-          onClick={onExplain}
-        >
-          How does this work?
-        </button>
-      )}
+      {onExplain &&
+        (primaryCtaHref ? (
+          <ExplainLink onClick={onExplain} />
+        ) : (
+          <button
+            className={FILLED_CTA}
+            data-ga-event="cta_hero_open_explainer"
+            data-ga-label="How does this work"
+            type="button"
+            onClick={onExplain}
+          >
+            How does this work?
+          </button>
+        ))}
       {onViewReport && (
         <button
           className={GHOST_CTA}
@@ -758,7 +789,9 @@ export function MarketHero({
   // empty flex child, which the column's gap would otherwise turn into a
   // stray 24px under the bullets.
   const ctaRowDesktop = (!!primaryCtaHref || onExplain || onViewReport) && (
-    <div className={`flex flex-wrap items-center gap-3 ${ctaJustify}`}>
+    <div
+      className={`flex flex-wrap items-center gap-x-6 gap-y-3 ${ctaJustify}`}
+    >
       {!!primaryCtaHref && store && (
         <StoreCta
           data-ga-event="cta_hero_download_app"
@@ -770,17 +803,20 @@ export function MarketHero({
           {store.label}
         </StoreCta>
       )}
-      {onExplain && (
-        <button
-          className={primaryCtaHref ? GHOST_CTA : FILLED_CTA}
-          data-ga-event="cta_hero_open_explainer"
-          data-ga-label="How does this work"
-          type="button"
-          onClick={onExplain}
-        >
-          How does this work?
-        </button>
-      )}
+      {onExplain &&
+        (primaryCtaHref ? (
+          <ExplainLink onClick={onExplain} />
+        ) : (
+          <button
+            className={FILLED_CTA}
+            data-ga-event="cta_hero_open_explainer"
+            data-ga-label="How does this work"
+            type="button"
+            onClick={onExplain}
+          >
+            How does this work?
+          </button>
+        ))}
       {onViewReport && (
         <button
           className={GHOST_CTA}

@@ -500,8 +500,7 @@ export const NetherlandsMarket: MarketConfig<EuRowGroup> = {
     </>
   ),
   heroBullets: [
-    <>Every Dutch director buy, the day it&rsquo;s filed</>,
-    <>Each one screened and rated</>,
+    <>Screened and rated the day it&rsquo;s filed</>,
     <>Straight from the AFM register</>,
   ],
   // The UK hero's layout too: message left, the proof panel right. Real

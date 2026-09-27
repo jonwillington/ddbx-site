@@ -1,28 +1,22 @@
 // Performance tab of the right-hand channel.
 //
-// The previous version was five widgets that each answered "did the picks
-// beat the market?" — a verdict, a pair of percentages, a hit-rate bar, a
-// sector list and a style race — and none of them contained a sentence. A
-// reader was handed data and left to assemble the story. This one tells it:
+// Rebuilt 2026-09-27 around one message: the winners, and what the money did.
+// The previous cut told a story in three blocks (a vs-index figure with a
+// sentence and a hit-rate bar, a hero pick with the insider's name, role,
+// size and date, then a sector breakdown) and still read as busy — every row
+// carried a company name, a person and a subline of small print. Now:
 //
-//   1. THE STORY — one figure ("+3.5pp ahead of the FTSE All-Share"), one
-//      line naming the rated slice and both returns, and the hit rate as a
-//      row. The total sits in the eyebrow so the numbers reconcile.
-//   2. THE PICKS — one plate: the top performer with who / how much / when
-//      under its name and the £1,000 payoff line (the one thing the old rail
-//      already did right), then the runners-up as rows with the same subline.
-//   3. THE EDGE — where the outperformance came from: at most three sector
-//      rows, each with its sample size, so a two-buy sector can't masquerade
-//      as a trend.
+//   1. WINNERS — one plate. Each row is logo, ticker, what £1,000 at
+//      disclosure is worth today, and the return. Tickers rather than names:
+//      the rail is 280px, names truncated, and the logo already says who it
+//      is. Who bought, how much and when lives in the explainer a click away.
+//   2. THE SCORECARD — the vs-index figure and the hit rate, compact, under
+//      the winners as the "and it isn't just the best few" footnote.
 //
-// Kept deliberately short. A first cut told the whole story in prose and the
-// rail read as a wall of text; the words that survive are the ones a figure
-// can't carry on its own — which slice, who bought, and what £1,000 became.
+// The sector "edge" block is gone from the rail; it's the full page's job.
 //
-// Same gating model as before. The PROOF is free (the story, the edge); the
-// ACTION — which specific stocks drove it — is shown a few deep and then
-// gated behind the app. The contrarian/momentum race no longer renders here:
-// it's the full page's job, and in a 320px rail it was a fifth "vs" frame.
+// Same gating model as before: the winners are shown a few deep and then
+// gated behind the app.
 //
 // A pick opens an explainer modal rather than navigating: a bare "+70.2%" is
 // read before it's understood, and what it measures (a share price, from a
@@ -40,6 +34,7 @@ import { LockClosedIcon } from "@heroicons/react/24/outline";
 
 import { CHANNEL_WINDOW_DAYS } from "@/lib/performance/channel-summary";
 import { formatSignedPct } from "@/lib/performance/format";
+import { displayTicker } from "@/lib/company";
 import { BUTTON_FILLED, BUTTON_RADIUS } from "@/components/button";
 import { AppModal } from "@/components/app-modal";
 import { CompanyLogo } from "@/components/company-logo";
@@ -51,14 +46,13 @@ interface Props {
   discretionEnabled: boolean;
   /** App Store URL for this market. */
   appHref: string;
-  /** Index the live alpha is measured against — named throughout the story.
-   *  Falls back to "the market". */
+  /** Index the live alpha is measured against. Falls back to "the market". */
   benchmarkLabel?: string;
-  /** Market-currency money formatter (major units); enables the payoff line
-   *  and the "bought £250,000" clause. */
+  /** Market-currency money formatter (major units); enables the £1,000 line
+   *  on each winner and in the explainer. */
   formatStake?: (n: number) => string;
-  /** Compact variant ("£48k") for the runners-up sublines. Falls back to
-   *  `formatStake`. */
+  /** Compact money formatter. No longer drawn in the rail (the rows carry
+   *  no deal size); kept so callers don't change. */
   formatStakeCompact?: (n: number) => string;
   /** Route for a contributor's deal detail. UK has a dedicated /dealings/:id
    *  page (the default); other markets deep-link via their own `?deal=` param
@@ -73,21 +67,6 @@ const STAKE = 1000;
 /** Picks that stay visible before the app gate. Generous on purpose — recent
  *  good picks are the hook, so let them breathe before the ask. */
 const UNBLURRED = 4;
-
-/** Sectors the edge section lists. Three is what the sentence can name. */
-const MAX_EDGE_SECTORS = 3;
-
-/** Honest adjective for the rated slice the headline reflects — "the 18 our
- *  analysis rated noteworthy". `every_buy` takes a different sentence. */
-const SLICE_ADJECTIVE: Record<
-  ChannelPerformanceSummary["headlineUniverse"],
-  string
-> = {
-  every_buy: "",
-  suggested: "worth watching",
-  significant: "significant",
-  noteworthy: "noteworthy",
-};
 
 const CARD_CLASS = panel({ variant: "inset", lift: true });
 
@@ -107,21 +86,9 @@ function formatDay(iso: string, style: "long" | "short" = "long"): string {
   });
 }
 
-/** "up 5.6%" / "down 2.1%" / "flat" — the story reads returns as words, not
- *  signed figures, because "+5.6%" in a sentence is a table cell that got
- *  lost. */
-function upDown(ratio: number): string {
-  const pct = Math.abs(ratio * 100).toFixed(1);
-
-  if (Math.abs(ratio) < 0.0005) return "flat";
-
-  return ratio > 0 ? `up ${pct}%` : `down ${pct}%`;
-}
-
-/** Compact role for the runners-up sublines, where "Non-Executive Director"
- *  would eat the row. Unknown titles pass through when short, otherwise the
- *  name is used instead. A PCA ("Person Closely Associated to Chair" — a
- *  spouse, a family trust) is matched before "chair" so it isn't crowned. */
+/** Compact role, used by `roleClause` when a full title is too long. A PCA
+ *  ("Person Closely Associated to Chair" — a spouse, a family trust) is
+ *  matched before "chair" so it isn't crowned. */
 const PCA_RE = /person closely associated(?:\s+(?:to|with)\s+(?:the\s+)?)?/i;
 
 const ROLE_SHORT: [RegExp, string][] = [
@@ -141,11 +108,9 @@ function shortRole(role?: string): string | undefined {
   return role.length <= 14 ? role : undefined;
 }
 
-/** The role as a clause the hero sentence can carry: "Rahul Dhir, Chief
+/** The role as a clause the explainer sentence can carry: "Rahul Dhir, Chief
  *  Executive Officer, bought …". A PCA becomes "an associate of the Chair"
- *  because the regulatory label means nothing to a reader; anything else
- *  keeps its full title unless it's too long for a 320px rail, when the
- *  compact form stands in or the clause is dropped. */
+ *  because the regulatory label means nothing to a reader. */
 function roleClause(role?: string): string | undefined {
   if (!role) return undefined;
   const pca = role.match(PCA_RE);
@@ -165,270 +130,39 @@ export function ChannelPerformance({
   appHref,
   benchmarkLabel,
   formatStake,
-  formatStakeCompact,
   dealHref,
 }: Props) {
   const index = benchmarkLabel ?? "the market";
 
-  // A container, so the narrow-rail adjustments below key on the rail's own
-  // width, not the viewport: the shell layout (lib/nav-mode) seats this in a
-  // 280px panel, the top-bar layout in a 320px one, and only the former
-  // needs them. The `@max-[19rem]:` variants all mean "narrow rail".
   return (
-    <div className="@container px-5 lg:px-4 py-3.5 space-y-4 @max-[19rem]:px-3.5">
-      <Story index={index} summary={summary} />
-
-      <Picks
+    <div className="px-5 lg:px-4 py-3.5 space-y-5">
+      <Winners
         appHref={appHref}
         dealHref={dealHref}
         formatStake={formatStake}
-        formatStakeCompact={formatStakeCompact ?? formatStake}
         gated={discretionEnabled}
         rows={summary.contributors}
       />
 
-      <Edge index={index} sectors={summary.sectors} />
+      <Scorecard index={index} summary={summary} />
     </div>
   );
 }
 
-/** The story: one figure, one paragraph, one bar. Replaces the old verdict
- *  card, the two-row comparison strip and the separate hit-rate panel, all
- *  of which said "vs market" in a different voice. */
-function Story({
-  summary,
-  index,
-}: {
-  summary: ChannelPerformanceSummary;
-  index: string;
-}) {
-  const {
-    alphaPct,
-    picksReturnPct,
-    benchmarkReturnPct,
-    marketBeatCount,
-    marketBeatTotal,
-    lastUpdated,
-    totalBuys,
-    sampleSize,
-    headlineUniverse,
-  } = summary;
-
-  const pp = alphaPct == null ? null : alphaPct * 100;
-  const level = pp != null && Math.abs(pp) < 0.05;
-  const ahead = pp != null && pp > 0;
-  const figureTone = level
-    ? "text-foreground"
-    : ahead
-      ? "text-positive"
-      : "text-negative";
-
-  return (
-    <section className={`relative overflow-hidden px-3.5 py-3 ${CARD_CLASS}`}>
-      {/* The one permitted sub-perceptual wash. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-12 -top-16 h-36 w-36 rounded-full bg-positive/10 blur-2xl"
-      />
-      <div className="relative">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-          <Eyebrow>
-            Last {CHANNEL_WINDOW_DAYS} days · {totalBuys}{" "}
-            {totalBuys === 1 ? "buy" : "buys"}
-          </Eyebrow>
-          <span className="whitespace-nowrap font-mono text-caption text-muted tabular-nums">
-            {lastUpdated ? `to ${formatDay(lastUpdated, "short")}` : ""}
-          </span>
-        </div>
-
-        {pp == null ? (
-          <p className="mt-2 text-lede font-semibold text-foreground">
-            Not enough data yet
-          </p>
-        ) : (
-          <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span
-              className={`text-[1.85rem] @max-[19rem]:text-[1.6rem] font-semibold leading-none tracking-[-0.03em] tabular-nums ${figureTone}`}
-            >
-              {level
-                ? "Level"
-                : `${ahead ? "+" : "−"}${Math.abs(pp).toFixed(1)}pp`}
-            </span>
-            <span className="whitespace-nowrap text-small leading-tight text-foreground/60">
-              {level
-                ? `with the ${index}`
-                : ahead
-                  ? `ahead of the ${index}`
-                  : `behind the ${index}`}
-            </span>
-          </p>
-        )}
-
-        {picksReturnPct != null && (
-          <p className="mt-1.5 text-small leading-snug text-foreground/70">
-            <StorySentence
-              benchmarkReturnPct={benchmarkReturnPct}
-              headlineUniverse={headlineUniverse}
-              picksReturnPct={picksReturnPct}
-              sampleSize={sampleSize}
-              totalBuys={totalBuys}
-            />
-          </p>
-        )}
-
-        {marketBeatTotal > 0 && (
-          <HitRate count={marketBeatCount} total={marketBeatTotal} />
-        )}
-      </div>
-    </section>
-  );
-}
-
-/** One line under the figure: "The 110 rated noteworthy are up 5.6%, vs
- *  +2.1% for the index." The total sits in the eyebrow, the index is named
- *  beside the figure, so the sentence only has to say which slice and what
- *  it did. A missing benchmark drops its clause rather than printing a dash. */
-function StorySentence({
-  totalBuys,
-  sampleSize,
-  headlineUniverse,
-  picksReturnPct,
-  benchmarkReturnPct,
-}: {
-  totalBuys: number;
-  sampleSize: number;
-  headlineUniverse: ChannelPerformanceSummary["headlineUniverse"];
-  picksReturnPct: number;
-  benchmarkReturnPct: number | null;
-}) {
-  const everyBuy = headlineUniverse === "every_buy" || sampleSize === totalBuys;
-  const subject = everyBuy ? (
-    <>Equal-weighted, {totalBuys === 1 ? "it is" : "they are"}</>
-  ) : (
-    <>
-      The{" "}
-      <span className="font-semibold tabular-nums text-foreground">
-        {sampleSize}
-      </span>{" "}
-      rated {SLICE_ADJECTIVE[headlineUniverse]}{" "}
-      {sampleSize === 1 ? "is" : "are"}
-    </>
-  );
-
-  return (
-    <>
-      {subject}{" "}
-      <span
-        className={`font-semibold tabular-nums ${toneClass(picksReturnPct)}`}
-      >
-        {upDown(picksReturnPct)}
-      </span>
-      {benchmarkReturnPct != null && (
-        <>
-          , vs{" "}
-          <span className="font-semibold tabular-nums text-foreground">
-            {formatSignedPct(benchmarkReturnPct)}
-          </span>{" "}
-          for the index
-        </>
-      )}
-      .
-    </>
-  );
-}
-
-/** The hit rate as one hairline row: caption left, share right, a thin bar
- *  under both. Colour carries meaning — green only once more than half beat
- *  the index. */
-function HitRate({ count, total }: { count: number; total: number }) {
-  const rate = count / total;
-  const good = rate >= 0.5;
-
-  return (
-    <div className="mt-2.5 border-t border-hairline/90 pt-2 dark:border-border/60">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-caption text-foreground/70 tabular-nums">
-          <span className="font-semibold text-foreground">{count}</span> of{" "}
-          {total} beat it
-        </span>
-        <span
-          className={`text-num font-semibold leading-none tabular-nums ${good ? "text-positive" : "text-foreground/70"}`}
-        >
-          {Math.round(rate * 100)}%
-        </span>
-      </div>
-      <div
-        aria-label={`${count} of ${total} buys beat the index`}
-        className="mt-1.5 h-1 overflow-hidden rounded-full bg-foreground/10"
-        role="img"
-      >
-        <div
-          className={`h-full rounded-full ${good ? "bg-positive dark:bg-positive/80" : "bg-foreground/40"}`}
-          style={{ width: `${rate * 100}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/** Where the outperformance came from: at most three hairline rows, each
- *  carrying its sector's sample size so the reader can see when a lead rests
- *  on two buys. Sectors that trailed the index aren't an edge and don't
- *  appear. */
-function Edge({
-  sectors,
-  index,
-}: {
-  sectors: ChannelPerformanceSummary["sectors"];
-  index: string;
-}) {
-  const leaders = sectors
-    .filter((s) => s.meanAlphaPct > 0)
-    .slice(0, MAX_EDGE_SECTORS);
-
-  if (leaders.length === 0) return null;
-
-  return (
-    <section className="border-t border-hairline pt-3 dark:border-border/60">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <Eyebrow>Where the edge came from</Eyebrow>
-        <span className="shrink-0 text-caption text-muted">vs {index}</span>
-      </div>
-      <ul className="mt-2 divide-y divide-hairline/80 border-y border-hairline/80 dark:divide-border/50 dark:border-border/50">
-        {leaders.map((s) => (
-          <li
-            key={s.sector}
-            className="flex items-baseline justify-between gap-2 py-1.5"
-          >
-            <span className="min-w-0 truncate text-small text-foreground/85">
-              {s.sector}
-              <span className="ml-1.5 font-mono text-caption text-muted tabular-nums">
-                {s.dealCount} {s.dealCount === 1 ? "buy" : "buys"}
-              </span>
-            </span>
-            <span className="shrink-0 text-small font-semibold tabular-nums text-positive">
-              {formatSignedPct(s.meanAlphaPct)}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function Picks({
+/** The winners plate: one uniform row per pick, best first, ending in the
+ *  app gate. The list is winners-only, so the £1,000 line never shows a
+ *  loss — same guarantee the app's plate makes. */
+function Winners({
   rows,
   gated,
   appHref,
   formatStake,
-  formatStakeCompact,
   dealHref,
 }: {
   rows: ChannelContributor[];
   gated: boolean;
   appHref: string;
   formatStake?: (n: number) => string;
-  formatStakeCompact?: (n: number) => string;
   dealHref?: (id: string) => string;
 }) {
   const [explained, setExplained] = useState<ChannelContributor | null>(null);
@@ -438,35 +172,22 @@ function Picks({
   const visible = gated ? rows.slice(0, UNBLURRED) : rows;
   const hiddenCount = gated ? Math.max(0, rows.length - UNBLURRED) : 0;
 
-  const [hero, ...rest] = visible;
-
   return (
     <section>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <Eyebrow>Best recent picks</Eyebrow>
-        <span className="shrink-0 text-caption text-muted">
-          share price since disclosure
+      <div className="flex items-baseline justify-between gap-3">
+        <Eyebrow>Winners</Eyebrow>
+        <span className="micro text-muted">
+          Last {CHANNEL_WINDOW_DAYS} days
         </span>
       </div>
 
-      {/* One plate: the top pick as its taller first row, the runners-up
-          under it, and the gate as the last row — so the list ends in a lock
-          rather than a floating button, and every return lands on one right
-          edge. */}
       <ul
         className={`mt-2 divide-y divide-hairline/80 overflow-hidden ${CARD_CLASS} dark:divide-border/50`}
       >
-        <HeroPick
-          formatStake={formatStake}
-          formatStakeCompact={formatStakeCompact}
-          row={hero}
-          onOpen={setExplained}
-        />
-
-        {rest.map((row) => (
-          <PickRow
+        {visible.map((row) => (
+          <WinnerRow
             key={row.id}
-            formatStakeCompact={formatStakeCompact}
+            formatStake={formatStake}
             row={row}
             onOpen={setExplained}
           />
@@ -484,13 +205,16 @@ function Picks({
             >
               <LockClosedIcon className="h-3 w-3 opacity-70" />
               <span className="whitespace-nowrap">
-                {hiddenCount} more {hiddenCount === 1 ? "pick" : "picks"} in the
-                app
+                {hiddenCount} more in the app
               </span>
             </a>
           </li>
         )}
       </ul>
+
+      <p className="mt-2 text-caption text-muted">
+        Share price since the director&rsquo;s buy was disclosed.
+      </p>
 
       <ContributorExplainer
         appHref={appHref}
@@ -503,115 +227,40 @@ function Picks({
   );
 }
 
-/** The top pick: company and return, then who / how much / when on one
- *  line, then the £1,000 payoff. The list is winners-only, so the payoff
- *  never shows a loss — same guarantee the app's plate makes. */
-function HeroPick({
+/** Logo, ticker, what £1,000 became, and the return on the shared right
+ *  edge. Nothing else: who bought and when is the explainer's job. */
+function WinnerRow({
   row,
   formatStake,
-  formatStakeCompact,
   onOpen,
 }: {
   row: ChannelContributor;
   formatStake?: (n: number) => string;
-  formatStakeCompact?: (n: number) => string;
   onOpen: (row: ChannelContributor) => void;
 }) {
   return (
     <li>
       <button
-        className="group block w-full px-3 py-3 text-left transition-colors hover:bg-white/60 dark:hover:bg-surface-secondary/60"
+        aria-label={`${row.company}: ${formatSignedPct(row.returnPct)} since disclosure`}
+        className="group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/60 dark:hover:bg-surface-secondary/60"
         data-ga-event="cta_channel_open_contributor_explainer"
         data-ga-label={row.ticker}
         type="button"
         onClick={() => onOpen(row)}
       >
-        <span className="flex items-center gap-2.5 @max-[19rem]:gap-2">
-          <CompanyLogo size={36} ticker={row.ticker} />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-body font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
-              {row.company}
-            </span>
-            <span className="block font-mono text-caption leading-tight text-muted">
-              {row.ticker}
-            </span>
-          </span>
-          <span
-            className={`shrink-0 text-2xl @max-[19rem]:text-[1.2rem] font-bold leading-none tabular-nums ${toneClass(row.returnPct)}`}
-          >
-            {formatSignedPct(row.returnPct)}
-          </span>
-        </span>
-
-        {/* Who, how much, when — one line, full width so the name fits. */}
-        <span className="mt-1.5 block truncate text-caption leading-tight text-foreground/70 tabular-nums">
-          <span className="font-semibold text-foreground">
-            {row.insiderName}
-          </span>
-          {[
-            shortRole(row.insiderRole),
-            row.value != null && formatStakeCompact
-              ? formatStakeCompact(row.value)
-              : null,
-            formatDay(row.disclosedDate, "short"),
-          ]
-            .filter(Boolean)
-            .map((part) => ` · ${part}`)
-            .join("")}
-        </span>
-
-        {formatStake && (
-          <span className="mt-2 flex items-baseline gap-1 border-t border-positive/15 pt-1.5 text-caption tabular-nums text-muted">
-            {formatStake(STAKE)} at disclosure →
-            <span className="font-semibold text-foreground">
-              {formatStake(STAKE * (1 + row.returnPct))} today
-            </span>
-          </span>
-        )}
-      </button>
-    </li>
-  );
-}
-
-/** A runner-up: company, then who / how much / when in one muted subline,
- *  return on the shared right edge. */
-function PickRow({
-  row,
-  formatStakeCompact,
-  onOpen,
-}: {
-  row: ChannelContributor;
-  formatStakeCompact?: (n: number) => string;
-  onOpen: (row: ChannelContributor) => void;
-}) {
-  const who = shortRole(row.insiderRole) ?? row.insiderName;
-  const subline = [
-    who,
-    row.value != null && formatStakeCompact
-      ? formatStakeCompact(row.value)
-      : null,
-    formatDay(row.disclosedDate, "short"),
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  return (
-    <li>
-      <button
-        className="group flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-white/60 dark:hover:bg-surface-secondary/60"
-        data-ga-event="cta_channel_open_contributor_explainer"
-        data-ga-label={row.ticker}
-        type="button"
-        onClick={() => onOpen(row)}
-      >
-        <CompanyLogo size={28} ticker={row.ticker} />
+        <CompanyLogo size={32} ticker={row.ticker} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-small font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
-            {row.company}
+          <span className="block truncate font-mono text-body font-semibold leading-tight text-foreground group-hover:text-brand-brown dark:group-hover:text-brand-tan">
+            {displayTicker(row.ticker)}
           </span>
-          <span className="mt-0.5 block truncate text-caption leading-tight text-muted tabular-nums">
-            {subline}
-          </span>
+          {formatStake && (
+            <span className="mt-0.5 block truncate text-caption leading-tight text-muted tabular-nums">
+              {formatStake(STAKE)} →{" "}
+              <span className="font-semibold text-foreground">
+                {formatStake(STAKE * (1 + row.returnPct))}
+              </span>
+            </span>
+          )}
         </span>
         <span
           className={`shrink-0 text-lede font-bold tabular-nums ${toneClass(row.returnPct)}`}
@@ -620,6 +269,98 @@ function PickRow({
         </span>
       </button>
     </li>
+  );
+}
+
+/** The footnote to the winners: not just the best few — how the whole rated
+ *  slice did against the index, and how many of them beat it. */
+function Scorecard({
+  summary,
+  index,
+}: {
+  summary: ChannelPerformanceSummary;
+  index: string;
+}) {
+  const {
+    alphaPct,
+    marketBeatCount,
+    marketBeatTotal,
+    sampleSize,
+    totalBuys,
+    headlineUniverse,
+  } = summary;
+  const everyBuy = headlineUniverse === "every_buy" || sampleSize === totalBuys;
+  const pp = alphaPct == null ? null : alphaPct * 100;
+  const level = pp != null && Math.abs(pp) < 0.05;
+  const ahead = pp != null && pp > 0;
+
+  return (
+    <section className="border-t border-rule pt-3">
+      <Eyebrow>
+        {everyBuy ? "Every buy" : "Every rated buy"} vs {index}
+      </Eyebrow>
+
+      {pp == null ? (
+        <p className="mt-2 text-small text-muted">Not enough data yet</p>
+      ) : (
+        <p className="mt-2 flex items-baseline gap-2">
+          <span
+            className={`text-figure font-semibold tabular-nums ${
+              level
+                ? "text-foreground"
+                : ahead
+                  ? "text-positive"
+                  : "text-negative"
+            }`}
+          >
+            {level
+              ? "Level"
+              : `${ahead ? "+" : "−"}${Math.abs(pp).toFixed(1)}pp`}
+          </span>
+          <span className="text-small text-muted">
+            {level ? "with the index" : ahead ? "ahead" : "behind"}
+          </span>
+        </p>
+      )}
+
+      {marketBeatTotal > 0 && (
+        <HitRate count={marketBeatCount} total={marketBeatTotal} />
+      )}
+    </section>
+  );
+}
+
+/** The hit rate as one hairline row: caption left, share right, a thin bar
+ *  under both. Colour carries meaning — green only once more than half beat
+ *  the index. */
+function HitRate({ count, total }: { count: number; total: number }) {
+  const rate = count / total;
+  const good = rate >= 0.5;
+
+  return (
+    <div className="mt-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-caption text-foreground/70 tabular-nums">
+          <span className="font-semibold text-foreground">{count}</span> of{" "}
+          {total} beat it
+        </span>
+        <span
+          className={`text-num leading-none tabular-nums ${good ? "text-positive" : "text-foreground/70"}`}
+        >
+          {Math.round(rate * 100)}%
+        </span>
+      </div>
+      <div
+        aria-label={`${count} of ${total} buys beat the index`}
+        className="mt-1.5 h-1 overflow-hidden rounded-full bg-foreground/10"
+        role="img"
+      >
+        <div
+          className={`h-full rounded-full ${good ? "bg-positive dark:bg-positive/80" : "bg-foreground/40"}`}
+          style={{ width: `${rate * 100}%` }}
+        />
+      </div>
+    </div>
   );
 }
 

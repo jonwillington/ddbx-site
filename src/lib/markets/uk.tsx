@@ -466,8 +466,7 @@ export const UkMarket: MarketConfig<Dealing> = {
   // each one lost ("so the signal stands out from the noise", "on every buy")
   // was restating the bullet it hung off.
   heroBullets: [
-    <>Every UK director buy, the day it&rsquo;s filed</>,
-    <>Each one screened and rated</>,
+    <>Screened and rated the day it&rsquo;s filed</>,
     <>Tracked against the FTSE All-Share</>,
     <>
       Then{" "}

@@ -593,7 +593,7 @@ export function MarketClusterRow<W>({
               />
             )}
             <div className="flex-1 min-w-0">
-              <div className="text-small font-medium truncate leading-tight">
+              <div className="text-base font-medium truncate leading-tight">
                 {company}
               </div>
               <div className="text-caption text-muted mt-0.5">{countLabel}</div>
@@ -1078,7 +1078,7 @@ export function MarketRow<W>({
             />
           )}
           <div className="flex-1 min-w-0">
-            <div className="text-small font-medium truncate leading-tight">
+            <div className="text-base font-medium truncate leading-tight">
               {company}
             </div>
             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">

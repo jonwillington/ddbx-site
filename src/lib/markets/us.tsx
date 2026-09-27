@@ -708,8 +708,7 @@ export const UsMarket: MarketConfig<UsRowGroup> = {
     </>
   ),
   heroBullets: [
-    <>Every Form 4 buy, the day it&rsquo;s filed</>,
-    <>Each one screened and rated</>,
+    <>Screened and rated the day it&rsquo;s filed</>,
     <>Tracked against the S&amp;P 500</>,
     <>
       Then{" "}

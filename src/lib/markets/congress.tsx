@@ -942,8 +942,7 @@ export const CongressMarket: MarketConfig<GovDealing> = {
     </>
   ),
   heroBullets: [
-    <>Every STOCK Act purchase, the day it&rsquo;s filed</>,
-    <>Each one screened and rated</>,
+    <>Screened and rated the day it&rsquo;s filed</>,
     <>Tracked against the S&amp;P 500</>,
     <>
       Then{" "}

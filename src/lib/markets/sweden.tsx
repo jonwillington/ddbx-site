@@ -587,8 +587,7 @@ export const SwedenMarket: MarketConfig<EuRowGroup> = {
     </>
   ),
   heroBullets: [
-    <>Every Swedish director buy, the day it&rsquo;s filed</>,
-    <>Each one screened and rated</>,
+    <>Screened and rated the day it&rsquo;s filed</>,
     <>Straight from Finansinspektionen</>,
   ],
   // The UK hero's layout too: message left, the proof panel right. Real
