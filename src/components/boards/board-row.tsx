@@ -394,7 +394,10 @@ export interface BoardRowProps {
   position?: number;
   /** A record list's lead instead of a rank: the purchase date, ISO. Pass
    *  `lead="date"` to the header to match. */
-  date?: { iso: string; locale: string };
+  /** `quiet` sets the date in muted ink, for lists where the date orders
+   *  the rows but isn't what the eye should land on first (/stories, where
+   *  the ticker and its return lead). */
+  date?: { iso: string; locale: string; quiet?: boolean };
   /** Where the row goes. A row with no URL of its own takes `onSelect`
    *  instead (the director page's drawer, for markets with no filing page),
    *  and is a button rather than a link to nowhere. */
@@ -576,7 +579,7 @@ export function BoardRow({
               {String(position).padStart(2, "0")}
             </span>
           ) : date ? (
-            <RowDate iso={date.iso} locale={date.locale} />
+            <RowDate iso={date.iso} locale={date.locale} quiet={date.quiet} />
           ) : null}
 
           {logo !== undefined ? (
@@ -712,7 +715,15 @@ export function BoardRow({
  *  it does the rank's job: it is what the eye runs down. The year drops to a
  *  second, quieter line only when it isn't this one, so the column stays one
  *  short token wide. */
-function RowDate({ iso, locale }: { iso: string; locale: string }) {
+function RowDate({
+  iso,
+  locale,
+  quiet = false,
+}: {
+  iso: string;
+  locale: string;
+  quiet?: boolean;
+}) {
   const t = Date.parse(`${iso.slice(0, 10)}T00:00:00Z`);
 
   if (!Number.isFinite(t)) return <span aria-hidden />;
@@ -725,7 +736,13 @@ function RowDate({ iso, locale }: { iso: string; locale: string }) {
   const year = d.getUTCFullYear();
 
   return (
-    <span className="font-mono text-lede font-medium leading-snug tabular-nums text-foreground">
+    <span
+      className={`font-mono leading-snug tabular-nums ${
+        quiet
+          ? "text-body text-foreground/45"
+          : "text-lede font-medium text-foreground"
+      }`}
+    >
       <span className="block whitespace-nowrap">{dayMonth}</span>
       {year !== new Date().getUTCFullYear() ? (
         <span className="mt-0.5 block text-caption font-normal text-foreground/45">

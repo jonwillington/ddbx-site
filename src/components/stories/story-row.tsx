@@ -44,6 +44,19 @@ const KICKER = "eyebrow text-brand";
 /** Display ticker: UK drops the `.L`, US is already bare. */
 const display = (t: string) => t.replace(/\.L$/, "");
 
+/** What £1,000 (or $1,000) put in alongside the director is worth now, from
+ *  the story's return (a PERCENT, 76.1 = +76.1%). The same framing the
+ *  performance rail leads on: a return is abstract, money isn't. */
+export function stakeLine(
+  market: string,
+  returnPct: number,
+): { from: string; to: string } {
+  const sym = market === "US" ? "$" : "£";
+  const fmt = (n: number) => `${sym}${Math.round(n).toLocaleString("en-GB")}`;
+
+  return { from: fmt(1000), to: fmt(1000 * (1 + returnPct / 100)) };
+}
+
 export function storyTickers(s: StoryListItem): string[] {
   return s.subject_tickers.length
     ? s.subject_tickers
@@ -66,7 +79,7 @@ export function StoryRow({ story: s }: { story: StoryListItem }) {
          a past one. */
       date={
         s.published_at
-          ? { iso: s.published_at, locale: localeFor(s.market) }
+          ? { iso: s.published_at, locale: localeFor(s.market), quiet: true }
           : undefined
       }
       logo={
@@ -97,6 +110,14 @@ export function StoryRow({ story: s }: { story: StoryListItem }) {
                 size="title"
                 value={s.return_pct}
               />
+            ) : null}
+            {s.return_pct != null ? (
+              <span className="text-small font-normal tabular-nums text-foreground/55">
+                {stakeLine(s.market, s.return_pct).from} →{" "}
+                <span className="font-semibold text-foreground">
+                  {stakeLine(s.market, s.return_pct).to}
+                </span>
+              </span>
             ) : null}
           </span>
           {/* The kind as a kicker UNDER the lead, where iOS puts it. On a

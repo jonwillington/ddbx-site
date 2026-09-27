@@ -203,3 +203,10 @@ export const studyCta = {
   headline: "Every purchase in these studies was a push notification first.",
   body: "A finding here is months old by the time it can be stated. The app tells you the day a purchase like these is filed, with the buyer’s role, the size and any cluster already attached.",
 };
+
+/** The story timeline. Every story starts as an alert the app sent months
+ *  earlier, so the ask is to be there for the start of the next one. */
+export const storiesCta = {
+  headline: "Every story here started as a notification.",
+  body: "Each one began as a director buy we flagged and rated the day it was filed. The app sends you the next one then, not months later when it’s a story.",
+};
