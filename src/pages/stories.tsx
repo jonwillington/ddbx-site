@@ -32,7 +32,7 @@ import { RelatedCards } from "@/components/seo/related-cards";
 import { storiesCta } from "@/components/seo/cta-copy";
 import { BoardRowList } from "@/components/boards/board-row";
 import { StoryRow } from "@/components/stories/story-row";
-import { StoriesStage } from "@/components/stories/stories-stage";
+import { StoryFeature } from "@/components/stories/story-feature";
 import { api } from "@/lib/api";
 import { marketForPath } from "@/lib/markets/registry";
 
@@ -115,18 +115,19 @@ export default function StoriesPage() {
     };
   }, [marketParam]);
 
-  const rows = stories ?? [];
+  // The newest story is the feature card; the dated list carries the rest,
+  // so the latest isn't stated twice in one screen.
+  const [latest, ...rows] = stories ?? [];
   const standfirst = (
     <>
-      When a director buy turns into something, we go back to it: what the price
-      did, what caused it, and how our call reads now. Wins and misses both.
+      When a director buy turns into something, we go back to it. Wins and
+      misses both.
     </>
   );
 
   return (
     <DefaultLayout>
       <SeoPageShell
-        titleInHero
         cta={{
           ...storiesCta,
           gaLabel: "Stories",
@@ -134,18 +135,19 @@ export default function StoriesPage() {
         }}
         error={failed ? { what: "the stories" } : null}
         eyebrow="Case studies"
-        hero={<StoriesStage standfirst={standfirst} stories={stories} />}
         loading={stories === null}
         skeleton={<SeoSkeleton rows={10} variant="ruled-list" />}
         standfirst={standfirst}
         title="Stories"
       >
-        {rows.length === 0 ? (
+        {latest ? <StoryFeature story={latest} /> : null}
+
+        {!latest ? (
           <p className="text-body text-foreground/70">
             No stories published yet.
           </p>
-        ) : (
-          <BoardRowList className="mt-8">
+        ) : rows.length === 0 ? null : (
+          <BoardRowList className="mt-10">
             {rows.map((s, i) => {
               const when = parseDate(s.published_at);
               const prev = i > 0 ? parseDate(rows[i - 1].published_at) : null;

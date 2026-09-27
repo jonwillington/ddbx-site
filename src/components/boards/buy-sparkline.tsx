@@ -18,10 +18,14 @@ export function BuySparkline({
   row,
   bars,
   bench,
+  heightClass = "h-[44px]",
 }: {
   row: BoardRow;
   bars: Bars | undefined;
   bench: Bars | undefined;
+  /** Drawn height. Rows use the default; a feature card (the latest story
+   *  on /stories) passes a taller one. The viewBox stretches to fit. */
+  heightClass?: string;
 }) {
   const drawn = useMemo(() => {
     if (!bars || bars.length < 3) return null;
@@ -96,7 +100,7 @@ export function BuySparkline({
     return (
       <div
         aria-hidden
-        className="h-[44px] w-full rounded-control bg-black/[0.03] dark:bg-white/[0.04]"
+        className={`${heightClass} w-full rounded-control bg-black/[0.03] dark:bg-white/[0.04]`}
       />
     );
   }
@@ -117,7 +121,7 @@ export function BuySparkline({
   return (
     <svg
       aria-hidden
-      className="block h-[44px] w-full overflow-visible"
+      className={`block ${heightClass} w-full overflow-visible`}
       preserveAspectRatio="none"
       viewBox={`0 0 ${W} ${H}`}
     >
