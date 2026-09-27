@@ -522,6 +522,14 @@ export interface Dealing {
    *  See InsiderHistory. Null/absent for a sell, a first buy, or when no
    *  earlier buy has buy-style data. */
   insider_history?: InsiderHistory | null;
+  /** How many earlier open-market buys we hold by this person, across every
+   *  company (a strictly earlier trade date). Lets a client know before it
+   *  fetches the record (`DirectorRecord`) whether there is a performance
+   *  record to show, so the trade sheet needn't paint a loading state that
+   *  collapses to nothing. An indicator: the record folds same-day fills and
+   *  can differ by a fill or two, so trust zero versus non-zero, not the
+   *  number. Absent for a sell, and when the count could not be built. */
+  earlier_buys?: number | null;
 }
 
 /**
@@ -557,6 +565,78 @@ export interface InsiderHistoryPoint {
   drawdown_from_high_pct: number;
   /** Signed. 90-day move into the buy, as a ratio (−0.17 = fell 17%). */
   trailing_return_pct: number;
+}
+
+/**
+ * A person's earlier open-market buys and how each has done since, served by
+ * `GET /api/directors/:id/record` (UK) and `/api/directors/us/:id/record` (US)
+ * for a trade sheet's "Track record" section.
+ *
+ * Unlike `InsiderHistory` (same company, set against the 90-day high) this
+ * spans every company the person has bought, and measures each buy from its
+ * trade date to the latest close. Returns assume the buy is still held: we do
+ * not net off later sales, which is what `caveat` says to the reader.
+ *
+ * Built at read time from `live_performance`, so no price fetch and no model
+ * call. The sentence and caveat are built once, server-side, so every surface
+ * says the same thing.
+ */
+export interface DirectorRecord {
+  /** The id in the URL (UK director id, or US reporter CIK). */
+  director_id: string;
+  name: string;
+  /** Latest close the returns run to (ISO day), or null when no item has one. */
+  as_of: string | null;
+  /** Reader-facing benchmark name, e.g. "FTSE All-Share". */
+  benchmark: string;
+  /** First disclosure we hold for this market (ISO day). */
+  record_start: string;
+  /** Earlier buys, newest first, at most 20. Same-day fills of one ticker are
+   *  folded into one item. Excludes the buy being viewed and anything on or
+   *  after its trade date. */
+  items: DirectorRecordItem[];
+  /** Every eligible earlier buy, after folding. Can exceed `items.length`
+   *  (capped) and `summary.counted` (too-recent and unpriced buys). */
+  total_buys: number;
+  /** Null below two countable buys: one number is not a track record. */
+  summary: DirectorRecordSummary | null;
+  /** House-style line built from `summary`; null when `summary` is null. */
+  sentence: string | null;
+  /** What the record covers and what it leaves out. Always present. */
+  caveat: string;
+}
+
+export interface DirectorRecordItem {
+  dealing_id: string;
+  ticker: string;
+  company: string;
+  trade_date: string;
+  /** Row currency, major units (GBP for UK, USD for US). */
+  value: number;
+  /** Since the trade date, as a PERCENT (5.6 = +5.6%). Null without prices. */
+  return_pct: number | null;
+  /** `return_pct` minus the benchmark over the same days, in percentage
+   *  points. Null without a benchmark leg. */
+  vs_index_pct: number | null;
+  /** Under 30 days old. Listed, but not counted into `summary`. */
+  too_recent: boolean;
+  /** Same issuer as the buy being viewed. */
+  same_company: boolean;
+}
+
+export interface DirectorRecordSummary {
+  /** Buys in the average: not too recent, and with a return. */
+  counted: number;
+  /** Distinct companies among the counted buys. */
+  companies: number;
+  /** Equal-weighted mean of `return_pct`, PERCENT. */
+  avg_return_pct: number;
+  /** Mean of `vs_index_pct` over counted buys that have one; null if none. */
+  avg_vs_index_pct: number | null;
+  /** Counted buys with a positive `vs_index_pct`. */
+  beat_index: number;
+  /** Counted buys with a `vs_index_pct` — the denominator for `beat_index`. */
+  benchmarked: number;
 }
 
 /**
@@ -1549,6 +1629,9 @@ export interface UsDealing {
    *  See LivePerformance. For tranche-split filings this is per-leg; the site
    *  reads it off the group's primary leg. */
   live_performance?: LivePerformance | null;
+  /** How many earlier open-market buys we hold by this reporter (CIK), across
+   *  every issuer. Same meaning and caveat as `Dealing.earlier_buys`. */
+  earlier_buys?: number | null;
   /** Post-transaction holding. Lets the product answer "did they sell out
    *  entirely?" — a stronger signal than just the transaction size. */
   shares_after?: number;
