@@ -77,11 +77,16 @@ export interface ChannelPerformanceSummary {
    *  slice beat the market by most, so the label can name it honestly. */
   headlineUniverse: PerformanceUniverse;
   contributors: ChannelContributor[];
+  /** The other side of the ledger: the headline slice's worst performers,
+   *  losers only, worst first. Shown beside the winners so the rail doesn't
+   *  read as a highlight reel. */
+  laggards: ChannelContributor[];
   sectors: ChannelSector[];
   styles: ChannelStyle[];
 }
 
 const MAX_CONTRIBUTORS = 6;
+const MAX_LAGGARDS = 3;
 const MAX_SECTORS = 5;
 
 /** The channel follows the iOS Analysis window default: 90 days, chosen there
@@ -213,6 +218,23 @@ function alphaOf(d: MarketDealing): number | null {
  *  `isPlacement`), so every row joins the every-buy universe. Without it —
  *  the fallback over the page's own dealings — we keep the old `isPurchase`
  *  guard, which for UK narrows to analyst-suggested rows. */
+function toContributor(d: MarketDealing): ChannelContributor {
+  const disclosedDate = d.disclosedDate.slice(0, 10);
+
+  return {
+    id: d.id,
+    ticker: d.ticker,
+    company: d.company,
+    insiderName: d.insiderName,
+    insiderRole: d.insiderRole,
+    value: d.value,
+    disclosedDate,
+    daysHeld: daysSince(disclosedDate),
+    returnPct: returnOf(d)!,
+    alphaPct: alphaOf(d),
+  };
+}
+
 export function buildChannelPerformance(
   dealings: MarketDealing[],
   opts: { assumeBuys?: boolean } = {},
@@ -277,21 +299,25 @@ export function buildChannelPerformance(
   for (const d of [...pool].sort((a, b) => returnOf(b)! - returnOf(a)!)) {
     if (seenTickers.has(d.ticker)) continue;
     seenTickers.add(d.ticker);
-    const disclosedDate = d.disclosedDate.slice(0, 10);
-
-    contributors.push({
-      id: d.id,
-      ticker: d.ticker,
-      company: d.company,
-      insiderName: d.insiderName,
-      insiderRole: d.insiderRole,
-      value: d.value,
-      disclosedDate,
-      daysHeld: daysSince(disclosedDate),
-      returnPct: returnOf(d)!,
-      alphaPct: alphaOf(d),
-    });
+    contributors.push(toContributor(d));
     if (contributors.length >= MAX_CONTRIBUTORS) break;
+  }
+
+  // Laggards: the mirror of the winners — same slice, same seasoning rule,
+  // one row per ticker, losers only, worst first.
+  const losers = headlineBuys.filter((d) => returnOf(d)! < 0);
+  const seasonedLosers = losers.filter(
+    (d) => d.disclosedDate.slice(0, 10) <= ageCutoff,
+  );
+  const loserPool = seasonedLosers.length > 0 ? seasonedLosers : losers;
+  const seenLosers = new Set<string>();
+  const laggards: ChannelContributor[] = [];
+
+  for (const d of [...loserPool].sort((a, b) => returnOf(a)! - returnOf(b)!)) {
+    if (seenLosers.has(d.ticker)) continue;
+    seenLosers.add(d.ticker);
+    laggards.push(toContributor(d));
+    if (laggards.length >= MAX_LAGGARDS) break;
   }
 
   // Sector leaderboard by mean alpha.
@@ -349,6 +375,7 @@ export function buildChannelPerformance(
     lastUpdated,
     headlineUniverse,
     contributors,
+    laggards,
     sectors,
     styles,
   };

@@ -1,22 +1,24 @@
 // Performance tab of the right-hand channel.
 //
-// Rebuilt 2026-09-27 around one message: the winners, and what the money did.
-// The previous cut told a story in three blocks (a vs-index figure with a
-// sentence and a hit-rate bar, a hero pick with the insider's name, role,
-// size and date, then a sector breakdown) and still read as busy — every row
-// carried a company name, a person and a subline of small print. Now:
+// Rebuilt 2026-09-27 around what the money did. The previous cut told a
+// story in three blocks (a vs-index figure with a sentence and a hit-rate
+// bar, a hero pick with the insider's name, role, size and date, then a
+// sector breakdown) and still read as busy — every row carried a company
+// name, a person and a subline of small print. Now:
 //
 //   1. WINNERS — one plate. Each row is logo, ticker, what £1,000 at
 //      disclosure is worth today, and the return. Tickers rather than names:
 //      the rail is 280px, names truncated, and the logo already says who it
 //      is. Who bought, how much and when lives in the explainer a click away.
-//   2. THE SCORECARD — the vs-index figure and the hit rate, compact, under
-//      the winners as the "and it isn't just the best few" footnote.
+//   2. LOSERS — the same rows for the worst three, so the rail shows both
+//      sides of the ledger rather than a highlight reel.
+//   3. OVERALL — the rated buys' average return beside the index's, the gap
+//      in points, and how many beat it.
 //
 // The sector "edge" block is gone from the rail; it's the full page's job.
 //
 // Same gating model as before: the winners are shown a few deep and then
-// gated behind the app.
+// gated behind the app. Losers are never gated.
 //
 // A pick opens an explainer modal rather than navigating: a bare "+70.2%" is
 // read before it's understood, and what it measures (a share price, from a
@@ -67,6 +69,18 @@ const STAKE = 1000;
 /** Picks that stay visible before the app gate. Generous on purpose — recent
  *  good picks are the hook, so let them breathe before the ask. */
 const UNBLURRED = 4;
+
+/** Names the slice the headline averages — the app picks whichever rated
+ *  slice beat the index by most, so "rated buys" would overclaim. */
+const SLICE_LABEL: Record<
+  ChannelPerformanceSummary["headlineUniverse"],
+  string
+> = {
+  every_buy: "Every buy",
+  suggested: "Worth watching",
+  significant: "Rated significant",
+  noteworthy: "Rated noteworthy",
+};
 
 const CARD_CLASS = panel({ variant: "inset", lift: true });
 
@@ -133,40 +147,71 @@ export function ChannelPerformance({
   dealHref,
 }: Props) {
   const index = benchmarkLabel ?? "the market";
+  const [explained, setExplained] = useState<ChannelContributor | null>(null);
+  const hasPicks =
+    summary.contributors.length > 0 || summary.laggards.length > 0;
 
   return (
     <div className="px-5 lg:px-4 py-3.5 space-y-5">
-      <Winners
+      <PickList
+        window
         appHref={appHref}
-        dealHref={dealHref}
         formatStake={formatStake}
         gated={discretionEnabled}
         rows={summary.contributors}
+        title="Winners"
+        onOpen={setExplained}
       />
 
+      <PickList
+        appHref={appHref}
+        formatStake={formatStake}
+        gated={false}
+        rows={summary.laggards}
+        title="Losers"
+        onOpen={setExplained}
+      />
+
+      {hasPicks && (
+        <p className="-mt-3 text-caption text-muted">
+          Share price since the director&rsquo;s buy was disclosed.
+        </p>
+      )}
+
       <Scorecard index={index} summary={summary} />
+
+      <ContributorExplainer
+        appHref={appHref}
+        dealHref={dealHref}
+        formatStake={formatStake}
+        row={explained}
+        onClose={() => setExplained(null)}
+      />
     </div>
   );
 }
 
-/** The winners plate: one uniform row per pick, best first, ending in the
- *  app gate. The list is winners-only, so the £1,000 line never shows a
- *  loss — same guarantee the app's plate makes. */
-function Winners({
+/** A plate of picks: one uniform row each, ending in the app gate when
+ *  gated. The winners list is winners-only and the losers list losers-only,
+ *  so a row's colour never contradicts its heading. */
+function PickList({
+  title,
+  window: showWindow = false,
   rows,
   gated,
   appHref,
   formatStake,
-  dealHref,
+  onOpen,
 }: {
+  title: string;
+  /** Show the "Last 90 days" caption beside the heading (first list only). */
+  window?: boolean;
   rows: ChannelContributor[];
   gated: boolean;
   appHref: string;
   formatStake?: (n: number) => string;
-  dealHref?: (id: string) => string;
+  onOpen: (row: ChannelContributor) => void;
 }) {
-  const [explained, setExplained] = useState<ChannelContributor | null>(null);
-
   if (rows.length === 0) return null;
 
   const visible = gated ? rows.slice(0, UNBLURRED) : rows;
@@ -175,21 +220,23 @@ function Winners({
   return (
     <section>
       <div className="flex items-baseline justify-between gap-3">
-        <Eyebrow>Winners</Eyebrow>
-        <span className="micro text-muted">
-          Last {CHANNEL_WINDOW_DAYS} days
-        </span>
+        <Eyebrow>{title}</Eyebrow>
+        {showWindow && (
+          <span className="micro text-muted">
+            Last {CHANNEL_WINDOW_DAYS} days
+          </span>
+        )}
       </div>
 
       <ul
         className={`mt-2 divide-y divide-hairline/80 overflow-hidden ${CARD_CLASS} dark:divide-border/50`}
       >
         {visible.map((row) => (
-          <WinnerRow
+          <PickRow
             key={row.id}
             formatStake={formatStake}
             row={row}
-            onOpen={setExplained}
+            onOpen={onOpen}
           />
         ))}
 
@@ -211,25 +258,13 @@ function Winners({
           </li>
         )}
       </ul>
-
-      <p className="mt-2 text-caption text-muted">
-        Share price since the director&rsquo;s buy was disclosed.
-      </p>
-
-      <ContributorExplainer
-        appHref={appHref}
-        dealHref={dealHref}
-        formatStake={formatStake}
-        row={explained}
-        onClose={() => setExplained(null)}
-      />
     </section>
   );
 }
 
 /** Logo, ticker, what £1,000 became, and the return on the shared right
  *  edge. Nothing else: who bought and when is the explainer's job. */
-function WinnerRow({
+function PickRow({
   row,
   formatStake,
   onOpen,
@@ -283,6 +318,8 @@ function Scorecard({
 }) {
   const {
     alphaPct,
+    picksReturnPct,
+    benchmarkReturnPct,
     marketBeatCount,
     marketBeatTotal,
     sampleSize,
@@ -296,31 +333,51 @@ function Scorecard({
 
   return (
     <section className="border-t border-rule pt-3">
-      <Eyebrow>
-        {everyBuy ? "Every buy" : "Every rated buy"} vs {index}
-      </Eyebrow>
+      <Eyebrow>Overall</Eyebrow>
 
-      {pp == null ? (
+      {picksReturnPct == null ? (
         <p className="mt-2 text-small text-muted">Not enough data yet</p>
       ) : (
-        <p className="mt-2 flex items-baseline gap-2">
-          <span
-            className={`text-figure font-semibold tabular-nums ${
-              level
-                ? "text-foreground"
-                : ahead
-                  ? "text-positive"
-                  : "text-negative"
-            }`}
-          >
-            {level
-              ? "Level"
-              : `${ahead ? "+" : "−"}${Math.abs(pp).toFixed(1)}pp`}
-          </span>
-          <span className="text-small text-muted">
-            {level ? "with the index" : ahead ? "ahead" : "behind"}
-          </span>
-        </p>
+        <>
+          {/* The two averages side by side: what the buys did, what the index
+              did over the same days. The gap is the line beneath. */}
+          <div className="mt-2 grid grid-cols-2 gap-3">
+            <div>
+              <div className="text-caption text-muted">
+                {everyBuy ? "Every buy" : SLICE_LABEL[headlineUniverse]}
+              </div>
+              <div
+                className={`text-figure font-semibold tabular-nums ${toneClass(picksReturnPct)}`}
+              >
+                {formatSignedPct(picksReturnPct)}
+              </div>
+            </div>
+            {benchmarkReturnPct != null && (
+              <div>
+                <div className="truncate text-caption text-muted">{index}</div>
+                <div className="text-figure font-semibold tabular-nums text-foreground/70">
+                  {formatSignedPct(benchmarkReturnPct)}
+                </div>
+              </div>
+            )}
+          </div>
+          {pp != null && (
+            <p className="mt-1.5 text-small text-foreground/70">
+              {level ? (
+                "Level with the index"
+              ) : (
+                <>
+                  <span
+                    className={`font-semibold tabular-nums ${ahead ? "text-positive" : "text-negative"}`}
+                  >
+                    {Math.abs(pp).toFixed(1)}pp
+                  </span>{" "}
+                  {ahead ? "ahead of" : "behind"} the index
+                </>
+              )}
+            </p>
+          )}
+        </>
       )}
 
       {marketBeatTotal > 0 && (
@@ -452,10 +509,22 @@ function ContributorExplainer({
               <span className="font-semibold text-foreground">
                 Why this one is here.
               </span>{" "}
-              It&rsquo;s among the strongest performers of every disclosed buy
-              in the last {CHANNEL_WINDOW_DAYS} days. It&rsquo;s a winner chosen
-              after the fact, so read it as evidence that insider buying is
-              worth watching, not as a prediction about this company.
+              {row.returnPct >= 0 ? (
+                <>
+                  It&rsquo;s among the strongest performers of every disclosed
+                  buy in the last {CHANNEL_WINDOW_DAYS} days. It&rsquo;s a
+                  winner chosen after the fact, so read it as evidence that
+                  insider buying is worth watching, not as a prediction about
+                  this company.
+                </>
+              ) : (
+                <>
+                  It&rsquo;s among the weakest performers of the last{" "}
+                  {CHANNEL_WINDOW_DAYS} days. We show the losers beside the
+                  winners because a director buying is a signal, not a
+                  guarantee.
+                </>
+              )}
             </p>
             <p>
               Past performance is not a reliable indicator of future results.
