@@ -113,58 +113,66 @@ export function BuySparkline({
         : "stroke-foreground";
   const fill =
     drawn.tone === "pos"
-      ? "fill-positive"
+      ? "bg-positive"
       : drawn.tone === "neg"
-        ? "fill-negative"
-        : "fill-foreground";
+        ? "bg-negative"
+        : "bg-foreground";
+  // The dots are HTML, not SVG circles: the SVG stretches to its box
+  // (preserveAspectRatio="none"), which drew them as ovals at any height but
+  // the row's own. Positioned in percent of the viewBox, they land on the
+  // same points and stay round.
+  const at = (x: number, y: number) => ({
+    left: `${(x / W) * 100}%`,
+    top: `${(y / H) * 100}%`,
+  });
+  const DOT =
+    "pointer-events-none absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background";
 
   return (
-    <svg
-      aria-hidden
-      className={`block ${heightClass} w-full overflow-visible`}
-      preserveAspectRatio="none"
-      viewBox={`0 0 ${W} ${H}`}
-    >
-      <line
-        className="stroke-foreground/10"
-        x1={PAD}
-        x2={W - PAD}
-        y1={drawn.zeroY}
-        y2={drawn.zeroY}
-      />
-      {drawn.bench ? (
+    <div className="relative">
+      <svg
+        aria-hidden
+        className={`block ${heightClass} w-full overflow-visible`}
+        preserveAspectRatio="none"
+        viewBox={`0 0 ${W} ${H}`}
+      >
+        <line
+          className="stroke-foreground/10"
+          x1={PAD}
+          x2={W - PAD}
+          y1={drawn.zeroY}
+          y2={drawn.zeroY}
+        />
+        {drawn.bench ? (
+          <path
+            className="stroke-foreground/25"
+            d={drawn.bench}
+            fill="none"
+            strokeLinejoin="round"
+            strokeWidth={1.25}
+            vectorEffect="non-scaling-stroke"
+          />
+        ) : null}
         <path
-          className="stroke-foreground/25"
-          d={drawn.bench}
+          className={`board-spark ${stroke}`}
+          d={drawn.price}
           fill="none"
+          strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth={1.25}
+          strokeWidth={2}
           vectorEffect="non-scaling-stroke"
         />
-      ) : null}
-      <path
-        className={`board-spark ${stroke}`}
-        d={drawn.price}
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        vectorEffect="non-scaling-stroke"
+      </svg>
+      <span
+        aria-hidden
+        className={`${DOT} bg-foreground`}
+        style={at(drawn.buyX, drawn.zeroY)}
       />
-      <circle
-        className="fill-foreground stroke-background"
-        cx={drawn.buyX}
-        cy={drawn.zeroY}
-        r={3.5}
-        strokeWidth={2}
+      <span
+        aria-hidden
+        className={`${DOT} ${fill}`}
+        style={at(drawn.endX, drawn.endY)}
       />
-      <circle
-        className={`${fill} stroke-background`}
-        cx={drawn.endX}
-        cy={drawn.endY}
-        r={3.5}
-        strokeWidth={2}
-      />
-    </svg>
+    </div>
   );
 }

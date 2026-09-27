@@ -917,3 +917,32 @@ body {
   .board-dot { animation: none; }
   .board-spark { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
 }
+
+/* The one sub-perceptual wash a light page may carry (design language,
+   tenet 4): a soft white-to-grey pool at the top of the page, masked so it
+   never presents an edge. Gives the header some depth without being a
+   visible object. Place as the first child of a `relative` wrapper. */
+.page-top-wash {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 30rem;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 55% 60% at 50% 22%,
+      rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%),
+    radial-gradient(ellipse 85% 85% at 50% 22%,
+      rgba(60, 50, 40, 0.06) 0%, rgba(60, 50, 40, 0.025) 45%,
+      rgba(60, 50, 40, 0) 75%);
+  /* Faded in at the top as well as out at the bottom: the wrapper starts
+     inside the sheet's padding, so an unmasked top was a visible edge. */
+  -webkit-mask-image: linear-gradient(to bottom,
+    transparent 0%, black 22%, black 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom,
+    transparent 0%, black 22%, black 55%, transparent 100%);
+}
+:is(.dark) .page-top-wash {
+  background:
+    radial-gradient(ellipse 55% 60% at 50% 22%,
+      rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 70%);
+}

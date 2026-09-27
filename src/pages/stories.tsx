@@ -127,75 +127,85 @@ export default function StoriesPage() {
 
   return (
     <DefaultLayout>
-      <SeoPageShell
-        cta={{
-          ...storiesCta,
-          gaLabel: "Stories",
-          marketId: marketParam === "US" ? "us" : "uk",
-        }}
-        error={failed ? { what: "the stories" } : null}
-        eyebrow="Case studies"
-        loading={stories === null}
-        skeleton={<SeoSkeleton rows={10} variant="ruled-list" />}
-        standfirst={standfirst}
-        title="Stories"
-      >
-        {latest ? <StoryFeature story={latest} /> : null}
+      {/* The page's one wash: depth behind the header, nothing more. */}
+      <div className="relative">
+        <div aria-hidden className="page-top-wash" />
+        <div className="relative z-10">
+          <SeoPageShell
+            cta={{
+              ...storiesCta,
+              gaLabel: "Stories",
+              marketId: marketParam === "US" ? "us" : "uk",
+            }}
+            error={failed ? { what: "the stories" } : null}
+            eyebrow="Case studies"
+            loading={stories === null}
+            skeleton={<SeoSkeleton rows={10} variant="ruled-list" />}
+            standfirst={standfirst}
+            title="Stories"
+          >
+            {latest ? <StoryFeature story={latest} /> : null}
 
-        {!latest ? (
-          <p className="text-body text-foreground/70">
-            No stories published yet.
-          </p>
-        ) : rows.length === 0 ? null : (
-          <BoardRowList className="mt-10">
-            {rows.map((s, i) => {
-              const when = parseDate(s.published_at);
-              const prev = i > 0 ? parseDate(rows[i - 1].published_at) : null;
-              const newMonth =
-                when != null &&
-                (prev == null ||
-                  prev.getMonth() !== when.getMonth() ||
-                  prev.getFullYear() !== when.getFullYear());
+            {!latest ? (
+              <p className="text-body text-foreground/70">
+                No stories published yet.
+              </p>
+            ) : rows.length === 0 ? null : (
+              <BoardRowList className="mt-10">
+                {rows.map((s, i) => {
+                  const when = parseDate(s.published_at);
+                  const prev =
+                    i > 0 ? parseDate(rows[i - 1].published_at) : null;
+                  const newMonth =
+                    when != null &&
+                    (prev == null ||
+                      prev.getMonth() !== when.getMonth() ||
+                      prev.getFullYear() !== when.getFullYear());
 
-              return (
-                <div key={s.id}>
-                  {newMonth && when ? (
-                    <div
-                      className={`${COUNTER} border-t border-rule pb-1 pt-4`}
-                    >
-                      {monthLabel(when)}
+                  return (
+                    <div key={s.id}>
+                      {newMonth && when ? (
+                        <div
+                          className={`${COUNTER} border-t border-rule pb-1 pt-4`}
+                        >
+                          {monthLabel(when)}
+                        </div>
+                      ) : null}
+                      <StoryRow story={s} />
                     </div>
-                  ) : null}
-                  <StoryRow story={s} />
-                </div>
-              );
-            })}
-          </BoardRowList>
-        )}
+                  );
+                })}
+              </BoardRowList>
+            )}
 
-        {failed ? null : (
-          <SeoSection id="how-stories-work" title="How a story gets written">
-            <ul className="space-y-2.5">
-              {HOW_IT_WORKS.map((line) => (
-                <li
-                  key={line}
-                  className="flex gap-2.5 text-body text-foreground/70"
-                >
-                  <span
-                    aria-hidden
-                    className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
-                  />
-                  <span className="max-w-measure">{line}</span>
-                </li>
-              ))}
-            </ul>
-          </SeoSection>
-        )}
+            {failed ? null : (
+              <SeoSection
+                id="how-stories-work"
+                title="How a story gets written"
+              >
+                <ul className="space-y-2.5">
+                  {HOW_IT_WORKS.map((line) => (
+                    <li
+                      key={line}
+                      className="flex gap-2.5 text-body text-foreground/70"
+                    >
+                      <span
+                        aria-hidden
+                        className="mt-[0.65em] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
+                      />
+                      <span className="max-w-measure">{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </SeoSection>
+            )}
 
-        <nav aria-label="More from ddbx" className="mt-10">
-          <RelatedCards cols={2} items={CROSS_LINKS} />
-        </nav>
-      </SeoPageShell>
+            <nav aria-label="More from ddbx" className="mt-10">
+              <RelatedCards cols={2} items={CROSS_LINKS} />
+            </nav>
+          </SeoPageShell>
+        </div>
+      </div>
     </DefaultLayout>
   );
 }
