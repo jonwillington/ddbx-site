@@ -114,7 +114,7 @@ export function StoryRow({ story: s }: { story: StoryListItem }) {
           </span>
           {/* The headline is the description now: three lines at most, so a
               long one cannot push the next row's ticker off a phone screen. */}
-          <span className="mt-2 block line-clamp-3 text-body leading-snug text-foreground/75">
+          <span className="mt-2 block line-clamp-3 text-body font-normal leading-snug text-foreground/55">
             {s.headline}
           </span>
         </span>
