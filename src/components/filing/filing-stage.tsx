@@ -60,6 +60,7 @@ import { UsMarket } from "@/lib/markets/us";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { Stage, StageFooter } from "@/components/ui/stage";
 import { StageTitle } from "@/components/ui/stage-header";
+import { useMediaQuery } from "@/lib/use-media-query";
 
 /* The panel, its eyebrow and its caption strip are the shared stage
    primitives (components/ui/stage.tsx), the same ones the story stage uses,
@@ -142,17 +143,25 @@ function DateLeaf({
   label,
   market,
   muted = false,
+  compact = false,
   tone,
 }: {
   iso: string;
   label: string;
   market: string;
   muted?: boolean;
+  /** Phone width: the smaller leaf and "25 Sept", so both dates share one
+   *  line instead of stacking into a third of the first screen. */
+  compact?: boolean;
   tone: "stage" | "page";
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <CalendarDayChip {...chipParts(iso)} muted={muted} size="lg" />
+    <div className={`flex items-center ${compact ? "gap-2" : "gap-3"}`}>
+      <CalendarDayChip
+        {...chipParts(iso)}
+        muted={muted}
+        size={compact ? "md" : "lg"}
+      />
       <div className="min-w-0">
         <p
           className={`micro ${tone === "stage" ? "text-white/50" : "text-muted"}`}
@@ -160,11 +169,11 @@ function DateLeaf({
           {label}
         </p>
         <p
-          className={`mt-1.5 whitespace-nowrap text-lede ${
+          className={`whitespace-nowrap ${compact ? "mt-1 text-body" : "mt-1.5 text-lede"} ${
             tone === "stage" ? "text-white" : "text-foreground"
           }`}
         >
-          {longDate(iso, market)}
+          {compact ? shortDate(iso, market) : longDate(iso, market)}
         </p>
       </div>
     </div>
@@ -195,6 +204,7 @@ export function FilingDateline({
   tone?: "stage" | "page";
   className?: string;
 }) {
+  const compact = !useMediaQuery("(min-width: 40rem)");
   // Same arithmetic as disclosureLagDays, on two bare dates rather than a
   // wire row, since the drawer holds a MarketDealing.
   const lag = tradeDate
@@ -212,6 +222,7 @@ export function FilingDateline({
     return (
       <div className={className}>
         <DateLeaf
+          compact={compact}
           iso={disclosedDate}
           label={tradeDate ? "Traded and disclosed" : "Disclosed"}
           market={market}
@@ -225,18 +236,19 @@ export function FilingDateline({
 
   return (
     <div
-      className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5 ${className}`.trimEnd()}
+      className={`flex flex-row items-center gap-3 sm:gap-5 ${className}`.trimEnd()}
     >
       <DateLeaf
         muted
+        compact={compact}
         iso={tradeDate}
         label="Traded"
         market={market}
         tone={tone}
       />
       {lag != null && lag > 0 ? (
-        <div className="flex items-center gap-2 pl-6 sm:pl-0">
-          <span aria-hidden className={`h-4 w-px sm:h-px sm:w-6 ${rule}`} />
+        <div className="flex items-center gap-2">
+          <span aria-hidden className={`hidden h-px w-6 sm:block ${rule}`} />
           <span
             className={`text-small whitespace-nowrap ${
               tone === "stage"
@@ -244,12 +256,14 @@ export function FilingDateline({
                 : "text-brand-brown dark:text-brand-tan"
             }`}
           >
-            {lag} {lag === 1 ? "day" : "days"} later
+            {lag} {lag === 1 ? "day" : "days"}
+            {compact ? "" : " later"}
           </span>
           <span aria-hidden className={`hidden h-px w-6 sm:block ${rule}`} />
         </div>
       ) : null}
       <DateLeaf
+        compact={compact}
         iso={disclosedDate}
         label="Disclosed"
         market={market}
@@ -276,6 +290,7 @@ export function FilingStage({
 }) {
   const fam = filingFamily(market);
   const mkt = market === "US" ? UsMarket : UkMarket;
+  const compact = !useMediaQuery("(min-width: 40rem)");
   const lp = deal.live_performance;
   const ret = lp?.return_pct_disclosed ?? null;
   const alpha = lp?.alpha_pct_disclosed ?? null;
@@ -347,13 +362,22 @@ export function FilingStage({
           tradeDate={deal.trade_date}
         />
 
-        <div className="mt-7 border-t border-rule-stage pt-7">
-          <CompanyLogo market={market} size={64} ticker={deal.ticker} />
+        <div className="mt-4 border-t border-rule-stage pt-4 sm:mt-7 sm:pt-7">
+          <CompanyLogo
+            market={market}
+            size={compact ? 36 : 64}
+            ticker={deal.ticker}
+          />
         </div>
 
         {/* Capped at 44: the headline is a sentence about the trade, and
-            54px runs it to four lines. */}
-        <StageTitle capped className="mt-5 max-w-[26ch]">
+            54px runs it to four lines. On a phone it drops to the subheading
+            step: at 34px it ran four lines and, with the dates and
+            the logo, filled the first screen before a single fact. */}
+        <StageTitle
+          capped
+          className="mt-4 max-w-[26ch] max-sm:text-subheading sm:mt-5"
+        >
           {filingHeadline(deal, market)}
         </StageTitle>
 
@@ -362,12 +386,14 @@ export function FilingStage({
             <figcaption className="micro text-white/45">
               From the analysis
             </figcaption>
-            <blockquote className="mt-1.5 text-lede text-white/70">
+            <blockquote className="mt-1.5 text-body text-white/70 sm:text-lede">
               {summary}
             </blockquote>
           </figure>
         ) : (
-          <p className="mt-4 max-w-measure text-lede text-white/65">
+          // Desktop only: on a phone it restates the headline (who, what,
+          // how much) and the dateline (the lag) just above it.
+          <p className="mt-4 hidden max-w-measure text-lede text-white/65 sm:block">
             {fam.leadSentence(deal)}
           </p>
         )}
@@ -376,7 +402,7 @@ export function FilingStage({
 
         {/* No figure is a state with words, never a dash in a figure slot. */}
         {!hasOutcome ? (
-          <p className="mt-5 max-w-measure text-body text-white/55">
+          <p className="mt-5 max-w-measure text-small text-white/55 sm:text-body">
             {dayZero
               ? `Not enough data yet on how it has done. The latest close we hold is the disclosure day, ${shortDate(deal.disclosed_date, market)}, so the return since fills in after the next close.`
               : "Not enough data yet on how it has done: we don’t hold a price mark for this filing. The return since fills in once the price panel covers it."}

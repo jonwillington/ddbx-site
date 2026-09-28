@@ -443,6 +443,7 @@ export default function FilingPage({
         hint: hasCluster
           ? `${deal.cluster?.count} insiders bought within ${windowWord} of each other.`
           : "What else was happening around this purchase.",
+        cta: hasCluster ? "See who else bought" : "See the context",
         body: (
           <>
             {/* The cluster, drawn from the issuer's own filings, above the
@@ -469,6 +470,7 @@ export default function FilingPage({
         aside:
           "Every disclosure is screened before anything is written about it. This one was not taken further, and this is the reason it was given at the time.",
         hint: "The screening judgement, as it was made on the day.",
+        cta: "Read the reason",
         body: (
           <>
             <p className={`mt-4 max-w-[62ch] ${R.body}`}>
@@ -497,6 +499,7 @@ export default function FilingPage({
           "The same six checks every purchase is scored against, answered for this one.",
         hint: `${met} of ${CHECKS.length} checks met.`,
         preview: <ChecksRowPreview checklist={checklist} />,
+        cta: "See each check",
         body: (
           <RatingChecks checklist={checklist} deal={deal} market={market} />
         ),

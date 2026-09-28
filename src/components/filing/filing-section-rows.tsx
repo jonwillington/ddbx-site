@@ -25,10 +25,15 @@
 import type { ReactNode } from "react";
 
 import { useState } from "react";
-import { ChevronRightIcon } from "@heroicons/react/20/solid";
+import { ArrowRightIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
 
 import { AppDrawer } from "@/components/app-drawer";
 import { panel } from "@/components/ui/panel";
+import {
+  BUTTON_FILLED_GROUP,
+  BUTTON_GHOST,
+  BUTTON_RADIUS,
+} from "@/components/button";
 
 export interface FilingSectionEntry {
   key: string;
@@ -46,6 +51,9 @@ export interface FilingSectionEntry {
   /** Set the row as a contained card rather than a hairline row. One per
    *  list at most: the section that carries the page's value (the analysis). */
   feature?: boolean;
+  /** The label on the row's open button, in the section's own words ("See
+   *  each check"). A bare chevron was too quiet to read as "tap to open". */
+  cta?: string;
   /** Drawer-only footer — the section's trial nudge, so the ask still meets
    *  the reader at the natural pause after the content, as it does between
    *  the stacked sections on desktop. */
@@ -77,7 +85,7 @@ export function FilingSectionRows({
         // carrying a sample of the analysis, so the page's value is visible
         // before the tap rather than described by a heading among three.
         <button
-          className={`${panel({ size: "roomy", lift: true })} mt-8 block w-full text-left`}
+          className={`${panel({ size: "roomy", lift: true })} group mt-8 block w-full text-left`}
           type="button"
           onClick={() => openSection(featured.key)}
         >
@@ -89,12 +97,13 @@ export function FilingSectionRows({
               {featured.hint}
             </span>
           )}
-          <span className="mt-5 flex items-center justify-between border-t border-rule pt-4 text-label font-semibold text-foreground">
-            Read the full analysis
-            <ChevronRightIcon
-              aria-hidden
-              className="h-4 w-4 shrink-0 text-foreground/50"
-            />
+          {/* A real button, not a text link: the card's one job is to be
+              opened, so the way in reads as a thing to press. */}
+          <span
+            className={`${BUTTON_FILLED_GROUP} ${BUTTON_RADIUS} mt-6 flex w-full items-center justify-center gap-2 py-3.5 text-label font-semibold`}
+          >
+            {featured.cta ?? "Read the full analysis"}
+            <ArrowRightIcon aria-hidden className="h-4 w-4 shrink-0" />
           </span>
         </button>
       ) : null}
@@ -111,24 +120,28 @@ export function FilingSectionRows({
               {/* The house counter spec, numbering the rows in THIS list's
                   order — the mobile read is its own run, not a citation of
                   the desktop one. */}
-              <span className="shrink-0 self-start pt-1 font-mono text-caption font-semibold tabular-nums tracking-widest text-foreground/35">
+              <span className="shrink-0 self-start pt-1.5 font-mono text-caption font-semibold tabular-nums tracking-widest text-foreground/35">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-lede font-semibold leading-tight text-foreground">
+                <span className="block text-subheading font-semibold text-foreground">
                   {s.title}
                 </span>
                 {s.preview ?? (
                   // Truncated, never wrapped: the row's job is to stay a row.
-                  <span className="mt-1 block truncate text-small text-foreground/55">
+                  <span className="mt-1 block text-body text-foreground/65">
                     {s.hint}
                   </span>
                 )}
+                {/* The way in, labelled: a quiet chevron at the row's edge
+                    was not reading as something to tap. */}
+                <span
+                  className={`${BUTTON_GHOST} ${BUTTON_RADIUS} mt-4 inline-flex items-center gap-1 py-2 pl-3.5 pr-2.5 text-label font-semibold`}
+                >
+                  {s.cta ?? "Open"}
+                  <ChevronRightIcon aria-hidden className="h-4 w-4 shrink-0" />
+                </span>
               </span>
-              <ChevronRightIcon
-                aria-hidden
-                className="h-4 w-4 shrink-0 text-foreground/35"
-              />
             </button>
           ))}
         </div>

@@ -57,11 +57,11 @@ function Tally({
         {Array.from({ length: Math.min(count, 8) }, (_, i) => (
           <span
             key={i}
-            className={`h-1.5 w-1.5 rounded-full ${tone === "for" ? "bg-foreground/70" : "border border-foreground/50"}`}
+            className={`h-2 w-2 rounded-full ${tone === "for" ? "bg-foreground/70" : "border border-foreground/50"}`}
           />
         ))}
       </span>
-      <span className="text-caption tabular-nums text-foreground/60">
+      <span className="text-body tabular-nums text-foreground/75">
         {count} {label}
       </span>
     </span>
@@ -89,21 +89,21 @@ export function AnalysisRowPreview({
   return (
     <>
       {lead ? (
-        <p className="mt-3 text-title font-medium text-foreground">
+        <p className="mt-3 text-subheading font-semibold text-foreground">
           “{lead.headline}”
         </p>
       ) : null}
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
         <Tally count={shape.for} label="for" tone="for" />
         <Tally count={shape.against} label="against" tone="against" />
         {shown.length > 0 ? (
           <span className="inline-flex items-center gap-1.5">
             <span aria-hidden className="inline-flex gap-1">
               {shown.map((h) => (
-                <NewsSourceLogo key={h} domain={h} size="caption" />
+                <NewsSourceLogo key={h} domain={h} size="body" />
               ))}
             </span>
-            <span className="text-caption tabular-nums text-foreground/60">
+            <span className="text-body tabular-nums text-foreground/75">
               {hosts.length} {hosts.length === 1 ? "source" : "sources"}
             </span>
           </span>
@@ -121,7 +121,7 @@ export function ChecksRowPreview({
   checklist: RatingChecklist;
 }) {
   return (
-    <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
+    <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
       {CHECKS.map((c) => {
         const met = Boolean(checklist[c.key as keyof RatingChecklist]);
         const Icon = met ? CheckIcon : XMarkIcon;
@@ -129,13 +129,13 @@ export function ChecksRowPreview({
         return (
           <li
             key={c.key}
-            className={`flex min-w-0 items-center gap-1.5 text-caption ${met ? "text-foreground/75" : "text-foreground/40"}`}
+            className={`flex min-w-0 items-start gap-1.5 text-body ${met ? "text-foreground/85" : "text-foreground/40"}`}
           >
             <Icon
               aria-hidden
-              className={`h-3.5 w-3.5 shrink-0 ${met ? "text-foreground" : "text-foreground/30"}`}
+              className={`mt-0.5 h-4 w-4 shrink-0 ${met ? "text-foreground" : "text-foreground/30"}`}
             />
-            <span className="truncate">{c.label}</span>
+            <span>{c.label}</span>
             <span className="sr-only">{met ? "met" : "not met"}</span>
           </li>
         );
