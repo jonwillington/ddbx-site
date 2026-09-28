@@ -75,6 +75,7 @@ export function MiniPriceChart({
   muted = false,
   showFigures = true,
   detailed = false,
+  height,
   preBuyDays = PRE_BUY_CONTEXT_DAYS,
   theme,
 }: {
@@ -119,11 +120,17 @@ export function MiniPriceChart({
    *  anchor across the series turns "+43.2% since disclosure" from a claim into
    *  something a reader can see. */
   detailed?: boolean;
+  /** Plot height in px, overriding the `detailed` default — the filing
+   *  stage passes a shorter one on a phone, where 260px was most of a
+   *  screen. */
+  height?: number;
   /** Calendar days of pre-buy context on the "Around buy" window. */
   preBuyDays?: number;
   /** Force the dark ink, for a chart inside an always-dark stage panel. */
   theme?: "dark";
 }) {
+  const plotHeight =
+    height ?? (detailed ? CHART_HEIGHT_DETAILED : CHART_HEIGHT);
   const [period, setPeriod] = useState<Period>("around");
   const [allBars, setAllBars] = useState<{ date: string; close: number }[]>([]);
   // Price + date under the crosshair while the user scrubs (hover on desktop,
@@ -280,7 +287,7 @@ export function MiniPriceChart({
 
     const chart = createChart(container, {
       width: container.clientWidth,
-      height: detailed ? CHART_HEIGHT_DETAILED : CHART_HEIGHT,
+      height: plotHeight,
       autoSize: false,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
@@ -517,7 +524,15 @@ export function MiniPriceChart({
       seriesRef.current = null;
       setScrub(null);
     };
-  }, [plotted, placement, entryPrice, lineColor, fillColor, isDark]);
+  }, [
+    plotted,
+    placement,
+    entryPrice,
+    lineColor,
+    fillColor,
+    isDark,
+    plotHeight,
+  ]);
 
   const visiblePrices = bars.map((b) => b.close);
   const periodHigh = visiblePrices.length ? Math.max(...visiblePrices) : null;
@@ -679,10 +694,7 @@ export function MiniPriceChart({
 
       {/* Bleed past the card's p-4 so the plot runs edge-to-edge. The meta
           rows above stay padded; only the canvas reaches the card borders. */}
-      <div
-        className="relative -mx-4"
-        style={{ height: detailed ? CHART_HEIGHT_DETAILED : CHART_HEIGHT }}
-      >
+      <div className="relative -mx-4" style={{ height: plotHeight }}>
         {plotted.length >= 2 ? (
           <div ref={containerRef} className="h-full w-full" />
         ) : (

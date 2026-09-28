@@ -273,6 +273,73 @@ export function FilingDateline({
   );
 }
 
+/** The phone's facts row: what was paid, then the two dates, on one line.
+ *  Stands in for both the dateline and the Paid figure on a narrow screen. */
+function CompactFacts({
+  paid,
+  tradeDate,
+  disclosedDate,
+  market,
+}: {
+  paid: string | null;
+  tradeDate: string | null | undefined;
+  disclosedDate: string;
+  market: string;
+}) {
+  const lag = tradeDate
+    ? Math.max(
+        0,
+        Math.round(
+          (Date.parse(`${disclosedDate.slice(0, 10)}T00:00:00Z`) -
+            Date.parse(`${tradeDate.slice(0, 10)}T00:00:00Z`)) /
+            86_400_000,
+        ),
+      )
+    : null;
+  const sameDay = !tradeDate || lag === 0;
+
+  return (
+    <dl className="mt-6 grid grid-cols-3 items-start gap-x-4">
+      {paid ? (
+        <div>
+          <dt className="micro text-white/45">Paid</dt>
+          <dd className="mt-1.5 text-figure font-medium text-white">{paid}</dd>
+        </div>
+      ) : null}
+      {sameDay ? (
+        <div className="col-span-2">
+          <dt className="micro text-white/45">
+            {tradeDate ? "Traded and disclosed" : "Disclosed"}
+          </dt>
+          <dd className="mt-1.5 text-lede text-white">
+            {shortDate(disclosedDate, market)}
+          </dd>
+        </div>
+      ) : (
+        <>
+          <div>
+            <dt className="micro text-white/45">Traded</dt>
+            <dd className="mt-1.5 text-lede text-white">
+              {shortDate(tradeDate, market)}
+            </dd>
+          </div>
+          <div>
+            <dt className="micro text-white/45">Disclosed</dt>
+            <dd className="mt-1.5 text-lede text-white">
+              {shortDate(disclosedDate, market)}
+            </dd>
+            {lag != null ? (
+              <dd className="text-small text-brand-amber">
+                {lag} {lag === 1 ? "day" : "days"} later
+              </dd>
+            ) : null}
+          </div>
+        </>
+      )}
+    </dl>
+  );
+}
+
 export function FilingStage({
   deal,
   market,
@@ -355,14 +422,21 @@ export function FilingStage({
           {rating ? ` · ${rating}` : ""}
         </Eyebrow>
 
-        <FilingDateline
-          className="mt-5"
-          disclosedDate={deal.disclosed_date}
-          market={market}
-          tradeDate={deal.trade_date}
-        />
+        {/* On a phone the dates move down into the figures row beside Paid
+            (Jon, 2026-09-28): two calendar leaves above the headline were a
+            band of the first screen spent before saying who bought what. */}
+        {compact ? null : (
+          <FilingDateline
+            className="mt-5"
+            disclosedDate={deal.disclosed_date}
+            market={market}
+            tradeDate={deal.trade_date}
+          />
+        )}
 
-        <div className="mt-4 border-t border-rule-stage pt-4 sm:mt-7 sm:pt-7">
+        <div
+          className={compact ? "mt-5" : "mt-7 border-t border-rule-stage pt-7"}
+        >
           <CompanyLogo
             market={market}
             size={compact ? 36 : 64}
@@ -398,7 +472,24 @@ export function FilingStage({
           </p>
         )}
 
-        {figures.length > 0 ? <StageFigures items={figures} /> : null}
+        {compact ? (
+          <>
+            <CompactFacts
+              disclosedDate={deal.disclosed_date}
+              market={market}
+              paid={paidLabel}
+              tradeDate={deal.trade_date}
+            />
+            {figures.length > 1 ? (
+              <StageFigures
+                className="!mt-5"
+                items={figures.filter((f) => f.k !== "Paid")}
+              />
+            ) : null}
+          </>
+        ) : figures.length > 0 ? (
+          <StageFigures items={figures} />
+        ) : null}
 
         {/* No figure is a state with words, never a dash in a figure slot. */}
         {!hasOutcome ? (
@@ -424,6 +515,7 @@ export function FilingStage({
               : (deal as Dealing).price_pence) ?? 0
           }
           fmt={mkt.priceFormat}
+          height={compact ? 180 : undefined}
           muted={deal.is_open_market_buy === false}
           normalizeClose={(close) => mkt.normalizeLivePrice(close)}
           showFigures={false}
