@@ -136,6 +136,10 @@ import { DISCRETION_ENABLED } from "@/lib/discretion";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { ClusterPanel } from "@/components/filing/cluster-panel";
 import { InsiderHistoryPanel } from "@/components/filing/insider-history";
+import {
+  AnalysisRowPreview,
+  ChecksRowPreview,
+} from "@/components/filing/filing-row-previews";
 import { ShareArrivalCard } from "@/components/filing/share-arrival";
 import DefaultLayout from "@/layouts/default";
 import { SeoRail } from "@/components/seo/seo-rail";
@@ -492,6 +496,7 @@ export default function FilingPage({
         aside:
           "The same six checks every purchase is scored against, answered for this one.",
         hint: `${met} of ${CHECKS.length} checks met.`,
+        preview: <ChecksRowPreview checklist={checklist} />,
         body: (
           <RatingChecks checklist={checklist} deal={deal} market={market} />
         ),
@@ -506,6 +511,8 @@ export default function FilingPage({
           ? "Every finding the assessment reached, for and against, with the source behind each. The reasoning under them is in the app."
           : "The whole assessment: the thesis, every finding for and against with the source behind each, and the risks weighed against them.",
         hint: `${shape.for} findings for, ${shape.against} against, with sources.`,
+        feature: true,
+        preview: <AnalysisRowPreview evidence={evidence} shape={shape} />,
         body: (
           <AnalysisPreview
             deal={deal}
@@ -686,7 +693,21 @@ export default function FilingPage({
                 to be reading it at, and the share route is the one with the
                 unfurl card and the Universal Link. The text is the same
                 sentence the unfurl carries, so a tweet and its preview agree. */}
-            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+            {/* MOBILE: the rows lead, straight under the stage — the analysis
+                card is the page's value and belongs on the first screen, not
+                after a paragraph of small print. */}
+            {!isDesktop && sections.length > 0 ? (
+              <>
+                <FilingSectionRows sections={mobileSections} />
+                <div className="mt-6">
+                  <TrialNudge lead={lagLead} marketId={fam.marketId} />
+                </div>
+              </>
+            ) : null}
+
+            <div
+              className={`${!isDesktop && sections.length > 0 ? "mt-8" : "mt-5"} flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8`}
+            >
               <p className="max-w-[62ch] text-[12.5px] leading-[1.6] text-foreground/45">
                 {asOf
                   ? `Marked to the close on ${longDate(asOf, market)}. `
@@ -712,40 +733,34 @@ export default function FilingPage({
                 mid-checklist. Each slot carries its own lead, but every one
                 ends on the identical trial terms.
 
-                MOBILE: the same sections as one screen of hairline rows, each
-                opening its body in the bottom sheet. The threaded nudges
+                MOBILE (rendered above the small print): the same sections as
+                the analysis card plus hairline rows, each opening its body in
+                the bottom sheet. The threaded nudges
                 collapse to a single one after the rows, carrying the lag line
                 (the strongest sentence the page has); the themed leads ride
                 at the foot of each sheet instead. */}
-            {isDesktop ? (
-              sections.map((s, i) => (
-                <Fragment key={s.key}>
-                  {i > 0 ? (
-                    <div className="mt-12">
-                      <TrialNudge
-                        lead={i === 1 ? lagLead : themedLead[s.key]}
-                        marketId={fam.marketId}
-                      />
-                    </div>
-                  ) : null}
-                  <SeoSection
-                    aside={s.aside}
-                    index={i + 1}
-                    title={s.title}
-                    total={totalSections}
-                  >
-                    {s.body}
-                  </SeoSection>
-                </Fragment>
-              ))
-            ) : sections.length > 0 ? (
-              <>
-                <FilingSectionRows sections={mobileSections} />
-                <div className="mt-6">
-                  <TrialNudge lead={lagLead} marketId={fam.marketId} />
-                </div>
-              </>
-            ) : null}
+            {isDesktop
+              ? sections.map((s, i) => (
+                  <Fragment key={s.key}>
+                    {i > 0 ? (
+                      <div className="mt-12">
+                        <TrialNudge
+                          lead={i === 1 ? lagLead : themedLead[s.key]}
+                          marketId={fam.marketId}
+                        />
+                      </div>
+                    ) : null}
+                    <SeoSection
+                      aside={s.aside}
+                      index={i + 1}
+                      title={s.title}
+                      total={totalSections}
+                    >
+                      {s.body}
+                    </SeoSection>
+                  </Fragment>
+                ))
+              : null}
 
             <SeoSection
               aside="The filing, as it was disclosed."

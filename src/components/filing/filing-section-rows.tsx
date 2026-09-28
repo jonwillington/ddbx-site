@@ -28,6 +28,7 @@ import { useState } from "react";
 import { ChevronRightIcon } from "@heroicons/react/20/solid";
 
 import { AppDrawer } from "@/components/app-drawer";
+import { panel } from "@/components/ui/panel";
 
 export interface FilingSectionEntry {
   key: string;
@@ -38,6 +39,13 @@ export interface FilingSectionEntry {
   /** The section body, authored once by the page: rendered inline inside a
    *  `SeoSection` on desktop, and inside the drawer here. */
   body: ReactNode;
+  /** A sample of the body, shown on the row in place of `hint` (which stays
+   *  the drawer subtitle). A row that describes its content is a table of
+   *  contents; a row that shows some of it is a reason to tap. */
+  preview?: ReactNode;
+  /** Set the row as a contained card rather than a hairline row. One per
+   *  list at most: the section that carries the page's value (the analysis). */
+  feature?: boolean;
   /** Drawer-only footer — the section's trial nudge, so the ask still meets
    *  the reader at the natural pause after the content, as it does between
    *  the stacked sections on desktop. */
@@ -55,41 +63,76 @@ export function FilingSectionRows({
   const [open, setOpen] = useState(false);
   const active = sections.find((s) => s.key === activeKey) ?? null;
 
+  const featured = sections.find((s) => s.feature) ?? null;
+  const rows = sections.filter((s) => s !== featured);
+  const openSection = (key: string) => {
+    setActiveKey(key);
+    setOpen(true);
+  };
+
   return (
     <>
-      <div className={`mt-8 border-t border-rule`}>
-        {sections.map((s, i) => (
-          <button
-            key={s.key}
-            className={`flex w-full items-center gap-4 border-b border-rule py-5 text-left`}
-            type="button"
-            onClick={() => {
-              setActiveKey(s.key);
-              setOpen(true);
-            }}
-          >
-            {/* The house counter spec, numbering the rows in THIS list's
-                order — the mobile read is its own run, not a citation of the
-                desktop one. */}
-            <span className="shrink-0 font-mono text-caption font-semibold tabular-nums tracking-widest text-foreground/35">
-              {String(i + 1).padStart(2, "0")}
+      {featured ? (
+        // The featured section, contained (design language tenet 1): a card
+        // carrying a sample of the analysis, so the page's value is visible
+        // before the tap rather than described by a heading among three.
+        <button
+          className={`${panel({ size: "roomy", lift: true })} mt-8 block w-full text-left`}
+          type="button"
+          onClick={() => openSection(featured.key)}
+        >
+          <span className="eyebrow block text-foreground/45">
+            {featured.title}
+          </span>
+          {featured.preview ?? (
+            <span className="mt-2 block text-small text-foreground/55">
+              {featured.hint}
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-lede font-semibold leading-tight text-foreground">
-                {s.title}
-              </span>
-              {/* Truncated, never wrapped: the row's job is to stay a row. */}
-              <span className="mt-1 block truncate text-small text-foreground/55">
-                {s.hint}
-              </span>
-            </span>
+          )}
+          <span className="mt-5 flex items-center justify-between border-t border-rule pt-4 text-label font-semibold text-foreground">
+            Read the full analysis
             <ChevronRightIcon
               aria-hidden
-              className="h-4 w-4 shrink-0 text-foreground/35"
+              className="h-4 w-4 shrink-0 text-foreground/50"
             />
-          </button>
-        ))}
-      </div>
+          </span>
+        </button>
+      ) : null}
+
+      {rows.length > 0 ? (
+        <div className={`${featured ? "mt-6" : "mt-8"} border-t border-rule`}>
+          {rows.map((s, i) => (
+            <button
+              key={s.key}
+              className="flex w-full items-center gap-4 border-b border-rule py-5 text-left"
+              type="button"
+              onClick={() => openSection(s.key)}
+            >
+              {/* The house counter spec, numbering the rows in THIS list's
+                  order — the mobile read is its own run, not a citation of
+                  the desktop one. */}
+              <span className="shrink-0 self-start pt-1 font-mono text-caption font-semibold tabular-nums tracking-widest text-foreground/35">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-lede font-semibold leading-tight text-foreground">
+                  {s.title}
+                </span>
+                {s.preview ?? (
+                  // Truncated, never wrapped: the row's job is to stay a row.
+                  <span className="mt-1 block truncate text-small text-foreground/55">
+                    {s.hint}
+                  </span>
+                )}
+              </span>
+              <ChevronRightIcon
+                aria-hidden
+                className="h-4 w-4 shrink-0 text-foreground/35"
+              />
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <AppDrawer
         open={open && active != null}
