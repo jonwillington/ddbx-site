@@ -7,6 +7,7 @@ import { LinkerParamCleanup } from "@/components/linker-param-cleanup";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import AccountDeletionPage from "@/pages/account-deletion";
 import ApiPage from "@/pages/api";
+import AssistantPage from "@/pages/assistant";
 import McpPage from "@/pages/mcp";
 import BestPerformingBuysPage from "@/pages/best-performing-buys";
 import BiggestBuysPage from "@/pages/biggest-buys";
@@ -205,6 +206,11 @@ function App() {
             gated, not in the navbar. Top-level rather than /developers/mcp
             because public/_redirects folds /developers/* onto /developers. */}
         <Route element={<McpPage />} path="/mcp" />
+        {/* One page per assistant, for people searching "<assistant> insider
+            buying" rather than "MCP". Same connector as /mcp, cross-market,
+            not in the navbar (footer and /mcp link to them). */}
+        <Route element={<AssistantPage which="claude" />} path="/claude" />
+        <Route element={<AssistantPage which="chatgpt" />} path="/chatgpt" />
         {/* Cross-market, like /api: the API it probes is the same one behind
             every domain, so ddbx.us/status and ddbx.eu/status render the same
             page and canonicalise to ddbx.uk/status. */}

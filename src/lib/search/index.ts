@@ -268,6 +268,8 @@ export function pageCatalogue(
 
   add("API", "/api", "Developers");
   add("MCP connector", "/mcp", "Developers");
+  add("ddbx for Claude", "/claude", "Developers");
+  add("ddbx for ChatGPT", "/chatgpt", "Developers");
 
   return [...out.values()];
 }

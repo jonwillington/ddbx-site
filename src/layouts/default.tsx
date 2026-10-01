@@ -739,6 +739,29 @@ export default function DefaultLayout({
                     ·
                   </span>
 
+                  {/* Crawl links to the per-assistant pages; deliberately not
+                  in the navbar. */}
+                  <Link
+                    className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-2"
+                    data-ga-event="nav_footer_claude"
+                    to="/claude"
+                  >
+                    Claude
+                  </Link>
+                  <span aria-hidden className="text-foreground/20">
+                    ·
+                  </span>
+                  <Link
+                    className="text-foreground/60 hover:text-foreground transition-colors underline underline-offset-2"
+                    data-ga-event="nav_footer_chatgpt"
+                    to="/chatgpt"
+                  >
+                    ChatGPT
+                  </Link>
+                  <span aria-hidden className="text-foreground/20">
+                    ·
+                  </span>
+
                   <button
                     aria-label="Follow on X (Twitter)"
                     className="flex items-center text-foreground/60 hover:text-foreground transition-colors"

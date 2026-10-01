@@ -29,6 +29,7 @@ import { UrlCopy } from "@/components/mcp/url-copy";
 import { RelatedCards } from "@/components/seo/related-cards";
 import DefaultLayout from "@/layouts/default";
 import { appHrefForMarket } from "@/lib/app-store";
+import { BEHIND_THE_LINK, IN_THE_ANSWER } from "@/lib/mcp-copy";
 import { MCP_SNIPPETS } from "@/lib/mcp-setup";
 import { useDevicePlatform } from "@/lib/use-device-platform";
 import { usePinnedTheme } from "@/lib/use-pinned-theme";
@@ -130,28 +131,6 @@ const QUESTIONS: { Icon: Icon; q: string; tool: string; note: string }[] = [
     tool: "search_dealings · US · GME",
     note: "Open-market buys only, filtered by ticker and disclosure date.",
   },
-];
-
-/** What the connector sends and what stays behind the link. Two lists, one
- *  honest boundary. The right-hand list is the paid product and the reason
- *  the page can afford to give the left-hand one away. */
-const IN_THE_ANSWER = [
-  "Who traded, and their role",
-  "Buy or sell, and the transaction type",
-  "Trade date and disclosure date",
-  "Shares, price and value, in the filing’s own currency",
-  "The ddbx rating: significant, noteworthy, minor or routine",
-  "Sector",
-  "Whether other insiders bought too, and how many",
-  "A link to the filing’s ddbx page",
-];
-
-const BEHIND_THE_LINK = [
-  "The thesis: why this purchase matters, or does not",
-  "Evidence for and evidence against",
-  "Key risks",
-  "The six-check rating checklist",
-  "Return and alpha since disclosure",
 ];
 
 const FAQ = [
@@ -427,7 +406,21 @@ export default function McpPage() {
               remote HTTP server at that address. Tools the assistant will see:{" "}
               <Path>search_dealings</Path>, <Path>get_dealing</Path>,{" "}
               <Path>get_company</Path>, <Path>get_daily_summary</Path>,{" "}
-              <Path>search</Path> and <Path>fetch</Path>.
+              <Path>search</Path> and <Path>fetch</Path>. Step-by-step for{" "}
+              <Link
+                className="text-white/70 underline-offset-2 hover:text-white hover:underline"
+                to="/claude"
+              >
+                Claude
+              </Link>{" "}
+              and{" "}
+              <Link
+                className="text-white/70 underline-offset-2 hover:text-white hover:underline"
+                to="/chatgpt"
+              >
+                ChatGPT
+              </Link>
+              .
             </p>
           </div>
         </div>

@@ -28,7 +28,7 @@ export function sectionForPath(p: string): SiteSection | null {
   if (under(p, "/learn") || p === "/how-it-works") return "Learn";
   if (under(p, "/brokers") || under(p, "/compare")) return "Brokers";
   if (p === "/developers" || p === "/api") return "API";
-  if (p === "/mcp") return "MCP";
+  if (p === "/mcp" || p === "/claude" || p === "/chatgpt") return "MCP";
   if (
     RESEARCH_PATHS.some((x) => under(p, x)) ||
     p.startsWith("/company/") ||

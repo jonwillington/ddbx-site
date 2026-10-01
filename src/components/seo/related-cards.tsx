@@ -80,7 +80,7 @@ const ICON_FOR: [RegExp, typeof DocumentTextIcon][] = [
   [/^\/reports?\b/, DocumentTextIcon],
   [/^\/performance/, ArrowTrendingUpIcon],
   [/^\/(developers|api)$/, CodeBracketIcon],
-  [/^\/mcp$/, ChatBubbleLeftRightIcon],
+  [/^\/(mcp|claude|chatgpt)$/, ChatBubbleLeftRightIcon],
   [/^\/(us\/)?research/, BeakerIcon],
 ];
 

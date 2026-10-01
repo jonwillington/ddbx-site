@@ -117,6 +117,9 @@ const ROUTES_BY_HOST = {
     // The MCP connector page follows /developers: served everywhere,
     // canonical on ddbx.uk alone.
     "/mcp",
+    // Per-assistant explainers for the same connector; canonical here too.
+    "/claude",
+    "/chatgpt",
     "/companies",
     "/sectors",
     "/biggest-buys",
