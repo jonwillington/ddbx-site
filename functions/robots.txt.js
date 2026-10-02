@@ -45,6 +45,12 @@ const TRAINING_ONLY_AGENTS = [
   "cohere-ai",
 ];
 
+// Search engines for markets ddbx doesn't serve. Baidu's JS-rendering crawler
+// was ~25% of all zone traffic in late Sep 2026, loading pages and the API
+// calls behind them for an index no UK/US investor searches. Baidu honours
+// robots.txt; if this doesn't quiet it, the fallback is a WAF challenge on CN.
+const OFF_MARKET_SEARCH_AGENTS = ["Baiduspider"];
+
 function apexHost(hostname) {
   const host = String(hostname ?? "").toLowerCase();
 
@@ -60,10 +66,10 @@ export async function onRequestGet(context) {
   // follow. A named crawler takes its most specific matching group and ignores
   // `*` entirely, so the block below wins for those agents without needing to
   // repeat the `*` rules.
-  const trainingGroup = TRAINING_ONLY_AGENTS.map((ua) => `User-agent: ${ua}`).join("\n");
+  const blockedGroup = [...TRAINING_ONLY_AGENTS, ...OFF_MARKET_SEARCH_AGENTS].map((ua) => `User-agent: ${ua}`).join("\n");
 
   const body = isProduction
-    ? `${trainingGroup}
+    ? `${blockedGroup}
 Disallow: /
 
 User-agent: *
